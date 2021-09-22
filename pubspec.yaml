@@ -1,0 +1,16 @@
+name: rohd
+description: The Rapid Open Hardware Development (ROHD) framework, a framework for describing and verifying hardware
+version: 0.0.1
+homepage: https://www.github.com/intel/rohd
+
+environment:
+  sdk: '>=2.14.0 <3.0.0'
+
+dependencies:
+  collection: ^1.15.0
+  meta: ^1.3.0
+  logging: ^1.0.1
+
+dev_dependencies:
+  test: ^1.17.3
+  lints: ^1.0.1
