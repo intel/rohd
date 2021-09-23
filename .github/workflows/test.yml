@@ -1,0 +1,51 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Note: This workflow uses the latest stable version of the Dart SDK.
+      # You can specify other versions if desired, see documentation here:
+      # https://github.com/dart-lang/setup-dart/blob/main/README.md
+      - uses: dart-lang/setup-dart@v1
+#       - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
+
+      - name: Install dependencies
+        run: dart pub get
+
+      # Uncomment this step to verify the use of 'dart format' on each commit.
+      # - name: Verify formatting
+      #   run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze project source
+        run: dart analyze --fatal-infos
+      
+      - name: Install Icarus Verilog
+        run: |
+          if [ ! -e "$HOME/.local/bin/iverilog" ]; then
+            sudo apt-get install -y shunit2 flex bison autoconf gperf
+            git clone https://github.com/steveicarus/iverilog.git
+            cd iverilog
+            git checkout v11_0
+            autoconf
+            ./configure --prefix=$HOME/.local
+            make -j2
+            make install
+            cd ..
+            export PATH="$PATH:$HOME/.local/bin"
+          fi
+
+      # Your project will need to have tests in test/ and a dependency on
+      # package:test for this step to succeed. Note that Flutter projects will
+      # want to change this to 'flutter test'.
+      - name: Run tests
+        run: dart test
