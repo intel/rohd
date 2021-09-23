@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="rohd library API docs, for the Dart programming language.">
+  <title>rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../"
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li class="self-crumb">rohd library</li>
+  </ol>
+  <div class="self-name">rohd</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      <div>
+<h1><span class="kind-library">rohd</span> library 
+    <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Copyright (C) 2021 Intel Corporation<br>
+SPDX-License-Identifier: BSD-3-Clause</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+
+      <dl>
+        <dt id="Add">
+  <span class="name "><a href="../rohd/Add-class.html">Add</a></span> 
+
+</dt>
+<dd>
+  A two-input addition module. 
+</dd>
+
+        <dt id="And2Gate">
+  <span class="name "><a href="../rohd/And2Gate-class.html">And2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input AND gate. 
+</dd>
+
+        <dt id="AndUnary">
+  <span class="name "><a href="../rohd/AndUnary-class.html">AndUnary</a></span> 
+
+</dt>
+<dd>
+  A unary AND gate. 
+</dd>
+
+        <dt id="ARShift">
+  <span class="name "><a href="../rohd/ARShift-class.html">ARShift</a></span> 
+
+</dt>
+<dd>
+  An arithmetic right-shift module. 
+</dd>
+
+        <dt id="BusSubset">
+  <span class="name "><a href="../rohd/BusSubset-class.html">BusSubset</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/Module-class.html">Module</a> which gives access to a subset range of signals of the input. <a href="../rohd/BusSubset-class.html">[...]</a>
+</dd>
+
+        <dt id="Case">
+  <span class="name "><a href="../rohd/Case-class.html">Case</a></span> 
+
+</dt>
+<dd>
+  A block of <a href="../rohd/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../rohd/CaseItem/value.html">CaseItem.value</a> is executed. <a href="../rohd/Case-class.html">[...]</a>
+</dd>
+
+        <dt id="CaseItem">
+  <span class="name "><a href="../rohd/CaseItem-class.html">CaseItem</a></span> 
+
+</dt>
+<dd>
+  Represents a single case within a <a href="../rohd/Case-class.html">Case</a> block. 
+</dd>
+
+        <dt id="CaseZ">
+  <span class="name "><a href="../rohd/CaseZ-class.html">CaseZ</a></span> 
+
+</dt>
+<dd>
+  A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in the expression. <a href="../rohd/CaseZ-class.html">[...]</a>
+</dd>
+
+        <dt id="Combinational">
+  <span class="name "><a href="../rohd/Combinational-class.html">Combinational</a></span> 
+
+</dt>
+<dd>
+  Represents a block of combinational logic. <a href="../rohd/Combinational-class.html">[...]</a>
+</dd>
+
+        <dt id="Conditional">
+  <span class="name "><a href="../rohd/Conditional-class.html">Conditional</a></span> 
+
+</dt>
+<dd>
+  Represents an some logical assignments or actions that will only happen under certain conditions. 
+</dd>
+
+        <dt id="ConditionalAssign">
+  <span class="name "><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span> 
+
+</dt>
+<dd>
+  An assignment that only happens under certain conditions. <a href="../rohd/ConditionalAssign-class.html">[...]</a>
+</dd>
+
+        <dt id="Const">
+  <span class="name "><a href="../rohd/Const-class.html">Const</a></span> 
+
+</dt>
+<dd>
+  Represents a <a href="../rohd/Logic-class.html">Logic</a> that never changes value. 
+</dd>
+
+        <dt id="Divide">
+  <span class="name "><a href="../rohd/Divide-class.html">Divide</a></span> 
+
+</dt>
+<dd>
+  A two-input divison module. 
+</dd>
+
+        <dt id="Dumper">
+  <span class="name "><a href="../rohd/Dumper-class.html">Dumper</a></span> 
+
+</dt>
+<dd>
+  A waveform dumper for simulations. <a href="../rohd/Dumper-class.html">[...]</a>
+</dd>
+
+        <dt id="Else">
+  <span class="name "><a href="../rohd/Else-class.html">Else</a></span> 
+
+</dt>
+<dd>
+  A conditional block to execute only if <a href="../rohd/Iff/condition.html">condition</a> is satisified. <a href="../rohd/Else-class.html">[...]</a>
+</dd>
+
+        <dt id="ElseIf">
+  <span class="name "><a href="../rohd/ElseIf-class.html">ElseIf</a></span> 
+
+</dt>
+<dd>
+  A conditional block to execute only if <a href="../rohd/Iff/condition.html">condition</a> is satisified. <a href="../rohd/ElseIf-class.html">[...]</a>
+</dd>
+
+        <dt id="Equals">
+  <span class="name "><a href="../rohd/Equals-class.html">Equals</a></span> 
+
+</dt>
+<dd>
+  A two-input equality comparison module. 
+</dd>
+
+        <dt id="ExternalModule">
+  <span class="name "><a href="../rohd/ExternalModule-class.html">ExternalModule</a></span> 
+
+</dt>
+<dd>
+  Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework. <a href="../rohd/ExternalModule-class.html">[...]</a>
+</dd>
+
+        <dt id="FF">
+  <span class="name "><a href="../rohd/FF-class.html">FF</a></span> 
+
+</dt>
+<dd>
+  Represents a block of sequential logic. <a href="../rohd/FF-class.html">[...]</a>
+</dd>
+
+        <dt id="FlipFlop">
+  <span class="name "><a href="../rohd/FlipFlop-class.html">FlipFlop</a></span> 
+
+</dt>
+<dd>
+  Represents a single flip-flop with no reset. 
+</dd>
+
+        <dt id="GreaterThan">
+  <span class="name "><a href="../rohd/GreaterThan-class.html">GreaterThan</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for greater-than. 
+</dd>
+
+        <dt id="GreaterThanOrEqual">
+  <span class="name "><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for greater-than-or-equal-to. 
+</dd>
+
+        <dt id="If">
+  <span class="name "><a href="../rohd/If-class.html">If</a></span> 
+
+</dt>
+<dd>
+  Represents a block of code to be conditionally executed, like <code>if</code>/<code>else</code>. 
+</dd>
+
+        <dt id="IfBlock">
+  <span class="name "><a href="../rohd/IfBlock-class.html">IfBlock</a></span> 
+
+</dt>
+<dd>
+  Represents a chain of blocks of code to be conditionally executed, like <code>if</code>/<code>else if</code>/<code>else</code>. <a href="../rohd/IfBlock-class.html">[...]</a>
+</dd>
+
+        <dt id="Iff">
+  <span class="name "><a href="../rohd/Iff-class.html">Iff</a></span> 
+
+</dt>
+<dd>
+  A conditional block to execute only if <a href="../rohd/Iff/condition.html">condition</a> is satisified. <a href="../rohd/Iff-class.html">[...]</a>
+</dd>
+
+        <dt id="Interface">
+  <span class="name "><a href="../rohd/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Represents a logical interface to a <a href="../rohd/Module-class.html">Module</a>. <a href="../rohd/Interface-class.html">[...]</a>
+</dd>
+
+        <dt id="LessThan">
+  <span class="name "><a href="../rohd/LessThan-class.html">LessThan</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for less-than. 
+</dd>
+
+        <dt id="LessThanOrEqual">
+  <span class="name "><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for less-than-or-equal-to. 
+</dd>
+
+        <dt id="Logic">
+  <span class="name "><a href="../rohd/Logic-class.html">Logic</a></span> 
+
+</dt>
+<dd>
+  Represents a logical signal of any width which can change values. 
+</dd>
+
+        <dt id="LogicValue">
+  <span class="name "><a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
+
+</dt>
+<dd>
+  Represents a single logical 4-value bit (<code>0</code>, <code>1</code>, <code>x</code>, or <code>z</code>). 
+</dd>
+
+        <dt id="LogicValueChanged">
+  <span class="name "><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span> 
+
+</dt>
+<dd>
+  Represents the event of a <a href="../rohd/Logic-class.html">Logic</a> changing value. 
+</dd>
+
+        <dt id="LogicValues">
+  <span class="name "><a href="../rohd/LogicValues-class.html">LogicValues</a></span> 
+
+</dt>
+<dd>
+  An immutable 4-value representation of an arbitrary number of bits. <a href="../rohd/LogicValues-class.html">[...]</a>
+</dd>
+
+        <dt id="LShift">
+  <span class="name "><a href="../rohd/LShift-class.html">LShift</a></span> 
+
+</dt>
+<dd>
+  A logical left-shift module. 
+</dd>
+
+        <dt id="Module">
+  <span class="name "><a href="../rohd/Module-class.html">Module</a></span> 
+
+</dt>
+<dd>
+  Represents a synthesizable hardware entity with clearly defined interface boundaries. <a href="../rohd/Module-class.html">[...]</a>
+</dd>
+
+        <dt id="Multiply">
+  <span class="name "><a href="../rohd/Multiply-class.html">Multiply</a></span> 
+
+</dt>
+<dd>
+  A two-input multiplication module. 
+</dd>
+
+        <dt id="Mux">
+  <span class="name "><a href="../rohd/Mux-class.html">Mux</a></span> 
+
+</dt>
+<dd>
+  A mux (multiplexer) module. <a href="../rohd/Mux-class.html">[...]</a>
+</dd>
+
+        <dt id="NotGate">
+  <span class="name "><a href="../rohd/NotGate-class.html">NotGate</a></span> 
+
+</dt>
+<dd>
+  A gate <a href="../rohd/Module-class.html">Module</a> that performs bit-wise inversion. 
+</dd>
+
+        <dt id="Or2Gate">
+  <span class="name "><a href="../rohd/Or2Gate-class.html">Or2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input OR gate. 
+</dd>
+
+        <dt id="OrUnary">
+  <span class="name "><a href="../rohd/OrUnary-class.html">OrUnary</a></span> 
+
+</dt>
+<dd>
+  A unary OR gate. 
+</dd>
+
+        <dt id="Port">
+  <span class="name "><a href="../rohd/Port-class.html">Port</a></span> 
+
+</dt>
+<dd>
+  An extension of <a href="../rohd/Logic-class.html">Logic</a> useful for <a href="../rohd/Interface-class.html">Interface</a> definitions. 
+</dd>
+
+        <dt id="RShift">
+  <span class="name "><a href="../rohd/RShift-class.html">RShift</a></span> 
+
+</dt>
+<dd>
+  A logical right-shift module. 
+</dd>
+
+        <dt id="SimpleClockGenerator">
+  <span class="name "><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></span> 
+
+</dt>
+<dd>
+  A very simple, clock generator.  Generates a non-synthesizable SystemVerilog representation. <a href="../rohd/SimpleClockGenerator-class.html">[...]</a>
+</dd>
+
+        <dt id="Simulator">
+  <span class="name "><a href="../rohd/Simulator-class.html">Simulator</a></span> 
+
+</dt>
+<dd>
+  A functional event-based static simulator for logic behavior. <a href="../rohd/Simulator-class.html">[...]</a>
+</dd>
+
+        <dt id="Subtract">
+  <span class="name "><a href="../rohd/Subtract-class.html">Subtract</a></span> 
+
+</dt>
+<dd>
+  A two-input subtraction module. 
+</dd>
+
+        <dt id="Swizzle">
+  <span class="name "><a href="../rohd/Swizzle-class.html">Swizzle</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/Module-class.html">Module</a> that performs concatenation of signals into one bigger <a href="../rohd/Logic-class.html">Logic</a>. <a href="../rohd/Swizzle-class.html">[...]</a>
+</dd>
+
+        <dt id="SynthBuilder">
+  <span class="name "><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></span> 
+
+</dt>
+<dd>
+  A generic class which can convert a module into a generated output using a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>. 
+</dd>
+
+        <dt id="SynthesisResult">
+  <span class="name "><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></span> 
+
+</dt>
+<dd>
+  An object representing the output of a Synthesizer 
+</dd>
+
+        <dt id="Synthesizer">
+  <span class="name "><a href="../rohd/Synthesizer-class.html">Synthesizer</a></span> 
+
+</dt>
+<dd>
+  An object capable of converting a module into some new output format 
+</dd>
+
+        <dt id="SystemVerilogSynthesizer">
+  <span class="name "><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></span> 
+
+</dt>
+<dd>
+  A <a href="../rohd/Synthesizer-class.html">Synthesizer</a> which generates equivalent SystemVerilog as the given <a href="../rohd/Module-class.html">Module</a>. <a href="../rohd/SystemVerilogSynthesizer-class.html">[...]</a>
+</dd>
+
+        <dt id="Xor2Gate">
+  <span class="name "><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input XOR gate. 
+</dd>
+
+        <dt id="XorUnary">
+  <span class="name "><a href="../rohd/XorUnary-class.html">XorUnary</a></span> 
+
+</dt>
+<dd>
+  A unary XOR gate. 
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="mixins">
+      <h2>Mixins</h2>
+
+      <dl>
+        <dt id="CustomSystemVerilog">
+  <span class="name "><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
+
+</dt>
+<dd>
+  Allows a <a href="../rohd/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be 
+injected in generated output instead of instantiating a separate <code>module</code>. 
+</dd>
+
+        <dt id="InlineSystemVerilog">
+  <span class="name "><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></span> 
+
+</dt>
+<dd>
+  Allows a <a href="../rohd/Module-class.html">Module</a> to define a special type of <a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a> which can
+be inlined within other SystemVerilog code. <a href="../rohd/InlineSystemVerilog-mixin.html">[...]</a>
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+
+      <dl class="callables">
+        <dt id="bin" class="callable">
+  <span class="name"><a href="../rohd/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.2/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Converts a binary <a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/2.14.2/dart-core/int-class.html">int</a>. <a href="../rohd/bin.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="rswizzle" class="callable">
+  <span class="name"><a href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of <code>signals</code> is 
+the <em>least</em> significant bit(s). <a href="../rohd/rswizzle.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="swizzle" class="callable">
+  <span class="name"><a href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of <code>signals</code> is 
+the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+
+      <dl>
+        <dt id="ConditionalType">
+  <span class="name "><a href="../rohd/ConditionalType-class.html">ConditionalType</a></span> 
+
+</dt>
+<dd>
+  Controls characteristics about <a href="../rohd/Case-class.html">Case</a> blocks. <a href="../rohd/ConditionalType-class.html">[...]</a>
+</dd>
+
+        <dt id="SimulatorPhase">
+  <span class="name "><a href="../rohd/SimulatorPhase-class.html">SimulatorPhase</a></span> 
+
+</dt>
+<dd>
+  An enum for the various phases of the <a href="../rohd/Simulator-class.html">Simulator</a>. 
+</dd>
+
+      </dl>
+    </section>
+
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="../index.html">rohd</a></li>
+  <li class="self-crumb">rohd library</li>
+</ol>
+
+
+    <h5><span class="package-name">rohd</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../rohd/rohd-library.html">rohd</a></li>
+</ol>
+
+  </div>
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>rohd library</h5>
+    <ol>
+  <li class="section-title"><a href="../rohd/rohd-library.html#classes">Classes</a></li>
+  <li><a href="../rohd/Add-class.html">Add</a></li>
+  <li><a href="../rohd/And2Gate-class.html">And2Gate</a></li>
+  <li><a href="../rohd/AndUnary-class.html">AndUnary</a></li>
+  <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
+  <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
+  <li><a href="../rohd/Case-class.html">Case</a></li>
+  <li><a href="../rohd/CaseItem-class.html">CaseItem</a></li>
+  <li><a href="../rohd/CaseZ-class.html">CaseZ</a></li>
+  <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
+  <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
+  <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+  <li><a href="../rohd/Const-class.html">Const</a></li>
+  <li><a href="../rohd/Divide-class.html">Divide</a></li>
+  <li><a href="../rohd/Dumper-class.html">Dumper</a></li>
+  <li><a href="../rohd/Else-class.html">Else</a></li>
+  <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
+  <li><a href="../rohd/Equals-class.html">Equals</a></li>
+  <li><a href="../rohd/ExternalModule-class.html">ExternalModule</a></li>
+  <li><a href="../rohd/FF-class.html">FF</a></li>
+  <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
+  <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
+  <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
+  <li><a href="../rohd/If-class.html">If</a></li>
+  <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
+  <li><a href="../rohd/Iff-class.html">Iff</a></li>
+  <li><a href="../rohd/Interface-class.html">Interface</a></li>
+  <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
+  <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
+  <li><a href="../rohd/Logic-class.html">Logic</a></li>
+  <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
+  <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
+  <li><a href="../rohd/LogicValues-class.html">LogicValues</a></li>
+  <li><a href="../rohd/LShift-class.html">LShift</a></li>
+  <li><a href="../rohd/Module-class.html">Module</a></li>
+  <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
+  <li><a href="../rohd/Mux-class.html">Mux</a></li>
+  <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
+  <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
+  <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
+  <li><a href="../rohd/Port-class.html">Port</a></li>
+  <li><a href="../rohd/RShift-class.html">RShift</a></li>
+  <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
+  <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
+  <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
+  <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
+  <li><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
+  <li><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
+  <li><a href="../rohd/Synthesizer-class.html">Synthesizer</a></li>
+  <li><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
+  <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
+  <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
+
+
+  <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
+  <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
+  <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
+
+
+
+  <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
+  <li><a href="../rohd/bin.html">bin</a></li>
+  <li><a href="../rohd/rswizzle.html">rswizzle</a></li>
+  <li><a href="../rohd/swizzle.html">swizzle</a></li>
+
+  <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
+  <li><a href="../rohd/ConditionalType-class.html">ConditionalType</a></li>
+  <li><a href="../rohd/SimulatorPhase-class.html">SimulatorPhase</a></li>
+
+
+</ol>
+
+  </div><!--/sidebar-offcanvas-right-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.0.1
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/script.js?v1"></script>
+
+
+
+</body>
+
+</html>
+
