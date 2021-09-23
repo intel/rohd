@@ -44,7 +44,11 @@
   <div id="dartdoc-main-content" class="main-content">
       
 <section class="desc markdown">
-  <h1 id="rapid-open-hardware-development-rohd-framework">Rapid Open Hardware Development (ROHD) Framework</h1>
+  <p><a href="https://github.com/intel/rohd/actions/workflows/test.yml"><img src="https://github.com/intel/rohd/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+<a href="https://intel.github.io/rohd/rohd/rohd-library.html"><img src="https://github.com/intel/rohd/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
+<a href="https://github.com/intel/rohd/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSD--3-blue" alt="License"></a>
+<a href="CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg" alt="Contributor Covenant"></a></p>
+<h1 id="rapid-open-hardware-development-rohd-framework">Rapid Open Hardware Development (ROHD) Framework</h1>
 <h2 id="describing-hardware-in-dart-with-rohd">Describing Hardware in Dart with ROHD</h2>
 <p>ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.</p>
 <p>Features of ROHD include:</p>
@@ -112,6 +116,7 @@
 <p>Now you can import it in your project using:</p>
 <pre class="language-dart"><code class="language-dart">import 'package:rohd/rohd.dart';
 </code></pre>
+<p>There are complete API docs available at <a href="https://intel.github.io/rohd/rohd/rohd-library.html">https://intel.github.io/rohd/rohd/rohd-library.html</a>.</p>
 <h2 id="package-managers-for-hardware">Package Managers for Hardware</h2>
 <p>In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your <em>direct</em> dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an <code>import</code> statment.  Compare that to SystemVerilog IP integration!</p>
 <p>Read more about package managers here: <a href="https://en.wikipedia.org/wiki/Package_manager">https://en.wikipedia.org/wiki/Package_manager</a><br>
