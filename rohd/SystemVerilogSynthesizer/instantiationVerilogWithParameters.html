@@ -65,18 +65,24 @@
 
     </section>
     
+<section class="desc markdown">
+  <p>Creates a line of SystemVerilog that instantiates <code>module</code>.</p>
+<p>The instantiation will create it as type <code>instanceType</code> and name <code>instanceName</code>.</p>
+<p><code>inputs</code> and <code>outputs</code> map <code>module</code> input/output name to a verilog signal name.
+For example:<br>
+To generate this SystemVerilog:  <code>sig_c = sig_a &amp; sig_b</code><br>
+Based on this module definition: <code>c &lt;= a &amp; b</code><br>
+The values for <code>inputs</code> and <code>outputs</code> should be:<br>
+inputs:  <code>{ 'a' : 'sig_a', 'b' : 'sig_b'}</code><br>
+outputs: <code>{ 'c' : 'sig_c' }</code></p>
+</section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static String instantiationVerilogWithParameters(Module module, String instanceType, String instanceName, Map&lt;String,String&gt; inputs, Map&lt;String,String&gt; outputs, {Map&lt;String,String&gt;? parameters}) {
-  &#47;&#47; inputs and outputs map  module input&#47;output name -&gt; verilog signal name
-  &#47;&#47; For example:
-  &#47;&#47; verilog:           sig_c = sig_a &amp; sig_b
-  &#47;&#47; module definition: c &lt;= a &amp; b
-  &#47;&#47; inputs: { &#39;a&#39; : &#39;sig_a&#39;, &#39;b&#39; : &#39;sig_b&#39;}
-  &#47;&#47; outputs { &#39;c&#39; : &#39;sig_c&#39; }
+
 
   if(module is CustomSystemVerilog) {
     return module.instantiationVerilog(instanceType, instanceName, inputs, outputs);

@@ -117,6 +117,7 @@
 <pre class="language-dart"><code class="language-dart">import 'package:rohd/rohd.dart';
 </code></pre>
 <p>There are complete API docs available at <a href="https://intel.github.io/rohd/rohd/rohd-library.html">https://intel.github.io/rohd/rohd/rohd-library.html</a>.</p>
+<p>If you need some help, you can visit our <a href="https://github.com/intel/rohd/discussions">Discussions</a> page.  This is a friendly place where you can ask questions, share ideas, or just discuss openly!  You could also head to <a href="https://stackoverflow.com/">StackOverflow.com</a> (use the tag <code>rohd</code>) to ask questions or look for answers.</p>
 <h2 id="package-managers-for-hardware">Package Managers for Hardware</h2>
 <p>In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your <em>direct</em> dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an <code>import</code> statment.  Compare that to SystemVerilog IP integration!</p>
 <p>Read more about package managers here: <a href="https://en.wikipedia.org/wiki/Package_manager">https://en.wikipedia.org/wiki/Package_manager</a><br>
@@ -166,7 +167,7 @@ class Counter extends Module {
 
 </code></pre>
 <h3 id="a-more-complex-example">A more complex example</h3>
-<p>See a more advanced example of a logarithmic-depth tree of arbitrary functionality at doc/TreeExample.md.</p>
+<p>See a more advanced example of a logarithmic-depth tree of arbitrary functionality at <a href="doc/TreeExample.md">doc/TreeExample.md</a>.</p>
 <h3 id="logical-signals">Logical signals</h3>
 <p>The fundamental signal building block in ROHD is called <code>Logic</code>.</p>
 <pre class="language-dart"><code class="language-dart">// a one bit, unnamed signal
@@ -566,7 +567,7 @@ b.put(LogicValues([
 <p>The ROHD package has a great set of examples of how to write unit tests for ROHD <code>Module</code>s in the test/ directory.</p>
 <p>Note that when unit testing with ROHD, it is important to reset the <code>Simulator</code> with <code>Simulator.reset()</code>.</p>
 <h2 id="contributing">Contributing</h2>
-<p>ROHD is under active development.  If you're interested in contributing, have feedback, or found a bug, please see CONTRIBUTING.md.</p>
+<p>ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
 <h2 id="comparison-with-alternatives">Comparison with Alternatives</h2>
 <p>There are a lot of options for developing hardware.  This section briefly discusses popular alternatives to ROHD and some of their strengths and weaknesses.</p>
 <h3 id="systemverilog">SystemVerilog</h3>

@@ -87,12 +87,6 @@ starting up interactions with independent processes (e.g. cosimulation).</p>
 Future&lt;void&gt; build() async {
   if(hasBuilt) throw Exception(&#39;Module already built.&#39;);
 
-  &#47;&#47;TODO: is building really necessary for all modules when you don&#39;t care about naming or hierarchy?
-  &#47;&#47; this could be skipped if all logic is built within the constructor
-  &#47;&#47; this would make the iteration time on simulations much faster, skipping a stage
-  &#47;&#47; one problem: constructors cannot be async! if you need async code in build, then it cant move to constructor,
-  &#47;&#47; and then you have to remember to call build somehow... e.g. cosim, but maybe could require build?
-
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module
   for(var output in _outputs.values) {
