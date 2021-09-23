@@ -1,3 +1,8 @@
+[![Tests](https://github.com/intel/rohd/actions/workflows/test.yml/badge.svg)](https://github.com/intel/rohd/actions/workflows/test.yml)
+[![Docs](https://github.com/intel/rohd/actions/workflows/docs.yml/badge.svg)](https://intel.github.io/rohd/rohd/rohd-library.html)
+[![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)
+
 Rapid Open Hardware Development (ROHD) Framework
 ================================================
 
@@ -84,6 +89,7 @@ Now you can import it in your project using:
 import 'package:rohd/rohd.dart';
 ```
 
+There are complete API docs available at https://intel.github.io/rohd/rohd/rohd-library.html.
 
 ## Package Managers for Hardware
 In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your *direct* dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an `import` statment.  Compare that to SystemVerilog IP integration!
