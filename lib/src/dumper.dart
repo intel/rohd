@@ -13,7 +13,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-//TODO: consider putting Dumper file-writing in an isolate so that it doesnt slow down main sim operation
 
 /// A waveform dumper for simulations.
 /// 
@@ -35,13 +34,7 @@ class Dumper {
   /// Stores the mapping from [Logic] to signal marker in the VCD file.
   final Map<Logic,String> _signalToMarkerMap = {};
 
-  //TODO: Dumper misses put's if the dumper starts before the put and it stays at initial value forever
-  // this can maybe be helped by storing all the values to write until a time tick? (THIS IS A BUG)
-
   //TODO: add unit testing for Dumper
-
-  //TODO: ignore things like const, unnamed signals, basic gates, etc. to reduce dumping time and debug spam
-  // nobody can tell what these random unnamed gates and signals are anyways.  Maybe any InlineVerilog?
   
   Dumper(this.module, {this.outputPath = 'waves.vcd'}) : _outputFile = File(outputPath) {
     if(!module.hasBuilt) throw Exception('Module must be built before passed to dumper.');

@@ -138,12 +138,6 @@ abstract class Module {
   @mustCallSuper
   Future<void> build() async {
     if(hasBuilt) throw Exception('Module already built.');
-    
-    //TODO: is building really necessary for all modules when you don't care about naming or hierarchy?
-    // this could be skipped if all logic is built within the constructor
-    // this would make the iteration time on simulations much faster, skipping a stage
-    // one problem: constructors cannot be async! if you need async code in build, then it cant move to constructor,
-    // and then you have to remember to call build somehow... e.g. cosim, but maybe could require build?
 
     // construct the list of modules within this module
     // 1) trace from outputs of this module back to inputs of this module
@@ -313,7 +307,6 @@ abstract class Module {
   /// The return value is the same as what is returned by [input()].
   @protected
   Logic addInput(String name, Logic x, {int width=1}) {
-    //TODO: could make x optional?
     _checkForSafePortName(name);
     if(x.width != width) throw Exception('Port width mismatch');
     _inputs[name] = Logic(name: name, width: width)..gets(x);
@@ -337,9 +330,6 @@ abstract class Module {
     
     return _outputs[name]!;
   }
-
-  //TODO: add support for inout (needed for assembly, analog, MSV)
-  // e.g. instantiating an analog module
 
   @override
   String toString() {

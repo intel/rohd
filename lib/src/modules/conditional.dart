@@ -11,17 +11,6 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
-//TODO: add pipestage type modelling (like TL-Verilog)
-
-//TODO: implement case statements (case, casez)
-//      https://www.verilogpro.com/verilog-case-casez-casex/
-//      maybe don't include casex, recommended not to use for synthesizable code since it can hide X prop
-//     > maybe there's a way to make case statements more beautiful than the typical case pattern
-//     > include priority and unique: https://www.verilogpro.com/systemverilog-unique-priority/
-//     > include ?'s or X's or something
-
-// TODO: add unique/priority to if/else statements
-//    http://www.verilogpro.com/systemverilog-unique-priority/
 
 // TODO: consider X optimism in conditional statements in more detail, dont be too pessimistic if both inputs are equal
 //  also need to add more tests around this (including @posedge(clk|reset))
@@ -140,8 +129,6 @@ class Combinational extends _Always {
 }
 
 
-//TODO: FF clk must be triggered by a simulator tick, a put alone won't cut it!
-
 /// Represents a block of sequential logic.
 /// 
 /// This is similar to an `always_ff` block in SystemVerilog.
@@ -164,12 +151,6 @@ class FF extends _Always {
 
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
-    // TODO: improve FF sampling performance
-    // listening at pretick and clkstable is expensive, since happens every simulator tick
-    // if we just listen to glitches, and selectively allow updates to preTickValue based on
-    // the phase of the tick, then we can maybe avoid the preTick?
-    // clkstable might be unavoidable?
-
     Simulator.preTick.listen((args) {
       for(var driverInput in _assignedDriverToInputMap.values) {
         _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
@@ -528,11 +509,6 @@ class CaseZ extends Case {
     return true;
   }
 }
-
-//TODO: add a "simple" constructor to control blocks that takes single
-// inputs instead of lists of inputs, so that simple control blocks
-// can be less verbose and ugly.  E.g. Iff.s(cond, x < y) instead of
-// Iff(cond, [x < y]).
 
 /// A conditional block to execute only if [condition] is satisified.
 /// 

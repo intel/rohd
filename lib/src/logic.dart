@@ -15,8 +15,6 @@ import 'package:rohd/rohd.dart';
 
 //TODO: add support for arrays of signals for synthesizing to SV so that it's not verbose for large structures, along with for loops?
 
-//TODO: add "in" like behavior, to see if some const is among a set of values of consts
-
 /// Represents the event of a [Logic] changing value.
 class LogicValueChanged {
 

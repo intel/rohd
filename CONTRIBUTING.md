@@ -13,6 +13,13 @@ ROHD adopts the Contributor Covenant v1.4 for the code of conduct.  It can be ac
 ### Issues
 If something doesn't seem right, you're stuck, there's a critical feature/enhancement missing, you find a bug, etc. then filing an issue on the GitHub repository is a great option.  Please try to provide as much detail as possible.  Complete, stand-alone reproduction instructions are extremely helpful for bugs!
 
+You can file an issue here: https://github.com/intel/rohd/issues/new
+
+### Discussions
+GitHub Discussions is a place where you can find announcements, ask questions, share ideas, show new things you're working on, or just discuss in general with the community!  If you have a question or need some help, this is a great place to go.
+
+You can access the discussions area here: https://github.com/intel/rohd/discussions
+
 ### StackOverflow
 StackOverflow.com is a great tool to ask questions and get answers from the community.  Use the `rohd` tag when asking your question so that others in the community who subscribe to that tag can find and answer your question more quickly!
 
@@ -54,6 +61,9 @@ If you have an idea for a feature or enhancement that would make ROHD better, fe
 
 ### Discussing Issues
 If you have an opinion or helpful information on any open issue, feel free to comment!  Even if you don't have the time to implement a change, providing valuable input is great too!
+
+### Fix or implement an Issue
+Take a look around the issues on the repo and see if there's any you'd like to take ownership of.  For your first contributions, look for issues tagged with `good first issue`, which are intended to be easier to get started with.  Feel free to ask for help or guidance!
 
 ### Pull Requests
 If you have a change that you have implemented and would like to contribute, you can open a pull request.  Please try to make sure you have implemented tests covering the changes, if applicable.  Smaller, simpler pull requests are easier to review.

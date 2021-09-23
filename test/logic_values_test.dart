@@ -11,7 +11,6 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-//TODO: write more tests for logicvalues
 //TODO: reversed looks broken
 //TODO: add a test with x & 0 == 0
 void main() {

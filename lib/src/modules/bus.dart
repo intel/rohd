@@ -79,8 +79,6 @@ class BusSubset extends Module with InlineSystemVerilog {
   }
 }
 
-// TODO: make a concat function that takes up to ~10 or so optional positional arguments, to avoid list notation (Eric's idea)
-
 /// Performs a concatenation operation on the list of signals, where index 0 of [signals] is 
 /// the *most* significant bit(s).
 /// 

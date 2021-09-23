@@ -510,8 +510,6 @@ class _FilledLogicValues extends LogicValues {
   
 }
 
-//TODO: create a whole test suite for LogicValues operations (especially careful around negatives!)
-
 /// An immutable 4-value representation of an arbitrary number of bits.
 /// 
 /// Each bit of [LogicValues] can be represented as a [LogicValue] of `0`, `1`, `x` (contention), or `z` (floating).
@@ -754,8 +752,6 @@ abstract class LogicValues {
   /// WARNING: Signed math is not fully tested.
   LogicValues operator/(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
-  //TODO: implement modulus %
-
   /// Executes mathematical operations between two [LogicValues]s
   /// 
   /// Handles length and bounds checks as well as proper conversion between different types of representation.
@@ -832,10 +828,6 @@ abstract class LogicValues {
     }
     return op(a, b) ? LogicValue.one : LogicValue.zero;
   }
-
-  //TODO: Need to update logical vs arithmetic shift operations with new Dart update 2.14
-  // https://medium.com/dartlang/announcing-dart-2-14-b48b9bb2fb67
-  // https://github.com/dart-lang/language/blob/master/accepted/future-releases/triple-shift-operator/feature-specification.md
 
   //TODO: test shift operations on INT_BITS width busses to make sure it works right
 

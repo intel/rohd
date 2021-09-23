@@ -17,18 +17,22 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
 
-  //TODO: make a static function in here that synthesizes a module, rather than module.synthesize
-
   @override
   bool generatesDefinition(Module module) => module is! CustomSystemVerilog;
 
+  /// Creates a line of SystemVerilog that instantiates [module].
+  /// 
+  /// The instantiation will create it as type [instanceType] and name [instanceName].
+  /// 
+  /// [inputs] and [outputs] map `module` input/output name to a verilog signal name.
+  /// For example:  
+  /// To generate this SystemVerilog:  `sig_c = sig_a & sig_b`  
+  /// Based on this module definition: `c <= a & b`  
+  /// The values for [inputs] and [outputs] should be:  
+  /// inputs:  `{ 'a' : 'sig_a', 'b' : 'sig_b'}`  
+  /// outputs: `{ 'c' : 'sig_c' }`  
   static String instantiationVerilogWithParameters(Module module, String instanceType, String instanceName, Map<String,String> inputs, Map<String,String> outputs, {Map<String,String>? parameters}) {
-    // inputs and outputs map  module input/output name -> verilog signal name
-    // For example:
-    // verilog:           sig_c = sig_a & sig_b
-    // module definition: c <= a & b
-    // inputs: { 'a' : 'sig_a', 'b' : 'sig_b'}
-    // outputs { 'c' : 'sig_c' }
+
 
     if(module is CustomSystemVerilog) {
       return module.instantiationVerilog(instanceType, instanceName, inputs, outputs);
@@ -168,7 +172,6 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     }
     return subModuleLines.join('\n');
   }
-  //TODO: make it so people can manually write their verilog for their module beyond just instantiation
   String _verilogModuleContents(Map<Module, String> moduleToInstanceTypeMap) {
     return [
       _verilogInternalNets(),
