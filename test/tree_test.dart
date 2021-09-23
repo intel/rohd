@@ -8,8 +8,6 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 /// 
 
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

@@ -1,5 +1,5 @@
 Rapid Open Hardware Development (ROHD) Framework
-=====
+================================================
 
 ## Describing Hardware in Dart with ROHD
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
