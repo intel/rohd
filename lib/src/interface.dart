@@ -34,8 +34,6 @@ class Interface<TagType> {
   final Map<String, Set<TagType>> _portToTagMap = {};
 
   Logic port(String name) => _ports[name]!;
-
-  // TODO: instead of append, maybe take a function that can rename things so people can be fancier
   
   /// Connects [module]'s inputs and outputs up to [srcInterface] and this [Interface].
   /// 

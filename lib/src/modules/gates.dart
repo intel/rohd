@@ -11,11 +11,6 @@
 import 'package:rohd/rohd.dart';
 
 
-//TODO: make input and output naming calculated based on input logics
-//     for example, a & b should name a_and_b
-
-//TODO: make a Mux Chain, for chains of "? :" without tons of parentheses
-
 /// A gate [Module] that performs bit-wise inversion.
 class NotGate extends Module with InlineSystemVerilog {
 

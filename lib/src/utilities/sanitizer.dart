@@ -24,7 +24,6 @@ class Sanitizer {
 
   /// Returns a modified version of [initialName] which is guaranteed to be "sanitary".
   static String sanitizeSV(String initialName) {
-    //TODO: more rules for sanitizing verilog
     var newName = initialName;
 
     // get rid of any weird characters, replace with `_`

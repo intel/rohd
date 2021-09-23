@@ -91,6 +91,8 @@ import 'package:rohd/rohd.dart';
 
 There are complete API docs available at https://intel.github.io/rohd/rohd/rohd-library.html.
 
+If you need some help, you can visit our [Discussions](https://github.com/intel/rohd/discussions) page.  This is a friendly place where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
+
 ## Package Managers for Hardware
 In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your *direct* dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an `import` statment.  Compare that to SystemVerilog IP integration!
 
@@ -146,7 +148,7 @@ class Counter extends Module {
 
 ### A more complex example
 
-See a more advanced example of a logarithmic-depth tree of arbitrary functionality at doc/TreeExample.md.
+See a more advanced example of a logarithmic-depth tree of arbitrary functionality at [doc/TreeExample.md](doc/TreeExample.md).
 
 ### Logical signals
 The fundamental signal building block in ROHD is called `Logic`.
@@ -625,7 +627,7 @@ Note that when unit testing with ROHD, it is important to reset the `Simulator` 
 
 ## Contributing
 
-ROHD is under active development.  If you're interested in contributing, have feedback, or found a bug, please see CONTRIBUTING.md.
+ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Comparison with Alternatives
 There are a lot of options for developing hardware.  This section briefly discusses popular alternatives to ROHD and some of their strengths and weaknesses.
