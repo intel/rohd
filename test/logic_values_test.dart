@@ -43,16 +43,14 @@ void main() {
         LogicValue.zero.toBool(),
         equals(false)
       );
-      /*
       expect( 
-        LogicValue.x.toBool(),
+        () => LogicValue.x.toBool(),
         throwsA(isA<Exception>())
       );
       expect( 
-        LogicValue.z.toBool(),
+        () => LogicValue.z.toBool(),
         throwsA(isA<Exception>())
       );
-      */
       expect( 
         LogicValue.one.toInt(),
         equals(1)
@@ -61,16 +59,14 @@ void main() {
         LogicValue.zero.toInt(),
         equals(0)
       );
-      /*
       expect( 
-        LogicValue.x.toInt(),
+        () => LogicValue.x.toInt(),
         throwsA(isA<Exception>())
       );
       expect( 
-        LogicValue.z.toInt(),
+        () => LogicValue.z.toInt(),
         throwsA(isA<Exception>())
       );
-      */
     });
     test('unary', () {
       expect( 
@@ -387,16 +383,14 @@ void main() {
         LogicValue.isPosedge(LogicValue.one, LogicValue.z, ignoreInvalid: true),
         equals(false)
       );
-      /*
       expect( 
-        LogicValue.isPosedge(LogicValue.x, LogicValue.one, ignoreInvalid: false),
+        () => LogicValue.isPosedge(LogicValue.x, LogicValue.one, ignoreInvalid: false),
         throwsA(isA<Exception>())
       );
       expect( 
-        LogicValue.isPosedge(LogicValue.one, LogicValue.z, ignoreInvalid: false),
+        () => LogicValue.isPosedge(LogicValue.one, LogicValue.z, ignoreInvalid: false),
         throwsA(isA<Exception>())
       );
-      */
     });
     test('isNegEdge', () {
       expect( 
@@ -415,16 +409,14 @@ void main() {
         LogicValue.isNegedge(LogicValue.one, LogicValue.z, ignoreInvalid: true),
         equals(false)
       );
-      /*
       expect( 
-        LogicValue.isNegedge(LogicValue.x, LogicValue.one, ignoreInvalid: false),
+        () => LogicValue.isNegedge(LogicValue.x, LogicValue.one, ignoreInvalid: false),
         throwsA(isA<Exception>())
       );
       expect( 
-        LogicValue.isNegedge(LogicValue.one, LogicValue.z, ignoreInvalid: false),
+        () => LogicValue.isNegedge(LogicValue.one, LogicValue.z, ignoreInvalid: false),
         throwsA(isA<Exception>())
       );
-      */
     });
   });
 
@@ -438,12 +430,10 @@ void main() {
         LogicValues.filled(100, LogicValue.zero) & LogicValues.filled(100, LogicValue.one),
         equals(LogicValues.filled(100, LogicValue.zero))
       );
-      /*
       expect( // test length mismatch
-        LogicValues.fromString('0') & LogicValues.fromString('01'),
+        () => LogicValues.fromString('0') & LogicValues.fromString('01'),
         throwsA(isA<Exception>())
       );
-      */
     });
   
     test('or2', () {
@@ -455,16 +445,14 @@ void main() {
         LogicValues.fromInt(1, 32) | LogicValues.fromInt(0, 32),
         equals(LogicValues.fromInt(1, 32))
       );
-      expect( // test fromBigInt - success (TODO: don't hardcode length?)
+      expect( // test fromBigInt - success
         LogicValues.fromBigInt(BigInt.one, 65) | LogicValues.fromBigInt(BigInt.zero, 65),
         equals(LogicValues.fromBigInt(BigInt.one, 65))
       );
-      /*
       expect( // test fromBigInt
-        LogicValues.fromBigInt(BigInt.one, 32) | LogicValues.fromBigInt(BigInt.zero, 32),
+        () => LogicValues.fromBigInt(BigInt.one, 32) | LogicValues.fromBigInt(BigInt.zero, 32),
         throwsA(isA<Exception>())
       );
-      */
     });
 
     test('xor2', () {
@@ -493,13 +481,13 @@ void main() {
         LogicValues.fromString('111').toInt(),
         equals(7)
       );
-      /*
       expect( // toInt - invalid
-        LogicValues.filled(65, LogicValue.one).toInt(),
+        () => LogicValues.filled(65, LogicValue.one).toInt(),
         throwsA(isA<Exception>())
       );
+      /* TODO: this doesn't throw an exception - why?
       expect( // toBigInt - invalid
-        LogicValues.fromString('111').toBigInt(),
+        () => LogicValues.fromString('111').toBigInt(),
         throwsA(isA<Exception>())
       );
       */
@@ -518,9 +506,9 @@ void main() {
         LogicValues.fromString('0101')[3],
         equals(LogicValue.zero) // NOTE: index (length-1) refers to MSb
       );
-      /*
+      /* TODO: test still fails - why?
       expect( // index - out of range
-        LogicValues.fromString('0101')[10],
+        () => LogicValues.fromString('0101')[10],
         throwsA(isA<Exception>())
       );
       */
@@ -532,24 +520,20 @@ void main() {
         LogicValues.fromString('0101').getRange(0, 2),
         equals(LogicValues.fromString('01'))
       );
-      /*
+      /* TODO: test still fails - why?
       expect( // getRange - bad inputs start < 0
-        LogicValues.fromString('0101').getRange(-2, 1),
+        () => LogicValues.fromString('0101').getRange(-2, 1),
         throwsA(isA<Exception>())
       );
       */
-      /*
       expect( // getRange - bad inputs start > end
-        LogicValues.fromString('0101').getRange(2, 1),
+        () => LogicValues.fromString('0101').getRange(2, 1),
         throwsA(isA<Exception>())
       );
-      */
-      /*
       expect( // getRange - bad inputs end > length-1
-        LogicValues.fromString('0101').getRange(0, 7),
+        () => LogicValues.fromString('0101').getRange(0, 7),
         throwsA(isA<Exception>())
       );
-      */
       expect( // isValid - valid
         LogicValues.fromString('0101').isValid,
         equals(true)
@@ -634,12 +618,10 @@ void main() {
         LogicValues.fromString('0110') >= LogicValues.fromString('011x'),
         equals(LogicValue.x)
       );
-      /*
       expect( // mismatched lengths
-        LogicValues.fromString('0110') >= LogicValues.fromString('011000'),
+        () => LogicValues.fromString('0110') >= LogicValues.fromString('011000'),
         throwsA(isA<Exception>())
       );
-      */
     });
 
     test('less', () {
@@ -690,12 +672,10 @@ void main() {
         LogicValues.fromString('0000') + LogicValues.fromString('111x'),
         equals(LogicValues.fromString('xxxx'))
       );
-      /*
       expect( // length mismatch
-        LogicValues.fromString('0000') - LogicValues.fromString('000100'),
+        () => LogicValues.fromString('0000') - LogicValues.fromString('000100'),
         throwsA(isA<Exception>())
       );
-      */
     });
 
     test('muldiv', () {
@@ -711,12 +691,10 @@ void main() {
         LogicValues.fromString('0100') / LogicValues.fromString('0011'),
         equals(LogicValues.fromString('0001')) // 4 / 3 = 1 (integer division)
       );
-      /*
       expect( // div-by-0
-        LogicValues.fromString('0100') / LogicValues.fromString('0000'),
+        () => LogicValues.fromString('0100') / LogicValues.fromString('0000'),
         throwsA(isA<Exception>())
       );
-      */
       expect( // * overflow
         LogicValues.fromString('0100') * LogicValues.fromString('0100'),
         equals(LogicValues.fromString('0000'))
