@@ -11,9 +11,7 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// TODO: arithmetic overflow tests are failing despite return values looking like they are equal - unsure as to why?
 // TODO: tests that expect an exception to be thrown are still causing the test suite to fail - why?
-// TODO: unexpected output for bitwise and/or reductions involving invalid bits
 
 // TODO: add a test with x & 0 == 0
 
@@ -682,7 +680,6 @@ void main() {
         LogicValues.fromString('0001') - LogicValues.fromString('0001'),
         equals(LogicValues.fromString('0000')) // 1 - 1 = 0
       );
-      /*
       expect( // + overflow
         LogicValues.fromString('1111') + LogicValues.fromString('0001'),
         equals(LogicValues.fromString('0000'))
@@ -691,7 +688,6 @@ void main() {
         LogicValues.fromString('0000') - LogicValues.fromString('0001'),
         equals(LogicValues.fromString('1111'))
       );
-      */
       expect( // x involved
         LogicValues.fromString('0000') + LogicValues.fromString('111x'),
         equals(LogicValues.fromString('xxxx'))
@@ -723,12 +719,10 @@ void main() {
         throwsA(isA<Exception>())
       );
       */
-      /*
       expect( // * overflow
         LogicValues.fromString('0100') * LogicValues.fromString('0100'),
         equals(LogicValues.fromString('0000'))
       );
-      */
     });
 
   });
@@ -753,12 +747,10 @@ void main() {
           LogicValues.fromString('1111').and(),
           equals(LogicValue.one)
         );
-        /*
         expect( // and - invalid
           LogicValues.fromString('010x').and(),
           equals(LogicValue.zero)
         );
-        */
         expect( // and - invalid (1's)
           LogicValues.fromString('111z').and(),
           equals(LogicValue.x)
@@ -773,12 +765,10 @@ void main() {
           LogicValues.fromString('0000').or(),
           equals(LogicValue.zero)
         );
-        /*
         expect( // or - invalid
           LogicValues.fromString('010x').or(),
           equals(LogicValue.one)
         );
-        */
         expect( // or - invalid (1's)
           LogicValues.fromString('000z').or(),
           equals(LogicValue.x)
