@@ -127,13 +127,13 @@ class _SmallLogicValues extends LogicValues {
   }
 
   @override
-  LogicValue and() => !isValid ? LogicValue.x :
-    _value ^ _mask == 0 ? LogicValue.one : 
-    LogicValue.zero;
+  LogicValue and() => (~_value & ~_invalid) & _mask != 0 ? LogicValue.zero :
+    !isValid ? LogicValue.x :
+    LogicValue.one;
 
   @override
-  LogicValue or() => !isValid ? LogicValue.x :
-    _value != 0 ? LogicValue.one :
+  LogicValue or() => (_value ^ _invalid) & _value != 0 ? LogicValue.one :
+    !isValid ? LogicValue.x :
     LogicValue.zero;
 
   @override
@@ -288,16 +288,15 @@ class _BigLogicValues extends LogicValues {
       length
     );
   }
-
+  
+  @override
+  LogicValue and() => (~_value & ~_invalid) & _mask != BigInt.zero ? LogicValue.zero :
+    !isValid ? LogicValue.x :
+    LogicValue.one;
 
   @override
-  LogicValue and() => !isValid ? LogicValue.x :
-    _value ^ _mask == BigInt.zero ? LogicValue.one : 
-    LogicValue.zero;
-
-  @override
-  LogicValue or() => !isValid ? LogicValue.x :
-    _value != BigInt.zero ? LogicValue.one :
+  LogicValue or() => (_value ^ _invalid) & _value != BigInt.zero ? LogicValue.one :
+    !isValid ? LogicValue.x :
     LogicValue.zero;
 
   @override
