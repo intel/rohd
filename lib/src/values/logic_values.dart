@@ -27,8 +27,8 @@ import 'package:rohd/rohd.dart';
 class _SmallLogicValues extends LogicValues {
   // Each 0/1 bit in value is 0/1 if !invalid, else is x/z
 
-  final int _value;
-  final int _invalid;
+  late final int _value;
+  late final int _invalid;
   
   int get _mask => _maskOfLength(length);
   static final Map<int,int> _masksOfLength = {};
@@ -39,8 +39,10 @@ class _SmallLogicValues extends LogicValues {
     return _masksOfLength[length]!;
   }
 
-  _SmallLogicValues(this._value, this._invalid, int length) : super._(length) {
+  _SmallLogicValues(int value, int invalid, int length) : super._(length) {
     if(length > LogicValues._INT_BITS) throw Exception('_SmallLogicValues cannot be used for big values.');
+    _value = _mask & value;
+    _invalid = _mask & invalid;
   }
   
   @override
@@ -177,8 +179,8 @@ class _SmallLogicValues extends LogicValues {
 /// The implementation is similar to [_SmallLogicValues], except it uses [BigInt].
 /// 
 class _BigLogicValues extends LogicValues {
-  final BigInt _value;
-  final BigInt _invalid;
+  late final BigInt _value;
+  late final BigInt _invalid;
 
   BigInt get _mask => _maskOfLength(length);
   static final Map<int,BigInt> _masksOfLength = {};
@@ -189,8 +191,10 @@ class _BigLogicValues extends LogicValues {
     return _masksOfLength[length]!;
   }
 
-  _BigLogicValues(this._value, this._invalid, int length) : super._(length) {
+  _BigLogicValues(BigInt value, BigInt invalid, int length) : super._(length) {
     if(length <= LogicValues._INT_BITS) throw Exception('_BigLogicValues should not be used for small values.');
+    _value = _mask & value;
+    _invalid = _mask & invalid;
   }
   
   @override
