@@ -81,7 +81,7 @@ dependencies:
 ```yaml
 dependencies:
   rohd:
-    url: git://github.com/intel/rohd.git
+    git: https://github.com/intel/rohd.git
 ```
 
 Now you can import it in your project using:
