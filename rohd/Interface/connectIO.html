@@ -57,7 +57,9 @@
 <li><span class="parameter" id="connectIO-param-srcInterface"><span class="type-annotation"><a href="../../rohd/Interface-class.html">Interface</a></span> <span class="parameter-name">srcInterface</span>, </span></li>
 <li><span class="parameter" id="connectIO-param-inputTags">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span></li>
 <li><span class="parameter" id="connectIO-param-outputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span></li>
-<li><span class="parameter" id="connectIO-param-append"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">append</span> = <span class="default-value">&#39;&#39;</span>}</span></li>
+<li><span class="parameter" id="connectIO-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<ol class="parameter-list"><li><span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span></li>
+</ol>
+)?}</span></li>
 </ol>)
 
       
@@ -69,25 +71,28 @@
 <p>The <code>srcInterface</code> should be a new instance of the <a href="../../rohd/Interface-class.html">Interface</a> to be used by <code>module</code> for
 all input and output connectivity.  All signals in the interface with specified <code>TagType</code>
 will be connected to the <a href="../../rohd/Module-class.html">Module</a> via <a href="../../rohd/Module/addInput.html">Module.addInput</a> or <a href="../../rohd/Module/addOutput.html">Module.addOutput</a> based on
-<code>inputTags</code> and <code>outputTags</code>, respectively.  <code>append</code> can be used to uniquifiy port names
-by appending a <a href="https://api.dart.dev/stable/2.14.2/dart-core/String-class.html">String</a> to the end.</p>
+<code>inputTags</code> and <code>outputTags</code>, respectively.  <code>uniquify</code> can be used to uniquifiy port names
+by manipulating the original name of the port.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void connectIO(Module module, Interface srcInterface, {Set&lt;TagType&gt;? inputTags, Set&lt;TagType&gt;? outputTags, String append=&#39;&#39;}) {
+  <pre class="language-dart"><code class="language-dart">void connectIO(Module module, Interface srcInterface, {Set&lt;TagType&gt;? inputTags, Set&lt;TagType&gt;? outputTags, String Function(String original)? uniquify}) {
+
+  uniquify = uniquify ?? (String original) =&gt; original;
+
   getPorts(inputTags).forEach((port) {
     setPort(
       &#47;&#47; ignore: invalid_use_of_protected_member
-      module.addInput(port.name+append, srcInterface.port(port.name), width: port.width),
+      module.addInput(uniquify!(port.name), srcInterface.port(port.name), width: port.width),
       portName: port.name
     );
   });
   getPorts(outputTags).forEach((port) {
     &#47;&#47; ignore: invalid_use_of_protected_member
-    var output = module.addOutput(port.name+append, width: port.width);
+    var output = module.addOutput(uniquify!(port.name), width: port.width);
     port &lt;= output;
     srcInterface.port(port.name) &lt;= port;
     setPort(
