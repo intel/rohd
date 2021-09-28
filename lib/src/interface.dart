@@ -40,19 +40,22 @@ class Interface<TagType> {
   /// The [srcInterface] should be a new instance of the [Interface] to be used by [module] for
   /// all input and output connectivity.  All signals in the interface with specified [TagType]
   /// will be connected to the [Module] via [Module.addInput] or [Module.addOutput] based on
-  /// [inputTags] and [outputTags], respectively.  [append] can be used to uniquifiy port names
-  /// by appending a [String] to the end.
-  void connectIO(Module module, Interface srcInterface, {Set<TagType>? inputTags, Set<TagType>? outputTags, String append=''}) {
+  /// [inputTags] and [outputTags], respectively.  [uniquify] can be used to uniquifiy port names
+  /// by manipulating the original name of the port.
+  void connectIO(Module module, Interface srcInterface, {Set<TagType>? inputTags, Set<TagType>? outputTags, String Function(String original)? uniquify}) {
+    
+    uniquify = uniquify ?? (String original) => original;
+
     getPorts(inputTags).forEach((port) {
       setPort(
         // ignore: invalid_use_of_protected_member
-        module.addInput(port.name+append, srcInterface.port(port.name), width: port.width),
+        module.addInput(uniquify!(port.name), srcInterface.port(port.name), width: port.width),
         portName: port.name
       );
     });
     getPorts(outputTags).forEach((port) {
       // ignore: invalid_use_of_protected_member
-      var output = module.addOutput(port.name+append, width: port.width);
+      var output = module.addOutput(uniquify!(port.name), width: port.width);
       port <= output;
       srcInterface.port(port.name) <= port;
       setPort(
