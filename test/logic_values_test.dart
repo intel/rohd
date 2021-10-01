@@ -11,8 +11,6 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// TODO: tests that expect an exception to be thrown are still causing the test suite to fail - why?
-
 // TODO: add a test with x & 0 == 0
 
 void main() {
@@ -485,12 +483,6 @@ void main() {
         () => LogicValues.filled(65, LogicValue.one).toInt(),
         throwsA(isA<Exception>())
       );
-      /* TODO: this doesn't throw an exception - why?
-      expect( // toBigInt - invalid
-        () => LogicValues.fromString('111').toBigInt(),
-        throwsA(isA<Exception>())
-      );
-      */
       expect( // toBigInt - valid
         LogicValues.filled(65, LogicValue.one).toBigInt(),
         equals(BigInt.parse('36893488147419103231'))
@@ -506,12 +498,14 @@ void main() {
         LogicValues.fromString('0101')[3],
         equals(LogicValue.zero) // NOTE: index (length-1) refers to MSb
       );
-      /* TODO: test still fails - why?
       expect( // index - out of range
         () => LogicValues.fromString('0101')[10],
-        throwsA(isA<Exception>())
+        throwsA(isA<IndexError>())
       );
-      */
+      expect( // index - negative
+        () => LogicValues.fromString('0101')[-1],
+        throwsA(isA<IndexError>())
+      );
       expect( // reversed
         LogicValues.fromString('0101').reversed,
         equals(LogicValues.fromString('1010'))
@@ -520,12 +514,10 @@ void main() {
         LogicValues.fromString('0101').getRange(0, 2),
         equals(LogicValues.fromString('01'))
       );
-      /* TODO: test still fails - why?
       expect( // getRange - bad inputs start < 0
         () => LogicValues.fromString('0101').getRange(-2, 1),
         throwsA(isA<Exception>())
       );
-      */
       expect( // getRange - bad inputs start > end
         () => LogicValues.fromString('0101').getRange(2, 1),
         throwsA(isA<Exception>())
