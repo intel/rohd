@@ -676,6 +676,14 @@ abstract class LogicValues {
 
   /// True iff all bits are `z`.
   bool get isFloating;
+
+  /// The current active value of this if it has width 1, as a [LogicValue].
+  /// 
+  /// Throws an Exception if width is not 1.
+  LogicValue get bit {
+    if(length != 1) throw Exception('Length is not 1');
+    return this[0];
+  }
   
   /// Converts valid a [LogicValues] to an [int].
   /// 
