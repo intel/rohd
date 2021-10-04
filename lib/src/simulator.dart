@@ -126,9 +126,15 @@ class Simulator {
 
   /// Adds an arbitrary [action] to be executed as soon as possible, during the current
   /// simulation tick if possible.
+  /// 
+  /// If the injection occurs outside of a tick ([Simulator.outOfTick]), it will trigger
+  /// a new tick in the same timestamp.
   static void injectAction(Function action) {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
+    if(phase == SimulatorPhase.outOfTick) {
+      tickExecute(() => null);
+    }
   }
 
   /// A single simulation tick.

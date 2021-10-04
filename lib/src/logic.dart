@@ -86,10 +86,7 @@ class Logic {
   /// The current active value of this signal if it has width 1, as a [LogicValue].
   /// 
   /// Throws an Exception if width is not 1.
-  LogicValue get bit {
-    if(width != 1) throw Exception('Logic width is not 1');
-    return _currentValue[0];
-  }
+  LogicValue get bit => _currentValue.bit;
 
   /// The current valid active value of this signal as an [int].
   /// 
@@ -104,7 +101,7 @@ class Logic {
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
   bool hasValidValue() => _currentValue.isValid;
 
-  /// Returns true iff all bits of the current value are floating (`z`).
+  /// Returns `true` iff *all* bits of the current value are floating (`z`).
   bool isFloating() => value.isFloating;
 
   /// The `Logic` signal that is driving [this], if any.
