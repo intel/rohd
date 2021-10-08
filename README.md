@@ -676,7 +676,7 @@ High-Level Synthesis (HLS) uses a subset of C++ and SystemC to describe algorith
 
 Read more about one example of an HLS tool (Cadence's Stratus tool) here: https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html
 
-There are a number of other attempts to make HLS better, including [XLS](https://github.com/google/xls) and [Dhalia](https://capra.cs.cornell.edu/fuse/docs/overview/).  There are discussions on ways to reasonably incorporate some of the strengths of HLS approaches into ROHD.
+There are a number of other attempts to make HLS better, including [XLS](https://github.com/google/xls) and [Dahlia](https://capra.cs.cornell.edu/dahlia/) & [Calyx](https://capra.cs.cornell.edu/calyx/).  There are discussions on ways to reasonably incorporate some of the strengths of HLS approaches into ROHD.
 
 ### Transaction Level Verilog (TL-Verilog)
 Transaction Level Verilog (TL-Verilog) is like an extension on top of SystemVerilog that makes pipelining simpler and more concise.
