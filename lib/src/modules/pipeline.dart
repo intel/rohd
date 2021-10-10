@@ -1,5 +1,8 @@
 
 
+
+import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/module.dart';
 
@@ -8,81 +11,98 @@ class PipelineStageInfo {
   final int stage;
   Pipeline _pipeline;
   PipelineStageInfo._(this._pipeline, this.stage);
-  Logic i(Logic identifier, [int stageAdjustment=0]) {
-    return _pipeline.i(identifier, stage+stageAdjustment);
+  Logic get(Logic identifier, [int stageAdjustment=0]) {
+    return _pipeline.get(identifier, stage+stageAdjustment);
   }
-  Logic o(Logic identifier, [int stageAdjustment=0]) {
-    return _pipeline.o(identifier, stage+stageAdjustment);
-  }
+  // Logic i(Logic identifier, [int stageAdjustment=0]) {
+  //   return _pipeline.i(identifier, stage+stageAdjustment);
+  // }
+  // Logic o(Logic identifier, [int stageAdjustment=0]) {
+  //   return _pipeline.o(identifier, stage+stageAdjustment);
+  // }
 
-  Logic iAbs(Logic identifier, int stage) {
-    return _pipeline.i(identifier, stage);
+  Logic getAbs(Logic identifier, int stage) {
+    return _pipeline.get(identifier, stage);
   }
-  Logic oAbs(Logic identifier, int stage) {
-    return _pipeline.o(identifier, stage);
-  }
+  // Logic iAbs(Logic identifier, int stage) {
+  //   return _pipeline.i(identifier, stage);
+  // }
+  // Logic oAbs(Logic identifier, int stage) {
+  //   return _pipeline.o(identifier, stage);
+  // }
   
-  void add(Logic newLogic) {
-    _pipeline.add(newLogic);
-  }
 }
 
 class Pipeline {
-  final List<Logic> _inputs;
-  final List<void Function(PipelineStageInfo p)> _stages;
-  late final List<Map<Logic,Logic>> _stageLogicMaps_i, _stageLogicMaps_o;
+  //TODO: handle empty _stages
+  final List<List<Conditional> Function(PipelineStageInfo p)> _stages;
+  late final List<Map<Logic,Logic>> _stageLogicMaps_i, _stageLogicMaps_o, _stageLogicMaps;
   final Logic clk;
-  Pipeline(this.clk, {List<Logic> inputs=const[], List<Function(PipelineStageInfo p)> stages=const[], String name='pipeline'}) :
-    _inputs = inputs, _stages = stages
+  int get _numStages => _stages.length;
+  Pipeline(this.clk, {List<List<Conditional> Function(PipelineStageInfo p)> stages=const[], String name='pipeline'}) :
+    _stages = stages
   {
-    _stageLogicMaps_i = List.generate(_stages.length, (index) => {});
-    _stageLogicMaps_o = List.generate(_stages.length, (index) => {});
+    _stageLogicMaps_i = List.generate(_numStages, (index) => {});
+    _stageLogicMaps = List.generate(_numStages, (index) => {});
+    _stageLogicMaps_o = List.generate(_numStages, (index) => {});
 
-    for(var input in _inputs) {
-      add(input);
+    var combMiddles = <List<Conditional>>[];
+    for(var i = 0; i < _numStages; i++) {
+      var combMiddle = _stages[i](PipelineStageInfo._(this, i));
+      combMiddles.add(combMiddle);
     }
 
-    for(var i = 0; i < _stages.length; i++) {
-      _stages[i](PipelineStageInfo._(this, i));
+    for(var stage = 0; stage < _numStages; stage++) {
+      Combinational(
+        [
+          ..._registeredKeys.map((logic) => get(logic, stage) < _i(logic, stage)),
+          ...combMiddles[stage],
+          ..._registeredKeys.map((logic) => _o(logic, stage) < get(logic, stage)),
+        ],
+        name: 'comb_stage$stage'
+      );
     }
 
-    _tieUpLooseEnds();
   }
 
-  void _tieUpLooseEnds() {
-    for(var i = 0; i < _stages.length; i++) {
-      _stageLogicMaps_o[i].forEach((key, value) {
-        if(value.srcConnection == null) {
-          value <= _stageLogicMaps_i[i][key]!;
-        }  
-      });
-    }
-  }
-
-  void add(Logic newLogic) {
+  void _add(Logic newLogic) {
     for(var i = 0; i < _stages.length; i++) {
       _stageLogicMaps_i[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_i', width: newLogic.width);
       _stageLogicMaps_o[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_o', width: newLogic.width);
+      _stageLogicMaps[i][newLogic] = Logic(name: newLogic.name + '_stage$i', width: newLogic.width);
     }
 
     _stageLogicMaps_i[0][newLogic]! <= newLogic;
     var ffAssigns = <ConditionalAssign>[];
     for(var i = 1; i < _stages.length; i++) {
       ffAssigns.add(
-        _stageLogicMaps_i[i][newLogic]! < _stageLogicMaps_o[i-1][newLogic]!
+        _i(newLogic, i) < _o(newLogic, i-1)
       );
     }
     FF(clk, ffAssigns, name: 'ff_${newLogic.name}');
   }
 
-  Logic i(Logic logic, [int? stage]) {
+  Logic _i(Logic logic, [int? stage]) {
     stage = stage ?? _stages.length - 1;
     var stageLogic = _stageLogicMaps_i[stage][logic]!;
     return stageLogic;
   }
-  Logic o(Logic logic, [int? stage]) {
+  Logic _o(Logic logic, [int? stage]) {
     stage = stage ?? _stages.length - 1;
     var stageLogic = _stageLogicMaps_o[stage][logic]!;
+    return stageLogic;
+  }
+
+  
+  bool _isRegistered(Logic logic) => _stageLogicMaps[0].containsKey(logic);
+  Iterable<Logic> get _registeredKeys => _stageLogicMaps[0].keys;
+
+  Logic get(Logic logic, [int? stage]) {
+    if(!_isRegistered(logic)) _add(logic);
+
+    stage = stage ?? _stages.length - 1;
+
+    var stageLogic = _stageLogicMaps[stage][logic]!;
     return stageLogic;
   }
 }
@@ -96,18 +116,18 @@ class PipelineWrapper extends Module {
     var b = addOutput('b');
 
     var pipeline = Pipeline(clk,
-      inputs: [a, b],
       stages: [
-        (p) {
-          p.o(a) <= p.i(a) | p.i(b); 
-        },
-        (p) {
-          p.o(a) <= p.i(a) & p.i(b);
-        },
-        (p) {},
+        (p) => [
+          p.get(a) < p.get(a) | p.get(b)
+        ],
+        (p) => [
+          p.get(a) < p.get(a) & p.get(b)
+        ],
+        (p) => [
+        ],
       ]
     );
-    b <= pipeline.o(b);
+    b <= pipeline.get(b);
   }
 }
 
@@ -118,7 +138,7 @@ void main() async {
   var pipem = PipelineWrapper(clk, a);
 
   await pipem.build();
-  print(pipem.generateSynth());
+  File('tmp.sv').writeAsStringSync(pipem.generateSynth());
 
   // Pipeline(inputs: [a, b, c], stages: [
   //   (info) {

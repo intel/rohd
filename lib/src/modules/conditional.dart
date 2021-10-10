@@ -702,20 +702,26 @@ ${padding}end ''';
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
 
+  /// Name for a port of this module. 
+  late final String _clk, _d, _q;
+
   /// The clock, posedge triggered.
-  Logic get clk => input('clk');
+  Logic get clk => input(_clk);
 
   /// The input to the flop.
-  Logic get d => input('d');
+  Logic get d => input(_d);
 
   /// The output of the flop.
-  Logic get q => output('q');
+  Logic get q => output(_q);
 
   FlipFlop(Logic clk, Logic d, {String name='flipflop'}) : super(name: name) {
     if(clk.width > 1) throw Exception('clk must be 1 bit');
-    addInput('clk', clk);
-    addInput('d', d, width: d.width);
-    addOutput('q', width: d.width);
+    _clk = Module.unpreferredName('clk');
+    _d = Module.unpreferredName('d');
+    _q = Module.unpreferredName('q');
+    addInput(_clk, clk);
+    addInput(_d, d, width: d.width);
+    addOutput(_q, width: d.width);
     _setup();
   }
 
