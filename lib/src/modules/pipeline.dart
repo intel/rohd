@@ -205,6 +205,7 @@ class ReadyValidPipeline {
       stages: newStages,
       signals: [validPipeIn],
       stalls: stalls,
+      reset: reset
     );
 
     for(var i = 0; i < stalls.length; i++) {
