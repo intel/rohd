@@ -219,8 +219,8 @@ abstract class Conditional {
 
   /// Gets the value that should be used for execution for the input port associated with [driver].
   @protected LogicValues driverValue(Logic driver) {
-    return _driverValueOverrideMap.containsKey(driver) ? 
-      _driverValueOverrideMap[driver]! : _assignedDriverToInputMap[driver]!.value;
+    return _driverValueOverrideMap.containsKey(driverInput(driver)) ? 
+      _driverValueOverrideMap[driverInput(driver)]! : _assignedDriverToInputMap[driver]!.value;
   }
 
   /// Gets the input port associated with [driver].
