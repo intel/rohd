@@ -61,10 +61,6 @@ class Pipeline {
 
     if(_numStages == 0) return;
 
-    for(var signal in signals) {
-      _add(signal);
-    }
-
     if(stalls != null) {
       if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
       for(var i = 0; i < _numStages-1; i++) {
@@ -73,6 +69,10 @@ class Pipeline {
         if(stall.width != 1) throw Exception('Stall signal must be 1 bit');
         _stages[i].stall = stall;
       }      
+    }
+
+    for(var signal in signals) {
+      _add(signal);
     }
 
     var combMiddles = <List<Conditional>>[];
@@ -92,13 +92,6 @@ class Pipeline {
       );
     }
 
-  }
-
-  Logic stall(int index) {
-    if(_stages[index].stall == null) {
-      _stages[index].stall = Logic(name: 'stall_$index');
-    }
-    return _stages[index].stall!;
   }
 
   void _add(Logic newLogic, {Const? resetValue}) {
@@ -180,93 +173,31 @@ class ReadyValidPipeline {
       String name='rvpipeline', Logic? reset,
     })
   {
-    var ready = Logic(name: 'ready');
     var valid = validPipeIn;
 
     var stalls = List.generate(stages.length, (index) => Logic(name: 'stall_$index'));
-  
-    var newStages = <List<Conditional> Function(PipelineStageInfo)>[];
-    for(var i = 0; i < stages.length-1; i++) {
-      var stage = stages[i];
-      newStages.add(
-        (PipelineStageInfo p) => [
-          p.get(ready) < ~p.get(valid, 1) | p.get(ready, 1),
-          ...stage(p)
-        ]
-      );
-    }
-    newStages.add((p) => [
-      p.get(ready) < readyPipeOut,
-      ...stages[stages.length-1](p)
-    ]);
 
+    var readys = List.generate(stages.length, (index) => Logic(name: 'ready_$index'));
+    readys.add(readyPipeOut);
 
     _pipeline = Pipeline(clk,
-      stages: newStages,
-      signals: [validPipeIn],
+      stages: stages,
+      signals: [valid],
       stalls: stalls,
       reset: reset
     );
 
     for(var i = 0; i < stalls.length; i++) {
-      stalls[i] <= ~_pipeline.get(ready, i);
+      readys[i] <= ~_pipeline.get(valid, i+1) | readys[i+1];
+      stalls[i] <= _pipeline.get(valid, i+1) & ~readys[i+1];
     }
 
     validPipeOut = _pipeline.get(valid);
-    readyPipeIn = _pipeline.get(ready, 0);
+    // readyPipeIn = _pipeline.get(ready, 0);
+    readyPipeIn = readys[0];
   }
 
   Logic get(Logic logic, [int? stage]) {
     return _pipeline.get(logic, stage);
   }  
 }
-
-// class PipelineWrapper extends Module {
-  
-//   Logic get b => output('b');
-//   PipelineWrapper(Logic clk, Logic a) : super(name: 'pipeline_wrapper') {
-//     clk = addInput('clk', clk);
-//     a = addInput('a', a);
-//     var b = addOutput('b');
-
-//     // var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
-//     //   stages: [
-//     //     (p) => [
-//     //       p.get(a) < p.get(a) | p.get(b)
-//     //     ],
-//     //     (p) => [
-//     //       p.get(a) < p.get(a) & p.get(b)
-//     //     ],
-//     //     (p) => [
-//     //     ],
-//     //   ], reset: Logic(name: 'reset')
-//     // );
-//     // b <= pipeline.get(b);
-
-//     Logic validPipeIn = Logic(name: 'validPipeIn');
-//     Logic readyPipeOut = Logic(name: 'readyPipeOut');
-//     var pipeline = ReadyValidPipeline(clk, validPipeIn, readyPipeOut,
-//       stages: [
-//         (p) => [
-//           p.get(a) < p.get(a) | p.get(b)
-//         ],
-//         (p) => [
-//           p.get(a) < p.get(a) & p.get(b)
-//         ],
-//         (p) => [
-//         ],
-//       ], reset: Logic(name: 'reset')
-//     );
-//     b <= pipeline.get(b);
-//   }
-// }
-
-// void main() async {
-
-//   Logic a = Logic(name: 'a');
-//   Logic clk = Logic(name: 'clk');
-//   var pipem = PipelineWrapper(clk, a);
-
-//   await pipem.build();
-//   File('tmp.sv').writeAsStringSync(pipem.generateSynth());
-// }
