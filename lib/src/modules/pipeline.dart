@@ -1,11 +1,7 @@
 
-
-
 import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/module.dart';
-
 
 class PipelineStageInfo {
   final int stage;
@@ -19,25 +15,54 @@ class PipelineStageInfo {
   }  
 }
 
+class _PipeStage {
+  Map<Logic,Logic> input = {};
+  Map<Logic,Logic> main = {};
+  Map<Logic,Logic> output = {};
+  Logic? stall;
+
+  List<Conditional> Function(PipelineStageInfo p) operation;
+  _PipeStage(this.operation);
+
+  void addLogic(Logic newLogic, int index) {
+    input[newLogic] = Logic(name: newLogic.name + '_stage${index}_i', width: newLogic.width);
+    output[newLogic] = Logic(name: newLogic.name + '_stage${index}_o', width: newLogic.width);
+    main[newLogic] = Logic(name: newLogic.name + '_stage$index', width: newLogic.width);
+  }
+   
+}
+
 class Pipeline {
-  final List<List<Conditional> Function(PipelineStageInfo p)> _stages;
-  late final List<Map<Logic,Logic>> _stageLogicMaps_i, _stageLogicMaps_o, _stageLogicMaps;
   final Logic clk;
   final Logic? reset;
+  late final List<_PipeStage> _stages;
   int get _numStages => _stages.length;
-  Pipeline(this.clk, {List<List<Conditional> Function(PipelineStageInfo p)> stages=const[], String name='pipeline', this.reset}) :
-    _stages = stages
+  Pipeline(this.clk,
+    {
+      List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
+      List<Logic?>? stalls,
+      String name='pipeline', this.reset
+    }) 
   {
+
+    _stages = stages.map((e) => _PipeStage(e)).toList();
+    _stages.add(_PipeStage((p)=>[])); // output stage
 
     if(_numStages == 0) return;
 
-    _stageLogicMaps_i = List.generate(_numStages, (index) => {});
-    _stageLogicMaps = List.generate(_numStages, (index) => {});
-    _stageLogicMaps_o = List.generate(_numStages, (index) => {});
+    if(stalls != null) {
+      if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
+      for(var i = 0; i < _numStages-1; i++) {
+        var stall = stalls[i];
+        if(stall == null) continue;
+        if(stall.width != 1) throw Exception('Stall signal must be 1 bit');
+        _stages[i].stall = stall;
+      }      
+    }
 
     var combMiddles = <List<Conditional>>[];
     for(var i = 0; i < _numStages; i++) {
-      var combMiddle = _stages[i](PipelineStageInfo._(this, i));
+      var combMiddle = _stages[i].operation(PipelineStageInfo._(this, i));
       combMiddles.add(combMiddle);
     }
 
@@ -54,16 +79,21 @@ class Pipeline {
 
   }
 
+  Logic stall(int index) {
+    if(_stages[index].stall == null) {
+      _stages[index].stall = Logic(name: 'stall_$index');
+    }
+    return _stages[index].stall!;
+  }
+
   void _add(Logic newLogic, {Const? resetValue}) {
     //TODO: how to expose resetValue to user
 
     for(var i = 0; i < _stages.length; i++) {
-      _stageLogicMaps_i[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_i', width: newLogic.width);
-      _stageLogicMaps_o[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_o', width: newLogic.width);
-      _stageLogicMaps[i][newLogic] = Logic(name: newLogic.name + '_stage$i', width: newLogic.width);
+      _stages[i].addLogic(newLogic, i);
     }
 
-    _stageLogicMaps_i[0][newLogic]! <= newLogic;
+    _stages[0].input[newLogic]! <= newLogic;
     var ffAssigns = <Conditional>[];
     for(var i = 1; i < _stages.length; i++) {
       ffAssigns.add(
@@ -72,15 +102,26 @@ class Pipeline {
     }
     if(reset != null) {
       ffAssigns = <Conditional>[
-        If(reset!, 
-        then:
-          ffAssigns.map((conditional) {
-            conditional as ConditionalAssign;
-            return conditional.receiver < (resetValue ?? 0);
-          }).toList(),
-        orElse: 
-          ffAssigns
-        )
+        IfBlock([
+          Iff(reset!, 
+            ffAssigns.map((conditional) {
+              conditional as ConditionalAssign;
+              return conditional.receiver < (resetValue ?? 0);
+            }).toList(),
+          ),
+          Else(
+            List.generate(_numStages-1, 
+              (index) {
+                var stall = _stages[index].stall;
+                var ffAssign = ffAssigns[index] as ConditionalAssign;
+                var driver = stall != null ?
+                  Mux(stall, ffAssign.receiver, ffAssign.driver).y :
+                  ffAssign.driver;
+                return ffAssign.receiver < driver;
+              }
+            )
+          )
+        ])
       ];
     }
     FF(clk, ffAssigns, name: 'ff_${newLogic.name}');
@@ -88,25 +129,24 @@ class Pipeline {
 
   Logic _i(Logic logic, [int? stage]) {
     stage = stage ?? _stages.length - 1;
-    var stageLogic = _stageLogicMaps_i[stage][logic]!;
+    var stageLogic = _stages[stage].input[logic]!;
     return stageLogic;
   }
   Logic _o(Logic logic, [int? stage]) {
     stage = stage ?? _stages.length - 1;
-    var stageLogic = _stageLogicMaps_o[stage][logic]!;
+    var stageLogic = _stages[stage].output[logic]!;
     return stageLogic;
   }
-
   
-  bool _isRegistered(Logic logic) => _stageLogicMaps[0].containsKey(logic);
-  Iterable<Logic> get _registeredKeys => _stageLogicMaps[0].keys;
+  bool _isRegistered(Logic logic) => _stages[0].main.containsKey(logic);
+  Iterable<Logic> get _registeredKeys => _stages[0].main.keys;
 
   Logic get(Logic logic, [int? stage]) {
     if(!_isRegistered(logic)) _add(logic);
 
     stage = stage ?? _stages.length - 1;
 
-    var stageLogic = _stageLogicMaps[stage][logic]!;
+    var stageLogic = _stages[stage].main[logic]!;
     return stageLogic;
   }
 }
@@ -119,7 +159,7 @@ class PipelineWrapper extends Module {
     a = addInput('a', a);
     var b = addOutput('b');
 
-    var pipeline = Pipeline(clk,
+    var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
       stages: [
         (p) => [
           p.get(a) < p.get(a) | p.get(b)
@@ -143,20 +183,4 @@ void main() async {
 
   await pipem.build();
   File('tmp.sv').writeAsStringSync(pipem.generateSynth());
-
-  // Pipeline(inputs: [a, b, c], stages: [
-  //   (info) {
-  //     Logic d = info.new();
-  //     info.new(d);
-  //     d = info.current(a) + info.current(b);
-
-  //   },
-  //   ...List.generate(8, (index) => null),
-  //   (info) {
-  //     info.past(-1, a) + ...
-  //   },
-  //   (info) {
-
-  //   }
-  // ]);
 }
