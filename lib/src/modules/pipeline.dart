@@ -1,3 +1,13 @@
+/// Copyright (C) 2021 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+/// 
+/// pipeline.dart
+/// Pipelines!
+/// 
+/// 2021 October 11
+/// Author: Max Korbel <max.korbel@intel.com>
+/// 
+
 
 import 'dart:io';
 import 'package:rohd/rohd.dart';
@@ -105,8 +115,20 @@ class Pipeline {
         _i(newLogic, i) < _o(newLogic, i-1)
       );
     }
+
+    var ffAssignsWithStall = List<Conditional>.generate(_numStages-1, 
+      (index) {
+        var stall = _stages[index].stall;
+        var ffAssign = ffAssigns[index] as ConditionalAssign;
+        var driver = stall != null ?
+          Mux(stall, ffAssign.receiver, ffAssign.driver).y :
+          ffAssign.driver;
+        return ffAssign.receiver < driver;
+      }
+    );
+
     if(reset != null) {
-      ffAssigns = <Conditional>[
+      ffAssignsWithStall = <Conditional>[
         IfBlock([
           Iff(reset!, 
             ffAssigns.map((conditional) {
@@ -115,21 +137,12 @@ class Pipeline {
             }).toList(),
           ),
           Else(
-            List.generate(_numStages-1, 
-              (index) {
-                var stall = _stages[index].stall;
-                var ffAssign = ffAssigns[index] as ConditionalAssign;
-                var driver = stall != null ?
-                  Mux(stall, ffAssign.receiver, ffAssign.driver).y :
-                  ffAssign.driver;
-                return ffAssign.receiver < driver;
-              }
-            )
+            ffAssignsWithStall
           )
         ])
       ];
     }
-    FF(clk, ffAssigns, name: 'ff_${newLogic.name}');
+    FF(clk, ffAssignsWithStall, name: 'ff_${newLogic.name}');
   }
 
   Logic _i(Logic logic, [int? stage]) {
@@ -170,6 +183,8 @@ class ReadyValidPipeline {
     var ready = Logic(name: 'ready');
     var valid = validPipeIn;
 
+    var stalls = List.generate(stages.length, (index) => Logic(name: 'stall_$index'));
+  
     var newStages = <List<Conditional> Function(PipelineStageInfo)>[];
     for(var i = 0; i < stages.length-1; i++) {
       var stage = stages[i];
@@ -185,7 +200,6 @@ class ReadyValidPipeline {
       ...stages[stages.length-1](p)
     ]);
 
-    var stalls = List.generate(stages.length, (index) => Logic(name: 'stall_$index'));
 
     _pipeline = Pipeline(clk,
       stages: newStages,
@@ -206,52 +220,52 @@ class ReadyValidPipeline {
   }  
 }
 
-class PipelineWrapper extends Module {
+// class PipelineWrapper extends Module {
   
-  Logic get b => output('b');
-  PipelineWrapper(Logic clk, Logic a) : super(name: 'pipeline_wrapper') {
-    clk = addInput('clk', clk);
-    a = addInput('a', a);
-    var b = addOutput('b');
+//   Logic get b => output('b');
+//   PipelineWrapper(Logic clk, Logic a) : super(name: 'pipeline_wrapper') {
+//     clk = addInput('clk', clk);
+//     a = addInput('a', a);
+//     var b = addOutput('b');
 
-    // var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
-    //   stages: [
-    //     (p) => [
-    //       p.get(a) < p.get(a) | p.get(b)
-    //     ],
-    //     (p) => [
-    //       p.get(a) < p.get(a) & p.get(b)
-    //     ],
-    //     (p) => [
-    //     ],
-    //   ], reset: Logic(name: 'reset')
-    // );
-    // b <= pipeline.get(b);
+//     // var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
+//     //   stages: [
+//     //     (p) => [
+//     //       p.get(a) < p.get(a) | p.get(b)
+//     //     ],
+//     //     (p) => [
+//     //       p.get(a) < p.get(a) & p.get(b)
+//     //     ],
+//     //     (p) => [
+//     //     ],
+//     //   ], reset: Logic(name: 'reset')
+//     // );
+//     // b <= pipeline.get(b);
 
-    Logic validPipeIn = Logic(name: 'validPipeIn');
-    Logic readyPipeOut = Logic(name: 'readyPipeOut');
-    var pipeline = ReadyValidPipeline(clk, validPipeIn, readyPipeOut,
-      stages: [
-        (p) => [
-          p.get(a) < p.get(a) | p.get(b)
-        ],
-        (p) => [
-          p.get(a) < p.get(a) & p.get(b)
-        ],
-        (p) => [
-        ],
-      ], reset: Logic(name: 'reset')
-    );
-    b <= pipeline.get(b);
-  }
-}
+//     Logic validPipeIn = Logic(name: 'validPipeIn');
+//     Logic readyPipeOut = Logic(name: 'readyPipeOut');
+//     var pipeline = ReadyValidPipeline(clk, validPipeIn, readyPipeOut,
+//       stages: [
+//         (p) => [
+//           p.get(a) < p.get(a) | p.get(b)
+//         ],
+//         (p) => [
+//           p.get(a) < p.get(a) & p.get(b)
+//         ],
+//         (p) => [
+//         ],
+//       ], reset: Logic(name: 'reset')
+//     );
+//     b <= pipeline.get(b);
+//   }
+// }
 
-void main() async {
+// void main() async {
 
-  Logic a = Logic(name: 'a');
-  Logic clk = Logic(name: 'clk');
-  var pipem = PipelineWrapper(clk, a);
+//   Logic a = Logic(name: 'a');
+//   Logic clk = Logic(name: 'clk');
+//   var pipem = PipelineWrapper(clk, a);
 
-  await pipem.build();
-  File('tmp.sv').writeAsStringSync(pipem.generateSynth());
-}
+//   await pipem.build();
+//   File('tmp.sv').writeAsStringSync(pipem.generateSynth());
+// }

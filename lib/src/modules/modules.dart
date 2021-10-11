@@ -5,3 +5,4 @@ export 'clkgen.dart';
 export 'conditional.dart';
 export 'gates.dart';
 export 'bus.dart';
+export 'pipeline.dart';

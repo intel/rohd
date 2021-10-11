@@ -63,12 +63,12 @@ class SimCompare {
     for(var vector in vectors) {
       // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () async {
-        for(var signalName in vector.inputValues.keys) {
-          var value = vector.inputValues[signalName];
-          await Simulator.tickExecute(() => module.input(signalName).put(value));
-          // module.input(signalName).inject(value);
-          // module.input(signalName).put(value);
-        }
+        await Simulator.tickExecute(() {
+          for(var signalName in vector.inputValues.keys) {
+            var value = vector.inputValues[signalName];
+            module.input(signalName).put(value);
+          }
+        });
         for(var signalName in vector.expectedOutputValues.keys) {
           var value = vector.expectedOutputValues[signalName];
           var o = module.output(signalName);
