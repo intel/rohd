@@ -41,6 +41,7 @@ class Pipeline {
     {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
       List<Logic?>? stalls,
+      List<Logic> signals = const[],
       String name='pipeline', this.reset
     }) 
   {
@@ -49,6 +50,10 @@ class Pipeline {
     _stages.add(_PipeStage((p)=>[])); // output stage
 
     if(_numStages == 0) return;
+
+    for(var signal in signals) {
+      _add(signal);
+    }
 
     if(stalls != null) {
       if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
@@ -151,6 +156,56 @@ class Pipeline {
   }
 }
 
+class ReadyValidPipeline {
+  late final Logic validPipeOut;
+  late final Logic readyPipeIn;
+  final Logic validPipeIn;
+  final Logic readyPipeOut;
+  late final Pipeline _pipeline;
+  ReadyValidPipeline(Logic clk, this.validPipeIn, this.readyPipeOut, {
+      List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
+      String name='rvpipeline', Logic? reset,
+    })
+  {
+    var ready = Logic(name: 'ready');
+    var valid = validPipeIn;
+
+    var newStages = <List<Conditional> Function(PipelineStageInfo)>[];
+    for(var i = 0; i < stages.length-1; i++) {
+      var stage = stages[i];
+      newStages.add(
+        (PipelineStageInfo p) => [
+          p.get(ready) < ~p.get(valid, 1) | p.get(ready, 1),
+          ...stage(p)
+        ]
+      );
+    }
+    newStages.add((p) => [
+      p.get(ready) < readyPipeOut,
+      ...stages[stages.length-1](p)
+    ]);
+
+    var stalls = List.generate(stages.length, (index) => Logic(name: 'stall_$index'));
+
+    _pipeline = Pipeline(clk,
+      stages: newStages,
+      signals: [validPipeIn],
+      stalls: stalls,
+    );
+
+    for(var i = 0; i < stalls.length; i++) {
+      stalls[i] <= ~_pipeline.get(ready, i);
+    }
+
+    validPipeOut = _pipeline.get(valid);
+    readyPipeIn = _pipeline.get(ready, 0);
+  }
+
+  Logic get(Logic logic, [int? stage]) {
+    return _pipeline.get(logic, stage);
+  }  
+}
+
 class PipelineWrapper extends Module {
   
   Logic get b => output('b');
@@ -159,7 +214,23 @@ class PipelineWrapper extends Module {
     a = addInput('a', a);
     var b = addOutput('b');
 
-    var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
+    // var pipeline = Pipeline(clk, stalls: [null, Logic(name:'stall'), null],
+    //   stages: [
+    //     (p) => [
+    //       p.get(a) < p.get(a) | p.get(b)
+    //     ],
+    //     (p) => [
+    //       p.get(a) < p.get(a) & p.get(b)
+    //     ],
+    //     (p) => [
+    //     ],
+    //   ], reset: Logic(name: 'reset')
+    // );
+    // b <= pipeline.get(b);
+
+    Logic validPipeIn = Logic(name: 'validPipeIn');
+    Logic readyPipeOut = Logic(name: 'readyPipeOut');
+    var pipeline = ReadyValidPipeline(clk, validPipeIn, readyPipeOut,
       stages: [
         (p) => [
           p.get(a) < p.get(a) | p.get(b)
