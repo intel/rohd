@@ -14,34 +14,23 @@ class PipelineStageInfo {
   Logic get(Logic identifier, [int stageAdjustment=0]) {
     return _pipeline.get(identifier, stage+stageAdjustment);
   }
-  // Logic i(Logic identifier, [int stageAdjustment=0]) {
-  //   return _pipeline.i(identifier, stage+stageAdjustment);
-  // }
-  // Logic o(Logic identifier, [int stageAdjustment=0]) {
-  //   return _pipeline.o(identifier, stage+stageAdjustment);
-  // }
-
   Logic getAbs(Logic identifier, int stage) {
     return _pipeline.get(identifier, stage);
-  }
-  // Logic iAbs(Logic identifier, int stage) {
-  //   return _pipeline.i(identifier, stage);
-  // }
-  // Logic oAbs(Logic identifier, int stage) {
-  //   return _pipeline.o(identifier, stage);
-  // }
-  
+  }  
 }
 
 class Pipeline {
-  //TODO: handle empty _stages
   final List<List<Conditional> Function(PipelineStageInfo p)> _stages;
   late final List<Map<Logic,Logic>> _stageLogicMaps_i, _stageLogicMaps_o, _stageLogicMaps;
   final Logic clk;
+  final Logic? reset;
   int get _numStages => _stages.length;
-  Pipeline(this.clk, {List<List<Conditional> Function(PipelineStageInfo p)> stages=const[], String name='pipeline'}) :
+  Pipeline(this.clk, {List<List<Conditional> Function(PipelineStageInfo p)> stages=const[], String name='pipeline', this.reset}) :
     _stages = stages
   {
+
+    if(_numStages == 0) return;
+
     _stageLogicMaps_i = List.generate(_numStages, (index) => {});
     _stageLogicMaps = List.generate(_numStages, (index) => {});
     _stageLogicMaps_o = List.generate(_numStages, (index) => {});
@@ -65,7 +54,9 @@ class Pipeline {
 
   }
 
-  void _add(Logic newLogic) {
+  void _add(Logic newLogic, {Const? resetValue}) {
+    //TODO: how to expose resetValue to user
+
     for(var i = 0; i < _stages.length; i++) {
       _stageLogicMaps_i[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_i', width: newLogic.width);
       _stageLogicMaps_o[i][newLogic] = Logic(name: newLogic.name + '_stage${i}_o', width: newLogic.width);
@@ -73,11 +64,24 @@ class Pipeline {
     }
 
     _stageLogicMaps_i[0][newLogic]! <= newLogic;
-    var ffAssigns = <ConditionalAssign>[];
+    var ffAssigns = <Conditional>[];
     for(var i = 1; i < _stages.length; i++) {
       ffAssigns.add(
         _i(newLogic, i) < _o(newLogic, i-1)
       );
+    }
+    if(reset != null) {
+      ffAssigns = <Conditional>[
+        If(reset!, 
+        then:
+          ffAssigns.map((conditional) {
+            conditional as ConditionalAssign;
+            return conditional.receiver < (resetValue ?? 0);
+          }).toList(),
+        orElse: 
+          ffAssigns
+        )
+      ];
     }
     FF(clk, ffAssigns, name: 'ff_${newLogic.name}');
   }
@@ -125,7 +129,7 @@ class PipelineWrapper extends Module {
         ],
         (p) => [
         ],
-      ]
+      ], reset: Logic(name: 'reset')
     );
     b <= pipeline.get(b);
   }
