@@ -2,16 +2,13 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 /// 
 /// pipeline.dart
-/// Pipelines!
+/// Pipeline generators
 /// 
 /// 2021 October 11
 /// Author: Max Korbel <max.korbel@intel.com>
 /// 
 
-
-import 'dart:io';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/module.dart';
 
 class PipelineStageInfo {
   final int stage;
@@ -193,7 +190,6 @@ class ReadyValidPipeline {
     }
 
     validPipeOut = _pipeline.get(valid);
-    // readyPipeIn = _pipeline.get(ready, 0);
     readyPipeIn = readys[0];
   }
 

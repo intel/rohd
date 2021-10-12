@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 /// 
 /// pipeline_test.dart
-/// Pipelines tests!
+/// Tests for pipeline generators
 /// 
 /// 2021 October 11
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -171,7 +171,45 @@ void main() {
       var simResult = SimCompare.iverilogVector(pipem.generateSynth(), pipem.runtimeType.toString(), vectors, signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
+
+    test('rv pipeline multi', () async {
+      var pipem = RVPipelineModule(Logic(width:8), Logic(), Logic(), Logic());
+      await pipem.build();
+
+      var signalToWidthMap = {
+        'a':8,
+        'b':8
+      };
+
+      Dumper(pipem);
+      File('tmp_rvpipe.sv').writeAsStringSync(pipem.generateSynth());
+
+      var vectors = [
+        Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
+        Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
+        Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
+        Vector({'reset': 0, 'a': 0x10, 'validIn': 1, 'readyForOut': 1}, {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0x20, 'validIn': 1, 'readyForOut': 0}, {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0x30, 'validIn': 1, 'readyForOut': 0}, {'validOut': 1}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1, 'b': 0x13}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 1, 'b': 0x13}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1, 'b': 0x23}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 1, 'b': 0x23}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 1, 'b': 0x33}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1}, {'validOut': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      var simResult = SimCompare.iverilogVector(pipem.generateSynth(), pipem.runtimeType.toString(), vectors, signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
   });
 
   
 }
+
