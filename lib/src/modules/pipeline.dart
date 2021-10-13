@@ -39,12 +39,27 @@ class _PipeStage {
    
 }
 
+/// A simple pipeline, separating arbitrary combinational logic by flop stages.
 class Pipeline {
   final Logic clk;
   final Logic? reset;
   late final List<_PipeStage> _stages;
   int get _numStages => _stages.length;
   late final Map<Logic,Const> _resetValues;
+
+  /// Constructs a simple pipeline, separating arbitrary combinational logic by flop stages.
+  /// 
+  /// Each stage in the list [stages] is a function whose sole parameter is a [PipelineStageInfo]
+  /// object and which returns a [List] of [Conditional] objects.  Each stage can be thought of
+  /// as being the contents of a [Combinational] block.  Use the [PipelineStageInfo] object
+  /// to grab signals for a given pipe stage.
+  /// 
+  /// Signals to be pipelined can optionally be specified in the [signals] list.  Any signal
+  /// referenced in a stage via the [PipelineStageInfo] will automatically be included in the
+  /// entire pipeline.
+  /// 
+  /// If a [reset] signal is provided, then it will be consumed as an active-high reset for 
+  /// every signal through the pipeline.
   Pipeline(this.clk,
     {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
@@ -62,15 +77,7 @@ class Pipeline {
 
     _resetValues = Map.from(resetValues);
 
-    if(stalls != null) {
-      if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
-      for(var i = 0; i < _numStages-1; i++) {
-        var stall = stalls[i];
-        if(stall == null) continue;
-        if(stall.width != 1) throw Exception('Stall signal must be 1 bit');
-        _stages[i].stall = stall;
-      }      
-    }
+    _setStalls(stalls);
 
     for(var signal in signals) {
       _add(signal);
@@ -93,6 +100,18 @@ class Pipeline {
       );
     }
 
+  }
+
+  void _setStalls(List<Logic?>? stalls) {
+    if(stalls != null) {
+      if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
+      for(var i = 0; i < _numStages-1; i++) {
+        var stall = stalls[i];
+        if(stall == null) continue;
+        if(stall.width != 1) throw Exception('Stall signal must be 1 bit');
+        _stages[i].stall = stall;
+      }      
+    }
   }
 
   void _add(Logic newLogic) {
@@ -168,44 +187,39 @@ class Pipeline {
   }
 }
 
-class ReadyValidPipeline {
+class ReadyValidPipeline extends Pipeline {
   late final Logic validPipeOut;
   late final Logic readyPipeIn;
   final Logic validPipeIn;
   final Logic readyPipeOut;
-  late final Pipeline _pipeline;
   ReadyValidPipeline(Logic clk, this.validPipeIn, this.readyPipeOut, {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
       Map<Logic,Const> resetValues = const{},
       List<Logic> signals = const[],
       String name='rvpipeline', Logic? reset,
-    })
+    }): super(
+      clk,
+      stages: stages,
+      signals: [validPipeIn, ...signals],
+      stalls: List.generate(stages.length, (index) => Logic(name: 'stall_$index')),
+      reset: reset,
+      resetValues: resetValues,
+    )
   {
     var valid = validPipeIn;
 
-    var stalls = List.generate(stages.length, (index) => Logic(name: 'stall_$index'));
+    var stalls = _stages.map((stage) => stage.stall).toList();
+    stalls.removeLast(); // garbage value at the end
 
     var readys = List.generate(stages.length, (index) => Logic(name: 'ready_$index'));
     readys.add(readyPipeOut);
 
-    _pipeline = Pipeline(clk,
-      stages: stages,
-      signals: [valid, ...signals],
-      stalls: stalls,
-      reset: reset,
-      resetValues: resetValues
-    );
-
     for(var i = 0; i < stalls.length; i++) {
-      readys[i] <= ~_pipeline.getAbs(valid, i+1) | readys[i+1];
-      stalls[i] <= _pipeline.getAbs(valid, i+1) & ~readys[i+1];
+      readys[i] <= ~getAbs(valid, i+1) | readys[i+1];
+      stalls[i]! <= getAbs(valid, i+1) & ~readys[i+1];
     }
 
-    validPipeOut = _pipeline.getAbs(valid);
+    validPipeOut = getAbs(valid);
     readyPipeIn = readys[0];
   }
-
-  Logic getAbs(Logic logic, [int? stage]) {
-    return _pipeline.getAbs(logic, stage);
-  }  
 }
