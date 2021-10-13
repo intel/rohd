@@ -12,13 +12,13 @@ import 'package:rohd/rohd.dart';
 
 class PipelineStageInfo {
   final int stage;
-  Pipeline _pipeline;
+  final Pipeline _pipeline;
   PipelineStageInfo._(this._pipeline, this.stage);
   Logic get(Logic identifier, [int stageAdjustment=0]) {
-    return _pipeline.get(identifier, stage+stageAdjustment);
+    return _pipeline.getAbs(identifier, stage+stageAdjustment);
   }
   Logic getAbs(Logic identifier, int stage) {
-    return _pipeline.get(identifier, stage);
+    return _pipeline.getAbs(identifier, stage);
   }  
 }
 
@@ -44,19 +44,23 @@ class Pipeline {
   final Logic? reset;
   late final List<_PipeStage> _stages;
   int get _numStages => _stages.length;
+  late final Map<Logic,Const> _resetValues;
   Pipeline(this.clk,
     {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
       List<Logic?>? stalls,
       List<Logic> signals = const[],
+      Map<Logic,Const> resetValues = const{},
       String name='pipeline', this.reset
     }) 
   {
-
-    _stages = stages.map((e) => _PipeStage(e)).toList();
+    
+    _stages = stages.map((stage) => _PipeStage(stage)).toList();
     _stages.add(_PipeStage((p)=>[])); // output stage
 
     if(_numStages == 0) return;
+
+    _resetValues = Map.from(resetValues);
 
     if(stalls != null) {
       if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
@@ -81,9 +85,9 @@ class Pipeline {
     for(var stage = 0; stage < _numStages; stage++) {
       Combinational(
         [
-          ..._registeredKeys.map((logic) => get(logic, stage) < _i(logic, stage)),
+          ..._registeredLogics.map((logic) => getAbs(logic, stage) < _i(logic, stage)),
           ...combMiddles[stage],
-          ..._registeredKeys.map((logic) => _o(logic, stage) < get(logic, stage)),
+          ..._registeredLogics.map((logic) => _o(logic, stage) < getAbs(logic, stage)),
         ],
         name: 'comb_stage$stage'
       );
@@ -91,8 +95,13 @@ class Pipeline {
 
   }
 
-  void _add(Logic newLogic, {Const? resetValue}) {
+  void _add(Logic newLogic) {
     //TODO: how to expose resetValue to user
+
+    Const? resetValue;
+    if(_resetValues.containsKey(newLogic)) {
+      resetValue = _resetValues[newLogic];
+    }
 
     for(var i = 0; i < _stages.length; i++) {
       _stages[i].addLogic(newLogic, i);
@@ -147,9 +156,9 @@ class Pipeline {
   }
   
   bool _isRegistered(Logic logic) => _stages[0].main.containsKey(logic);
-  Iterable<Logic> get _registeredKeys => _stages[0].main.keys;
+  Iterable<Logic> get _registeredLogics => _stages[0].main.keys;
 
-  Logic get(Logic logic, [int? stage]) {
+  Logic getAbs(Logic logic, [int? stage]) {
     if(!_isRegistered(logic)) _add(logic);
 
     stage = stage ?? _stages.length - 1;
@@ -167,6 +176,8 @@ class ReadyValidPipeline {
   late final Pipeline _pipeline;
   ReadyValidPipeline(Logic clk, this.validPipeIn, this.readyPipeOut, {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
+      Map<Logic,Const> resetValues = const{},
+      List<Logic> signals = const[],
       String name='rvpipeline', Logic? reset,
     })
   {
@@ -179,21 +190,22 @@ class ReadyValidPipeline {
 
     _pipeline = Pipeline(clk,
       stages: stages,
-      signals: [valid],
+      signals: [valid, ...signals],
       stalls: stalls,
-      reset: reset
+      reset: reset,
+      resetValues: resetValues
     );
 
     for(var i = 0; i < stalls.length; i++) {
-      readys[i] <= ~_pipeline.get(valid, i+1) | readys[i+1];
-      stalls[i] <= _pipeline.get(valid, i+1) & ~readys[i+1];
+      readys[i] <= ~_pipeline.getAbs(valid, i+1) | readys[i+1];
+      stalls[i] <= _pipeline.getAbs(valid, i+1) & ~readys[i+1];
     }
 
-    validPipeOut = _pipeline.get(valid);
+    validPipeOut = _pipeline.getAbs(valid);
     readyPipeIn = readys[0];
   }
 
-  Logic get(Logic logic, [int? stage]) {
-    return _pipeline.get(logic, stage);
+  Logic getAbs(Logic logic, [int? stage]) {
+    return _pipeline.getAbs(logic, stage);
   }  
 }

@@ -748,9 +748,9 @@ class FlipFlop extends Module with CustomSystemVerilog {
     if(inputs.length != 2 || outputs.length != 1) {
       throw Exception('FlipFlop has exactly two inputs and one output.');
     }
-    var clk = inputs['clk']!;
-    var d = inputs['d']!;
-    var q = outputs['q']!;
+    var clk = inputs[_clk]!;
+    var d = inputs[_d]!;
+    var q = outputs[_q]!;
     return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
   }
 }

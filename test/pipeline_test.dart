@@ -33,7 +33,7 @@ class SimplePipelineModule extends Module {
         ],
       ]
     );
-    b <= pipeline.get(a);
+    b <= pipeline.getAbs(a);
   }
 }
 
@@ -60,7 +60,7 @@ class RVPipelineModule extends Module {
         ],
       ]
     );
-    b <= pipeline.get(a);
+    b <= pipeline.getAbs(a);
 
     addOutput('validOut') <= pipeline.validPipeOut;
     addOutput('readyForIn') <= pipeline.readyPipeIn;
@@ -81,9 +81,6 @@ void main() {
         'a':8,
         'b':8
       };
-
-      Dumper(pipem);
-      File('tmp_pipe.sv').writeAsStringSync(pipem.generateSynth());
 
       var vectors = [
         Vector({'a': 1}, {}),
@@ -107,9 +104,6 @@ void main() {
         'a':8,
         'b':8
       };
-
-      Dumper(pipem);
-      File('tmp_rvpipe.sv').writeAsStringSync(pipem.generateSynth());
 
       var vectors = [
         Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
@@ -138,9 +132,6 @@ void main() {
         'a':8,
         'b':8
       };
-
-      Dumper(pipem);
-      File('tmp_rvpipe.sv').writeAsStringSync(pipem.generateSynth());
 
       var vectors = [
         Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
@@ -180,9 +171,6 @@ void main() {
         'a':8,
         'b':8
       };
-
-      Dumper(pipem);
-      File('tmp_rvpipe.sv').writeAsStringSync(pipem.generateSynth());
 
       var vectors = [
         Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
