@@ -599,6 +599,41 @@ class NotGate extends Module with InlineSystemVerilog {
 }
 ```
 
+### Pipelines
+ROHD has a built-in syntax for handling pipelines in a simple & refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that [`Pipeline`](https://intel.github.io/rohd/rohd/Pipeline-class.html) consumes a clock and a list of stages, which are each a `List<Conditional> Function(PipelineStageInfo p)`, where `PipelineStageInfo` has information on the value of a given signal in that stage.  The `List<Conditional>` the same type of procedural code that can be placed in `Combinational`.
+```dart
+var pipeline = Pipeline(clk,
+  stages: [
+    (p) => [
+      p.get(a) < p.get(a) + 1
+    ],
+    (p) => [
+      p.get(a) < p.get(a) + 1
+    ],
+    (p) => [
+      p.get(a) < p.get(a) + 1
+    ],
+  ]
+);
+```
+This pipeline is very easy to refactor.  If we wanted to merge the last two stages, we could simply rewrite it as:
+```dart
+var pipeline = Pipeline(clk,
+  stages: [
+    (p) => [
+      p.get(a) < p.get(a) + 1
+    ],
+    (p) => [
+      p.get(a) < p.get(a) + 1,
+      p.get(a) < p.get(a) + 1
+    ],
+  ]
+);
+```
+You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just access as normal, so other logic can optionally sit outside of the pipeline object.
+
+ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
+
 ## ROHD Simulator
 
 The ROHD simulator is a static class accessible as `Simulator` which implements a simple event-based simulator.  All `Logic`s in Dart have `glitch` events which propogate values to connected `Logic`s downstream.  In this way, ROHD propogates values across the entire graph representation of the hardware (without any `Simulator` involvement required).  The simulator has a concept of (unitless) time, and arbitrary Dart functions can be registered to occur at arbitraty times in the simulator.  Asking the simulator to run causes it to iterate through all registered timestamps and execute the functions in chronological order.  When these functions deposit signals on `Logic`s, it propogates values across the hardware.  The simulator has a number of events surrounding execution of a timestamp tick so that things like `FlipFlop`s can know when clocks and signals are glitch-free.

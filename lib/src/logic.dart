@@ -373,6 +373,7 @@ class Logic {
     } else if(val is bool) {
       newValue = LogicValues.fromInt(val ? 1 : 0, width);
     } else if(val is LogicValues) {
+      //TODO: this looks wrong, should act like List<LogicValue>?
       newValue = val;
     } else if(val is List<LogicValue>) {
       if(val.length == 1 && (val[0]==LogicValue.x || val[0] == LogicValue.z || fill)) {
