@@ -8,8 +8,6 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 /// 
 
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -33,7 +31,7 @@ class SimplePipelineModule extends Module {
         ],
       ]
     );
-    b <= pipeline.getAbs(a);
+    b <= pipeline.get(a);  //TODO FIX NAME
   }
 }
 
@@ -60,7 +58,7 @@ class RVPipelineModule extends Module {
         ],
       ]
     );
-    b <= pipeline.getAbs(a);
+    b <= pipeline.get(a);
 
     addOutput('validOut') <= pipeline.validPipeOut;
     addOutput('readyForIn') <= pipeline.readyPipeIn;

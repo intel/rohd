@@ -10,28 +10,37 @@
 
 import 'package:rohd/rohd.dart';
 
+//TODO: write documentation on pipeline in README
+//TODO: make links to API docs in the README
+
+/// Information and accessors associated with a [Pipeline] stage.
 class PipelineStageInfo {
+  
+  /// The index of the current stage in the associated [Pipeline].
   final int stage;
+
+  /// The [Pipeline] associated with this object.
   final Pipeline _pipeline;
+
   PipelineStageInfo._(this._pipeline, this.stage);
   Logic get(Logic identifier, [int stageAdjustment=0]) {
-    return _pipeline.getAbs(identifier, stage+stageAdjustment);
+    return _pipeline.get(identifier, stage+stageAdjustment);
   }
-  Logic getAbs(Logic identifier, int stage) {
-    return _pipeline.getAbs(identifier, stage);
+  Logic getAbs(Logic identifier, int stageIndex) {
+    return _pipeline.get(identifier, stageIndex);
   }  
 }
 
 class _PipeStage {
-  Map<Logic,Logic> input = {};
-  Map<Logic,Logic> main = {};
-  Map<Logic,Logic> output = {};
+  final Map<Logic,Logic> input = {};
+  final Map<Logic,Logic> main = {};
+  final Map<Logic,Logic> output = {};
   Logic? stall;
 
-  List<Conditional> Function(PipelineStageInfo p) operation;
+  final List<Conditional> Function(PipelineStageInfo p) operation;
   _PipeStage(this.operation);
 
-  void addLogic(Logic newLogic, int index) {
+  void _addLogic(Logic newLogic, int index) {
     input[newLogic] = Logic(name: newLogic.name + '_stage${index}_i', width: newLogic.width);
     output[newLogic] = Logic(name: newLogic.name + '_stage${index}_o', width: newLogic.width);
     main[newLogic] = Logic(name: newLogic.name + '_stage$index', width: newLogic.width);
@@ -41,32 +50,48 @@ class _PipeStage {
 
 /// A simple pipeline, separating arbitrary combinational logic by flop stages.
 class Pipeline {
+
+  /// The clock whose positive edge triggers the flops in this pipeline.
   final Logic clk;
+
+  /// An optional reset signal for all pipelined signals.
   final Logic? reset;
+
+  /// All the [_PipeStage]s for this [Pipeline]
   late final List<_PipeStage> _stages;
+
+  /// Returns the number of stages in this pipeline.
   int get _numStages => _stages.length;
-  late final Map<Logic,Const> _resetValues;
+
+  /// A map of reset values for every signal.
+  late final Map<Logic,dynamic> _resetValues;
 
   /// Constructs a simple pipeline, separating arbitrary combinational logic by flop stages.
   /// 
   /// Each stage in the list [stages] is a function whose sole parameter is a [PipelineStageInfo]
   /// object and which returns a [List] of [Conditional] objects.  Each stage can be thought of
   /// as being the contents of a [Combinational] block.  Use the [PipelineStageInfo] object
-  /// to grab signals for a given pipe stage.
+  /// to grab signals for a given pipe stage.  Flops are positive edge triggered based on [clk].
   /// 
   /// Signals to be pipelined can optionally be specified in the [signals] list.  Any signal
   /// referenced in a stage via the [PipelineStageInfo] will automatically be included in the
   /// entire pipeline.
   /// 
   /// If a [reset] signal is provided, then it will be consumed as an active-high reset for 
-  /// every signal through the pipeline.
+  /// every signal through the pipeline.  The default reset value is 0 for all signals, but
+  /// that can be overridden by setting [resetValues] to the desired value.  The values specified
+  /// in [resetValues] should be a type acceptable to [Logic]'s `put` function.
+  /// 
+  /// Each stage can be stalled independently using [stalls], where every index of [stalls] corresponds
+  /// to the index of the stage to be stalled.  When a stage's stall is asserted, the output of that
+  /// stage will not change.
   Pipeline(this.clk,
     {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
       List<Logic?>? stalls,
       List<Logic> signals = const[],
       Map<Logic,Const> resetValues = const{},
-      String name='pipeline', this.reset
+      this.reset
     }) 
   {
     
@@ -89,19 +114,20 @@ class Pipeline {
       combMiddles.add(combMiddle);
     }
 
-    for(var stage = 0; stage < _numStages; stage++) {
+    for(var stageIndex = 0; stageIndex < _numStages; stageIndex++) {
       Combinational(
         [
-          ..._registeredLogics.map((logic) => getAbs(logic, stage) < _i(logic, stage)),
-          ...combMiddles[stage],
-          ..._registeredLogics.map((logic) => _o(logic, stage) < getAbs(logic, stage)),
+          ..._registeredLogics.map((logic) => get(logic, stageIndex) < _i(logic, stageIndex)),
+          ...combMiddles[stageIndex],
+          ..._registeredLogics.map((logic) => _o(logic, stageIndex) < get(logic, stageIndex)),
         ],
-        name: 'comb_stage$stage'
+        name: 'comb_stage$stageIndex'
       );
     }
 
   }
 
+  /// Sets up the stall signals across [_stages].
   void _setStalls(List<Logic?>? stalls) {
     if(stalls != null) {
       if(stalls.length != _numStages-1) throw Exception('Stall list length must match number of stages.');
@@ -114,16 +140,15 @@ class Pipeline {
     }
   }
 
+  /// Adds a new signal to be pipelined across all stages.
   void _add(Logic newLogic) {
-    //TODO: how to expose resetValue to user
-
-    Const? resetValue;
+    dynamic resetValue;
     if(_resetValues.containsKey(newLogic)) {
       resetValue = _resetValues[newLogic];
     }
 
     for(var i = 0; i < _stages.length; i++) {
-      _stages[i].addLogic(newLogic, i);
+      _stages[i]._addLogic(newLogic, i);
     }
 
     _stages[0].input[newLogic]! <= newLogic;
@@ -163,40 +188,85 @@ class Pipeline {
     FF(clk, ffAssignsWithStall, name: 'ff_${newLogic.name}');
   }
 
-  Logic _i(Logic logic, [int? stage]) {
-    stage = stage ?? _stages.length - 1;
-    var stageLogic = _stages[stage].input[logic]!;
+  /// The stage input for a signal associated with [logic] to [stageIndex].
+  /// 
+  /// This is the output of the previous flop.
+  Logic _i(Logic logic, [int? stageIndex]) {
+    stageIndex = stageIndex ?? _stages.length - 1;
+    var stageLogic = _stages[stageIndex].input[logic]!;
     return stageLogic;
   }
-  Logic _o(Logic logic, [int? stage]) {
-    stage = stage ?? _stages.length - 1;
-    var stageLogic = _stages[stage].output[logic]!;
+
+  /// The stage output for a signal associated with [logic] to [stageIndex].
+  /// 
+  /// This is the input to the next flop.
+  Logic _o(Logic logic, [int? stageIndex]) {
+    stageIndex = stageIndex ?? _stages.length - 1;
+    var stageLogic = _stages[stageIndex].output[logic]!;
     return stageLogic;
   }
   
+  /// Returns true if [logic] is already a part of this [Pipeline].
   bool _isRegistered(Logic logic) => _stages[0].main.containsKey(logic);
+
+  /// Returns a list of all [Logic]s which are part of this [Pipeline].
   Iterable<Logic> get _registeredLogics => _stages[0].main.keys;
 
-  Logic getAbs(Logic logic, [int? stage]) {
+  /// Gets the pipelined version of [logic].  By default [stageIndex] is the last 
+  /// stage (the output of the pipeline).
+  /// 
+  /// If the signal is not already a part of this [Pipeline], the signal will be 
+  /// added to the [Pipeline].  Use [stageIndex] to select the value of [logic] at a
+  /// specific stage of the pipeline.
+  Logic get(Logic logic, [int? stageIndex]) {
     if(!_isRegistered(logic)) _add(logic);
 
-    stage = stage ?? _stages.length - 1;
+    stageIndex = stageIndex ?? _stages.length - 1;
 
-    var stageLogic = _stages[stage].main[logic]!;
+    var stageLogic = _stages[stageIndex].main[logic]!;
     return stageLogic;
   }
 }
 
+/// A pipeline that implements Ready/Valid protocol at each stage.
 class ReadyValidPipeline extends Pipeline {
+
+  /// Indicates that valid contents are ready to be recieved
+  /// at the output of the pipeline.
   late final Logic validPipeOut;
+
+  /// Indicates that the pipeline is ready to accept new content.
   late final Logic readyPipeIn;
+
+  /// Indicates that the input to the pipeline is valid.
   final Logic validPipeIn;
+
+  /// Indicates that the receiver of the output of the pipeline
+  /// is ready to pull out of the pipeline.
   final Logic readyPipeOut;
+
+  /// Constructs a pipeline with Ready/Valid protocol at each stage.
+  /// 
+  /// The [validPipeIn] signal indicates that the input to the pipeline
+  /// is valid.  The [readyPipeOut] signal indicates that the receiver
+  /// of the output of the pipeline is ready to pull out of the pipeline.
+  /// 
+  /// The [validPipeOut] signal indicates that valid contents are ready
+  /// to be received at the output of the pipeline.  The [readyPipeIn]
+  /// signal indicates that the pipeline is ready to accept new content.
+  /// 
+  /// The pipeline will only progress through any stage, including the
+  /// output, if both valid and ready are asserted at the same time.  This
+  /// pipeline is capable of having bubbles, but they will collapse if 
+  /// downstream stages are backpressured.
+  /// 
+  /// If contents are pushed in when the pipeline is not ready, they
+  /// will be dropped.
   ReadyValidPipeline(Logic clk, this.validPipeIn, this.readyPipeOut, {
       List<List<Conditional> Function(PipelineStageInfo p)> stages=const[],
       Map<Logic,Const> resetValues = const{},
       List<Logic> signals = const[],
-      String name='rvpipeline', Logic? reset,
+      Logic? reset,
     }): super(
       clk,
       stages: stages,
@@ -215,11 +285,11 @@ class ReadyValidPipeline extends Pipeline {
     readys.add(readyPipeOut);
 
     for(var i = 0; i < stalls.length; i++) {
-      readys[i] <= ~getAbs(valid, i+1) | readys[i+1];
-      stalls[i]! <= getAbs(valid, i+1) & ~readys[i+1];
+      readys[i]  <= ~get(valid, i+1) | readys[i+1];
+      stalls[i]! <= get(valid, i+1) & ~readys[i+1];
     }
 
-    validPipeOut = getAbs(valid);
+    validPipeOut = get(valid);
     readyPipeIn = readys[0];
   }
 }
