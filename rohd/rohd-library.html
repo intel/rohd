@@ -371,12 +371,36 @@ SPDX-License-Identifier: BSD-3-Clause</p>
   A unary OR gate. 
 </dd>
 
+        <dt id="Pipeline">
+  <span class="name "><a href="../rohd/Pipeline-class.html">Pipeline</a></span> 
+
+</dt>
+<dd>
+  A simple pipeline, separating arbitrary combinational logic by flop stages. 
+</dd>
+
+        <dt id="PipelineStageInfo">
+  <span class="name "><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> 
+
+</dt>
+<dd>
+  Information and accessors associated with a <a href="../rohd/Pipeline-class.html">Pipeline</a> stage. 
+</dd>
+
         <dt id="Port">
   <span class="name "><a href="../rohd/Port-class.html">Port</a></span> 
 
 </dt>
 <dd>
   An extension of <a href="../rohd/Logic-class.html">Logic</a> useful for <a href="../rohd/Interface-class.html">Interface</a> definitions. 
+</dd>
+
+        <dt id="ReadyValidPipeline">
+  <span class="name "><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></span> 
+
+</dt>
+<dd>
+  A pipeline that implements Ready/Valid protocol at each stage. 
 </dd>
 
         <dt id="RShift">
@@ -503,20 +527,20 @@ be inlined within other SystemVerilog code. <a href="../rohd/InlineSystemVerilog
 
       <dl class="callables">
         <dt id="bin" class="callable">
-  <span class="name"><a href="../rohd/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.3/dart-core/int-class.html">int</a></span>
+  <span class="name"><a href="../rohd/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/int-class.html">int</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/2.14.3/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/2.14.3/dart-core/int-class.html">int</a>. <a href="../rohd/bin.html">[...]</a>
+  Converts a binary <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/2.14.4/dart-core/int-class.html">int</a>. <a href="../rohd/bin.html">[...]</a>
   
 
 </dd>
 
         <dt id="rswizzle" class="callable">
-  <span class="name"><a href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+  <span class="name"><a href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -530,7 +554,7 @@ the <em>least</em> significant bit(s). <a href="../rohd/rswizzle.html">[...]</a>
 </dd>
 
         <dt id="swizzle" class="callable">
-  <span class="name"><a href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+  <span class="name"><a href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -637,7 +661,10 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
   <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
   <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
   <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
+  <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
+  <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
   <li><a href="../rohd/Port-class.html">Port</a></li>
+  <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
   <li><a href="../rohd/RShift-class.html">RShift</a></li>
   <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
   <li><a href="../rohd/Simulator-class.html">Simulator</a></li>

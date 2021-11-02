@@ -53,7 +53,7 @@
         
 
 <span class="returntype"><a href="../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">rswizzle</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span></li>
+<span class="name ">rswizzle</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span></li>
 </ol>)
 
     </section>
@@ -61,7 +61,7 @@
 <section class="desc markdown">
   <p>Performs a concatenation operation on the list of signals, where index 0 of <code>signals</code> is 
 the <em>least</em> significant bit(s).</p>
-<p>This is the one you should probably use if you're trying to concatenate a generated <a href="https://api.dart.dev/stable/2.14.3/dart-core/List-class.html">List</a> of signals.
+<p>This is the one you should probably use if you're trying to concatenate a generated <a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a> of signals.
 If you write <code>rswizzle([a, b, c])</code> you would get a single output <a href="../rohd/Logic-class.html">Logic</a> where the bits in <code>a</code>
 are the least significant (lowest) bits.</p>
 <p>If you want the opposite, check out <a href="../rohd/swizzle.html">swizzle()</a>.</p>
@@ -133,7 +133,10 @@ are the least significant (lowest) bits.</p>
   <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
   <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
   <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
+  <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
+  <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
   <li><a href="../rohd/Port-class.html">Port</a></li>
+  <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
   <li><a href="../rohd/RShift-class.html">RShift</a></li>
   <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
   <li><a href="../rohd/Simulator-class.html">Simulator</a></li>

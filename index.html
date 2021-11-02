@@ -545,6 +545,37 @@ b.put(LogicValues([
   }
 }
 </code></pre>
+<h3 id="pipelines">Pipelines</h3>
+<p>ROHD has a built-in syntax for handling pipelines in a simple &amp; refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that <a href="https://intel.github.io/rohd/rohd/Pipeline-class.html"><code>Pipeline</code></a> consumes a clock and a list of stages, which are each a <code>List&lt;Conditional&gt; Function(PipelineStageInfo p)</code>, where <code>PipelineStageInfo</code> has information on the value of a given signal in that stage.  The <code>List&lt;Conditional&gt;</code> the same type of procedural code that can be placed in <code>Combinational</code>.</p>
+<pre class="language-dart"><code class="language-dart">var pipeline = Pipeline(clk,
+  stages: [
+    (p) =&gt; [
+      p.get(a) &lt; p.get(a) + 1
+    ],
+    (p) =&gt; [
+      p.get(a) &lt; p.get(a) + 1
+    ],
+    (p) =&gt; [
+      p.get(a) &lt; p.get(a) + 1
+    ],
+  ]
+);
+</code></pre>
+<p>This pipeline is very easy to refactor.  If we wanted to merge the last two stages, we could simply rewrite it as:</p>
+<pre class="language-dart"><code class="language-dart">var pipeline = Pipeline(clk,
+  stages: [
+    (p) =&gt; [
+      p.get(a) &lt; p.get(a) + 1
+    ],
+    (p) =&gt; [
+      p.get(a) &lt; p.get(a) + 1,
+      p.get(a) &lt; p.get(a) + 1
+    ],
+  ]
+);
+</code></pre>
+<p>You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the <code>PipelineStageInfo</code> object is just access as normal, so other logic can optionally sit outside of the pipeline object.</p>
+<p>ROHD also includes a version of <code>Pipeline</code> that supports a ready/valid protocol called <a href="https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html"><code>ReadyValidPipeline</code></a>.  The syntax looks the same, but has some additional parameters for readys and valids.</p>
 <h2 id="rohd-simulator">ROHD Simulator</h2>
 <p>The ROHD simulator is a static class accessible as <code>Simulator</code> which implements a simple event-based simulator.  All <code>Logic</code>s in Dart have <code>glitch</code> events which propogate values to connected <code>Logic</code>s downstream.  In this way, ROHD propogates values across the entire graph representation of the hardware (without any <code>Simulator</code> involvement required).  The simulator has a concept of (unitless) time, and arbitrary Dart functions can be registered to occur at arbitraty times in the simulator.  Asking the simulator to run causes it to iterate through all registered timestamps and execute the functions in chronological order.  When these functions deposit signals on <code>Logic</code>s, it propogates values across the hardware.  The simulator has a number of events surrounding execution of a timestamp tick so that things like <code>FlipFlop</code>s can know when clocks and signals are glitch-free.</p>
 <ul>
