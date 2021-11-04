@@ -4,7 +4,7 @@
 export 'src/simulator.dart';
 export 'src/logic.dart';
 export 'src/module.dart';
-export 'src/dumper.dart';
+export 'src/wave_dumper.dart';
 export 'src/modules/modules.dart';
 export 'src/interface.dart';
 export 'src/external.dart';

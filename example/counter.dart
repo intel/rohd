@@ -73,7 +73,7 @@ void main({bool noPrint=false}) async {
   reset.put(1);
 
   // Attach a waveform dumper so we can see what happens.
-  Dumper(counter);
+  WaveDumper(counter);
 
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));

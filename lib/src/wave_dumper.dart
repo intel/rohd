@@ -16,8 +16,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
 /// 
-/// Outputs to vcd format at [outputPath].  [module] must be built prior to attaching the [Dumper].
-class Dumper {
+/// Outputs to vcd format at [outputPath].  [module] must be built prior to attaching the [WaveDumper].
+class WaveDumper {
 
   /// The [Module] being dumped.
   final Module module;
@@ -36,7 +36,7 @@ class Dumper {
 
   //TODO: add unit testing for Dumper
   
-  Dumper(this.module, {this.outputPath = 'waves.vcd'}) : _outputFile = File(outputPath) {
+  WaveDumper(this.module, {this.outputPath = 'waves.vcd'}) : _outputFile = File(outputPath) {
     if(!module.hasBuilt) throw Exception('Module must be built before passed to dumper.');
 
     _collectAllSignals();
@@ -57,7 +57,10 @@ class Dumper {
       var m = modulesToParse[i];
       for(var sig in m.signals) {
         
-        if(sig is Const) continue;
+        if(sig is Const) {
+          // constant values are "boring" to inspect
+          continue;
+        }
 
         _signalToMarkerMap[sig] = 's${_signalMarkerIdx++}';
         sig.changed.listen((args) {
@@ -68,6 +71,10 @@ class Dumper {
         });
       }
       for(var subm in m.subModules) {
+        if(subm is CustomSystemVerilog) {
+          // the CustomSystemVerilog modules are "boring" to inspect
+          continue;
+        }
         modulesToParse.add(subm);
       }
     }
