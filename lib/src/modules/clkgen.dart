@@ -10,9 +10,7 @@
 
 import 'package:rohd/rohd.dart';
 
-/// A very simple, clock generator.  Generates a non-synthesizable SystemVerilog representation.
-/// 
-/// Set the frequency via [clockPeriod].
+/// A very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
 class SimpleClockGenerator extends Module with CustomSystemVerilog {
   final double clockPeriod;
 
@@ -21,6 +19,9 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
 
   //TODO: consider making clock start at 1 instead of 0 (requires some tweaks to unit testing)
   
+  /// Constructs a very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
+  /// 
+  /// Set the frequency via [clockPeriod].
   SimpleClockGenerator(this.clockPeriod, {String name='clkgen'}) : super(name: name) {
     addOutput('clk');
 
