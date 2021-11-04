@@ -10,9 +10,6 @@
 
 import 'package:rohd/rohd.dart';
 
-//TODO: write documentation on pipeline in README
-//TODO: make links to API docs in the README
-
 /// Information and accessors associated with a [Pipeline] stage.
 class PipelineStageInfo {
   
