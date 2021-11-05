@@ -1,7 +1,7 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 /// 
-/// dumper.dart
+/// wave_dumper.dart
 /// Waveform dumper for a given module hierarchy, dumps to .vcd file
 /// 
 /// 2021 May 7
@@ -16,8 +16,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
 /// 
-/// Outputs to vcd format at [outputPath].  [module] must be built prior to attaching the [Dumper].
-class Dumper {
+/// Outputs to vcd format at [outputPath].  [module] must be built prior to attaching the [WaveDumper].
+class WaveDumper {
 
   /// The [Module] being dumped.
   final Module module;
@@ -34,19 +34,38 @@ class Dumper {
   /// Stores the mapping from [Logic] to signal marker in the VCD file.
   final Map<Logic,String> _signalToMarkerMap = {};
 
-  //TODO: add unit testing for Dumper
-  
-  Dumper(this.module, {this.outputPath = 'waves.vcd'}) : _outputFile = File(outputPath) {
+  /// A set of all [Logic]s that have changed in this timestamp so far.
+  /// 
+  /// This spans across multiple inject or changed events if they are in the same
+  /// timestamp of the [Simulator].
+  final Set<Logic> _changedLogicsThisTimestamp = <Logic>{};
+
+  /// The timestamp which is currently being collected for a dump.
+  /// 
+  /// When the [Simulator] time progresses beyond this, it will dump all the
+  /// signals that have changed up until that point at this saved time value.
+  var _currentDumpingTimestamp = Simulator.time;
+    
+  WaveDumper(this.module, {this.outputPath = 'waves.vcd'}) : _outputFile = File(outputPath) {
     if(!module.hasBuilt) throw Exception('Module must be built before passed to dumper.');
 
     _collectAllSignals();
     
     _writeHeader();
     _writeScope();
-    _captureTimestamp();
     
     Simulator.preTick.listen((args) {
-      _captureTimestamp();
+      if(Simulator.time != _currentDumpingTimestamp) {
+        if(_changedLogicsThisTimestamp.isNotEmpty) {
+          // no need to write blank timestamps
+          _captureTimestamp(_currentDumpingTimestamp);
+        }
+        _currentDumpingTimestamp = Simulator.time;
+      }
+    });
+
+    Simulator.simulationEnded.then((args) {
+      _captureTimestamp(Simulator.time);
     });
   }
 
@@ -57,17 +76,21 @@ class Dumper {
       var m = modulesToParse[i];
       for(var sig in m.signals) {
         
-        if(sig is Const) continue;
+        if(sig is Const) {
+          // constant values are "boring" to inspect
+          continue;
+        }
 
         _signalToMarkerMap[sig] = 's${_signalMarkerIdx++}';
         sig.changed.listen((args) {
-          _writeSignalValueUpdate(sig);
-        });
-        Simulator.simulationEnded.then((args) {
-          _writeSignalValueUpdate(sig);
+          _changedLogicsThisTimestamp.add(sig);
         });
       }
       for(var subm in m.subModules) {
+        if(subm is InlineSystemVerilog) {
+          // the InlineSystemVerilog modules are "boring" to inspect
+          continue;
+        }
         modulesToParse.add(subm);
       }
     }
@@ -109,6 +132,7 @@ class Dumper {
     var moduleSignalUniquifier = Uniquifier();
     var padding = List.filled(indent, '  ').join();
     var scopeString = '$padding\$scope module ${m.uniqueInstanceName} \$end\n';
+    var innerScopeString = '';
     for(var sig in m.signals) {
       
       if(!_signalToMarkerMap.containsKey(sig)) continue;
@@ -117,19 +141,29 @@ class Dumper {
       var marker = _signalToMarkerMap[sig];
       var signalName = Sanitizer.sanitizeSV(sig.name);
       signalName = moduleSignalUniquifier.getUniqueName(initialName: signalName, reserved: sig.isPort);
-      scopeString += '  $padding\$var wire $width $marker $signalName \$end\n';
+      innerScopeString += '  $padding\$var wire $width $marker $signalName \$end\n';
     }
     for(var subModule in m.subModules) {
-      scopeString += _computeScopeString(subModule, indent: indent + 1);
+      innerScopeString += _computeScopeString(subModule, indent: indent + 1);
     }
+    if(innerScopeString.isEmpty) {
+      // no need to dump empty scopes
+      return '';
+    }
+    scopeString += innerScopeString;
     scopeString += '$padding\$upscope \$end\n';
     return scopeString;
   }
 
   /// Writes the current timestamp to the VCD.
-  void _captureTimestamp() {
-    var timestampString = '#${Simulator.time.toInt()}\n';
+  void _captureTimestamp(int timestamp) {
+    var timestampString = '#$timestamp\n';
     _outputFile.writeAsStringSync(timestampString, mode: FileMode.append);
+
+    for(var signal in _changedLogicsThisTimestamp) {
+      _writeSignalValueUpdate(signal);
+    }
+    _changedLogicsThisTimestamp.clear();
   }
 
   /// Writes the current value of [signal] to the VCD.
@@ -143,3 +177,7 @@ class Dumper {
   }
 
 }
+
+
+@Deprecated('Use WaveDumper instead')
+typedef Dumper = WaveDumper;

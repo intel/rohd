@@ -111,7 +111,7 @@ void main() {
       );
       await ftm.build();
       // File('tmp.sv').writeAsStringSync(ftm.generateSynth())
-      // Dumper(ftm);
+      // WaveDumper(ftm);
       var vectors = [
         Vector({'lrst': 0}, {}),
         Vector({'lrst': 1}, {}),

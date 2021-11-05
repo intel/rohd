@@ -331,8 +331,8 @@ class Logic {
   /// Injects a value onto this signal in the current [Simulator] tick.
   /// 
   /// This function calls [put()] in [Simulator.injectAction()].
-  void inject(dynamic val, {bool fill = false}) {
-    Simulator.injectAction(() => put(val, fill: fill));
+  Future<void> inject(dynamic val, {bool fill = false}) async {
+    await Simulator.injectAction(() => put(val, fill: fill));
   }
 
   /// Keeps track of whether there is an active put, to detect reentrance.

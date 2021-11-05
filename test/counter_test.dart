@@ -47,6 +47,7 @@ void main() {
     test('counter', () async {
       var mod = Counter(Logic(), Logic());
       await mod.build();
+      // WaveDumper(mod);
       // File('tmp_counter.sv').writeAsStringSync(mod.generateSynth());
       var vectors = [
         Vector({'en': 0, 'reset': 1}, {}),

@@ -12,7 +12,7 @@ import 'package:rohd/rohd.dart';
 
 /// A very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
 class SimpleClockGenerator extends Module with CustomSystemVerilog {
-  final double clockPeriod;
+  final int clockPeriod;
 
   /// The generated clock.
   Logic get clk => output('clk');
@@ -26,7 +26,7 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
     addOutput('clk');
 
     clk.glitch.listen((args) {
-      Simulator.registerAction(Simulator.time + clockPeriod/2, () {
+      Simulator.registerAction(Simulator.time + clockPeriod~/2, () {
         clk.put(
           ~clk.value
         );
