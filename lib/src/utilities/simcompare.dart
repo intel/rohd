@@ -93,6 +93,7 @@ class SimCompare {
   static bool iverilogVector(String generatedVerilog, String topModule, List<Vector> vectors, 
         {
           bool dontDeleteTmpFiles=false,
+          bool dumpWaves=false,
           Map<String,int> signalToWidthMap = const {},
           List<String> iverilogExtraArgs = const [],
         }) {
@@ -110,22 +111,35 @@ class SimCompare {
     var moduleInstance = '$topModule dut($moduleConnections);';
     var stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
 
+
+
+    var uniqueId = (generatedVerilog + localDeclarations + stimulus + moduleInstance)
+      .hashCode; // so that when they run in parallel, they dont step on each other
+    var dir = 'tmp_test';
+    var tmpTestFile = '$dir/tmp_test$uniqueId.sv';
+    var tmpOutput = '$dir/tmp_out$uniqueId';
+    var tmpVcdFile = '$dir/tmp_waves_$uniqueId.vcd';
+    
+    var waveDumpCode =
+'''
+\$dumpfile("$tmpVcdFile");
+\$dumpvars(0,dut);
+''';
+
     var testbench = [
       generatedVerilog,
       'module tb;',
       localDeclarations,
       moduleInstance,
       'initial begin',
+      if(dumpWaves) waveDumpCode,
+      '#1',
       stimulus,
       '\$finish;', // so the test doesn't run forever if there's a clock generator
       'end',
       'endmodule',
     ].join('\n');
 
-    var uniqueId = testbench.hashCode; // so that when they run in parallel, they dont step on each other
-    var dir = 'tmp_test';
-    var tmpTestFile = '$dir/tmp_test$uniqueId.sv';
-    var tmpOutput = '$dir/tmp_out$uniqueId';
     Directory(dir).createSync(recursive:true);
     File(tmpTestFile).writeAsStringSync(testbench);
     var compileResult = Process.runSync('iverilog', ['-g2012', tmpTestFile, '-o', tmpOutput] + iverilogExtraArgs);
@@ -142,6 +156,7 @@ class SimCompare {
       try {
         File(tmpOutput).deleteSync();
         File(tmpTestFile).deleteSync();
+        if(dumpWaves) File(tmpVcdFile).deleteSync();
       } catch (e) {
         print("Couldn't delete: $e");
         return false;

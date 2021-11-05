@@ -25,7 +25,7 @@ class Counter extends Module {
     
     nextVal <= val + 1;
 
-    FF( (SimpleClockGenerator(10).clk), [
+    FF( (SimpleClockGenerator(10).clk | reset), [
       If(reset, then:[
         val < 0
       ], orElse: [If(en, then: [
@@ -50,7 +50,7 @@ void main() {
       // WaveDumper(mod);
       // File('tmp_counter.sv').writeAsStringSync(mod.generateSynth());
       var vectors = [
-        Vector({'en': 0, 'reset': 1}, {}),
+        Vector({'en': 0, 'reset': 0}, {}),
         Vector({'en': 0, 'reset': 1}, {'val': 0}),
         Vector({'en': 1, 'reset': 1}, {'val': 0}),
         Vector({'en': 1, 'reset': 0}, {'val': 0}),

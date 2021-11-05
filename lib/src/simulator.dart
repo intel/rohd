@@ -166,16 +166,19 @@ class Simulator {
 
   /// Performs the actual execution of a collection of actions for a [tick()].
   static Future<void> tickExecute(Function() toExecute) async {
-    _preTickController.add(null); // useful for flop sampling
     _phase = SimulatorPhase.beforeTick;
-    _startTickController.add(null); // useful for things that need to trigger every tick without other input
+    _preTickController.add(null); // useful for flop sampling
+    
     _phase = SimulatorPhase.mainTick;
+    _startTickController.add(null); // useful for things that need to trigger every tick without other input
     await _executeInjectedActions();
     await toExecute();
     await _executeInjectedActions();
-    _clkStableController.add(null); // useful for flop clk input stability
+    
     _phase = SimulatorPhase.clksStable;
+    _clkStableController.add(null); // useful for flop clk input stability
     await _executeInjectedActions();
+
     _phase = SimulatorPhase.outOfTick;
     _postTickController.add(null); // useful for determination of signal settling
   }

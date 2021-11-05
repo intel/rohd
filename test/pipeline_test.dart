@@ -31,7 +31,7 @@ class SimplePipelineModule extends Module {
         ],
       ]
     );
-    b <= pipeline.get(a);  //TODO FIX NAME
+    b <= pipeline.get(a);
   }
 }
 
@@ -138,7 +138,7 @@ void main() {
         Vector({'reset': 0, 'a': 0x10, 'validIn': 1, 'readyForOut': 0}, {'validOut': 0}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 0}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 0}),
-        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1, 'b': 0x13}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
         Vector({'reset': 0, 'a': 0x20, 'validIn': 1, 'readyForOut': 0}, {'validOut': 1}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {'validOut': 1}),
