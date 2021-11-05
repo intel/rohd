@@ -76,8 +76,13 @@
       _preTickValue = value;
     });
     Simulator.postTick.listen((event) {
-      if(value != _preTickValue) {
-        _changedController.add(LogicValueChanged(value, _preTickValue));
+      if(value != _preTickValue &amp;&amp; _preTickValue != null) {
+        _changedController.add(
+          LogicValueChanged(
+            value,
+            _preTickValue!
+          )
+        );
       }
     });
   }
