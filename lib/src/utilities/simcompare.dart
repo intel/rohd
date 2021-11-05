@@ -59,7 +59,7 @@ class Vector {
 class SimCompare {
   
   static Future<void> checkFunctionalVector(Module module, List<Vector> vectors) async {
-    var timestamp = 1.0;
+    var timestamp = 1;
     for(var vector in vectors) {
       // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () async {

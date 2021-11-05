@@ -31,11 +31,9 @@ enum SimulatorPhase {outOfTick, beforeTick, mainTick, clksStable}
 /// Functional behavior modelling subscribes to [Simulator] events and/or queries the [SimulatorPhase].
 class Simulator {
 
-  //TODO: reconsider using int for timestamp
-
   /// The current time in the [Simulator].
-  static double get time => _currentTimestamp;
-  static double _currentTimestamp = 0;
+  static int get time => _currentTimestamp;
+  static int _currentTimestamp = 0;
 
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
@@ -43,7 +41,7 @@ class Simulator {
   /// The maximum time the simulation can run.
   /// 
   /// If set to -1 (the default), it means there is no maximum time limit.
-  static double _maxSimTime = -1;
+  static int _maxSimTime = -1;
 
   //TODO: use logger more, with hierarchy prints, and clean up exceptions where necessary
   
@@ -54,10 +52,10 @@ class Simulator {
   static bool hasStepsRemaining() => _pendingTimestamps.isNotEmpty;
 
   /// Sorted storage for pending functions to execute at appropriate times.
-  static final SplayTreeMap<double,List<Function>> _pendingTimestamps = SplayTreeMap<double,List<Function>>();
+  static final SplayTreeMap<int,List<Function>> _pendingTimestamps = SplayTreeMap<int,List<Function>>();
   
   /// Functions to be executed as soon as possible by the [Simulator].
-  static final Queue<Function> _injectedActions = Queue<Function>();
+  static final Queue<void Function()> _injectedActions = Queue<void Function()>();
 
   /// Emits an event before any other actions take place on the tick.
   static Stream get preTick => _preTickController.stream;
@@ -109,12 +107,12 @@ class Simulator {
   /// Sets a time, after which, the [Simulator] will halt processing of new actions.
   /// 
   /// You should set this for your simulations so that you don't get infinite simulation.
-  static void setMaxSimTime(double newMaxSimTime) {
+  static void setMaxSimTime(int newMaxSimTime) {
     _maxSimTime = newMaxSimTime;
   }
 
   /// Registers an abritrary [action] to be executed at [timestamp] time.
-  static void registerAction(double timestamp, Function action) {
+  static void registerAction(int timestamp, Function action) {
     if(timestamp <= _currentTimestamp) {
       throw Exception('Cannot add timestamp in the past.');
     }
@@ -129,11 +127,11 @@ class Simulator {
   /// 
   /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will trigger
   /// a new tick in the same timestamp.
-  static void injectAction(Function action) {
+  static Future<void> injectAction(void Function() action) async {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
     if(phase == SimulatorPhase.outOfTick) {
-      tickExecute(() => null);
+      await tickExecute(() => null);
     }
   }
 
@@ -158,24 +156,26 @@ class Simulator {
     _pendingTimestamps.remove(_currentTimestamp);    
   }
 
+  /// Executes all pending injected actions.
+  static Future<void> _executeInjectedActions() async {
+    while(_injectedActions.isNotEmpty) {
+      var injectedFunction = _injectedActions.removeFirst();
+      injectedFunction();
+    }
+  }
+
   /// Performs the actual execution of a collection of actions for a [tick()].
   static Future<void> tickExecute(Function() toExecute) async {
-    //TODO: This breaks things for the Dumper to have multiple ticks per timestamp!!  Add tests too...
     _preTickController.add(null); // useful for flop sampling
     _phase = SimulatorPhase.beforeTick;
     _startTickController.add(null); // useful for things that need to trigger every tick without other input
     _phase = SimulatorPhase.mainTick;
+    await _executeInjectedActions();
     await toExecute();
-    while(_injectedActions.isNotEmpty) {
-      var injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
+    await _executeInjectedActions();
     _clkStableController.add(null); // useful for flop clk input stability
     _phase = SimulatorPhase.clksStable;
-    while(_injectedActions.isNotEmpty) {
-      var injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
+    await _executeInjectedActions();
     _phase = SimulatorPhase.outOfTick;
     _postTickController.add(null); // useful for determination of signal settling
   }
@@ -198,6 +198,7 @@ class Simulator {
       logger.warning('Simulation ended due to maximum simulation time.');
     }
     _simulationEndedCompleter.complete();
+    await simulationEnded;
   }
   
 }

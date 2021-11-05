@@ -573,7 +573,7 @@ abstract class LogicValues {
   /// 
   /// ```dart
   /// var stringRepresentation = '1x0';
-  /// var lv = LogicValues.fromString(it);
+  /// var lv = LogicValues.fromString(stringRepresentation);
   /// print(lv); // This prints `3b'1x0`
   /// ```
   static LogicValues fromString(String stringRepresentation) {
@@ -583,6 +583,7 @@ abstract class LogicValues {
     if(length <= _INT_BITS) {
       var value = int.parse(valueString, radix: 2);
       var invalid = int.parse(invalidString, radix: 2);
+      //TODO: check if we should use filled here
       return _SmallLogicValues(value, invalid, length);
     } else {
       var value = BigInt.parse(valueString, radix: 2);

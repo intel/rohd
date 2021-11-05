@@ -17,15 +17,15 @@ void main() {
     Simulator.reset();
   });
 
-  test('simulator supports registration of actions at time stamps', () {
+  test('simulator supports registration of actions at time stamps', () async {
     var actionTaken = false;
     Simulator.registerAction(100, () => actionTaken = true);
-    Simulator.run();
+    await Simulator.run();
     expect(actionTaken, equals(true));
   });
 
   test('simulator stops at maximum time', () async {
-    var timeLimit = 1000.0;
+    var timeLimit = 1000;
     Simulator.setMaxSimTime(timeLimit);
     void register100inFuture() {
       // print('@${Simulator.time} registering again!');
@@ -42,7 +42,7 @@ void main() {
   test('simulator stops when endSimulation is called', () async {
     var tooFar = false;
     var farEnough = false;
-    var haltTime = 650.0;
+    var haltTime = 650;
     Simulator.registerAction(100, () => farEnough = true);
     Simulator.registerAction(1000, () => tooFar = true);
     Simulator.registerAction(haltTime, () => Simulator.endSimulation());
