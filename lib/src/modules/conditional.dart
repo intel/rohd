@@ -774,24 +774,11 @@ class FlipFlop extends Module with CustomSystemVerilog {
     _setup();
   }
 
-  late LogicValues _preTickValue; // logic or bus value, so dynamic
-  late LogicValue _preTickClkValue;
-
-//TODO: make functional implementation here just use FF for consistency!
-
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Simulator.preTick.listen((args) {
-      _preTickValue = d.value;
-      _preTickClkValue = clk.bit;
-    });
-    Simulator.clkStable.listen((args) {
-      if(!_preTickClkValue.isValid || !clk.bit.isValid) {
-        q.put(LogicValue.x);
-      } else if(LogicValue.isPosedge(_preTickClkValue, clk.bit)) {
-        q.put(_preTickValue);
-      }
-    });
+    FF(clk, [
+      q < d
+    ]);
   }
 
   @override
