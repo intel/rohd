@@ -67,7 +67,7 @@ The order of the created <a href="../../rohd/LogicValues-class.html">LogicValues
 corresponds to the <code>length - i - 1</code>th bit.  That is, the last character of <code>stringRepresentation</code> will be 
 the 0th bit of the returned <a href="../../rohd/LogicValues-class.html">LogicValues</a>.</p>
 <pre class="language-dart"><code class="language-dart">var stringRepresentation = '1x0';
-var lv = LogicValues.fromString(it);
+var lv = LogicValues.fromString(stringRepresentation);
 print(lv); // This prints `3b'1x0`
 </code></pre>
 </section>
@@ -83,6 +83,7 @@ print(lv); // This prints `3b'1x0`
   if(length &lt;= _INT_BITS) {
     var value = int.parse(valueString, radix: 2);
     var invalid = int.parse(invalidString, radix: 2);
+    &#47;&#47;TODO: check if we should use filled here
     return _SmallLogicValues(value, invalid, length);
   } else {
     var value = BigInt.parse(valueString, radix: 2);

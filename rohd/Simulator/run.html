@@ -79,6 +79,7 @@ it finishes or is stopped.</p>
     logger.warning(&#39;Simulation ended due to maximum simulation time.&#39;);
   }
   _simulationEndedCompleter.complete();
+  await simulationEnded;
 }</code></pre>
 </section>
 

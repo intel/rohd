@@ -70,22 +70,16 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tickExecute(Function() toExecute) async {
-  &#47;&#47;TODO: This breaks things for the Dumper to have multiple ticks per timestamp!!  Add tests too...
   _preTickController.add(null); &#47;&#47; useful for flop sampling
   _phase = SimulatorPhase.beforeTick;
   _startTickController.add(null); &#47;&#47; useful for things that need to trigger every tick without other input
   _phase = SimulatorPhase.mainTick;
+  await _executeInjectedActions();
   await toExecute();
-  while(_injectedActions.isNotEmpty) {
-    var injectedFunction = _injectedActions.removeFirst();
-    await injectedFunction();
-  }
+  await _executeInjectedActions();
   _clkStableController.add(null); &#47;&#47; useful for flop clk input stability
   _phase = SimulatorPhase.clksStable;
-  while(_injectedActions.isNotEmpty) {
-    var injectedFunction = _injectedActions.removeFirst();
-    await injectedFunction();
-  }
+  await _executeInjectedActions();
   _phase = SimulatorPhase.outOfTick;
   _postTickController.add(null); &#47;&#47; useful for determination of signal settling
 }</code></pre>

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the LogicValueChanged class from the rohd library, for the Dart programming language.">
-  <title>LogicValueChanged class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the Dumper property from the rohd library, for the Dart programming language.">
+  <title>Dumper typedef - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb">LogicValueChanged class</li>
+    <li class="self-crumb"><span class="deprecated">Dumper</span> typedef</li>
   </ol>
-  <div class="self-name">LogicValueChanged</div>
+  <div class="self-name">Dumper</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -44,134 +44,32 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-class">LogicValueChanged</span> class 
+<h1><span class="kind-typedef">Dumper</span> typedef 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
  
 </h1></div>
 
+    <section class="multi-line-signature">
+        
+  
+<div>
+  <ol class="annotation-list">
+    <li>@<a href="https://api.dart.dev/stable/2.14.4/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use WaveDumper instead&#39;)</li>
+  </ol>
+</div>
+<span class="name deprecated">Dumper</span> = <a href="../rohd/WaveDumper-class.html">WaveDumper</a></span>
+
+
+    </section>
+
     
-<section class="desc markdown">
-  <p>Represents the event of a <a href="../rohd/Logic-class.html">Logic</a> changing value.</p>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use WaveDumper instead&#39;)
+typedef Dumper = WaveDumper;</code></pre>
 </section>
-
-
-
-    <section class="summary offset-anchor" id="constructors">
-      <h2>Constructors</h2>
-
-      <dl class="constructor-summary-list">
-        <dt id="LogicValueChanged" class="callable">
-          <span class="name"><a href="../rohd/LogicValueChanged/LogicValueChanged.html">LogicValueChanged</a></span><span class="signature">(<span class="parameter" id="-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValues-class.html">LogicValues</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValues-class.html">LogicValues</a></span> <span class="parameter-name">previousValue</span></span>)</span>
-        </dt>
-        <dd>
-           
-        </dd>
-      </dl>
-    </section>
-
-    <section class="summary offset-anchor" id="instance-properties">
-      <h2>Properties</h2>
-
-      <dl class="properties">
-        <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/int-class.html">int</a></span> 
-
-</dt>
-<dd class="inherited">
-  The hash code for this object. <a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/hashCode.html">[...]</a>
-  <div class="features">read-only, inherited</div>
-
-</dd>
-
-        <dt id="newValue" class="property">
-  <span class="name"><a href="../rohd/LogicValueChanged/newValue.html">newValue</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValues-class.html">LogicValues</a></span> 
-
-</dt>
-<dd>
-  The newly updated value of the <a href="../rohd/Logic-class.html">Logic</a>. 
-  <div class="features">final</div>
-
-</dd>
-
-        <dt id="previousValue" class="property">
-  <span class="name"><a href="../rohd/LogicValueChanged/previousValue.html">previousValue</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValues-class.html">LogicValues</a></span> 
-
-</dt>
-<dd>
-  The previous value of the <a href="../rohd/Logic-class.html">Logic</a>. 
-  <div class="features">final</div>
-
-</dd>
-
-        <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/Type-class.html">Type</a></span> 
-
-</dt>
-<dd class="inherited">
-  A representation of the runtime type of the object. 
-  <div class="features">read-only, inherited</div>
-
-</dd>
-
-      </dl>
-    </section>
-
-    <section class="summary offset-anchor" id="instance-methods">
-      <h2>Methods</h2>
-      <dl class="callables">
-        <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
-    <span class="returntype parameter">&#8594; dynamic</span>
-  </span>
-  
-
-</dt>
-<dd class="inherited">
-  Invoked when a non-existent method or property is accessed. <a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/noSuchMethod.html">[...]</a>
-  <div class="features">inherited</div>
-
-</dd>
-
-        <dt id="toString" class="callable">
-  <span class="name"><a href="../rohd/LogicValueChanged/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>
-  </span>
-  
-
-</dt>
-<dd>
-  A string representation of this object. <a href="../rohd/LogicValueChanged/toString.html">[...]</a>
-  <div class="features">override</div>
-
-</dd>
-
-      </dl>
-    </section>
-
-    <section class="summary offset-anchor inherited" id="operators">
-      <h2>Operators</h2>
-      <dl class="callables">
-        <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/bool-class.html">bool</a></span>
-  </span>
-  
-
-</dt>
-<dd class="inherited">
-  The equality operator. <a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/operator_equals.html">[...]</a>
-  <div class="features">inherited</div>
-
-</dd>
-
-      </dl>
-    </section>
-
-
 
 
   </div> <!-- /.main-content -->
@@ -186,7 +84,7 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../index.html">rohd</a></li>
   <li><a href="../rohd/rohd-library.html">rohd</a></li>
-  <li class="self-crumb">LogicValueChanged class</li>
+  <li class="self-crumb"><span class="deprecated">Dumper</span> typedef</li>
 </ol>
 
 
@@ -269,35 +167,9 @@
 
 </ol>
 
-  </div>
+  </div><!--/.sidebar-offcanvas-left-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-    <ol>
-
-    <li class="section-title"><a href="../rohd/LogicValueChanged-class.html#constructors">Constructors</a></li>
-    <li><a href="../rohd/LogicValueChanged/LogicValueChanged.html">LogicValueChanged</a></li>
-
-
-    <li class="section-title">
-      <a href="../rohd/LogicValueChanged-class.html#instance-properties">Properties</a>
-    </li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/hashCode.html">hashCode</a></li>
-    <li><a href="../rohd/LogicValueChanged/newValue.html">newValue</a></li>
-    <li><a href="../rohd/LogicValueChanged/previousValue.html">previousValue</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/runtimeType.html">runtimeType</a></li>
-
-    <li class="section-title"><a href="../rohd/LogicValueChanged-class.html#instance-methods">Methods</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
-    <li><a href="../rohd/LogicValueChanged/toString.html">toString</a></li>
-
-    <li class="section-title inherited"><a href="../rohd/LogicValueChanged-class.html#operators">Operators</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/operator_equals.html">operator ==</a></li>
-
-
-
-
-</ol>
-
   </div><!--/.sidebar-offcanvas-->
 
 </main>
