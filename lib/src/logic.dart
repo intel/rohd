@@ -72,7 +72,7 @@ class Logic {
   /// The last value of this signal before the [Simulator] tick.
   /// 
   /// This is useful for detecting when to trigger an edge.
-  LogicValues _preTickValue;
+  LogicValues? _preTickValue;
   
   /// The number of bits in this signal.
   final int width;
@@ -143,8 +143,13 @@ class Logic {
         _preTickValue = value;
       });
       Simulator.postTick.listen((event) {
-        if(value != _preTickValue) {
-          _changedController.add(LogicValueChanged(value, _preTickValue));
+        if(value != _preTickValue && _preTickValue != null) {
+          _changedController.add(
+            LogicValueChanged(
+              value,
+              _preTickValue!
+            )
+          );
         }
       });
     }
@@ -209,8 +214,7 @@ class Logic {
   Logic({String? name, this.width=1}) :
       name = name ?? 's${_signalIdx++}',
       assert(width >= 0), 
-      _currentValue = LogicValues.filled(width, LogicValue.z),
-      _preTickValue = LogicValues.filled(width, LogicValue.z);
+      _currentValue = LogicValues.filled(width, LogicValue.z);
 
   @override
   String toString() {

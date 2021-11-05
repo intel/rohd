@@ -146,33 +146,82 @@ class FF extends _Always {
     _setup();
   }
 
+  /// A map from input [Logic]s to the values that should be used for computations on the edge.
   final Map<Logic, LogicValues> _inputToPreTickInputValuesMap = {};
-  late LogicValue _preTickClkValue;
+
+  /// The value of the clock before the tick.
+  LogicValue? _preTickClkValue;
+
+  /// Keeps track of whether the clock has glitched and an [_execute] is necessary.
+  bool _pendingExecute = false;
+
+  /// A set of drivers whose values in [_inputToPreTickInputValuesMap] need updating after the tick completes.
+  final Set<Logic> _driverInputsPendingPostUpdate = {};
+
+  /// Keeps track of whether values need to be updated post-tick.
+  bool _pendingPostUpdate = false;
 
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
-    Simulator.preTick.listen((args) {
-      for(var driverInput in _assignedDriverToInputMap.values) {
-        _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+
+    // one time is enough, it's a final map
+    for (var element in conditionals) { element._updateOverrideMap(_inputToPreTickInputValuesMap); }
+
+    // listen to every input of this FF for changes
+    for(var driverInput in _assignedDriverToInputMap.values) {
+      driverInput.glitch.listen((event) {
+        if(Simulator.phase != SimulatorPhase.clksStable) {
+          // if the change happens not when the clocks are stable, immediately update the map
+          _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+        } else {
+          // if this is during stable clocks, it's probably another flop driving it, so hold onto it for later
+          _driverInputsPendingPostUpdate.add(driverInput);
+          if(!_pendingPostUpdate) {
+            Simulator.postTick.first.then((value) {
+              // once the tick has completed, we can update the override maps
+              for(var driverInput in _driverInputsPendingPostUpdate) {
+                _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+              }
+              _driverInputsPendingPostUpdate.clear();
+              _pendingPostUpdate = false;
+            });
+          }
+          _pendingPostUpdate = true;
+        }
+      });
+    }
+
+    // listen to every clock glitch to see if we need to execute
+    clk.glitch.listen((event) {
+      // we want the first previousValue from the first glitch of this tick
+      _preTickClkValue ??= event.previousValue.bit;
+      if(!_pendingExecute) {
+        Simulator.clkStable.first.then((value) {
+          // once the clocks are stable, execute the contents of the FF
+          _execute();
+          _preTickClkValue = null;
+          _pendingExecute = false;
+        });
       }
-      for (var element in conditionals) { element._updateOverrideMap(_inputToPreTickInputValuesMap); }
-      _preTickClkValue = clk.bit;
+      _pendingExecute = true;
     });
-    Simulator.clkStable.listen((args) {
-      if(!clk.bit.isValid || !_preTickClkValue.isValid) {
-        for (var receiverOutput in _assignedReceiverToOutputMap.values) {
-          receiverOutput.put(LogicValue.x);
-        }
-      } else if(LogicValue.isPosedge(_preTickClkValue, clk.bit)) {
-        var allDrivenSignals = <Logic>[];
-        for (var element in conditionals) {
-          allDrivenSignals.addAll(element.execute());
-        }
-        if(allDrivenSignals.length != allDrivenSignals.toSet().length) {
-          throw Exception('FF drove the same signal multiple times.');
-        }
+
+  }
+
+  void _execute() {
+    if(!clk.bit.isValid || !_preTickClkValue!.isValid) {
+      for (var receiverOutput in _assignedReceiverToOutputMap.values) {
+        receiverOutput.put(LogicValue.x);
       }
-    });
+    } else if(LogicValue.isPosedge(_preTickClkValue!, clk.bit)) {
+      var allDrivenSignals = <Logic>[];
+      for (var element in conditionals) {
+        allDrivenSignals.addAll(element.execute());
+      }
+      if(allDrivenSignals.length != allDrivenSignals.toSet().length) {
+        throw Exception('FF drove the same signal multiple times.');
+      }
+    }
   }
 
   @override String alwaysVerilogStatement(Map<String,String> inputs) => 'always_ff @(posedge ${inputs[_clk]})';
@@ -727,6 +776,8 @@ class FlipFlop extends Module with CustomSystemVerilog {
 
   late LogicValues _preTickValue; // logic or bus value, so dynamic
   late LogicValue _preTickClkValue;
+
+//TODO: make functional implementation here just use FF for consistency!
 
   /// Performs setup for custom functional behavior.
   void _setup() {
