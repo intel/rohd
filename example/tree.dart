@@ -52,7 +52,7 @@ class TreeOfTwoInputModules extends Module {
   }
 }
 
-void main({bool noPrint=false}) async {
+Future<void> main({bool noPrint=false}) async {
   // You could instantiate this module with some code such as:
   var tree = TreeOfTwoInputModules(
     List<Logic>.generate(16, (index) => Logic(width: 8)),

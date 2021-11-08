@@ -14,6 +14,10 @@ import '../example/counter.dart' as counter;
 import '../example/tree.dart' as tree;
 
 void main() {
-  test('counter example', () => counter.main(noPrint: true));
-  test('tree example', () => tree.main(noPrint: true));
+  test('counter example', () async {
+    await counter.main(noPrint: true);
+  });
+  test('tree example', () async {
+    await tree.main(noPrint: true);
+  });
 }
