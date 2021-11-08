@@ -135,7 +135,7 @@ void main() {
     var dumpName = 'dumpBeforePut';
     
     createTemporaryDump(mod, dumpName);
-    await a.inject(1);
+    a.inject(1);
 
     Simulator.registerAction(10, () => a.put(0));
     Simulator.registerAction(20, () => a.put(1));
@@ -172,7 +172,7 @@ void main() {
     await clk.nextPosedge;
 
     // inject a 0 on a when it should be 1 already from the clock
-    await a.inject(0);
+    a.inject(0);
 
     await Simulator.simulationEnded;
     

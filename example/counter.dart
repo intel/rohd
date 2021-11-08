@@ -69,8 +69,8 @@ void main({bool noPrint=false}) async {
   // Now let's try simulating!
 
   // Let's start off with a disabled counter and asserting reset.
-  await en.inject(0);
-  await reset.inject(1);
+  en.inject(0);
+  reset.inject(1);
 
   // Attach a waveform dumper so we can see what happens.
   WaveDumper(counter);
