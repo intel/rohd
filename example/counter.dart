@@ -48,7 +48,7 @@ class Counter extends Module {
 }
 
 // Let's simulate with this counter a little, generate a waveform, and take a look at generated SystemVerilog.
-void main({bool noPrint=false}) async {
+Future<void> main({bool noPrint=false}) async {
   // Define some local signals.
   var   en    = Logic(name: 'en'),
         reset = Logic(name: 'reset');

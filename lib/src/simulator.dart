@@ -125,7 +125,7 @@ class Simulator {
   /// Adds an arbitrary [action] to be executed as soon as possible, during the current
   /// simulation tick if possible.
   /// 
-  /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will trigger
+  /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will execute in
   /// a new tick in the same timestamp.
   static void injectAction(void Function() action) {
     // adds an action to be executed in the current timestamp
@@ -189,7 +189,7 @@ class Simulator {
     _postTickController.add(null); // useful for determination of signal settling
   }
 
-  /// Halts the simulation.  Allows the current [tick()] to finish, if there is one.
+  /// Halts the simulation.  Allows the current [tick] to finish, if there is one.
   static void endSimulation() {
     _simulationEndRequested = true;
   }

@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'utilities/synchronous_propagator.dart';
 
 //TODO: add support for arrays of signals for synthesizing to SV so that it's not verbose for large structures, along with for loops?
 
@@ -115,16 +116,11 @@ class Logic {
   /// Notifies [this] that [dstConnection] is now directly connected to the output of [this].
   void _registerConnection(Logic dstConnection) => _dstConnections.add(dstConnection);
   
-  /// A [Stream] of [LogicValueChanged] events for every time the signal transitions at any time during a [Simulator] tick.
+  /// A stream of [LogicValueChanged] events for every time the signal transitions at any time during a [Simulator] tick.
   /// 
   /// This event can occur more than once per edge, or even if there is no edge.
-  Stream<LogicValueChanged> get glitch => _glitchController.stream;
-  final StreamController<LogicValueChanged> _glitchController = StreamController<LogicValueChanged>.broadcast(sync: true);
-
-  //TODO: consider using synchronous propogator instead of streams for glitch
-
-  // final SynchronousPropagator<LogicValueChanged> _glitchController = SynchronousPropagator<LogicValueChanged>();
-  // SynchronousEmitter<LogicValueChanged> get glitch => _glitchController.emitter;
+  SynchronousEmitter<LogicValueChanged> get glitch => _glitchController.emitter;
+  final SynchronousPropagator<LogicValueChanged> _glitchController = SynchronousPropagator<LogicValueChanged>();
   
   /// Controller for stable events that can be safely consumed at the end of a [Simulator] tick.
   final StreamController<LogicValueChanged> _changedController = StreamController<LogicValueChanged>.broadcast(sync: true);
@@ -235,7 +231,7 @@ class Logic {
 
   // TODO: prevent re-connection after build / after simulator has started?
 
-  /// Connects this [Logic] directly to another [Logic].
+  /// Connects this [Logic] directly to [other].
   /// 
   /// Every time [other] transitions (`glitch`es), this signal will transition the same way.
   void gets(Logic other) {
@@ -350,7 +346,7 @@ class Logic {
   /// Use this function for custom definitions of [Module] behavior.
   /// 
   /// If [fill] is set, all bits of the signal gets set to [val], similar to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill=false}) async {
+  void put(dynamic val, {bool fill=false}) {
     //TODO: prevent re-assignment for _unassignable even via put/inject
     // this opens the opportunity to automate stuff like &1 if necessary
     LogicValues newValue;
@@ -403,27 +399,16 @@ class Logic {
 
     if(newValue.length != width) throw Exception('Updated value width mismatch');
 
-    var cycleContention = false;
     if(_isPutting) {
       // if this is the result of a cycle, then contention!
       newValue = LogicValues.filled(width, LogicValue.x);
-      cycleContention = true;
     }
 
     var _prevValue = _currentValue;
-    if(_prevValue != newValue) {
-      _currentValue = newValue;
-    }
+    _currentValue = newValue;
 
     // sends out a glitch if the value deposited has changed
     if(_currentValue != _prevValue) {
-      
-      if(cycleContention){
-        // sync stream is not reentrant, so kill remaining tasks first, then propogate the X
-        await glitch.drain();
-        _isPutting = false;
-      }
-
       _isPutting = true;
       _glitchController.add(LogicValueChanged(
         _currentValue,
