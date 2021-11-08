@@ -49,10 +49,10 @@ class Simulator {
   static final Logger logger = Logger('ROHD');
 
   /// Returns true iff there are more steps for the [Simulator] to tick through.
-  static bool hasStepsRemaining() => _pendingTimestamps.isNotEmpty;
+  static bool hasStepsRemaining() => _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
 
   /// Sorted storage for pending functions to execute at appropriate times.
-  static final SplayTreeMap<int,List<Function>> _pendingTimestamps = SplayTreeMap<int,List<Function>>();
+  static final SplayTreeMap<int,List<void Function()>> _pendingTimestamps = SplayTreeMap<int,List<void Function()>>();
   
   /// Functions to be executed as soon as possible by the [Simulator].
   static final Queue<void Function()> _injectedActions = Queue<void Function()>();
@@ -112,7 +112,7 @@ class Simulator {
   }
 
   /// Registers an abritrary [action] to be executed at [timestamp] time.
-  static void registerAction(int timestamp, Function action) {
+  static void registerAction(int timestamp, void Function() action) {
     if(timestamp <= _currentTimestamp) {
       throw Exception('Cannot add timestamp in the past.');
     }
@@ -127,12 +127,9 @@ class Simulator {
   /// 
   /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will trigger
   /// a new tick in the same timestamp.
-  static Future<void> injectAction(void Function() action) async {
+  static void injectAction(void Function() action) {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
-    if(phase == SimulatorPhase.outOfTick) {
-      await tickExecute(() => null);
-    }
   }
 
   /// A single simulation tick.
@@ -140,6 +137,15 @@ class Simulator {
   /// Takes the simulator through all actions within the next pending 
   /// timestamp, and passes through all events and phases on the way.
   static Future<void> tick() async {
+    
+    if(_injectedActions.isNotEmpty) {
+      // injected actions will automatically be executed during tickExecute
+      tickExecute(() {});
+
+      // don't continue through the tick for injected actions, come back around
+      return;
+    }
+
     var nextTimeStamp = _pendingTimestamps.firstKey();
     if(nextTimeStamp == null){
       print('No more to tick.');
@@ -147,17 +153,17 @@ class Simulator {
     }
 
     _currentTimestamp = nextTimeStamp;
-    // print('Tick: $_currentTimestamp');
-    await tickExecute(() async {
+    // print("Tick: $_currentTimestamp");
+    tickExecute(() {
       for(var func in _pendingTimestamps[nextTimeStamp]!) {
-        await func();
+        func();
       }
     });
     _pendingTimestamps.remove(_currentTimestamp);    
   }
 
   /// Executes all pending injected actions.
-  static Future<void> _executeInjectedActions() async {
+  static void _executeInjectedActions() {
     while(_injectedActions.isNotEmpty) {
       var injectedFunction = _injectedActions.removeFirst();
       injectedFunction();
@@ -165,19 +171,19 @@ class Simulator {
   }
 
   /// Performs the actual execution of a collection of actions for a [tick()].
-  static Future<void> tickExecute(Function() toExecute) async {
+  static void tickExecute(void Function() toExecute) {
     _phase = SimulatorPhase.beforeTick;
     _preTickController.add(null); // useful for flop sampling
     
     _phase = SimulatorPhase.mainTick;
     _startTickController.add(null); // useful for things that need to trigger every tick without other input
-    await _executeInjectedActions();
-    await toExecute();
-    await _executeInjectedActions();
+    _executeInjectedActions();
+    toExecute();
+    _executeInjectedActions();
     
     _phase = SimulatorPhase.clksStable;
     _clkStableController.add(null); // useful for flop clk input stability
-    await _executeInjectedActions();
+    _executeInjectedActions();
 
     _phase = SimulatorPhase.outOfTick;
     _postTickController.add(null); // useful for determination of signal settling

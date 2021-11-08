@@ -139,6 +139,8 @@ class Logic {
     if(!_changedBeingWatched) {
       // only do these simulator subscriptions if someone has asked for them! saves performance!
       _changedBeingWatched = true;
+
+      //TODO: only set these up to listen to glitch? consider efficiency
       Simulator.preTick.listen((event) {
         _preTickValue = value;
       });
@@ -335,8 +337,8 @@ class Logic {
   /// Injects a value onto this signal in the current [Simulator] tick.
   /// 
   /// This function calls [put()] in [Simulator.injectAction()].
-  Future<void> inject(dynamic val, {bool fill = false}) async {
-    await Simulator.injectAction(() => put(val, fill: fill));
+  void inject(dynamic val, {bool fill = false}) {
+    Simulator.injectAction(() => put(val, fill: fill));
   }
 
   /// Keeps track of whether there is an active put, to detect reentrance.

@@ -63,7 +63,7 @@ class SimCompare {
     for(var vector in vectors) {
       // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () async {
-        await Simulator.tickExecute(() {
+        Simulator.tickExecute(() {
           for(var signalName in vector.inputValues.keys) {
             var value = vector.inputValues[signalName];
             module.input(signalName).put(value);
@@ -85,7 +85,7 @@ class SimCompare {
       });
       timestamp += Vector.period;
     }
-    Simulator.registerAction(timestamp + Vector.period, () => null); // just so it does one more thing at the end
+    Simulator.registerAction(timestamp + Vector.period, () {}); // just so it does one more thing at the end
     Simulator.setMaxSimTime(timestamp + 2*Vector.period);
     await Simulator.run();
   }
