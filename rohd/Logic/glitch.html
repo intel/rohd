@@ -54,7 +54,7 @@
 <section id="getter">
 
 <section class="multi-line-signature">
-  <span class="returntype"><a href="https://api.dart.dev/stable/2.14.4/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  <span class="returntype">SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
   <span class="name ">glitch</span>
   
 
@@ -62,14 +62,14 @@
 
 
 <section class="desc markdown">
-  <p>A <a href="https://api.dart.dev/stable/2.14.4/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events for every time the signal transitions at any time during a <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
+  <p>A stream of <code>LogicValueChanged</code> events for every time the signal transitions at any time during a <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
 <p>This event can occur more than once per edge, or even if there is no edge.</p>
 </section>
 
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get glitch =&gt; _glitchController.stream;</code></pre>
+  <pre class="language-dart"><code class="language-dart">SynchronousEmitter&lt;LogicValueChanged&gt; get glitch =&gt; _glitchController.emitter;</code></pre>
 </section>
 
 </section>

@@ -122,11 +122,11 @@
 
         <dt id="glitch" class="property">
   <span class="name"><a href="../rohd/Logic/glitch.html">glitch</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/2.14.4/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events for every time the signal transitions at any time during a <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/glitch.html">[...]</a>
+  A stream of <code>LogicValueChanged</code> events for every time the signal transitions at any time during a <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/glitch.html">[...]</a>
   <div class="features">read-only</div>
 
 </dd>
@@ -358,7 +358,7 @@
 
 </dt>
 <dd>
-  Connects this <a href="../rohd/Logic-class.html">Logic</a> directly to another <a href="../rohd/Logic-class.html">Logic</a>. <a href="../rohd/Logic/gets.html">[...]</a>
+  Connects this <a href="../rohd/Logic-class.html">Logic</a> directly to <code>other</code>. <a href="../rohd/Logic/gets.html">[...]</a>
   
 
 </dd>
