@@ -72,6 +72,8 @@
   if(!_changedBeingWatched) {
     &#47;&#47; only do these simulator subscriptions if someone has asked for them! saves performance!
     _changedBeingWatched = true;
+
+    &#47;&#47;TODO: only set these up to listen to glitch? consider efficiency
     Simulator.preTick.listen((event) {
       _preTickValue = value;
     });

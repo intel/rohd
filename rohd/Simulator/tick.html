@@ -70,6 +70,15 @@ timestamp, and passes through all events and phases on the way.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
+
+  if(_injectedActions.isNotEmpty) {
+    &#47;&#47; injected actions will automatically be executed during tickExecute
+    tickExecute(() {});
+
+    &#47;&#47; don&#39;t continue through the tick for injected actions, come back around
+    return;
+  }
+
   var nextTimeStamp = _pendingTimestamps.firstKey();
   if(nextTimeStamp == null){
     print(&#39;No more to tick.&#39;);
@@ -77,10 +86,10 @@ timestamp, and passes through all events and phases on the way.</p>
   }
 
   _currentTimestamp = nextTimeStamp;
-  &#47;&#47; print(&#39;Tick: $_currentTimestamp&#39;);
-  await tickExecute(() async {
+  &#47;&#47; print(&quot;Tick: $_currentTimestamp&quot;);
+  tickExecute(() {
     for(var func in _pendingTimestamps[nextTimeStamp]!) {
-      await func();
+      func();
     }
   });
   _pendingTimestamps.remove(_currentTimestamp);

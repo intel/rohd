@@ -52,7 +52,7 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.14.4/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="returntype">void</span>
 <span class="name ">injectAction</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="injectAction-param-action"><span class="type-annotation">void</span> <span class="parameter-name">action</span>(<ol class="parameter-list"></ol>
 )</span></li>
 </ol>)
@@ -72,12 +72,9 @@ a new tick in the same timestamp.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; injectAction(void Function() action) async {
+  <pre class="language-dart"><code class="language-dart">static void injectAction(void Function() action) {
   &#47;&#47; adds an action to be executed in the current timestamp
   _injectedActions.addLast(action);
-  if(phase == SimulatorPhase.outOfTick) {
-    await tickExecute(() =&gt; null);
-  }
 }</code></pre>
 </section>
 
