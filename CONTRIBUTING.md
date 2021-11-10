@@ -41,7 +41,7 @@ If you're on Microsoft Windows, you may want to consider developing with Ubuntu 
 ### Cloning and Running the Tests
 Once requirements are installed, you can clone and run the test suite.
 ```
-git clone <path_to_rohd>
+git clone https://github.com/intel/rohd.git
 cd rohd
 dart run test
 ```
@@ -68,7 +68,7 @@ Take a look around the issues on the repo and see if there's any you'd like to t
 ### Pull Requests
 If you have a change that you have implemented and would like to contribute, you can open a pull request.  Please try to make sure you have implemented tests covering the changes, if applicable.  Smaller, simpler pull requests are easier to review.
 
-Be sure to run the test suite (`dart run test`) before asking for your code to be merged.
+Be sure to run the test suite (`dart test`) before asking for your code to be merged.  You can also locally generate API documentation (`dartdoc`) to make sure it looks right and doesn't have any errors.
 
 Maintainers of the project and other community members will provide feedback and help iterate as necessary until the contribution is ready to be merged.
 
