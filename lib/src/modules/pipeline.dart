@@ -20,9 +20,19 @@ class PipelineStageInfo {
   final Pipeline _pipeline;
 
   PipelineStageInfo._(this._pipeline, this.stage);
+
+  /// Returns a staged version of [identifier] at the current stage, adjusted
+  /// by the amount of [stageAdjustment].
+  /// 
+  /// Typically, your pipeline will consist of a lot of `p.get(x)` type calls, but
+  /// if you want to combinationally access a value of a signal from another stage,
+  /// you can access it relatively using [stageAdjustment].  For example, `p.get(x, -1)`
+  /// will access the value of `x` one stage prior.
   Logic get(Logic identifier, [int stageAdjustment=0]) {
     return _pipeline.get(identifier, stage+stageAdjustment);
   }
+
+  /// Returns a staged version of [identifier] at the specified absolute [stageIndex].
   Logic getAbs(Logic identifier, int stageIndex) {
     return _pipeline.get(identifier, stageIndex);
   }  
