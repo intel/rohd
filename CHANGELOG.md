@@ -1,3 +1,3 @@
-## 0.0.1
+## 0.1.0
 
-- ROHD still under initial development, and is not formally versioned yet
+- The first formally versioned release of ROHD.
