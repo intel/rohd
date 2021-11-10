@@ -550,9 +550,11 @@ b.put(LogicValues([
 </code></pre>
 <h3 id="pipelines">Pipelines</h3>
 <p>ROHD has a built-in syntax for handling pipelines in a simple &amp; refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that <a href="https://intel.github.io/rohd/rohd/Pipeline-class.html"><code>Pipeline</code></a> consumes a clock and a list of stages, which are each a <code>List&lt;Conditional&gt; Function(PipelineStageInfo p)</code>, where <code>PipelineStageInfo</code> has information on the value of a given signal in that stage.  The <code>List&lt;Conditional&gt;</code> the same type of procedural code that can be placed in <code>Combinational</code>.</p>
-<pre class="language-dart"><code class="language-dart">var pipeline = Pipeline(clk,
+<pre class="language-dart"><code class="language-dart">Logic a;
+var pipeline = Pipeline(clk,
   stages: [
     (p) =&gt; [
+      // the first time `get` is called, `a` is automatically pipelined
       p.get(a) &lt; p.get(a) + 1
     ],
     (p) =&gt; [
@@ -563,9 +565,11 @@ b.put(LogicValues([
     ],
   ]
 );
+var b = pipeline.get(a); // the output of the pipeline
 </code></pre>
 <p>This pipeline is very easy to refactor.  If we wanted to merge the last two stages, we could simply rewrite it as:</p>
-<pre class="language-dart"><code class="language-dart">var pipeline = Pipeline(clk,
+<pre class="language-dart"><code class="language-dart">Logic a;
+var pipeline = Pipeline(clk,
   stages: [
     (p) =&gt; [
       p.get(a) &lt; p.get(a) + 1
@@ -576,6 +580,7 @@ b.put(LogicValues([
     ],
   ]
 );
+var b = pipeline.get(a);
 </code></pre>
 <p>You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the <code>PipelineStageInfo</code> object is just access as normal, so other logic can optionally sit outside of the pipeline object.</p>
 <p>ROHD also includes a version of <code>Pipeline</code> that supports a ready/valid protocol called <a href="https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html"><code>ReadyValidPipeline</code></a>.  The syntax looks the same, but has some additional parameters for readys and valids.</p>
