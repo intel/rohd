@@ -24,7 +24,7 @@ A clear and concise description of what you expected to happen.
 ## Actual behavior
 What you observed instead of the expected behavior.
 
-## Additional Details
+## Additional details
 **Please paste the output of `dart --version`**  
 ```
 > dart --version
