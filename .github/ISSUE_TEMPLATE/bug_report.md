@@ -7,10 +7,10 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+## Describe the bug
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+## To Reproduce
 If possible, please include code that reproduces the failure.
 
 Steps to reproduce the behavior:
@@ -18,22 +18,23 @@ Steps to reproduce the behavior:
 2. Run a simulation with ...
 3. See error
 
-**Expected behavior**
+## Expected behavior
 A clear and concise description of what you expected to happen.
 
-**Actual behavior**
+## Actual behavior
 What you observed instead of the expected behavior.
 
-**Please paste the output of `dart --version`**
+## Additional Details
+**Please paste the output of `dart --version`**  
 ```
 > dart --version
 ...
 ```
 
-**Please paste the contents of your pubspec.yaml file and identify the version of ROHD you're using**
+**Please paste the contents of your pubspec.yaml file and identify the version of ROHD you're using**  
 ```yaml
-your pubspe.yaml file here...
+your pubspec.yaml file here...
 ```
 
-**Additional context**
+**Additional context**  
 Add any other context about the problem here.
