@@ -16,6 +16,10 @@
 
 > Is this a breaking change that will not be backwards-compatible?  If yes, how so?
 
+<!--Answer here-->
+
 ## Documentation
 
 > Does the change require any updates to documentation?  If so, where?  Are they included?
+
+<!--Answer here-->
