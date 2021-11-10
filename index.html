@@ -103,16 +103,7 @@
 </ul>
 <h2 id="getting-started">Getting started</h2>
 <p>Once you have Dart installed, if you don't already have a project, you can create one using <code>dart create</code>: <a href="https://dart.dev/tools/dart-tool">https://dart.dev/tools/dart-tool</a></p>
-<p>Then add ROHD as a dependency to your pubspec.yaml file.  Until ROHD is available on a package manager, you can either clone this repo to your local disk and include the relative or absolute path like this:</p>
-<pre class="language-yaml"><code class="language-yaml">dependencies:
-  rohd:
-    path: /path/to/rohd
-</code></pre>
-<p><em>OR</em> you can directly depend on the github repository like this:</p>
-<pre class="language-yaml"><code class="language-yaml">dependencies:
-  rohd:
-    git: https://github.com/intel/rohd.git
-</code></pre>
+<p>Then add ROHD as a dependency to your pubspec.yaml file.  ROHD is <a href="https://pub.dev/packages/rohd">registered</a> on pub.dev.  The easiest way to add ROHD as a dependency is following the instructions here <a href="https://pub.dev/packages/rohd/install">https://pub.dev/packages/rohd/install</a>.</p>
 <p>Now you can import it in your project using:</p>
 <pre class="language-dart"><code class="language-dart">import 'package:rohd/rohd.dart';
 </code></pre>
