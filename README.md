@@ -607,10 +607,13 @@ class NotGate extends Module with InlineSystemVerilog {
 
 ### Pipelines
 ROHD has a built-in syntax for handling pipelines in a simple & refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that [`Pipeline`](https://intel.github.io/rohd/rohd/Pipeline-class.html) consumes a clock and a list of stages, which are each a `List<Conditional> Function(PipelineStageInfo p)`, where `PipelineStageInfo` has information on the value of a given signal in that stage.  The `List<Conditional>` the same type of procedural code that can be placed in `Combinational`.
+
 ```dart
+Logic a;
 var pipeline = Pipeline(clk,
   stages: [
     (p) => [
+      // the first time `get` is called, `a` is automatically pipelined
       p.get(a) < p.get(a) + 1
     ],
     (p) => [
@@ -621,9 +624,13 @@ var pipeline = Pipeline(clk,
     ],
   ]
 );
+var b = pipeline.get(a); // the output of the pipeline
 ```
+
 This pipeline is very easy to refactor.  If we wanted to merge the last two stages, we could simply rewrite it as:
+
 ```dart
+Logic a;
 var pipeline = Pipeline(clk,
   stages: [
     (p) => [
@@ -635,6 +642,7 @@ var pipeline = Pipeline(clk,
     ],
   ]
 );
+var b = pipeline.get(a);
 ```
 You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just access as normal, so other logic can optionally sit outside of the pipeline object.
 
