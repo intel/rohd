@@ -11,7 +11,7 @@ ROHD (pronounced like "road") is a framework for describing and verifying hardwa
 
 Features of ROHD include:
 - Full power of the modern **Dart language** for hardware design and verification
-- Makes **validation collateral** simpler to develop and debug.  A future package (like UVM for ROHD) to help build testbenches is planned for release soon.
+- Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches.
 - Develop **layers of abstraction** within a hardware design, making it more flexible and powerful
 - Easy **IP integration** and **interfaces**; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration
 - **Simple and fast build**, free of complex build systems and EDA vendor tools
@@ -62,7 +62,7 @@ See some Dart language samples here: https://dart.dev/samples
 For more information on Dart and tutorials, see https://dart.dev/ and https://dart.dev/overview
 
 ## Development Recommendations
-- A UVM-like framework for building testbenches for hardware modelled in ROHD is planned for release soon.
+- The [ROHD Verification Framework](https://github.com/intel/rohd-vf) is a UVM-like framework for building testbenches for hardware modelled in ROHD.
 - Visual Studio Code (vscode) is a great, free IDE with excellent support for Dart.  It works well on all platforms, including native Windows or Windows Subsystem for Linux (WSL) which allows you to run a native Linux kernel (e.g. Ubuntu) within Windows.  You can also use vscode to develop on a remote machine with the Remote SSH extension.
     - vscode: https://code.visualstudio.com/
     - WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
