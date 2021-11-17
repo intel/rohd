@@ -1,12 +1,12 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// translations_test.dart
 /// Unit tests looking at redoing some real implementations in a better way
-/// 
+///
 /// 2021 May 20
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -26,17 +26,25 @@ class FlopArray extends Module {
   final List<FlopArrayPort> _wrPorts = [], _rdPorts = [];
 
   final int numWrites, numReads, awidth, dwidth, numEntries;
-  FlopArray(
-      Logic lclk, Logic lrst,
-      List<Logic> rdEn, List<Logic> rdPtr,
+  FlopArray(Logic lclk, Logic lrst, List<Logic> rdEn, List<Logic> rdPtr,
       List<Logic> wrEn, List<Logic> wrPtr, List<Logic> wrData,
       {this.numEntries = 8})
-      : numWrites = wrEn.length, numReads = rdEn.length, dwidth=wrData[0].width, awidth=rdPtr[0].width,
+      : numWrites = wrEn.length,
+        numReads = rdEn.length,
+        dwidth = wrData[0].width,
+        awidth = rdPtr[0].width,
         super(name: 'floparray_${wrEn.length}w_${rdEn.length}r') {
     // make sure widths of everything match expectations
-    if (rdPtr.length != numReads) throw Exception('Read pointer length must match number of read enables.');
-    if (wrPtr.length != numWrites) throw Exception('Write pointer length must match number of write enables');
-    if (wrData.length != numWrites) throw Exception('Write data length must match number of write enables');
+    if (rdPtr.length != numReads) {
+      throw Exception('Read pointer length must match number of read enables.');
+    }
+    if (wrPtr.length != numWrites) {
+      throw Exception(
+          'Write pointer length must match number of write enables');
+    }
+    if (wrData.length != numWrites) {
+      throw Exception('Write data length must match number of write enables');
+    }
 
     // register inputs and outputs with ROHD
     addInput('lclk', lclk);
@@ -63,7 +71,8 @@ class FlopArray extends Module {
         numEntries, (i) => Logic(name: 'storageBank_$i', width: dwidth));
 
     // FF(lclk, [  // normally this should be here
-    FF(SimpleClockGenerator(10).clk, [  //for testing purposes, easier to just plug a clock in here
+    FF(SimpleClockGenerator(10).clk, [
+      //for testing purposes, easier to just plug a clock in here
       If(lrst, then: [
         ...storageBank
             .map((e) => e < 0) // zero out entire storage bank on reset
@@ -91,8 +100,8 @@ void main() {
   });
 
   var signalToWidthMap = {
-    'wrData0':16,
-    'wrData1':16,
+    'wrData0': 16,
+    'wrData1': 16,
     'wrPtr0': 6,
     'wrPtr1': 6,
     'rdPtr0': 6,
@@ -103,11 +112,15 @@ void main() {
 
   group('simcompare', () {
     test('translation', () async {
-      var numRdPorts=2, numWrPorts=2;
+      var numRdPorts = 2, numWrPorts = 2;
       var ftm = FlopArray(
-        Logic(), Logic(),
-        List<Logic>.generate(numRdPorts, (index) => Logic(width: 1)), List<Logic>.generate(numRdPorts, (index) => Logic(width: 6)),
-        List<Logic>.generate(numWrPorts, (index) => Logic(width: 1)), List<Logic>.generate(numWrPorts, (index) => Logic(width: 6)), List<Logic>.generate(numWrPorts, (index) => Logic(width: 16)),
+        Logic(),
+        Logic(),
+        List<Logic>.generate(numRdPorts, (index) => Logic(width: 1)),
+        List<Logic>.generate(numRdPorts, (index) => Logic(width: 6)),
+        List<Logic>.generate(numWrPorts, (index) => Logic(width: 1)),
+        List<Logic>.generate(numWrPorts, (index) => Logic(width: 6)),
+        List<Logic>.generate(numWrPorts, (index) => Logic(width: 16)),
       );
       await ftm.build();
       // File('tmp.sv').writeAsStringSync(ftm.generateSynth())
@@ -122,9 +135,9 @@ void main() {
         Vector({'wrEn1': 0, 'rdEn0': 0}, {'rdData0': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(ftm.generateSynth(), ftm.runtimeType.toString(), vectors, 
-        signalToWidthMap: signalToWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
   });

@@ -1,18 +1,17 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// changed_test.dart
 /// Unit tests for Logic change events
-/// 
+///
 /// 2021 November 5
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-
   tearDown(() {
     Simulator.reset();
   });
@@ -44,7 +43,7 @@ void main() {
   test('clk edge counter', () async {
     var clk = SimpleClockGenerator(10).clk;
     var b = Logic();
-    
+
     bool val = false;
     clk.negedge.listen((event) async {
       b.inject(val);

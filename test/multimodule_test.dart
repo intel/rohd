@@ -1,12 +1,12 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// multimodule_test.dart
 /// Unit tests for a hierarchy of multiple modules and multiple instantiation
-/// 
+///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -30,8 +30,8 @@ class AModule extends Module {
   Logic get y => output('y');
 
   AModule(Logic a) : super(name: 'amodule') {
-    a = addInput('a', a, width:a.width);
-    var y = addOutput('y', width:a.width);
+    a = addInput('a', a, width: a.width);
+    var y = addOutput('y', width: a.width);
 
     var tmp = Logic(width: a.width);
     y <= tmp;
@@ -42,9 +42,9 @@ class AModule extends Module {
 class BModule extends Module {
   Logic get zz => output('zz');
   BModule(Logic bb) : super(name: 'bmodule') {
-    bb = addInput('bb', bb, width:bb.width);
-    var zz = addOutput('zz', width:bb.width);
-    
+    bb = addInput('bb', bb, width: bb.width);
+    var zz = addOutput('zz', width: bb.width);
+
     zz <= ~bb;
   }
 }
@@ -63,12 +63,12 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'y': 1, 'z': 0, 'z2': 0}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'a': 4,
-          'y': 4,
-        }
-      );
+      var simResult = SimCompare.iverilogVector(
+          ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
+          signalToWidthMap: {
+            'a': 4,
+            'y': 4,
+          });
       expect(simResult, equals(true));
     });
   });

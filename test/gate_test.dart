@@ -1,12 +1,12 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// gate_test.dart
 /// Unit tests for basic gates
-/// 
+///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -60,7 +60,8 @@ class UnaryGateTestModule extends Module {
 
 class ShiftTestModule extends Module {
   int constantInt;
-  ShiftTestModule(Logic a, Logic b, {this.constantInt = 3}) : super(name: 'shifttestmodule') {
+  ShiftTestModule(Logic a, Logic b, {this.constantInt = 3})
+      : super(name: 'shifttestmodule') {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
@@ -68,9 +69,8 @@ class ShiftTestModule extends Module {
     var aLshiftB = addOutput('a_lshift_b', width: a.width);
     var aArshiftB = addOutput('a_arshift_b', width: a.width);
 
-  
-    var aRshiftConst  = addOutput('a_rshift_const', width: a.width);
-    var aLshiftConst  = addOutput('a_lshift_const', width: a.width);
+    var aRshiftConst = addOutput('a_rshift_const', width: a.width);
+    var aLshiftConst = addOutput('a_lshift_const', width: a.width);
     var aArshiftConst = addOutput('a_arshift_const', width: a.width);
 
     var c = Const(constantInt, width: b.width);
@@ -81,7 +81,6 @@ class ShiftTestModule extends Module {
     aLshiftConst <= a << c;
     aArshiftConst <= a >> c;
   }
-
 }
 
 class MuxWrapper extends Module {
@@ -96,7 +95,6 @@ class MuxWrapper extends Module {
 }
 
 void main() {
-
   tearDown(() {
     Simulator.reset();
   });
@@ -106,9 +104,11 @@ void main() {
       var a = Logic();
       var gtm = GateTestModule(a, Logic());
       var out = gtm.aBar;
-      await gtm.build(); 
-      a.put(1); expect(out.valueInt, equals(0));
-      a.put(0); expect(out.valueInt, equals(1));
+      await gtm.build();
+      a.put(1);
+      expect(out.valueInt, equals(0));
+      a.put(0);
+      expect(out.valueInt, equals(1));
     });
 
     test('Contention not gate', () async {
@@ -117,17 +117,25 @@ void main() {
       mod.y.put(0);
       expect(mod.y.bit, equals(LogicValue.x));
     });
-    
+
     test('And2Gate single bit', () async {
       var a = Logic();
       var b = Logic();
       var gtm = GateTestModule(a, b);
       var out = gtm.aAndB;
       await gtm.build();
-      a.put(0); b.put(0); expect(out.valueInt, equals(0));
-      a.put(0); b.put(1); expect(out.valueInt, equals(0));
-      a.put(1); b.put(0); expect(out.valueInt, equals(0));
-      a.put(1); b.put(1); expect(out.valueInt, equals(1));
+      a.put(0);
+      b.put(0);
+      expect(out.valueInt, equals(0));
+      a.put(0);
+      b.put(1);
+      expect(out.valueInt, equals(0));
+      a.put(1);
+      b.put(0);
+      expect(out.valueInt, equals(0));
+      a.put(1);
+      b.put(1);
+      expect(out.valueInt, equals(1));
     });
 
     test('Or2Gate single bit', () async {
@@ -136,10 +144,18 @@ void main() {
       var gtm = GateTestModule(a, b);
       var out = gtm.aOrB;
       await gtm.build();
-      a.put(0); b.put(0); expect(out.valueInt, equals(0));
-      a.put(0); b.put(1); expect(out.valueInt, equals(1));
-      a.put(1); b.put(0); expect(out.valueInt, equals(1));
-      a.put(1); b.put(1); expect(out.valueInt, equals(1));
+      a.put(0);
+      b.put(0);
+      expect(out.valueInt, equals(0));
+      a.put(0);
+      b.put(1);
+      expect(out.valueInt, equals(1));
+      a.put(1);
+      b.put(0);
+      expect(out.valueInt, equals(1));
+      a.put(1);
+      b.put(1);
+      expect(out.valueInt, equals(1));
     });
 
     test('Xor2Gate single bit', () async {
@@ -148,10 +164,18 @@ void main() {
       var gtm = GateTestModule(a, b);
       var out = gtm.aXorB;
       await gtm.build();
-      a.put(0); b.put(0); expect(out.valueInt, equals(0));
-      a.put(0); b.put(1); expect(out.valueInt, equals(1));
-      a.put(1); b.put(0); expect(out.valueInt, equals(1));
-      a.put(1); b.put(1); expect(out.valueInt, equals(0));
+      a.put(0);
+      b.put(0);
+      expect(out.valueInt, equals(0));
+      a.put(0);
+      b.put(1);
+      expect(out.valueInt, equals(1));
+      a.put(1);
+      b.put(0);
+      expect(out.valueInt, equals(1));
+      a.put(1);
+      b.put(1);
+      expect(out.valueInt, equals(0));
     });
   });
 
@@ -164,7 +188,8 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -178,11 +203,11 @@ void main() {
         Vector({'a': bin('0001')}, {'a_and': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'a': 4,
-        }
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {
+            'a': 4,
+          });
       expect(simResult, equals(true));
     });
 
@@ -196,11 +221,11 @@ void main() {
         Vector({'a': bin('0001')}, {'a_or': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'a': 4,
-        }
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {
+            'a': 4,
+          });
       expect(simResult, equals(true));
     });
 
@@ -214,11 +239,11 @@ void main() {
         Vector({'a': bin('0001')}, {'a_xor': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'a': 4,
-        }
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {
+            'a': 4,
+          });
       expect(simResult, equals(true));
     });
 
@@ -231,12 +256,13 @@ void main() {
         Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
     test('Mux bus', () async {
-      var mod = MuxWrapper(Logic(), Logic(width:8), Logic(width:8));
+      var mod = MuxWrapper(Logic(), Logic(width: 8), Logic(width: 8));
       await mod.build();
       var vectors = [
         Vector({'control': 1, 'd0': 12, 'd1': 15}, {'y': 15}),
@@ -244,13 +270,9 @@ void main() {
         Vector({'control': 0, 'd0': 3, 'd1': 6}, {'y': 3}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'd0':8,
-          'd1':8,
-          'y':8
-        }
-      );
+      var simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: {'d0': 8, 'd1': 8, 'y': 8});
       expect(simResult, equals(true));
     });
 
@@ -266,7 +288,7 @@ void main() {
     };
 
     test('lshift logic', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8));
+      var gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010'), 'b': 0}, {'a_lshift_b': bin('010')}),
@@ -275,14 +297,14 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
     test('rshift logic', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8));
+      var gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010'), 'b': 0}, {'a_rshift_b': bin('010')}),
@@ -291,14 +313,14 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
     test('arshift logic', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8));
+      var gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010'), 'b': 0}, {'a_arshift_b': bin('010')}),
@@ -309,48 +331,51 @@ void main() {
         Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
     test('lshift int', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8), constantInt: 1);
+      var gtm =
+          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
     test('rshift int', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8), constantInt: 1);
+      var gtm =
+          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
     test('arshift int', () async {
-      var gtm = ShiftTestModule(Logic(width:3), Logic(width:8), constantInt: 1);
+      var gtm =
+          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
       await gtm.build();
       var vectors = [
         Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: shiftVectorWidthMap
-      );
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: shiftVectorWidthMap);
       expect(simResult, equals(true));
     });
 
@@ -364,7 +389,8 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -378,7 +404,8 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_or_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -392,9 +419,9 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_xor_b': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
-  });  
-
+  });
 }
