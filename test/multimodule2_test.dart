@@ -1,12 +1,12 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// multimodule2_test.dart
 /// Unit tests for a hierarchy of multiple modules and multiple instantiation (another type)
-/// 
+///
 /// 2021 June 28
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -41,7 +41,6 @@ class TopModule extends Module {
   }
 }
 
-
 void main() {
   tearDown(() {
     Simulator.reset();
@@ -61,7 +60,8 @@ void main() {
         Vector({'sig': 1}, {'sig_sync': 1}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      var simResult = SimCompare.iverilogVector(
+          ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

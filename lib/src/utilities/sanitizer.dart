@@ -1,22 +1,21 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// sanitizer.dart
 /// Sanitizes strings so they don't collide with generated code in other languages (e.g. SystemVerilog)
-/// 
+///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 /***/
 
 /// A utility for ensuring generated code is "sanitary".
-/// 
+///
 /// "Sanitary" means it doesn't have any characters illegal in generated languages,
 /// doesn't collide with keywords in generated languages, and has a valid variable
 /// name in generated languages.
 class Sanitizer {
-
   /// Returns true iff [name] needs no renaming to be "sanitary".
   static bool isSanitary(String name) {
     return name == sanitizeSV(name);
@@ -28,14 +27,14 @@ class Sanitizer {
 
     // get rid of any weird characters, replace with `_`
     newName = newName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
-    
+
     // can't start with a number
-    if(newName.startsWith(RegExp(r'[0-9]'))) {
+    if (newName.startsWith(RegExp(r'[0-9]'))) {
       newName = 's' + newName;
     }
 
     // add `_` to the end if the name is a SystemVerilog keyword
-    while(_reservedSVKeywords.contains(newName)) {
+    while (_reservedSVKeywords.contains(newName)) {
       newName += '_';
     }
 

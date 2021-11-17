@@ -1,18 +1,17 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
-/// 
+///
 /// simulator_test.dart
 /// Unit tests for the ROHD simulator
-/// 
+///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
-/// 
+///
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-
   tearDown(() {
     Simulator.reset();
   });
@@ -30,10 +29,9 @@ void main() {
     void register100inFuture() {
       // print('@${Simulator.time} registering again!');
       Simulator.registerAction(
-        Simulator.time+100,
-        () => register100inFuture()
-      );
+          Simulator.time + 100, () => register100inFuture());
     }
+
     register100inFuture();
     await Simulator.run();
     expect(Simulator.time, lessThanOrEqualTo(timeLimit));
