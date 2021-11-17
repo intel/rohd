@@ -68,10 +68,12 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator|(LogicValue other) {
-  return (this == LogicValue.one || other == LogicValue.one) ? LogicValue.one :
-         (isValid &amp;&amp; other.isValid)                          ? LogicValue.zero :
-         LogicValue.x;
+  <pre class="language-dart"><code class="language-dart">LogicValue operator |(LogicValue other) {
+  return (this == LogicValue.one || other == LogicValue.one)
+      ? LogicValue.one
+      : (isValid &amp;&amp; other.isValid)
+          ? LogicValue.zero
+          : LogicValue.x;
 }</code></pre>
 </section>
 

@@ -75,7 +75,10 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Conditional&gt; getConditionals() {
-  return iffs.map((iff) =&gt; iff.then).expand((conditional) =&gt; conditional).toList();
+  return iffs
+      .map((iff) =&gt; iff.then)
+      .expand((conditional) =&gt; conditional)
+      .toList();
 }</code></pre>
 </section>
 

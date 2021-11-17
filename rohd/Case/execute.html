@@ -78,7 +78,7 @@ List&lt;Logic&gt; execute() {
   var drivenLogics = &lt;Logic&gt;[];
 
   &#47;&#47;TODO: what about for CaseZ where epxressions can have Z?  BUG?
-  if(!expression.value.isValid) {
+  if (!expression.value.isValid) {
     &#47;&#47; if expression has X or Z, then propogate X&#39;s!
     getReceivers().forEach((receiver) {
       receiverOutput(receiver).put(LogicValue.x);
@@ -88,31 +88,33 @@ List&lt;Logic&gt; execute() {
 
   var foundMatch = false;
 
-  for(var item in items) {
+  for (var item in items) {
     &#47;&#47; match on the first matchinig item
-    if(isMatch(item.value.value)) {
-      for(var conditional in item.then) {
+    if (isMatch(item.value.value)) {
+      for (var conditional in item.then) {
         drivenLogics.addAll(conditional.execute());
       }
-      if(foundMatch &amp;&amp; conditionalType == ConditionalType.unique) {
+      if (foundMatch &amp;&amp; conditionalType == ConditionalType.unique) {
         &#47;&#47;TODO: replace this with a logger message
         throw Exception(&#39;Unique case statement had multiple matching cases&#39;);
       }
 
       foundMatch = true;
 
-      if(foundMatch &amp;&amp; conditionalType != ConditionalType.unique) {
+      if (foundMatch &amp;&amp; conditionalType != ConditionalType.unique) {
         break;
       }
     }
   }
 
   &#47;&#47; no items matched
-  if(!foundMatch &amp;&amp; defaultItem != null) {
-    for(var conditional in defaultItem!) {
+  if (!foundMatch &amp;&amp; defaultItem != null) {
+    for (var conditional in defaultItem!) {
       drivenLogics.addAll(conditional.execute());
     }
-  } else if(!foundMatch &amp;&amp; (conditionalType == ConditionalType.unique || conditionalType == ConditionalType.priority)) {
+  } else if (!foundMatch &amp;&amp;
+      (conditionalType == ConditionalType.unique ||
+          conditionalType == ConditionalType.priority)) {
     throw Exception(&#39;$conditionalType case statement had no matching case.&#39;);
   }
 

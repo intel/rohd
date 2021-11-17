@@ -69,7 +69,9 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get posedge =&gt; changed.where((args) =&gt;
-  width==1 &amp;&amp; LogicValue.isPosedge(args.previousValue[0], args.newValue[0], ignoreInvalid: true));</code></pre>
+    width == 1 &amp;&amp;
+    LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
+        ignoreInvalid: true));</code></pre>
 </section>
 
 </section>

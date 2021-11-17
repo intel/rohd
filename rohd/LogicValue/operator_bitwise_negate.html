@@ -67,10 +67,9 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator~() {
-  if(!isValid) return LogicValue.x;
-  return this == LogicValue.zero ?
-    LogicValue.one : LogicValue.zero;
+  <pre class="language-dart"><code class="language-dart">LogicValue operator ~() {
+  if (!isValid) return LogicValue.x;
+  return this == LogicValue.zero ? LogicValue.one : LogicValue.zero;
 }</code></pre>
 </section>
 

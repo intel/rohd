@@ -70,7 +70,7 @@
     
 <section class="desc markdown">
   <p>Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation.</p>
-<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name, respectively of 
+<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name, respectively of
 the module that would have been instantiated had it not been overridden.  The <a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a>s
 <code>inputs</code> and <code>outputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
 the signals that are passed into those ports in the generated SystemVerilog.</p>
@@ -81,9 +81,11 @@ the signals that are passed into those ports in the generated SystemVerilog.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String instantiationVerilog(String instanceType, String instanceName, Map&lt;String,String&gt; inputs, Map&lt;String,String&gt; outputs) {
-  if(inputs.isNotEmpty || outputs.length != 1) {
-    throw Exception(&#39;SimpleClockGenerator has exactly one output and no inputs.&#39;);
+String instantiationVerilog(String instanceType, String instanceName,
+    Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) {
+  if (inputs.isNotEmpty || outputs.length != 1) {
+    throw Exception(
+        &#39;SimpleClockGenerator has exactly one output and no inputs.&#39;);
   }
   var clk = outputs[&#39;clk&#39;]!;
   return &#39;&#39;&#39;
@@ -91,7 +93,7 @@ String instantiationVerilog(String instanceType, String instanceName, Map&lt;Str
 initial begin
 $clk = 0;
 forever begin
-  #${clockPeriod~&#47;2};
+  #${clockPeriod ~&#47; 2};
   $clk = ~$clk;
 end
 end

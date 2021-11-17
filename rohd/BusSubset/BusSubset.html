@@ -63,17 +63,25 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex, {String name = &#39;bussubset&#39;}) : super(name: name) {
-  if(startIndex &lt; 0 || endIndex &lt; 0) throw Exception(&#39;Cannot access negative indices&#39;);
-  if(endIndex &gt; bus.width-1 || startIndex &gt; bus.width-1) throw Exception(&#39;Index out of bounds, must be less than width-1&#39;);
+  <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
+    {String name = &#39;bussubset&#39;})
+    : super(name: name) {
+  if (startIndex &lt; 0 || endIndex &lt; 0) {
+    throw Exception(&#39;Cannot access negative indices&#39;);
+  }
+  if (endIndex &gt; bus.width - 1 || startIndex &gt; bus.width - 1) {
+    throw Exception(&#39;Index out of bounds, must be less than width-1&#39;);
+  }
 
-  _original = Module.unpreferredName(&#39;original_&#39;+bus.name);
-  _subset = Module.unpreferredName(&#39;subset_${endIndex}_${startIndex}_&#39;+bus.name);
+  _original = Module.unpreferredName(&#39;original_&#39; + bus.name);
+  _subset =
+      Module.unpreferredName(&#39;subset_${endIndex}_${startIndex}_&#39; + bus.name);
 
   addInput(_original, bus, width: bus.width);
   var newWidth = (endIndex - startIndex).abs() + 1;
   addOutput(_subset, width: newWidth);
-  subset.makeUnassignable(); &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
+  subset
+      .makeUnassignable(); &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
 
   _setup();
 }</code></pre>

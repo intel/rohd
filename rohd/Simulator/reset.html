@@ -72,15 +72,17 @@
   _currentTimestamp = 0;
   _simulationEndRequested = false;
   _maxSimTime = -1;
-  if(!_preTickController.isClosed) await _preTickController.close();
-  if(!_startTickController.isClosed) await _startTickController.close();
-  if(!_clkStableController.isClosed) await _clkStableController.close();
-  if(!_postTickController.isClosed) await _postTickController.close();
+  if (!_preTickController.isClosed) await _preTickController.close();
+  if (!_startTickController.isClosed) await _startTickController.close();
+  if (!_clkStableController.isClosed) await _clkStableController.close();
+  if (!_postTickController.isClosed) await _postTickController.close();
   _preTickController = StreamController.broadcast(sync: true);
   _startTickController = StreamController.broadcast(sync: true);
   _clkStableController = StreamController.broadcast(sync: true);
   _postTickController = StreamController.broadcast(sync: true);
-  if(!_simulationEndedCompleter.isCompleted) _simulationEndedCompleter.complete();
+  if (!_simulationEndedCompleter.isCompleted) {
+    _simulationEndedCompleter.complete();
+  }
   _simulationEndedCompleter = Completer();
   _pendingTimestamps.clear();
   _phase = SimulatorPhase.outOfTick;

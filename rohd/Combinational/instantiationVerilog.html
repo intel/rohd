@@ -70,7 +70,7 @@
     
 <section class="desc markdown">
   <p>Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation.</p>
-<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name, respectively of 
+<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name, respectively of
 the module that would have been instantiated had it not been overridden.  The <a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a>s
 <code>inputs</code> and <code>outputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
 the signals that are passed into those ports in the generated SystemVerilog.</p>
@@ -81,7 +81,8 @@ the signals that are passed into those ports in the generated SystemVerilog.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String instantiationVerilog(String instanceType, String instanceName, Map&lt;String,String&gt; inputs, Map&lt;String,String&gt; outputs) {
+String instantiationVerilog(String instanceType, String instanceName,
+    Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) {
   var verilog = &#39;&#39;;
   verilog += &#39;&#47;&#47;  $instanceName\n&#39;;
   verilog += &#39;${alwaysVerilogStatement(inputs)} begin\n&#39;;

@@ -78,7 +78,10 @@ print(lv); // This prints `3b'1x0`
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String toString() =&gt;
-  &quot;$length&#39;b&quot; + List&lt;String&gt;.generate(length, (index) =&gt; this[index].toString()).reversed.join();</code></pre>
+    &quot;$length&#39;b&quot; +
+    List&lt;String&gt;.generate(length, (index) =&gt; this[index].toString())
+        .reversed
+        .join();</code></pre>
 </section>
 
 

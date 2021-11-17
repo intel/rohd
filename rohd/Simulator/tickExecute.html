@@ -74,7 +74,8 @@
   _preTickController.add(null); &#47;&#47; useful for flop sampling
 
   _phase = SimulatorPhase.mainTick;
-  _startTickController.add(null); &#47;&#47; useful for things that need to trigger every tick without other input
+  _startTickController.add(
+      null); &#47;&#47; useful for things that need to trigger every tick without other input
   _executeInjectedActions();
   toExecute();
   _executeInjectedActions();
@@ -84,7 +85,8 @@
   _executeInjectedActions();
 
   _phase = SimulatorPhase.outOfTick;
-  _postTickController.add(null); &#47;&#47; useful for determination of signal settling
+  _postTickController
+      .add(null); &#47;&#47; useful for determination of signal settling
 }</code></pre>
 </section>
 

@@ -81,27 +81,34 @@ that should be used for any assignments within this <a href="../../rohd/Conditio
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap, Map&lt;String, String&gt; outputsNameMap, String assignOperator) {
+String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
+    Map&lt;String, String&gt; outputsNameMap, String assignOperator) {
   var padding = Conditional.calcPadding(indent);
   var expressionName = inputsNameMap[driverInput(expression).name];
   var caseHeader = caseType;
-  if(conditionalType == ConditionalType.priority) {
+  if (conditionalType == ConditionalType.priority) {
     caseHeader = &#39;priority $caseType&#39;;
-  } else if(conditionalType == ConditionalType.unique) {
+  } else if (conditionalType == ConditionalType.unique) {
     caseHeader = &#39;unique $caseType&#39;;
   }
   var verilog = &#39;$padding$caseHeader ($expressionName) \n&#39;;
-  var subPadding = Conditional.calcPadding(indent+2);
-  for(var item in items) {
+  var subPadding = Conditional.calcPadding(indent + 2);
+  for (var item in items) {
     var conditionName = inputsNameMap[driverInput(item.value).name];
-    var caseContents = item.then.map((conditional) =&gt; conditional.verilogContents(indent+4, inputsNameMap, outputsNameMap, assignOperator)).join(&#39;\n&#39;);
+    var caseContents = item.then
+        .map((conditional) =&gt; conditional.verilogContents(
+            indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+        .join(&#39;\n&#39;);
     verilog += &#39;&#39;&#39;$subPadding$conditionName : begin
 $caseContents
 ${subPadding}end
 &#39;&#39;&#39;;
   }
-  if(defaultItem != null) {
-    var defaultCaseContents = defaultItem!.map((conditional) =&gt; conditional.verilogContents(indent+4, inputsNameMap, outputsNameMap, assignOperator)).join(&#39;\n&#39;);
+  if (defaultItem != null) {
+    var defaultCaseContents = defaultItem!
+        .map((conditional) =&gt; conditional.verilogContents(
+            indent + 4, inputsNameMap, outputsNameMap, assignOperator))
+        .join(&#39;\n&#39;);
     verilog += &#39;&#39;&#39;${subPadding}default : begin
 $defaultCaseContents
 ${subPadding}end

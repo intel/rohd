@@ -64,7 +64,8 @@
   <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {String name = &#39;swizzle&#39;}) : super(name: name) {
   var idx = 0;
   var outputWidth = 0;
-  for(var signal in signals.reversed) {   &#47;&#47;reverse so bit 0 is the last thing in the input list
+  for (var signal in signals.reversed) {
+    &#47;&#47;reverse so bit 0 is the last thing in the input list
     var inputName = Module.unpreferredName(&#39;in${idx++}&#39;);
     addInput(inputName, signal, width: signal.width);
     _swizzleInputs.add(input(inputName));
@@ -72,11 +73,11 @@
   }
   addOutput(_out, width: outputWidth);
 
-  for(var swizzleInput in _swizzleInputs) {
+  for (var swizzleInput in _swizzleInputs) {
     &#47;&#47; var startIdx = _swizzleInputs.getRange(0, _swizzleInputs.indexOf(swizzleInput)).map((e) =&gt; e.width).reduce((a, b) =&gt; a+b);
     var startIdx = 0;
-    for(var xsi in _swizzleInputs) {
-      if(xsi == swizzleInput) break;
+    for (var xsi in _swizzleInputs) {
+      if (xsi == swizzleInput) break;
       startIdx += xsi.width;
     }
     _execute(startIdx, swizzleInput, null); &#47;&#47; for initial values

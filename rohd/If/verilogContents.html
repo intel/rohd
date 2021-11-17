@@ -81,15 +81,22 @@ that should be used for any assignments within this <a href="../../rohd/Conditio
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String verilogContents(int indent, Map&lt;String,String&gt; inputsNameMap, Map&lt;String,String&gt; outputsNameMap, String assignOperator) {
+String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
+    Map&lt;String, String&gt; outputsNameMap, String assignOperator) {
   var padding = Conditional.calcPadding(indent);
   var conditionName = inputsNameMap[driverInput(condition).name];
-  var ifContents = then.map((conditional) =&gt; conditional.verilogContents(indent+2, inputsNameMap, outputsNameMap, assignOperator)).join(&#39;\n&#39;);
-  var elseContents = orElse.map((conditional) =&gt; conditional.verilogContents(indent+2, inputsNameMap, outputsNameMap, assignOperator)).join(&#39;\n&#39;);
+  var ifContents = then
+      .map((conditional) =&gt; conditional.verilogContents(
+          indent + 2, inputsNameMap, outputsNameMap, assignOperator))
+      .join(&#39;\n&#39;);
+  var elseContents = orElse
+      .map((conditional) =&gt; conditional.verilogContents(
+          indent + 2, inputsNameMap, outputsNameMap, assignOperator))
+      .join(&#39;\n&#39;);
   var verilog = &#39;&#39;&#39;${padding}if($conditionName) begin
 $ifContents
 ${padding}end &#39;&#39;&#39;;
-  if(orElse.isNotEmpty) {
+  if (orElse.isNotEmpty) {
     verilog += &#39;&#39;&#39;else begin
 $elseContents
 ${padding}end &#39;&#39;&#39;;

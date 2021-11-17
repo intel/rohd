@@ -68,9 +68,10 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator[](int index) {
-  if(index &gt;= length || index &lt; 0) {
-    throw IndexError(index, this, &#39;LogicValuesIndexOutOfRange&#39;, &#39;Index out of range: $index.&#39;, length);
+  <pre class="language-dart"><code class="language-dart">LogicValue operator [](int index) {
+  if (index &gt;= length || index &lt; 0) {
+    throw IndexError(index, this, &#39;LogicValuesIndexOutOfRange&#39;,
+        &#39;Index out of range: $index.&#39;, length);
   }
   return _getIndex(index);
 }</code></pre>

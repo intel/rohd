@@ -65,14 +65,13 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">SimpleClockGenerator(this.clockPeriod, {String name=&#39;clkgen&#39;}) : super(name: name) {
+  <pre class="language-dart"><code class="language-dart">SimpleClockGenerator(this.clockPeriod, {String name = &#39;clkgen&#39;})
+    : super(name: name) {
   addOutput(&#39;clk&#39;);
 
   clk.glitch.listen((args) {
-    Simulator.registerAction(Simulator.time + clockPeriod~&#47;2, () {
-      clk.put(
-        ~clk.value
-      );
+    Simulator.registerAction(Simulator.time + clockPeriod ~&#47; 2, () {
+      clk.put(~clk.value);
     });
   });
   clk.put(0);

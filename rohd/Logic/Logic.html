@@ -65,10 +65,10 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic({String? name, this.width=1}) :
-    name = name ?? &#39;s${_signalIdx++}&#39;,
-    assert(width &gt;= 0),
-    _currentValue = LogicValues.filled(width, LogicValue.z);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic({String? name, this.width = 1})
+    : name = name ?? &#39;s${_signalIdx++}&#39;,
+      assert(width &gt;= 0),
+      _currentValue = LogicValues.filled(width, LogicValue.z);</code></pre>
 </section>
 
 

@@ -83,9 +83,13 @@ mainly for debugging or logging.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String toString() {
-  return this == LogicValue.x ? &#39;x&#39; :
-         this == LogicValue.z ? &#39;z&#39; :
-         this == LogicValue.one ? &#39;1&#39; : &#39;0&#39;;
+  return this == LogicValue.x
+      ? &#39;x&#39;
+      : this == LogicValue.z
+          ? &#39;z&#39;
+          : this == LogicValue.one
+              ? &#39;1&#39;
+              : &#39;0&#39;;
 }</code></pre>
 </section>
 

@@ -77,9 +77,9 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
-Logic addInput(String name, Logic x, {int width=1}) {
+Logic addInput(String name, Logic x, {int width = 1}) {
   _checkForSafePortName(name);
-  if(x.width != width) throw Exception(&#39;Port width mismatch&#39;);
+  if (x.width != width) throw Exception(&#39;Port width mismatch&#39;);
   _inputs[name] = Logic(name: name, width: width)..gets(x);
 
   &#47;&#47; ignore: invalid_use_of_protected_member

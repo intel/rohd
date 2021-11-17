@@ -75,11 +75,11 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getReceivers() {
   var receivers = &lt;Logic&gt;[];
-  for(var iff in iffs) {
-    receivers.addAll(
-      iff.then.map((conditional) =&gt; conditional.getReceivers())
-        .expand((receiver) =&gt; receiver).toList()
-    );
+  for (var iff in iffs) {
+    receivers.addAll(iff.then
+        .map((conditional) =&gt; conditional.getReceivers())
+        .expand((receiver) =&gt; receiver)
+        .toList());
   }
   return receivers;
 }</code></pre>

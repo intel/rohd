@@ -68,11 +68,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String hierarchyString([int indent=0]) {
+  <pre class="language-dart"><code class="language-dart">String hierarchyString([int indent = 0]) {
   var padding = List.filled(indent, &#39;  &#39;).join();
   var hier = padding + &#39;&gt; &#39; + toString();
   for (var module in _modules) {
-    hier += &#39;\n&#39; + module.hierarchyString(indent+1);
+    hier += &#39;\n&#39; + module.hierarchyString(indent + 1);
   }
   return hier;
 }</code></pre>

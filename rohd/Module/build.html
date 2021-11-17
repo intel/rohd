@@ -85,28 +85,27 @@ starting up interactions with independent processes (e.g. cosimulation).</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@mustCallSuper
 Future&lt;void&gt; build() async {
-  if(hasBuilt) throw Exception(&#39;Module already built.&#39;);
+  if (hasBuilt) throw Exception(&#39;Module already built.&#39;);
 
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module
-  for(var output in _outputs.values) {
+  for (var output in _outputs.values) {
     _traceOutputForModuleContents(output, dontAddSignal: true);
   }
   &#47;&#47; 2) trace from inputs of all modules to inputs of this module
-  for(var input in _inputs.values) {
+  for (var input in _inputs.values) {
     _traceInputForModuleContents(input, dontAddSignal: true);
   }
 
-  for(var module in _modules) {
+  for (var module in _modules) {
     await module.build();
   }
 
   &#47;&#47; set unique module instance names for submodules
   var uniquifier = Uniquifier();
-  for(var module in _modules) {
+  for (var module in _modules) {
     module._uniqueInstanceName = uniquifier.getUniqueName(
-      initialName: Sanitizer.sanitizeSV(module.name)
-    );
+        initialName: Sanitizer.sanitizeSV(module.name));
   }
 
   _hasBuilt = true;

@@ -69,14 +69,13 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">List&lt;Logic&gt; getPorts([Set&lt;TagType&gt;? tags]) {
-  if(tags == null) {
+  if (tags == null) {
     return List.from(_ports.values);
   } else {
     var matchingPorts = &lt;Logic&gt;{};
-    for(var tag in tags) {
-      matchingPorts.addAll(
-        _ports.values.where((port) =&gt; _portToTagMap[port.name]?.contains(tag) ?? false)
-      );
+    for (var tag in tags) {
+      matchingPorts.addAll(_ports.values
+          .where((port) =&gt; _portToTagMap[port.name]?.contains(tag) ?? false));
     }
     return matchingPorts.toList();
   }

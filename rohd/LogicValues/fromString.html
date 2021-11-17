@@ -64,7 +64,7 @@
   <p>Converts a binary <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a> representation of a <a href="../../rohd/LogicValues-class.html">LogicValues</a> into a <a href="../../rohd/LogicValues-class.html">LogicValues</a>.</p>
 <p>The <code>stringRepresentation</code> should only contain bit values (e.g. no <code>0b</code> at the start).
 The order of the created <a href="../../rohd/LogicValues-class.html">LogicValues</a> will be such that the <code>i</code>th character in <code>stringRepresentation</code>
-corresponds to the <code>length - i - 1</code>th bit.  That is, the last character of <code>stringRepresentation</code> will be 
+corresponds to the <code>length - i - 1</code>th bit.  That is, the last character of <code>stringRepresentation</code> will be
 the 0th bit of the returned <a href="../../rohd/LogicValues-class.html">LogicValues</a>.</p>
 <pre class="language-dart"><code class="language-dart">var stringRepresentation = '1x0';
 var lv = LogicValues.fromString(stringRepresentation);
@@ -77,10 +77,10 @@ print(lv); // This prints `3b'1x0`
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValues fromString(String stringRepresentation) {
-  var valueString   = _valueString(stringRepresentation);
+  var valueString = _valueString(stringRepresentation);
   var invalidString = _invalidString(stringRepresentation);
   var length = stringRepresentation.length;
-  if(length &lt;= _INT_BITS) {
+  if (length &lt;= _INT_BITS) {
     var value = int.parse(valueString, radix: 2);
     var invalid = int.parse(invalidString, radix: 2);
     &#47;&#47;TODO: check if we should use filled here
@@ -88,16 +88,16 @@ print(lv); // This prints `3b'1x0`
   } else {
     var value = BigInt.parse(valueString, radix: 2);
     var invalid = BigInt.parse(invalidString, radix: 2);
-    if(invalid.sign == 0) {
-      if(value.sign == 0) {
+    if (invalid.sign == 0) {
+      if (value.sign == 0) {
         return LogicValues.filled(length, LogicValue.zero);
-      } else if(_bigIntIsFilled(value, length)) {
+      } else if (_bigIntIsFilled(value, length)) {
         return LogicValues.filled(length, LogicValue.one);
       }
-    } else if(_bigIntIsFilled(invalid, length)) {
-      if(value.sign == 0) {
+    } else if (_bigIntIsFilled(invalid, length)) {
+      if (value.sign == 0) {
         return LogicValues.filled(length, LogicValue.x);
-      } else if(_bigIntIsFilled(value, length)) {
+      } else if (_bigIntIsFilled(value, length)) {
         return LogicValues.filled(length, LogicValue.z);
       }
     }

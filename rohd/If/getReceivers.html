@@ -75,8 +75,12 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getReceivers() {
   var allReceivers = &lt;Logic&gt;[];
-  for (var element in then) {allReceivers.addAll(element.getReceivers());}
-  for (var element in orElse) {allReceivers.addAll(element.getReceivers());}
+  for (var element in then) {
+    allReceivers.addAll(element.getReceivers());
+  }
+  for (var element in orElse) {
+    allReceivers.addAll(element.getReceivers());
+  }
   return allReceivers;
 }</code></pre>
 </section>

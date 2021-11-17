@@ -68,9 +68,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator^(LogicValue other) {
-  if(!isValid || !other.isValid) return LogicValue.x;
-  return ((this == LogicValue.one) ^ (other == LogicValue.one)) ? LogicValue.one : LogicValue.zero;
+  <pre class="language-dart"><code class="language-dart">LogicValue operator ^(LogicValue other) {
+  if (!isValid || !other.isValid) return LogicValue.x;
+  return ((this == LogicValue.one) ^ (other == LogicValue.one))
+      ? LogicValue.one
+      : LogicValue.zero;
 }</code></pre>
 </section>
 

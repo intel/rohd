@@ -69,7 +69,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed {
-  if(!_changedBeingWatched) {
+  if (!_changedBeingWatched) {
     &#47;&#47; only do these simulator subscriptions if someone has asked for them! saves performance!
     _changedBeingWatched = true;
 
@@ -78,13 +78,8 @@
       _preTickValue = value;
     });
     Simulator.postTick.listen((event) {
-      if(value != _preTickValue &amp;&amp; _preTickValue != null) {
-        _changedController.add(
-          LogicValueChanged(
-            value,
-            _preTickValue!
-          )
-        );
+      if (value != _preTickValue &amp;&amp; _preTickValue != null) {
+        _changedController.add(LogicValueChanged(value, _preTickValue!));
       }
     });
   }

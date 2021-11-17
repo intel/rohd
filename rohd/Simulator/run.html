@@ -69,13 +69,12 @@ it finishes or is stopped.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; run() async {
-  while(hasStepsRemaining() &amp;&amp;
-        !_simulationEndRequested &amp;&amp;
-        (_maxSimTime &lt; 0 || _currentTimestamp &lt; _maxSimTime)
-      ) {
+  while (hasStepsRemaining() &amp;&amp;
+      !_simulationEndRequested &amp;&amp;
+      (_maxSimTime &lt; 0 || _currentTimestamp &lt; _maxSimTime)) {
     await tick(); &#47;&#47; make this async so that await-ing events works
   }
-  if(_currentTimestamp &gt;= _maxSimTime) {
+  if (_currentTimestamp &gt;= _maxSimTime) {
     logger.warning(&#39;Simulation ended due to maximum simulation time.&#39;);
   }
   _simulationEndedCompleter.complete();

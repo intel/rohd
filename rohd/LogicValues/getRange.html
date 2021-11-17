@@ -70,9 +70,9 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValues getRange(int start, int end) {
-  if(end &lt; start) throw Exception(&#39;End cannot be greater than start.&#39;);
-  if(end &gt; length) throw Exception(&#39;End must be less than length.&#39;);
-  if(start &lt; 0) throw Exception(&#39;Start must be greater than or equal to 0.&#39;);
+  if (end &lt; start) throw Exception(&#39;End cannot be greater than start.&#39;);
+  if (end &gt; length) throw Exception(&#39;End must be less than length.&#39;);
+  if (start &lt; 0) throw Exception(&#39;Start must be greater than or equal to 0.&#39;);
   return _getRange(start, end);
 }</code></pre>
 </section>

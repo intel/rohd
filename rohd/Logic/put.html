@@ -72,47 +72,50 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill=false}) {
+  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) {
   &#47;&#47;TODO: prevent re-assignment for _unassignable even via put&#47;inject
   &#47;&#47; this opens the opportunity to automate stuff like &amp;1 if necessary
   LogicValues newValue;
-  if(val is int) {
-    if(fill) {
+  if (val is int) {
+    if (fill) {
       newValue = LogicValues.filled(
-        width,
-        val == 0 ? LogicValue.zero:
-          val == 1 ? LogicValue.one :
-          throw Exception(&#39;Only can fill 0 or 1&#39;)
-      );
+          width,
+          val == 0
+              ? LogicValue.zero
+              : val == 1
+                  ? LogicValue.one
+                  : throw Exception(&#39;Only can fill 0 or 1&#39;));
     } else {
       newValue = LogicValues.fromInt(val, width);
     }
-  } else if(val is BigInt) {
-    if(fill) {
+  } else if (val is BigInt) {
+    if (fill) {
       newValue = LogicValues.filled(
-        width,
-        val == BigInt.zero ? LogicValue.zero:
-          val == BigInt.one  ? LogicValue.one :
-          throw Exception(&#39;Only can fill 0 or 1&#39;)
-      );
+          width,
+          val == BigInt.zero
+              ? LogicValue.zero
+              : val == BigInt.one
+                  ? LogicValue.one
+                  : throw Exception(&#39;Only can fill 0 or 1&#39;));
     } else {
       newValue = LogicValues.fromBigInt(val, width);
     }
-  } else if(val is bool) {
+  } else if (val is bool) {
     newValue = LogicValues.fromInt(val ? 1 : 0, width);
-  } else if(val is LogicValues) {
+  } else if (val is LogicValues) {
     &#47;&#47;TODO: this looks wrong, should act like List&lt;LogicValue&gt;?
     newValue = val;
-  } else if(val is List&lt;LogicValue&gt;) {
-    if(val.length == 1 &amp;&amp; (val[0]==LogicValue.x || val[0] == LogicValue.z || fill)) {
+  } else if (val is List&lt;LogicValue&gt;) {
+    if (val.length == 1 &amp;&amp;
+        (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
       newValue = LogicValues.filled(width, val[0]);
-    } else if(fill) {
+    } else if (fill) {
       throw Exception(&#39;Failed to fill.&#39;);
     } else {
       newValue = LogicValues.from(val);
     }
-  } else if(val is LogicValue) {
-    if(val == LogicValue.x || val == LogicValue.z || fill) {
+  } else if (val is LogicValue) {
+    if (val == LogicValue.x || val == LogicValue.z || fill) {
       newValue = LogicValues.filled(width, val);
     } else {
       var logicVals = List&lt;LogicValue&gt;.filled(width, LogicValue.zero);
@@ -123,9 +126,11 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     throw Exception(&#39;Unrecognized value to deposit on this signal.&#39;);
   }
 
-  if(newValue.length != width) throw Exception(&#39;Updated value width mismatch&#39;);
+  if (newValue.length != width) {
+    throw Exception(&#39;Updated value width mismatch&#39;);
+  }
 
-  if(_isPutting) {
+  if (_isPutting) {
     &#47;&#47; if this is the result of a cycle, then contention!
     newValue = LogicValues.filled(width, LogicValue.x);
   }
@@ -134,12 +139,9 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
   _currentValue = newValue;
 
   &#47;&#47; sends out a glitch if the value deposited has changed
-  if(_currentValue != _prevValue) {
+  if (_currentValue != _prevValue) {
     _isPutting = true;
-    _glitchController.add(LogicValueChanged(
-      _currentValue,
-      _prevValue
-    ));
+    _glitchController.add(LogicValueChanged(_currentValue, _prevValue));
     _isPutting = false;
   }
 }</code></pre>

@@ -68,13 +68,10 @@ If <code>fill</code> is set to <code>true</code>, the value is extended across <
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill=false}) :
-  super(
-    name: &#39;const_$val&#39;,
-    width: val is LogicValues ?
-      val.length :
-      width ?? 1
-) {
+  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false})
+    : super(
+          name: &#39;const_$val&#39;,
+          width: val is LogicValues ? val.length : width ?? 1) {
   put(val, fill: fill);
   _unassignable = true;
 }</code></pre>

@@ -75,8 +75,12 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getDrivers() {
   var allDrivers = &lt;Logic&gt;[condition];
-  for (var element in then) {allDrivers.addAll(element.getDrivers());}
-  for (var element in orElse) {allDrivers.addAll(element.getDrivers());}
+  for (var element in then) {
+    allDrivers.addAll(element.getDrivers());
+  }
+  for (var element in orElse) {
+    allDrivers.addAll(element.getDrivers());
+  }
   return allDrivers;
 }</code></pre>
 </section>

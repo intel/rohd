@@ -73,9 +73,10 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override bool operator ==(Object other) {
-  if(other is! LogicValues) return false;
-  if(other.length != length) return false;
+  <pre class="language-dart"><code class="language-dart">@override
+bool operator ==(Object other) {
+  if (other is! LogicValues) return false;
+  if (other.length != length) return false;
   return _equals(other);
 }</code></pre>
 </section>

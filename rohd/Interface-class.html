@@ -55,11 +55,11 @@
 <p>Interfaces make it easier to define port connections of a <a href="../rohd/Module-class.html">Module</a>
 in a reusable way.  The <code>TagType</code> allows grouping of port signals
 of the module when connecting at a <a href="../rohd/Module-class.html">Module</a> level.</p>
-<p>When connecting an <a href="../rohd/Interface-class.html">Interface</a> to a <a href="../rohd/Module-class.html">Module</a>, you should always create 
-a new instance of the <a href="../rohd/Interface-class.html">Interface</a> so you don't modify the one being 
-passed in through the constructor.  Modifying the same <a href="../rohd/Interface-class.html">Interface</a> as 
-was passed would have negative consequences if multiple <a href="../rohd/Module-class.html">Module</a>s 
-were consuming the same <a href="../rohd/Interface-class.html">Interface</a>, and also breaks the rules for 
+<p>When connecting an <a href="../rohd/Interface-class.html">Interface</a> to a <a href="../rohd/Module-class.html">Module</a>, you should always create
+a new instance of the <a href="../rohd/Interface-class.html">Interface</a> so you don't modify the one being
+passed in through the constructor.  Modifying the same <a href="../rohd/Interface-class.html">Interface</a> as
+was passed would have negative consequences if multiple <a href="../rohd/Module-class.html">Module</a>s
+were consuming the same <a href="../rohd/Interface-class.html">Interface</a>, and also breaks the rules for
 <a href="../rohd/Module-class.html">Module</a> input and output connectivity.</p>
 </section>
 

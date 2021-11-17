@@ -75,12 +75,12 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getDrivers() {
   var drivers = &lt;Logic&gt;[];
-  for(var iff in iffs) {
+  for (var iff in iffs) {
     drivers.add(iff.condition);
-    drivers.addAll(
-      iff.then.map((conditional) =&gt; conditional.getDrivers())
-        .expand((driver) =&gt; driver).toList()
-    );
+    drivers.addAll(iff.then
+        .map((conditional) =&gt; conditional.getDrivers())
+        .expand((driver) =&gt; driver)
+        .toList());
   }
   return drivers;
 }</code></pre>

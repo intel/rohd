@@ -78,8 +78,8 @@
   <pre class="language-dart"><code class="language-dart">@protected
 void setPort(Logic port, {List&lt;TagType&gt;? tags, String? portName}) {
   _ports[portName ?? port.name] = port;
-  if(tags != null) {
-    if(!_portToTagMap.containsKey(port.name)) {
+  if (tags != null) {
+    if (!_portToTagMap.containsKey(port.name)) {
       _portToTagMap[port.name] = &lt;TagType&gt;{};
     }
     _portToTagMap[port.name]!.addAll(tags);

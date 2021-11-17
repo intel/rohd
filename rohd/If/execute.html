@@ -76,12 +76,12 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; execute() {
   var drivenLogics = &lt;Logic&gt;[];
-  if(driverValue(condition)[0] == LogicValue.one) {
-    for(var conditional in then) {
+  if (driverValue(condition)[0] == LogicValue.one) {
+    for (var conditional in then) {
       drivenLogics.addAll(conditional.execute());
     }
-  } else if(driverValue(condition)[0] == LogicValue.zero) {
-    for(var conditional in orElse) {
+  } else if (driverValue(condition)[0] == LogicValue.zero) {
+    for (var conditional in orElse) {
       drivenLogics.addAll(conditional.execute());
     }
   } else {

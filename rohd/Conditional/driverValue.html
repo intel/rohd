@@ -73,9 +73,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected LogicValues driverValue(Logic driver) {
-  return _driverValueOverrideMap.containsKey(driverInput(driver)) ?
-    _driverValueOverrideMap[driverInput(driver)]! : _assignedDriverToInputMap[driver]!.value;
+  <pre class="language-dart"><code class="language-dart">@protected
+LogicValues driverValue(Logic driver) {
+  return _driverValueOverrideMap.containsKey(driverInput(driver))
+      ? _driverValueOverrideMap[driverInput(driver)]!
+      : _assignedDriverToInputMap[driver]!.value;
 }</code></pre>
 </section>
 

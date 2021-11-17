@@ -81,7 +81,8 @@ that should be used for any assignments within this <a href="../../rohd/Conditio
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String verilogContents(int indent, Map&lt;String,String&gt; inputsNameMap, Map&lt;String,String&gt; outputsNameMap, String assignOperator) {
+String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
+    Map&lt;String, String&gt; outputsNameMap, String assignOperator) {
   var padding = Conditional.calcPadding(indent);
   var driverName = inputsNameMap[driverInput(driver).name]!;
   var receiverName = outputsNameMap[receiverOutput(receiver).name]!;

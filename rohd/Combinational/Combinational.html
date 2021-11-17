@@ -61,7 +61,8 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Combinational(List&lt;Conditional&gt; conditionals, {String name = &#39;always_comb&#39;}) : super(conditionals, name:name) {
+  <pre class="language-dart"><code class="language-dart">Combinational(List&lt;Conditional&gt; conditionals, {String name = &#39;always_comb&#39;})
+    : super(conditionals, name: name) {
   _execute(); &#47;&#47; for initial values
   for (var element in _assignedDriverToInputMap.keys) {
     element.glitch.listen((args) {

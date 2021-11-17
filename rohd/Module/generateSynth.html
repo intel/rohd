@@ -61,7 +61,7 @@
     
 <section class="desc markdown">
   <p>Returns a synthesized version of this <a href="../../rohd/Module-class.html">Module</a>.</p>
-<p>Currently returns one long file in SystemVerilog, but in the future 
+<p>Currently returns one long file in SystemVerilog, but in the future
 may have other output formats, languages, files, etc.</p>
 </section>
 
@@ -70,7 +70,7 @@ may have other output formats, languages, files, etc.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String generateSynth() {
-  if(!_hasBuilt) {
+  if (!_hasBuilt) {
     throw Exception(&#39;Module has not yet built!&#39;);
   }
 
@@ -82,7 +82,10 @@ may have other output formats, languages, files, etc.</p>
  *&#47;
 
 &#39;&#39;&#39;;
-  return synthHeader + SynthBuilder(this, SystemVerilogSynthesizer()).getFileContents().join(&#39;\n\n&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;\n\n&#39;);
+  return synthHeader +
+      SynthBuilder(this, SystemVerilogSynthesizer())
+          .getFileContents()
+          .join(&#39;\n\n&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;\n\n&#39;);
 }</code></pre>
 </section>
 

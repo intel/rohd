@@ -61,7 +61,7 @@
     
 <section class="desc markdown">
   <p>A single simulation tick.</p>
-<p>Takes the simulator through all actions within the next pending 
+<p>Takes the simulator through all actions within the next pending
 timestamp, and passes through all events and phases on the way.</p>
 </section>
 
@@ -70,8 +70,7 @@ timestamp, and passes through all events and phases on the way.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
-
-  if(_injectedActions.isNotEmpty) {
+  if (_injectedActions.isNotEmpty) {
     &#47;&#47; injected actions will automatically be executed during tickExecute
     tickExecute(() {});
 
@@ -80,7 +79,7 @@ timestamp, and passes through all events and phases on the way.</p>
   }
 
   var nextTimeStamp = _pendingTimestamps.firstKey();
-  if(nextTimeStamp == null){
+  if (nextTimeStamp == null) {
     print(&#39;No more to tick.&#39;);
     return;
   }
@@ -88,7 +87,7 @@ timestamp, and passes through all events and phases on the way.</p>
   _currentTimestamp = nextTimeStamp;
   &#47;&#47; print(&quot;Tick: $_currentTimestamp&quot;);
   tickExecute(() {
-    for(var func in _pendingTimestamps[nextTimeStamp]!) {
+    for (var func in _pendingTimestamps[nextTimeStamp]!) {
       func();
     }
   });

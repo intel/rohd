@@ -71,7 +71,7 @@ to be received at the output of the pipeline.  The <a href="../../rohd/ReadyVali
 signal indicates that the pipeline is ready to accept new content.</p>
 <p>The pipeline will only progress through any stage, including the
 output, if both valid and ready are asserted at the same time.  This
-pipeline is capable of having bubbles, but they will collapse if 
+pipeline is capable of having bubbles, but they will collapse if
 downstream stages are backpressured.</p>
 <p>If contents are pushed in when the pipeline is not ready, they
 will be dropped.</p>
@@ -81,31 +81,35 @@ will be dropped.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ReadyValidPipeline(Logic clk, this.validPipeIn, this.readyPipeOut, {
-    List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages=const[],
-    Map&lt;Logic,Const&gt; resetValues = const{},
-    List&lt;Logic&gt; signals = const[],
-    Logic? reset,
-  }): super(
-    clk,
-    stages: stages,
-    signals: [validPipeIn, ...signals],
-    stalls: List.generate(stages.length, (index) =&gt; Logic(name: &#39;stall_$index&#39;)),
-    reset: reset,
-    resetValues: resetValues,
-  )
-{
+  <pre class="language-dart"><code class="language-dart">ReadyValidPipeline(
+  Logic clk,
+  this.validPipeIn,
+  this.readyPipeOut, {
+  List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
+  Map&lt;Logic, Const&gt; resetValues = const {},
+  List&lt;Logic&gt; signals = const [],
+  Logic? reset,
+}) : super(
+        clk,
+        stages: stages,
+        signals: [validPipeIn, ...signals],
+        stalls: List.generate(
+            stages.length, (index) =&gt; Logic(name: &#39;stall_$index&#39;)),
+        reset: reset,
+        resetValues: resetValues,
+      ) {
   var valid = validPipeIn;
 
   var stalls = _stages.map((stage) =&gt; stage.stall).toList();
   stalls.removeLast(); &#47;&#47; garbage value at the end
 
-  var readys = List.generate(stages.length, (index) =&gt; Logic(name: &#39;ready_$index&#39;));
+  var readys =
+      List.generate(stages.length, (index) =&gt; Logic(name: &#39;ready_$index&#39;));
   readys.add(readyPipeOut);
 
-  for(var i = 0; i &lt; stalls.length; i++) {
-    readys[i]  &lt;= ~get(valid, i+1) | readys[i+1];
-    stalls[i]! &lt;= get(valid, i+1) &amp; ~readys[i+1];
+  for (var i = 0; i &lt; stalls.length; i++) {
+    readys[i] &lt;= ~get(valid, i + 1) | readys[i + 1];
+    stalls[i]! &lt;= get(valid, i + 1) &amp; ~readys[i + 1];
   }
 
   validPipeOut = get(valid);

@@ -62,8 +62,9 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">FF(Logic clk, List&lt;Conditional&gt; conditionals, {String name = &#39;always_ff&#39;}) : super(conditionals, name:name) {
-  if(clk.width &gt; 1) throw Exception(&#39;clk must be 1 bit&#39;);
+  <pre class="language-dart"><code class="language-dart">FF(Logic clk, List&lt;Conditional&gt; conditionals, {String name = &#39;always_ff&#39;})
+    : super(conditionals, name: name) {
+  if (clk.width &gt; 1) throw Exception(&#39;clk must be 1 bit&#39;);
   addInput(_clk, clk);
   _setup();
 }</code></pre>

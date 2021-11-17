@@ -69,7 +69,7 @@ to grab signals for a given pipe stage.  Flops are positive edge triggered based
 <p>Signals to be pipelined can optionally be specified in the <code>signals</code> list.  Any signal
 referenced in a stage via the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> will automatically be included in the
 entire pipeline.</p>
-<p>If a <a href="../../rohd/Pipeline/reset.html">reset</a> signal is provided, then it will be consumed as an active-high reset for 
+<p>If a <a href="../../rohd/Pipeline/reset.html">reset</a> signal is provided, then it will be consumed as an active-high reset for
 every signal through the pipeline.  The default reset value is 0 for all signals, but
 that can be overridden by setting <code>resetValues</code> to the desired value.  The values specified
 in <code>resetValues</code> should be a type acceptable to <a href="../../rohd/Logic-class.html">Logic</a>'s <code>put</code> function.</p>
@@ -83,45 +83,39 @@ stage will not change.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Pipeline(this.clk,
-  {
-    List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages=const[],
+    {List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
     List&lt;Logic?&gt;? stalls,
-    List&lt;Logic&gt; signals = const[],
-    Map&lt;Logic,Const&gt; resetValues = const{},
-    this.reset
-  })
-{
-
+    List&lt;Logic&gt; signals = const [],
+    Map&lt;Logic, Const&gt; resetValues = const {},
+    this.reset}) {
   _stages = stages.map((stage) =&gt; _PipeStage(stage)).toList();
-  _stages.add(_PipeStage((p)=&gt;[])); &#47;&#47; output stage
+  _stages.add(_PipeStage((p) =&gt; [])); &#47;&#47; output stage
 
-  if(_numStages == 0) return;
+  if (_numStages == 0) return;
 
   _resetValues = Map.from(resetValues);
 
   _setStalls(stalls);
 
-  for(var signal in signals) {
+  for (var signal in signals) {
     _add(signal);
   }
 
   var combMiddles = &lt;List&lt;Conditional&gt;&gt;[];
-  for(var i = 0; i &lt; _numStages; i++) {
+  for (var i = 0; i &lt; _numStages; i++) {
     var combMiddle = _stages[i].operation(PipelineStageInfo._(this, i));
     combMiddles.add(combMiddle);
   }
 
-  for(var stageIndex = 0; stageIndex &lt; _numStages; stageIndex++) {
-    Combinational(
-      [
-        ..._registeredLogics.map((logic) =&gt; get(logic, stageIndex) &lt; _i(logic, stageIndex)),
-        ...combMiddles[stageIndex],
-        ..._registeredLogics.map((logic) =&gt; _o(logic, stageIndex) &lt; get(logic, stageIndex)),
-      ],
-      name: &#39;comb_stage$stageIndex&#39;
-    );
+  for (var stageIndex = 0; stageIndex &lt; _numStages; stageIndex++) {
+    Combinational([
+      ..._registeredLogics
+          .map((logic) =&gt; get(logic, stageIndex) &lt; _i(logic, stageIndex)),
+      ...combMiddles[stageIndex],
+      ..._registeredLogics
+          .map((logic) =&gt; _o(logic, stageIndex) &lt; get(logic, stageIndex)),
+    ], name: &#39;comb_stage$stageIndex&#39;);
   }
-
 }</code></pre>
 </section>
 

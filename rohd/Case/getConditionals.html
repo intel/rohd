@@ -76,7 +76,10 @@
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Conditional&gt; getConditionals() {
   return [
-    ...items.map((item) =&gt; item.then).expand((conditional) =&gt; conditional).toList(),
+    ...items
+        .map((item) =&gt; item.then)
+        .expand((conditional) =&gt; conditional)
+        .toList(),
     ...defaultItem ?? []
   ];
 }</code></pre>

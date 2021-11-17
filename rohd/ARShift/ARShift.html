@@ -62,9 +62,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ARShift(Logic a, Logic shamt, {String name = &#39;arshift&#39;}) :
-  &#47;&#47; Note: &gt;&gt;&gt; vs &gt;&gt; is backwards for SystemVerilog and Dart
-  super((a, shamt) =&gt; a &gt;&gt; shamt, &#39;&gt;&gt;&gt;&#39;, a, shamt, name: name, signed: true);</code></pre>
+  <pre class="language-dart"><code class="language-dart">ARShift(Logic a, Logic shamt, {String name = &#39;arshift&#39;})
+    :
+      &#47;&#47; Note: &gt;&gt;&gt; vs &gt;&gt; is backwards for SystemVerilog and Dart
+      super((a, shamt) =&gt; a &gt;&gt; shamt, &#39;&gt;&gt;&gt;&#39;, a, shamt,
+          name: name, signed: true);</code></pre>
 </section>
 
 

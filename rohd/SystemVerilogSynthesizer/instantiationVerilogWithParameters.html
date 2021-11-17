@@ -69,11 +69,11 @@
   <p>Creates a line of SystemVerilog that instantiates <code>module</code>.</p>
 <p>The instantiation will create it as type <code>instanceType</code> and name <code>instanceName</code>.</p>
 <p><code>inputs</code> and <code>outputs</code> map <code>module</code> input/output name to a verilog signal name.
-For example:<br>
-To generate this SystemVerilog:  <code>sig_c = sig_a &amp; sig_b</code><br>
-Based on this module definition: <code>c &lt;= a &amp; b</code><br>
-The values for <code>inputs</code> and <code>outputs</code> should be:<br>
-inputs:  <code>{ 'a' : 'sig_a', 'b' : 'sig_b'}</code><br>
+For example:
+To generate this SystemVerilog:  <code>sig_c = sig_a &amp; sig_b</code>
+Based on this module definition: <code>c &lt;= a &amp; b</code>
+The values for <code>inputs</code> and <code>outputs</code> should be:
+inputs:  <code>{ 'a' : 'sig_a', 'b' : 'sig_b'}</code>
 outputs: <code>{ 'c' : 'sig_c' }</code></p>
 </section>
 
@@ -81,11 +81,16 @@ outputs: <code>{ 'c' : 'sig_c' }</code></p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static String instantiationVerilogWithParameters(Module module, String instanceType, String instanceName, Map&lt;String,String&gt; inputs, Map&lt;String,String&gt; outputs, {Map&lt;String,String&gt;? parameters}) {
-
-
-  if(module is CustomSystemVerilog) {
-    return module.instantiationVerilog(instanceType, instanceName, inputs, outputs);
+  <pre class="language-dart"><code class="language-dart">static String instantiationVerilogWithParameters(
+    Module module,
+    String instanceType,
+    String instanceName,
+    Map&lt;String, String&gt; inputs,
+    Map&lt;String, String&gt; outputs,
+    {Map&lt;String, String&gt;? parameters}) {
+  if (module is CustomSystemVerilog) {
+    return module.instantiationVerilog(
+        instanceType, instanceName, inputs, outputs);
   }
 
   &#47;&#47;non-custom needs more details
@@ -98,8 +103,10 @@ outputs: <code>{ 'c' : 'sig_c' }</code></p>
   });
   var connectionsStr = connections.join(&#39;,&#39;);
   var parameterString = &#39;&#39;;
-  if(parameters != null) {
-    parameterString = &#39;#(&#39; + parameters.entries.map((e) =&gt; &#39;.${e.key}(${e.value})&#39;).join(&#39;,&#39;) + &#39;)&#39;;
+  if (parameters != null) {
+    parameterString = &#39;#(&#39; +
+        parameters.entries.map((e) =&gt; &#39;.${e.key}(${e.value})&#39;).join(&#39;,&#39;) +
+        &#39;)&#39;;
   }
   return &#39;$instanceType $parameterString $instanceName($connectionsStr);&#39;;
 }</code></pre>

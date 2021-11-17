@@ -62,20 +62,18 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">SynthBuilder(this.top, this.synthesizer) {
-
   var modulesToParse = &lt;Module&gt;[top];
-  for(var i = 0; i &lt; modulesToParse.length; i++) {
+  for (var i = 0; i &lt; modulesToParse.length; i++) {
     var moduleI = modulesToParse[i];
-    if(!synthesizer.generatesDefinition(moduleI)) continue;
+    if (!synthesizer.generatesDefinition(moduleI)) continue;
     modulesToParse.addAll(moduleI.subModules);
   }
 
   &#47;&#47; go backwards to start from the bottom (...now we&#39;re here)
   &#47;&#47; critical to go in this order for caching to work properly
-  for(var module in modulesToParse.reversed) {
-    if(synthesizer.generatesDefinition(module)) _getInstanceType(module);
+  for (var module in modulesToParse.reversed) {
+    if (synthesizer.generatesDefinition(module)) _getInstanceType(module);
   }
-
 }</code></pre>
 </section>
 

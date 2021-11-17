@@ -77,13 +77,13 @@
 List&lt;Logic&gt; execute() {
   var drivenLogics = &lt;Logic&gt;[];
 
-  for(var iff in iffs) {
-    if(driverValue(iff.condition)[0] == LogicValue.one) {
-      for(var conditional in iff.then) {
+  for (var iff in iffs) {
+    if (driverValue(iff.condition)[0] == LogicValue.one) {
+      for (var conditional in iff.then) {
         drivenLogics.addAll(conditional.execute());
       }
       break;
-    } else if(driverValue(iff.condition)[0] != LogicValue.zero) {
+    } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
       &#47;&#47; x and z propagation
       getReceivers().forEach((receiver) {
         receiverOutput(receiver).put(driverValue(iff.condition)[0]);

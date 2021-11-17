@@ -70,10 +70,10 @@ Returns an instance of <a href="../../rohd/ConditionalAssign-class.html">Conditi
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ConditionalAssign operator &lt; (dynamic other) {
-  if(_unassignable) throw Exception(&#39;This signal is unassignable.&#39;);
+  <pre class="language-dart"><code class="language-dart">ConditionalAssign operator &lt;(dynamic other) {
+  if (_unassignable) throw Exception(&#39;This signal is unassignable.&#39;);
 
-  if(other is Logic) {
+  if (other is Logic) {
     return ConditionalAssign(this, other);
   } else {
     return ConditionalAssign(this, Logic(width: width)..put(other));
