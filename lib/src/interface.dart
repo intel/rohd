@@ -29,9 +29,19 @@ class Port extends Logic {
 /// were consuming the same [Interface], and also breaks the rules for
 /// [Module] input and output connectivity.
 class Interface<TagType> {
+  /// Maps from the [Interface]'s defined port name to an instance of a [Port].
+  ///
+  /// Note that each port's name (`port.name`) does not necessarily match the
+  /// keys of [_ports] if they have been uniquified.
   final Map<String, Logic> _ports = {};
+
+  /// Maps from the [Interface]'s defined port name to the set of tags associated with
+  /// that port.
   final Map<String, Set<TagType>> _portToTagMap = {};
 
+  /// Accesses a port named [name].
+  ///
+  /// This [name] is not a uniquified name, it is the original port name.
   Logic port(String name) => _ports[name]!;
 
   /// Connects [module]'s inputs and outputs up to [srcInterface] and this [Interface].
@@ -41,6 +51,9 @@ class Interface<TagType> {
   /// will be connected to the [Module] via [Module.addInput] or [Module.addOutput] based on
   /// [inputTags] and [outputTags], respectively.  [uniquify] can be used to uniquifiy port names
   /// by manipulating the original name of the port.
+  ///
+  /// If [inputTags] or [outputTags] is not specified, then, respectively, no inputs or outputs
+  /// will be added.
   void connectIO(Module module, Interface srcInterface,
       {Set<TagType>? inputTags,
       Set<TagType>? outputTags,
@@ -75,26 +88,33 @@ class Interface<TagType> {
     } else {
       var matchingPorts = <Logic>{};
       for (var tag in tags) {
-        matchingPorts.addAll(_ports.values
-            .where((port) => _portToTagMap[port.name]?.contains(tag) ?? false));
+        matchingPorts.addAll(_ports.keys
+            .where(
+                (portName) => _portToTagMap[portName]?.contains(tag) ?? false)
+            .map((matchingPortName) => _ports[matchingPortName]!));
       }
       return matchingPorts.toList();
     }
   }
 
   /// Adds a single new port to this [Interface], associated with [tags] and with name [portName].
+  ///
+  /// If no [portName] is specified, then [port]'s name is used.
   @protected
   void setPort(Logic port, {List<TagType>? tags, String? portName}) {
-    _ports[portName ?? port.name] = port;
+    portName ??= port.name;
+    _ports[portName] = port;
     if (tags != null) {
       if (!_portToTagMap.containsKey(port.name)) {
-        _portToTagMap[port.name] = <TagType>{};
+        _portToTagMap[portName] = <TagType>{};
       }
-      _portToTagMap[port.name]!.addAll(tags);
+      _portToTagMap[portName]!.addAll(tags);
     }
   }
 
   /// Adds a collection of ports to this [Interface], each associated with all of [tags].
+  ///
+  /// All names of ports are gotten from the names of the [ports].
   @protected
   void setPorts(List<Logic> ports, [List<TagType>? tags]) {
     for (var port in ports) {
