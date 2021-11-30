@@ -41,6 +41,9 @@ class Counter extends Module {
           inputTags: {CounterDirection.inward},
           outputTags: {CounterDirection.outward});
 
+    // this should do nothing
+    this.intf.connectIO(this, intf);
+
     _buildLogic();
   }
 
