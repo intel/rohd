@@ -47,20 +47,25 @@ class Interface<TagType> {
       String Function(String original)? uniquify}) {
     uniquify = uniquify ?? (String original) => original;
 
-    getPorts(inputTags).forEach((port) {
-      setPort(
-          // ignore: invalid_use_of_protected_member
-          module.addInput(uniquify!(port.name), srcInterface.port(port.name),
-              width: port.width),
-          portName: port.name);
-    });
-    getPorts(outputTags).forEach((port) {
-      // ignore: invalid_use_of_protected_member
-      var output = module.addOutput(uniquify!(port.name), width: port.width);
-      port <= output;
-      srcInterface.port(port.name) <= port;
-      setPort(output, portName: port.name);
-    });
+    if (inputTags != null) {
+      getPorts(inputTags).forEach((port) {
+        setPort(
+            // ignore: invalid_use_of_protected_member
+            module.addInput(uniquify!(port.name), srcInterface.port(port.name),
+                width: port.width),
+            portName: port.name);
+      });
+    }
+
+    if (outputTags != null) {
+      getPorts(outputTags).forEach((port) {
+        // ignore: invalid_use_of_protected_member
+        var output = module.addOutput(uniquify!(port.name), width: port.width);
+        port <= output;
+        srcInterface.port(port.name) <= port;
+        setPort(output, portName: port.name);
+      });
+    }
   }
 
   /// Returns all interface ports associated with the provided [tags].
