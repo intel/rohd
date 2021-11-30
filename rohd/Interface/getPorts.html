@@ -74,8 +74,10 @@
   } else {
     var matchingPorts = &lt;Logic&gt;{};
     for (var tag in tags) {
-      matchingPorts.addAll(_ports.values
-          .where((port) =&gt; _portToTagMap[port.name]?.contains(tag) ?? false));
+      matchingPorts.addAll(_ports.keys
+          .where(
+              (portName) =&gt; _portToTagMap[portName]?.contains(tag) ?? false)
+          .map((matchingPortName) =&gt; _ports[matchingPortName]!));
     }
     return matchingPorts.toList();
   }

@@ -69,6 +69,7 @@
     
 <section class="desc markdown">
   <p>Adds a single new port to this <a href="../../rohd/Interface-class.html">Interface</a>, associated with <code>tags</code> and with name <code>portName</code>.</p>
+<p>If no <code>portName</code> is specified, then <code>port</code>'s name is used.</p>
 </section>
 
 
@@ -77,12 +78,13 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 void setPort(Logic port, {List&lt;TagType&gt;? tags, String? portName}) {
-  _ports[portName ?? port.name] = port;
+  portName ??= port.name;
+  _ports[portName] = port;
   if (tags != null) {
     if (!_portToTagMap.containsKey(port.name)) {
-      _portToTagMap[port.name] = &lt;TagType&gt;{};
+      _portToTagMap[portName] = &lt;TagType&gt;{};
     }
-    _portToTagMap[port.name]!.addAll(tags);
+    _portToTagMap[portName]!.addAll(tags);
   }
 }</code></pre>
 </section>
