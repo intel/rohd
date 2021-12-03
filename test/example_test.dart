@@ -10,7 +10,7 @@
 
 import 'package:test/test.dart';
 
-import '../example/counter.dart' as counter;
+import '../example/example.dart' as counter;
 import '../example/tree.dart' as tree;
 
 void main() {
