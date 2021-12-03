@@ -27,8 +27,8 @@ import 'package:rohd/rohd.dart';
 class _SmallLogicValues extends LogicValues {
   // Each 0/1 bit in value is 0/1 if !invalid, else is x/z
 
-  late final int _value;
-  late final int _invalid;
+  final int _value;
+  final int _invalid;
 
   int get _mask => _maskOfLength(length);
   static final Map<int, int> _masksOfLength = {};
@@ -39,13 +39,11 @@ class _SmallLogicValues extends LogicValues {
     return _masksOfLength[length]!;
   }
 
-  _SmallLogicValues(int value, int invalid, int length) : super._(length) {
-    if (length > LogicValues._INT_BITS) {
-      throw Exception('_SmallLogicValues cannot be used for big values.');
-    }
-    _value = _mask & value;
-    _invalid = _mask & invalid;
-  }
+  const _SmallLogicValues(int value, int invalid, int length)
+      : assert(length <= LogicValues._INT_BITS),
+        _value = ((1 << length) - 1) & value,
+        _invalid = ((1 << length) - 1) & invalid,
+        super._(length);
 
   @override
   bool _equals(Object other) {
@@ -191,10 +189,9 @@ class _BigLogicValues extends LogicValues {
     return _masksOfLength[length]!;
   }
 
-  _BigLogicValues(BigInt value, BigInt invalid, int length) : super._(length) {
-    if (length <= LogicValues._INT_BITS) {
-      throw Exception('_BigLogicValues should not be used for small values.');
-    }
+  _BigLogicValues(BigInt value, BigInt invalid, int length)
+      : assert(length > LogicValues._INT_BITS),
+        super._(length) {
     _value = _mask & value;
     _invalid = _mask & invalid;
   }
@@ -340,7 +337,7 @@ class _BigLogicValues extends LogicValues {
 class _FilledLogicValues extends LogicValues {
   final LogicValue _value;
 
-  _FilledLogicValues(this._value, int length) : super._(length);
+  const _FilledLogicValues(this._value, int length) : super._(length);
 
   @override
   bool _equals(Object other) {
@@ -557,19 +554,23 @@ abstract class LogicValues {
   /// The number of bits in this `LogicValues`.
   final int length;
 
-  LogicValues._(this.length) {
-    if (length < 0) throw Exception('Length must be positive.');
-  }
+  const LogicValues._(this.length) : assert(length >= 0);
 
   /// Converts `int` [value] to a valid [LogicValues] with [length] number of bits.
+  ///
+  /// [length] must be greater than or equal to 0.
   static LogicValues fromInt(int value, int length) =>
       _SmallLogicValues(value, 0, length);
 
   /// Converts `BigInt` [value] to a valid [LogicValues] with [length] number of bits.
+  ///
+  /// [length] must be greater than or equal to 0.
   static LogicValues fromBigInt(BigInt value, int length) =>
       _BigLogicValues(value, BigInt.zero, length);
 
   /// Constructs a [LogicValues] with the [length] number of bits, where every bit has the same value of [fill].
+  ///
+  /// [length] must be greater than or equal to 0.
   static LogicValues filled(int length, LogicValue fill) =>
       _FilledLogicValues(fill, length);
 
