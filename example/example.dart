@@ -1,7 +1,7 @@
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// counter.dart
+/// example.dart
 /// A very basic example of a counter module.
 ///
 /// 2021 September 17

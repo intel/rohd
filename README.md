@@ -137,7 +137,7 @@ class Counter extends Module {
 
 ```
 
-You can find an executable version of this counter example in [example/counter.dart](https://github.com/intel/rohd/blob/main/example/counter.dart).
+You can find an executable version of this counter example in [example/example.dart](https://github.com/intel/rohd/blob/main/example/example.dart).
 
 ### A more complex example
 
