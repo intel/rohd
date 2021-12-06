@@ -52,7 +52,7 @@ class Counter extends Module {
 
     nextVal <= intf.val + 1;
 
-    FF((SimpleClockGenerator(10).clk), [
+    Sequential((SimpleClockGenerator(10).clk), [
       If(intf.reset, then: [
         intf.val < 0
       ], orElse: [

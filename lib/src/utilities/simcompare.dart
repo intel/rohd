@@ -77,12 +77,18 @@ class SimCompare {
         for (var signalName in vector.expectedOutputValues.keys) {
           var value = vector.expectedOutputValues[signalName];
           var o = module.output(signalName);
+          var errorReason =
+              'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
           if (value is int) {
-            expect(o.valueInt, equals(value));
+            if (!o.value.isValid) {
+              // invalid value causes exception without helpful message, so throw it
+              throw Exception(errorReason);
+            }
+            expect(o.valueInt, equals(value), reason: errorReason);
           } else if (value is LogicValue &&
               (value == LogicValue.x || value == LogicValue.z)) {
             o.value.toList().forEach((element) {
-              expect(element, equals(value));
+              expect(element, equals(value), reason: errorReason);
             });
           } else {
             throw Exception(
