@@ -8,12 +8,16 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:async';
+// import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 
 class Counter extends Module {
   final int width;
+  Logic get val => output('val');
   Counter(Logic en, Logic reset, {this.width = 8}) : super(name: 'counter') {
     en = addInput('en', en);
     reset = addInput('reset', reset);
@@ -24,7 +28,10 @@ class Counter extends Module {
 
     nextVal <= val + 1;
 
-    Sequential((SimpleClockGenerator(10).clk | reset), [
+    Sequential.multi([
+      SimpleClockGenerator(10).clk,
+      reset
+    ], [
       If(reset, then: [
         val < 0
       ], orElse: [
@@ -41,10 +48,18 @@ void main() {
 
   group('simcompare', () {
     test('counter', () async {
-      var mod = Counter(Logic(), Logic());
-      await mod.build();
-      // WaveDumper(mod);
-      // File('tmp_counter.sv').writeAsStringSync(mod.generateSynth());
+      var reset = Logic();
+      var counter = Counter(Logic(), reset);
+      await counter.build();
+      // WaveDumper(counter);
+      // File('tmp_counter.sv').writeAsStringSync(counter.generateSynth());
+
+      // check that 1 timestep after reset, the value has reset properly
+      unawaited(reset.nextPosedge
+          .then((value) => Simulator.registerAction(Simulator.time + 1, () {
+                expect(counter.val.valueInt, equals(0));
+              })));
+
       var vectors = [
         Vector({'en': 0, 'reset': 0}, {}),
         Vector({'en': 0, 'reset': 1}, {'val': 0}),
@@ -58,9 +73,9 @@ void main() {
         Vector({'en': 1, 'reset': 0}, {'val': 4}),
         Vector({'en': 0, 'reset': 0}, {'val': 5}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
+      await SimCompare.checkFunctionalVector(counter, vectors);
       var simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          counter.generateSynth(), counter.runtimeType.toString(), vectors,
           signalToWidthMap: {'val': 8});
       expect(simResult, equals(true));
     });

@@ -140,16 +140,18 @@ typedef FF = Sequential;
 
 /// Represents a block of sequential logic.
 ///
-/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge triggered.
+/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge triggered by
+/// either one trigger or multiple with [Sequential.multi].
 class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
+  /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
       {String name = 'sequential'})
       : this.multi([clk], conditionals, name: name);
 
-  /// Multiple triggers TODO
+  /// Constructs a [Sequential] multi-triggered by any of [clks].
   Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
       {String name = 'sequential'})
       : super(conditionals, name: name) {
@@ -230,10 +232,12 @@ class Sequential extends _Always {
     bool anyClkInvalid = false;
     bool anyClkPosedge = false;
     for (var i = 0; i < _clks.length; i++) {
-      if (!_clks[i].bit.isValid || !(_preTickClkValues[i]?.isValid ?? false)) {
+      // if the pre-tick value is null, then it should have the same value as it currently does
+      if (!_clks[i].bit.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
         anyClkInvalid = true;
         break;
-      } else if (LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].bit)) {
+      } else if (_preTickClkValues[i] != null &&
+          LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].bit)) {
         anyClkPosedge = true;
         break;
       }
