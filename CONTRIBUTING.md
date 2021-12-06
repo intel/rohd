@@ -23,6 +23,9 @@ You can access the discussions area here: https://github.com/intel/rohd/discussi
 ### StackOverflow
 StackOverflow.com is a great tool to ask questions and get answers from the community.  Use the `rohd` tag when asking your question so that others in the community who subscribe to that tag can find and answer your question more quickly!
 
+### Meetings in the ROHD Forum
+The [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) is a periodic virtual meeting for developers and users of ROHD that anyone can join.  Feel free to join the call!
+
 ## Getting Started
 
 ### Requirements

@@ -82,6 +82,8 @@ There are complete API docs available at https://intel.github.io/rohd/rohd/rohd-
 
 If you need some help, you can visit our [Discussions](https://github.com/intel/rohd/discussions) page.  This is a friendly place where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
 
+You also may be interested to join the [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
+
 Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.14.0).  If you're using the version of Dart that came with Flutter, it might be older than that.
 
 ## Package Managers for Hardware
