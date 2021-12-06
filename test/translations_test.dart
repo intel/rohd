@@ -70,8 +70,8 @@ class FlopArray extends Module {
     var storageBank = List<Logic>.generate(
         numEntries, (i) => Logic(name: 'storageBank_$i', width: dwidth));
 
-    // FF(lclk, [  // normally this should be here
-    FF(SimpleClockGenerator(10).clk, [
+    // Sequential(lclk, [  // normally this should be here
+    Sequential(SimpleClockGenerator(10).clk, [
       //for testing purposes, easier to just plug a clock in here
       If(lrst, then: [
         ...storageBank

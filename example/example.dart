@@ -35,8 +35,8 @@ class Counter extends Module {
     // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
     nextVal <= val + 1;
 
-    // `FF` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
-    FF(clk, [
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    Sequential(clk, [
       // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
       If(reset, then: [
         // the '<' operator is a conditional assignment

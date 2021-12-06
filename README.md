@@ -122,8 +122,8 @@ class Counter extends Module {
     // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
     nextVal <= val + 1;
 
-    // `FF` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
-    FF(clk, [
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    Sequential(clk, [
       // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
       If(reset, then:[
         // the '<' operator is a conditional assignment
@@ -361,12 +361,12 @@ class MyModule extends Module {
 ```
 
 ### Sequentials
-ROHD has a basic [`FlipFlop`](https://intel.github.io/rohd/rohd/FlipFlop-class.html) module that can be used as a flip flop.  For more complex sequential logic, use the `FF` block described in the Conditionals section.
+ROHD has a basic [`FlipFlop`](https://intel.github.io/rohd/rohd/FlipFlop-class.html) module that can be used as a flip flop.  For more complex sequential logic, use the `Sequential` block described in the Conditionals section.
 
 Dart doesn't have a notion of certain signals being "clocks" vs. "not clocks".  You can use any signal as a clock input to sequential logic, and have as many clocks of as many frequencies as you want.
 
 ### Conditionals
-ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/rohd/Conditional-class.html) type statements that always must fall within a type of `_Always` block, similar to SystemVerilog.  There are two types of `_Always` blocks: [`FF`](https://intel.github.io/rohd/rohd/FF-class.html) and [`Combinational`](https://intel.github.io/rohd/rohd/Combinational-class.html), which map to SystemVerilog's `always_ff` and `always_comb`, respectively.  `Combinational` takes a list of `Conditional` statements.  Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements.  You can create `Conditional` composition chains as deep as you like.
+ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/rohd/Conditional-class.html) type statements that always must fall within a type of `_Always` block, similar to SystemVerilog.  There are two types of `_Always` blocks: [`Sequential`](https://intel.github.io/rohd/rohd/Sequential-class.html) and [`Combinational`](https://intel.github.io/rohd/rohd/Combinational-class.html), which map to SystemVerilog's `always_ff` and `always_comb`, respectively.  `Combinational` takes a list of `Conditional` statements.  Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements.  You can create `Conditional` composition chains as deep as you like.
 
 Conditional statements are executed imperatively and in order, just like the contents of `always` blocks in SystemVerilog.  `_Always` blocks in ROHD map 1-to-1 with SystemVerilog `always` statements when converted.
 
@@ -395,7 +395,7 @@ Combinational([
 #### `IfBlock`
 The [`IfBlock`](https://intel.github.io/rohd/rohd/IfBlock-class.html) makes syntax for long chains of if / else if / else chains nicer.  For example:
 ```dart
-FF(clk, [
+Sequential(clk, [
   IfBlock([
     // the first one must be Iff (yes, with 2 f's, to differentiate from If above)
     Iff(a & ~b, [
@@ -507,7 +507,7 @@ class Counter extends Module {
     // access signals directly from the interface
     nextVal <= intf.val + 1;
 
-    FF( SimpleClockGenerator(10).clk, [
+    Sequential( SimpleClockGenerator(10).clk, [
       If(intf.reset, then:[
         intf.val < 0
       ], orElse: [If(intf.en, then: [

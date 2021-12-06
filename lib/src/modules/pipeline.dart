@@ -184,7 +184,7 @@ class Pipeline {
         ])
       ];
     }
-    FF(clk, ffAssignsWithStall, name: 'ff_${newLogic.name}');
+    Sequential(clk, ffAssignsWithStall, name: 'ff_${newLogic.name}');
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].

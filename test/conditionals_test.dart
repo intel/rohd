@@ -114,8 +114,8 @@ class CombModule extends Module {
   }
 }
 
-class FFModule extends Module {
-  FFModule(Logic a, Logic b, Logic d) : super(name: 'ffmodule') {
+class SequentialModule extends Module {
+  SequentialModule(Logic a, Logic b, Logic d) : super(name: 'ffmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
     var y = addOutput('y');
@@ -125,7 +125,7 @@ class FFModule extends Module {
     d = addInput('d', d, width: d.width);
     var q = addOutput('q', width: d.width);
 
-    FF(SimpleClockGenerator(10).clk, [
+    Sequential(SimpleClockGenerator(10).clk, [
       If(a, then: [
         q < d,
         y < a,
@@ -209,7 +209,7 @@ void main() {
     });
 
     test('conditional ff', () async {
-      var mod = FFModule(Logic(), Logic(), Logic(width: 8));
+      var mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
       await mod.build();
       var vectors = [
         Vector({'a': 1, 'd': 1}, {}),

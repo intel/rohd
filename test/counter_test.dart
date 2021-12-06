@@ -24,7 +24,7 @@ class Counter extends Module {
 
     nextVal <= val + 1;
 
-    FF((SimpleClockGenerator(10).clk | reset), [
+    Sequential((SimpleClockGenerator(10).clk | reset), [
       If(reset, then: [
         val < 0
       ], orElse: [

@@ -93,7 +93,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
 class Combinational extends _Always {
-  Combinational(List<Conditional> conditionals, {String name = 'always_comb'})
+  Combinational(List<Conditional> conditionals, {String name = 'combinational'})
       : super(conditionals, name: name) {
     _execute(); // for initial values
     for (var element in _assignedDriverToInputMap.keys) {
@@ -135,20 +135,30 @@ class Combinational extends _Always {
   String assignOperator() => '=';
 }
 
+@Deprecated('Use Sequential instead')
+typedef FF = Sequential;
+
 /// Represents a block of sequential logic.
 ///
-/// This is similar to an `always_ff` block in SystemVerilog.
-class FF extends _Always {
-  /// The name of the clock for this block.
-  final String _clk = Module.unpreferredName('clk');
+/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge triggered.
+class Sequential extends _Always {
+  /// The input clocks used in this block.
+  final List<Logic> _clks = [];
 
-  /// The clock used in this block.
-  Logic get clk => input(_clk);
+  Sequential(Logic clk, List<Conditional> conditionals,
+      {String name = 'sequential'})
+      : this.multi([clk], conditionals, name: name);
 
-  FF(Logic clk, List<Conditional> conditionals, {String name = 'always_ff'})
+  /// Multiple triggers TODO
+  Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
+      {String name = 'sequential'})
       : super(conditionals, name: name) {
-    if (clk.width > 1) throw Exception('clk must be 1 bit');
-    addInput(_clk, clk);
+    for (var i = 0; i < clks.length; i++) {
+      var clk = clks[i];
+      if (clk.width > 1) throw Exception('clk must be 1 bit');
+      _clks.add(addInput(Module.unpreferredName('clk$i'), clk));
+      _preTickClkValues.add(null);
+    }
     _setup();
   }
 
@@ -156,7 +166,7 @@ class FF extends _Always {
   final Map<Logic, LogicValues> _inputToPreTickInputValuesMap = {};
 
   /// The value of the clock before the tick.
-  LogicValue? _preTickClkValue;
+  final List<LogicValue?> _preTickClkValues = [];
 
   /// Keeps track of whether the clock has glitched and an [_execute] is necessary.
   bool _pendingExecute = false;
@@ -174,7 +184,7 @@ class FF extends _Always {
       element._updateOverrideMap(_inputToPreTickInputValuesMap);
     }
 
-    // listen to every input of this FF for changes
+    // listen to every input of this `Sequential` for changes
     for (var driverInput in _assignedDriverToInputMap.values) {
       driverInput.glitch.listen((event) {
         if (Simulator.phase != SimulatorPhase.clksStable) {
@@ -199,40 +209,63 @@ class FF extends _Always {
     }
 
     // listen to every clock glitch to see if we need to execute
-    clk.glitch.listen((event) {
-      // we want the first previousValue from the first glitch of this tick
-      _preTickClkValue ??= event.previousValue.bit;
-      if (!_pendingExecute) {
-        Simulator.clkStable.first.then((value) {
-          // once the clocks are stable, execute the contents of the FF
-          _execute();
-          _preTickClkValue = null;
-          _pendingExecute = false;
-        });
-      }
-      _pendingExecute = true;
-    });
+    for (var i = 0; i < _clks.length; i++) {
+      var clk = _clks[i];
+      clk.glitch.listen((event) {
+        // we want the first previousValue from the first glitch of this tick
+        _preTickClkValues[i] ??= event.previousValue.bit;
+        if (!_pendingExecute) {
+          Simulator.clkStable.first.then((value) {
+            // once the clocks are stable, execute the contents of the FF
+            _execute();
+            _pendingExecute = false;
+          });
+        }
+        _pendingExecute = true;
+      });
+    }
   }
 
   void _execute() {
-    if (!clk.bit.isValid || !_preTickClkValue!.isValid) {
+    bool anyClkInvalid = false;
+    bool anyClkPosedge = false;
+    for (var i = 0; i < _clks.length; i++) {
+      if (!_clks[i].bit.isValid || !(_preTickClkValues[i]?.isValid ?? false)) {
+        anyClkInvalid = true;
+        break;
+      } else if (LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].bit)) {
+        anyClkPosedge = true;
+        break;
+      }
+    }
+
+    if (anyClkInvalid) {
       for (var receiverOutput in _assignedReceiverToOutputMap.values) {
         receiverOutput.put(LogicValue.x);
       }
-    } else if (LogicValue.isPosedge(_preTickClkValue!, clk.bit)) {
+    } else if (anyClkPosedge) {
       var allDrivenSignals = <Logic>[];
       for (var element in conditionals) {
         allDrivenSignals.addAll(element.execute());
       }
       if (allDrivenSignals.length != allDrivenSignals.toSet().length) {
-        throw Exception('FF drove the same signal multiple times.');
+        throw Exception('Sequential drove the same signal multiple times.');
       }
+    }
+
+    // clear out all the pre-tick value of clocks
+    for (var i = 0; i < _clks.length; i++) {
+      _preTickClkValues[i] = null;
     }
   }
 
   @override
-  String alwaysVerilogStatement(Map<String, String> inputs) =>
-      'always_ff @(posedge ${inputs[_clk]})';
+  String alwaysVerilogStatement(Map<String, String> inputs) {
+    String triggers =
+        _clks.map((clk) => 'posedge ${inputs[clk.name]}').join(' or ');
+    return 'always_ff @($triggers)';
+  }
+
   @override
   String assignOperator() => '<=';
 }
@@ -247,7 +280,7 @@ abstract class Conditional {
 
   /// A [Map] of override [LogicValues]s for driver [Logic]s of this [Conditional].
   ///
-  /// This is used for things like [FF]'s pre-tick values.
+  /// This is used for things like [Sequential]'s pre-tick values.
   Map<Logic, LogicValues> _driverValueOverrideMap = {};
 
   /// Updates the values of [_assignedReceiverToOutputMap] and [_assignedDriverToInputMap] and
@@ -834,7 +867,7 @@ class FlipFlop extends Module with CustomSystemVerilog {
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    FF(clk, [q < d]);
+    Sequential(clk, [q < d]);
   }
 
   @override
