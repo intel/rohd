@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the FF class from the rohd library, for the Dart programming language.">
-  <title>FF class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the Sequential class from the rohd library, for the Dart programming language.">
+  <title>Sequential class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb">FF class</li>
+    <li class="self-crumb">Sequential class</li>
   </ol>
-  <div class="self-name">FF</div>
+  <div class="self-name">Sequential</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -44,7 +44,7 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-class">FF</span> class 
+<h1><span class="kind-class">Sequential</span> class 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
  
 </h1></div>
@@ -52,7 +52,8 @@
     
 <section class="desc markdown">
   <p>Represents a block of sequential logic.</p>
-<p>This is similar to an <code>always_ff</code> block in SystemVerilog.</p>
+<p>This is similar to an <code>always_ff</code> block in SystemVerilog.  Positive edge triggered by
+either one trigger or multiple with <a href="../rohd/Sequential/Sequential.multi.html">Sequential.multi</a>.</p>
 </section>
 
 
@@ -62,7 +63,7 @@
         <dd><ul class="gt-separated dark clazz-relationships">
           <li><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object-class.html">Object</a></li>
           <li><a href="../rohd/Module-class.html">Module</a></li>
-          <li>FF</li>
+          <li>Sequential</li>
         </ul></dd>
 
 
@@ -76,32 +77,27 @@
       <h2>Constructors</h2>
 
       <dl class="constructor-summary-list">
-        <dt id="FF" class="callable">
-          <span class="name"><a href="../rohd/FF/FF.html">FF</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">conditionals</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;always_ff&#39;</span>}</span>)</span>
+        <dt id="Sequential" class="callable">
+          <span class="name"><a href="../rohd/Sequential/Sequential.html">Sequential</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">conditionals</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;sequential&#39;</span>}</span>)</span>
         </dt>
         <dd>
-           
+          Constructs a <a href="../rohd/Sequential-class.html">Sequential</a> single-triggered by <code>clk</code>. 
+        </dd>
+        <dt id="Sequential.multi" class="callable">
+          <span class="name"><a href="../rohd/Sequential/Sequential.multi.html">Sequential.multi</a></span><span class="signature">(<span class="parameter" id="multi-param-clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">clks</span>, </span><span class="parameter" id="multi-param-conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">conditionals</span>, </span><span class="parameter" id="multi-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;sequential&#39;</span>}</span>)</span>
+        </dt>
+        <dd>
+          Constructs a <a href="../rohd/Sequential-class.html">Sequential</a> multi-triggered by any of <code>clks</code>. 
         </dd>
       </dl>
     </section>
 
-    <section class="summary offset-anchor" id="instance-properties">
+    <section class="summary offset-anchor inherited" id="instance-properties">
       <h2>Properties</h2>
 
       <dl class="properties">
-        <dt id="clk" class="property">
-  <span class="name"><a href="../rohd/FF/clk.html">clk</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd>
-  The clock used in this block. 
-  <div class="features">read-only</div>
-
-</dd>
-
         <dt id="conditionals" class="property inherited">
-  <span class="name"><a href="../rohd/FF/conditionals.html">conditionals</a></span>
+  <span class="name"><a href="../rohd/Sequential/conditionals.html">conditionals</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> 
 
 </dt>
@@ -265,27 +261,27 @@
 </dd>
 
         <dt id="alwaysVerilogStatement" class="callable">
-  <span class="name"><a href="../rohd/FF/alwaysVerilogStatement.html">alwaysVerilogStatement</a></span><span class="signature">(<wbr><span class="parameter" id="alwaysVerilogStatement-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span>)
+  <span class="name"><a href="../rohd/Sequential/alwaysVerilogStatement.html">alwaysVerilogStatement</a></span><span class="signature">(<wbr><span class="parameter" id="alwaysVerilogStatement-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  The "always" part of the <code>always</code> block when generating SystemVerilog. <a href="../rohd/FF/alwaysVerilogStatement.html">[...]</a>
+  The "always" part of the <code>always</code> block when generating SystemVerilog. <a href="../rohd/Sequential/alwaysVerilogStatement.html">[...]</a>
   
 
 </dd>
 
         <dt id="assignOperator" class="callable">
-  <span class="name"><a href="../rohd/FF/assignOperator.html">assignOperator</a></span><span class="signature">(<wbr>)
+  <span class="name"><a href="../rohd/Sequential/assignOperator.html">assignOperator</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  The assignment operator to use when generating SystemVerilog. <a href="../rohd/FF/assignOperator.html">[...]</a>
+  The assignment operator to use when generating SystemVerilog. <a href="../rohd/Sequential/assignOperator.html">[...]</a>
   
 
 </dd>
@@ -356,14 +352,14 @@
 </dd>
 
         <dt id="instantiationVerilog" class="callable inherited">
-  <span class="name"><a href="../rohd/FF/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span>)
+  <span class="name"><a href="../rohd/Sequential/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd class="inherited">
-  Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation. <a href="../rohd/FF/instantiationVerilog.html">[...]</a>
+  Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation. <a href="../rohd/Sequential/instantiationVerilog.html">[...]</a>
   <div class="features">inherited</div>
 
 </dd>
@@ -470,7 +466,7 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../index.html">rohd</a></li>
   <li><a href="../rohd/rohd-library.html">rohd</a></li>
-  <li class="self-crumb">FF class</li>
+  <li class="self-crumb">Sequential class</li>
 </ol>
 
 
@@ -494,7 +490,6 @@
   <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
   <li><a href="../rohd/Equals-class.html">Equals</a></li>
   <li><a href="../rohd/ExternalModule-class.html">ExternalModule</a></li>
-  <li><a href="../rohd/FF-class.html">FF</a></li>
   <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
   <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
   <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
@@ -520,6 +515,7 @@
   <li><a href="../rohd/Port-class.html">Port</a></li>
   <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
   <li><a href="../rohd/RShift-class.html">RShift</a></li>
+  <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
   <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
   <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
   <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
@@ -550,6 +546,7 @@
 
   <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
+  <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
 
 </ol>
 
@@ -558,15 +555,15 @@
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
     <ol>
 
-    <li class="section-title"><a href="../rohd/FF-class.html#constructors">Constructors</a></li>
-    <li><a href="../rohd/FF/FF.html">FF</a></li>
+    <li class="section-title"><a href="../rohd/Sequential-class.html#constructors">Constructors</a></li>
+    <li><a href="../rohd/Sequential/Sequential.html">Sequential</a></li>
+    <li><a href="../rohd/Sequential/Sequential.multi.html">multi</a></li>
 
 
-    <li class="section-title">
-      <a href="../rohd/FF-class.html#instance-properties">Properties</a>
+    <li class="section-title inherited">
+      <a href="../rohd/Sequential-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../rohd/FF/clk.html">clk</a></li>
-    <li class="inherited"><a href="../rohd/FF/conditionals.html">conditionals</a></li>
+    <li class="inherited"><a href="../rohd/Sequential/conditionals.html">conditionals</a></li>
     <li class="inherited"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../rohd/Module/inputs.html">inputs</a></li>
@@ -579,24 +576,24 @@
     <li class="inherited"><a href="../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
 
-    <li class="section-title"><a href="../rohd/FF-class.html#instance-methods">Methods</a></li>
+    <li class="section-title"><a href="../rohd/Sequential-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../rohd/Module/addInput.html">addInput</a></li>
     <li class="inherited"><a href="../rohd/Module/addOutput.html">addOutput</a></li>
-    <li><a href="../rohd/FF/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
-    <li><a href="../rohd/FF/assignOperator.html">assignOperator</a></li>
+    <li><a href="../rohd/Sequential/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
+    <li><a href="../rohd/Sequential/assignOperator.html">assignOperator</a></li>
     <li class="inherited"><a href="../rohd/Module/build.html">build</a></li>
     <li class="inherited"><a href="../rohd/Module/generateSynth.html">generateSynth</a></li>
     <li class="inherited"><a href="../rohd/Module/hierarchy.html">hierarchy</a></li>
     <li class="inherited"><a href="../rohd/Module/hierarchyString.html">hierarchyString</a></li>
     <li class="inherited"><a href="../rohd/Module/input.html">input</a></li>
-    <li class="inherited"><a href="../rohd/FF/instantiationVerilog.html">instantiationVerilog</a></li>
+    <li class="inherited"><a href="../rohd/Sequential/instantiationVerilog.html">instantiationVerilog</a></li>
     <li class="inherited"><a href="../rohd/Module/isInput.html">isInput</a></li>
     <li class="inherited"><a href="../rohd/Module/isOutput.html">isOutput</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li class="inherited"><a href="../rohd/Module/output.html">output</a></li>
     <li class="inherited"><a href="../rohd/Module/toString.html">toString</a></li>
 
-    <li class="section-title inherited"><a href="../rohd/FF-class.html#operators">Operators</a></li>
+    <li class="section-title inherited"><a href="../rohd/Sequential-class.html#operators">Operators</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/operator_equals.html">operator ==</a></li>
 
 

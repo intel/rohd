@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the alwaysVerilogStatement method from the FF class, for the Dart programming language.">
-  <title>alwaysVerilogStatement method - FF class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the Sequential.multi constructor from the Class Sequential class from the rohd library, for the Dart programming language.">
+  <title>Sequential.multi constructor - Sequential class - rohd library - Dart API</title>
 
 
   
@@ -31,10 +31,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/FF-class.html">FF</a></li>
-    <li class="self-crumb">alwaysVerilogStatement method</li>
+    <li><a href="../../rohd/Sequential-class.html">Sequential</a></li>
+    <li class="self-crumb">Sequential.multi constructor</li>
   </ol>
-  <div class="self-name">alwaysVerilogStatement</div>
+  <div class="self-name">Sequential.multi</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,38 +45,37 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">alwaysVerilogStatement</span> method 
+<h1><span class="kind-constructor">Sequential.multi</span> constructor 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
-      
-<div>
-  <ol class="annotation-list">
-    <li>@<a href="https://api.dart.dev/stable/2.14.4/dart-core/override-constant.html">override</a></li>
-  </ol>
-</div>
-
-<span class="returntype"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>
-<span class="name ">alwaysVerilogStatement</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="alwaysVerilogStatement-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
+      <span class="name ">Sequential.multi</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="multi-param-clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">clks</span>, </span></li>
+<li><span class="parameter" id="multi-param-conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">conditionals</span>, </span></li>
+<li><span class="parameter" id="multi-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.14.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;sequential&#39;</span>}</span></li>
 </ol>)
-
-      
-
     </section>
+
     
 <section class="desc markdown">
-  <p>The "always" part of the <code>always</code> block when generating SystemVerilog.</p>
-<p>For example, <code>always_comb</code> or <code>always_ff</code>.</p>
+  <p>Constructs a <a href="../../rohd/Sequential-class.html">Sequential</a> multi-triggered by any of <code>clks</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-String alwaysVerilogStatement(Map&lt;String, String&gt; inputs) =&gt;
-    &#39;always_ff @(posedge ${inputs[_clk]})&#39;;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Sequential.multi(List&lt;Logic&gt; clks, List&lt;Conditional&gt; conditionals,
+    {String name = &#39;sequential&#39;})
+    : super(conditionals, name: name) {
+  for (var i = 0; i &lt; clks.length; i++) {
+    var clk = clks[i];
+    if (clk.width &gt; 1) throw Exception(&#39;clk must be 1 bit&#39;);
+    _clks.add(addInput(Module.unpreferredName(&#39;clk$i&#39;), clk));
+    _preTickClkValues.add(null);
+  }
+  _setup();
+}</code></pre>
 </section>
 
 
@@ -92,23 +91,23 @@ String alwaysVerilogStatement(Map&lt;String, String&gt; inputs) =&gt;
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-  <li><a href="../../rohd/FF-class.html">FF</a></li>
-  <li class="self-crumb">alwaysVerilogStatement method</li>
+  <li><a href="../../rohd/Sequential-class.html">Sequential</a></li>
+  <li class="self-crumb">Sequential.multi constructor</li>
 </ol>
 
 
-    <h5>FF class</h5>
+    <h5>Sequential class</h5>
     <ol>
 
-    <li class="section-title"><a href="../../rohd/FF-class.html#constructors">Constructors</a></li>
-    <li><a href="../../rohd/FF/FF.html">FF</a></li>
+    <li class="section-title"><a href="../../rohd/Sequential-class.html#constructors">Constructors</a></li>
+    <li><a href="../../rohd/Sequential/Sequential.html">Sequential</a></li>
+    <li><a href="../../rohd/Sequential/Sequential.multi.html">multi</a></li>
 
 
-    <li class="section-title">
-      <a href="../../rohd/FF-class.html#instance-properties">Properties</a>
+    <li class="section-title inherited">
+      <a href="../../rohd/Sequential-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/FF/clk.html">clk</a></li>
-    <li class="inherited"><a href="../../rohd/FF/conditionals.html">conditionals</a></li>
+    <li class="inherited"><a href="../../rohd/Sequential/conditionals.html">conditionals</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
@@ -121,24 +120,24 @@ String alwaysVerilogStatement(Map&lt;String, String&gt; inputs) =&gt;
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
 
-    <li class="section-title"><a href="../../rohd/FF-class.html#instance-methods">Methods</a></li>
+    <li class="section-title"><a href="../../rohd/Sequential-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>
     <li class="inherited"><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
-    <li><a href="../../rohd/FF/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
-    <li><a href="../../rohd/FF/assignOperator.html">assignOperator</a></li>
+    <li><a href="../../rohd/Sequential/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
+    <li><a href="../../rohd/Sequential/assignOperator.html">assignOperator</a></li>
     <li class="inherited"><a href="../../rohd/Module/build.html">build</a></li>
     <li class="inherited"><a href="../../rohd/Module/generateSynth.html">generateSynth</a></li>
     <li class="inherited"><a href="../../rohd/Module/hierarchy.html">hierarchy</a></li>
     <li class="inherited"><a href="../../rohd/Module/hierarchyString.html">hierarchyString</a></li>
     <li class="inherited"><a href="../../rohd/Module/input.html">input</a></li>
-    <li class="inherited"><a href="../../rohd/FF/instantiationVerilog.html">instantiationVerilog</a></li>
+    <li class="inherited"><a href="../../rohd/Sequential/instantiationVerilog.html">instantiationVerilog</a></li>
     <li class="inherited"><a href="../../rohd/Module/isInput.html">isInput</a></li>
     <li class="inherited"><a href="../../rohd/Module/isOutput.html">isOutput</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li class="inherited"><a href="../../rohd/Module/output.html">output</a></li>
     <li class="inherited"><a href="../../rohd/Module/toString.html">toString</a></li>
 
-    <li class="section-title inherited"><a href="../../rohd/FF-class.html#operators">Operators</a></li>
+    <li class="section-title inherited"><a href="../../rohd/Sequential-class.html#operators">Operators</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.14.4/dart-core/Object/operator_equals.html">operator ==</a></li>
 
 
@@ -146,7 +145,7 @@ String alwaysVerilogStatement(Map&lt;String, String&gt; inputs) =&gt;
 
 </ol>
 
-  </div><!--/.sidebar-offcanvas-->
+  </div><!--/.sidebar-offcanvas-left-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->

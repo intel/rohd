@@ -144,8 +144,8 @@ class Counter extends Module {
     // Assignment statement of nextVal to be val+1 (&lt;= is the assignment operator)
     nextVal &lt;= val + 1;
 
-    // `FF` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
-    FF(clk, [
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    Sequential(clk, [
       // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
       If(reset, then:[
         // the '&lt;' operator is a conditional assignment
@@ -335,10 +335,10 @@ class MyModule extends Module {
 }
 </code></pre>
 <h3 id="sequentials">Sequentials</h3>
-<p>ROHD has a basic <a href="https://intel.github.io/rohd/rohd/FlipFlop-class.html"><code>FlipFlop</code></a> module that can be used as a flip flop.  For more complex sequential logic, use the <code>FF</code> block described in the Conditionals section.</p>
+<p>ROHD has a basic <a href="https://intel.github.io/rohd/rohd/FlipFlop-class.html"><code>FlipFlop</code></a> module that can be used as a flip flop.  For more complex sequential logic, use the <code>Sequential</code> block described in the Conditionals section.</p>
 <p>Dart doesn't have a notion of certain signals being "clocks" vs. "not clocks".  You can use any signal as a clock input to sequential logic, and have as many clocks of as many frequencies as you want.</p>
 <h3 id="conditionals">Conditionals</h3>
-<p>ROHD supports a variety of <a href="https://intel.github.io/rohd/rohd/Conditional-class.html"><code>Conditional</code></a> type statements that always must fall within a type of <code>_Always</code> block, similar to SystemVerilog.  There are two types of <code>_Always</code> blocks: <a href="https://intel.github.io/rohd/rohd/FF-class.html"><code>FF</code></a> and <a href="https://intel.github.io/rohd/rohd/Combinational-class.html"><code>Combinational</code></a>, which map to SystemVerilog's <code>always_ff</code> and <code>always_comb</code>, respectively.  <code>Combinational</code> takes a list of <code>Conditional</code> statements.  Different kinds of <code>Conditional</code> statement, such as <code>If</code>, may be composed of more <code>Conditional</code> statements.  You can create <code>Conditional</code> composition chains as deep as you like.</p>
+<p>ROHD supports a variety of <a href="https://intel.github.io/rohd/rohd/Conditional-class.html"><code>Conditional</code></a> type statements that always must fall within a type of <code>_Always</code> block, similar to SystemVerilog.  There are two types of <code>_Always</code> blocks: <a href="https://intel.github.io/rohd/rohd/Sequential-class.html"><code>Sequential</code></a> and <a href="https://intel.github.io/rohd/rohd/Combinational-class.html"><code>Combinational</code></a>, which map to SystemVerilog's <code>always_ff</code> and <code>always_comb</code>, respectively.  <code>Combinational</code> takes a list of <code>Conditional</code> statements.  Different kinds of <code>Conditional</code> statement, such as <code>If</code>, may be composed of more <code>Conditional</code> statements.  You can create <code>Conditional</code> composition chains as deep as you like.</p>
 <p>Conditional statements are executed imperatively and in order, just like the contents of <code>always</code> blocks in SystemVerilog.  <code>_Always</code> blocks in ROHD map 1-to-1 with SystemVerilog <code>always</code> statements when converted.</p>
 <p>Assignments within an <code>_Always</code> should be executed conditionally, so use the <code>&lt;</code> operator which creates a <a href="https://intel.github.io/rohd/rohd/ConditionalAssign-class.html"><code>ConditionalAssign</code></a> object instead of <code>&lt;=</code>.</p>
 <h4 id="if"><code>If</code></h4>
@@ -361,7 +361,7 @@ class MyModule extends Module {
 </code></pre>
 <h4 id="ifblock"><code>IfBlock</code></h4>
 <p>The <a href="https://intel.github.io/rohd/rohd/IfBlock-class.html"><code>IfBlock</code></a> makes syntax for long chains of if / else if / else chains nicer.  For example:</p>
-<pre class="language-dart"><code class="language-dart">FF(clk, [
+<pre class="language-dart"><code class="language-dart">Sequential(clk, [
   IfBlock([
     // the first one must be Iff (yes, with 2 f's, to differentiate from If above)
     Iff(a &amp; ~b, [
@@ -462,7 +462,7 @@ class Counter extends Module {
     // access signals directly from the interface
     nextVal &lt;= intf.val + 1;
 
-    FF( SimpleClockGenerator(10).clk, [
+    Sequential( SimpleClockGenerator(10).clk, [
       If(intf.reset, then:[
         intf.val &lt; 0
       ], orElse: [If(intf.en, then: [

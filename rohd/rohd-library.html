@@ -195,14 +195,6 @@ SPDX-License-Identifier: BSD-3-Clause</p>
   Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework. <a href="../rohd/ExternalModule-class.html">[...]</a>
 </dd>
 
-        <dt id="FF">
-  <span class="name "><a href="../rohd/FF-class.html">FF</a></span> 
-
-</dt>
-<dd>
-  Represents a block of sequential logic. <a href="../rohd/FF-class.html">[...]</a>
-</dd>
-
         <dt id="FlipFlop">
   <span class="name "><a href="../rohd/FlipFlop-class.html">FlipFlop</a></span> 
 
@@ -401,6 +393,14 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 </dt>
 <dd>
   A logical right-shift module. 
+</dd>
+
+        <dt id="Sequential">
+  <span class="name "><a href="../rohd/Sequential-class.html">Sequential</a></span> 
+
+</dt>
+<dd>
+  Represents a block of sequential logic. <a href="../rohd/Sequential-class.html">[...]</a>
 </dd>
 
         <dt id="SimpleClockGenerator">
@@ -612,6 +612,21 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
 </dd>
 
 
+          
+  <dt id="FF" class="">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/FF.html">FF</a></span>
+    = <a href="../rohd/Sequential-class.html">Sequential</a>
+  </span>
+  
+
+</dt>
+<dd>
+   
+  <div class="features">@<a href="https://api.dart.dev/stable/2.14.4/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use Sequential instead&#39;)</div>
+
+</dd>
+
+
       </dl>
     </section>
 
@@ -660,7 +675,6 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
   <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
   <li><a href="../rohd/Equals-class.html">Equals</a></li>
   <li><a href="../rohd/ExternalModule-class.html">ExternalModule</a></li>
-  <li><a href="../rohd/FF-class.html">FF</a></li>
   <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
   <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
   <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
@@ -686,6 +700,7 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
   <li><a href="../rohd/Port-class.html">Port</a></li>
   <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
   <li><a href="../rohd/RShift-class.html">RShift</a></li>
+  <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
   <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
   <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
   <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
@@ -716,6 +731,7 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
+  <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
 
 </ol>
 
