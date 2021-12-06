@@ -70,7 +70,9 @@
     : super(conditionals, name: name) {
   for (var i = 0; i &lt; clks.length; i++) {
     var clk = clks[i];
-    if (clk.width &gt; 1) throw Exception(&#39;clk must be 1 bit&#39;);
+    if (clk.width &gt; 1) {
+      throw Exception(&#39;Each clk must be 1 bit, but saw $clk.&#39;);
+    }
     _clks.add(addInput(Module.unpreferredName(&#39;clk$i&#39;), clk));
     _preTickClkValues.add(null);
   }

@@ -67,10 +67,12 @@
     {String name = &#39;bussubset&#39;})
     : super(name: name) {
   if (startIndex &lt; 0 || endIndex &lt; 0) {
-    throw Exception(&#39;Cannot access negative indices&#39;);
+    throw Exception(&#39;Cannot access negative indices!&#39;
+        &#39;  Indices $startIndex and&#47;or $endIndex are invalid.&#39;);
   }
   if (endIndex &gt; bus.width - 1 || startIndex &gt; bus.width - 1) {
-    throw Exception(&#39;Index out of bounds, must be less than width-1&#39;);
+    throw Exception(
+        &#39;Index out of bounds, indices $startIndex and $endIndex must be less than width-1&#39;);
   }
 
   _original = Module.unpreferredName(&#39;original_&#39; + bus.name);

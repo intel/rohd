@@ -75,7 +75,8 @@ thrown, unless <code>ignoreInvalid</code> is set to <code>true</code>.</p>
   <pre class="language-dart"><code class="language-dart">static bool isNegedge(LogicValue previousValue, LogicValue newValue,
     {ignoreInvalid = false}) {
   if (!ignoreInvalid &amp;&amp; (!previousValue.isValid | !newValue.isValid)) {
-    throw Exception(&#39;Edge detection on invalid value&#39;);
+    throw Exception(
+        &#39;Edge detection on invalid value from $previousValue to $newValue&#39;);
   }
   return previousValue == LogicValue.one &amp;&amp; newValue == LogicValue.zero;
 }</code></pre>

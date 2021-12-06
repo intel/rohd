@@ -84,7 +84,7 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
               ? LogicValue.zero
               : val == 1
                   ? LogicValue.one
-                  : throw Exception(&#39;Only can fill 0 or 1&#39;));
+                  : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
     } else {
       newValue = LogicValues.fromInt(val, width);
     }
@@ -96,21 +96,29 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
               ? LogicValue.zero
               : val == BigInt.one
                   ? LogicValue.one
-                  : throw Exception(&#39;Only can fill 0 or 1&#39;));
+                  : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
     } else {
       newValue = LogicValues.fromBigInt(val, width);
     }
   } else if (val is bool) {
     newValue = LogicValues.fromInt(val ? 1 : 0, width);
   } else if (val is LogicValues) {
-    &#47;&#47;TODO: this looks wrong, should act like List&lt;LogicValue&gt;?
-    newValue = val;
+    if (val.length == 1 &amp;&amp;
+        (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
+      newValue = LogicValues.filled(width, val[0]);
+    } else if (fill) {
+      throw Exception(
+          &#39;Failed to fill value with $val.  To fill, it should be 1 bit.&#39;);
+    } else {
+      newValue = val;
+    }
   } else if (val is List&lt;LogicValue&gt;) {
     if (val.length == 1 &amp;&amp;
         (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
       newValue = LogicValues.filled(width, val[0]);
     } else if (fill) {
-      throw Exception(&#39;Failed to fill.&#39;);
+      throw Exception(
+          &#39;Failed to fill value with $val.  To fill, it should be 1 bit.&#39;);
     } else {
       newValue = LogicValues.from(val);
     }
@@ -123,11 +131,13 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
       newValue = LogicValues.from(logicVals);
     }
   } else {
-    throw Exception(&#39;Unrecognized value to deposit on this signal.&#39;);
+    throw Exception(&#39;Unrecognized value &quot;$val&quot; to deposit on this signal. &#39;
+        &#39;Unknown type ${val.runtimeType} cannot be deposited.&#39;);
   }
 
   if (newValue.length != width) {
-    throw Exception(&#39;Updated value width mismatch&#39;);
+    throw Exception(
+        &#39;Updated value width mismatch.  The width of $val should be $width.&#39;);
   }
 
   if (_isPutting) {

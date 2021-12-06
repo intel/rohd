@@ -65,8 +65,12 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {String name = &#39;mux&#39;})
     : super(name: name) {
-  if (control.width != 1) throw Exception(&#39;Control must be single bit logic&#39;);
-  if (d0.width != d1.width) throw Exception(&#39;d0 and d1 must be same width&#39;);
+  if (control.width != 1) {
+    throw Exception(&#39;Control must be single bit Logic, but found $control.&#39;);
+  }
+  if (d0.width != d1.width) {
+    throw Exception(&#39;d0 ($d0) and d1 ($d1) must be same width&#39;);
+  }
 
   _control = Module.unpreferredName(&#39;control_&#39; + control.name);
   _d0 = Module.unpreferredName(&#39;d0_&#39; + d0.name);

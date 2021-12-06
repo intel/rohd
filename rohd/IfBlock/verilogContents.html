@@ -87,7 +87,7 @@ String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
   var verilog = &#39;&#39;;
   for (var iff in iffs) {
     if (iff is Else &amp;&amp; iff != iffs.last) {
-      throw Exception(&#39;Else must come last in an IfBlock&#39;);
+      throw Exception(&#39;Else must come last in an IfBlock.&#39;);
     }
     var header = iff == iffs.first
         ? &#39;if&#39;
@@ -95,7 +95,8 @@ String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
             ? &#39;else if&#39;
             : iff is Else
                 ? &#39;else&#39;
-                : throw Exception(&#39;Unsupported Iff&#39;);
+                : throw Exception(
+                    &#39;Unsupported Iff type: ${iff.runtimeType}.&#39;);
 
     var conditionName = inputsNameMap[driverInput(iff.condition).name];
     var ifContents = iff.then

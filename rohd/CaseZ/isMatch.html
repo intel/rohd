@@ -76,7 +76,8 @@
   <pre class="language-dart"><code class="language-dart">@override
 bool isMatch(LogicValues value) {
   if (expression.width != value.length) {
-    throw Exception(&#39;Value and expression must be equal width.&#39;);
+    throw Exception(
+        &#39;Value &quot;$value&quot; and expression &quot;$expression&quot; must be equal width.&#39;);
   }
   for (var i = 0; i &lt; expression.width; i++) {
     if (expression.value[i] != value[i] &amp;&amp; value[i] != LogicValue.z) {

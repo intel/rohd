@@ -72,7 +72,8 @@ Only returns valid information after <a href="../../rohd/Module/build.html">buil
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Iterable&lt;Module&gt; hierarchy() {
   if (!hasBuilt) {
-    throw Exception(&#39;Module must be built before accessing hierarchy.&#39;);
+    throw Exception(
+        &#39;Module must be built before accessing hierarchy.  Call build() before executing this.&#39;);
   }
   Module? pModule = this;
   var hierarchyQueue = Queue&lt;Module&gt;();

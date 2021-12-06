@@ -86,7 +86,7 @@ List&lt;Logic&gt; execute() {
     return [];
   }
 
-  var foundMatch = false;
+  CaseItem? foundMatch;
 
   for (var item in items) {
     &#47;&#47; match on the first matchinig item
@@ -94,28 +94,31 @@ List&lt;Logic&gt; execute() {
       for (var conditional in item.then) {
         drivenLogics.addAll(conditional.execute());
       }
-      if (foundMatch &amp;&amp; conditionalType == ConditionalType.unique) {
+      if (foundMatch != null &amp;&amp; conditionalType == ConditionalType.unique) {
         &#47;&#47;TODO: replace this with a logger message
-        throw Exception(&#39;Unique case statement had multiple matching cases&#39;);
+        throw Exception(&#39;Unique case statement had multiple matching cases.&#39;
+            &#39; Original: &quot;$foundMatch&quot;.&#39;
+            &#39; Duplicate: &quot;$item&quot;.&#39;);
       }
 
-      foundMatch = true;
+      foundMatch = item;
 
-      if (foundMatch &amp;&amp; conditionalType != ConditionalType.unique) {
+      if (conditionalType != ConditionalType.unique) {
         break;
       }
     }
   }
 
   &#47;&#47; no items matched
-  if (!foundMatch &amp;&amp; defaultItem != null) {
+  if (foundMatch == null &amp;&amp; defaultItem != null) {
     for (var conditional in defaultItem!) {
       drivenLogics.addAll(conditional.execute());
     }
-  } else if (!foundMatch &amp;&amp;
+  } else if (foundMatch == null &amp;&amp;
       (conditionalType == ConditionalType.unique ||
           conditionalType == ConditionalType.priority)) {
-    throw Exception(&#39;$conditionalType case statement had no matching case.&#39;);
+    throw Exception(&#39;$conditionalType case statement had no matching case,&#39;
+        &#39; and type was $conditionalType.&#39;);
   }
 
   return drivenLogics;

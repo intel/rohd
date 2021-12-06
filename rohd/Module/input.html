@@ -71,7 +71,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic input(String name) =&gt; _inputs.containsKey(name)
     ? _inputs[name]!
-    : throw Exception(&#39;Input name &quot;$name&quot; not found&#39;);</code></pre>
+    : throw Exception(
+        &#39;Input name &quot;$name&quot; not found as an input to this Module.&#39;);</code></pre>
 </section>
 
 

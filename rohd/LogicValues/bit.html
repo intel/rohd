@@ -70,7 +70,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue get bit {
-  if (length != 1) throw Exception(&#39;Length is not 1&#39;);
+  if (length != 1) throw Exception(&#39;Length must be 1, but was $length.&#39;);
   return this[0];
 }</code></pre>
 </section>

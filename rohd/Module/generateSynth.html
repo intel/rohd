@@ -71,7 +71,7 @@ may have other output formats, languages, files, etc.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String generateSynth() {
   if (!_hasBuilt) {
-    throw Exception(&#39;Module has not yet built!&#39;);
+    throw Exception(&#39;Module has not yet built!  Must call build() first.&#39;);
   }
 
   var synthHeader = &#39;&#39;&#39;

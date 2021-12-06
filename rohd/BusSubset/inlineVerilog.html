@@ -78,7 +78,9 @@ passed into those ports in the generated SystemVerilog.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 1) throw Exception(&#39;BusSubset has exactly one input.&#39;);
+  if (inputs.length != 1) {
+    throw Exception(&#39;BusSubset has exactly one input, but saw $inputs.&#39;);
+  }
   var a = inputs[_original]!;
   var sliceString =
       startIndex == endIndex ? &#39;[$startIndex]&#39; : &#39;[$endIndex:$startIndex]&#39;;

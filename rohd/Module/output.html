@@ -71,7 +71,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic output(String name) =&gt; _outputs.containsKey(name)
     ? _outputs[name]!
-    : throw Exception(&#39;Output name &quot;$name&quot; not found&#39;);</code></pre>
+    : throw Exception(
+        &#39;Output name &quot;$name&quot; not found as an output of this Module.&#39;);</code></pre>
 </section>
 
 

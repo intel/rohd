@@ -85,7 +85,10 @@ starting up interactions with independent processes (e.g. cosimulation).</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@mustCallSuper
 Future&lt;void&gt; build() async {
-  if (hasBuilt) throw Exception(&#39;Module already built.&#39;);
+  if (hasBuilt) {
+    throw Exception(
+        &#39;This Module has already been built, and can only be built once.&#39;);
+  }
 
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module

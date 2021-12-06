@@ -84,7 +84,8 @@ the signals that are passed into those ports in the generated SystemVerilog.</p>
 String instantiationVerilog(String instanceType, String instanceName,
     Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) {
   if (outputs.length != 1) {
-    throw Exception(&#39;Inline verilog must have exactly one output.&#39;);
+    throw Exception(
+        &#39;Inline verilog must have exactly one output, but saw $outputs.&#39;);
   }
   var output = outputs.values.first;
   var inline = inlineVerilog(inputs);

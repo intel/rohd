@@ -71,7 +71,10 @@ Returns an instance of <a href="../../rohd/ConditionalAssign-class.html">Conditi
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ConditionalAssign operator &lt;(dynamic other) {
-  if (_unassignable) throw Exception(&#39;This signal is unassignable.&#39;);
+  if (_unassignable) {
+    throw Exception(&#39;This signal &quot;$this&quot; has been marked as unassignable.  &#39;
+        &#39;It may be a constant expression or otherwise should not be assigned.&#39;);
+  }
 
   if (other is Logic) {
     return ConditionalAssign(this, other);

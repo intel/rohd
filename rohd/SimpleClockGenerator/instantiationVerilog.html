@@ -85,7 +85,8 @@ String instantiationVerilog(String instanceType, String instanceName,
     Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) {
   if (inputs.isNotEmpty || outputs.length != 1) {
     throw Exception(
-        &#39;SimpleClockGenerator has exactly one output and no inputs.&#39;);
+        &#39;SimpleClockGenerator has exactly one output and no inputs,&#39;
+        &#39; but saw inputs $inputs and outputs $outputs.&#39;);
   }
   var clk = outputs[&#39;clk&#39;]!;
   return &#39;&#39;&#39;

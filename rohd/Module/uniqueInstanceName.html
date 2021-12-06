@@ -70,7 +70,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String get uniqueInstanceName =&gt; hasBuilt
     ? _uniqueInstanceName
-    : throw Exception(&#39;Module must be built to access uniquified name.&#39;);</code></pre>
+    : throw Exception(
+        &#39;Module must be built to access uniquified name.  Call build() before accessing this.&#39;);</code></pre>
 </section>
 
 </section>
