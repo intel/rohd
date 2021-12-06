@@ -254,7 +254,7 @@ var a = Logic(width:8),
 
 
 // assign b to the bottom 3 bits of a
-b <= a.range(2,0);
+b <= a.slice(2,0);
 
 // assign d to the top bit of a
 d <= a[7];
