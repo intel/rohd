@@ -39,7 +39,8 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
       Map<String, String> inputs, Map<String, String> outputs) {
     if (inputs.isNotEmpty || outputs.length != 1) {
       throw Exception(
-          'SimpleClockGenerator has exactly one output and no inputs.');
+          'SimpleClockGenerator has exactly one output and no inputs,'
+          ' but saw inputs $inputs and outputs $outputs.');
     }
     var clk = outputs['clk']!;
     return '''

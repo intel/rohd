@@ -98,7 +98,8 @@ mixin InlineSystemVerilog on Module implements CustomSystemVerilog {
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
     if (outputs.length != 1) {
-      throw Exception('Inline verilog must have exactly one output.');
+      throw Exception(
+          'Inline verilog must have exactly one output, but saw $outputs.');
     }
     var output = outputs.values.first;
     var inline = inlineVerilog(inputs);
@@ -299,7 +300,7 @@ class _SynthModuleDefinition {
   late final Uniquifier _synthLogicNameUniquifier;
   String _getUniqueSynthLogicName(String? initialName, bool portName) {
     if (portName && initialName == null) {
-      throw Exception('Port name cannot be null');
+      throw Exception('Port name cannot be null.');
     }
     return _synthLogicNameUniquifier.getUniqueName(
         initialName: initialName, reserved: portName);
@@ -512,7 +513,8 @@ class _SynthModuleDefinition {
             assignment._src is _SynthLogic ? assignment._src : null;
         if (dst.name == src?.name) {
           //TODO: is this ok? just let it continue and delete the assignment?
-          throw Exception('Circular assignment detected');
+          throw Exception(
+              'Circular assignment detected between $dst and $src.');
         }
         if (src != null) {
           if (dst.renameable && src.renameable) {
@@ -570,7 +572,9 @@ class _SynthLogic {
 
   void mergeName(_SynthLogic other) {
     // print("Renaming $name to ${other.name}");
-    if (!renameable) throw Exception('This _SynthLogic cannot be renamed');
+    if (!renameable) {
+      throw Exception('This _SynthLogic ($this) cannot be renamed to $other.');
+    }
     _mergedConst = null;
     _mergedNameSynthLogic
         ?.mergeName(this); // in case we're changing direction of merge
@@ -580,7 +584,10 @@ class _SynthLogic {
 
   void mergeConst(String constant) {
     // print("Renaming $name to const ${constant}");
-    if (!renameable) throw Exception('This _SynthLogic cannot be renamed');
+    if (!renameable) {
+      throw Exception(
+          'This _SynthLogic ($this) cannot be renamed to $constant.');
+    }
     _mergedNameSynthLogic = null;
     _mergedConst = constant;
     _needsDeclaration = false;

@@ -59,7 +59,7 @@ class Uniquifier {
     }
 
     if (reserved && initialName != actualName) {
-      throw Exception('Unable to acquire reserved name.');
+      throw Exception('Unable to acquire reserved name "$initialName".');
     }
 
     _takenNames.add(actualName);

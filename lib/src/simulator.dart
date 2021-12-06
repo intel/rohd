@@ -122,7 +122,8 @@ class Simulator {
   /// Registers an abritrary [action] to be executed at [timestamp] time.
   static void registerAction(int timestamp, void Function() action) {
     if (timestamp <= _currentTimestamp) {
-      throw Exception('Cannot add timestamp in the past.');
+      throw Exception(
+          'Cannot add timestamp "$timestamp" in the past.  Current time is ${Simulator.time}');
     }
     if (!_pendingTimestamps.containsKey(timestamp)) {
       _pendingTimestamps[timestamp] = [];

@@ -47,7 +47,8 @@ class WaveDumper {
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
       : _outputFile = File(outputPath) {
     if (!module.hasBuilt) {
-      throw Exception('Module must be built before passed to dumper.');
+      throw Exception(
+          'Module must be built before passed to dumper.  Call build() first.');
     }
 
     _collectAllSignals();

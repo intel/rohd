@@ -216,12 +216,16 @@ class Logic {
   }
 
   /// Throws an exception if this [Logic] cannot be connected to another signal.
-  void _assertConnectable() {
+  void _assertConnectable(Logic other) {
     if (_srcConnection != null) {
-      throw Exception('This signal is already connected.');
+      throw Exception(
+          'This signal "$this" is already connected to "$srcConnection", so it cannot be connected to "$other".');
       //TODO: this should be legal to do, but needs more safety around it (difficult)
     }
-    if (_unassignable) throw Exception('This signal is unassignable.');
+    if (_unassignable) {
+      throw Exception('This signal "$this" has been marked as unassignable.  '
+          'It may be a constant expression or otherwise should not be assigned.');
+    }
   }
 
   // TODO: prevent re-connection after build / after simulator has started?
@@ -230,7 +234,7 @@ class Logic {
   ///
   /// Every time [other] transitions (`glitch`es), this signal will transition the same way.
   void gets(Logic other) {
-    _assertConnectable();
+    _assertConnectable(other);
 
     _connect(other);
 
@@ -240,7 +244,10 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
-    if (other.width != width) throw Exception('Bus widths must match.');
+    if (other.width != width) {
+      throw Exception('Bus widths must match.'
+          'Cannot connect $this to $other which have different widths.');
+    }
 
     _unassignable = true;
 
@@ -327,7 +334,10 @@ class Logic {
   /// Represents conditionally asigning the value of another signal to this.
   /// Returns an instance of [ConditionalAssign] to be be passed to a [Conditional].
   ConditionalAssign operator <(dynamic other) {
-    if (_unassignable) throw Exception('This signal is unassignable.');
+    if (_unassignable) {
+      throw Exception('This signal "$this" has been marked as unassignable.  '
+          'It may be a constant expression or otherwise should not be assigned.');
+    }
 
     if (other is Logic) {
       return ConditionalAssign(this, other);
@@ -366,7 +376,7 @@ class Logic {
                 ? LogicValue.zero
                 : val == 1
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1'));
+                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValues.fromInt(val, width);
       }
@@ -378,21 +388,29 @@ class Logic {
                 ? LogicValue.zero
                 : val == BigInt.one
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1'));
+                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValues.fromBigInt(val, width);
       }
     } else if (val is bool) {
       newValue = LogicValues.fromInt(val ? 1 : 0, width);
     } else if (val is LogicValues) {
-      //TODO: this looks wrong, should act like List<LogicValue>?
-      newValue = val;
+      if (val.length == 1 &&
+          (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
+        newValue = LogicValues.filled(width, val[0]);
+      } else if (fill) {
+        throw Exception(
+            'Failed to fill value with $val.  To fill, it should be 1 bit.');
+      } else {
+        newValue = val;
+      }
     } else if (val is List<LogicValue>) {
       if (val.length == 1 &&
           (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
         newValue = LogicValues.filled(width, val[0]);
       } else if (fill) {
-        throw Exception('Failed to fill.');
+        throw Exception(
+            'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
         newValue = LogicValues.from(val);
       }
@@ -405,11 +423,13 @@ class Logic {
         newValue = LogicValues.from(logicVals);
       }
     } else {
-      throw Exception('Unrecognized value to deposit on this signal.');
+      throw Exception('Unrecognized value "$val" to deposit on this signal. '
+          'Unknown type ${val.runtimeType} cannot be deposited.');
     }
 
     if (newValue.length != width) {
-      throw Exception('Updated value width mismatch');
+      throw Exception(
+          'Updated value width mismatch.  The width of $val should be $width.');
     }
 
     if (_isPutting) {

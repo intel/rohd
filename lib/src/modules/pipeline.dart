@@ -132,12 +132,15 @@ class Pipeline {
   void _setStalls(List<Logic?>? stalls) {
     if (stalls != null) {
       if (stalls.length != _numStages - 1) {
-        throw Exception('Stall list length must match number of stages.');
+        throw Exception(
+            'Stall list length (${stalls.length}) must match number of stages (${_numStages - 1}).');
       }
       for (var i = 0; i < _numStages - 1; i++) {
         var stall = stalls[i];
         if (stall == null) continue;
-        if (stall.width != 1) throw Exception('Stall signal must be 1 bit');
+        if (stall.width != 1) {
+          throw Exception('Stall signal must be 1 bit, but found $stall.');
+        }
         _stages[i].stall = stall;
       }
     }

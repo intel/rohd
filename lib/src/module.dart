@@ -81,14 +81,16 @@ abstract class Module {
   /// Logic within this [Module] should consume this signal.
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
-      : throw Exception('Input name "$name" not found');
+      : throw Exception(
+          'Input name "$name" not found as an input to this Module.');
 
   /// Accesses the [Logic] associated with this [Module]s output port named [name].
   ///
   /// Logic outside of this [Module] should consume this signal.  It is okay to consume this within this [Module] as well.
   Logic output(String name) => _outputs.containsKey(name)
       ? _outputs[name]!
-      : throw Exception('Output name "$name" not found');
+      : throw Exception(
+          'Output name "$name" not found as an output of this Module.');
 
   /// Returns true iff [net] is the same [Logic] as the input port of this [Module] with the same name.
   bool isInput(Logic net) => _inputs[net.name] == net;
@@ -99,7 +101,8 @@ abstract class Module {
   /// If this module has a [parent], after [build()] this will be a guaranteed unique name within its scope.
   String get uniqueInstanceName => hasBuilt
       ? _uniqueInstanceName
-      : throw Exception('Module must be built to access uniquified name.');
+      : throw Exception(
+          'Module must be built to access uniquified name.  Call build() before accessing this.');
   String _uniqueInstanceName;
 
   Module({this.name = 'unnamed_module'}) : _uniqueInstanceName = name;
@@ -111,7 +114,8 @@ abstract class Module {
   /// Only returns valid information after [build()].
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
-      throw Exception('Module must be built before accessing hierarchy.');
+      throw Exception(
+          'Module must be built before accessing hierarchy.  Call build() before executing this.');
     }
     Module? pModule = this;
     var hierarchyQueue = Queue<Module>();
@@ -145,7 +149,10 @@ abstract class Module {
   /// This function should only be called one time per [Module].
   @mustCallSuper
   Future<void> build() async {
-    if (hasBuilt) throw Exception('Module already built.');
+    if (hasBuilt) {
+      throw Exception(
+          'This Module has already been built, and can only be built once.');
+    }
 
     // construct the list of modules within this module
     // 1) trace from outputs of this module back to inputs of this module
@@ -173,7 +180,11 @@ abstract class Module {
 
   /// Adds a [Module] to this as a subModule.
   void _addModule(Module module) {
-    if (module.parent != null) throw Exception('Module already has a parent');
+    if (module.parent != null) {
+      throw Exception('This Module "$this" already has a parent. '
+          'If you are hitting this as a user of ROHD, please file '
+          'a bug at https://github.com/intel/rohd/issues.');
+    }
 
     if (!_modules.contains(module)) {
       _modules.add(module);
@@ -221,7 +232,9 @@ abstract class Module {
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule nor this module, bad!
       //TODO: add tests that this exception hits!
-      throw Exception('Violation of input/output rules');
+      throw Exception('Violation of input/output rules.'
+          '  Logic within a Module should only consume inputs and drive outputs of that Module.'
+          '  See https://github.com/intel/rohd#modules for more information.');
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -268,7 +281,9 @@ abstract class Module {
 
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule nor this module, bad!
-      throw Exception('Violation of input/output rules');
+      throw Exception('Violation of input/output rules.'
+          '  Logic within a Module should only consume inputs and drive outputs of that Module.'
+          '  See https://github.com/intel/rohd#modules for more information.');
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -310,10 +325,11 @@ abstract class Module {
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
     if (!Sanitizer.isSanitary(name)) {
-      throw Exception('Invalid name:"$name", must be legal SystemVerilog');
+      throw Exception(
+          'Invalid name "$name", must be legal SystemVerilog and not collide with any keywords.');
     }
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
-      throw Exception('Already defined a port with name $name');
+      throw Exception('Already defined a port with name "$name".');
     }
   }
 
@@ -323,7 +339,10 @@ abstract class Module {
   @protected
   Logic addInput(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
-    if (x.width != width) throw Exception('Port width mismatch');
+    if (x.width != width) {
+      throw Exception(
+          'Port width mismatch, signal "$x" does not have specified width "$width".');
+    }
     _inputs[name] = Logic(name: name, width: width)..gets(x);
 
     // ignore: invalid_use_of_protected_member
@@ -367,7 +386,7 @@ abstract class Module {
   /// may have other output formats, languages, files, etc.
   String generateSynth() {
     if (!_hasBuilt) {
-      throw Exception('Module has not yet built!');
+      throw Exception('Module has not yet built!  Must call build() first.');
     }
 
     var synthHeader = '''
