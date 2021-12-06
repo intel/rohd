@@ -92,7 +92,8 @@ class LogicValue {
   static bool isPosedge(LogicValue previousValue, LogicValue newValue,
       {ignoreInvalid = false}) {
     if (!ignoreInvalid && (!previousValue.isValid | !newValue.isValid)) {
-      throw Exception('Edge detection on invalid value');
+      throw Exception(
+          'Edge detection on invalid value from $previousValue to $newValue.');
     }
     return previousValue == LogicValue.zero && newValue == LogicValue.one;
   }
@@ -104,7 +105,8 @@ class LogicValue {
   static bool isNegedge(LogicValue previousValue, LogicValue newValue,
       {ignoreInvalid = false}) {
     if (!ignoreInvalid && (!previousValue.isValid | !newValue.isValid)) {
-      throw Exception('Edge detection on invalid value');
+      throw Exception(
+          'Edge detection on invalid value from $previousValue to $newValue');
     }
     return previousValue == LogicValue.one && newValue == LogicValue.zero;
   }

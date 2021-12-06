@@ -157,7 +157,9 @@ class Sequential extends _Always {
       : super(conditionals, name: name) {
     for (var i = 0; i < clks.length; i++) {
       var clk = clks[i];
-      if (clk.width > 1) throw Exception('clk must be 1 bit');
+      if (clk.width > 1) {
+        throw Exception('Each clk must be 1 bit, but saw $clk.');
+      }
       _clks.add(addInput(Module.unpreferredName('clk$i'), clk));
       _preTickClkValues.add(null);
     }
@@ -253,7 +255,18 @@ class Sequential extends _Always {
         allDrivenSignals.addAll(element.execute());
       }
       if (allDrivenSignals.length != allDrivenSignals.toSet().length) {
-        throw Exception('Sequential drove the same signal multiple times.');
+        var alreadySet = <Logic>{};
+        var redrivenSignals = <Logic>{};
+        for (var signal in allDrivenSignals) {
+          if (alreadySet.contains(signal)) {
+            redrivenSignals.add(signal);
+          }
+          alreadySet.add(signal);
+        }
+        throw Exception(
+            'Sequential drove the same signal(s) multiple times: $redrivenSignals.'
+            ' If you hit this Exception as a ROHD user,'
+            ' please file a bug at https://github.com/intel/rohd/issues');
       }
     }
 
@@ -372,7 +385,9 @@ class ConditionalAssign extends Conditional {
   final Logic driver;
 
   ConditionalAssign(this.receiver, this.driver) {
-    if (driver.width != receiver.width) throw Exception('Widths must match');
+    if (driver.width != receiver.width) {
+      throw Exception('Width for $receiver and $driver must match but do not.');
+    }
   }
 
   //TODO: how to handle a conditional fill a-la '1
@@ -410,6 +425,9 @@ class CaseItem {
   final List<Conditional> then;
 
   CaseItem(this.value, this.then);
+
+  @override
+  String toString() => '$value : $then';
 }
 
 /// Controls characteristics about [Case] blocks.
@@ -473,7 +491,7 @@ class Case extends Conditional {
       return [];
     }
 
-    var foundMatch = false;
+    CaseItem? foundMatch;
 
     for (var item in items) {
       // match on the first matchinig item
@@ -481,28 +499,31 @@ class Case extends Conditional {
         for (var conditional in item.then) {
           drivenLogics.addAll(conditional.execute());
         }
-        if (foundMatch && conditionalType == ConditionalType.unique) {
+        if (foundMatch != null && conditionalType == ConditionalType.unique) {
           //TODO: replace this with a logger message
-          throw Exception('Unique case statement had multiple matching cases');
+          throw Exception('Unique case statement had multiple matching cases.'
+              ' Original: "$foundMatch".'
+              ' Duplicate: "$item".');
         }
 
-        foundMatch = true;
+        foundMatch = item;
 
-        if (foundMatch && conditionalType != ConditionalType.unique) {
+        if (conditionalType != ConditionalType.unique) {
           break;
         }
       }
     }
 
     // no items matched
-    if (!foundMatch && defaultItem != null) {
+    if (foundMatch == null && defaultItem != null) {
       for (var conditional in defaultItem!) {
         drivenLogics.addAll(conditional.execute());
       }
-    } else if (!foundMatch &&
+    } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
             conditionalType == ConditionalType.priority)) {
-      throw Exception('$conditionalType case statement had no matching case.');
+      throw Exception('$conditionalType case statement had no matching case,'
+          ' and type was $conditionalType.');
     }
 
     return drivenLogics;
@@ -618,7 +639,8 @@ class CaseZ extends Case {
   @override
   bool isMatch(LogicValues value) {
     if (expression.width != value.length) {
-      throw Exception('Value and expression must be equal width.');
+      throw Exception(
+          'Value "$value" and expression "$expression" must be equal width.');
     }
     for (var i = 0; i < expression.width; i++) {
       if (expression.value[i] != value[i] && value[i] != LogicValue.z) {
@@ -731,7 +753,7 @@ class IfBlock extends Conditional {
     var verilog = '';
     for (var iff in iffs) {
       if (iff is Else && iff != iffs.last) {
-        throw Exception('Else must come last in an IfBlock');
+        throw Exception('Else must come last in an IfBlock.');
       }
       var header = iff == iffs.first
           ? 'if'
@@ -739,7 +761,8 @@ class IfBlock extends Conditional {
               ? 'else if'
               : iff is Else
                   ? 'else'
-                  : throw Exception('Unsupported Iff');
+                  : throw Exception(
+                      'Unsupported Iff type: ${iff.runtimeType}.');
 
       var conditionName = inputsNameMap[driverInput(iff.condition).name];
       var ifContents = iff.then
@@ -859,7 +882,7 @@ class FlipFlop extends Module with CustomSystemVerilog {
   Logic get q => output(_q);
 
   FlipFlop(Logic clk, Logic d, {String name = 'flipflop'}) : super(name: name) {
-    if (clk.width > 1) throw Exception('clk must be 1 bit');
+    if (clk.width != 1) throw Exception('clk must be 1 bit');
     _clk = Module.unpreferredName('clk');
     _d = Module.unpreferredName('d');
     _q = Module.unpreferredName('q');

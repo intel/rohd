@@ -84,7 +84,7 @@ class _SmallLogicValues extends LogicValues {
   @override
   int toInt() {
     if (_invalid != 0) {
-      throw Exception('Cannot convert invalid LogicValues to int: ${this}');
+      throw Exception('Cannot convert invalid LogicValues to int: $this');
     }
     return _value;
   }
@@ -364,7 +364,8 @@ class _FilledLogicValues extends LogicValues {
         return other._value == other._mask && other._invalid == other._mask;
       }
     }
-    throw Exception('Unexpected unknown comparison.');
+    throw Exception(
+        'Unexpected unknown comparison between $runtimeType and ${other.runtimeType}.');
   }
 
   @override
@@ -702,9 +703,15 @@ abstract class LogicValues {
 
   /// Returns a subset [LogicValues].  It is inclusive of [start], exclusive of [end].
   LogicValues getRange(int start, int end) {
-    if (end < start) throw Exception('End cannot be greater than start.');
-    if (end > length) throw Exception('End must be less than length.');
-    if (start < 0) throw Exception('Start must be greater than or equal to 0.');
+    if (end < start) {
+      throw Exception('End ($end) cannot be greater than start ($start).');
+    }
+    if (end > length) {
+      throw Exception('End ($end) must be less than length ($length).');
+    }
+    if (start < 0) {
+      throw Exception('Start ($start) must be greater than or equal to 0.');
+    }
     return _getRange(start, end);
   }
 
@@ -726,7 +733,7 @@ abstract class LogicValues {
   ///
   /// Throws an Exception if width is not 1.
   LogicValue get bit {
-    if (length != 1) throw Exception('Length is not 1');
+    if (length != 1) throw Exception('Length must be 1, but was $length.');
     return this[0];
   }
 
@@ -768,7 +775,9 @@ abstract class LogicValues {
 
   LogicValues _twoInputBitwiseOp(
       LogicValues other, LogicValues Function(LogicValues, LogicValues) op) {
-    if (length != other.length) throw Exception('Lengths must match');
+    if (length != other.length) {
+      throw Exception('Lengths must match, but found $this and $other');
+    }
     if (other is _FilledLogicValues && this is! _FilledLogicValues) {
       return op(other, this);
     }
@@ -822,10 +831,11 @@ abstract class LogicValues {
   LogicValues _doMath(
       dynamic other, dynamic Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValues || other is BigInt)) {
-      throw Exception('Improper argument ${other.runtimeType}');
+      throw Exception(
+          'Improper argument ${other.runtimeType}, should be int, LogicValues, or BigInt.');
     }
     if (other is LogicValues && other.length != length) {
-      throw Exception('Lengths must match');
+      throw Exception('Lengths must match, but found "$this" and "$other".');
     }
 
     if (!isValid) return LogicValues.filled(length, LogicValue.x);
@@ -843,7 +853,8 @@ abstract class LogicValues {
               ? BigInt.from(other)
               : other is LogicValues
                   ? other.toBigInt()
-                  : throw Exception('Unexpected big type.');
+                  : throw Exception(
+                      'Unexpected big type: ${other.runtimeType}.');
       return LogicValues.fromBigInt(op(a, b), length);
     } else {
       var a = toInt();
@@ -884,10 +895,11 @@ abstract class LogicValues {
   /// Handles length and bounds checks as well as proper conversion between different types of representation.
   LogicValue _doCompare(dynamic other, bool Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValues || other is BigInt)) {
-      throw Exception('Improper arguments ${other.runtimeType}.');
+      throw Exception(
+          'Improper arguments ${other.runtimeType}, should be int, LogicValues, or BigInt.');
     }
     if (other is LogicValues && other.length != length) {
-      throw Exception('Lengths must match');
+      throw Exception('Lengths must match, but found "$this" and "$other"');
     }
 
     if (!isValid) return LogicValue.x;
@@ -904,7 +916,8 @@ abstract class LogicValues {
               ? BigInt.from(other)
               : other is LogicValues
                   ? other.toBigInt()
-                  : throw Exception('Unexpected big type.');
+                  : throw Exception(
+                      'Unexpected big type: ${other.runtimeType}.');
     } else {
       a = toInt();
       b = other is int ? other : (other as LogicValues).toInt();
@@ -933,7 +946,7 @@ abstract class LogicValues {
     } else if (shamt is int) {
       shamtInt = shamt;
     } else {
-      throw Exception('Cannot shift by type ${shamt.runtimeType}');
+      throw Exception('Cannot shift by type ${shamt.runtimeType}.');
     }
     if (direction == _ShiftType.left) {
       return _shiftLeft(shamtInt);

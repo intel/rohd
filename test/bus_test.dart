@@ -21,8 +21,12 @@ class BusTestModule extends Module {
   Logic get aPlusB => output('a_plus_b');
 
   BusTestModule(Logic a, Logic b) : super(name: 'bustestmodule') {
-    if (a.width != b.width) throw Exception('a and b must be same width');
-    if (a.width <= 3) throw Exception('a must be more than width 3');
+    if (a.width != b.width) {
+      throw Exception('a and b must be same width, but found "$a" and "$b".');
+    }
+    if (a.width <= 3) {
+      throw Exception('a must be more than width 3.');
+    }
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 

@@ -132,7 +132,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
       {String name = 'gate2'})
       : super(name: name) {
     if (b is Logic && a.width != b.width) {
-      throw Exception('Input widths must match.');
+      throw Exception(
+          'Input widths must match, but found $a and $b with different widths.');
     }
 
     var bLogic = b is Logic ? b : Const(b, width: a.width);
@@ -207,7 +208,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
       {String name = 'cmp2'})
       : super(name: name) {
     if (b is Logic && a.width != b.width) {
-      throw Exception('Input widths must match.');
+      throw Exception(
+          'Input widths must match, but found $a and $b with different widths.');
     }
 
     var bLogic = b is Logic ? b : Const(b, width: a.width);
@@ -452,8 +454,12 @@ class Mux extends Module with InlineSystemVerilog {
 
   Mux(Logic control, Logic d1, Logic d0, {String name = 'mux'})
       : super(name: name) {
-    if (control.width != 1) throw Exception('Control must be single bit logic');
-    if (d0.width != d1.width) throw Exception('d0 and d1 must be same width');
+    if (control.width != 1) {
+      throw Exception('Control must be single bit Logic, but found $control.');
+    }
+    if (d0.width != d1.width) {
+      throw Exception('d0 ($d0) and d1 ($d1) must be same width');
+    }
 
     _control = Module.unpreferredName('control_' + control.name);
     _d0 = Module.unpreferredName('d0_' + d0.name);

@@ -16,7 +16,9 @@ class ComparisonTestModule extends Module {
   final int c;
   ComparisonTestModule(Logic a, Logic b, {this.c = 5})
       : super(name: 'gatetestmodule') {
-    if (a.width != b.width) throw Exception('a and b must be same width');
+    if (a.width != b.width) {
+      throw Exception('a and b must be same width, but found $a and $b.');
+    }
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 

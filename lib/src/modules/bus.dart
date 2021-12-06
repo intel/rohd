@@ -31,10 +31,12 @@ class BusSubset extends Module with InlineSystemVerilog {
       {String name = 'bussubset'})
       : super(name: name) {
     if (startIndex < 0 || endIndex < 0) {
-      throw Exception('Cannot access negative indices');
+      throw Exception('Cannot access negative indices!'
+          '  Indices $startIndex and/or $endIndex are invalid.');
     }
     if (endIndex > bus.width - 1 || startIndex > bus.width - 1) {
-      throw Exception('Index out of bounds, must be less than width-1');
+      throw Exception(
+          'Index out of bounds, indices $startIndex and $endIndex must be less than width-1');
     }
 
     _original = Module.unpreferredName('original_' + bus.name);
@@ -69,7 +71,9 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) throw Exception('BusSubset has exactly one input.');
+    if (inputs.length != 1) {
+      throw Exception('BusSubset has exactly one input, but saw $inputs.');
+    }
     var a = inputs[_original]!;
     var sliceString =
         startIndex == endIndex ? '[$startIndex]' : '[$endIndex:$startIndex]';
@@ -147,7 +151,8 @@ class Swizzle extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != _swizzleInputs.length) {
-      throw Exception('This swizzle has ${_swizzleInputs.length} inputs.');
+      throw Exception('This swizzle has ${_swizzleInputs.length} inputs,'
+          ' but saw $inputs with ${inputs.length} values.');
     }
     var inputStr = _swizzleInputs.reversed.map((e) => inputs[e.name]).join(',');
     return '{$inputStr}';
