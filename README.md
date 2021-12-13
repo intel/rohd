@@ -16,7 +16,7 @@ Features of ROHD include:
 - Easy **IP integration** and **interfaces**; using an IP is as easy as an import.  Reduces tedious, redundant, and error prone aspects of integration
 - **Simple and fast build**, free of complex build systems and EDA vendor tools
 - Can use the excellent pub.dev **package manager** and all the packages it has to offer
-- Built-in event-based **fast simulator**, with **waveform dumper** to .vcd file format
+- Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform dumper** to .vcd file format
 - Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** for integration or downstream tool consumption
 - **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
 - Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
