@@ -308,10 +308,10 @@ abstract class Conditional {
   ) {
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
-    getConditionals().forEach((element) {
-      element._updateAssignmentMaps(
+    for (var conditional in getConditionals()) {
+      conditional._updateAssignmentMaps(
           assignedReceiverToOutputMap, assignedDriverToInputMap);
-    });
+    }
   }
 
   /// Updates the value of [_driverValueOverrideMap] and passes it down to all
@@ -319,9 +319,9 @@ abstract class Conditional {
   void _updateOverrideMap(Map<Logic, LogicValues> driverValueOverrideMap) {
     // this is for always_ff pre-tick values
     _driverValueOverrideMap = driverValueOverrideMap;
-    getConditionals().forEach((element) {
-      element._updateOverrideMap(driverValueOverrideMap);
-    });
+    for (var conditional in getConditionals()) {
+      conditional._updateOverrideMap(driverValueOverrideMap);
+    }
   }
 
   /// Gets the value that should be used for execution for the input port associated with [driver].
@@ -485,9 +485,9 @@ class Case extends Conditional {
     //TODO: what about for CaseZ where epxressions can have Z?  BUG?
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      getReceivers().forEach((receiver) {
+      for (var receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
-      });
+      }
       return [];
     }
 
@@ -703,9 +703,9 @@ class IfBlock extends Conditional {
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
         // x and z propagation
-        getReceivers().forEach((receiver) {
+        for (var receiver in getReceivers()) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-        });
+        }
         break;
       }
       // if it's 0, then continue searching down the path
@@ -833,9 +833,9 @@ class If extends Conditional {
       }
     } else {
       // x and z propagation
-      getReceivers().forEach((receiver) {
+      for (var receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
-      });
+      }
     }
     return drivenLogics;
   }
