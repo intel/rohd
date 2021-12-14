@@ -88,23 +88,23 @@ will be added.</p>
   uniquify = uniquify ?? (String original) =&gt; original;
 
   if (inputTags != null) {
-    getPorts(inputTags).forEach((port) {
+    for (var port in getPorts(inputTags)) {
       setPort(
           &#47;&#47; ignore: invalid_use_of_protected_member
-          module.addInput(uniquify!(port.name), srcInterface.port(port.name),
+          module.addInput(uniquify(port.name), srcInterface.port(port.name),
               width: port.width),
           portName: port.name);
-    });
+    }
   }
 
   if (outputTags != null) {
-    getPorts(outputTags).forEach((port) {
+    for (var port in getPorts(outputTags)) {
       &#47;&#47; ignore: invalid_use_of_protected_member
-      var output = module.addOutput(uniquify!(port.name), width: port.width);
+      var output = module.addOutput(uniquify(port.name), width: port.width);
       port &lt;= output;
       srcInterface.port(port.name) &lt;= port;
       setPort(output, portName: port.name);
-    });
+    }
   }
 }</code></pre>
 </section>

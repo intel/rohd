@@ -86,9 +86,9 @@ List&lt;Logic&gt; execute() {
     }
   } else {
     &#47;&#47; x and z propagation
-    getReceivers().forEach((receiver) {
+    for (var receiver in getReceivers()) {
       receiverOutput(receiver).put(driverValue(condition)[0]);
-    });
+    }
   }
   return drivenLogics;
 }</code></pre>

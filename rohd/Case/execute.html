@@ -80,9 +80,9 @@ List&lt;Logic&gt; execute() {
   &#47;&#47;TODO: what about for CaseZ where epxressions can have Z?  BUG?
   if (!expression.value.isValid) {
     &#47;&#47; if expression has X or Z, then propogate X&#39;s!
-    getReceivers().forEach((receiver) {
+    for (var receiver in getReceivers()) {
       receiverOutput(receiver).put(LogicValue.x);
-    });
+    }
     return [];
   }
 

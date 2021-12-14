@@ -85,9 +85,9 @@ List&lt;Logic&gt; execute() {
       break;
     } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
       &#47;&#47; x and z propagation
-      getReceivers().forEach((receiver) {
+      for (var receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-      });
+      }
       break;
     }
     &#47;&#47; if it&#39;s 0, then continue searching down the path
