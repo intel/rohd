@@ -87,9 +87,9 @@ class SimCompare {
             expect(o.valueInt, equals(value), reason: errorReason);
           } else if (value is LogicValue &&
               (value == LogicValue.x || value == LogicValue.z)) {
-            o.value.toList().forEach((element) {
-              expect(element, equals(value), reason: errorReason);
-            });
+            for (var oBit in o.value.toList()) {
+              expect(oBit, equals(value), reason: errorReason);
+            }
           } else {
             throw Exception(
                 'Value type ${value.runtimeType} is not supported (yet?)');

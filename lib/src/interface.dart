@@ -61,23 +61,23 @@ class Interface<TagType> {
     uniquify = uniquify ?? (String original) => original;
 
     if (inputTags != null) {
-      getPorts(inputTags).forEach((port) {
+      for (var port in getPorts(inputTags)) {
         setPort(
             // ignore: invalid_use_of_protected_member
-            module.addInput(uniquify!(port.name), srcInterface.port(port.name),
+            module.addInput(uniquify(port.name), srcInterface.port(port.name),
                 width: port.width),
             portName: port.name);
-      });
+      }
     }
 
     if (outputTags != null) {
-      getPorts(outputTags).forEach((port) {
+      for (var port in getPorts(outputTags)) {
         // ignore: invalid_use_of_protected_member
-        var output = module.addOutput(uniquify!(port.name), width: port.width);
+        var output = module.addOutput(uniquify(port.name), width: port.width);
         port <= output;
         srcInterface.port(port.name) <= port;
         setPort(output, portName: port.name);
-      });
+      }
     }
   }
 
