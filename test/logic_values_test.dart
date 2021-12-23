@@ -30,9 +30,11 @@ void main() {
   });
 
   group('logic value', () {
-    test('ofBool', () {
-      expect(LogicValue.ofBool(true), equals(LogicValue.one));
-      expect(LogicValue.ofBool(false), equals(LogicValue.zero));
+    test('fromBool', () {
+      expect(LogicValue.fromBool(true), equals(LogicValue.one));
+      expect(LogicValue.fromBool(false), equals(LogicValue.zero));
+      expect(LogicValues.fromBool(true), equals(LogicValues.fromString('1')));
+      expect(LogicValues.fromBool(false), equals(LogicValues.fromString('0')));
     });
   });
 }

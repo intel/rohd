@@ -25,7 +25,7 @@ class LogicValue {
   static const LogicValue z = LogicValue._(_LogicValueEnum.z);
 
   /// Convert a bool to a one or zero
-  static LogicValue ofBool(bool v) => v ? one : zero;
+  static LogicValue fromBool(bool v) => v ? one : zero;
 
   final _LogicValueEnum _value;
   const LogicValue._(this._value);
