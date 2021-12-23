@@ -557,6 +557,10 @@ abstract class LogicValues {
 
   const LogicValues._(this.length) : assert(length >= 0);
 
+  /// Converts `bool` [value] to a valid [LogicValues] with 1 bits either one or zero.
+  static LogicValues fromBool(bool value) =>
+      _SmallLogicValues(value ? 1 : 0, 0, 1);
+
   /// Converts `int` [value] to a valid [LogicValues] with [length] number of bits.
   ///
   /// [length] must be greater than or equal to 0.

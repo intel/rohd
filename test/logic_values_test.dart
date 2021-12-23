@@ -28,4 +28,13 @@ void main() {
           equals(LogicValues.fromString('01xx' * 100)));
     });
   });
+
+  group('logic value', () {
+    test('fromBool', () {
+      expect(LogicValue.fromBool(true), equals(LogicValue.one));
+      expect(LogicValue.fromBool(false), equals(LogicValue.zero));
+      expect(LogicValues.fromBool(true), equals(LogicValues.fromString('1')));
+      expect(LogicValues.fromBool(false), equals(LogicValues.fromString('0')));
+    });
+  });
 }
