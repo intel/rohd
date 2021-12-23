@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the toInt method from the LogicValue class, for the Dart programming language.">
-  <title>toInt method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the fromBool method from the LogicValue class, for the Dart programming language.">
+  <title>fromBool method - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">toInt method</li>
+    <li class="self-crumb">fromBool method</li>
   </ol>
-  <div class="self-name">toInt</div>
+  <div class="self-name">fromBool</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,32 +45,30 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">toInt</span> method 
+<h1><span class="kind-method">fromBool</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.15.1/dart-core/int-class.html">int</a></span>
-<span class="name ">toInt</span>(<wbr>)
+<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
+<span class="name ">fromBool</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="fromBool-param-v"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">v</span></span></li>
+</ol>)
 
       
 
     </section>
     
 <section class="desc markdown">
-  <p>Converts a valid logical value to an <a href="https://api.dart.dev/stable/2.15.1/dart-core/int-class.html">int</a>.</p>
-<p>Throws an exception if the value is invalid.</p>
+  <p>Convert a bool to a one or zero</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">int toInt() {
-  return toBool() ? 1 : 0;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">static LogicValue fromBool(bool v) =&gt; v ? one : zero;</code></pre>
 </section>
 
 
@@ -87,7 +85,7 @@
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li class="self-crumb">toInt method</li>
+  <li class="self-crumb">fromBool method</li>
 </ol>
 
 
