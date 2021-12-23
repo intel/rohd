@@ -28,4 +28,11 @@ void main() {
           equals(LogicValues.fromString('01xx' * 100)));
     });
   });
+
+  group('logic value', () {
+    test('ofBool', () {
+      expect(LogicValue.ofBool(true), equals(LogicValue.one));
+      expect(LogicValue.ofBool(false), equals(LogicValue.zero));
+    });
+  });
 }
