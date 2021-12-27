@@ -11,21 +11,43 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-//TODO: reversed looks broken
-//TODO: add a test with x & 0 == 0
+// All logicvalues to support trying all possiblities
+const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
+
+// shorten some names to make tests read better
+final lv = LogicValues.fromString;
+LogicValues large(LogicValue lv) => LogicValues.filled(100, lv);
+
 void main() {
   group('two input bitwise', () {
     test('and2', () {
-      expect(LogicValues.fromString('01xz') & LogicValues.fromString('1111'),
-          equals(LogicValues.fromString('01xx')));
-      expect(
-          LogicValues.filled(100, LogicValue.zero) &
-              LogicValues.filled(100, LogicValue.one),
-          equals(LogicValues.filled(100, LogicValue.zero)));
-      expect(
-          LogicValues.fromString('01xz' * 100) &
-              LogicValues.fromString('1111' * 100),
-          equals(LogicValues.fromString('01xx' * 100)));
+      // test z & 1 == x, rest unchanged
+      expect(lv('01xz') & lv('1111'), equals(lv('01xx')));
+      // Large filled test of * & 1
+      for (final v in allLv) {
+        expect(large(v) & large(LogicValue.one),
+            equals(large(v & LogicValue.one)));
+      }
+      // Large logicValues test of &
+      expect(lv('01xz' * 100) & lv('1111' * 100), equals(lv('01xx' * 100)));
+      // test * & 0 = 0
+      expect(lv('01xz') & lv('0000'), equals(lv('0000')));
+      // try mixing .fromString with .filled
+      expect(lv('01xz') & LogicValues.filled(4, LogicValue.zero),
+          equals(LogicValues.filled(4, LogicValue.zero)));
+    });
+  });
+  group('LogicValues Misc', () {
+    test('reversed', () {
+      expect(lv('01xz').reversed, equals(lv('zx10')));
+      expect(lv('010').reversed, equals(lv('010')));
+      // reverse large values
+      expect(lv('01' * 100).reversed, equals(lv('10' * 100)));
+      expect(lv('01xz' * 100).reversed, equals(lv('zx10' * 100)));
+      // reverse filled
+      for (final v in allLv) {
+        expect(large(v).reversed, equals(large(v)));
+      }
     });
   });
 
