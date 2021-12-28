@@ -11,8 +11,6 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// TODO: add some tests where length = 64 (border between Small and Big)
-
 void main() {
   
   group('LogicValue', () {
@@ -449,7 +447,7 @@ void main() {
       );
       expect( // test fromBigInt
         () => LogicValues.fromBigInt(BigInt.one, 32) | LogicValues.fromBigInt(BigInt.zero, 32),
-        throwsA(isA<Exception>())
+        throwsA(isA<AssertionError>())
       );
     });
 
@@ -640,7 +638,6 @@ void main() {
     });
 
   });
-
   group('arithmetic operations', () {
 
     test('addsub', () {
@@ -669,7 +666,6 @@ void main() {
         throwsA(isA<Exception>())
       );
     });
-
     test('muldiv', () {
       expect( // * normal
         LogicValues.fromString('0001') * LogicValues.fromString('0011'),
@@ -756,6 +752,210 @@ void main() {
           equals(LogicValue.x)
         );
       });
-    
+    });
+    group('BigLogicValues', () {
+      test('overrides', () {
+        expect( // reversed
+          LogicValues.fromString('01'*100).reversed,
+          equals(LogicValues.fromString('10'*100))
+        );
+        expect( // isValid - valid
+          LogicValues.fromString('01'*100).isValid,
+          equals(true)
+        );
+        expect( // isValid - invalid ('x')
+          LogicValues.fromString('0x'*100).isValid,
+          equals(false)
+        );
+        expect( // isValid - invalid ('z')
+          LogicValues.fromString('1z'*100).isValid,
+          equals(false)
+        );
+        expect( // isFloating - floating
+          LogicValues.fromString('z'*100).isFloating,
+          equals(true)
+        );
+        expect( // isFloating - not floating
+          LogicValues.fromString('z1'*100).isFloating,
+          equals(false)
+        );
+        expect( // toInt - always invalid
+          () => LogicValues.fromString('11'*100).toInt(),
+          throwsA(isA<Exception>())
+        );
+        expect( // toBigInt - invalid
+          () => LogicValues.fromString('1x'*100).toBigInt(),
+          throwsA(isA<Exception>())
+        );
+        expect( // toBigInt - valid
+          LogicValues.fromString('0'*100).toBigInt(),
+          equals(BigInt.from(0))
+        );
+        expect( // not - valid
+          ~LogicValues.fromString('0'*100),
+          equals(LogicValues.fromString('1'*100))
+        );
+        expect( // not - invalid
+          ~LogicValues.fromString('z1'*100),
+          equals(LogicValues.fromString('x0'*100))
+        );
+        expect( // and - valid
+          LogicValues.fromString('01'*100).and(),
+          equals(LogicValue.zero)
+        );
+        expect( // and - valid (1's)
+          LogicValues.fromString('1'*100).and(),
+          equals(LogicValue.one)
+        );
+        expect( // and - invalid
+          LogicValues.fromString('01x'*100).and(),
+          equals(LogicValue.zero)
+        );
+        expect( // and - invalid (1's)
+          LogicValues.fromString('111z'*100).and(),
+          equals(LogicValue.x)
+        );
+        expect( // or - valid
+          LogicValues.fromString('01'*100).or(),
+          equals(LogicValue.one)
+        );
+        expect( // or - valid (0's)
+          LogicValues.fromString('0'*100).or(),
+          equals(LogicValue.zero)
+        );
+        expect( // or - invalid
+          LogicValues.fromString('10x'*100).or(),
+          equals(LogicValue.one)
+        );
+        expect( // or - invalid (1's)
+          LogicValues.fromString('0z'*100).or(),
+          equals(LogicValue.x)
+        );
+        expect( // xor - valid (even)
+          LogicValues.fromString('1100'*100).xor(),
+          equals(LogicValue.zero)
+        );
+        expect( // xor - valid (odd)
+          LogicValues.fromString('1110'*99).xor(),
+          equals(LogicValue.one)
+        );
+        expect( // xor - invalid
+          LogicValues.fromString('010x'*100).xor(),
+          equals(LogicValue.x)
+        );
+      });
+    });
+
+    group('FilledLogicValues', () {
+      test('overrides', () {
+        expect( // reversed
+          LogicValues.filled(100, LogicValue.one).reversed,
+          equals(LogicValues.filled(100, LogicValue.one))
+        );
+        expect( // reversed
+          LogicValues.filled(100, LogicValue.zero).reversed,
+          equals(LogicValues.filled(100, LogicValue.zero))
+        );
+        expect( // isValid - valid
+          LogicValues.filled(100, LogicValue.zero).isValid,
+          equals(true)
+        );
+        expect( // isValid - valid
+          LogicValues.filled(100, LogicValue.one).isValid,
+          equals(true)
+        );
+        expect( // isValid - invalid ('x')
+          LogicValues.filled(100, LogicValue.x).isValid,
+          equals(false)
+        );
+        expect( // isValid - invalid ('z')
+          LogicValues.filled(100, LogicValue.z).isValid,
+          equals(false)
+        );
+        expect( // isFloating - floating
+          LogicValues.filled(100, LogicValue.z).isFloating,
+          equals(true)
+        );
+        expect( // isFloating - not floating
+          LogicValues.filled(100, LogicValue.one).isFloating,
+          equals(false)
+        );
+        expect( // toInt - invalid
+          () => LogicValues.filled(100, LogicValue.one).toInt(),
+          throwsA(isA<Exception>())
+        );
+        expect( // toInt - valid
+          LogicValues.filled(64, LogicValue.zero).toInt(),
+          equals(0)
+        );
+        expect( // toBigInt - invalid
+          () => LogicValues.filled(100, LogicValue.x).toBigInt(),
+          throwsA(isA<Exception>())
+        );
+        expect( // toBigInt - valid
+          LogicValues.filled(100, LogicValue.zero).toBigInt(),
+          equals(BigInt.from(0))
+        );
+        expect( // not - valid
+          ~LogicValues.filled(100, LogicValue.zero),
+          equals(LogicValues.filled(100, LogicValue.one))
+        );
+        expect( // not - valid
+          ~LogicValues.filled(100, LogicValue.one),
+          equals(LogicValues.filled(100, LogicValue.zero))
+        );
+        expect( // not - invalid
+          ~LogicValues.filled(100, LogicValue.z),
+          equals(LogicValues.filled(100, LogicValue.x))
+        );
+        expect( // and - valid 0
+          LogicValues.filled(100, LogicValue.zero).and(),
+          equals(LogicValue.zero)
+        );
+        expect( // and - valid 1
+          LogicValues.filled(100, LogicValue.one).and(),
+          equals(LogicValue.one)
+        );
+        expect( // and - invalid x
+          LogicValues.filled(100, LogicValue.x).and(),
+          equals(LogicValue.x)
+        );
+        expect( // and - invalid z
+          LogicValues.filled(100, LogicValue.z).and(),
+          equals(LogicValue.x)
+        );
+        expect( // or - valid 0
+          LogicValues.filled(100, LogicValue.zero).and(),
+          equals(LogicValue.zero)
+        );
+        expect( // or - valid 1
+          LogicValues.filled(100, LogicValue.one).and(),
+          equals(LogicValue.one)
+        );
+        expect( // or - invalid x
+          LogicValues.filled(100, LogicValue.x).and(),
+          equals(LogicValue.x)
+        );
+        expect( // or - invalid z
+          LogicValues.filled(100, LogicValue.z).and(),
+          equals(LogicValue.x)
+        );
+        expect( // xor - valid 0
+          LogicValues.filled(100, LogicValue.zero).and(),
+          equals(LogicValue.zero)
+        );
+        expect( // xor - valid 1
+          LogicValues.filled(99, LogicValue.one).and(),
+          equals(LogicValue.one)
+        );
+        expect( // xor - invalid x
+          LogicValues.filled(100, LogicValue.x).and(),
+          equals(LogicValue.x)
+        );
+        expect( // xor - invalid z
+          LogicValues.filled(100, LogicValue.z).and(),
+          equals(LogicValue.x)
+        );
+      });
     });
 }
