@@ -11,7 +11,7 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// TODO: add a test with x & 0 == 0
+// TODO: add some tests where length = 64 (border between Small and Big)
 
 void main() {
   
