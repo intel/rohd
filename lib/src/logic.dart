@@ -145,13 +145,13 @@ class Logic {
     return _changedController.stream;
   }
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
   Stream<LogicValueChanged> get negedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
   Stream<LogicValueChanged> get posedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
