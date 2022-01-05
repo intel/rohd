@@ -88,8 +88,8 @@ will be added.</p>
   uniquify = uniquify ?? (String original) =&gt; original;
 
   if (inputTags != null) {
-    for (var port in getPorts(inputTags)) {
-      setPort(
+    for (var port in getPorts(inputTags).values) {
+      _setPort(
           &#47;&#47; ignore: invalid_use_of_protected_member
           module.addInput(uniquify(port.name), srcInterface.port(port.name),
               width: port.width),
@@ -98,12 +98,12 @@ will be added.</p>
   }
 
   if (outputTags != null) {
-    for (var port in getPorts(outputTags)) {
+    for (var port in getPorts(outputTags).values) {
       &#47;&#47; ignore: invalid_use_of_protected_member
       var output = module.addOutput(uniquify(port.name), width: port.width);
       port &lt;= output;
       srcInterface.port(port.name) &lt;= port;
-      setPort(output, portName: port.name);
+      _setPort(output, portName: port.name);
     }
   }
 }</code></pre>
@@ -134,10 +134,11 @@ will be added.</p>
     <li><a href="../../rohd/Interface/Interface.html">Interface</a></li>
 
 
-    <li class="section-title inherited">
+    <li class="section-title">
       <a href="../../rohd/Interface-class.html#instance-properties">Properties</a>
     </li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/hashCode.html">hashCode</a></li>
+    <li><a href="../../rohd/Interface/ports.html">ports</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/runtimeType.html">runtimeType</a></li>
 
     <li class="section-title"><a href="../../rohd/Interface-class.html#instance-methods">Methods</a></li>
@@ -145,7 +146,6 @@ will be added.</p>
     <li><a href="../../rohd/Interface/getPorts.html">getPorts</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../../rohd/Interface/port.html">port</a></li>
-    <li><a href="../../rohd/Interface/setPort.html">setPort</a></li>
     <li><a href="../../rohd/Interface/setPorts.html">setPorts</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/toString.html">toString</a></li>
 
