@@ -81,26 +81,6 @@ class BusSubset extends Module with InlineSystemVerilog {
   }
 }
 
-/// Performs a concatenation operation on the list of signals, where index 0 of [signals] is
-/// the *most* significant bit(s).
-///
-/// This is the one you should use if you're writing something like SystemVerilog's `{}` notation.
-/// If you write `swizzle([a, b, c])` you would get a single output [Logic] where the bits in `a`
-/// are the most significant (highest) bits.
-///
-/// If you want the opposite, check out [rswizzle()].
-Logic swizzle(List<Logic> signals) => Swizzle(signals).out;
-
-/// Performs a concatenation operation on the list of signals, where index 0 of [signals] is
-/// the *least* significant bit(s).
-///
-/// This is the one you should probably use if you're trying to concatenate a generated [List] of signals.
-/// If you write `rswizzle([a, b, c])` you would get a single output [Logic] where the bits in `a`
-/// are the least significant (lowest) bits.
-///
-/// If you want the opposite, check out [swizzle()].
-Logic rswizzle(List<Logic> signals) => Swizzle(signals.reversed.toList()).out;
-
 /// A [Module] that performs concatenation of signals into one bigger [Logic].
 ///
 /// The concatenation occurs such that index 0 of [signals] is the *most* significant bit(s).

@@ -38,7 +38,7 @@ class CaseModule extends Module {
 
     Combinational([
       Case(
-          swizzle([b, a]),
+          [b, a].swizzle(),
           [
             CaseItem(Const(LogicValues.fromString('01')), [c < 1, d < 0]),
             CaseItem(Const(LogicValues.fromString('10')), [
@@ -52,9 +52,9 @@ class CaseModule extends Module {
           ],
           conditionalType: ConditionalType.unique),
       CaseZ(
-          swizzle([b, a]),
+          [b, a].rswizzle(),
           [
-            CaseItem(Const(LogicValues.fromString('z1')), [
+            CaseItem(Const(LogicValues.fromString('1z')), [
               e < 1,
             ])
           ],
