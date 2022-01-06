@@ -263,11 +263,11 @@ d <= a[7];
 
 // construct e by swizzling bits from b, c, and d
 // here, the MSB is on the left, LSB is on the right
-e <= swizzle([d, c, b]);
+e <= [d, c, b].swizzle();
 
 // alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
 // here, the LSB is on the left, the MSB is on the right
-e <= rswizzle([b, c, d]);
+e <= [b, c, d].rswizzle();
 ```
 
 ROHD does not (currently) support assignment to a subset of a bus.  That is, you *cannot* do something like `e[3] <= d`.  If you need to build a bus from a collection of other signals, use swizzling.
@@ -421,7 +421,7 @@ Sequential(clk, [
 ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`CaseZ`](https://intel.github.io/rohd/rohd/CaseZ-class.html) statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:
 ```dart
 Combinational([
-  Case(swizzle([b,a]), [
+  Case([b,a].swizzle(), [
       CaseItem(Const(LogicValues.fromString('01')), [
         c < 1,
         d < 0
@@ -436,7 +436,7 @@ Combinational([
     ],
     conditionalType: ConditionalType.Unique
   ),
-  CaseZ(swizzle([b,a]),[
+  CaseZ([b,a].swizzle(),[
       CaseItem(Const(LogicValues.fromString('z1')), [
         e < 1,
       ])
