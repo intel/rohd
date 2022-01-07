@@ -253,11 +253,11 @@ d &lt;= a[7];
 
 // construct e by swizzling bits from b, c, and d
 // here, the MSB is on the left, LSB is on the right
-e &lt;= swizzle([d, c, b]);
+e &lt;= [d, c, b].swizzle();
 
 // alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
 // here, the LSB is on the left, the MSB is on the right
-e &lt;= rswizzle([b, c, d]);
+e &lt;= [b, c, d].rswizzle();
 </code></pre>
 <p>ROHD does not (currently) support assignment to a subset of a bus.  That is, you <em>cannot</em> do something like <code>e[3] &lt;= d</code>.  If you need to build a bus from a collection of other signals, use swizzling.</p>
 <h3 id="modules">Modules</h3>
@@ -384,7 +384,7 @@ class MyModule extends Module {
 <h4 id="case-and-casez"><code>Case</code> and <code>CaseZ</code></h4>
 <p>ROHD supports <a href="https://intel.github.io/rohd/rohd/Case-class.html"><code>Case</code></a> and <a href="https://intel.github.io/rohd/rohd/CaseZ-class.html"><code>CaseZ</code></a> statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:</p>
 <pre class="language-dart"><code class="language-dart">Combinational([
-  Case(swizzle([b,a]), [
+  Case([b,a].swizzle(), [
       CaseItem(Const(LogicValues.fromString('01')), [
         c &lt; 1,
         d &lt; 0
@@ -399,7 +399,7 @@ class MyModule extends Module {
     ],
     conditionalType: ConditionalType.Unique
   ),
-  CaseZ(swizzle([b,a]),[
+  CaseZ([b,a].swizzle(),[
       CaseItem(Const(LogicValues.fromString('z1')), [
         e &lt; 1,
       ])

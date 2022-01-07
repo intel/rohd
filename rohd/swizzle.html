@@ -31,7 +31,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb">swizzle function</li>
+    <li class="self-crumb"><span class="deprecated">swizzle</span> function</li>
   </ol>
   <div class="self-name">swizzle</div>
   <form class="search navbar-right" role="search">
@@ -51,9 +51,14 @@
 
     <section class="multi-line-signature">
         
+<div>
+  <ol class="annotation-list">
+    <li>@<a href="https://api.dart.dev/stable/2.15.1/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `List&lt;Logic&gt;.swizzle()` instead&#39;)</li>
+  </ol>
+</div>
 
 <span class="returntype"><a href="../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">swizzle</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span></li>
+<span class="name deprecated">swizzle</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span></li>
 </ol>)
 
     </section>
@@ -64,14 +69,15 @@ the <em>most</em> significant bit(s).</p>
 <p>This is the one you should use if you're writing something like SystemVerilog's <code>{}</code> notation.
 If you write <code>swizzle([a, b, c])</code> you would get a single output <a href="../rohd/Logic-class.html">Logic</a> where the bits in <code>a</code>
 are the most significant (highest) bits.</p>
-<p>If you want the opposite, check out <a href="../rohd/rswizzle.html">rswizzle()</a>.</p>
+<p>If you want the opposite, check out <a class="deprecated" href="../rohd/rswizzle.html">rswizzle()</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic swizzle(List&lt;Logic&gt; signals) =&gt; Swizzle(signals).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `List&lt;Logic&gt;.swizzle()` instead&#39;)
+Logic swizzle(List&lt;Logic&gt; signals) =&gt; signals.swizzle();</code></pre>
 </section>
 
 
@@ -87,7 +93,7 @@ are the most significant (highest) bits.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../index.html">rohd</a></li>
   <li><a href="../rohd/rohd-library.html">rohd</a></li>
-  <li class="self-crumb">swizzle function</li>
+  <li class="self-crumb"><span class="deprecated">swizzle</span> function</li>
 </ol>
 
 
@@ -149,6 +155,10 @@ are the most significant (highest) bits.</p>
   <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
   <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
 
+  <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
+  <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
+  <li><a href="../rohd/LogicValuesSwizzle.html">LogicValuesSwizzle</a></li>
+  <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
   <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
@@ -158,8 +168,8 @@ are the most significant (highest) bits.</p>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
   <li><a href="../rohd/bin.html">bin</a></li>
-  <li><a href="../rohd/rswizzle.html">rswizzle</a></li>
-  <li><a href="../rohd/swizzle.html">swizzle</a></li>
+  <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
+  <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
   <li><a href="../rohd/ConditionalType.html">ConditionalType</a></li>

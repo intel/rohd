@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the FF property from the rohd library, for the Dart programming language.">
-  <title>FF typedef - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the LogicValueSwizzle extension from the rohd library, for the Dart programming language.">
+  <title>LogicValueSwizzle extension - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb"><span class="deprecated">FF</span> typedef</li>
+    <li class="self-crumb">LogicValueSwizzle extension</li>
   </ol>
-  <div class="self-name">FF</div>
+  <div class="self-name">LogicValueSwizzle</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -42,39 +42,71 @@
 <main>
 
 
-  <div id="dartdoc-main-content" class="main-content">
-      <div>
-<h1><span class="kind-typedef">FF</span> typedef 
+<div id="dartdoc-main-content" class="main-content">
+    <div>
+<h1><span class="kind-class">LogicValueSwizzle</span> extension 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
  
 </h1></div>
 
-    <section class="multi-line-signature">
-        
-  
-<div>
-  <ol class="annotation-list">
-    <li>@<a href="https://api.dart.dev/stable/2.15.1/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use Sequential instead&#39;)</li>
-  </ol>
-</div>
-<span class="name deprecated">FF</span> = <a href="../rohd/Sequential-class.html">Sequential</a></span>
-
-
-    </section>
-
     
-
-    
-<section class="summary source-code" id="source">
-  <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use Sequential instead&#39;)
-typedef FF = Sequential;</code></pre>
+<section class="desc markdown">
+  <p>Allows lists of <a href="../rohd/LogicValue-class.html">LogicValue</a>s to be swizzled.</p>
 </section>
 
+    <section>
+        <dl class="dl-horizontal">
+        <dt>on</dt>
+        <dd>
+            <ul class="comma-separated clazz-relationships">
+            <li><a href="https://api.dart.dev/stable/2.15.1/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></li>
+            </ul>
+        </dd>
+        </dl>
+    </section>
 
-  </div> <!-- /.main-content -->
 
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <section class="summary offset-anchor" id="instance-methods">
+        <h2>Methods</h2>
+        <dl class="callables">
+            <dt id="rswizzle" class="callable">
+  <span class="name"><a href="../rohd/LogicValueSwizzle/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValues-class.html">LogicValues</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of this list is
+the <em>least</em> significant bit. <a href="../rohd/LogicValueSwizzle/rswizzle.html">[...]</a>
+  
+
+</dd>
+
+            <dt id="swizzle" class="callable">
+  <span class="name"><a href="../rohd/LogicValueSwizzle/swizzle.html">swizzle</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValues-class.html">LogicValues</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of this list is
+the <em>most</em> significant bit. <a href="../rohd/LogicValueSwizzle/swizzle.html">[...]</a>
+  
+
+</dd>
+
+        </dl>
+    </section>
+
+
+
+
+
+</div> <!-- /.main-content -->
+
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -84,7 +116,7 @@ typedef FF = Sequential;</code></pre>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../index.html">rohd</a></li>
   <li><a href="../rohd/rohd-library.html">rohd</a></li>
-  <li class="self-crumb"><span class="deprecated">FF</span> typedef</li>
+  <li class="self-crumb">LogicValueSwizzle extension</li>
 </ol>
 
 
@@ -172,10 +204,25 @@ typedef FF = Sequential;</code></pre>
 
 </ol>
 
-  </div><!--/.sidebar-offcanvas-left-->
+</div>
 
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <ol>
+
+
+
+
+
+    <li class="section-title"><a href="../rohd/LogicValueSwizzle.html#instance-methods">Methods</a></li>
+    <li><a href="../rohd/LogicValueSwizzle/rswizzle.html">rswizzle</a></li>
+    <li><a href="../rohd/LogicValueSwizzle/swizzle.html">swizzle</a></li>
+
+
+
+
+</ol>
+
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 
