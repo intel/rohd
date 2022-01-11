@@ -83,6 +83,7 @@ class Simulator {
   static Future get simulationEnded => _simulationEndedCompleter.future;
   static Completer _simulationEndedCompleter = Completer();
 
+  /// Returns true iff the simulation has completed.
   static bool get simulationHasEnded => _simulationEndedCompleter.isCompleted;
 
   /// Gets the current [SimulatorPhase] of the [Simulator].
