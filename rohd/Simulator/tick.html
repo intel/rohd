@@ -72,7 +72,7 @@ timestamp, and passes through all events and phases on the way.</p>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
   if (_injectedActions.isNotEmpty) {
     &#47;&#47; injected actions will automatically be executed during tickExecute
-    tickExecute(() {});
+    await tickExecute(() {});
 
     &#47;&#47; don&#39;t continue through the tick for injected actions, come back around
     return;
@@ -86,7 +86,7 @@ timestamp, and passes through all events and phases on the way.</p>
 
   _currentTimestamp = nextTimeStamp;
   &#47;&#47; print(&quot;Tick: $_currentTimestamp&quot;);
-  tickExecute(() {
+  await tickExecute(() {
     for (var func in _pendingTimestamps[nextTimeStamp]!) {
       func();
     }
@@ -141,6 +141,7 @@ timestamp, and passes through all events and phases on the way.</p>
     <li><a href="../../rohd/Simulator/postTick.html">postTick</a></li>
     <li><a href="../../rohd/Simulator/preTick.html">preTick</a></li>
     <li><a href="../../rohd/Simulator/simulationEnded.html">simulationEnded</a></li>
+    <li><a href="../../rohd/Simulator/simulationHasEnded.html">simulationHasEnded</a></li>
     <li><a href="../../rohd/Simulator/startTick.html">startTick</a></li>
     <li><a href="../../rohd/Simulator/time.html">time</a></li>
 

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the run method from the Simulator class, for the Dart programming language.">
-  <title>run method - Simulator class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the simulationHasEnded property from the Simulator class, for the Dart programming language.">
+  <title>simulationHasEnded property - Simulator class - rohd library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-    <li class="self-crumb">run method</li>
+    <li class="self-crumb">simulationHasEnded property</li>
   </ol>
-  <div class="self-name">run</div>
+  <div class="self-name">simulationHasEnded</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,41 +45,32 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">run</span> method 
+<h1><span class="kind-property">simulationHasEnded</span> property 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-    <section class="multi-line-signature">
-      
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.15.1/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
-<span class="name ">run</span>(<wbr>)
+        
+<section id="getter">
 
-      
+<section class="multi-line-signature">
+  <span class="returntype"><a href="https://api.dart.dev/stable/2.15.1/dart-core/bool-class.html">bool</a></span>
+  <span class="name ">simulationHasEnded</span>
+  
 
-    </section>
-    
-<section class="desc markdown">
-  <p>Starts the simulation, executing all pending actions in time-order until
-it finishes or is stopped.</p>
 </section>
 
 
-    
+<section class="desc markdown">
+  <p>Returns true iff the simulation has completed.</p>
+</section>
+
+
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; run() async {
-  while (hasStepsRemaining() &amp;&amp;
-      !_simulationEndRequested &amp;&amp;
-      (_maxSimTime &lt; 0 || _currentTimestamp &lt; _maxSimTime)) {
-    await tick(); &#47;&#47; make this async so that await-ing events works
-  }
-  if (_currentTimestamp &gt;= _maxSimTime &amp;&amp; _maxSimTime &gt; 0) {
-    logger.warning(&#39;Simulation ended due to maximum simulation time.&#39;);
-  }
-  _simulationEndedCompleter.complete();
-  await simulationEnded;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">static bool get simulationHasEnded =&gt; _simulationEndedCompleter.isCompleted;</code></pre>
+</section>
+
 </section>
 
 
@@ -96,7 +87,7 @@ it finishes or is stopped.</p>
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-  <li class="self-crumb">run method</li>
+  <li class="self-crumb">simulationHasEnded property</li>
 </ol>
 
 

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the ExternalModule class from the rohd library, for the Dart programming language.">
-  <title>ExternalModule class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the ExternalSystemVerilogModule class from the rohd library, for the Dart programming language.">
+  <title>ExternalSystemVerilogModule class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb">ExternalModule abstract class</li>
+    <li class="self-crumb">ExternalSystemVerilogModule abstract class</li>
   </ol>
-  <div class="self-name">ExternalModule</div>
+  <div class="self-name">ExternalSystemVerilogModule</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -44,17 +44,17 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-class">ExternalModule</span> class 
+<h1><span class="kind-class">ExternalSystemVerilogModule</span> class 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
  
 </h1></div>
 
     
 <section class="desc markdown">
-  <p>Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework.</p>
-<p>This is useful for interacting with, for example, SystemVerilog modules.
+  <p>Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework in SystemVerilog.</p>
+<p>This is useful for interacting with SystemVerilog modules.
 You can add custom behavior for how to synthesize the generated SystemVerilog
-as well as extend functionality with behavior models or cosimulation.</p>
+as well as extend functionality with behavioral models or cosimulation.</p>
 </section>
 
 
@@ -64,7 +64,7 @@ as well as extend functionality with behavior models or cosimulation.</p>
         <dd><ul class="gt-separated dark clazz-relationships">
           <li><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object-class.html">Object</a></li>
           <li><a href="../rohd/Module-class.html">Module</a></li>
-          <li>ExternalModule</li>
+          <li>ExternalSystemVerilogModule</li>
         </ul></dd>
 
 
@@ -82,8 +82,8 @@ as well as extend functionality with behavior models or cosimulation.</p>
       <h2>Constructors</h2>
 
       <dl class="constructor-summary-list">
-        <dt id="ExternalModule" class="callable">
-          <span class="name"><a href="../rohd/ExternalModule/ExternalModule.html">ExternalModule</a></span><span class="signature">(<span class="parameter" id="-param-topModuleName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">topModuleName</span>, </span><span class="parameter" id="-param-parameters">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;external_module&#39;</span>}</span>)</span>
+        <dt id="ExternalSystemVerilogModule" class="callable">
+          <span class="name"><a href="../rohd/ExternalSystemVerilogModule/ExternalSystemVerilogModule.html">ExternalSystemVerilogModule</a></span><span class="signature">(<span class="parameter" id="-param-topModuleName">{<span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">topModuleName</span>, </span><span class="parameter" id="-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;external_module&#39;</span>}</span>)</span>
         </dt>
         <dd>
            
@@ -162,12 +162,12 @@ as well as extend functionality with behavior models or cosimulation.</p>
 </dd>
 
         <dt id="parameters" class="property">
-  <span class="name"><a href="../rohd/ExternalModule/parameters.html">parameters</a></span>
+  <span class="name"><a href="../rohd/ExternalSystemVerilogModule/parameters.html">parameters</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span>?</span> 
 
 </dt>
 <dd>
-   
+  A map of parameter names and values to be passed to the SystemVerilog module. 
   <div class="features">final</div>
 
 </dd>
@@ -217,12 +217,12 @@ as well as extend functionality with behavior models or cosimulation.</p>
 </dd>
 
         <dt id="topModuleName" class="property">
-  <span class="name"><a href="../rohd/ExternalModule/topModuleName.html">topModuleName</a></span>
+  <span class="name"><a href="../rohd/ExternalSystemVerilogModule/topModuleName.html">topModuleName</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> 
 
 </dt>
 <dd>
-   
+  The name of the top SystemVerilog module. 
   <div class="features">final</div>
 
 </dd>
@@ -336,14 +336,14 @@ as well as extend functionality with behavior models or cosimulation.</p>
 </dd>
 
         <dt id="instantiationVerilog" class="callable">
-  <span class="name"><a href="../rohd/ExternalModule/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span>)
+  <span class="name"><a href="../rohd/ExternalSystemVerilogModule/instantiationVerilog.html">instantiationVerilog</a></span><span class="signature">(<wbr><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.15.1/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation. <a href="../rohd/ExternalModule/instantiationVerilog.html">[...]</a>
+  Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation. <a href="../rohd/ExternalSystemVerilogModule/instantiationVerilog.html">[...]</a>
   <div class="features">override</div>
 
 </dd>
@@ -450,7 +450,7 @@ as well as extend functionality with behavior models or cosimulation.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
   <li><a href="../index.html">rohd</a></li>
   <li><a href="../rohd/rohd-library.html">rohd</a></li>
-  <li class="self-crumb">ExternalModule abstract class</li>
+  <li class="self-crumb">ExternalSystemVerilogModule abstract class</li>
 </ol>
 
 
@@ -473,7 +473,7 @@ as well as extend functionality with behavior models or cosimulation.</p>
   <li><a href="../rohd/Else-class.html">Else</a></li>
   <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
   <li><a href="../rohd/Equals-class.html">Equals</a></li>
-  <li><a href="../rohd/ExternalModule-class.html">ExternalModule</a></li>
+  <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
   <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
   <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
   <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
@@ -534,6 +534,7 @@ as well as extend functionality with behavior models or cosimulation.</p>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
+  <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
   <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
 
 </ol>
@@ -543,12 +544,12 @@ as well as extend functionality with behavior models or cosimulation.</p>
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
     <ol>
 
-    <li class="section-title"><a href="../rohd/ExternalModule-class.html#constructors">Constructors</a></li>
-    <li><a href="../rohd/ExternalModule/ExternalModule.html">ExternalModule</a></li>
+    <li class="section-title"><a href="../rohd/ExternalSystemVerilogModule-class.html#constructors">Constructors</a></li>
+    <li><a href="../rohd/ExternalSystemVerilogModule/ExternalSystemVerilogModule.html">ExternalSystemVerilogModule</a></li>
 
 
     <li class="section-title">
-      <a href="../rohd/ExternalModule-class.html#instance-properties">Properties</a>
+      <a href="../rohd/ExternalSystemVerilogModule-class.html#instance-properties">Properties</a>
     </li>
     <li class="inherited"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/hashCode.html">hashCode</a></li>
@@ -556,15 +557,15 @@ as well as extend functionality with behavior models or cosimulation.</p>
     <li class="inherited"><a href="../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../rohd/Module/name.html">name</a></li>
     <li class="inherited"><a href="../rohd/Module/outputs.html">outputs</a></li>
-    <li><a href="../rohd/ExternalModule/parameters.html">parameters</a></li>
+    <li><a href="../rohd/ExternalSystemVerilogModule/parameters.html">parameters</a></li>
     <li class="inherited"><a href="../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li class="inherited"><a href="../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../rohd/Module/subModules.html">subModules</a></li>
-    <li><a href="../rohd/ExternalModule/topModuleName.html">topModuleName</a></li>
+    <li><a href="../rohd/ExternalSystemVerilogModule/topModuleName.html">topModuleName</a></li>
     <li class="inherited"><a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
 
-    <li class="section-title"><a href="../rohd/ExternalModule-class.html#instance-methods">Methods</a></li>
+    <li class="section-title"><a href="../rohd/ExternalSystemVerilogModule-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../rohd/Module/addInput.html">addInput</a></li>
     <li class="inherited"><a href="../rohd/Module/addOutput.html">addOutput</a></li>
     <li class="inherited"><a href="../rohd/Module/build.html">build</a></li>
@@ -572,14 +573,14 @@ as well as extend functionality with behavior models or cosimulation.</p>
     <li class="inherited"><a href="../rohd/Module/hierarchy.html">hierarchy</a></li>
     <li class="inherited"><a href="../rohd/Module/hierarchyString.html">hierarchyString</a></li>
     <li class="inherited"><a href="../rohd/Module/input.html">input</a></li>
-    <li><a href="../rohd/ExternalModule/instantiationVerilog.html">instantiationVerilog</a></li>
+    <li><a href="../rohd/ExternalSystemVerilogModule/instantiationVerilog.html">instantiationVerilog</a></li>
     <li class="inherited"><a href="../rohd/Module/isInput.html">isInput</a></li>
     <li class="inherited"><a href="../rohd/Module/isOutput.html">isOutput</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li class="inherited"><a href="../rohd/Module/output.html">output</a></li>
     <li class="inherited"><a href="../rohd/Module/toString.html">toString</a></li>
 
-    <li class="section-title inherited"><a href="../rohd/ExternalModule-class.html#operators">Operators</a></li>
+    <li class="section-title inherited"><a href="../rohd/ExternalSystemVerilogModule-class.html#operators">Operators</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.15.1/dart-core/Object/operator_equals.html">operator ==</a></li>
 
 

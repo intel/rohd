@@ -47,7 +47,7 @@
   <p><a href="https://github.com/intel/rohd/actions/workflows/test.yml"><img src="https://github.com/intel/rohd/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
 <a href="https://intel.github.io/rohd/rohd/rohd-library.html"><img src="https://github.com/intel/rohd/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
 <a href="https://github.com/intel/rohd/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSD--3-blue" alt="License"></a>
-<a href="CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg" alt="Contributor Covenant"></a></p>
+<a href="https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg" alt="Contributor Covenant"></a></p>
 <h1 id="rapid-open-hardware-development-rohd-framework">Rapid Open Hardware Development (ROHD) Framework</h1>
 <h2 id="describing-hardware-in-dart-with-rohd">Describing Hardware in Dart with ROHD</h2>
 <p>ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.</p>
@@ -161,7 +161,7 @@ class Counter extends Module {
 </code></pre>
 <p>You can find an executable version of this counter example in <a href="https://github.com/intel/rohd/blob/main/example/example.dart">example/example.dart</a>.</p>
 <h3 id="a-more-complex-example">A more complex example</h3>
-<p>See a more advanced example of a logarithmic-depth tree of arbitrary functionality at <a href="doc/TreeExample.md">doc/TreeExample.md</a>.</p>
+<p>See a more advanced example of a logarithmic-depth tree of arbitrary functionality at <a href="https://github.com/intel/rohd/blob/main/doc/TreeExample.md">doc/TreeExample.md</a>.</p>
 <p>You can find an executable version of the tree example in <a href="https://github.com/intel/rohd/blob/main/example/tree.dart">example/tree.dart</a>.</p>
 <h3 id="logical-signals">Logical signals</h3>
 <p>The fundamental signal building block in ROHD is called <a href="https://intel.github.io/rohd/rohd/Logic-class.html"><code>Logic</code></a>.</p>
@@ -592,14 +592,14 @@ var b = pipeline.get(a);
 <li>To add an action to the Simulator in the <em>current</em> timestep, use <code>Simulator.injectAction</code>.</li>
 </ul>
 <h2 id="instantiation-of-external-modules">Instantiation of External Modules</h2>
-<p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalModule-class.html"><code>ExternalModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalModule</code>, it will instantiate instances of the specified <code>topModuleName</code>.  This is useful for integration related activities.</p>
-<p>There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an <code>ExternalModule</code> planned for release soon.</p>
+<p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html"><code>ExternalSystemVerilogModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalSystemVerilogModule</code>, it will instantiate instances of the specified <code>topModuleName</code>.  This is useful for integration related activities.</p>
+<p>There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an <code>ExternalSystemVerilogModule</code> planned for release soon.</p>
 <h2 id="unit-testing">Unit Testing</h2>
 <p>Dart has a great unit testing package available on pub.dev: <a href="https://pub.dev/packages/test">https://pub.dev/packages/test</a></p>
 <p>The ROHD package has a great set of examples of how to write unit tests for ROHD <code>Module</code>s in the test/ directory.</p>
 <p>Note that when unit testing with ROHD, it is important to reset the <code>Simulator</code> with <code>Simulator.reset()</code>.</p>
 <h2 id="contributing">Contributing</h2>
-<p>ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+<p>ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see <a href="https://github.com/intel/rohd/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
 <h2 id="comparison-with-alternatives">Comparison with Alternatives</h2>
 <p>There are a lot of options for developing hardware.  This section briefly discusses popular alternatives to ROHD and some of their strengths and weaknesses.</p>
 <h3 id="systemverilog">SystemVerilog</h3>

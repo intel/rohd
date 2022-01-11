@@ -52,7 +52,7 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype">void</span>
+<span class="returntype"><a href="https://api.dart.dev/stable/2.15.1/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">tickExecute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="tickExecute-param-toExecute"><span class="type-annotation">void</span> <span class="parameter-name">toExecute</span>(<ol class="parameter-list"></ol>
 )</span></li>
 </ol>)
@@ -69,20 +69,19 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void tickExecute(void Function() toExecute) {
+  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tickExecute(void Function() toExecute) async {
   _phase = SimulatorPhase.beforeTick;
   _preTickController.add(null); &#47;&#47; useful for flop sampling
 
   _phase = SimulatorPhase.mainTick;
   _startTickController.add(
       null); &#47;&#47; useful for things that need to trigger every tick without other input
-  _executeInjectedActions();
   toExecute();
-  _executeInjectedActions();
 
-  _phase = SimulatorPhase.clksStable;
+  _phase = SimulatorPhase.clkStable;
   _clkStableController.add(null); &#47;&#47; useful for flop clk input stability
-  _executeInjectedActions();
+
+  await _executeInjectedActions();
 
   _phase = SimulatorPhase.outOfTick;
   _postTickController
@@ -136,6 +135,7 @@
     <li><a href="../../rohd/Simulator/postTick.html">postTick</a></li>
     <li><a href="../../rohd/Simulator/preTick.html">preTick</a></li>
     <li><a href="../../rohd/Simulator/simulationEnded.html">simulationEnded</a></li>
+    <li><a href="../../rohd/Simulator/simulationHasEnded.html">simulationHasEnded</a></li>
     <li><a href="../../rohd/Simulator/startTick.html">startTick</a></li>
     <li><a href="../../rohd/Simulator/time.html">time</a></li>
 
