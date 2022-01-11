@@ -13,7 +13,9 @@ import 'package:test/test.dart';
 
 class MyExternalModule extends ExternalSystemVerilogModule {
   MyExternalModule(Logic a, {int width = 2})
-      : super('external_module_name', parameters: {'WIDTH': '$width'}) {
+      : super(
+            topModuleName: 'external_module_name',
+            parameters: {'WIDTH': '$width'}) {
     addInput('a', a, width: width);
     addOutput('b', width: width);
   }
