@@ -13,7 +13,7 @@ import 'dart:collection';
 import 'package:logging/logging.dart';
 
 /// An enum for the various phases of the [Simulator].
-enum SimulatorPhase { outOfTick, beforeTick, mainTick, clksStable }
+enum SimulatorPhase { outOfTick, beforeTick, mainTick, clkStable }
 
 /// A functional event-based static simulator for logic behavior.
 ///
@@ -24,7 +24,7 @@ enum SimulatorPhase { outOfTick, beforeTick, mainTick, clksStable }
 /// - [startTick]                 (event): The beginning of the "meat" of the tick.
 /// - [SimulatorPhase.mainTick]   (phase): Most events happen here, lots of glitches.
 /// - [clkStable]                 (event): All glitchiness has completed, clocks should be stable now.
-/// - [SimulatorPhase.clksStable] (phase)
+/// - [SimulatorPhase.clkStable]  (phase)
 /// - [postTick]                  (event): The tick has completed, all values should be settled.
 /// - [SimulatorPhase.outOfTick]  (phase): Not during an active simulator tick.
 ///
@@ -56,8 +56,7 @@ class Simulator {
       SplayTreeMap<int, List<void Function()>>();
 
   /// Functions to be executed as soon as possible by the [Simulator].
-  static final Queue<void Function()> _injectedActions =
-      Queue<void Function()>();
+  static final Queue<Function()> _injectedActions = Queue<Function()>();
 
   /// Emits an event before any other actions take place on the tick.
   static Stream get preTick => _preTickController.stream;
@@ -83,6 +82,9 @@ class Simulator {
   /// Completes when the simulation has completed.
   static Future get simulationEnded => _simulationEndedCompleter.future;
   static Completer _simulationEndedCompleter = Completer();
+
+  /// Returns true iff the simulation has completed.
+  static bool get simulationHasEnded => _simulationEndedCompleter.isCompleted;
 
   /// Gets the current [SimulatorPhase] of the [Simulator].
   static SimulatorPhase get phase => _phase;
@@ -136,7 +138,7 @@ class Simulator {
   ///
   /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will execute in
   /// a new tick in the same timestamp.
-  static void injectAction(void Function() action) {
+  static void injectAction(Function() action) {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
   }
@@ -148,7 +150,7 @@ class Simulator {
   static Future<void> tick() async {
     if (_injectedActions.isNotEmpty) {
       // injected actions will automatically be executed during tickExecute
-      tickExecute(() {});
+      await tickExecute(() {});
 
       // don't continue through the tick for injected actions, come back around
       return;
@@ -162,7 +164,7 @@ class Simulator {
 
     _currentTimestamp = nextTimeStamp;
     // print("Tick: $_currentTimestamp");
-    tickExecute(() {
+    await tickExecute(() {
       for (var func in _pendingTimestamps[nextTimeStamp]!) {
         func();
       }
@@ -171,28 +173,27 @@ class Simulator {
   }
 
   /// Executes all pending injected actions.
-  static void _executeInjectedActions() {
+  static Future<void> _executeInjectedActions() async {
     while (_injectedActions.isNotEmpty) {
       var injectedFunction = _injectedActions.removeFirst();
-      injectedFunction();
+      await injectedFunction();
     }
   }
 
   /// Performs the actual execution of a collection of actions for a [tick()].
-  static void tickExecute(void Function() toExecute) {
+  static Future<void> tickExecute(void Function() toExecute) async {
     _phase = SimulatorPhase.beforeTick;
     _preTickController.add(null); // useful for flop sampling
 
     _phase = SimulatorPhase.mainTick;
     _startTickController.add(
         null); // useful for things that need to trigger every tick without other input
-    _executeInjectedActions();
     toExecute();
-    _executeInjectedActions();
 
-    _phase = SimulatorPhase.clksStable;
+    _phase = SimulatorPhase.clkStable;
     _clkStableController.add(null); // useful for flop clk input stability
-    _executeInjectedActions();
+
+    await _executeInjectedActions();
 
     _phase = SimulatorPhase.outOfTick;
     _postTickController
@@ -212,7 +213,7 @@ class Simulator {
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick(); // make this async so that await-ing events works
     }
-    if (_currentTimestamp >= _maxSimTime) {
+    if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
       logger.warning('Simulation ended due to maximum simulation time.');
     }
     _simulationEndedCompleter.complete();

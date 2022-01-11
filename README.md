@@ -1,7 +1,7 @@
 [![Tests](https://github.com/intel/rohd/actions/workflows/test.yml/badge.svg)](https://github.com/intel/rohd/actions/workflows/test.yml)
 [![Docs](https://github.com/intel/rohd/actions/workflows/docs.yml/badge.svg)](https://intel.github.io/rohd/rohd/rohd-library.html)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
 Rapid Open Hardware Development (ROHD) Framework
 ================================================
@@ -143,7 +143,7 @@ You can find an executable version of this counter example in [example/example.d
 
 ### A more complex example
 
-See a more advanced example of a logarithmic-depth tree of arbitrary functionality at [doc/TreeExample.md](doc/TreeExample.md).
+See a more advanced example of a logarithmic-depth tree of arbitrary functionality at [doc/TreeExample.md](https://github.com/intel/rohd/blob/main/doc/TreeExample.md).
 
 You can find an executable version of the tree example in [example/tree.dart](https://github.com/intel/rohd/blob/main/example/tree.dart).
 
@@ -655,9 +655,9 @@ The ROHD simulator is a static class accessible as [`Simulator`](https://intel.g
 
 ## Instantiation of External Modules
 
-ROHD can instantiate external SystemVerilog modules.  The [`ExternalModule`](https://intel.github.io/rohd/rohd/ExternalModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalModule`, it will instantiate instances of the specified `topModuleName`.  This is useful for integration related activities.
+ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `topModuleName`.  This is useful for integration related activities.
 
-There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalModule` planned for release soon.
+There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalSystemVerilogModule` planned for release soon.
 
 ## Unit Testing
 
@@ -669,7 +669,7 @@ Note that when unit testing with ROHD, it is important to reset the `Simulator` 
 
 ## Contributing
 
-ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
 
 ## Comparison with Alternatives
 There are a lot of options for developing hardware.  This section briefly discusses popular alternatives to ROHD and some of their strengths and weaknesses.

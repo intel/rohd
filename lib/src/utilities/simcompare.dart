@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// simcompare.dart
@@ -8,6 +8,7 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
@@ -67,34 +68,44 @@ class SimCompare {
     var timestamp = 1;
     for (var vector in vectors) {
       // print('Running vector: $vector');
-      Simulator.registerAction(timestamp, () async {
-        Simulator.tickExecute(() {
-          for (var signalName in vector.inputValues.keys) {
-            var value = vector.inputValues[signalName];
-            module.input(signalName).put(value);
+      Simulator.registerAction(timestamp, () {
+        for (var signalName in vector.inputValues.keys) {
+          var value = vector.inputValues[signalName];
+          module.input(signalName).put(value);
+        }
+
+        Simulator.postTick.first.then((value) {
+          for (var signalName in vector.expectedOutputValues.keys) {
+            var value = vector.expectedOutputValues[signalName];
+            var o = module.output(signalName);
+            var errorReason =
+                'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
+            if (value is int) {
+              if (!o.value.isValid) {
+                // invalid value causes exception without helpful message, so throw it
+                throw Exception(errorReason);
+              }
+              expect(o.valueInt, equals(value), reason: errorReason);
+            } else if (value is LogicValue) {
+              if (o.width > 1 &&
+                  (value == LogicValue.x || value == LogicValue.z)) {
+                for (var oBit in o.value.toList()) {
+                  expect(oBit, equals(value), reason: errorReason);
+                }
+              } else if (o.width == 1) {
+                expect(o.bit, equals(value));
+              } else {
+                throw Exception(
+                    'Valid LogicValue bit width mismatch.  Saw ${o.width}, but expected 1.');
+              }
+            } else if (value is LogicValues) {
+              expect(o.value, equals(value));
+            } else {
+              throw Exception(
+                  'Value type ${value.runtimeType} is not supported (yet?)');
+            }
           }
         });
-        for (var signalName in vector.expectedOutputValues.keys) {
-          var value = vector.expectedOutputValues[signalName];
-          var o = module.output(signalName);
-          var errorReason =
-              'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
-          if (value is int) {
-            if (!o.value.isValid) {
-              // invalid value causes exception without helpful message, so throw it
-              throw Exception(errorReason);
-            }
-            expect(o.valueInt, equals(value), reason: errorReason);
-          } else if (value is LogicValue &&
-              (value == LogicValue.x || value == LogicValue.z)) {
-            for (var oBit in o.value.toList()) {
-              expect(oBit, equals(value), reason: errorReason);
-            }
-          } else {
-            throw Exception(
-                'Value type ${value.runtimeType} is not supported (yet?)');
-          }
-        }
       });
       timestamp += Vector.period;
     }

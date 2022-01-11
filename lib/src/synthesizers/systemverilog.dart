@@ -36,10 +36,13 @@ class SystemVerilogSynthesizer extends Synthesizer {
       String instanceName,
       Map<String, String> inputs,
       Map<String, String> outputs,
-      {Map<String, String>? parameters}) {
-    if (module is CustomSystemVerilog) {
-      return module.instantiationVerilog(
-          instanceType, instanceName, inputs, outputs);
+      {Map<String, String>? parameters,
+      bool forceStandardInstantiation = false}) {
+    if (!forceStandardInstantiation) {
+      if (module is CustomSystemVerilog) {
+        return module.instantiationVerilog(
+            instanceType, instanceName, inputs, outputs);
+      }
     }
 
     //non-custom needs more details

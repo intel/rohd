@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// external.dart
@@ -12,18 +12,23 @@ import 'package:rohd/rohd.dart';
 
 // TODO: offer a way to reference sub-module signals
 
-// TODO: add a test for externalmodule
-
-/// Represents a [Module] whose definition exists outside of this framework.
+/// Represents a [Module] whose definition exists outside of this framework in SystemVerilog.
 ///
-/// This is useful for interacting with, for example, SystemVerilog modules.
+/// This is useful for interacting with SystemVerilog modules.
 /// You can add custom behavior for how to synthesize the generated SystemVerilog
-/// as well as extend functionality with behavior models or cosimulation.
-abstract class ExternalModule extends Module with CustomSystemVerilog {
+/// as well as extend functionality with behavioral models or cosimulation.
+abstract class ExternalSystemVerilogModule extends Module
+    with CustomSystemVerilog {
+  /// The name of the top SystemVerilog module.
   final String topModuleName;
+
+  /// A map of parameter names and values to be passed to the SystemVerilog module.
   final Map<String, String>? parameters;
-  ExternalModule(this.topModuleName,
-      {this.parameters, String name = 'external_module'})
+
+  ExternalSystemVerilogModule(
+      {required this.topModuleName,
+      this.parameters,
+      String name = 'external_module'})
       : super(name: name);
 
   @override
@@ -32,6 +37,9 @@ abstract class ExternalModule extends Module with CustomSystemVerilog {
     //TODO: how to avoid module name conflicts with generated modules?
     return SystemVerilogSynthesizer.instantiationVerilogWithParameters(
         this, topModuleName, instanceName, inputs, outputs,
-        parameters: parameters);
+        parameters: parameters, forceStandardInstantiation: true);
   }
 }
+
+@Deprecated('Use ExternalSystemVerilogModule instead.')
+typedef ExternalModule = ExternalSystemVerilogModule;
