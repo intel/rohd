@@ -191,7 +191,7 @@ class Sequential extends _Always {
     // listen to every input of this `Sequential` for changes
     for (var driverInput in _assignedDriverToInputMap.values) {
       driverInput.glitch.listen((event) {
-        if (Simulator.phase != SimulatorPhase.clksStable) {
+        if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately update the map
           _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
         } else {

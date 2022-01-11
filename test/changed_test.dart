@@ -62,4 +62,20 @@ void main() {
 
     expect(count, equals(uniquePosedgeTimestamps.length));
   });
+
+  test('injection triggers edge', () async {
+    var a = Logic();
+    a.put(0);
+
+    int numPosedges = 0;
+    a.posedge.listen((event) {
+      numPosedges += 1;
+    });
+
+    a.inject(1);
+
+    await Simulator.run();
+
+    expect(numPosedges, equals(1));
+  });
 }

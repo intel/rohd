@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// external.dart
@@ -12,17 +12,16 @@ import 'package:rohd/rohd.dart';
 
 // TODO: offer a way to reference sub-module signals
 
-// TODO: add a test for externalmodule
-
-/// Represents a [Module] whose definition exists outside of this framework.
+/// Represents a [Module] whose definition exists outside of this framework in SystemVerilog.
 ///
 /// This is useful for interacting with, for example, SystemVerilog modules.
 /// You can add custom behavior for how to synthesize the generated SystemVerilog
 /// as well as extend functionality with behavior models or cosimulation.
-abstract class ExternalModule extends Module with CustomSystemVerilog {
+abstract class ExternalSystemVerilogModule extends Module
+    with CustomSystemVerilog {
   final String topModuleName;
   final Map<String, String>? parameters;
-  ExternalModule(this.topModuleName,
+  ExternalSystemVerilogModule(this.topModuleName,
       {this.parameters, String name = 'external_module'})
       : super(name: name);
 
@@ -32,6 +31,6 @@ abstract class ExternalModule extends Module with CustomSystemVerilog {
     //TODO: how to avoid module name conflicts with generated modules?
     return SystemVerilogSynthesizer.instantiationVerilogWithParameters(
         this, topModuleName, instanceName, inputs, outputs,
-        parameters: parameters);
+        parameters: parameters, forceStandardInstantiation: true);
   }
 }
