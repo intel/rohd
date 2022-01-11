@@ -68,15 +68,13 @@ class SimCompare {
     var timestamp = 1;
     for (var vector in vectors) {
       // print('Running vector: $vector');
-      Simulator.registerAction(timestamp, () async {
-        // await Simulator.tickExecute(() {
+      Simulator.registerAction(timestamp, () {
         for (var signalName in vector.inputValues.keys) {
           var value = vector.inputValues[signalName];
           module.input(signalName).put(value);
         }
-        // });
 
-        unawaited(Simulator.postTick.first.then((value) {
+        Simulator.postTick.first.then((value) {
           for (var signalName in vector.expectedOutputValues.keys) {
             var value = vector.expectedOutputValues[signalName];
             var o = module.output(signalName);
@@ -88,17 +86,26 @@ class SimCompare {
                 throw Exception(errorReason);
               }
               expect(o.valueInt, equals(value), reason: errorReason);
-            } else if (value is LogicValue &&
-                (value == LogicValue.x || value == LogicValue.z)) {
-              for (var oBit in o.value.toList()) {
-                expect(oBit, equals(value), reason: errorReason);
+            } else if (value is LogicValue) {
+              if (o.width > 1 &&
+                  (value == LogicValue.x || value == LogicValue.z)) {
+                for (var oBit in o.value.toList()) {
+                  expect(oBit, equals(value), reason: errorReason);
+                }
+              } else if (o.width == 1) {
+                expect(o.bit, equals(value));
+              } else {
+                throw Exception(
+                    'Valid LogicValue bit width mismatch.  Saw ${o.width}, but expected 1.');
               }
+            } else if (value is LogicValues) {
+              expect(o.value, equals(value));
             } else {
               throw Exception(
                   'Value type ${value.runtimeType} is not supported (yet?)');
             }
           }
-        }));
+        });
       });
       timestamp += Vector.period;
     }
