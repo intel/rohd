@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// sanitizer.dart
@@ -15,7 +15,7 @@
 /// "Sanitary" means it doesn't have any characters illegal in generated languages,
 /// doesn't collide with keywords in generated languages, and has a valid variable
 /// name in generated languages.
-class Sanitizer {
+abstract class Sanitizer {
   /// Returns true iff [name] needs no renaming to be "sanitary".
   static bool isSanitary(String name) {
     return name == sanitizeSV(name);

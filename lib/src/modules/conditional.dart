@@ -10,6 +10,8 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
 
 // TODO: consider X optimism in conditional statements in more detail, dont be too pessimistic if both inputs are equal
 //  also need to add more tests around this (including @posedge(clk|reset))
@@ -24,6 +26,8 @@ abstract class _Always extends Module with CustomSystemVerilog {
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
   final Map<Logic, Logic> _assignedDriverToInputMap = {};
 
+  final Uniquifier _portUniquifier = Uniquifier();
+
   _Always(this.conditionals, {String name = 'always'}) : super(name: name) {
     //TODO: need to do some check that the same conditional is not used multiple times in the same always or in different always
 
@@ -32,7 +36,9 @@ abstract class _Always extends Module with CustomSystemVerilog {
     for (var conditional in conditionals) {
       for (var driver in conditional.getDrivers()) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
-          var inputName = Module.unpreferredName('in$idx');
+          var inputName = _portUniquifier.getUniqueName(
+              initialName: Module.unpreferredName(
+                  Sanitizer.sanitizeSV('in${idx}_${driver.name}')));
           addInput(inputName, driver, width: driver.width);
           _assignedDriverToInputMap[driver] = input(inputName);
           idx++;
@@ -40,7 +46,9 @@ abstract class _Always extends Module with CustomSystemVerilog {
       }
       for (var receiver in conditional.getReceivers()) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
-          var outputName = Module.unpreferredName('out$idx');
+          var outputName = _portUniquifier.getUniqueName(
+              initialName: Module.unpreferredName(
+                  Sanitizer.sanitizeSV('out${idx}_${receiver.name}')));
           addOutput(outputName, width: receiver.width);
           _assignedReceiverToOutputMap[receiver] = output(outputName);
           receiver <= output(outputName);
@@ -160,7 +168,11 @@ class Sequential extends _Always {
       if (clk.width > 1) {
         throw Exception('Each clk must be 1 bit, but saw $clk.');
       }
-      _clks.add(addInput(Module.unpreferredName('clk$i'), clk));
+      _clks.add(addInput(
+          _portUniquifier.getUniqueName(
+              initialName: Sanitizer.sanitizeSV(
+                  Module.unpreferredName('clk${i}_${clk.name}'))),
+          clk));
       _preTickClkValues.add(null);
     }
     _setup();
@@ -190,6 +202,9 @@ class Sequential extends _Always {
 
     // listen to every input of this `Sequential` for changes
     for (var driverInput in _assignedDriverToInputMap.values) {
+      // pre-fill the _inputToPreTickInputValuesMap so that nothing ever uses values directly
+      _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+
       driverInput.glitch.listen((event) {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately update the map
@@ -401,7 +416,6 @@ class ConditionalAssign extends Conditional {
 
   @override
   List<Logic> execute() {
-    // print('>>Assigning $receiver [value ${receiver.value}] to $driver [value ${driver.value}]');
     receiverOutput(receiver).put(driverValue(driver));
     return [receiver];
   }
