@@ -73,7 +73,11 @@
     if (clk.width &gt; 1) {
       throw Exception(&#39;Each clk must be 1 bit, but saw $clk.&#39;);
     }
-    _clks.add(addInput(Module.unpreferredName(&#39;clk$i&#39;), clk));
+    _clks.add(addInput(
+        _portUniquifier.getUniqueName(
+            initialName: Sanitizer.sanitizeSV(
+                Module.unpreferredName(&#39;clk${i}_${clk.name}&#39;))),
+        clk));
     _preTickClkValues.add(null);
   }
   _setup();
