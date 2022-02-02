@@ -6,6 +6,7 @@
 /// Author: wswongat
 ///
 import 'package:rohd/rohd.dart';
+import 'package:test/test.dart';
 
 class FirFilter extends Module {
   // For convenience, map interesting outputs to short variable names for consumers of this module
@@ -64,12 +65,16 @@ class FirFilter extends Module {
 }
 
 Future<void> main({bool noPrint = false}) async {
+  if (Simulator.time != 0) {
+    await Simulator.reset();
+  }
+
   var sumWidth = 8;
   var en = Logic(name: 'en'),
       rst = Logic(name: 'en'),
       inputVal = Logic(name: 'en', width: sumWidth);
 
-  var clk = SimpleClockGenerator(10).clk;
+  var clk = SimpleClockGenerator(5).clk;
   // 4-cycle delay coefficients
   var firFilter =
       FirFilter(en, rst, clk, inputVal, [0, 0, 0, 1], bitWidth: sumWidth);
@@ -92,24 +97,20 @@ Future<void> main({bool noPrint = false}) async {
   // Attach a waveform dumper
   WaveDumper(firFilter);
 
-  Simulator.registerAction(1, () => en.put(1));
-  Simulator.registerAction(12, () => rst.put(1));
-
-  Simulator.registerAction(20, () => inputVal.put(1));
+  Simulator.registerAction(5, () => en.put(1));
+  Simulator.registerAction(10, () => rst.put(1));
 
   for (int i = 1; i < 10; i++) {
-    Simulator.registerAction(5 + i * 10, () => inputVal.put(i));
+    Simulator.registerAction(5 + i * 4, () => inputVal.put(i));
   }
 
-  Simulator.registerAction(105, () => rst.put(0));
-
   // Print a message when we're done with the simulation!
-  Simulator.registerAction(200, () {
+  Simulator.registerAction(100, () {
     if (!noPrint) print('Simulation completed!');
   });
 
   // Set a maximum time for the simulation so it doesn't keep running forever.
-  Simulator.setMaxSimTime(300);
+  Simulator.setMaxSimTime(100);
 
   // Kick off the simulation.
   await Simulator.run();
