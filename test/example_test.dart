@@ -9,12 +9,16 @@
 ///
 
 import 'package:test/test.dart';
+import 'package:rohd/rohd.dart';
 
 import '../example/example.dart' as counter;
 import '../example/tree.dart' as tree;
 import '../example/fir_filter.dart' as fir_filter;
 
 void main() {
+  tearDown(() {
+    Simulator.reset();
+  });
   test('counter example', () async {
     await counter.main(noPrint: true);
   });
