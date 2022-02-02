@@ -21,7 +21,7 @@ void main() {
   test('tree example', () async {
     await tree.main(noPrint: true);
   });
-  test('fir filter example', () async{
+  test('fir filter example', () async {
     await fir_filter.main(noPrint: true);
   });
 }
