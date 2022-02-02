@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import '../example/example.dart' as counter;
 import '../example/tree.dart' as tree;
+import '../example/fir_filter.dart' as fir_filter;
 
 void main() {
   test('counter example', () async {
@@ -19,5 +20,8 @@ void main() {
   });
   test('tree example', () async {
     await tree.main(noPrint: true);
+  });
+  test('fir filter example', () async{
+    await fir_filter.main(noPrint: true);
   });
 }
