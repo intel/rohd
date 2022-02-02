@@ -6,7 +6,6 @@
 /// Author: wswongat
 ///
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 
 class FirFilter extends Module {
   // For convenience, map interesting outputs to short variable names for consumers of this module
