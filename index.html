@@ -385,11 +385,11 @@ class MyModule extends Module {
 <p>ROHD supports <a href="https://intel.github.io/rohd/rohd/Case-class.html"><code>Case</code></a> and <a href="https://intel.github.io/rohd/rohd/CaseZ-class.html"><code>CaseZ</code></a> statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:</p>
 <pre class="language-dart"><code class="language-dart">Combinational([
   Case([b,a].swizzle(), [
-      CaseItem(Const(LogicValues.fromString('01')), [
+      CaseItem(Const(LogicValues.ofString('01')), [
         c &lt; 1,
         d &lt; 0
       ]),
-      CaseItem(Const(LogicValues.fromString('10')), [
+      CaseItem(Const(LogicValues.ofString('10')), [
         c &lt; 1,
         d &lt; 0,
       ]),
@@ -400,7 +400,7 @@ class MyModule extends Module {
     conditionalType: ConditionalType.Unique
   ),
   CaseZ([b,a].swizzle(),[
-      CaseItem(Const(LogicValues.fromString('z1')), [
+      CaseItem(Const(LogicValues.ofString('z1')), [
         e &lt; 1,
       ])
     ], defaultItem: [
