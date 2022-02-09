@@ -88,11 +88,10 @@ bool confirmValue(
       } else if (line.endsWith(sigName!)) {
         if (width == 1) {
           // ex: zs1
-          currentValue = LogicValues.fromString(line[0]);
+          currentValue = LogicValues.ofString(line[0]);
         } else {
           // ex: bzzzzzzzz s2
-          currentValue =
-              LogicValues.fromString(line.split(' ')[0].substring(1));
+          currentValue = LogicValues.ofString(line.split(' ')[0].substring(1));
         }
       }
     }
@@ -120,11 +119,11 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 5, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 5, LogicValues.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.fromString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
         equals(true));
 
     deleteTemporaryDump(dumpName);
@@ -146,13 +145,13 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 1, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 1, LogicValues.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.fromString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 20, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 20, LogicValues.ofString('1')),
         equals(true));
 
     deleteTemporaryDump(dumpName);
@@ -184,13 +183,13 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.fromString('0')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 5, LogicValues.fromString('1')),
+    expect(confirmValue(vcdContents, 'a', 5, LogicValues.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.fromString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 35, LogicValues.fromString('0')),
+    expect(confirmValue(vcdContents, 'a', 35, LogicValues.ofString('0')),
         equals(true));
 
     deleteTemporaryDump(dumpName);

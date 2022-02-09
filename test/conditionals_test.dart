@@ -40,8 +40,8 @@ class CaseModule extends Module {
       Case(
           [b, a].swizzle(),
           [
-            CaseItem(Const(LogicValues.fromString('01')), [c < 1, d < 0]),
-            CaseItem(Const(LogicValues.fromString('10')), [
+            CaseItem(Const(LogicValues.ofString('01')), [c < 1, d < 0]),
+            CaseItem(Const(LogicValues.ofString('10')), [
               c < 1,
               d < 0,
             ]),
@@ -54,7 +54,7 @@ class CaseModule extends Module {
       CaseZ(
           [b, a].rswizzle(),
           [
-            CaseItem(Const(LogicValues.fromString('1z')), [
+            CaseItem(Const(LogicValues.ofString('1z')), [
               e < 1,
             ])
           ],

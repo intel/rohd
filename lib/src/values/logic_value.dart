@@ -25,7 +25,11 @@ class LogicValue {
   static const LogicValue z = LogicValue._(_LogicValueEnum.z);
 
   /// Convert a bool to a one or zero
-  static LogicValue fromBool(bool v) => v ? one : zero;
+  static LogicValue ofBool(bool value) => value ? one : zero;
+
+  /// Convert a bool to a one or zero
+  @Deprecated('Use `ofBool` instead.')
+  static LogicValue fromBool(bool value) => ofBool(value);
 
   final _LogicValueEnum _value;
   const LogicValue._(this._value);

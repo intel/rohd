@@ -422,11 +422,11 @@ ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`
 ```dart
 Combinational([
   Case([b,a].swizzle(), [
-      CaseItem(Const(LogicValues.fromString('01')), [
+      CaseItem(Const(LogicValues.ofString('01')), [
         c < 1,
         d < 0
       ]),
-      CaseItem(Const(LogicValues.fromString('10')), [
+      CaseItem(Const(LogicValues.ofString('10')), [
         c < 1,
         d < 0,
       ]),
@@ -437,7 +437,7 @@ Combinational([
     conditionalType: ConditionalType.Unique
   ),
   CaseZ([b,a].swizzle(),[
-      CaseItem(Const(LogicValues.fromString('z1')), [
+      CaseItem(Const(LogicValues.ofString('z1')), [
         e < 1,
       ])
     ], defaultItem: [

@@ -43,7 +43,7 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// are the most significant (highest) bits.
   ///
   /// If you want the opposite, check out [rswizzle].
-  LogicValues swizzle() => LogicValues.from(reversed);
+  LogicValues swizzle() => LogicValues.of(reversed);
 
   /// Performs a concatenation operation on the list of signals, where index 0 of this list is
   /// the *least* significant bit.
@@ -53,7 +53,7 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// are the least significant (lowest) bits.
   ///
   /// If you want the opposite, check out [swizzle].
-  LogicValues rswizzle() => LogicValues.from(this);
+  LogicValues rswizzle() => LogicValues.of(this);
 }
 
 /// Allows lists of [LogicValues]s to be swizzled.
@@ -67,7 +67,7 @@ extension LogicValuesSwizzle on List<LogicValues> {
   ///
   /// If you want the opposite, check out [rswizzle].
   LogicValues swizzle() =>
-      LogicValues.from(reversed.map((e) => e.toList()).expand((e) => e));
+      LogicValues.of(reversed.map((e) => e.toList()).expand((e) => e));
 
   /// Performs a concatenation operation on the list of signals, where index 0 of this list is
   /// the *least* significant bit(s).
@@ -78,7 +78,7 @@ extension LogicValuesSwizzle on List<LogicValues> {
   ///
   /// If you want the opposite, check out [swizzle].
   LogicValues rswizzle() =>
-      LogicValues.from(map((e) => e.toList()).expand((e) => e));
+      LogicValues.of(map((e) => e.toList()).expand((e) => e));
 }
 
 /// Performs a concatenation operation on the list of signals, where index 0 of [signals] is

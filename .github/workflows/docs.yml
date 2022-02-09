@@ -18,7 +18,7 @@ jobs:
 
       # build docs into "public" folder
       - name: build dart docs
-        run: dartdoc
+        run: dart doc .
 
       # deploy HTML to a branch named "docs"
       - name: deploy to branch
