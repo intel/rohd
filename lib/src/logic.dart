@@ -378,7 +378,7 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.fromInt(val, width);
+        newValue = LogicValues.ofInt(val, width);
       }
     } else if (val is BigInt) {
       if (fill) {
@@ -390,10 +390,10 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.fromBigInt(val, width);
+        newValue = LogicValues.ofBigInt(val, width);
       }
     } else if (val is bool) {
-      newValue = LogicValues.fromInt(val ? 1 : 0, width);
+      newValue = LogicValues.ofInt(val ? 1 : 0, width);
     } else if (val is LogicValues) {
       if (val.length == 1 &&
           (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
@@ -412,7 +412,7 @@ class Logic {
         throw Exception(
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
-        newValue = LogicValues.from(val);
+        newValue = LogicValues.of(val);
       }
     } else if (val is LogicValue) {
       if (val == LogicValue.x || val == LogicValue.z || fill) {
@@ -420,7 +420,7 @@ class Logic {
       } else {
         var logicVals = List<LogicValue>.filled(width, LogicValue.zero);
         logicVals[0] = val;
-        newValue = LogicValues.from(logicVals);
+        newValue = LogicValues.of(logicVals);
       }
     } else {
       throw Exception('Unrecognized value "$val" to deposit on this signal. '

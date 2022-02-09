@@ -208,6 +208,11 @@ class Simulator {
   /// Starts the simulation, executing all pending actions in time-order until
   /// it finishes or is stopped.
   static Future<void> run() async {
+    if (simulationHasEnded) {
+      throw Exception('Simulation has already been run and ended.'
+          '  To run a new simulation, use Simulator.reset().');
+    }
+
     while (hasStepsRemaining() &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {

@@ -70,7 +70,7 @@ class _SmallLogicValues extends LogicValues {
   }
 
   @override
-  LogicValues get reversed => LogicValues.from(toList().reversed);
+  LogicValues get reversed => LogicValues.of(toList().reversed);
 
   @override
   bool get isValid => _invalid == 0;
@@ -228,7 +228,7 @@ class _BigLogicValues extends LogicValues {
   }
 
   @override
-  LogicValues get reversed => LogicValues.from(toList().reversed);
+  LogicValues get reversed => LogicValues.of(toList().reversed);
 
   @override
   bool get isValid => _invalid.sign == 0;
@@ -530,16 +530,16 @@ class _FilledLogicValues extends LogicValues {
               : LogicValue.zero;
 
   @override
-  LogicValues _shiftLeft(int shamt) => LogicValues.fromString(
-      _value.toString() * (length - shamt) + '0' * shamt);
+  LogicValues _shiftLeft(int shamt) =>
+      LogicValues.ofString(_value.toString() * (length - shamt) + '0' * shamt);
 
   @override
-  LogicValues _shiftRight(int shamt) => LogicValues.fromString(
-      '0' * shamt + _value.toString() * (length - shamt));
+  LogicValues _shiftRight(int shamt) =>
+      LogicValues.ofString('0' * shamt + _value.toString() * (length - shamt));
 
   @override
   LogicValues _shiftArithmeticRight(int shamt) =>
-      LogicValues.fromString((_value == LogicValue.one ? '1' : '0') * shamt +
+      LogicValues.ofString((_value == LogicValue.one ? '1' : '0') * shamt +
           _value.toString() * (length - shamt));
 }
 
@@ -558,20 +558,39 @@ abstract class LogicValues {
   const LogicValues._(this.length) : assert(length >= 0);
 
   /// Converts `bool` [value] to a valid [LogicValues] with 1 bits either one or zero.
-  static LogicValues fromBool(bool value) =>
+  static LogicValues ofBool(bool value) =>
       _SmallLogicValues(value ? 1 : 0, 0, 1);
+
+  /// Converts `bool` [value] to a valid [LogicValues] with 1 bits either one or zero.
+  @Deprecated('Use `ofBool` instead.')
+  static LogicValues fromBool(bool value) => ofBool(value);
 
   /// Converts `int` [value] to a valid [LogicValues] with [length] number of bits.
   ///
   /// [length] must be greater than or equal to 0.
-  static LogicValues fromInt(int value, int length) =>
-      _SmallLogicValues(value, 0, length);
+  static LogicValues ofInt(int value, int length) => length > _INT_BITS
+      ? _BigLogicValues(BigInt.from(value), BigInt.zero, length)
+      : _SmallLogicValues(value, 0, length);
+
+  /// Converts `int` [value] to a valid [LogicValues] with [length] number of bits.
+  ///
+  /// [length] must be greater than or equal to 0.
+  @Deprecated('Use `ofInt` instead.')
+  static LogicValues fromInt(int value, int length) => ofInt(value, length);
 
   /// Converts `BigInt` [value] to a valid [LogicValues] with [length] number of bits.
   ///
   /// [length] must be greater than or equal to 0.
+  static LogicValues ofBigInt(BigInt value, int length) => length > _INT_BITS
+      ? _BigLogicValues(value, BigInt.zero, length)
+      : _SmallLogicValues(value.toInt(), 0, length);
+
+  /// Converts `BigInt` [value] to a valid [LogicValues] with [length] number of bits.
+  ///
+  /// [length] must be greater than or equal to 0.
+  @Deprecated('Use `ofBigInt` instead.')
   static LogicValues fromBigInt(BigInt value, int length) =>
-      _BigLogicValues(value, BigInt.zero, length);
+      ofBigInt(value, length);
 
   /// Constructs a [LogicValues] with the [length] number of bits, where every bit has the same value of [fill].
   ///
@@ -586,11 +605,24 @@ abstract class LogicValues {
   ///
   /// ```dart
   /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
+  /// var lv = LogicValues.of(it);
+  /// print(lv); // This prints `3b'1x0`
+  /// ```
+  static LogicValues of(Iterable<LogicValue> it) => LogicValues.ofString(
+      it.map((e) => e.toString()).toList().reversed.join());
+
+  /// Constructs a [LogicValues] from [it].
+  ///
+  /// The order of the created [LogicValues] will be such that the `i`th entry in [it] corresponds
+  /// to the `i`th bit.  That is, the 0th element of [it] will be the 0th bit of the returned [LogicValues].
+  ///
+  /// ```dart
+  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
   /// var lv = LogicValues.from(it);
   /// print(lv); // This prints `3b'1x0`
   /// ```
-  static LogicValues from(Iterable<LogicValue> it) => LogicValues.fromString(
-      it.map((e) => e.toString()).toList().reversed.join());
+  @Deprecated('Use `of` instead.')
+  static LogicValues from(Iterable<LogicValue> it) => of(it);
 
   /// Returns true if bits in the [BigInt] are either all 0 or all 1
   static bool _bigIntIsFilled(BigInt x, int length) =>
@@ -615,10 +647,10 @@ abstract class LogicValues {
   ///
   /// ```dart
   /// var stringRepresentation = '1x0';
-  /// var lv = LogicValues.fromString(stringRepresentation);
+  /// var lv = LogicValues.ofString(stringRepresentation);
   /// print(lv); // This prints `3b'1x0`
   /// ```
-  static LogicValues fromString(String stringRepresentation) {
+  static LogicValues ofString(String stringRepresentation) {
     var valueString = _valueString(stringRepresentation);
     var invalidString = _invalidString(stringRepresentation);
     var length = stringRepresentation.length;
@@ -647,6 +679,22 @@ abstract class LogicValues {
     }
   }
 
+  /// Converts a binary [String] representation of a [LogicValues] into a [LogicValues].
+  ///
+  /// The [stringRepresentation] should only contain bit values (e.g. no `0b` at the start).
+  /// The order of the created [LogicValues] will be such that the `i`th character in [stringRepresentation]
+  /// corresponds to the `length - i - 1`th bit.  That is, the last character of [stringRepresentation] will be
+  /// the 0th bit of the returned [LogicValues].
+  ///
+  /// ```dart
+  /// var stringRepresentation = '1x0';
+  /// var lv = LogicValues.fromString(stringRepresentation);
+  /// print(lv); // This prints `3b'1x0`
+  /// ```
+  @Deprecated('Use `ofString` instead.')
+  static LogicValues fromString(String stringRepresentation) =>
+      ofString(stringRepresentation);
+
   /// Returns true iff the length and all bits of [this] are equal to [other].
   @override
   bool operator ==(Object other) {
@@ -668,7 +716,7 @@ abstract class LogicValues {
   /// to the `i`th bit.  That is, the 0th element of the list will be the 0th bit of this [LogicValues].
   ///
   /// ```dart
-  /// var lv = LogicValues.fromString('1x0');
+  /// var lv = LogicValues.ofString('1x0');
   /// var it = lv.toList();
   /// print(lv); // This prints `[LogicValue.zero, LogicValue.x, LogicValue.one]`
   /// ```
@@ -680,7 +728,7 @@ abstract class LogicValues {
   /// The first digits before the `b` are the length of the value.
   ///
   /// ```dart
-  /// var lv = LogicValues.fromString('1x0');
+  /// var lv = LogicValues.ofString('1x0');
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @override
@@ -859,11 +907,11 @@ abstract class LogicValues {
                   ? other.toBigInt()
                   : throw Exception(
                       'Unexpected big type: ${other.runtimeType}.');
-      return LogicValues.fromBigInt(op(a, b), length);
+      return LogicValues.ofBigInt(op(a, b), length);
     } else {
       var a = toInt();
       var b = other is int ? other : (other as LogicValues).toInt();
-      return LogicValues.fromInt(op(a, b), length);
+      return LogicValues.ofInt(op(a, b), length);
     }
   }
 
