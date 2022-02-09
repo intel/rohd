@@ -28,7 +28,7 @@ class FirFilter extends Module {
     // Add input/output port
     en = addInput('en', en);
     inputVal = addInput('inputVal', inputVal, width: bitWidth);
-    resetB = addInput('reset', resetB);
+    resetB = addInput('resetB', resetB);
     clk = addInput('clk', clk);
     // Generate input train
     List<Logic> _z = List<Logic>.generate(
@@ -71,8 +71,8 @@ class FirFilter extends Module {
 Future<void> main({bool noPrint = false}) async {
   var sumWidth = 8;
   var en = Logic(name: 'en'),
-      resetB = Logic(name: 'en'),
-      inputVal = Logic(name: 'en', width: sumWidth);
+      resetB = Logic(name: 'resetB'),
+      inputVal = Logic(name: 'inputVal', width: sumWidth);
 
   var clk = SimpleClockGenerator(5).clk;
   // 4-cycle delay coefficients
