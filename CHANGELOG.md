@@ -1,3 +1,19 @@
+## 0.2.0
+- Updated implementation to avoid `Iterable.forEach` to make debug easier.
+- Added `ofBool` to `LogicValue` and `LogicValues` (https://github.com/intel/rohd/issues/34).
+- Breaking: updated `Interface` API so that `getPorts` returns a `Map` from port names to `Logic` signals instead of just a list, which makes it easier to work with when names are uniquified.
+- Breaking: removed `setPort` from `Interface`.  Use `setPorts` instead.
+- Deprecated `swizzle` and `rswizzle` global functions and replaced them with extensions on `List`s of certain types including `Logic`, `LogicValue`, and `LogicValues` (https://github.com/intel/rohd/issues/70). 
+- Breaking: renamed `ExternalModule` to `ExternalSystemVerilogModule` since it is specifically for SystemVerilog.
+- Breaking: made `topModuleName` a required named parameter in `ExternalSystemVerilogModule` to reduce confusion.
+- Added `simulationHasEnded` bool to `Simulator`.
+- Updated `Simulator` to allow for injected actions to return `Future`s which will be `await`ed.
+- Fixed bug where `Simulator` warns about maximum simulation time when not appropriate.
+- Fixed a bug where `ExternalSystemVerilogModule` could enter infinite recursion.
+- Some improvements to `SimCompare` to properly check values at the end of a tick and support a wider variety of values in `Vector`s.
+- Fixed a bug related to `Sequential` signal sampling where under certain scenarios, signals would pass through instead of being flopped (https://github.com/intel/rohd/issues/79).
+- Deprecated a number of `from` functions and replaced them with `of` to more closely follow Dart conventions (https://github.com/intel/rohd/issues/72).
+
 ## 0.1.2
 - Optimized construction of `LogicValues` to improve performance
 - Renamed `FF` to `Sequential` (marked `FF` as deprecated) (breaking: removed `clk` signal)
