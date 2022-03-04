@@ -29,12 +29,14 @@ abstract class ExternalSystemVerilogModule extends Module
       {required this.topModuleName,
       this.parameters,
       String name = 'external_module'})
-      : super(name: name);
+      : super(
+            name: name,
+            definitionName: topModuleName,
+            reserveDefinitionName: true);
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
-    //TODO: how to avoid module name conflicts with generated modules?
     return SystemVerilogSynthesizer.instantiationVerilogWithParameters(
         this, topModuleName, instanceName, inputs, outputs,
         parameters: parameters, forceStandardInstantiation: true);

@@ -450,6 +450,7 @@ class Logic {
 
   /// Accesses the [index]th bit of this signal.
   Logic operator [](int index) {
+    //TODO: support negative numbers to access relative from the end
     return slice(index, index);
   }
 

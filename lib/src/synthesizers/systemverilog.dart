@@ -289,7 +289,9 @@ class _SynthModuleDefinition {
       return moduleToSubModuleInstantiationMap[m]!;
     } else {
       var newSSMI = _SynthSubModuleInstantiation(
-          m, _getUniqueSynthSubModuleInstantiationName(m.uniqueInstanceName));
+          m,
+          _getUniqueSynthSubModuleInstantiationName(
+              m.uniqueInstanceName, m.reserveName));
       moduleToSubModuleInstantiationMap[m] = newSSMI;
       return newSSMI;
     }
@@ -310,7 +312,8 @@ class _SynthModuleDefinition {
   }
 
   final Uniquifier _synthSubModuleInstantiationNameUniquifier = Uniquifier();
-  String _getUniqueSynthSubModuleInstantiationName(String? initialName) {
+  String _getUniqueSynthSubModuleInstantiationName(
+      String? initialName, bool reserved) {
     return _synthSubModuleInstantiationNameUniquifier.getUniqueName(
         initialName: initialName, nullStarter: 'm');
   }

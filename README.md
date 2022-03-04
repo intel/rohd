@@ -67,6 +67,7 @@ For more information on Dart and tutorials, see https://dart.dev/ and https://da
     - vscode: https://code.visualstudio.com/
     - WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10
     - Remote SSH: https://code.visualstudio.com/blogs/2019/07/25/remote-ssh
+    - Dart extension for vscode: https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code
 
 ## Getting started
 Once you have Dart installed, if you don't already have a project, you can create one using `dart create`: https://dart.dev/tools/dart-tool
