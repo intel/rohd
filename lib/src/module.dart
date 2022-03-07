@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// module.dart
@@ -231,7 +231,6 @@ abstract class Module {
 
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule nor this module, bad!
-      //TODO: add tests that this exception hits!
       throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs of that Module.'
           '  See https://github.com/intel/rohd#modules for more information.');
@@ -261,6 +260,12 @@ abstract class Module {
       if (!dontAddSignal && !isInput(signal) && subModule == null) {
         _addInternalSignal(signal);
       }
+
+      if (!dontAddSignal && isInput(signal)) {
+        throw Exception('Input $signal of module $this is dependent on'
+            ' another input of the same module.');
+      }
+
       for (var dstConnection in signal.dstConnections) {
         if (signal.isOutput &&
             dstConnection.isOutput &&
