@@ -1,7 +1,7 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// trace_dest.dart
+/// trace_test.dart
 ///
 /// 2021 July 22
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -42,6 +42,20 @@ class BadSubModuleIn extends Module {
   }
 }
 
+class DoubledInputModule extends Module {
+  DoubledInputModule(Logic a) : super(name: 'doubledinput') {
+    var aInner = addInput('a', a);
+    addInput('b', aInner);
+  }
+}
+
+class DoubledGappedInputModule extends Module {
+  DoubledGappedInputModule(Logic a) : super(name: 'doubledgappedinput') {
+    var aInner = addInput('a', a);
+    addInput('b', Logic()..gets(~aInner));
+  }
+}
+
 void main() {
   tearDown(() {
     Simulator.reset();
@@ -56,6 +70,20 @@ void main() {
 
   test('flying input', () async {
     var mod = FlyingInputModule(Logic());
+    expect(() async {
+      await mod.build();
+    }, throwsException);
+  });
+
+  test('doubled input', () async {
+    var mod = DoubledInputModule(Logic());
+    expect(() async {
+      await mod.build();
+    }, throwsException);
+  });
+
+  test('doubled gapped input', () async {
+    var mod = DoubledGappedInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
