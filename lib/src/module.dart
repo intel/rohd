@@ -98,6 +98,9 @@ abstract class Module {
   /// Returns true iff [net] is the same [Logic] as the output port of this [Module] with the same name.
   bool isOutput(Logic net) => _outputs[net.name] == net;
 
+  /// Returns true iff [net] is the same [Logic] as an input or output port of this [Module] with the same name.
+  bool isPort(Logic net) => isInput(net) || isOutput(net);
+
   /// If this module has a [parent], after [build()] this will be a guaranteed unique name within its scope.
   String get uniqueInstanceName => hasBuilt
       ? _uniqueInstanceName
@@ -157,15 +160,11 @@ abstract class Module {
     // construct the list of modules within this module
     // 1) trace from outputs of this module back to inputs of this module
     for (var output in _outputs.values) {
-      _traceOutputForModuleContents(output, dontAddSignal: true);
+      await _traceOutputForModuleContents(output, dontAddSignal: true);
     }
     // 2) trace from inputs of all modules to inputs of this module
     for (var input in _inputs.values) {
-      _traceInputForModuleContents(input, dontAddSignal: true);
-    }
-
-    for (var module in _modules) {
-      await module.build();
+      await _traceInputForModuleContents(input, dontAddSignal: true);
     }
 
     // set unique module instance names for submodules
@@ -179,7 +178,7 @@ abstract class Module {
   }
 
   /// Adds a [Module] to this as a subModule.
-  void _addModule(Module module) {
+  Future<void> _addAndBuildModule(Module module) async {
     if (module.parent != null) {
       throw Exception('This Module "$this" already has a parent. '
           'If you are hitting this as a user of ROHD, please file '
@@ -190,6 +189,7 @@ abstract class Module {
       _modules.add(module);
     }
     module._parent = this;
+    await module.build();
   }
 
   /// A prefix to add to the beginning of any port name that is "unpreferred".
@@ -216,8 +216,8 @@ abstract class Module {
   }
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
-  void _traceInputForModuleContents(Logic signal,
-      {bool dontAddSignal = false}) {
+  Future<void> _traceInputForModuleContents(Logic signal,
+      {bool dontAddSignal = false}) async {
     if (isOutput(signal)) return;
 
     if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
@@ -232,7 +232,7 @@ abstract class Module {
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule nor this module, bad!
       //TODO: add tests that this exception hits!
-      throw Exception('Violation of input/output rules.'
+      throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs of that Module.'
           '  See https://github.com/intel/rohd#modules for more information.');
     }
@@ -247,27 +247,39 @@ abstract class Module {
         (subModuleParent == null || subModuleParent == this)) {
       // if the subModuleParent hasn't been set, or it is the current module, then trace it
       if (subModuleParent != this) {
-        _addModule(subModule);
+        await _addAndBuildModule(subModule);
       }
       for (var subModuleOutput in subModule._outputs.values) {
-        _traceInputForModuleContents(subModuleOutput, dontAddSignal: true);
+        await _traceInputForModuleContents(subModuleOutput,
+            dontAddSignal: true);
       }
       for (var subModuleInput in subModule._inputs.values) {
-        _traceOutputForModuleContents(subModuleInput, dontAddSignal: true);
+        await _traceOutputForModuleContents(subModuleInput,
+            dontAddSignal: true);
       }
     } else {
       if (!dontAddSignal && !isInput(signal) && subModule == null) {
         _addInternalSignal(signal);
       }
       for (var dstConnection in signal.dstConnections) {
-        _traceInputForModuleContents(dstConnection);
+        if (signal.isOutput &&
+            dstConnection.isOutput &&
+            signal.parentModule! == dstConnection.parentModule!) {
+          // since both are outputs, we can't easily use them to
+          // check if they have already been traversed, so we must
+          // explicitly check that we're not running them back-to-back.
+          // another iteration will take care of continuing the trace
+          continue;
+        }
+
+        await _traceInputForModuleContents(dstConnection);
       }
     }
   }
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
-  void _traceOutputForModuleContents(Logic signal,
-      {bool dontAddSignal = false}) {
+  Future<void> _traceOutputForModuleContents(Logic signal,
+      {bool dontAddSignal = false}) async {
     if (isInput(signal)) return;
 
     if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
@@ -281,7 +293,7 @@ abstract class Module {
 
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule nor this module, bad!
-      throw Exception('Violation of input/output rules.'
+      throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs of that Module.'
           '  See https://github.com/intel/rohd#modules for more information.');
     }
@@ -296,26 +308,30 @@ abstract class Module {
         (subModuleParent == null || subModuleParent == this)) {
       // if the subModuleParent hasn't been set, or it is the current module, then trace it
       if (subModuleParent != this) {
-        _addModule(subModule);
+        await _addAndBuildModule(subModule);
       }
       for (var subModuleInput in subModule._inputs.values) {
-        _traceOutputForModuleContents(subModuleInput, dontAddSignal: true);
+        await _traceOutputForModuleContents(subModuleInput,
+            dontAddSignal: true);
       }
       for (var subModuleOutput in subModule._outputs.values) {
-        _traceInputForModuleContents(subModuleOutput, dontAddSignal: true);
+        await _traceInputForModuleContents(subModuleOutput,
+            dontAddSignal: true);
       }
     } else {
       if (!dontAddSignal && !isOutput(signal) && subModule == null) {
         _addInternalSignal(signal);
       }
       if (signal.srcConnection != null) {
-        _traceOutputForModuleContents(signal.srcConnection!);
+        await _traceOutputForModuleContents(signal.srcConnection!);
       }
     }
   }
 
   /// Registers a signal as an internal signal.
   void _addInternalSignal(Logic signal) {
+    assert(!signal.isPort);
+
     _internalSignals.add(signal);
 
     // ignore: invalid_use_of_protected_member
