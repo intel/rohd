@@ -26,6 +26,10 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// This construct is similar to a SystemVerilog `module`.
 abstract class Module {
   /// The name of this [Module].
+  ///
+  /// This is not necessarily the same as the instance name in generated code.  For that,
+  /// see [uniqueInstanceName].  If you set [reserveName], then it is guaranteed to match
+  /// or else the [build] will fail.
   final String name;
 
   /// An internal list of sub-modules.
@@ -101,20 +105,41 @@ abstract class Module {
   /// Returns true iff [net] is the same [Logic] as an input or output port of this [Module] with the same name.
   bool isPort(Logic net) => isInput(net) || isOutput(net);
 
-  /// If this module has a [parent], after [build()] this will be a guaranteed unique name within its scope.
-  String get uniqueInstanceName => hasBuilt
+  /// If this module has a [parent], after [build] this will be a guaranteed unique name within its scope.
+  String get uniqueInstanceName => hasBuilt || reserveName
       ? _uniqueInstanceName
       : throw Exception(
           'Module must be built to access uniquified name.  Call build() before accessing this.');
   String _uniqueInstanceName;
 
-  Module({this.name = 'unnamed_module'}) : _uniqueInstanceName = name;
+  /// If true, guarantees [uniqueInstanceName] matches [name] or else the [build] will fail.
+  final bool reserveName;
+
+  /// The definition name of this [Module] used when instantiating instances in generated code.
+  ///
+  /// By default, if none is provided at construction time, the definition name is the same
+  /// as the [runtimeType].
+  ///
+  /// This could become uniquified by a [Synthesizer] unless [reserveDefinitionName] is set.
+  String get definitionName => _definitionName ?? runtimeType.toString();
+  final String? _definitionName;
+
+  /// If true, guarantees [definitionName] is maintained by a [Synthesizer], or else it will fail.
+  final bool reserveDefinitionName;
+
+  Module(
+      {this.name = 'unnamed_module',
+      this.reserveName = false,
+      String? definitionName,
+      this.reserveDefinitionName = false})
+      : _uniqueInstanceName = name,
+        _definitionName = definitionName;
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to this [Module].
   ///
   /// The first element of the [Iterable] is the top-most hierarchy.
   /// The last element of the [Iterable] is this [Module].
-  /// Only returns valid information after [build()].
+  /// Only returns valid information after [build].
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
       throw Exception(
@@ -171,7 +196,8 @@ abstract class Module {
     var uniquifier = Uniquifier();
     for (var module in _modules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
-          initialName: Sanitizer.sanitizeSV(module.name));
+          initialName: Sanitizer.sanitizeSV(module.name),
+          reserved: module.reserveName);
     }
 
     _hasBuilt = true;
@@ -204,7 +230,6 @@ abstract class Module {
   /// signals as "unpreferred" can have the effect of making generated output easier to read.
   @protected
   static String unpreferredName(String name) {
-    //TODO: how to make sure there's no module name conflicts??
     return _unpreferredPrefix + name;
   }
 

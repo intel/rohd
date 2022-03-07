@@ -64,7 +64,7 @@ class SynthBuilder {
     if (_moduleToInstanceTypeMap.containsKey(module)) {
       return _moduleToInstanceTypeMap[module]!;
     }
-    var newName = module.runtimeType.toString();
+    var newName = module.definitionName;
 
     var newSynthesisResult =
         synthesizer.synthesize(module, _moduleToInstanceTypeMap);
@@ -74,7 +74,8 @@ class SynthBuilder {
           _synthesisResults.lookup(newSynthesisResult)!.module]!;
     } else {
       _synthesisResults.add(newSynthesisResult);
-      newName = _instanceTypeUniquifier.getUniqueName(initialName: newName);
+      newName = _instanceTypeUniquifier.getUniqueName(
+          initialName: newName, reserved: module.reserveDefinitionName);
     }
 
     _moduleToInstanceTypeMap[module] = newName;

@@ -753,6 +753,8 @@ abstract class LogicValues {
   /// Returns a new `LogicValues` with the order of all bits in the reverse order of this `LogicValues`
   LogicValues get reversed;
 
+  //TODO: maybe getRange end should be optional, where it returns just bit of start if no end is provided
+
   /// Returns a subset [LogicValues].  It is inclusive of [start], exclusive of [end].
   LogicValues getRange(int start, int end) {
     if (end < start) {
@@ -781,7 +783,7 @@ abstract class LogicValues {
   /// True iff all bits are `z`.
   bool get isFloating;
 
-  /// The current active value of this if it has width 1, as a [LogicValue].
+  /// The current active value of this, if it has width 1, as a [LogicValue].
   ///
   /// Throws an Exception if width is not 1.
   LogicValue get bit {
