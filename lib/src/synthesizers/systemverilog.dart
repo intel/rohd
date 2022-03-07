@@ -315,7 +315,7 @@ class _SynthModuleDefinition {
   String _getUniqueSynthSubModuleInstantiationName(
       String? initialName, bool reserved) {
     return _synthSubModuleInstantiationNameUniquifier.getUniqueName(
-        initialName: initialName, nullStarter: 'm');
+        initialName: initialName, nullStarter: 'm', reserved: reserved);
   }
 
   _SynthLogic? _getSynthLogic(Logic? logic, bool allowPortName) {

@@ -196,7 +196,8 @@ abstract class Module {
     var uniquifier = Uniquifier();
     for (var module in _modules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
-          initialName: Sanitizer.sanitizeSV(module.name));
+          initialName: Sanitizer.sanitizeSV(module.name),
+          reserved: module.reserveName);
     }
 
     _hasBuilt = true;
