@@ -93,15 +93,11 @@ Future&lt;void&gt; build() async {
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module
   for (var output in _outputs.values) {
-    _traceOutputForModuleContents(output, dontAddSignal: true);
+    await _traceOutputForModuleContents(output, dontAddSignal: true);
   }
   &#47;&#47; 2) trace from inputs of all modules to inputs of this module
   for (var input in _inputs.values) {
-    _traceInputForModuleContents(input, dontAddSignal: true);
-  }
-
-  for (var module in _modules) {
-    await module.build();
+    await _traceInputForModuleContents(input, dontAddSignal: true);
   }
 
   &#47;&#47; set unique module instance names for submodules
@@ -165,6 +161,7 @@ Future&lt;void&gt; build() async {
     <li><a href="../../rohd/Module/input.html">input</a></li>
     <li><a href="../../rohd/Module/isInput.html">isInput</a></li>
     <li><a href="../../rohd/Module/isOutput.html">isOutput</a></li>
+    <li><a href="../../rohd/Module/isPort.html">isPort</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.1/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../../rohd/Module/output.html">output</a></li>
     <li><a href="../../rohd/Module/toString.html">toString</a></li>

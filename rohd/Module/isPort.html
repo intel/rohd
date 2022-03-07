@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the hierarchy method from the Module class, for the Dart programming language.">
-  <title>hierarchy method - Module class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the isPort method from the Module class, for the Dart programming language.">
+  <title>isPort method - Module class - rohd library - Dart API</title>
 
 
   
@@ -32,9 +32,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Module-class.html">Module</a></li>
-    <li class="self-crumb">hierarchy method</li>
+    <li class="self-crumb">isPort method</li>
   </ol>
-  <div class="self-name">hierarchy</div>
+  <div class="self-name">isPort</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -45,44 +45,30 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">hierarchy</span> method 
+<h1><span class="kind-method">isPort</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.16.1/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>&gt;</span></span>
-<span class="name ">hierarchy</span>(<wbr>)
+<span class="returntype"><a href="https://api.dart.dev/stable/2.16.1/dart-core/bool-class.html">bool</a></span>
+<span class="name ">isPort</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isPort-param-net"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">net</span></span></li>
+</ol>)
 
       
 
     </section>
     
 <section class="desc markdown">
-  <p>Returns an <a href="https://api.dart.dev/stable/2.16.1/dart-core/Iterable-class.html">Iterable</a> of <code>Module</code>s representing the hierarchical path to this <code>Module</code>.</p>
-<p>The first element of the <a href="https://api.dart.dev/stable/2.16.1/dart-core/Iterable-class.html">Iterable</a> is the top-most hierarchy.
-The last element of the <a href="https://api.dart.dev/stable/2.16.1/dart-core/Iterable-class.html">Iterable</a> is this <code>Module</code>.
-Only returns valid information after <a href="../../rohd/Module/build.html">build()</a>.</p>
+  <p>Returns true iff <code>net</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as an input or output port of this <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Iterable&lt;Module&gt; hierarchy() {
-  if (!hasBuilt) {
-    throw Exception(
-        &#39;Module must be built before accessing hierarchy.  Call build() before executing this.&#39;);
-  }
-  Module? pModule = this;
-  var hierarchyQueue = Queue&lt;Module&gt;();
-  while (pModule != null) {
-    hierarchyQueue.addFirst(pModule);
-    pModule = pModule.parent;
-  }
-  return hierarchyQueue;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool isPort(Logic net) =&gt; isInput(net) || isOutput(net);</code></pre>
 </section>
 
 
@@ -99,7 +85,7 @@ Only returns valid information after <a href="../../rohd/Module/build.html">buil
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Module-class.html">Module</a></li>
-  <li class="self-crumb">hierarchy method</li>
+  <li class="self-crumb">isPort method</li>
 </ol>
 
 
