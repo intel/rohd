@@ -229,7 +229,6 @@ abstract class Module {
   /// signals as "unpreferred" can have the effect of making generated output easier to read.
   @protected
   static String unpreferredName(String name) {
-    //TODO: how to make sure there's no module name conflicts??
     return _unpreferredPrefix + name;
   }
 
