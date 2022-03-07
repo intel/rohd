@@ -110,6 +110,17 @@
 
 </dd>
 
+        <dt id="definitionName" class="property inherited">
+  <span class="name"><a href="../rohd/Module/definitionName.html">definitionName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.1/dart-core/String-class.html">String</a></span> 
+
+</dt>
+<dd class="inherited">
+  The definition name of this <a href="../rohd/Module-class.html">Module</a> used when instantiating instances in generated code. <a href="../rohd/Module/definitionName.html">[...]</a>
+  <div class="features">read-only, inherited</div>
+
+</dd>
+
         <dt id="hasBuilt" class="property inherited">
   <span class="name"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.1/dart-core/bool-class.html">bool</a></span> 
@@ -160,7 +171,7 @@
 
 </dt>
 <dd class="inherited">
-  The name of this <a href="../rohd/Module-class.html">Module</a>. 
+  The name of this <a href="../rohd/Module-class.html">Module</a>. <a href="../rohd/Module/name.html">[...]</a>
   <div class="features">final, inherited</div>
 
 </dd>
@@ -184,6 +195,28 @@
 <dd class="inherited">
   The parent <a href="../rohd/Module-class.html">Module</a> of this <a href="../rohd/Module-class.html">Module</a>. <a href="../rohd/Module/parent.html">[...]</a>
   <div class="features">read-only, inherited</div>
+
+</dd>
+
+        <dt id="reserveDefinitionName" class="property inherited">
+  <span class="name"><a href="../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.1/dart-core/bool-class.html">bool</a></span> 
+
+</dt>
+<dd class="inherited">
+  If true, guarantees <a href="../rohd/Module/definitionName.html">definitionName</a> is maintained by a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>, or else it will fail. 
+  <div class="features">final, inherited</div>
+
+</dd>
+
+        <dt id="reserveName" class="property inherited">
+  <span class="name"><a href="../rohd/Module/reserveName.html">reserveName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.1/dart-core/bool-class.html">bool</a></span> 
+
+</dt>
+<dd class="inherited">
+  If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the <a href="../rohd/Module/build.html">build</a> will fail. 
+  <div class="features">final, inherited</div>
 
 </dd>
 
@@ -226,7 +259,7 @@
 
 </dt>
 <dd class="inherited">
-  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Module/build.html">build()</a> this will be a guaranteed unique name within its scope. 
+  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Module/build.html">build</a> this will be a guaranteed unique name within its scope. 
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -583,6 +616,7 @@
     </li>
     <li class="inherited"><a href="../rohd/And2Gate/a.html">a</a></li>
     <li class="inherited"><a href="../rohd/And2Gate/b.html">b</a></li>
+    <li class="inherited"><a href="../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.1/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../rohd/Module/inputs.html">inputs</a></li>
@@ -590,6 +624,8 @@
     <li class="inherited"><a href="../rohd/Module/name.html">name</a></li>
     <li class="inherited"><a href="../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../rohd/Module/parent.html">parent</a></li>
+    <li class="inherited"><a href="../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
+    <li class="inherited"><a href="../rohd/Module/reserveName.html">reserveName</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.1/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li class="inherited"><a href="../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../rohd/Module/subModules.html">subModules</a></li>
