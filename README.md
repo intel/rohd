@@ -636,7 +636,7 @@ var pipeline = Pipeline(clk,
 );
 var b = pipeline.get(a);
 ```
-You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just access as normal, so other logic can optionally sit outside of the pipeline object.
+You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just accessed as normal, so other logic can optionally sit outside of the pipeline object.
 
 ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
 
