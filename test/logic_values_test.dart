@@ -19,6 +19,14 @@ final lv = LogicValues.ofString;
 LogicValues large(LogicValue lv) => LogicValues.filled(100, lv);
 
 void main() {
+  test('bin with underscores', () {
+    var x = bin('11_1');
+    expect(x, equals(7));
+    x = bin('0001_0111');
+    expect(x, equals(23));
+    x = bin('0000_1000_0000');
+    expect(x, equals(128));
+  });
   group('two input bitwise', () {
     test('and2', () {
       // test z & 1 == x, rest unchanged

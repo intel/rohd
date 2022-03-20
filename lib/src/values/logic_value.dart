@@ -134,10 +134,10 @@ class LogicValue {
   }
 }
 
-/// Converts a binary [String] representation to a binary [int].
+/// Converts a binary [String] representation to a binary [int]. Ignores all '_' in the provided binary.
 ///
 /// Exactly equivalent to `int.parse(s, radix:2)`, but shorter to type.
-int bin(String s) => int.parse(s, radix: 2);
+int bin(String s) => int.parse(s.replaceAll('_', ''), radix: 2);
 
 /// Enum for a [LogicValue]'s value.
 enum _LogicValueEnum { zero, one, x, z }
