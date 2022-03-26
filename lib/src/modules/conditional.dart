@@ -179,7 +179,7 @@ class Sequential extends _Always {
   }
 
   /// A map from input [Logic]s to the values that should be used for computations on the edge.
-  final Map<Logic, LogicValues> _inputToPreTickInputValuesMap = {};
+  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap = {};
 
   /// The value of the clock before the tick.
   final List<LogicValue?> _preTickClkValues = [];
@@ -310,10 +310,10 @@ abstract class Conditional {
   /// A [Map] from driver [Logic] signals passed into this [Conditional] to the appropriate input logic port.
   late Map<Logic, Logic> _assignedDriverToInputMap;
 
-  /// A [Map] of override [LogicValues]s for driver [Logic]s of this [Conditional].
+  /// A [Map] of override [LogicValue]s for driver [Logic]s of this [Conditional].
   ///
   /// This is used for things like [Sequential]'s pre-tick values.
-  Map<Logic, LogicValues> _driverValueOverrideMap = {};
+  Map<Logic, LogicValue> _driverValueOverrideMap = {};
 
   /// Updates the values of [_assignedReceiverToOutputMap] and [_assignedDriverToInputMap] and
   /// passes them down to all sub-[Conditional]s as well.
@@ -331,7 +331,7 @@ abstract class Conditional {
 
   /// Updates the value of [_driverValueOverrideMap] and passes it down to all
   /// sub-[Conditional]s as well.
-  void _updateOverrideMap(Map<Logic, LogicValues> driverValueOverrideMap) {
+  void _updateOverrideMap(Map<Logic, LogicValue> driverValueOverrideMap) {
     // this is for always_ff pre-tick values
     _driverValueOverrideMap = driverValueOverrideMap;
     for (var conditional in getConditionals()) {
@@ -341,7 +341,7 @@ abstract class Conditional {
 
   /// Gets the value that should be used for execution for the input port associated with [driver].
   @protected
-  LogicValues driverValue(Logic driver) {
+  LogicValue driverValue(Logic driver) {
     return _driverValueOverrideMap.containsKey(driverInput(driver))
         ? _driverValueOverrideMap[driverInput(driver)]!
         : _assignedDriverToInputMap[driver]!.value;
@@ -484,7 +484,7 @@ class Case extends Conditional {
 
   /// Returns true iff [value] matches the expressions current value.
   @protected
-  bool isMatch(LogicValues value) {
+  bool isMatch(LogicValue value) {
     return expression.value == value;
   }
 
@@ -651,8 +651,8 @@ class CaseZ extends Case {
 
   //TODO: what if there's an X in the expression? should throw exception!
   @override
-  bool isMatch(LogicValues value) {
-    if (expression.width != value.length) {
+  bool isMatch(LogicValue value) {
+    if (expression.width != value.width) {
       throw Exception(
           'Value "$value" and expression "$expression" must be equal width.');
     }

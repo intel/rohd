@@ -19,10 +19,10 @@ import 'utilities/synchronous_propagator.dart';
 /// Represents the event of a [Logic] changing value.
 class LogicValueChanged {
   /// The newly updated value of the [Logic].
-  final LogicValues newValue;
+  final LogicValue newValue;
 
   /// The previous value of the [Logic].
-  final LogicValues previousValue;
+  final LogicValue previousValue;
 
   LogicValueChanged(this.newValue, this.previousValue);
 
@@ -34,13 +34,13 @@ class LogicValueChanged {
 class Const extends Logic {
   /// Constructs a [Const] with the specified value.
   ///
-  /// If [val] is a [LogicValues], the [width] is inferred from it.
+  /// If [val] is a [LogicValue], the [width] is inferred from it.
   /// Otherwise, if [width] is not specified, the default [width] is 1.
   /// If [fill] is set to `true`, the value is extended across [width] (like `'` in SystemVerilog).
   Const(dynamic val, {int? width, bool fill = false})
       : super(
             name: 'const_$val',
-            width: val is LogicValues ? val.length : width ?? 1) {
+            width: val is LogicValue ? val.width : width ?? 1) {
     put(val, fill: fill);
     _unassignable = true;
   }
@@ -61,18 +61,18 @@ class Logic {
   final String name;
 
   /// The current active value of this signal.
-  LogicValues _currentValue;
+  LogicValue _currentValue;
 
   /// The last value of this signal before the [Simulator] tick.
   ///
   /// This is useful for detecting when to trigger an edge.
-  LogicValues? _preTickValue;
+  LogicValue? _preTickValue;
 
   /// The number of bits in this signal.
   final int width;
 
   /// The current active value of this signal.
-  LogicValues get value => _currentValue;
+  LogicValue get value => _currentValue;
 
   //TODO: add a setter for value that calls put()?
   // set value(dynamic newValue) => put(newValue);
@@ -207,7 +207,7 @@ class Logic {
   Logic({String? name, this.width = 1})
       : name = name ?? 's${_signalIdx++}',
         assert(width >= 0),
-        _currentValue = LogicValues.filled(width, LogicValue.z);
+        _currentValue = LogicValue.filled(width, LogicValue.z);
 
   @override
   String toString() {
@@ -367,10 +367,10 @@ class Logic {
   void put(dynamic val, {bool fill = false}) {
     //TODO: prevent re-assignment for _unassignable even via put/inject
     // this opens the opportunity to automate stuff like &1 if necessary
-    LogicValues newValue;
+    LogicValue newValue;
     if (val is int) {
       if (fill) {
-        newValue = LogicValues.filled(
+        newValue = LogicValue.filled(
             width,
             val == 0
                 ? LogicValue.zero
@@ -378,11 +378,11 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.ofInt(val, width);
+        newValue = LogicValue.ofInt(val, width);
       }
     } else if (val is BigInt) {
       if (fill) {
-        newValue = LogicValues.filled(
+        newValue = LogicValue.filled(
             width,
             val == BigInt.zero
                 ? LogicValue.zero
@@ -390,14 +390,14 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.ofBigInt(val, width);
+        newValue = LogicValue.ofBigInt(val, width);
       }
     } else if (val is bool) {
-      newValue = LogicValues.ofInt(val ? 1 : 0, width);
-    } else if (val is LogicValues) {
-      if (val.length == 1 &&
+      newValue = LogicValue.ofInt(val ? 1 : 0, width);
+    } else if (val is LogicValue) {
+      if (val.width == 1 &&
           (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValues.filled(width, val[0]);
+        newValue = LogicValue.filled(width, val[0]);
       } else if (fill) {
         throw Exception(
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
@@ -407,34 +407,34 @@ class Logic {
     } else if (val is List<LogicValue>) {
       if (val.length == 1 &&
           (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValues.filled(width, val[0]);
+        newValue = LogicValue.filled(width, val[0]);
       } else if (fill) {
         throw Exception(
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
-        newValue = LogicValues.of(val);
+        newValue = LogicValue.of(val);
       }
     } else if (val is LogicValue) {
       if (val == LogicValue.x || val == LogicValue.z || fill) {
-        newValue = LogicValues.filled(width, val);
+        newValue = LogicValue.filled(width, val);
       } else {
         var logicVals = List<LogicValue>.filled(width, LogicValue.zero);
         logicVals[0] = val;
-        newValue = LogicValues.of(logicVals);
+        newValue = LogicValue.of(logicVals);
       }
     } else {
       throw Exception('Unrecognized value "$val" to deposit on this signal. '
           'Unknown type ${val.runtimeType} cannot be deposited.');
     }
 
-    if (newValue.length != width) {
+    if (newValue.width != width) {
       throw Exception(
           'Updated value width mismatch.  The width of $val should be $width.');
     }
 
     if (_isPutting) {
       // if this is the result of a cycle, then contention!
-      newValue = LogicValues.filled(width, LogicValue.x);
+      newValue = LogicValue.filled(width, LogicValue.x);
     }
 
     var _prevValue = _currentValue;

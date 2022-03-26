@@ -98,7 +98,7 @@ class SimCompare {
                 throw Exception(
                     'Valid LogicValue bit width mismatch.  Saw ${o.width}, but expected 1.');
               }
-            } else if (value is LogicValues) {
+            } else if (value is LogicValue) {
               expect(o.value, equals(value));
             } else {
               throw Exception(

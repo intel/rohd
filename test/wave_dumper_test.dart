@@ -50,13 +50,13 @@ enum VCDParseState { findSig, findDumpVars, findValue }
 /// This function is basic and only works on flat, single modules, or at least
 /// cases where only one signal is named [signalName] across all scopes.
 bool confirmValue(
-    String vcdContents, String signalName, int timestamp, LogicValues value) {
+    String vcdContents, String signalName, int timestamp, LogicValue value) {
   var lines = vcdContents.split('\n');
 
   String? sigName;
   int? width;
   int currentTime = 0;
-  LogicValues? currentValue;
+  LogicValue? currentValue;
 
   VCDParseState state = VCDParseState.findSig;
 
@@ -88,10 +88,10 @@ bool confirmValue(
       } else if (line.endsWith(sigName!)) {
         if (width == 1) {
           // ex: zs1
-          currentValue = LogicValues.ofString(line[0]);
+          currentValue = LogicValue.ofString(line[0]);
         } else {
           // ex: bzzzzzzzz s2
-          currentValue = LogicValues.ofString(line.split(' ')[0].substring(1));
+          currentValue = LogicValue.ofString(line.split(' ')[0].substring(1));
         }
       }
     }
@@ -119,11 +119,11 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 5, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
         equals(true));
 
     deleteTemporaryDump(dumpName);
@@ -145,13 +145,13 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 1, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 1, LogicValue.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 20, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 20, LogicValue.ofString('1')),
         equals(true));
 
     deleteTemporaryDump(dumpName);
@@ -183,13 +183,13 @@ void main() {
 
     var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(confirmValue(vcdContents, 'a', 0, LogicValues.ofString('0')),
+    expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 5, LogicValues.ofString('1')),
+    expect(confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 10, LogicValues.ofString('0')),
+    expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
         equals(true));
-    expect(confirmValue(vcdContents, 'a', 35, LogicValues.ofString('0')),
+    expect(confirmValue(vcdContents, 'a', 35, LogicValue.ofString('0')),
         equals(true));
 
     deleteTemporaryDump(dumpName);

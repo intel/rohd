@@ -125,7 +125,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     //TODO: This could be more efficient if LogicValues had a setAll built-in
     var updatedVal = out.value.toList();
     updatedVal.setAll(startIdx, swizzleInput.value.toList());
-    out.put(LogicValues.of(updatedVal));
+    out.put(LogicValue.of(updatedVal));
   }
 
   @override

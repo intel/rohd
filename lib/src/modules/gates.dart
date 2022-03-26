@@ -66,7 +66,7 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   /// The output of this gate (width is always 1).
   Logic get y => output(_y);
 
-  final LogicValue Function(LogicValues a) _op;
+  final LogicValue Function(LogicValue a) _op;
   final String _opStr;
 
   /// Constructs a unary gate for an abitrary custom functional implementation.
@@ -120,7 +120,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   Logic get y => output(_y);
 
-  final LogicValues Function(LogicValues a, LogicValues b) _op;
+  final LogicValue Function(LogicValue a, LogicValue b) _op;
   final String _opStr;
 
   /// Constructs a two-input bitwise gate for an abitrary custom functional implementation.
@@ -196,7 +196,7 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   Logic get y => output(_y);
 
-  final LogicValue Function(LogicValues a, LogicValues b) _op;
+  final LogicValue Function(LogicValue a, LogicValue b) _op;
   final String _opStr;
 
   /// Constructs a two-input comparison gate for an abitrary custom functional implementation.
@@ -265,7 +265,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   Logic get y => output(_y);
 
-  final LogicValues Function(LogicValues a, LogicValues b) _op;
+  final LogicValue Function(LogicValue a, LogicValue b) _op;
   final String _opStr;
 
   /// Whether or not this gate operates on a signed number.

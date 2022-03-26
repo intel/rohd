@@ -39,46 +39,21 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// the *most* significant bit.
   ///
   /// This is the one you should use if you're writing something like SystemVerilog's `{}` notation.
-  /// If you call [swizzle] on `[a, b, c]` you would get a single output [LogicValues] where the bits in `a`
+  /// If you call [swizzle] on `[a, b, c]` you would get a single output [LogicValue] where the bits in `a`
   /// are the most significant (highest) bits.
   ///
   /// If you want the opposite, check out [rswizzle].
-  LogicValues swizzle() => LogicValues.of(reversed);
+  LogicValue swizzle() => LogicValue.of(reversed);
 
   /// Performs a concatenation operation on the list of signals, where index 0 of this list is
   /// the *least* significant bit.
   ///
   /// This is the one you should probably use if you're trying to concatenate a generated [List] of signals.
-  /// If you call [rswizzle] on `[a, b, c]` you would get a single output [LogicValues] where the bits in `a`
+  /// If you call [rswizzle] on `[a, b, c]` you would get a single output [LogicValue] where the bits in `a`
   /// are the least significant (lowest) bits.
   ///
   /// If you want the opposite, check out [swizzle].
-  LogicValues rswizzle() => LogicValues.of(this);
-}
-
-/// Allows lists of [LogicValues]s to be swizzled.
-extension LogicValuesSwizzle on List<LogicValues> {
-  /// Performs a concatenation operation on the list of signals, where index 0 of this list is
-  /// the *most* significant bit(s).
-  ///
-  /// This is the one you should use if you're writing something like SystemVerilog's `{}` notation.
-  /// If you call [swizzle] on `[a, b, c]` you would get a single output [LogicValues] where the bits in `a`
-  /// are the most significant (highest) bits.
-  ///
-  /// If you want the opposite, check out [rswizzle].
-  LogicValues swizzle() =>
-      LogicValues.of(reversed.map((e) => e.toList()).expand((e) => e));
-
-  /// Performs a concatenation operation on the list of signals, where index 0 of this list is
-  /// the *least* significant bit(s).
-  ///
-  /// This is the one you should probably use if you're trying to concatenate a generated [List] of signals.
-  /// If you call [rswizzle] on `[a, b, c]` you would get a single output [LogicValues] where the bits in `a`
-  /// are the least significant (lowest) bits.
-  ///
-  /// If you want the opposite, check out [swizzle].
-  LogicValues rswizzle() =>
-      LogicValues.of(map((e) => e.toList()).expand((e) => e));
+  LogicValue rswizzle() => LogicValue.of(this);
 }
 
 /// Performs a concatenation operation on the list of signals, where index 0 of [signals] is

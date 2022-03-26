@@ -624,8 +624,8 @@ class _SynthAssignment {
       return "'" + _src.toString();
     } else if (_src is int) {
       return _src.toString();
-    } else if (_src is LogicValues) {
-      return (_src as LogicValues).toString();
+    } else if (_src is LogicValue) {
+      return (_src as LogicValue).toString();
     } else if (_src is _SynthLogic) {
       return (_src as _SynthLogic).name;
     } else {
