@@ -35,7 +35,7 @@ void main() {
           equals(LogicValue.ofString('zx01')));
     });
   });
-  group('LogicValues', () {
+  group('LogicValue', () {
     test('simple swizzle', () {
       expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].swizzle(),
           equals(LogicValue.ofString('10xz')));

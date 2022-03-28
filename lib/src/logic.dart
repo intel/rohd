@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// logic.dart
@@ -80,6 +80,8 @@ class Logic {
   /// The current active value of this signal if it has width 1, as a [LogicValue].
   ///
   /// Throws an Exception if width is not 1.
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
   LogicValue get bit => _currentValue.bit;
 
   /// The current valid active value of this signal as an [int].
@@ -358,7 +360,10 @@ class Logic {
   /// Keeps track of whether there is an active put, to detect reentrance.
   bool _isPutting = false;
 
-  /// Puts a value onto this signal, which may or may not be picked up for [changed] in this [Simulator] tick.
+  /// Puts a value [val] onto this signal, which may or may not be picked up
+  /// for [changed] in this [Simulator] tick.
+  ///
+  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
   ///
   /// This function is used for propogating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
@@ -396,31 +401,13 @@ class Logic {
       newValue = LogicValue.ofInt(val ? 1 : 0, width);
     } else if (val is LogicValue) {
       if (val.width == 1 &&
-          (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValue.filled(width, val[0]);
+          (val == LogicValue.x || val == LogicValue.z || fill)) {
+        newValue = LogicValue.filled(width, val);
       } else if (fill) {
         throw Exception(
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
         newValue = val;
-      }
-    } else if (val is List<LogicValue>) {
-      if (val.length == 1 &&
-          (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValue.filled(width, val[0]);
-      } else if (fill) {
-        throw Exception(
-            'Failed to fill value with $val.  To fill, it should be 1 bit.');
-      } else {
-        newValue = LogicValue.of(val);
-      }
-    } else if (val is LogicValue) {
-      if (val == LogicValue.x || val == LogicValue.z || fill) {
-        newValue = LogicValue.filled(width, val);
-      } else {
-        var logicVals = List<LogicValue>.filled(width, LogicValue.zero);
-        logicVals[0] = val;
-        newValue = LogicValue.of(logicVals);
       }
     } else {
       throw Exception('Unrecognized value "$val" to deposit on this signal. '

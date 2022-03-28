@@ -175,7 +175,7 @@ class WaveDumper {
         ? 'b' +
             signal.value.reversed.toList().map((e) => e.toString()).join() +
             ' '
-        : signal.bit.toString();
+        : signal.value.toString(includeWidth: false);
     var marker = _signalToMarkerMap[signal];
     var updateString = '$updateValue$marker\n';
     _outputFile.writeAsStringSync(updateString, mode: FileMode.append);

@@ -1,11 +1,11 @@
 /// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// small_logic_values.dart
+/// small_logic_value.dart
 /// Definition for a logical value where the width is less
 /// than or equal to the size of an int.
 ///
-/// 2021 August 2
+/// 2022 March 28
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
@@ -24,7 +24,7 @@ part of values;
 /// | 0         | 1          | x       |
 /// | 1         | 1          | z       |
 ///
-class _SmallLogicValues extends LogicValue {
+class _SmallLogicValue extends LogicValue {
   // Each 0/1 bit in value is 0/1 if !invalid, else is x/z
 
   final int _value;
@@ -39,7 +39,7 @@ class _SmallLogicValues extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  const _SmallLogicValues(int value, int invalid, int width)
+  const _SmallLogicValue(int value, int invalid, int width)
       : assert(width <= LogicValue._INT_BITS),
         _value = ((1 << width) - 1) & value,
         _invalid = ((1 << width) - 1) & invalid,
@@ -47,8 +47,8 @@ class _SmallLogicValues extends LogicValue {
 
   @override
   bool _equals(Object other) {
-    if (other is _FilledLogicValues) return other == this;
-    if (other is! _SmallLogicValues) return false;
+    if (other is _FilledLogicValue) return other == this;
+    if (other is! _SmallLogicValue) return false;
     return _value == other._value && _invalid == other._invalid;
   }
 
@@ -65,7 +65,7 @@ class _SmallLogicValues extends LogicValue {
   @override
   LogicValue _getRange(int start, int end) {
     var newWidth = end - start;
-    return _SmallLogicValues((_value >> start) & _maskOfWidth(newWidth),
+    return _SmallLogicValue((_value >> start) & _maskOfWidth(newWidth),
         (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
   }
 
@@ -91,36 +91,36 @@ class _SmallLogicValues extends LogicValue {
 
   @override
   LogicValue operator ~() =>
-      _SmallLogicValues(~_value & ~_invalid & _mask, _invalid, width);
+      _SmallLogicValue(~_value & ~_invalid & _mask, _invalid, width);
 
   @override
   LogicValue _and2(LogicValue other) {
-    if (other is! _SmallLogicValues) {
+    if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
     var eitherZero = (~_value & ~_invalid) | (~other._value & ~other._invalid);
-    return _SmallLogicValues(
+    return _SmallLogicValue(
         ~eitherInvalid & ~eitherZero, eitherInvalid & ~eitherZero, width);
   }
 
   @override
   LogicValue _or2(LogicValue other) {
-    if (other is! _SmallLogicValues) {
+    if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
     var eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
-    return _SmallLogicValues(eitherOne, eitherInvalid & ~eitherOne, width);
+    return _SmallLogicValue(eitherOne, eitherInvalid & ~eitherOne, width);
   }
 
   @override
   LogicValue _xor2(LogicValue other) {
-    if (other is! _SmallLogicValues) {
+    if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
-    return _SmallLogicValues(
+    return _SmallLogicValue(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
   }
 
@@ -152,19 +152,19 @@ class _SmallLogicValues extends LogicValue {
 
   @override
   LogicValue _shiftLeft(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _SmallLogicValues(
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _SmallLogicValue(
           (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
   LogicValue _shiftRight(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _SmallLogicValues(_value >> shamt, _invalid >> shamt, width);
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _SmallLogicValue(_value >> shamt, _invalid >> shamt, width);
 
   @override
   LogicValue _shiftArithmeticRight(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _SmallLogicValues(
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _SmallLogicValue(
           ((_value | (this[width - 1] == LogicValue.one ? ~_mask : 0)) >>
                   shamt) &
               _mask,

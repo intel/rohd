@@ -8,6 +8,8 @@ export 'src/wave_dumper.dart';
 export 'src/modules/modules.dart';
 export 'src/interface.dart';
 export 'src/external.dart';
-export 'src/values/values.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/swizzle.dart';
+export 'src/values/values.dart';
+// ignore: unused_import
+import 'src/values/values.dart';

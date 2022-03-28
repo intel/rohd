@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// systemverilog.dart
@@ -620,9 +620,7 @@ class _SynthAssignment {
   }
 
   String srcName() {
-    if (_src is LogicValue) {
-      return "'" + _src.toString();
-    } else if (_src is int) {
+    if (_src is int) {
       return _src.toString();
     } else if (_src is LogicValue) {
       return (_src as LogicValue).toString();

@@ -1,10 +1,20 @@
+/// Copyright (C) 2021-2022 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// big_logic_value.dart
+/// Definition for a logical value where all bits are the same value.
+///
+/// 2022 March 28
+/// Author: Max Korbel <max.korbel@intel.com>
+///
+
 part of values;
 
 /// A [LogicValue] whose number of bits is greater than the size of an [int].
 ///
-/// The implementation is similar to [_SmallLogicValues], except it uses [BigInt].
+/// The implementation is similar to [_SmallLogicValue], except it uses [BigInt].
 ///
-class _BigLogicValues extends LogicValue {
+class _BigLogicValue extends LogicValue {
   late final BigInt _value;
   late final BigInt _invalid;
 
@@ -17,7 +27,7 @@ class _BigLogicValues extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  _BigLogicValues(BigInt value, BigInt invalid, int width)
+  _BigLogicValue(BigInt value, BigInt invalid, int width)
       : assert(width > LogicValue._INT_BITS),
         super._(width) {
     _value = _mask & value;
@@ -26,8 +36,8 @@ class _BigLogicValues extends LogicValue {
 
   @override
   bool _equals(Object other) {
-    if (other is _FilledLogicValues) return other == this;
-    if (other is! _BigLogicValues) return false;
+    if (other is _FilledLogicValue) return other == this;
+    if (other is! _BigLogicValue) return false;
     return _value == other._value && _invalid == other._invalid;
   }
 
@@ -45,10 +55,10 @@ class _BigLogicValues extends LogicValue {
   LogicValue _getRange(int start, int end) {
     var newWidth = end - start;
     if (newWidth > LogicValue._INT_BITS) {
-      return _BigLogicValues((_value >> start) & _maskOfWidth(newWidth),
+      return _BigLogicValue((_value >> start) & _maskOfWidth(newWidth),
           (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
     } else {
-      return _SmallLogicValues(
+      return _SmallLogicValue(
           ((_value >> start) & _maskOfWidth(newWidth)).toInt(),
           ((_invalid >> start) & _maskOfWidth(newWidth)).toInt(),
           newWidth);
@@ -78,36 +88,36 @@ class _BigLogicValues extends LogicValue {
 
   @override
   LogicValue operator ~() =>
-      _BigLogicValues(~_value & ~_invalid & _mask, _invalid, width);
+      _BigLogicValue(~_value & ~_invalid & _mask, _invalid, width);
 
   @override
   LogicValue _and2(LogicValue other) {
-    if (other is! _BigLogicValues) {
+    if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
     var eitherZero = (~_value & ~_invalid) | (~other._value & ~other._invalid);
-    return _BigLogicValues(
+    return _BigLogicValue(
         ~eitherInvalid & ~eitherZero, eitherInvalid & ~eitherZero, width);
   }
 
   @override
   LogicValue _or2(LogicValue other) {
-    if (other is! _BigLogicValues) {
+    if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
     var eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
-    return _BigLogicValues(eitherOne, eitherInvalid & ~eitherOne, width);
+    return _BigLogicValue(eitherOne, eitherInvalid & ~eitherOne, width);
   }
 
   @override
   LogicValue _xor2(LogicValue other) {
-    if (other is! _BigLogicValues) {
+    if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     var eitherInvalid = _invalid | other._invalid;
-    return _BigLogicValues(
+    return _BigLogicValue(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
   }
 
@@ -139,19 +149,19 @@ class _BigLogicValues extends LogicValue {
 
   @override
   LogicValue _shiftLeft(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _BigLogicValues(
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _BigLogicValue(
           (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
   LogicValue _shiftRight(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _BigLogicValues(_value >> shamt, _invalid >> shamt, width);
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _BigLogicValue(_value >> shamt, _invalid >> shamt, width);
 
   @override
   LogicValue _shiftArithmeticRight(int shamt) => !isValid
-      ? _FilledLogicValues(_LogicValueEnum.x, width)
-      : _BigLogicValues(
+      ? _FilledLogicValue(_LogicValueEnum.x, width)
+      : _BigLogicValue(
           ((_value |
                   (this[width - 1] == LogicValue.one
                       ? ((_mask >> (width - shamt)) << (width - shamt))

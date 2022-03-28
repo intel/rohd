@@ -1,8 +1,8 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// logic_values_test.dart
-/// Tests for LogicValues
+/// logic_value_test.dart
+/// Tests for LogicValue
 ///
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -17,6 +17,8 @@ const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
 // shorten some names to make tests read better
 final lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
+
+//TODO: add tests for 0-bit values
 
 void main() {
   test('bin with underscores', () {
@@ -46,7 +48,7 @@ void main() {
     });
   });
 
-  group('LogicValues Misc', () {
+  group('LogicValue Misc', () {
     test('reversed', () {
       expect(lv('01xz').reversed, equals(lv('zx10')));
       expect(lv('010').reversed, equals(lv('010')));
@@ -71,10 +73,14 @@ void main() {
 
   group('LogicValue', () {
     test('factory and to methods', () {
-      expect(LogicValue.one.toString(), equals('1'));
-      expect(LogicValue.zero.toString(), equals('0'));
-      expect(LogicValue.x.toString(), equals('x'));
-      expect(LogicValue.z.toString(), equals('z'));
+      expect(LogicValue.one.toString(includeWidth: false), equals('1'));
+      expect(LogicValue.zero.toString(includeWidth: false), equals('0'));
+      expect(LogicValue.x.toString(includeWidth: false), equals('x'));
+      expect(LogicValue.z.toString(includeWidth: false), equals('z'));
+      expect(LogicValue.one.toString(), equals("1'h1"));
+      expect(LogicValue.zero.toString(), equals("1'h0"));
+      expect(LogicValue.x.toString(), equals("1'bx"));
+      expect(LogicValue.z.toString(), equals("1'bz"));
       expect(LogicValue.one.toBool(), equals(true));
       expect(LogicValue.zero.toBool(), equals(false));
       expect(() => LogicValue.x.toBool(), throwsA(isA<Exception>()));
@@ -563,7 +569,7 @@ void main() {
           equals(LogicValue.x));
     });
   });
-  group('BigLogicValues', () {
+  group('BigLogicValue', () {
     test('overrides', () {
       expect(
           // reversed
@@ -660,7 +666,7 @@ void main() {
     });
   });
 
-  group('FilledLogicValues', () {
+  group('FilledLogicValue', () {
     test('overrides', () {
       expect(
           // reversed
