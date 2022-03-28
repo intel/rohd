@@ -732,11 +732,12 @@ abstract class LogicValues {
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @override
-  String toString() =>
-      "$length'b" +
-      List<String>.generate(length, (index) => this[index].toString())
-          .reversed
-          .join();
+  String toString() => isValid
+      ? "$length'h" + toInt().toRadixString(16)
+      : "$length'b" +
+          List<String>.generate(length, (index) => this[index].toString())
+              .reversed
+              .join();
 
   /// Returns the `i`th bit of this [LogicValues]
   LogicValue operator [](int index) {

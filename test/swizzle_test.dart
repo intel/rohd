@@ -9,7 +9,16 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
+
+class SwizzlyModule extends Module {
+  SwizzlyModule(Logic a) {
+    a = addInput('a', a);
+    var b = addOutput('b', width: 3);
+    b <= [Const(1), a, Const(1)].swizzle();
+  }
+}
 
 void main() {
   group('LogicValue', () {
@@ -36,6 +45,22 @@ void main() {
       expect(
           [LogicValues.ofString('10'), LogicValues.ofString('xz')].rswizzle(),
           equals(LogicValues.ofString('xz10')));
+    });
+  });
+
+  group('Logic', () {
+    test('simple swizzle', () async {
+      var mod = SwizzlyModule(Logic());
+      await mod.build();
+      var vectors = [
+        Vector({'a': 0}, {'b': bin('101')}),
+        Vector({'a': 1}, {'b': bin('111')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      var simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: {'b': 3});
+      expect(simResult, equals(true));
     });
   });
 }
