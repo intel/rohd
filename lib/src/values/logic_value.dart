@@ -12,10 +12,9 @@ part of values;
 
 // TODO: make a "split" function that can split according to some granularity
 // TODO: use slice in addition to getrange?
-// TODO: fix empty list swizzling bug
 
 @Deprecated('Use `LogicValue` instead.'
-    '  LogicValues and LogicValue are merged into one type.')
+    '  LogicValues and LogicValue have been merged into one type.')
 typedef LogicValues = LogicValue;
 
 /// An immutable 4-value representation of an arbitrary number of bits.
@@ -157,13 +156,17 @@ abstract class LogicValue {
   /// print(lv); // This prints `3b'1x0`
   /// ```
   static LogicValue ofString(String stringRepresentation) {
+    if (stringRepresentation.isEmpty) {
+      return _SmallLogicValue(0, 0, 0);
+    }
+
     var valueString = _valueString(stringRepresentation);
     var invalidString = _invalidString(stringRepresentation);
     var width = stringRepresentation.length;
+
     if (width <= _INT_BITS) {
       var value = int.parse(valueString, radix: 2);
       var invalid = int.parse(invalidString, radix: 2);
-      //TODO: check if we should use filled here
       return _SmallLogicValue(value, invalid, width);
     } else {
       var value = BigInt.parse(valueString, radix: 2);

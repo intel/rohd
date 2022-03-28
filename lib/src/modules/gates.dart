@@ -491,11 +491,11 @@ class Mux extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of the mux.
   void _execute() {
-    if (!control.bit.isValid) {
-      y.put(control.bit);
-    } else if (control.bit == LogicValue.zero) {
+    if (!control.value.isValid) {
+      y.put(control.value);
+    } else if (control.value == LogicValue.zero) {
       y.put(d0.value);
-    } else if (control.bit == LogicValue.one) {
+    } else if (control.value == LogicValue.one) {
       y.put(d1.value);
     }
   }

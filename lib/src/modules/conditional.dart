@@ -232,7 +232,7 @@ class Sequential extends _Always {
       var clk = _clks[i];
       clk.glitch.listen((event) {
         // we want the first previousValue from the first glitch of this tick
-        _preTickClkValues[i] ??= event.previousValue.bit;
+        _preTickClkValues[i] ??= event.previousValue;
         if (!_pendingExecute) {
           Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF
@@ -250,11 +250,11 @@ class Sequential extends _Always {
     bool anyClkPosedge = false;
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as it currently does
-      if (!_clks[i].bit.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
+      if (!_clks[i].value.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
         anyClkInvalid = true;
         break;
       } else if (_preTickClkValues[i] != null &&
-          LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].bit)) {
+          LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].value)) {
         anyClkPosedge = true;
         break;
       }

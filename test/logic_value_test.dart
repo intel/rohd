@@ -89,6 +89,9 @@ void main() {
       expect(LogicValue.zero.toInt(), equals(0));
       expect(() => LogicValue.x.toInt(), throwsA(isA<Exception>()));
       expect(() => LogicValue.z.toInt(), throwsA(isA<Exception>()));
+      expect(LogicValue.ofString(''), equals(LogicValue.ofInt(1, 0)));
+      expect(
+          <LogicValue>[].swizzle(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
     });
     test('unary', () {
       expect(LogicValue.one.isValid, equals(true));

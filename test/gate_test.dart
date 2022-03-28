@@ -115,7 +115,7 @@ void main() {
       var mod = ContentionModule();
       await mod.build();
       mod.y.put(0);
-      expect(mod.y.bit, equals(LogicValue.x));
+      expect(mod.y.value, equals(LogicValue.x));
     });
 
     test('And2Gate single bit', () async {
