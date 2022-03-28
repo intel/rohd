@@ -270,7 +270,7 @@ void main() {
       expect(
           // toString
           LogicValues.ofString('0').toString(),
-          equals('1\'b0'));
+          equals('1\'h0'));
       expect(
           // toList
           LogicValues.ofString('0101').toList(),

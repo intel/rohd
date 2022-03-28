@@ -401,7 +401,7 @@ class _SynthModuleDefinition {
           assignments.add(_SynthAssignment(synthDriver!, synthReceiver));
         }
       } else if (driver == null && receiver.hasValidValue()) {
-        assignments.add(_SynthAssignment(receiver.valueInt, synthReceiver));
+        assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       } else if (driver == null && !receiver.isFloating()) {
         // this is a signal that is *partially* invalid (e.g. 0b1z1x0)
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
@@ -627,7 +627,7 @@ class _SynthAssignment {
     } else if (_src is LogicValues) {
       return (_src as LogicValues).toString();
     } else if (_src is _SynthLogic) {
-      return _src.name;
+      return (_src as _SynthLogic).name;
     } else {
       throw Exception("Don't know how to synthesize value: $_src");
     }
