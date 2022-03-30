@@ -77,14 +77,14 @@ class _BigLogicValue extends LogicValue {
   @override
   BigInt toBigInt() {
     if (_invalid.sign != 0) {
-      throw Exception('Cannot convert invalid LogicValues to int: ${this}');
+      throw Exception('Cannot convert invalid LogicValue to BigInt: ${this}');
     }
     return _value;
   }
 
   @override
   int toInt() => throw Exception(
-      'LogicValues width $width is too long to convert to int. Use toBigInt() instead.');
+      'LogicValue width $width is too long to convert to int. Use toBigInt() instead.');
 
   @override
   LogicValue operator ~() =>

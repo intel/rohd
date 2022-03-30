@@ -84,7 +84,7 @@ class _SmallLogicValue extends LogicValue {
   @override
   int toInt() {
     if (_invalid != 0) {
-      throw Exception('Cannot convert invalid LogicValues to int: $this');
+      throw Exception('Cannot convert invalid LogicValue to int: $this');
     }
     return _value;
   }

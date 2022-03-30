@@ -104,9 +104,9 @@ void main() {
       var out = gtm.aBar;
       await gtm.build();
       a.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Contention not gate', () async {
@@ -124,16 +124,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Or2Gate single bit', () async {
@@ -144,16 +144,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Xor2Gate single bit', () async {
@@ -164,16 +164,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
     });
   });
 

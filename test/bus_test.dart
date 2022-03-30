@@ -58,13 +58,13 @@ void main() {
       var out = gtm.aBar;
       await gtm.build();
       a.put(0xff);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
-      expect(out.valueInt, equals(0xff));
+      expect(out.value.toInt(), equals(0xff));
       a.put(0x55);
-      expect(out.valueInt, equals(0xaa));
+      expect(out.value.toInt(), equals(0xaa));
       a.put(0x1);
-      expect(out.valueInt, equals(0xfe));
+      expect(out.value.toInt(), equals(0xfe));
     });
 
     test('And2Gate bus', () async {
@@ -75,19 +75,19 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(0xff);
       b.put(0xaa);
-      expect(out.valueInt, equals(0xaa));
+      expect(out.value.toInt(), equals(0xaa));
     });
 
     test('Bus shrink', () async {
@@ -97,11 +97,11 @@ void main() {
       var out = gtm.aShrunk;
       await gtm.build();
       a.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0xff);
-      expect(out.valueInt, equals(bin('111')));
+      expect(out.value.toInt(), equals(bin('111')));
       a.put(0xf5);
-      expect(out.valueInt, equals(5));
+      expect(out.value.toInt(), equals(5));
     });
 
     test('Bus swizzle', () async {
@@ -112,19 +112,19 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0xff);
       b.put(0xff);
-      expect(out.valueInt, equals(0xffff));
+      expect(out.value.toInt(), equals(0xffff));
       a.put(0xff);
       b.put(0);
-      expect(out.valueInt, equals(0xff));
+      expect(out.value.toInt(), equals(0xff));
       a.put(0);
       b.put(0xff);
-      expect(out.valueInt, equals(0xff00));
+      expect(out.value.toInt(), equals(0xff00));
       a.put(0xaa);
       b.put(0x55);
-      expect(out.valueInt, equals(0x55aa));
+      expect(out.value.toInt(), equals(0x55aa));
     });
   });
 

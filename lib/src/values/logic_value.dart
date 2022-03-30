@@ -304,9 +304,6 @@ abstract class LogicValue {
   /// If [start] and [end] are equal, then a zero-width signal is returned.
   LogicValue _getRange(int start, int end);
 
-  //TODO: implement slice
-  // LogicValue slice(int end, int start) {}
-
   /// Converts a pair of `_value` and `_invalid` into a [LogicValue].
   LogicValue _bitsToLogicValue(bool bitValue, bool bitInvalid) => bitInvalid
       ? (bitValue ? LogicValue.z : LogicValue.x)

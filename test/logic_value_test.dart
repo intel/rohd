@@ -244,16 +244,16 @@ void main() {
               LogicValue.ofString('01xz01xz01xz01xz'),
           equals(LogicValue.ofString('01xx1111x1xxx1xx')));
       expect(
-          // test fromInt
+          // test ofInt
           LogicValue.ofInt(1, 32) | LogicValue.ofInt(0, 32),
           equals(LogicValue.ofInt(1, 32)));
       expect(
-          // test fromBigInt - success
+          // test ofBigInt - success
           LogicValue.ofBigInt(BigInt.one, 65) |
               LogicValue.ofBigInt(BigInt.zero, 65),
           equals(LogicValue.ofBigInt(BigInt.one, 65)));
       expect(
-          // test fromBigInt
+          // test ofBigInt
           LogicValue.ofBigInt(BigInt.one, 32) |
               LogicValue.ofBigInt(BigInt.zero, 32),
           equals(LogicValue.ofInt(1, 32)));
@@ -661,7 +661,7 @@ void main() {
           LogicValue.ofString('010x' * 100).xor(),
           equals(LogicValue.x));
       expect(
-          // fromInt with >64 bits
+          // ofInt with >64 bits
           LogicValue.ofInt(3, 512),
           equals(LogicValue.ofBigInt(BigInt.from(3), 512)));
     });

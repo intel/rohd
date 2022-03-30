@@ -153,7 +153,7 @@ void main() {
       var mod = LoopyCombModule(Logic());
       await mod.build();
       mod.a.put(1);
-      expect(mod.x.valueInt, equals(0));
+      expect(mod.x.value.toInt(), equals(0));
     });
   });
 

@@ -84,7 +84,7 @@ class SimCompare {
                 // invalid value causes exception without helpful message, so throw it
                 throw Exception(errorReason);
               }
-              expect(o.valueInt, equals(value), reason: errorReason);
+              expect(o.value.toInt(), equals(value), reason: errorReason);
             } else if (value is LogicValue) {
               if (o.width > 1 &&
                   (value == LogicValue.x || value == LogicValue.z)) {

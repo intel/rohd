@@ -1,3 +1,14 @@
+## (next release)
+- Breaking: Merged `LogicValue` and `LogicValues` into one type called `LogicValue`.
+- Deprecation: Aligned `LogicValue` to `Logic` by renaming `length` to `width`.
+- Breaking: `Logic.put` no longer accepts `List<LogicValue>`, swizzle it together instead.
+- Deprecated `Logic.valueInt` and `Logic.valueBigInt`; instead use equivalent functions on `Logic.value`.
+- Deprecated `bit` on both `LogicValue` and `Logic`; instead just check `width`.
+- Added ability in `LogicValue.toString` to decide whether or not to include the width annotation through `includeWidth` argument.
+- Fixed a bug related to zero-width construction of `LogicValue`s (https://github.com/intel/rohd/issues/90).
+- Fixed a bug where generated constants in SystemVerilog had no width, which can cause issues in some cases (e.g. swizzles) (https://github.com/intel/rohd/issues/89)
+- Added capability to convert binary strings to ints with underscore separators using `bin` (https://github.com/intel/rohd/issues/56).
+
 ## 0.2.0
 - Updated implementation to avoid `Iterable.forEach` to make debug easier.
 - Added `ofBool` to `LogicValue` and `LogicValues` (https://github.com/intel/rohd/issues/34).

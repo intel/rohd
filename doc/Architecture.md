@@ -6,14 +6,11 @@ This document describes the organization and architecture of the ROHD framework.
 ## Major Concepts
 
 ### Logic
-The `Logic` is the fundamental "wire" that connects signals throughout a hardware design.  It behaves very similarly to a `logic` in SystemVerilog.  It has a fixed creation-time-defined width.  At any point in time, it has one value of type `LogicValues`.  A `Logic` can be connected to up to one source, and any number of destinations.  All connections must be the same width.
+The `Logic` is the fundamental "wire" that connects signals throughout a hardware design.  It behaves very similarly to a `logic` in SystemVerilog.  It has a fixed creation-time-defined width.  At any point in time, it has one value of type `LogicValue`.  A `Logic` can be connected to up to one source, and any number of destinations.  All connections must be the same width.
 
 Any time the source of a `Logic` changes, it propogates the change outwards to its destinations.  There are various events that can be subscribed to related to signal value transitions on `Logic`.
 
-### LogicValues and LogicValue
-A `LogicValues` represents a multi-bit 4-value (`1`, `0`, `x`, `z`) static value.  It is immutable.  It can be thought of as an array of `LogicValue`s.
-
-A `LogicValue` is a single bit 4-value bit.
+A `LogicValue` represents a multi-bit (including 0-bit and 1-bit) 4-value (`1`, `0`, `x`, `z`) static value.  It is immutable. 
 
 ### Module
 The `Module` is the fundamental building block of hardware designs in ROHD.  They have clearly defined inputs and outputs, and all logic contained within the module should connect either/both from inputs and to outputs.  The ROHD framework will determine at `build()` time which logic sits within which `Module`.  Any functional operation, whether a simple gate or a large module, is implemented as a `Module`.
@@ -40,4 +37,4 @@ Contains logic for synthesizing `Module`s into some output.  It is structured to
 Various generic objects and classes that may be useful in different areas of ROHD.
 
 ### values
-Definitions for things like `LogicValues` and `LogicValue`.
+Definitions for things related to `LogicValue`.

@@ -80,11 +80,13 @@ class Logic {
   /// The current valid active value of this signal as an [int].
   ///
   /// Throws an exception if the signal is not valid or can't be represented as an [int].
+  @Deprecated('Use value.toInt() instead.')
   int get valueInt => value.toInt();
 
   /// The current valid active value of this signal as a [BigInt].
   ///
   /// Throws an exception if the signal is not valid.
+  @Deprecated('Use value.toBigInt() instead.')
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).

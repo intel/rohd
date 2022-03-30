@@ -72,14 +72,14 @@ class _FilledLogicValue extends LogicValue {
     } else if (_value == _LogicValueEnum.zero) {
       return BigInt.zero;
     }
-    throw Exception('Cannot convert invalid value "$_value" to an int.');
+    throw Exception('Cannot convert invalid value "$_value" to BigInt.');
   }
 
   @override
   int toInt() {
     if (width > LogicValue._INT_BITS) {
       throw Exception(
-          'LogicValues width $width is too long to convert to int. Use toBigInt() instead.');
+          'LogicValue width $width is too long to convert to int. Use toBigInt() instead.');
     }
     if (_value == _LogicValueEnum.one) {
       return _SmallLogicValue._maskOfWidth(width);
@@ -98,7 +98,7 @@ class _FilledLogicValue extends LogicValue {
               : _LogicValueEnum.zero,
       width);
 
-  _SmallLogicValue _toSmallLogicValues() => _value == _LogicValueEnum.x
+  _SmallLogicValue _toSmallLogicValue() => _value == _LogicValueEnum.x
       ? _SmallLogicValue(0, _SmallLogicValue._maskOfWidth(width), width)
       : _value == _LogicValueEnum.z
           ? _SmallLogicValue(_SmallLogicValue._maskOfWidth(width),
@@ -107,7 +107,7 @@ class _FilledLogicValue extends LogicValue {
               ? _SmallLogicValue(_SmallLogicValue._maskOfWidth(width), 0, width)
               : _SmallLogicValue(0, 0, width);
 
-  _BigLogicValue _toBigLogicValues() => _value == _LogicValueEnum.x
+  _BigLogicValue _toBigLogicValue() => _value == _LogicValueEnum.x
       ? _BigLogicValue(BigInt.zero, _BigLogicValue._maskOfWidth(width), width)
       : _value == _LogicValueEnum.z
           ? _BigLogicValue(_BigLogicValue._maskOfWidth(width),
@@ -135,9 +135,9 @@ class _FilledLogicValue extends LogicValue {
       return _FilledLogicValue(_LogicValueEnum.zero, width);
     } else if (!isValid) {
       if (other is _SmallLogicValue) {
-        return other & _toSmallLogicValues();
+        return other & _toSmallLogicValue();
       } else if (other is _BigLogicValue) {
-        return other & _toBigLogicValues();
+        return other & _toBigLogicValue();
       }
     } else if (other is _SmallLogicValue) {
       // _value is 1
@@ -164,9 +164,9 @@ class _FilledLogicValue extends LogicValue {
       return _FilledLogicValue(_LogicValueEnum.one, width);
     } else if (!isValid) {
       if (other is _SmallLogicValue) {
-        return other | _toSmallLogicValues();
+        return other | _toSmallLogicValue();
       } else if (other is _BigLogicValue) {
-        return other | _toBigLogicValues();
+        return other | _toBigLogicValue();
       }
       return _FilledLogicValue(_LogicValueEnum.x, width);
     } else if (other is _SmallLogicValue) {
