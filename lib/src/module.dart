@@ -16,10 +16,6 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-//TODO: make a way to convert SV modules into ROHD
-//  check out:  https://github.com/google/verible
-//              https://github.com/alainmarcel/Surelog
-
 /// Represents a synthesizable hardware entity with clearly defined interface boundaries.
 ///
 /// Any hardware to be synthesized must be contained within a [Module].
@@ -365,7 +361,7 @@ abstract class Module {
     _internalSignals.add(signal);
 
     // ignore: invalid_use_of_protected_member
-    signal.setParentModule(this);
+    signal.parentModule = this;
   }
 
   /// Checks whether a port name is safe to add (e.g. no duplicates).
@@ -392,7 +388,7 @@ abstract class Module {
     _inputs[name] = Logic(name: name, width: width)..gets(x);
 
     // ignore: invalid_use_of_protected_member
-    _inputs[name]!.setParentModule(this);
+    _inputs[name]!.parentModule = this;
 
     return _inputs[name]!;
   }
@@ -406,7 +402,7 @@ abstract class Module {
     _outputs[name] = Logic(name: name, width: width);
 
     // ignore: invalid_use_of_protected_member
-    _outputs[name]!.setParentModule(this);
+    _outputs[name]!.parentModule = this;
 
     return _outputs[name]!;
   }

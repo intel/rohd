@@ -13,11 +13,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-// TODO: consider X optimism in conditional statements in more detail, dont be too pessimistic if both inputs are equal
-//  also need to add more tests around this (including @posedge(clk|reset))
-
-// TODO: warnings for case statements not covering all cases
-
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
@@ -29,8 +24,6 @@ abstract class _Always extends Module with CustomSystemVerilog {
   final Uniquifier _portUniquifier = Uniquifier();
 
   _Always(this.conditionals, {String name = 'always'}) : super(name: name) {
-    //TODO: need to do some check that the same conditional is not used multiple times in the same always or in different always
-
     // create a registration of all inputs and outputs of this module
     var idx = 0;
     for (var conditional in conditionals) {
@@ -125,7 +118,6 @@ class Combinational extends _Always {
     _isExecuting = true;
 
     // combinational must always drive all outputs or else you get X!
-    //TODO: could be more efficient if we only put X's on non-driven outputs (based on execute return)
     for (var element in _assignedReceiverToOutputMap.values) {
       element.put(LogicValue.x, fill: true);
     }
@@ -405,8 +397,6 @@ class ConditionalAssign extends Conditional {
     }
   }
 
-  //TODO: how to handle a conditional fill a-la '1
-
   @override
   List<Logic> getReceivers() => [receiver];
   @override
@@ -496,7 +486,6 @@ class Case extends Conditional {
   List<Logic> execute() {
     var drivenLogics = <Logic>[];
 
-    //TODO: what about for CaseZ where epxressions can have Z?  BUG?
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (var receiver in getReceivers()) {
@@ -514,7 +503,6 @@ class Case extends Conditional {
           drivenLogics.addAll(conditional.execute());
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
-          //TODO: replace this with a logger message
           throw Exception('Unique case statement had multiple matching cases.'
               ' Original: "$foundMatch".'
               ' Duplicate: "$item".');
@@ -646,10 +634,6 @@ class CaseZ extends Case {
   @override
   String get caseType => 'casez';
 
-  //TODO: should CaseZ force Const in items? Otherwise, what if a floating signal came into the case statement??
-  // or at least don't do wildcard for non-const items?
-
-  //TODO: what if there's an X in the expression? should throw exception!
   @override
   bool isMatch(LogicValue value) {
     if (expression.width != value.width) {

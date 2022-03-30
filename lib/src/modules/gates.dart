@@ -336,8 +336,6 @@ class Xor2Gate extends _TwoInputBitwiseGate {
       : super((a, b) => a ^ b, '^', a, b, name: name);
 }
 
-//TODO: allow math operations on different sized Logics, with optional overrideable output size
-
 /// A two-input addition module.
 class Add extends _TwoInputBitwiseGate {
   Add(Logic a, dynamic b, {String name = 'add'})
@@ -464,7 +462,7 @@ class Mux extends Module with InlineSystemVerilog {
     _control = Module.unpreferredName('control_' + control.name);
     _d0 = Module.unpreferredName('d0_' + d0.name);
     _d1 = Module.unpreferredName('d1_' + d1.name);
-    _y = Module.unpreferredName('y'); //TODO: something better here?
+    _y = Module.unpreferredName('y');
 
     addInput(_control, control);
     addInput(_d0, d0, width: d0.width);

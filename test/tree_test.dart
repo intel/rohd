@@ -43,13 +43,6 @@ class TreeOfTwoInputModules extends Module {
 }
 
 void main() {
-  // var mod = TreeOfTwoInputModules(
-  //   List<Logic>.generate(16, (index) => Logic(width: 8)),
-  //   (Logic a, Logic b) => Mux(a > b, a, b).y
-  // );
-  // mod.build();
-  // File('tmp_tree.sv').writeAsStringSync(mod.generateSynth());
-
   tearDown(() {
     Simulator.reset();
   });

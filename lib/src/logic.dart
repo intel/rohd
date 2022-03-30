@@ -14,8 +14,6 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'utilities/synchronous_propagator.dart';
 
-//TODO: add support for arrays of signals for synthesizing to SV so that it's not verbose for large structures, along with for loops?
-
 /// Represents the event of a [Logic] changing value.
 class LogicValueChanged {
   /// The newly updated value of the [Logic].
@@ -46,8 +44,6 @@ class Const extends Logic {
   }
 }
 
-//TODO: how to convert 0-width signals to SystemVerilog?
-
 /// Represents a logical signal of any width which can change values.
 class Logic {
   /// An internal counter for encouraging unique naming of unnamed signals.
@@ -73,9 +69,6 @@ class Logic {
 
   /// The current active value of this signal.
   LogicValue get value => _currentValue;
-
-  //TODO: add a setter for value that calls put()?
-  // set value(dynamic newValue) => put(newValue);
 
   /// The current active value of this signal if it has width 1, as a [LogicValue].
   ///
@@ -112,29 +105,29 @@ class Logic {
   void _registerConnection(Logic dstConnection) =>
       _dstConnections.add(dstConnection);
 
-  /// A stream of [LogicValueChanged] events for every time the signal transitions at any time during a [Simulator] tick.
+  /// A stream of [LogicValueChanged] events for every time the signal
+  /// transitions at any time during a [Simulator] tick.
   ///
   /// This event can occur more than once per edge, or even if there is no edge.
   SynchronousEmitter<LogicValueChanged> get glitch => _glitchController.emitter;
   final SynchronousPropagator<LogicValueChanged> _glitchController =
       SynchronousPropagator<LogicValueChanged>();
 
-  /// Controller for stable events that can be safely consumed at the end of a [Simulator] tick.
+  /// Controller for stable events that can be safely consumed at the
+  /// end of a [Simulator] tick.
   final StreamController<LogicValueChanged> _changedController =
       StreamController<LogicValueChanged>.broadcast(sync: true);
 
   /// Tracks whether is being subscribed to by anything/anyone.
   bool _changedBeingWatched = false;
 
-  //TODO: add tests for changed, posedge, negedge, etc. to make sure they dont break!
-
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed.
   Stream<LogicValueChanged> get changed {
     if (!_changedBeingWatched) {
       // only do these simulator subscriptions if someone has asked for them! saves performance!
       _changedBeingWatched = true;
 
-      //TODO: only set these up to listen to glitch? consider efficiency
       Simulator.preTick.listen((event) {
         _preTickValue = value;
       });
@@ -147,25 +140,30 @@ class Logic {
     return _changedController.stream;
   }
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
   Stream<LogicValueChanged> get negedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
   Stream<LogicValueChanged> get posedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick.
   Future<LogicValueChanged> get nextChanged => changed.first;
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick from `0` to `1`.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `0` to `1`.
   Future<LogicValueChanged> get nextPosedge => posedge.first;
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick from `1` to `0`.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `1` to `0`.
   Future<LogicValueChanged> get nextNegedge => negedge.first;
 
   /// The [Module] that this [Logic] exists within.
@@ -174,16 +172,11 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
-  //TODO: improve appropriate protection of parentModule
-
   /// Sets the value of [parentModule] to [newParent].
   ///
-  /// This should *only* be called by [Module.build()].
+  /// This should *only* be called by [Module.build()].  It is used to optimize search.
   @protected
-  void setParentModule(Module? newParent) {
-    // this should ONLY be called by Module build(), it is used to optimize the search
-    _parentModule = newParent;
-  }
+  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
 
   /// Returns true iff this signal is an input of its parent [Module].
   ///
@@ -213,7 +206,6 @@ class Logic {
 
   @override
   String toString() {
-    //TODO: make this a prettier print, including full hierarchy from parents if available
     return 'Logic($width): $name';
   }
 
@@ -222,15 +214,12 @@ class Logic {
     if (_srcConnection != null) {
       throw Exception(
           'This signal "$this" is already connected to "$srcConnection", so it cannot be connected to "$other".');
-      //TODO: this should be legal to do, but needs more safety around it (difficult)
     }
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
           'It may be a constant expression or otherwise should not be assigned.');
     }
   }
-
-  // TODO: prevent re-connection after build / after simulator has started?
 
   /// Connects this [Logic] directly to [other].
   ///
@@ -296,8 +285,6 @@ class Logic {
   /// WARNING: Signed math is not fully tested.
   Logic operator /(dynamic other) => Divide(this, other).y;
 
-  //TODO: implement shift operators for ints
-
   /// Arithmetic right-shift.
   Logic operator >>(Logic other) => ARShift(this, other).y;
 
@@ -344,11 +331,9 @@ class Logic {
     if (other is Logic) {
       return ConditionalAssign(this, other);
     } else {
-      return ConditionalAssign(this, Logic(width: width)..put(other));
+      return ConditionalAssign(this, Const(other, width: width));
     }
   }
-
-  //TODO: implement a conditionalassign with fill here
 
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
@@ -370,8 +355,6 @@ class Logic {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar to `'` in SystemVerilog.
   void put(dynamic val, {bool fill = false}) {
-    //TODO: prevent re-assignment for _unassignable even via put/inject
-    // this opens the opportunity to automate stuff like &1 if necessary
     LogicValue newValue;
     if (val is int) {
       if (fill) {
@@ -437,7 +420,6 @@ class Logic {
 
   /// Accesses the [index]th bit of this signal.
   Logic operator [](int index) {
-    //TODO: support negative numbers to access relative from the end
     return slice(index, index);
   }
 

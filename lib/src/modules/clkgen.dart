@@ -17,8 +17,6 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
   /// The generated clock.
   Logic get clk => output('clk');
 
-  //TODO: consider making clock start at 1 instead of 0 (requires some tweaks to unit testing)
-
   /// Constructs a very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
   ///
   /// Set the frequency via [clockPeriod].
