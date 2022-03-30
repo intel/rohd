@@ -270,10 +270,8 @@ class Sequential extends _Always {
           }
           alreadySet.add(signal);
         }
-        throw Exception(
-            'Sequential drove the same signal(s) multiple times: $redrivenSignals.'
-            ' If you hit this Exception as a ROHD user,'
-            ' please file a bug at https://github.com/intel/rohd/issues');
+        throw Exception('Sequential drove the same signal(s) multiple times:'
+            ' $redrivenSignals.');
       }
     }
 

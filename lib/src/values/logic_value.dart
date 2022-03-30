@@ -10,11 +10,8 @@
 
 part of values;
 
-// TODO: make a "split" function that can split according to some granularity
-// TODO: use slice in addition to getrange?
-
 @Deprecated('Use `LogicValue` instead.'
-    '  LogicValues and LogicValue have been merged into one type.')
+    '  `LogicValues` and `LogicValue` have been merged into one type.')
 typedef LogicValues = LogicValue;
 
 /// An immutable 4-value representation of an arbitrary number of bits.
@@ -245,7 +242,10 @@ abstract class LogicValue {
   /// ```
   @override
   String toString({bool includeWidth = true}) => isValid && includeWidth
-      ? "$width'h" + toInt().toRadixString(16)
+      ? "$width'h" +
+          (width > _INT_BITS
+              ? toBigInt().toRadixString(16)
+              : toInt().toRadixString(16))
       : [
           if (includeWidth) "$width'b",
           List<String>.generate(width, (index) => this[index]._bitString())
@@ -282,9 +282,9 @@ abstract class LogicValue {
   /// Returns a new [LogicValue] with the order of all bits in the reverse order of this [LogicValue]
   LogicValue get reversed;
 
-  //TODO: maybe getRange end should be optional, where it returns just bit of start if no end is provided
-
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
+  ///
+  /// If [start] and [end] are equal, then a zero-width signal is returned.
   LogicValue getRange(int start, int end) {
     if (end < start) {
       throw Exception('End ($end) cannot be greater than start ($start).');
@@ -300,9 +300,12 @@ abstract class LogicValue {
 
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
   /// Performs no boundary checks.
+  ///
+  /// If [start] and [end] are equal, then a zero-width signal is returned.
   LogicValue _getRange(int start, int end);
 
-  // LogicValue slice(int end, int start) {} //TODO
+  //TODO: implement slice
+  // LogicValue slice(int end, int start) {}
 
   /// Converts a pair of `_value` and `_invalid` into a [LogicValue].
   LogicValue _bitsToLogicValue(bool bitValue, bool bitInvalid) => bitInvalid
@@ -401,8 +404,6 @@ abstract class LogicValue {
   ///
   /// Returns `x` if any bit is invalid.
   LogicValue xor();
-
-  //TODO: finish implementing and testing signed math.
 
   /// Addition operation.
   ///
@@ -519,8 +520,6 @@ abstract class LogicValue {
     return op(a, b) ? LogicValue.one : LogicValue.zero;
   }
 
-  //TODO: test shift operations on INT_BITS width busses to make sure it works right
-
   /// Arithmetic right-shift operation.
   LogicValue operator >>(dynamic shamt) =>
       _shift(shamt, _ShiftType.arithmeticRight);
@@ -530,8 +529,6 @@ abstract class LogicValue {
 
   /// Logical right-shift operation.
   LogicValue operator >>>(dynamic shamt) => _shift(shamt, _ShiftType.right);
-
-  //TODO: test all over the place for 0-width values and signals
 
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
@@ -563,8 +560,6 @@ abstract class LogicValue {
 
   /// Arithmetic right-shift operation by an [int].
   LogicValue _shiftArithmeticRight(int shamt);
-
-  //TODO: consider pessimism/optimism impact here for both design and validation
 
   static void _assertSingleBit(LogicValue value) {
     if (value.width != 1) {

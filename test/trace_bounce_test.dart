@@ -52,6 +52,4 @@ void main() {
         signalToWidthMap: {'bundle_top': 3});
     expect(simResult, equals(true));
   });
-
-  //TODO: what if someone mistakenly assigns an input to another input within the module?
 }

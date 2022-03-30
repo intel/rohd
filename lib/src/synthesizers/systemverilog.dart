@@ -244,7 +244,6 @@ class _SynthSubModuleInstantiation {
     _needsDeclaration = false;
   }
 
-  //TODO: make this verilog stuff more generic for inlining in other IRs
   Map<String, String> _moduleInputsMap() {
     return inputMapping.map((synthLogic, logic) => MapEntry(
         logic.name, // port name guaranteed to match
@@ -421,17 +420,6 @@ class _SynthModuleDefinition {
     _collapseChainableModules();
   }
 
-  //TODO: collapse in-line assignments where the driver is equal to eliminate duplicates (decrease verbosity)
-  //  for example, merge these two:
-  //      assign out = {b,a};  // swizzle_0
-  //      assign out_0 = {b,a};  // swizzle
-  // void _collapseEquivalentInlineModules() {
-  //   //WARNING: do not collapse non-renameable outputs directly, create a buffer signal
-  //   //  maybe do this before collapsing assignments, always add a buffer, then let assignment collapsing handle it?
-
-  //   // this can be easily done using existing merge capabilities for synthlogic?
-  // }
-
   void _collapseChainableModules() {
     // collapse multiple lines of in-line assignments into one where they are unnamed one-liners
     //  for example, be capable of creating lines like:
@@ -518,7 +506,6 @@ class _SynthModuleDefinition {
         _SynthLogic? src =
             assignment._src is _SynthLogic ? assignment._src : null;
         if (dst.name == src?.name) {
-          //TODO: is this ok? just let it continue and delete the assignment?
           throw Exception(
               'Circular assignment detected between $dst and $src.');
         }
@@ -599,7 +586,6 @@ class _SynthLogic {
     _needsDeclaration = false;
   }
 
-  //TODO: extract systemverilog naming to systemverilog synthesizer
   String definitionName() {
     if (logic.width > 1) {
       return '[${logic.width - 1}:0] $name';

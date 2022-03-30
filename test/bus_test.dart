@@ -128,8 +128,6 @@ void main() {
     });
   });
 
-  //TODO: add test for reverse bit slice
-
   group('simcompare', () {
     var signalToWidthMap = {
       'a': 8,

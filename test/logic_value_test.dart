@@ -18,8 +18,6 @@ const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
 final lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
 
-//TODO: add tests for 0-bit values
-
 void main() {
   test('bin with underscores', () {
     var x = bin('11_1');

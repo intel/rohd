@@ -56,8 +56,6 @@ class UnaryGateTestModule extends Module {
   }
 }
 
-//TODO: add tests to shift logic by const, and const by logic
-
 class ShiftTestModule extends Module {
   int constantInt;
   ShiftTestModule(Logic a, Logic b, {this.constantInt = 3})

@@ -12,8 +12,6 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 
-// TODO: ensure no multiple drivers on ff allowed (illegal in SV and makes no sense) [implemented, but add a test]
-
 class LoopyCombModule extends Module {
   Logic get a => input('a');
   Logic get x => output('x');
