@@ -10,8 +10,6 @@
 
 import 'package:rohd/rohd.dart';
 
-// TODO: offer a way to reference sub-module signals
-
 /// Represents a [Module] whose definition exists outside of this framework in SystemVerilog.
 ///
 /// This is useful for interacting with SystemVerilog modules.

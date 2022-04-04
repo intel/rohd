@@ -50,5 +50,4 @@ abstract class SynthesisResult {
 
   /// Generates what could go into a file
   String toFileContents();
-  //TODO: this could be a FileContents object of some sort, including file name and contents
 }

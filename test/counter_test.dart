@@ -57,7 +57,7 @@ void main() {
       // check that 1 timestep after reset, the value has reset properly
       unawaited(reset.nextPosedge
           .then((value) => Simulator.registerAction(Simulator.time + 1, () {
-                expect(counter.val.valueInt, equals(0));
+                expect(counter.val.value.toInt(), equals(0));
               })));
 
       var vectors = [

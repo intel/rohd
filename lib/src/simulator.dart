@@ -42,8 +42,6 @@ class Simulator {
   /// If set to -1 (the default), it means there is no maximum time limit.
   static int _maxSimTime = -1;
 
-  //TODO: use logger more, with hierarchy prints, and clean up exceptions where necessary
-
   /// A global logger object for the [Simulator].
   static final Logger logger = Logger('ROHD');
 

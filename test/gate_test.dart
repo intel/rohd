@@ -56,8 +56,6 @@ class UnaryGateTestModule extends Module {
   }
 }
 
-//TODO: add tests to shift logic by const, and const by logic
-
 class ShiftTestModule extends Module {
   int constantInt;
   ShiftTestModule(Logic a, Logic b, {this.constantInt = 3})
@@ -106,16 +104,16 @@ void main() {
       var out = gtm.aBar;
       await gtm.build();
       a.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Contention not gate', () async {
       var mod = ContentionModule();
       await mod.build();
       mod.y.put(0);
-      expect(mod.y.bit, equals(LogicValue.x));
+      expect(mod.y.value, equals(LogicValue.x));
     });
 
     test('And2Gate single bit', () async {
@@ -126,16 +124,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Or2Gate single bit', () async {
@@ -146,16 +144,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
     });
 
     test('Xor2Gate single bit', () async {
@@ -166,16 +164,16 @@ void main() {
       await gtm.build();
       a.put(0);
       b.put(0);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
       a.put(0);
       b.put(1);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(0);
-      expect(out.valueInt, equals(1));
+      expect(out.value.toInt(), equals(1));
       a.put(1);
       b.put(1);
-      expect(out.valueInt, equals(0));
+      expect(out.value.toInt(), equals(0));
     });
   });
 

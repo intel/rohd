@@ -122,10 +122,9 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute(int startIdx, Logic swizzleInput, LogicValueChanged? args) {
-    //TODO: This could be more efficient if LogicValues had a setAll built-in
     var updatedVal = out.value.toList();
     updatedVal.setAll(startIdx, swizzleInput.value.toList());
-    out.put(LogicValues.of(updatedVal));
+    out.put(LogicValue.of(updatedVal));
   }
 
   @override

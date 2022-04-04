@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// logic.dart
@@ -14,15 +14,13 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'utilities/synchronous_propagator.dart';
 
-//TODO: add support for arrays of signals for synthesizing to SV so that it's not verbose for large structures, along with for loops?
-
 /// Represents the event of a [Logic] changing value.
 class LogicValueChanged {
   /// The newly updated value of the [Logic].
-  final LogicValues newValue;
+  final LogicValue newValue;
 
   /// The previous value of the [Logic].
-  final LogicValues previousValue;
+  final LogicValue previousValue;
 
   LogicValueChanged(this.newValue, this.previousValue);
 
@@ -34,19 +32,17 @@ class LogicValueChanged {
 class Const extends Logic {
   /// Constructs a [Const] with the specified value.
   ///
-  /// If [val] is a [LogicValues], the [width] is inferred from it.
+  /// If [val] is a [LogicValue], the [width] is inferred from it.
   /// Otherwise, if [width] is not specified, the default [width] is 1.
   /// If [fill] is set to `true`, the value is extended across [width] (like `'` in SystemVerilog).
   Const(dynamic val, {int? width, bool fill = false})
       : super(
             name: 'const_$val',
-            width: val is LogicValues ? val.length : width ?? 1) {
+            width: val is LogicValue ? val.width : width ?? 1) {
     put(val, fill: fill);
     _unassignable = true;
   }
 }
-
-//TODO: how to convert 0-width signals to SystemVerilog?
 
 /// Represents a logical signal of any width which can change values.
 class Logic {
@@ -61,35 +57,36 @@ class Logic {
   final String name;
 
   /// The current active value of this signal.
-  LogicValues _currentValue;
+  LogicValue _currentValue;
 
   /// The last value of this signal before the [Simulator] tick.
   ///
   /// This is useful for detecting when to trigger an edge.
-  LogicValues? _preTickValue;
+  LogicValue? _preTickValue;
 
   /// The number of bits in this signal.
   final int width;
 
   /// The current active value of this signal.
-  LogicValues get value => _currentValue;
-
-  //TODO: add a setter for value that calls put()?
-  // set value(dynamic newValue) => put(newValue);
+  LogicValue get value => _currentValue;
 
   /// The current active value of this signal if it has width 1, as a [LogicValue].
   ///
   /// Throws an Exception if width is not 1.
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
   LogicValue get bit => _currentValue.bit;
 
   /// The current valid active value of this signal as an [int].
   ///
   /// Throws an exception if the signal is not valid or can't be represented as an [int].
+  @Deprecated('Use value.toInt() instead.')
   int get valueInt => value.toInt();
 
   /// The current valid active value of this signal as a [BigInt].
   ///
   /// Throws an exception if the signal is not valid.
+  @Deprecated('Use value.toBigInt() instead.')
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
@@ -110,29 +107,29 @@ class Logic {
   void _registerConnection(Logic dstConnection) =>
       _dstConnections.add(dstConnection);
 
-  /// A stream of [LogicValueChanged] events for every time the signal transitions at any time during a [Simulator] tick.
+  /// A stream of [LogicValueChanged] events for every time the signal
+  /// transitions at any time during a [Simulator] tick.
   ///
   /// This event can occur more than once per edge, or even if there is no edge.
   SynchronousEmitter<LogicValueChanged> get glitch => _glitchController.emitter;
   final SynchronousPropagator<LogicValueChanged> _glitchController =
       SynchronousPropagator<LogicValueChanged>();
 
-  /// Controller for stable events that can be safely consumed at the end of a [Simulator] tick.
+  /// Controller for stable events that can be safely consumed at the
+  /// end of a [Simulator] tick.
   final StreamController<LogicValueChanged> _changedController =
       StreamController<LogicValueChanged>.broadcast(sync: true);
 
   /// Tracks whether is being subscribed to by anything/anyone.
   bool _changedBeingWatched = false;
 
-  //TODO: add tests for changed, posedge, negedge, etc. to make sure they dont break!
-
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed.
   Stream<LogicValueChanged> get changed {
     if (!_changedBeingWatched) {
       // only do these simulator subscriptions if someone has asked for them! saves performance!
       _changedBeingWatched = true;
 
-      //TODO: only set these up to listen to glitch? consider efficiency
       Simulator.preTick.listen((event) {
         _preTickValue = value;
       });
@@ -145,25 +142,30 @@ class Logic {
     return _changedController.stream;
   }
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
   Stream<LogicValueChanged> get negedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
-  /// A [Stream] of [LogicValueChanged] events which triggers at most once per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
   Stream<LogicValueChanged> get posedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick.
   Future<LogicValueChanged> get nextChanged => changed.first;
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick from `0` to `1`.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `0` to `1`.
   Future<LogicValueChanged> get nextPosedge => posedge.first;
 
-  /// Triggers at most once, the next time that this [Logic] changes value at the end of a [Simulator] tick from `1` to `0`.
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `1` to `0`.
   Future<LogicValueChanged> get nextNegedge => negedge.first;
 
   /// The [Module] that this [Logic] exists within.
@@ -172,16 +174,11 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
-  //TODO: improve appropriate protection of parentModule
-
   /// Sets the value of [parentModule] to [newParent].
   ///
-  /// This should *only* be called by [Module.build()].
+  /// This should *only* be called by [Module.build()].  It is used to optimize search.
   @protected
-  void setParentModule(Module? newParent) {
-    // this should ONLY be called by Module build(), it is used to optimize the search
-    _parentModule = newParent;
-  }
+  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
 
   /// Returns true iff this signal is an input of its parent [Module].
   ///
@@ -207,11 +204,10 @@ class Logic {
   Logic({String? name, this.width = 1})
       : name = name ?? 's${_signalIdx++}',
         assert(width >= 0),
-        _currentValue = LogicValues.filled(width, LogicValue.z);
+        _currentValue = LogicValue.filled(width, LogicValue.z);
 
   @override
   String toString() {
-    //TODO: make this a prettier print, including full hierarchy from parents if available
     return 'Logic($width): $name';
   }
 
@@ -220,15 +216,12 @@ class Logic {
     if (_srcConnection != null) {
       throw Exception(
           'This signal "$this" is already connected to "$srcConnection", so it cannot be connected to "$other".');
-      //TODO: this should be legal to do, but needs more safety around it (difficult)
     }
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
           'It may be a constant expression or otherwise should not be assigned.');
     }
   }
-
-  // TODO: prevent re-connection after build / after simulator has started?
 
   /// Connects this [Logic] directly to [other].
   ///
@@ -294,8 +287,6 @@ class Logic {
   /// WARNING: Signed math is not fully tested.
   Logic operator /(dynamic other) => Divide(this, other).y;
 
-  //TODO: implement shift operators for ints
-
   /// Arithmetic right-shift.
   Logic operator >>(Logic other) => ARShift(this, other).y;
 
@@ -342,11 +333,9 @@ class Logic {
     if (other is Logic) {
       return ConditionalAssign(this, other);
     } else {
-      return ConditionalAssign(this, Logic(width: width)..put(other));
+      return ConditionalAssign(this, Const(other, width: width));
     }
   }
-
-  //TODO: implement a conditionalassign with fill here
 
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
@@ -358,19 +347,20 @@ class Logic {
   /// Keeps track of whether there is an active put, to detect reentrance.
   bool _isPutting = false;
 
-  /// Puts a value onto this signal, which may or may not be picked up for [changed] in this [Simulator] tick.
+  /// Puts a value [val] onto this signal, which may or may not be picked up
+  /// for [changed] in this [Simulator] tick.
+  ///
+  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
   ///
   /// This function is used for propogating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar to `'` in SystemVerilog.
   void put(dynamic val, {bool fill = false}) {
-    //TODO: prevent re-assignment for _unassignable even via put/inject
-    // this opens the opportunity to automate stuff like &1 if necessary
-    LogicValues newValue;
+    LogicValue newValue;
     if (val is int) {
       if (fill) {
-        newValue = LogicValues.filled(
+        newValue = LogicValue.filled(
             width,
             val == 0
                 ? LogicValue.zero
@@ -378,11 +368,11 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.ofInt(val, width);
+        newValue = LogicValue.ofInt(val, width);
       }
     } else if (val is BigInt) {
       if (fill) {
-        newValue = LogicValues.filled(
+        newValue = LogicValue.filled(
             width,
             val == BigInt.zero
                 ? LogicValue.zero
@@ -390,51 +380,33 @@ class Logic {
                     ? LogicValue.one
                     : throw Exception('Only can fill 0 or 1, but saw $val.'));
       } else {
-        newValue = LogicValues.ofBigInt(val, width);
+        newValue = LogicValue.ofBigInt(val, width);
       }
     } else if (val is bool) {
-      newValue = LogicValues.ofInt(val ? 1 : 0, width);
-    } else if (val is LogicValues) {
-      if (val.length == 1 &&
-          (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValues.filled(width, val[0]);
+      newValue = LogicValue.ofInt(val ? 1 : 0, width);
+    } else if (val is LogicValue) {
+      if (val.width == 1 &&
+          (val == LogicValue.x || val == LogicValue.z || fill)) {
+        newValue = LogicValue.filled(width, val);
       } else if (fill) {
         throw Exception(
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
         newValue = val;
       }
-    } else if (val is List<LogicValue>) {
-      if (val.length == 1 &&
-          (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-        newValue = LogicValues.filled(width, val[0]);
-      } else if (fill) {
-        throw Exception(
-            'Failed to fill value with $val.  To fill, it should be 1 bit.');
-      } else {
-        newValue = LogicValues.of(val);
-      }
-    } else if (val is LogicValue) {
-      if (val == LogicValue.x || val == LogicValue.z || fill) {
-        newValue = LogicValues.filled(width, val);
-      } else {
-        var logicVals = List<LogicValue>.filled(width, LogicValue.zero);
-        logicVals[0] = val;
-        newValue = LogicValues.of(logicVals);
-      }
     } else {
       throw Exception('Unrecognized value "$val" to deposit on this signal. '
           'Unknown type ${val.runtimeType} cannot be deposited.');
     }
 
-    if (newValue.length != width) {
+    if (newValue.width != width) {
       throw Exception(
           'Updated value width mismatch.  The width of $val should be $width.');
     }
 
     if (_isPutting) {
       // if this is the result of a cycle, then contention!
-      newValue = LogicValues.filled(width, LogicValue.x);
+      newValue = LogicValue.filled(width, LogicValue.x);
     }
 
     var _prevValue = _currentValue;
@@ -450,7 +422,6 @@ class Logic {
 
   /// Accesses the [index]th bit of this signal.
   Logic operator [](int index) {
-    //TODO: support negative numbers to access relative from the end
     return slice(index, index);
   }
 

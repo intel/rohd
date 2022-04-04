@@ -59,8 +59,6 @@ void main() {
       'b': 8,
     };
 
-    //TODO: test (and finish implementing) negatives extensively (twos complement) with comparisons
-
     test('compares', () async {
       var gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();

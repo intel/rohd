@@ -74,8 +74,6 @@ void main() {
       'a_dividedby_const': 8,
     };
 
-    //TODO: test (and finish implementing) negatives extensively (twos complement)
-
     test('addition', () async {
       var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();

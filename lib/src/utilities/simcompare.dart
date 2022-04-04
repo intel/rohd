@@ -28,15 +28,14 @@ class Vector {
 
   String errorCheckString(
       String sigName, dynamic expected, String inputValues) {
-    String expectedHexStr;
-    String expectedValStr;
-    if (expected is int) {
-      expectedHexStr = '0x' + expected.toRadixString(16);
-      expectedValStr = expected.toString();
-    } else if (expected is LogicValue) {
-      expectedHexStr = expected.toString();
-      expectedValStr = "'" + expected.toString();
-    } else {
+    String expectedHexStr = expected is int
+        ? '0x' + expected.toRadixString(16)
+        : expected.toString();
+    String expectedValStr = (expected is LogicValue && expected.width == 1)
+        ? "'" + expected.toString(includeWidth: false)
+        : expected.toString();
+
+    if (expected is! int && expected is! LogicValue) {
       throw Exception(
           'Support for ${expected.runtimeType} is not supported (yet?).');
     }
@@ -85,21 +84,16 @@ class SimCompare {
                 // invalid value causes exception without helpful message, so throw it
                 throw Exception(errorReason);
               }
-              expect(o.valueInt, equals(value), reason: errorReason);
+              expect(o.value.toInt(), equals(value), reason: errorReason);
             } else if (value is LogicValue) {
               if (o.width > 1 &&
                   (value == LogicValue.x || value == LogicValue.z)) {
                 for (var oBit in o.value.toList()) {
                   expect(oBit, equals(value), reason: errorReason);
                 }
-              } else if (o.width == 1) {
-                expect(o.bit, equals(value));
               } else {
-                throw Exception(
-                    'Valid LogicValue bit width mismatch.  Saw ${o.width}, but expected 1.');
+                expect(o.value, equals(value));
               }
-            } else if (value is LogicValues) {
-              expect(o.value, equals(value));
             } else {
               throw Exception(
                   'Value type ${value.runtimeType} is not supported (yet?)');

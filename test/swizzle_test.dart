@@ -26,25 +26,24 @@ void main() {
       expect(
           [LogicValue.one, LogicValue.zero, LogicValue.x, LogicValue.z]
               .swizzle(),
-          equals(LogicValues.ofString('10xz')));
+          equals(LogicValue.ofString('10xz')));
     });
     test('simple rswizzle', () {
       expect(
           [LogicValue.one, LogicValue.zero, LogicValue.x, LogicValue.z]
               .rswizzle(),
-          equals(LogicValues.ofString('zx01')));
+          equals(LogicValue.ofString('zx01')));
     });
   });
-  group('LogicValues', () {
+  group('LogicValue', () {
     test('simple swizzle', () {
-      expect([LogicValues.ofString('10'), LogicValues.ofString('xz')].swizzle(),
-          equals(LogicValues.ofString('10xz')));
+      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].swizzle(),
+          equals(LogicValue.ofString('10xz')));
     });
 
     test('simple rswizzle', () {
-      expect(
-          [LogicValues.ofString('10'), LogicValues.ofString('xz')].rswizzle(),
-          equals(LogicValues.ofString('xz10')));
+      expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].rswizzle(),
+          equals(LogicValue.ofString('xz10')));
     });
   });
 

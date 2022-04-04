@@ -105,13 +105,13 @@ void main() {
     await baseClk.nextPosedge;
     clk.inject(1);
     await baseClk.nextPosedge;
-    expect(q.bit, equals(LogicValue.zero));
+    expect(q.value, equals(LogicValue.zero));
     clk.inject(0);
     d.inject(1);
     await baseClk.nextPosedge;
     clk.inject(1);
     await baseClk.nextPosedge;
-    expect(q.bit, equals(LogicValue.one));
+    expect(q.value, equals(LogicValue.one));
 
     await Simulator.simulationEnded;
 

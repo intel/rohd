@@ -37,9 +37,6 @@ class CollapseTestModule extends Module {
   }
 }
 
-//TODO: add a collapse test with subsets, muxes, other gates, etc.
-//TODO: add a collapse test with always blocks (e.g. combinational)
-
 void main() {
   tearDown(() {
     Simulator.reset();

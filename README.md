@@ -162,22 +162,22 @@ var bus = Logic(name: 'b', width: 8)
 #### The value of a signal
 You can access the current value of a signal using `value`.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an int with `valueInt` (ROHD will throw an exception otherwise).  If the signal has more bits than a dart `int` (64 bits, usually), you need to use `valueBigInt` to get a `BigInt` (again, ROHD will throw an exception otherwise).
 
-Bits of a `Logic` are of type [`LogicValue`](https://intel.github.io/rohd/rohd/LogicValue-class.html), with pre-defined constant enum values `x`, `z`, `one`, and `zero`.  The value of a `Logic` is represented by a [`LogicValues`](https://intel.github.io/rohd/rohd/LogicValues-class.html), which behaves like a collection of `LogicValue`s.  Both `LogicValue` and `LogicValues` have a number of built-in logical operations (like &, |, ^, +, -, etc.).
+The value of a `Logic` is of type [`LogicValue`](https://intel.github.io/rohd/rohd/LogicValue-class.html), with pre-defined constant bit values `x`, `z`, `one`, and `zero`.  `LogicValue` has a number of built-in logical operations (like &, |, ^, +, -, etc.).
 
 ```dart
 var x = Logic(width:2);
 
-// a LogicValues
+// a LogicValue
 x.value
 
 // an int
-x.valueInt
+x.value.toInt()
 
 // a BigInt
-x.valueBigInt
+x.value.toBigInt()
 ```
 
-You can create `LogicValues`s using a variety of constructors including `fromInt`, `fromBigInt`, `filled` (like '0, '1, 'x, etc. in SystemVerilog), and `from` (which takes any `Iterable<LogicValue>`).
+You can create `LogicValue`s using a variety of constructors including `ofInt`, `ofBigInt`, `filled` (like '0, '1, 'x, etc. in SystemVerilog), and `of` (which takes any `Iterable<LogicValue>`).
 
 #### Listening to and waiting for changes
 You can trigger on changes of `Logic`s with some built in events.  ROHD uses dart synchronous [streams](https://dart.dev/tutorials/language/streams) for events.
@@ -423,11 +423,11 @@ ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`
 ```dart
 Combinational([
   Case([b,a].swizzle(), [
-      CaseItem(Const(LogicValues.ofString('01')), [
+      CaseItem(Const(LogicValue.ofString('01')), [
         c < 1,
         d < 0
       ]),
-      CaseItem(Const(LogicValues.ofString('10')), [
+      CaseItem(Const(LogicValue.ofString('10')), [
         c < 1,
         d < 0,
       ]),
@@ -438,7 +438,7 @@ Combinational([
     conditionalType: ConditionalType.Unique
   ),
   CaseZ([b,a].swizzle(),[
-      CaseItem(Const(LogicValues.ofString('z1')), [
+      CaseItem(Const(LogicValue.ofString('z1')), [
         e < 1,
       ])
     ], defaultItem: [
@@ -523,7 +523,7 @@ class Counter extends Module {
 
 ### Non-synthesizable signal deposition
 
-For testbench code or other non-synthesizable code, you can use `put` or `inject` on any `Logic` to deposit a value on the signal.  The two functions have similar behavior, but `inject` is shorthand for calling `put` inside of `Simulator.injectAction`, which allows the deposited change to propogate within the same `Simulator` tick.
+For testbench code or other non-synthesizable code, you can use `put` or `inject` on any `Logic` to deposit a value on the signal.  The two functions have similar behavior, but `inject` is shorthand for calling `put` inside of `Simulator.injectAction`, which allows the deposited change to propogate within the same `Simulator` tick.  Generally, you will want to use `inject` for testbench interaction with a design.
 
 ```dart
 var a = Logic(), b = Logic(width:4);
@@ -533,17 +533,7 @@ a.put(0);
 b.inject(0xf);
 
 // you can also put a `LogicValue` onto a signal
-a.put(LogicValue.x);
-
-// you can also put a `LogicValues` onto a signal
-b.put(LogicValues([
-  LogicValue.one,
-  LogicValue.zero,
-  LogicValue.x,
-  LogicValue.z,
-  ].reversed // reverse since arrays start with 0
-));
-
+a.inject(LogicValue.x);
 ```
 
 Note: changing a value directly with `put()` will propogate the value, but it will not trigger flip-flop edge detection or cosim interaction.
@@ -745,5 +735,5 @@ Read more about cocotb here: https://github.com/cocotb/cocotb or https://docs.co
 Author: Max Korbel <<max.korbel@intel.com>>
 
  
-Copyright (C) 2021 Intel Corporation  
+Copyright (C) 2021-2022 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause

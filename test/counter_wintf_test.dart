@@ -15,8 +15,6 @@ import 'package:rohd/src/utilities/simcompare.dart';
 enum CounterDirection { inward, outward }
 
 class CounterInterface extends Interface<CounterDirection> {
-  // TODO: interfaces within interfaces
-
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
