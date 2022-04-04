@@ -52,7 +52,7 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="../../rohd/LogicValues-class.html">LogicValues</a></span>
+<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
 <span class="name ">swizzle</span>(<wbr>)
 
       
@@ -63,7 +63,7 @@
   <p>Performs a concatenation operation on the list of signals, where index 0 of this list is
 the <em>most</em> significant bit.</p>
 <p>This is the one you should use if you're writing something like SystemVerilog's <code>{}</code> notation.
-If you call <a href="../../rohd/LogicValueSwizzle/swizzle.html">swizzle</a> on <code>[a, b, c]</code> you would get a single output <a href="../../rohd/LogicValues-class.html">LogicValues</a> where the bits in <code>a</code>
+If you call <a href="../../rohd/LogicValueSwizzle/swizzle.html">swizzle</a> on <code>[a, b, c]</code> you would get a single output <a href="../../rohd/LogicValue-class.html">LogicValue</a> where the bits in <code>a</code>
 are the most significant (highest) bits.</p>
 <p>If you want the opposite, check out <a href="../../rohd/LogicValueSwizzle/rswizzle.html">rswizzle</a>.</p>
 </section>
@@ -72,7 +72,7 @@ are the most significant (highest) bits.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValues swizzle() =&gt; LogicValues.of(reversed);</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue swizzle() =&gt; LogicValue.of(reversed);</code></pre>
 </section>
 
 

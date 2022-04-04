@@ -77,7 +77,6 @@
 List&lt;Logic&gt; execute() {
   var drivenLogics = &lt;Logic&gt;[];
 
-  &#47;&#47;TODO: what about for CaseZ where epxressions can have Z?  BUG?
   if (!expression.value.isValid) {
     &#47;&#47; if expression has X or Z, then propogate X&#39;s!
     for (var receiver in getReceivers()) {
@@ -95,7 +94,6 @@ List&lt;Logic&gt; execute() {
         drivenLogics.addAll(conditional.execute());
       }
       if (foundMatch != null &amp;&amp; conditionalType == ConditionalType.unique) {
-        &#47;&#47;TODO: replace this with a logger message
         throw Exception(&#39;Unique case statement had multiple matching cases.&#39;
             &#39; Original: &quot;$foundMatch&quot;.&#39;
             &#39; Duplicate: &quot;$item&quot;.&#39;);

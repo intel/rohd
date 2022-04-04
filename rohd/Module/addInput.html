@@ -86,7 +86,7 @@ Logic addInput(String name, Logic x, {int width = 1}) {
   _inputs[name] = Logic(name: name, width: width)..gets(x);
 
   &#47;&#47; ignore: invalid_use_of_protected_member
-  _inputs[name]!.setParentModule(this);
+  _inputs[name]!.parentModule = this;
 
   return _inputs[name]!;
 }</code></pre>

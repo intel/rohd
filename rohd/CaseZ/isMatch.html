@@ -58,7 +58,7 @@
 </div>
 
 <span class="returntype"><a href="https://api.dart.dev/stable/2.16.2/dart-core/bool-class.html">bool</a></span>
-<span class="name ">isMatch</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isMatch-param-value"><span class="type-annotation"><a href="../../rohd/LogicValues-class.html">LogicValues</a></span> <span class="parameter-name">value</span></span></li>
+<span class="name ">isMatch</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isMatch-param-value"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">value</span></span></li>
 </ol>)
 
       <div class="features">override</div>
@@ -74,8 +74,8 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-bool isMatch(LogicValues value) {
-  if (expression.width != value.length) {
+bool isMatch(LogicValue value) {
+  if (expression.width != value.width) {
     throw Exception(
         &#39;Value &quot;$value&quot; and expression &quot;$expression&quot; must be equal width.&#39;);
   }

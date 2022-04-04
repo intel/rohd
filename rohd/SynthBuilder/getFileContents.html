@@ -69,12 +69,11 @@ the <a href="../../rohd/SynthBuilder/synthesizer.html">synthesizer</a>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">List&lt;String&gt; getFileContents() {
-  var fileContents = &lt;String&gt;[];
-  for (var synthesisResult in _synthesisResults.toList().reversed) {
+  var fileContents = &lt;String&gt;{};
+  for (var synthesisResult in _synthesisResults) {
     fileContents.add(synthesisResult.toFileContents());
   }
-  return fileContents.toSet().toList(); &#47;&#47; no dupes!
-  &#47;&#47;TODO: is this toSet necessary anymore w&#47; the caching?
+  return fileContents.toList();
 }</code></pre>
 </section>
 

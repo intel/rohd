@@ -174,19 +174,19 @@ var bus = Logic(name: 'b', width: 8)
 </code></pre>
 <h4 id="the-value-of-a-signal">The value of a signal</h4>
 <p>You can access the current value of a signal using <code>value</code>.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an int with <code>valueInt</code> (ROHD will throw an exception otherwise).  If the signal has more bits than a dart <code>int</code> (64 bits, usually), you need to use <code>valueBigInt</code> to get a <code>BigInt</code> (again, ROHD will throw an exception otherwise).</p>
-<p>Bits of a <code>Logic</code> are of type <a href="https://intel.github.io/rohd/rohd/LogicValue-class.html"><code>LogicValue</code></a>, with pre-defined constant enum values <code>x</code>, <code>z</code>, <code>one</code>, and <code>zero</code>.  The value of a <code>Logic</code> is represented by a <a href="https://intel.github.io/rohd/rohd/LogicValues-class.html"><code>LogicValues</code></a>, which behaves like a collection of <code>LogicValue</code>s.  Both <code>LogicValue</code> and <code>LogicValues</code> have a number of built-in logical operations (like &amp;, |, ^, +, -, etc.).</p>
+<p>The value of a <code>Logic</code> is of type <a href="https://intel.github.io/rohd/rohd/LogicValue-class.html"><code>LogicValue</code></a>, with pre-defined constant bit values <code>x</code>, <code>z</code>, <code>one</code>, and <code>zero</code>.  <code>LogicValue</code> has a number of built-in logical operations (like &amp;, |, ^, +, -, etc.).</p>
 <pre class="language-dart"><code class="language-dart">var x = Logic(width:2);
 
-// a LogicValues
+// a LogicValue
 x.value
 
 // an int
-x.valueInt
+x.value.toInt()
 
 // a BigInt
-x.valueBigInt
+x.value.toBigInt()
 </code></pre>
-<p>You can create <code>LogicValues</code>s using a variety of constructors including <code>fromInt</code>, <code>fromBigInt</code>, <code>filled</code> (like '0, '1, 'x, etc. in SystemVerilog), and <code>from</code> (which takes any <code>Iterable&lt;LogicValue&gt;</code>).</p>
+<p>You can create <code>LogicValue</code>s using a variety of constructors including <code>ofInt</code>, <code>ofBigInt</code>, <code>filled</code> (like '0, '1, 'x, etc. in SystemVerilog), and <code>of</code> (which takes any <code>Iterable&lt;LogicValue&gt;</code>).</p>
 <h4 id="listening-to-and-waiting-for-changes">Listening to and waiting for changes</h4>
 <p>You can trigger on changes of <code>Logic</code>s with some built in events.  ROHD uses dart synchronous <a href="https://dart.dev/tutorials/language/streams">streams</a> for events.</p>
 <p>There are three testbench-consumable streams built-in to ROHD <code>Logic</code>s: <code>changed</code>, <code>posedge</code>, and <code>negedge</code>.  You can use <code>listen</code> to trigger something every time the edge transitions.  Note that this is <em>not</em> synthesizable by ROHD and should not be confused with a synthesizable <code>always(@)</code> type of statement.  Event arguments passed to listeners are of type <code>LogicValueChanged</code>, which has information about the <code>previousValue</code> and <code>newValue</code>.</p>
@@ -386,11 +386,11 @@ class MyModule extends Module {
 <p>ROHD supports <a href="https://intel.github.io/rohd/rohd/Case-class.html"><code>Case</code></a> and <a href="https://intel.github.io/rohd/rohd/CaseZ-class.html"><code>CaseZ</code></a> statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:</p>
 <pre class="language-dart"><code class="language-dart">Combinational([
   Case([b,a].swizzle(), [
-      CaseItem(Const(LogicValues.ofString('01')), [
+      CaseItem(Const(LogicValue.ofString('01')), [
         c &lt; 1,
         d &lt; 0
       ]),
-      CaseItem(Const(LogicValues.ofString('10')), [
+      CaseItem(Const(LogicValue.ofString('10')), [
         c &lt; 1,
         d &lt; 0,
       ]),
@@ -401,7 +401,7 @@ class MyModule extends Module {
     conditionalType: ConditionalType.Unique
   ),
   CaseZ([b,a].swizzle(),[
-      CaseItem(Const(LogicValues.ofString('z1')), [
+      CaseItem(Const(LogicValue.ofString('z1')), [
         e &lt; 1,
       ])
     ], defaultItem: [
@@ -475,7 +475,7 @@ class Counter extends Module {
 }
 </code></pre>
 <h3 id="non-synthesizable-signal-deposition">Non-synthesizable signal deposition</h3>
-<p>For testbench code or other non-synthesizable code, you can use <code>put</code> or <code>inject</code> on any <code>Logic</code> to deposit a value on the signal.  The two functions have similar behavior, but <code>inject</code> is shorthand for calling <code>put</code> inside of <code>Simulator.injectAction</code>, which allows the deposited change to propogate within the same <code>Simulator</code> tick.</p>
+<p>For testbench code or other non-synthesizable code, you can use <code>put</code> or <code>inject</code> on any <code>Logic</code> to deposit a value on the signal.  The two functions have similar behavior, but <code>inject</code> is shorthand for calling <code>put</code> inside of <code>Simulator.injectAction</code>, which allows the deposited change to propogate within the same <code>Simulator</code> tick.  Generally, you will want to use <code>inject</code> for testbench interaction with a design.</p>
 <pre class="language-dart"><code class="language-dart">var a = Logic(), b = Logic(width:4);
 
 // you can put an int directly on a signal
@@ -483,17 +483,7 @@ a.put(0);
 b.inject(0xf);
 
 // you can also put a `LogicValue` onto a signal
-a.put(LogicValue.x);
-
-// you can also put a `LogicValues` onto a signal
-b.put(LogicValues([
-  LogicValue.one,
-  LogicValue.zero,
-  LogicValue.x,
-  LogicValue.z,
-  ].reversed // reverse since arrays start with 0
-));
-
+a.inject(LogicValue.x);
 </code></pre>
 <p>Note: changing a value directly with <code>put()</code> will propogate the value, but it will not trigger flip-flop edge detection or cosim interaction.</p>
 <h3 id="custom-module-behavior-with-custom-in-line-systemverilog-representation">Custom module behavior with custom in-line SystemVerilog representation</h3>
@@ -670,7 +660,7 @@ var b = pipeline.get(a);
 <hr>
 <p>2021 August 6<br>
 Author: Max Korbel &lt;<a href="mailto:max.korbel@intel.com">max.korbel@intel.com</a>&gt;</p>
-<p>Copyright (C) 2021 Intel Corporation<br>
+<p>Copyright (C) 2021-2022 Intel Corporation<br>
 SPDX-License-Identifier: BSD-3-Clause</p>
 </section>
 
@@ -682,7 +672,7 @@ SPDX-License-Identifier: BSD-3-Clause</p>
   <span class="name"><a href="rohd/rohd-library.html">rohd</a></span> 
 
 </dt>
-<dd>Copyright (C) 2021 Intel Corporation
+<dd>Copyright (C) 2021-2022 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause 
 </dd>
 

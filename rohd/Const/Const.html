@@ -59,7 +59,7 @@
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/Const-class.html">Const</a> with the specified value.</p>
-<p>If <code>val</code> is a <a href="../../rohd/LogicValues-class.html">LogicValues</a>, the <code>width</code> is inferred from it.
+<p>If <code>val</code> is a <a href="../../rohd/LogicValue-class.html">LogicValue</a>, the <code>width</code> is inferred from it.
 Otherwise, if <code>width</code> is not specified, the default <code>width</code> is 1.
 If <code>fill</code> is set to <code>true</code>, the value is extended across <code>width</code> (like <code>'</code> in SystemVerilog).</p>
 </section>
@@ -71,7 +71,7 @@ If <code>fill</code> is set to <code>true</code>, the value is extended across <
   <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false})
     : super(
           name: &#39;const_$val&#39;,
-          width: val is LogicValues ? val.length : width ?? 1) {
+          width: val is LogicValue ? val.width : width ?? 1) {
   put(val, fill: fill);
   _unassignable = true;
 }</code></pre>
@@ -105,7 +105,7 @@ If <code>fill</code> is set to <code>true</code>, the value is extended across <
     <li class="section-title inherited">
       <a href="../../rohd/Const-class.html#instance-properties">Properties</a>
     </li>
-    <li class="inherited"><a href="../../rohd/Logic/bit.html">bit</a></li>
+    <li class="inherited"><a class="deprecated" href="../../rohd/Logic/bit.html">bit</a></li>
     <li class="inherited"><a href="../../rohd/Logic/changed.html">changed</a></li>
     <li class="inherited"><a href="../../rohd/Logic/dstConnections.html">dstConnections</a></li>
     <li class="inherited"><a href="../../rohd/Logic/glitch.html">glitch</a></li>
@@ -123,8 +123,8 @@ If <code>fill</code> is set to <code>true</code>, the value is extended across <
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li class="inherited"><a href="../../rohd/Logic/srcConnection.html">srcConnection</a></li>
     <li class="inherited"><a href="../../rohd/Logic/value.html">value</a></li>
-    <li class="inherited"><a href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
-    <li class="inherited"><a href="../../rohd/Logic/valueInt.html">valueInt</a></li>
+    <li class="inherited"><a class="deprecated" href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
+    <li class="inherited"><a class="deprecated" href="../../rohd/Logic/valueInt.html">valueInt</a></li>
     <li class="inherited"><a href="../../rohd/Logic/width.html">width</a></li>
 
     <li class="section-title inherited"><a href="../../rohd/Const-class.html#instance-methods">Methods</a></li>
@@ -140,7 +140,6 @@ If <code>fill</code> is set to <code>true</code>, the value is extended across <
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li class="inherited"><a href="../../rohd/Logic/or.html">or</a></li>
     <li class="inherited"><a href="../../rohd/Logic/put.html">put</a></li>
-    <li class="inherited"><a href="../../rohd/Logic/setParentModule.html">setParentModule</a></li>
     <li class="inherited"><a href="../../rohd/Logic/slice.html">slice</a></li>
     <li class="inherited"><a href="../../rohd/Logic/toString.html">toString</a></li>
     <li class="inherited"><a href="../../rohd/Logic/xor.html">xor</a></li>

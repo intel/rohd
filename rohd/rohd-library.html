@@ -50,7 +50,7 @@
 
     
 <section class="desc markdown">
-  <p>Copyright (C) 2021 Intel Corporation
+  <p>Copyright (C) 2021-2022 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause</p>
 </section>
 
@@ -280,7 +280,7 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  Represents a single logical 4-value bit (<code>0</code>, <code>1</code>, <code>x</code>, or <code>z</code>). 
+  An immutable 4-value representation of an arbitrary number of bits. <a href="../rohd/LogicValue-class.html">[...]</a>
 </dd>
 
         <dt id="LogicValueChanged">
@@ -289,14 +289,6 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 </dt>
 <dd>
   Represents the event of a <a href="../rohd/Logic-class.html">Logic</a> changing value. 
-</dd>
-
-        <dt id="LogicValues">
-  <span class="name "><a href="../rohd/LogicValues-class.html">LogicValues</a></span> 
-
-</dt>
-<dd>
-  An immutable 4-value representation of an arbitrary number of bits. <a href="../rohd/LogicValues-class.html">[...]</a>
 </dd>
 
         <dt id="LShift">
@@ -532,15 +524,6 @@ be inlined within other SystemVerilog code. <a href="../rohd/InlineSystemVerilog
 </dd>
 
 
-        <dt id="LogicValuesSwizzle">
-    <span class="name "><a href="../rohd/LogicValuesSwizzle.html">LogicValuesSwizzle</a></span> 
-
-</dt>
-<dd>
-    Allows lists of <a href="../rohd/LogicValues-class.html">LogicValues</a>s to be swizzled. 
-</dd>
-
-
         <dt id="LogicValueSwizzle">
     <span class="name "><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></span> 
 
@@ -675,6 +658,21 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
 </dd>
 
 
+          
+  <dt id="LogicValues" class="">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></span>
+    = <a href="../rohd/LogicValue-class.html">LogicValue</a>
+  </span>
+  
+
+</dt>
+<dd>
+   
+  <div class="features">@<a href="https://api.dart.dev/stable/2.16.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `LogicValue` instead.&#39; &#39;  `LogicValues` and `LogicValue` have been merged into one type.&#39;)</div>
+
+</dd>
+
+
       </dl>
     </section>
 
@@ -735,7 +733,6 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
   <li><a href="../rohd/Logic-class.html">Logic</a></li>
   <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
   <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
-  <li><a href="../rohd/LogicValues-class.html">LogicValues</a></li>
   <li><a href="../rohd/LShift-class.html">LShift</a></li>
   <li><a href="../rohd/Module-class.html">Module</a></li>
   <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
@@ -763,7 +760,6 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
   <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
-  <li><a href="../rohd/LogicValuesSwizzle.html">LogicValuesSwizzle</a></li>
   <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
@@ -785,6 +781,7 @@ the <em>most</em> significant bit(s). <a href="../rohd/swizzle.html">[...]</a>
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
   <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
   <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
+  <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
 
 </ol>
 

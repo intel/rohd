@@ -88,13 +88,13 @@
 
       <dl class="properties">
         <dt id="bit" class="property">
-  <span class="name"><a href="../rohd/Logic/bit.html">bit</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></span>
   <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
 
 </dt>
 <dd>
   The current active value of this signal if it has width 1, as a <a href="../rohd/LogicValue-class.html">LogicValue</a>. <a href="../rohd/Logic/bit.html">[...]</a>
-  <div class="features">read-only</div>
+  <div class="features">@<a href="https://api.dart.dev/stable/2.16.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `value` instead.&#39; &#39;  Check `width` separately to confirm single-bit.&#39;), read-only</div>
 
 </dd>
 
@@ -104,7 +104,8 @@
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed. 
+  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed. 
   <div class="features">read-only</div>
 
 </dd>
@@ -126,7 +127,8 @@
 
 </dt>
 <dd>
-  A stream of <code>LogicValueChanged</code> events for every time the signal transitions at any time during a <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/glitch.html">[...]</a>
+  A stream of <code>LogicValueChanged</code> events for every time the signal
+transitions at any time during a <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/glitch.html">[...]</a>
   <div class="features">read-only</div>
 
 </dd>
@@ -192,7 +194,8 @@
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>1</code> to <code>0</code>. 
+  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>1</code> to <code>0</code>. 
   <div class="features">read-only</div>
 
 </dd>
@@ -203,7 +206,8 @@
 
 </dt>
 <dd>
-  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick. 
+  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
+value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick. 
   <div class="features">read-only</div>
 
 </dd>
@@ -214,7 +218,8 @@
 
 </dt>
 <dd>
-  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>1</code> to <code>0</code>. 
+  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
+value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>1</code> to <code>0</code>. 
   <div class="features">read-only</div>
 
 </dd>
@@ -225,19 +230,20 @@
 
 </dt>
 <dd>
-  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>0</code> to <code>1</code>. 
+  Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
+value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>0</code> to <code>1</code>. 
   <div class="features">read-only</div>
 
 </dd>
 
         <dt id="parentModule" class="property">
   <span class="name"><a href="../rohd/Logic/parentModule.html">parentModule</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Module-class.html">Module</a>?</span> 
+  <span class="signature">&#8596; <a href="../rohd/Module-class.html">Module</a>?</span> 
 
 </dt>
 <dd>
   The <a href="../rohd/Module-class.html">Module</a> that this <a href="../rohd/Logic-class.html">Logic</a> exists within. <a href="../rohd/Logic/parentModule.html">[...]</a>
-  <div class="features">read-only</div>
+  <div class="features">@<a href="https://pub.dev/documentation/meta/1.7.0/meta/protected-constant.html">protected</a>, read / write</div>
 
 </dd>
 
@@ -247,7 +253,8 @@
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>0</code> to <code>1</code>. 
+  A <a href="https://api.dart.dev/stable/2.16.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>0</code> to <code>1</code>. 
   <div class="features">read-only</div>
 
 </dd>
@@ -276,7 +283,7 @@
 
         <dt id="value" class="property">
   <span class="name"><a href="../rohd/Logic/value.html">value</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValues-class.html">LogicValues</a></span> 
+  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
 
 </dt>
 <dd>
@@ -286,24 +293,24 @@
 </dd>
 
         <dt id="valueBigInt" class="property">
-  <span class="name"><a href="../rohd/Logic/valueBigInt.html">valueBigInt</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Logic/valueBigInt.html">valueBigInt</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.2/dart-core/BigInt-class.html">BigInt</a></span> 
 
 </dt>
 <dd>
   The current valid active value of this signal as a <a href="https://api.dart.dev/stable/2.16.2/dart-core/BigInt-class.html">BigInt</a>. <a href="../rohd/Logic/valueBigInt.html">[...]</a>
-  <div class="features">read-only</div>
+  <div class="features">@<a href="https://api.dart.dev/stable/2.16.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use value.toBigInt() instead.&#39;), read-only</div>
 
 </dd>
 
         <dt id="valueInt" class="property">
-  <span class="name"><a href="../rohd/Logic/valueInt.html">valueInt</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Logic/valueInt.html">valueInt</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
   The current valid active value of this signal as an <a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a>. <a href="../rohd/Logic/valueInt.html">[...]</a>
-  <div class="features">read-only</div>
+  <div class="features">@<a href="https://api.dart.dev/stable/2.16.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use value.toInt() instead.&#39;), read-only</div>
 
 </dd>
 
@@ -475,21 +482,9 @@
 
 </dt>
 <dd>
-  Puts a value onto this signal, which may or may not be picked up for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/put.html">[...]</a>
+  Puts a value <code>val</code> onto this signal, which may or may not be picked up
+for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Simulator-class.html">Simulator</a> tick. <a href="../rohd/Logic/put.html">[...]</a>
   
-
-</dd>
-
-        <dt id="setParentModule" class="callable">
-  <span class="name"><a href="../rohd/Logic/setParentModule.html">setParentModule</a></span><span class="signature">(<wbr><span class="parameter" id="setParentModule-param-newParent"><span class="type-annotation"><a href="../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParent</span></span>)
-    <span class="returntype parameter">&#8594; void</span>
-  </span>
-  
-
-</dt>
-<dd>
-  Sets the value of <a href="../rohd/Logic/parentModule.html">parentModule</a> to <code>newParent</code>. <a href="../rohd/Logic/setParentModule.html">[...]</a>
-  <div class="features">@<a href="https://pub.dev/documentation/meta/1.7.0/meta/protected-constant.html">protected</a></div>
 
 </dd>
 
@@ -813,7 +808,6 @@
   <li><a href="../rohd/Logic-class.html">Logic</a></li>
   <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
   <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
-  <li><a href="../rohd/LogicValues-class.html">LogicValues</a></li>
   <li><a href="../rohd/LShift-class.html">LShift</a></li>
   <li><a href="../rohd/Module-class.html">Module</a></li>
   <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
@@ -841,7 +835,6 @@
 
   <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
   <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
-  <li><a href="../rohd/LogicValuesSwizzle.html">LogicValuesSwizzle</a></li>
   <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
 
   <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
@@ -863,6 +856,7 @@
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
   <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
   <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
+  <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
 
 </ol>
 
@@ -878,7 +872,7 @@
     <li class="section-title">
       <a href="../rohd/Logic-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../rohd/Logic/bit.html">bit</a></li>
+    <li><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></li>
     <li><a href="../rohd/Logic/changed.html">changed</a></li>
     <li><a href="../rohd/Logic/dstConnections.html">dstConnections</a></li>
     <li><a href="../rohd/Logic/glitch.html">glitch</a></li>
@@ -896,8 +890,8 @@
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li><a href="../rohd/Logic/srcConnection.html">srcConnection</a></li>
     <li><a href="../rohd/Logic/value.html">value</a></li>
-    <li><a href="../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
-    <li><a href="../rohd/Logic/valueInt.html">valueInt</a></li>
+    <li><a class="deprecated" href="../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
+    <li><a class="deprecated" href="../rohd/Logic/valueInt.html">valueInt</a></li>
     <li><a href="../rohd/Logic/width.html">width</a></li>
 
     <li class="section-title"><a href="../rohd/Logic-class.html#instance-methods">Methods</a></li>
@@ -913,7 +907,6 @@
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../rohd/Logic/or.html">or</a></li>
     <li><a href="../rohd/Logic/put.html">put</a></li>
-    <li><a href="../rohd/Logic/setParentModule.html">setParentModule</a></li>
     <li><a href="../rohd/Logic/slice.html">slice</a></li>
     <li><a href="../rohd/Logic/toString.html">toString</a></li>
     <li><a href="../rohd/Logic/xor.html">xor</a></li>

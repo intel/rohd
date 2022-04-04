@@ -81,7 +81,7 @@ Logic addOutput(String name, {int width = 1}) {
   _outputs[name] = Logic(name: name, width: width);
 
   &#47;&#47; ignore: invalid_use_of_protected_member
-  _outputs[name]!.setParentModule(this);
+  _outputs[name]!.parentModule = this;
 
   return _outputs[name]!;
 }</code></pre>

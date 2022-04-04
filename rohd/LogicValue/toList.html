@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the toList method from the LogicValue class, for the Dart programming language.">
+  <title>toList method - LogicValue class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../../"
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
+    <li class="self-crumb">toList method</li>
+  </ol>
+  <div class="self-name">toList</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      <div>
+<h1><span class="kind-method">toList</span> method 
+    <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+
+<span class="returntype"><a href="https://api.dart.dev/stable/2.16.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span>
+<span class="name ">toList</span>(<wbr>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.16.2/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element is 1 bit.</p>
+<p>The order of the created <a href="https://api.dart.dev/stable/2.16.2/dart-core/List-class.html">List</a> will be such that the <code>i</code>th entry of it corresponds
+to the <code>i</code>th bit.  That is, the 0th element of the list will be the 0th bit of this <code>LogicValue</code>.</p>
+<pre class="language-dart"><code class="language-dart">var lv = LogicValue.ofString('1x0');
+var it = lv.toList();
+print(lv); // This prints `[1'h0, 1'bx, 1'h1]`
+</code></pre>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">List&lt;LogicValue&gt; toList() =&gt;
+    List&lt;LogicValue&gt;.generate(width, (index) =&gt; this[index]).toList();</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="../../index.html">rohd</a></li>
+  <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+  <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
+  <li class="self-crumb">toList method</li>
+</ol>
+
+
+    <h5>LogicValue class</h5>
+    <ol>
+
+
+
+    <li class="section-title">
+      <a href="../../rohd/LogicValue-class.html#instance-properties">Properties</a>
+    </li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/bit.html">bit</a></li>
+    <li><a href="../../rohd/LogicValue/hashCode.html">hashCode</a></li>
+    <li><a href="../../rohd/LogicValue/isFloating.html">isFloating</a></li>
+    <li><a href="../../rohd/LogicValue/isValid.html">isValid</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/length.html">length</a></li>
+    <li><a href="../../rohd/LogicValue/reversed.html">reversed</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/runtimeType.html">runtimeType</a></li>
+    <li><a href="../../rohd/LogicValue/width.html">width</a></li>
+
+    <li class="section-title"><a href="../../rohd/LogicValue-class.html#instance-methods">Methods</a></li>
+    <li><a href="../../rohd/LogicValue/and.html">and</a></li>
+    <li><a href="../../rohd/LogicValue/eq.html">eq</a></li>
+    <li><a href="../../rohd/LogicValue/getRange.html">getRange</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
+    <li><a href="../../rohd/LogicValue/or.html">or</a></li>
+    <li><a href="../../rohd/LogicValue/toBigInt.html">toBigInt</a></li>
+    <li><a href="../../rohd/LogicValue/toBool.html">toBool</a></li>
+    <li><a href="../../rohd/LogicValue/toInt.html">toInt</a></li>
+    <li><a href="../../rohd/LogicValue/toList.html">toList</a></li>
+    <li><a href="../../rohd/LogicValue/toString.html">toString</a></li>
+    <li><a href="../../rohd/LogicValue/xor.html">xor</a></li>
+
+    <li class="section-title"><a href="../../rohd/LogicValue-class.html#operators">Operators</a></li>
+    <li><a href="../../rohd/LogicValue/operator_bitwise_and.html">operator &</a></li>
+    <li><a href="../../rohd/LogicValue/operator_multiply.html">operator *</a></li>
+    <li><a href="../../rohd/LogicValue/operator_plus.html">operator +</a></li>
+    <li><a href="../../rohd/LogicValue/operator_minus.html">operator -</a></li>
+    <li><a href="../../rohd/LogicValue/operator_divide.html">operator /</a></li>
+    <li><a href="../../rohd/LogicValue/operator_less.html">operator <</a></li>
+    <li><a href="../../rohd/LogicValue/operator_shift_left.html">operator <<</a></li>
+    <li><a href="../../rohd/LogicValue/operator_less_equal.html">operator <=</a></li>
+    <li><a href="../../rohd/LogicValue/operator_equals.html">operator ==</a></li>
+    <li><a href="../../rohd/LogicValue/operator_greater.html">operator ></a></li>
+    <li><a href="../../rohd/LogicValue/operator_greater_equal.html">operator >=</a></li>
+    <li><a href="../../rohd/LogicValue/operator_shift_right.html">operator >></a></li>
+    <li><a href="../../rohd/LogicValue/operator_triple_shift.html">operator >>></a></li>
+    <li><a href="../../rohd/LogicValue/operator_get.html">operator []</a></li>
+    <li><a href="../../rohd/LogicValue/operator_bitwise_exclusive_or.html">operator ^</a></li>
+    <li><a href="../../rohd/LogicValue/operator_bitwise_or.html">operator |</a></li>
+    <li><a href="../../rohd/LogicValue/operator_bitwise_negate.html">operator ~</a></li>
+
+
+
+    <li class="section-title"><a href="../../rohd/LogicValue-class.html#static-methods">Static methods</a></li>
+    <li><a href="../../rohd/LogicValue/filled.html">filled</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/from.html">from</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/fromBigInt.html">fromBigInt</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/fromBool.html">fromBool</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/fromInt.html">fromInt</a></li>
+    <li><a class="deprecated" href="../../rohd/LogicValue/fromString.html">fromString</a></li>
+    <li><a href="../../rohd/LogicValue/isNegedge.html">isNegedge</a></li>
+    <li><a href="../../rohd/LogicValue/isPosedge.html">isPosedge</a></li>
+    <li><a href="../../rohd/LogicValue/of.html">of</a></li>
+    <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
+    <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
+    <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+    <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
+
+    <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>
+    <li><a href="../../rohd/LogicValue/one-constant.html">one</a></li>
+    <li><a href="../../rohd/LogicValue/x-constant.html">x</a></li>
+    <li><a href="../../rohd/LogicValue/z-constant.html">z</a></li>
+    <li><a href="../../rohd/LogicValue/zero-constant.html">zero</a></li>
+</ol>
+
+  </div><!--/.sidebar-offcanvas-->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.2.0
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/script.js?v1"></script>
+
+
+
+</body>
+
+</html>
+

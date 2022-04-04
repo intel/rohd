@@ -62,7 +62,9 @@
     </section>
     
 <section class="desc markdown">
-  <p>Puts a value onto this signal, which may or may not be picked up for <a href="../../rohd/Logic/changed.html">changed</a> in this <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
+  <p>Puts a value <code>val</code> onto this signal, which may or may not be picked up
+for <a href="../../rohd/Logic/changed.html">changed</a> in this <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
+<p>The type of <code>val</code> should be an <code>int</code>, <a href="https://api.dart.dev/stable/2.16.2/dart-core/BigInt-class.html">BigInt</a>, <code>bool</code>, or <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <p>This function is used for propogating glitches through connected signals.
 Use this function for custom definitions of <a href="../../rohd/Module-class.html">Module</a> behavior.</p>
 <p>If <code>fill</code> is set, all bits of the signal gets set to <code>val</code>, similar to <code>'</code> in SystemVerilog.</p>
@@ -73,12 +75,10 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) {
-  &#47;&#47;TODO: prevent re-assignment for _unassignable even via put&#47;inject
-  &#47;&#47; this opens the opportunity to automate stuff like &amp;1 if necessary
-  LogicValues newValue;
+  LogicValue newValue;
   if (val is int) {
     if (fill) {
-      newValue = LogicValues.filled(
+      newValue = LogicValue.filled(
           width,
           val == 0
               ? LogicValue.zero
@@ -86,11 +86,11 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
                   ? LogicValue.one
                   : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
     } else {
-      newValue = LogicValues.ofInt(val, width);
+      newValue = LogicValue.ofInt(val, width);
     }
   } else if (val is BigInt) {
     if (fill) {
-      newValue = LogicValues.filled(
+      newValue = LogicValue.filled(
           width,
           val == BigInt.zero
               ? LogicValue.zero
@@ -98,51 +98,33 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
                   ? LogicValue.one
                   : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
     } else {
-      newValue = LogicValues.ofBigInt(val, width);
+      newValue = LogicValue.ofBigInt(val, width);
     }
   } else if (val is bool) {
-    newValue = LogicValues.ofInt(val ? 1 : 0, width);
-  } else if (val is LogicValues) {
-    if (val.length == 1 &amp;&amp;
-        (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-      newValue = LogicValues.filled(width, val[0]);
+    newValue = LogicValue.ofInt(val ? 1 : 0, width);
+  } else if (val is LogicValue) {
+    if (val.width == 1 &amp;&amp;
+        (val == LogicValue.x || val == LogicValue.z || fill)) {
+      newValue = LogicValue.filled(width, val);
     } else if (fill) {
       throw Exception(
           &#39;Failed to fill value with $val.  To fill, it should be 1 bit.&#39;);
     } else {
       newValue = val;
     }
-  } else if (val is List&lt;LogicValue&gt;) {
-    if (val.length == 1 &amp;&amp;
-        (val[0] == LogicValue.x || val[0] == LogicValue.z || fill)) {
-      newValue = LogicValues.filled(width, val[0]);
-    } else if (fill) {
-      throw Exception(
-          &#39;Failed to fill value with $val.  To fill, it should be 1 bit.&#39;);
-    } else {
-      newValue = LogicValues.of(val);
-    }
-  } else if (val is LogicValue) {
-    if (val == LogicValue.x || val == LogicValue.z || fill) {
-      newValue = LogicValues.filled(width, val);
-    } else {
-      var logicVals = List&lt;LogicValue&gt;.filled(width, LogicValue.zero);
-      logicVals[0] = val;
-      newValue = LogicValues.of(logicVals);
-    }
   } else {
     throw Exception(&#39;Unrecognized value &quot;$val&quot; to deposit on this signal. &#39;
         &#39;Unknown type ${val.runtimeType} cannot be deposited.&#39;);
   }
 
-  if (newValue.length != width) {
+  if (newValue.width != width) {
     throw Exception(
         &#39;Updated value width mismatch.  The width of $val should be $width.&#39;);
   }
 
   if (_isPutting) {
     &#47;&#47; if this is the result of a cycle, then contention!
-    newValue = LogicValues.filled(width, LogicValue.x);
+    newValue = LogicValue.filled(width, LogicValue.x);
   }
 
   var _prevValue = _currentValue;
@@ -185,7 +167,7 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     <li class="section-title">
       <a href="../../rohd/Logic-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/Logic/bit.html">bit</a></li>
+    <li><a class="deprecated" href="../../rohd/Logic/bit.html">bit</a></li>
     <li><a href="../../rohd/Logic/changed.html">changed</a></li>
     <li><a href="../../rohd/Logic/dstConnections.html">dstConnections</a></li>
     <li><a href="../../rohd/Logic/glitch.html">glitch</a></li>
@@ -203,8 +185,8 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li><a href="../../rohd/Logic/srcConnection.html">srcConnection</a></li>
     <li><a href="../../rohd/Logic/value.html">value</a></li>
-    <li><a href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
-    <li><a href="../../rohd/Logic/valueInt.html">valueInt</a></li>
+    <li><a class="deprecated" href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
+    <li><a class="deprecated" href="../../rohd/Logic/valueInt.html">valueInt</a></li>
     <li><a href="../../rohd/Logic/width.html">width</a></li>
 
     <li class="section-title"><a href="../../rohd/Logic-class.html#instance-methods">Methods</a></li>
@@ -220,7 +202,6 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../../rohd/Logic/or.html">or</a></li>
     <li><a href="../../rohd/Logic/put.html">put</a></li>
-    <li><a href="../../rohd/Logic/setParentModule.html">setParentModule</a></li>
     <li><a href="../../rohd/Logic/slice.html">slice</a></li>
     <li><a href="../../rohd/Logic/toString.html">toString</a></li>
     <li><a href="../../rohd/Logic/xor.html">xor</a></li>
