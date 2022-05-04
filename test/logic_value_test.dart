@@ -314,6 +314,14 @@ void main() {
           equals(LogicValue.zero) // NOTE: index (length-1) refers to MSb
           );
       expect(
+          // large
+          LogicValue.ofString('01xz' * 50)[101],
+          equals(LogicValue.x));
+      expect(
+          // filled
+          LogicValue.ofString('1111')[2],
+          equals(LogicValue.one));
+      expect(
           // index - out of range
           () => LogicValue.ofString('0101')[10],
           throwsA(isA<IndexError>()));
@@ -341,6 +349,10 @@ void main() {
           // getRange - bad inputs end > length-1
           () => LogicValue.ofString('0101').getRange(0, 7),
           throwsA(isA<Exception>()));
+      expect(LogicValue.ofString('xz01').slice(2, 1),
+          equals(LogicValue.ofString('z0')));
+      expect(LogicValue.ofString('xz01').slice(1, 3),
+          equals(LogicValue.ofString('0zx')));
       expect(
           // isValid - valid
           LogicValue.ofString('0101').isValid,
