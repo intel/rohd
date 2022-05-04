@@ -75,6 +75,15 @@ class BusSubset extends Module with InlineSystemVerilog {
       throw Exception('BusSubset has exactly one input, but saw $inputs.');
     }
     var a = inputs[_original]!;
+
+    // SystemVerilog doesn't allow reverse-order select to reverse a bus, so do it manually
+    if (startIndex > endIndex) {
+      return '{' +
+          List.generate(startIndex - endIndex + 1, (i) => '$a[${endIndex + i}]')
+              .join(',') +
+          '}';
+    }
+
     var sliceString =
         startIndex == endIndex ? '[$startIndex]' : '[$endIndex:$startIndex]';
     return '$a$sliceString';

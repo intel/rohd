@@ -16,6 +16,7 @@ class BusTestModule extends Module {
   Logic get aBar => output('a_bar');
   Logic get aAndB => output('a_and_b');
   Logic get aShrunk => output('a_shrunk');
+  Logic get aRSliced => output('a_rsliced');
   Logic get aBJoined => output('a_b_joined');
   Logic get a1 => output('a1');
   Logic get aPlusB => output('a_plus_b');
@@ -33,6 +34,7 @@ class BusTestModule extends Module {
     var aBar = addOutput('a_bar', width: a.width);
     var aAndB = addOutput('a_and_b', width: a.width);
     var aShrunk = addOutput('a_shrunk', width: 3);
+    var aRSliced = addOutput('a_rsliced', width: 5);
     var aBJoined = addOutput('a_b_joined', width: a.width + b.width);
     var aPlusB = addOutput('a_plus_b', width: a.width);
     var a1 = addOutput('a1');
@@ -40,7 +42,8 @@ class BusTestModule extends Module {
     aBar <= ~a;
     aAndB <= a & b;
     aShrunk <= a.slice(2, 0);
-    aBJoined <= Swizzle([b, a]).out;
+    aRSliced <= a.slice(3, 7);
+    aBJoined <= [b, a].swizzle();
     a1 <= a[1];
     aPlusB <= a + b;
   }
@@ -135,6 +138,7 @@ void main() {
       'a_bar': 8,
       'a_and_b': 8,
       'a_shrunk': 3,
+      'a_rsliced': 5,
       'a_b_joined': 16,
       'a_plus_b': 8
     };
@@ -178,6 +182,21 @@ void main() {
         Vector({'a': 0}, {'a_shrunk': 0}),
         Vector({'a': 0xff}, {'a_shrunk': bin('111')}),
         Vector({'a': 0xf5}, {'a_shrunk': 5}),
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('Bus reverse slice', () async {
+      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      var vectors = [
+        Vector({'a': 0}, {'a_rsliced': 0}),
+        Vector({'a': 0xff}, {'a_rsliced': bin('11111')}),
+        Vector({'a': 0xf5}, {'a_rsliced': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
