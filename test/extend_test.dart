@@ -1,8 +1,8 @@
 /// Copyright (C) 2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// bus_test.dart
-/// Unit tests for bus-related operations
+/// extend_test.dart
+/// Unit tests for extend and withSet operations
 ///
 /// 2022 May 4
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -38,6 +38,9 @@ class WithSetModule extends Module {
 
 void main() {
   group('Logic', () {
+    tearDown(() {
+      Simulator.reset();
+    });
     group('extend', () {
       Future<void> extendVectors(
           List<Vector> vectors, int newWidth, ExtendType extendType) async {
@@ -88,14 +91,50 @@ void main() {
       });
     });
 
-    // TODO: finish the withset stuff
     group('withSet', () {
-      test('setting with bigger number throws exception', () {});
-      test('setting with number in middle overrun throws exception', () {});
-      test('setting same width returns only new', () {});
-      test('setting at front', () {});
-      test('setting at end', () {});
-      test('setting in the middle', () {});
+      Future<void> withSetVectors(
+          List<Vector> vectors, int startIndex, int updateWidth) async {
+        var mod = WithSetModule(
+            Logic(width: 8), startIndex, Logic(width: updateWidth));
+        await mod.build();
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        var simResult = SimCompare.iverilogVector(
+            mod.generateSynth(), mod.runtimeType.toString(), vectors,
+            signalToWidthMap: {'a': 8, 'b': updateWidth, 'c': 8});
+        expect(simResult, equals(true));
+      }
+
+      test('setting with bigger number throws exception', () {
+        expect(() => withSetVectors([], 0, 9), throwsException);
+      });
+      test('setting with number in middle overrun throws exception', () {
+        expect(() => withSetVectors([], 4, 5), throwsException);
+      });
+      test('setting same width returns only new', () async {
+        await withSetVectors([
+          Vector({'a': 0x23, 'b': 0xff}, {'c': 0xff}),
+          Vector({'a': 0x45, 'b': 0x5a}, {'c': 0x5a}),
+        ], 0, 8);
+      });
+      test('setting at front', () async {
+        await withSetVectors([
+          Vector({'a': 0x23, 'b': 0xf}, {'c': 0x2f}),
+          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x45}),
+        ], 0, 4);
+      });
+      test('setting at end', () async {
+        await withSetVectors([
+          Vector({'a': 0x23, 'b': 0xf}, {'c': 0xf3}),
+          Vector({'a': 0x4a, 'b': 0x5}, {'c': 0x5a}),
+        ], 4, 4);
+      });
+      test('setting in the middle', () async {
+        await withSetVectors([
+          Vector({'a': 0xff, 'b': 0x0}, {'c': bin('11000011')}),
+          Vector(
+              {'a': bin('01111110'), 'b': bin('0110')}, {'c': bin('01011010')}),
+        ], 2, 4);
+      });
     });
   });
   group('LogicValue', () {

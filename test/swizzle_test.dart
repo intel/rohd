@@ -21,6 +21,10 @@ class SwizzlyModule extends Module {
 }
 
 void main() {
+  tearDown(() {
+    Simulator.reset();
+  });
+
   group('LogicValue', () {
     test('simple swizzle', () {
       expect(
@@ -72,7 +76,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       var simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {'b': 2}, dontDeleteTmpFiles: true);
+          signalToWidthMap: {'b': 2});
       expect(simResult, equals(true));
     });
   });
