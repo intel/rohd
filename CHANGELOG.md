@@ -8,6 +8,12 @@
 - Fixed a bug related to zero-width construction of `LogicValue`s (https://github.com/intel/rohd/issues/90).
 - Fixed a bug where generated constants in SystemVerilog had no width, which can cause issues in some cases (e.g. swizzles) (https://github.com/intel/rohd/issues/89)
 - Added capability to convert binary strings to ints with underscore separators using `bin` (https://github.com/intel/rohd/issues/56).
+- Added `getRange` and `reversed` on `Logic` and `slice` on `LogicValue` to improve consistency.
+- Using `slice` in reverse-index order now reverses the order.
+- Added the ability to extend signals (e.g. `zeroExtend` and `signExtend`) on both `Logic` and `LogicValue` (https://github.com/intel/rohd/issues/101).
+- Improved flexibility of `IfBlock`.
+- Added `withSet` on `LogicValue` and `Logic` to make it easier to assign subsets of signals and values (https://github.com/intel/rohd/issues/101).
+- Fixed a bug where 0-bit signals would sometimes improperly generate 0-bit constants in generated SystemVerilog (https://github.com/intel/rohd/issues/122).
 
 ## 0.2.0
 - Updated implementation to avoid `Iterable.forEach` to make debug easier.
