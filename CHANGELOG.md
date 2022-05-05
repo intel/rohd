@@ -1,4 +1,4 @@
-## (next release)
+## 0.3.0
 - Breaking: Merged `LogicValue` and `LogicValues` into one type called `LogicValue`.
 - Deprecation: Aligned `LogicValue` to `Logic` by renaming `length` to `width`.
 - Breaking: `Logic.put` no longer accepts `List<LogicValue>`, swizzle it together instead.
@@ -14,6 +14,7 @@
 - Improved flexibility of `IfBlock`.
 - Added `withSet` on `LogicValue` and `Logic` to make it easier to assign subsets of signals and values (https://github.com/intel/rohd/issues/101).
 - Fixed a bug where 0-bit signals would sometimes improperly generate 0-bit constants in generated SystemVerilog (https://github.com/intel/rohd/issues/122).
+- Added capability to reserve instance names, as well as provide and reserve definition names, for `Module`s and their corresponding generated outputs.
 
 ## 0.2.0
 - Updated implementation to avoid `Iterable.forEach` to make debug easier.
