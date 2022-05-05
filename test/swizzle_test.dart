@@ -14,8 +14,8 @@ import 'package:test/test.dart';
 
 class SwizzlyModule extends Module {
   SwizzlyModule(Logic a) {
-    a = addInput('a', a);
-    var b = addOutput('b', width: 3);
+    a = addInput('a', a, width: a.width);
+    var b = addOutput('b', width: a.width + 2);
     b <= [Const(1), a, Const(1)].swizzle();
   }
 }
@@ -59,6 +59,20 @@ void main() {
       var simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'b': 3});
+      expect(simResult, equals(true));
+    });
+
+    test('const 0-width swizzle', () async {
+      var mod = SwizzlyModule(Const(0, width: 0));
+      await mod.build();
+      var vectors = [
+        Vector({}, {'b': bin('11')}),
+        Vector({}, {'b': bin('11')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      var simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: {'b': 2}, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
   });

@@ -142,7 +142,10 @@ class Swizzle extends Module with InlineSystemVerilog {
       throw Exception('This swizzle has ${_swizzleInputs.length} inputs,'
           ' but saw $inputs with ${inputs.length} values.');
     }
-    var inputStr = _swizzleInputs.reversed.map((e) => inputs[e.name]).join(',');
+    var inputStr = _swizzleInputs.reversed
+        .where((e) => e.width > 0)
+        .map((e) => inputs[e.name])
+        .join(',');
     return '{$inputStr}';
   }
 }
