@@ -433,6 +433,9 @@ class Logic {
     return BusSubset(this, startIndex, endIndex).subset;
   }
 
+  /// Returns a version of this [Logic] with the bit order reversed.
+  Logic get reversed => slice(0, width - 1);
+
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of [endIndex].
   ///
   /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
