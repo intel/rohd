@@ -82,6 +82,15 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     throw Exception(&#39;BusSubset has exactly one input, but saw $inputs.&#39;);
   }
   var a = inputs[_original]!;
+
+  &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus, so do it manually
+  if (startIndex &gt; endIndex) {
+    return &#39;{&#39; +
+        List.generate(startIndex - endIndex + 1, (i) =&gt; &#39;$a[${endIndex + i}]&#39;)
+            .join(&#39;,&#39;) +
+        &#39;}&#39;;
+  }
+
   var sliceString =
       startIndex == endIndex ? &#39;[$startIndex]&#39; : &#39;[$endIndex:$startIndex]&#39;;
   return &#39;$a$sliceString&#39;;

@@ -82,7 +82,10 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     throw Exception(&#39;This swizzle has ${_swizzleInputs.length} inputs,&#39;
         &#39; but saw $inputs with ${inputs.length} values.&#39;);
   }
-  var inputStr = _swizzleInputs.reversed.map((e) =&gt; inputs[e.name]).join(&#39;,&#39;);
+  var inputStr = _swizzleInputs.reversed
+      .where((e) =&gt; e.width &gt; 0)
+      .map((e) =&gt; inputs[e.name])
+      .join(&#39;,&#39;);
   return &#39;{$inputStr}&#39;;
 }</code></pre>
 </section>

@@ -53,8 +53,8 @@
       
 
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">getRange</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="getRange-param-start"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">start</span>, </span></li>
-<li><span class="parameter" id="getRange-param-end"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">end</span></span></li>
+<span class="name ">getRange</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
+<li><span class="parameter" id="getRange-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span></span></li>
 </ol>)
 
       
@@ -62,25 +62,28 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns a subset <a href="../../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>start</code>, exclusive of <code>end</code>.</p>
-<p>If <code>start</code> and <code>end</code> are equal, then a zero-width signal is returned.</p>
+  <p>Returns a subset <a href="../../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>startIndex</code>, exclusive of <code>endIndex</code>.</p>
+<p><code>startIndex</code> must be less than <code>endIndex</code>. If <code>startIndex</code> and <code>endIndex</code> are equal, then a
+zero-width value is returned.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue getRange(int start, int end) {
-  if (end &lt; start) {
-    throw Exception(&#39;End ($end) cannot be greater than start ($start).&#39;);
+  <pre class="language-dart"><code class="language-dart">LogicValue getRange(int startIndex, int endIndex) {
+  if (endIndex &lt; startIndex) {
+    throw Exception(
+        &#39;End ($endIndex) cannot be less than start ($startIndex).&#39;);
   }
-  if (end &gt; width) {
-    throw Exception(&#39;End ($end) must be less than width ($width).&#39;);
+  if (endIndex &gt; width) {
+    throw Exception(&#39;End ($endIndex) must be less than width ($width).&#39;);
   }
-  if (start &lt; 0) {
-    throw Exception(&#39;Start ($start) must be greater than or equal to 0.&#39;);
+  if (startIndex &lt; 0) {
+    throw Exception(
+        &#39;Start ($startIndex) must be greater than or equal to 0.&#39;);
   }
-  return _getRange(start, end);
+  return _getRange(startIndex, endIndex);
 }</code></pre>
 </section>
 
@@ -122,15 +125,20 @@
     <li class="section-title"><a href="../../rohd/LogicValue-class.html#instance-methods">Methods</a></li>
     <li><a href="../../rohd/LogicValue/and.html">and</a></li>
     <li><a href="../../rohd/LogicValue/eq.html">eq</a></li>
+    <li><a href="../../rohd/LogicValue/extend.html">extend</a></li>
     <li><a href="../../rohd/LogicValue/getRange.html">getRange</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../../rohd/LogicValue/or.html">or</a></li>
+    <li><a href="../../rohd/LogicValue/signExtend.html">signExtend</a></li>
+    <li><a href="../../rohd/LogicValue/slice.html">slice</a></li>
     <li><a href="../../rohd/LogicValue/toBigInt.html">toBigInt</a></li>
     <li><a href="../../rohd/LogicValue/toBool.html">toBool</a></li>
     <li><a href="../../rohd/LogicValue/toInt.html">toInt</a></li>
     <li><a href="../../rohd/LogicValue/toList.html">toList</a></li>
     <li><a href="../../rohd/LogicValue/toString.html">toString</a></li>
+    <li><a href="../../rohd/LogicValue/withSet.html">withSet</a></li>
     <li><a href="../../rohd/LogicValue/xor.html">xor</a></li>
+    <li><a href="../../rohd/LogicValue/zeroExtend.html">zeroExtend</a></li>
 
     <li class="section-title"><a href="../../rohd/LogicValue-class.html#operators">Operators</a></li>
     <li><a href="../../rohd/LogicValue/operator_bitwise_and.html">operator &</a></li>

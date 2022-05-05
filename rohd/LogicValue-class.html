@@ -195,15 +195,29 @@
 
 </dd>
 
-        <dt id="getRange" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-start"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">start</span>, </span><span class="parameter" id="getRange-param-end"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">end</span></span>)
+        <dt id="extend" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/extend.html">extend</a></span><span class="signature">(<wbr><span class="parameter" id="extend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span>, </span><span class="parameter" id="extend-param-fill"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">fill</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns a subset <a href="../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>start</code>, exclusive of <code>end</code>. <a href="../rohd/LogicValue/getRange.html">[...]</a>
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where the most significant
+bits for indices beyond the original <a href="../rohd/LogicValue/width.html">width</a> are set to <code>fill</code>. <a href="../rohd/LogicValue/extend.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="getRange" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a subset <a href="../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>startIndex</code>, exclusive of <code>endIndex</code>. <a href="../rohd/LogicValue/getRange.html">[...]</a>
   
 
 </dd>
@@ -230,6 +244,34 @@
 </dt>
 <dd>
   Unary OR operation. <a href="../rohd/LogicValue/or.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="signExtend" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are sign bits
+as the most significant bits.  The sign is determined using two's complement, so
+it takes the most significant bit of the original value and extends with that. <a href="../rohd/LogicValue/signExtend.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="slice" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Accesses a subset of this <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>startIndex</code> to <code>endIndex</code>, both inclusive. <a href="../rohd/LogicValue/slice.html">[...]</a>
   
 
 </dd>
@@ -300,6 +342,21 @@ in SystemVerilog style. <a href="../rohd/LogicValue/toString.html">[...]</a>
 
 </dd>
 
+        <dt id="withSet" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">update</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a copy of this <a href="../rohd/LogicValue-class.html">LogicValue</a> with the bits starting from <code>startIndex</code>
+up until <code>startIndex</code> + <code>update</code><code>.width</code> set to <code>update</code> instead
+of their original value. <a href="../rohd/LogicValue/withSet.html">[...]</a>
+  
+
+</dd>
+
         <dt id="xor" class="callable">
   <span class="name"><a href="../rohd/LogicValue/xor.html">xor</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
@@ -309,6 +366,20 @@ in SystemVerilog style. <a href="../rohd/LogicValue/toString.html">[...]</a>
 </dt>
 <dd>
   Unary XOR operation. <a href="../rohd/LogicValue/xor.html">[...]</a>
+  
+
+</dd>
+
+        <dt id="zeroExtend" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.16.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are zeros
+as the most significant bits. <a href="../rohd/LogicValue/zeroExtend.html">[...]</a>
   
 
 </dd>
@@ -827,7 +898,6 @@ in SystemVerilog style. <a href="../rohd/LogicValue/toString.html">[...]</a>
   <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
   <li><a href="../rohd/If-class.html">If</a></li>
   <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
-  <li><a href="../rohd/Iff-class.html">Iff</a></li>
   <li><a href="../rohd/Interface-class.html">Interface</a></li>
   <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
   <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
@@ -882,6 +952,7 @@ in SystemVerilog style. <a href="../rohd/LogicValue/toString.html">[...]</a>
   <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
   <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
   <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
+  <li><a href="../rohd/Iff.html">Iff</a></li>
   <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
 
 </ol>
@@ -908,15 +979,20 @@ in SystemVerilog style. <a href="../rohd/LogicValue/toString.html">[...]</a>
     <li class="section-title"><a href="../rohd/LogicValue-class.html#instance-methods">Methods</a></li>
     <li><a href="../rohd/LogicValue/and.html">and</a></li>
     <li><a href="../rohd/LogicValue/eq.html">eq</a></li>
+    <li><a href="../rohd/LogicValue/extend.html">extend</a></li>
     <li><a href="../rohd/LogicValue/getRange.html">getRange</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.16.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li><a href="../rohd/LogicValue/or.html">or</a></li>
+    <li><a href="../rohd/LogicValue/signExtend.html">signExtend</a></li>
+    <li><a href="../rohd/LogicValue/slice.html">slice</a></li>
     <li><a href="../rohd/LogicValue/toBigInt.html">toBigInt</a></li>
     <li><a href="../rohd/LogicValue/toBool.html">toBool</a></li>
     <li><a href="../rohd/LogicValue/toInt.html">toInt</a></li>
     <li><a href="../rohd/LogicValue/toList.html">toList</a></li>
     <li><a href="../rohd/LogicValue/toString.html">toString</a></li>
+    <li><a href="../rohd/LogicValue/withSet.html">withSet</a></li>
     <li><a href="../rohd/LogicValue/xor.html">xor</a></li>
+    <li><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></li>
 
     <li class="section-title"><a href="../rohd/LogicValue-class.html#operators">Operators</a></li>
     <li><a href="../rohd/LogicValue/operator_bitwise_and.html">operator &</a></li>

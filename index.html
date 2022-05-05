@@ -185,6 +185,12 @@ x.value.toInt()
 
 // a BigInt
 x.value.toBigInt()
+
+// constructing a LogicValue a handful of different ways
+LogicValue.ofString('0101xz01');                      // 0b0101xz01
+LogicValue.of([LogicValue.one, LogicValue.zero]);     // 0b10
+[LogicValue.z, LogicValue.x].swizzle();               // 0bzx
+LogicValue.ofInt(15, 4);                              // 0xf
 </code></pre>
 <p>You can create <code>LogicValue</code>s using a variety of constructors including <code>ofInt</code>, <code>ofBigInt</code>, <code>filled</code> (like '0, '1, 'x, etc. in SystemVerilog), and <code>of</code> (which takes any <code>Iterable&lt;LogicValue&gt;</code>).</p>
 <h4 id="listening-to-and-waiting-for-changes">Listening to and waiting for changes</h4>
@@ -204,7 +210,8 @@ var x = Const(5, width:16);
 </code></pre>
 <p>There is a convenience function for converting binary to an integer:</p>
 <pre class="language-dart"><code class="language-dart">// this is equvialent to and shorter than int.parse('010101', radix:2)
-bin('010101')
+// you can put underscores to help with readability, they are ignored
+bin('01_0101')
 </code></pre>
 <h3 id="assignment">Assignment</h3>
 <p>To assign one signal to the value of another signal, use the <code>&lt;=</code> operator.  This is a hardware synthesizable assignment connecting two wires together.</p>
@@ -232,13 +239,13 @@ a_gt_b    &lt;=  (a &gt; b)  // greater than          NOTE: careful with order o
 a_gte_b   &lt;=  (a &gt;= b) // greater than or equal NOTE: careful with order of operations, &gt;= needs parentheses in this case
 </code></pre>
 <h3 id="shift-operations">Shift Operations</h3>
-<p>Dart has <a href="https://github.com/dart-lang/language/blob/master/accepted/future-releases/triple-shift-operator/feature-specification.md">implemented the triple shift</a> operator (&gt;&gt;&gt;) in the opposite way as is <a href="https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html">implemented in SystemVerilog</a>.  That is to say in Dart, &gt;&gt;&gt; means <em>logical</em> shift right (fill with 0's), and &gt;&gt; means <em>arithmetic</em> shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).</p>
+<p>Dart has <a href="https://github.com/dart-lang/language/blob/master/accepted/2.14/triple-shift-operator/feature-specification.md">implemented the triple shift</a> operator (&gt;&gt;&gt;) in the opposite way as is <a href="https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html">implemented in SystemVerilog</a>.  That is to say in Dart, &gt;&gt;&gt; means <em>logical</em> shift right (fill with 0's), and &gt;&gt; means <em>arithmetic</em> shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).</p>
 <pre class="language-dart"><code class="language-dart">a &lt;&lt; b    // logical shift left
 a &gt;&gt; b    // arithmetic shift right
 a &gt;&gt;&gt; b   // logical shift right
 </code></pre>
 <h3 id="bus-ranges-and-swizzling">Bus ranges and swizzling</h3>
-<p>Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.</p>
+<p>Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.  Slicing, swizzling, etc. are also accessible on <code>LogicValue</code>s.</p>
 <pre class="language-dart"><code class="language-dart">var a = Logic(width:8),
     b = Logic(width:3),
     c = Const(7, width:5),
@@ -260,7 +267,10 @@ e &lt;= [d, c, b].swizzle();
 // here, the LSB is on the left, the MSB is on the right
 e &lt;= [b, c, d].rswizzle();
 </code></pre>
-<p>ROHD does not (currently) support assignment to a subset of a bus.  That is, you <em>cannot</em> do something like <code>e[3] &lt;= d</code>.  If you need to build a bus from a collection of other signals, use swizzling.</p>
+<p>ROHD does not support assignment to a subset of a bus.  That is, you <em>cannot</em> do something like <code>e[3] &lt;= d</code>.  Instead, you can use the <code>withSet</code> function to get a copy with that subset of the bus assigned to something else.  This applies for both <code>Logic</code> and <code>LogicValue</code>.  For example:</p>
+<pre class="language-dart"><code class="language-dart">// reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
+e = e.withSet(3, d);
+</code></pre>
 <h3 id="modules">Modules</h3>
 <p><a href="https://intel.github.io/rohd/rohd/Module-class.html"><code>Module</code></a>s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that <em>must</em> be followed when implementing a module.</p>
 <ol>
@@ -342,7 +352,7 @@ class MyModule extends Module {
 <h3 id="conditionals">Conditionals</h3>
 <p>ROHD supports a variety of <a href="https://intel.github.io/rohd/rohd/Conditional-class.html"><code>Conditional</code></a> type statements that always must fall within a type of <code>_Always</code> block, similar to SystemVerilog.  There are two types of <code>_Always</code> blocks: <a href="https://intel.github.io/rohd/rohd/Sequential-class.html"><code>Sequential</code></a> and <a href="https://intel.github.io/rohd/rohd/Combinational-class.html"><code>Combinational</code></a>, which map to SystemVerilog's <code>always_ff</code> and <code>always_comb</code>, respectively.  <code>Combinational</code> takes a list of <code>Conditional</code> statements.  Different kinds of <code>Conditional</code> statement, such as <code>If</code>, may be composed of more <code>Conditional</code> statements.  You can create <code>Conditional</code> composition chains as deep as you like.</p>
 <p>Conditional statements are executed imperatively and in order, just like the contents of <code>always</code> blocks in SystemVerilog.  <code>_Always</code> blocks in ROHD map 1-to-1 with SystemVerilog <code>always</code> statements when converted.</p>
-<p>Assignments within an <code>_Always</code> should be executed conditionally, so use the <code>&lt;</code> operator which creates a <a href="https://intel.github.io/rohd/rohd/ConditionalAssign-class.html"><code>ConditionalAssign</code></a> object instead of <code>&lt;=</code>.</p>
+<p>Assignments within an <code>_Always</code> should be executed conditionally, so use the <code>&lt;</code> operator which creates a <a href="https://intel.github.io/rohd/rohd/ConditionalAssign-class.html"><code>ConditionalAssign</code></a> object instead of <code>&lt;=</code>.  The right hand side a <code>ConditionalAssign</code> can be anything that can be <code>put</code> onto a <code>Logic</code>, which includes <code>int</code>s.  If you're looking to fill the width of something, use <code>Const</code> with the <code>fill = true</code>.</p>
 <h4 id="if"><code>If</code></h4>
 <p>Below is an example of an <a href="https://intel.github.io/rohd/rohd/If-class.html"><code>If</code></a> statement in ROHD:</p>
 <pre class="language-dart"><code class="language-dart">Combinational([
@@ -357,7 +367,7 @@ class MyModule extends Module {
       q &lt; 13,
   ], orElse: [
       y &lt; 0,
-      z &lt; 1,
+      z &lt; Const(1, width: 4, fill: true),
   ])])
 ]);
 </code></pre>

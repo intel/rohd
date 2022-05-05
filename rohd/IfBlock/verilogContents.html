@@ -91,12 +91,9 @@ String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
     }
     var header = iff == iffs.first
         ? &#39;if&#39;
-        : iff is ElseIf
-            ? &#39;else if&#39;
-            : iff is Else
-                ? &#39;else&#39;
-                : throw Exception(
-                    &#39;Unsupported Iff type: ${iff.runtimeType}.&#39;);
+        : iff is Else
+            ? &#39;else&#39;
+            : &#39;else if&#39;;
 
     var conditionName = inputsNameMap[driverInput(iff.condition).name];
     var ifContents = iff.then
