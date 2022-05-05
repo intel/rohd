@@ -174,7 +174,7 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
-  /// Sets the value of [parentModule] to [newParent].
+  /// Sets the value of [parentModule] to [newParentModule].
   ///
   /// This should *only* be called by [Module.build()].  It is used to optimize search.
   @protected
@@ -496,7 +496,7 @@ class Logic {
   }
 
   /// Returns a copy of this [Logic] with the bits starting from [startIndex]
-  /// up until [startIndex] + [update.width] set to [update] instead
+  /// up until [startIndex] + [update]`.width` set to [update] instead
   /// of their original value.
   ///
   /// The return signal will be the same [width].  An exception will be thrown if

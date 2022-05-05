@@ -650,7 +650,7 @@ abstract class LogicValue {
   }
 
   /// Returns a copy of this [LogicValue] with the bits starting from [startIndex]
-  /// up until [startIndex] + [update.width] set to [update] instead
+  /// up until [startIndex] + [update]`.width` set to [update] instead
   /// of their original value.
   ///
   /// The return value will be the same [width].  An exception will be thrown if
