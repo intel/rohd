@@ -81,6 +81,23 @@ class IfBlockModule extends Module {
   }
 }
 
+class ElseIfBlockModule extends Module {
+  ElseIfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    var c = addOutput('c');
+    var d = addOutput('d');
+
+    Combinational([
+      IfBlock([
+        ElseIf(a & ~b, [c < 1, d < 0]),
+        ElseIf(b & ~a, [c < 1, d < 0]),
+        Else([c < 0, d < 1])
+      ])
+    ]);
+  }
+}
+
 class CombModule extends Module {
   CombModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
     a = addInput('a', a);
@@ -178,6 +195,21 @@ void main() {
 
     test('iffblock comb', () async {
       var mod = IfBlockModule(Logic(), Logic());
+      await mod.build();
+      var vectors = [
+        Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1}),
+        Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
+        Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
+        Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      var simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('elseifblock comb', () async {
+      var mod = ElseIfBlockModule(Logic(), Logic());
       await mod.build();
       var vectors = [
         Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1}),

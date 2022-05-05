@@ -174,7 +174,7 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
-  /// Sets the value of [parentModule] to [newParent].
+  /// Sets the value of [parentModule] to [newParentModule].
   ///
   /// This should *only* be called by [Module.build()].  It is used to optimize search.
   @protected
@@ -426,7 +426,92 @@ class Logic {
   }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex], both inclusive.
+  ///
+  /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
+  /// to the original signal.
   Logic slice(int endIndex, int startIndex) {
     return BusSubset(this, startIndex, endIndex).subset;
+  }
+
+  /// Returns a version of this [Logic] with the bit order reversed.
+  Logic get reversed => slice(0, width - 1);
+
+  /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of [endIndex].
+  ///
+  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
+  /// zero-width signal is returned.
+  Logic getRange(int startIndex, int endIndex) {
+    if (endIndex < startIndex) {
+      throw Exception(
+          'End ($endIndex) cannot be less than start ($startIndex).');
+    }
+    if (endIndex > width) {
+      throw Exception('End ($endIndex) must be less than width ($width).');
+    }
+    if (startIndex < 0) {
+      throw Exception(
+          'Start ($startIndex) must be greater than or equal to 0.');
+    }
+    if (endIndex == startIndex) {
+      return Const(0, width: 0);
+    }
+    return slice(endIndex - 1, startIndex);
+  }
+
+  /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
+  /// as the most significant bits.
+  ///
+  /// The [newWidth] must be greater than or equal to the current width or an exception
+  /// will be thrown.
+  Logic zeroExtend(int newWidth) {
+    if (newWidth < width) {
+      throw Exception(
+          'New width $newWidth must be greater than or equal to width $width.');
+    }
+    return [
+      Const(0, width: newWidth - width),
+      this,
+    ].swizzle();
+  }
+
+  /// Returns a new [Logic] with width [newWidth] where new bits added are sign bits
+  /// as the most significant bits.  The sign is determined using two's complement, so
+  /// it takes the most significant bit of the original signal and extends with that.
+  ///
+  /// The [newWidth] must be greater than or equal to the current width or an exception
+  /// will be thrown.
+  Logic signExtend(int newWidth) {
+    if (newWidth < width) {
+      throw Exception(
+          'New width $newWidth must be greater than or equal to width $width.');
+    }
+    return [
+      Mux(
+        this[width - 1],
+        Const(1, width: newWidth - width, fill: true),
+        Const(0, width: newWidth - width),
+      ).y,
+      this,
+    ].swizzle();
+  }
+
+  /// Returns a copy of this [Logic] with the bits starting from [startIndex]
+  /// up until [startIndex] + [update]`.width` set to [update] instead
+  /// of their original value.
+  ///
+  /// The return signal will be the same [width].  An exception will be thrown if
+  /// the position of the [update] would cause an overrun past the [width].
+  Logic withSet(int startIndex, Logic update) {
+    if (startIndex + update.width > width) {
+      throw Exception(
+          'Width of updatedValue $update at startIndex $startIndex would'
+          'overrun the width of the original ($width).');
+    }
+
+    return [
+      getRange(startIndex + update.width, width),
+      update,
+      getRange(0, startIndex),
+    ].swizzle();
   }
 }

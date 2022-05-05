@@ -175,6 +175,12 @@ x.value.toInt()
 
 // a BigInt
 x.value.toBigInt()
+
+// constructing a LogicValue a handful of different ways
+LogicValue.ofString('0101xz01');                      // 0b0101xz01
+LogicValue.of([LogicValue.one, LogicValue.zero]);     // 0b10
+[LogicValue.z, LogicValue.x].swizzle();               // 0bzx
+LogicValue.ofInt(15, 4);                              // 0xf
 ```
 
 You can create `LogicValue`s using a variety of constructors including `ofInt`, `ofBigInt`, `filled` (like '0, '1, 'x, etc. in SystemVerilog), and `of` (which takes any `Iterable<LogicValue>`).
@@ -205,7 +211,8 @@ var x = Const(5, width:16);
 There is a convenience function for converting binary to an integer:
 ```dart
 // this is equvialent to and shorter than int.parse('010101', radix:2)
-bin('010101')
+// you can put underscores to help with readability, they are ignored
+bin('01_0101')
 ```
 
 ### Assignment
@@ -238,7 +245,7 @@ a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of oper
 ```
 
 ### Shift Operations
-Dart has [implemented the triple shift](https://github.com/dart-lang/language/blob/master/accepted/future-releases/triple-shift-operator/feature-specification.md) operator (>>>) in the opposite way as is [implemented in SystemVerilog](https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html).  That is to say in Dart, >>> means *logical* shift right (fill with 0's), and >> means *arithmetic* shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).
+Dart has [implemented the triple shift](https://github.com/dart-lang/language/blob/master/accepted/2.14/triple-shift-operator/feature-specification.md) operator (>>>) in the opposite way as is [implemented in SystemVerilog](https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html).  That is to say in Dart, >>> means *logical* shift right (fill with 0's), and >> means *arithmetic* shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).
 
 ```dart
 a << b    // logical shift left
@@ -247,7 +254,7 @@ a >>> b   // logical shift right
 ```
 
 ### Bus ranges and swizzling
-Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.
+Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.  Slicing, swizzling, etc. are also accessible on `LogicValue`s.
 ```dart
 var a = Logic(width:8),
     b = Logic(width:3),
@@ -271,7 +278,11 @@ e <= [d, c, b].swizzle();
 e <= [b, c, d].rswizzle();
 ```
 
-ROHD does not (currently) support assignment to a subset of a bus.  That is, you *cannot* do something like `e[3] <= d`.  If you need to build a bus from a collection of other signals, use swizzling.
+ROHD does not support assignment to a subset of a bus.  That is, you *cannot* do something like `e[3] <= d`.  Instead, you can use the `withSet` function to get a copy with that subset of the bus assigned to something else.  This applies for both `Logic` and `LogicValue`.  For example:
+```dart
+// reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
+e = e.withSet(3, d);
+```
 
 ### Modules
 [`Module`](https://intel.github.io/rohd/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
@@ -373,7 +384,7 @@ ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/rohd/Con
 
 Conditional statements are executed imperatively and in order, just like the contents of `always` blocks in SystemVerilog.  `_Always` blocks in ROHD map 1-to-1 with SystemVerilog `always` statements when converted.
 
-Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/rohd/ConditionalAssign-class.html) object instead of `<=`.
+Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/rohd/ConditionalAssign-class.html) object instead of `<=`.  The right hand side a `ConditionalAssign` can be anything that can be `put` onto a `Logic`, which includes `int`s.  If you're looking to fill the width of something, use `Const` with the `fill = true`.
 
 #### `If`
 Below is an example of an [`If`](https://intel.github.io/rohd/rohd/If-class.html) statement in ROHD:
@@ -390,7 +401,7 @@ Combinational([
       q < 13,
   ], orElse: [
       y < 0,
-      z < 1,
+      z < Const(1, width: 4, fill: true),
   ])])
 ]);
 ```

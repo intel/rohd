@@ -650,22 +650,20 @@ class CaseZ extends Case {
 /// A conditional block to execute only if [condition] is satisified.
 ///
 /// Intended for use with [IfBlock].
-class Iff {
+class ElseIf {
   /// A condition to match against to determine if [then] should be executed.
   final Logic condition;
 
   /// The [Conditional]s to execute if [condition] is satisfied.
   final List<Conditional> then;
 
-  Iff(this.condition, this.then);
+  ElseIf(this.condition, this.then);
 }
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
 /// Intended for use with [IfBlock].
-class ElseIf extends Iff {
-  ElseIf(Logic condition, List<Conditional> then) : super(condition, then);
-}
+typedef Iff = ElseIf;
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
@@ -681,8 +679,9 @@ class Else extends Iff {
 class IfBlock extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
-  /// The first item *must* be an [Iff], and if an [Else] is included it must
-  /// be the last item.  Any other items should be [ElseIf].
+  /// The first item should be an [Iff], and if an [Else] is included it must
+  /// be the last item.  Any other items should be [ElseIf].  It is okay to make the
+  /// first item an [ElseIf], it will act just like an [Iff].
   final List<Iff> iffs;
 
   IfBlock(this.iffs);
@@ -753,12 +752,9 @@ class IfBlock extends Conditional {
       }
       var header = iff == iffs.first
           ? 'if'
-          : iff is ElseIf
-              ? 'else if'
-              : iff is Else
-                  ? 'else'
-                  : throw Exception(
-                      'Unsupported Iff type: ${iff.runtimeType}.');
+          : iff is Else
+              ? 'else'
+              : 'else if';
 
       var conditionName = inputsNameMap[driverInput(iff.condition).name];
       var ifContents = iff.then

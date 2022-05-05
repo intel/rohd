@@ -282,20 +282,23 @@ abstract class LogicValue {
   /// Returns a new [LogicValue] with the order of all bits in the reverse order of this [LogicValue]
   LogicValue get reversed;
 
-  /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
+  /// Returns a subset [LogicValue].  It is inclusive of [startIndex], exclusive of [endIndex].
   ///
-  /// If [start] and [end] are equal, then a zero-width signal is returned.
-  LogicValue getRange(int start, int end) {
-    if (end < start) {
-      throw Exception('End ($end) cannot be greater than start ($start).');
+  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
+  /// zero-width value is returned.
+  LogicValue getRange(int startIndex, int endIndex) {
+    if (endIndex < startIndex) {
+      throw Exception(
+          'End ($endIndex) cannot be less than start ($startIndex).');
     }
-    if (end > width) {
-      throw Exception('End ($end) must be less than width ($width).');
+    if (endIndex > width) {
+      throw Exception('End ($endIndex) must be less than width ($width).');
     }
-    if (start < 0) {
-      throw Exception('Start ($start) must be greater than or equal to 0.');
+    if (startIndex < 0) {
+      throw Exception(
+          'Start ($startIndex) must be greater than or equal to 0.');
     }
-    return _getRange(start, end);
+    return _getRange(startIndex, endIndex);
   }
 
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
@@ -303,6 +306,18 @@ abstract class LogicValue {
   ///
   /// If [start] and [end] are equal, then a zero-width signal is returned.
   LogicValue _getRange(int start, int end);
+
+  /// Accesses a subset of this [LogicValue] from [startIndex] to [endIndex], both inclusive.
+  ///
+  /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
+  /// to the original value.
+  LogicValue slice(int endIndex, int startIndex) {
+    if (startIndex <= endIndex) {
+      return getRange(startIndex, endIndex + 1);
+    } else {
+      return getRange(endIndex, startIndex + 1).reversed;
+    }
+  }
 
   /// Converts a pair of `_value` and `_invalid` into a [LogicValue].
   LogicValue _bitsToLogicValue(bool bitValue, bool bitInvalid) => bitInvalid
@@ -594,6 +609,64 @@ abstract class LogicValue {
           'Edge detection on invalid value from $previousValue to $newValue');
     }
     return previousValue == LogicValue.one && newValue == LogicValue.zero;
+  }
+
+  /// Returns a new [LogicValue] with width [newWidth] where the most significant
+  /// bits for indices beyond the original [width] are set to [fill].
+  ///
+  /// The [newWidth] must be greater than or equal to the current width or an exception
+  /// will be thrown. [fill] must be a single bit ([width]=1).
+  LogicValue extend(int newWidth, LogicValue fill) {
+    if (newWidth < width) {
+      throw Exception(
+          'New width $newWidth must be greater than or equal to width $width.');
+    }
+    if (fill.width != 1) {
+      throw Exception('The fill must be 1 bit, but got $fill.');
+    }
+    return [
+      LogicValue.filled(newWidth - width, fill),
+      this,
+    ].swizzle();
+  }
+
+  /// Returns a new [LogicValue] with width [newWidth] where new bits added are zeros
+  /// as the most significant bits.
+  ///
+  /// The [newWidth] must be greater than or equal to the current width or an exception
+  /// will be thrown.
+  LogicValue zeroExtend(int newWidth) {
+    return extend(newWidth, LogicValue.zero);
+  }
+
+  /// Returns a new [LogicValue] with width [newWidth] where new bits added are sign bits
+  /// as the most significant bits.  The sign is determined using two's complement, so
+  /// it takes the most significant bit of the original value and extends with that.
+  ///
+  /// The [newWidth] must be greater than or equal to the current width or an exception
+  /// will be thrown.
+  LogicValue signExtend(int newWidth) {
+    return extend(newWidth, this[width - 1]);
+  }
+
+  /// Returns a copy of this [LogicValue] with the bits starting from [startIndex]
+  /// up until [startIndex] + [update]`.width` set to [update] instead
+  /// of their original value.
+  ///
+  /// The return value will be the same [width].  An exception will be thrown if
+  /// the position of the [update] would cause an overrun past the [width].
+  LogicValue withSet(int startIndex, LogicValue update) {
+    if (startIndex + update.width > width) {
+      throw Exception(
+          'Width of updatedValue $update at startIndex $startIndex would'
+          'overrun the width of the original ($width).');
+    }
+
+    return [
+      getRange(startIndex + update.width, width),
+      update,
+      getRange(0, startIndex),
+    ].swizzle();
   }
 }
 
