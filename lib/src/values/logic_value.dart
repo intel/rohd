@@ -621,6 +621,9 @@ abstract class LogicValue {
       throw Exception(
           'New width $newWidth must be greater than or equal to width $width.');
     }
+    if (fill.width != 1) {
+      throw Exception('The fill must be 1 bit, but got $fill.');
+    }
     return [
       LogicValue.filled(newWidth - width, fill),
       this,
@@ -647,21 +650,21 @@ abstract class LogicValue {
   }
 
   /// Returns a copy of this [LogicValue] with the bits starting from [startIndex]
-  /// up until [startIndex] + [updatedValue.width] set to [updatedValue] instead
+  /// up until [startIndex] + [update.width] set to [update] instead
   /// of their original value.
   ///
   /// The return value will be the same [width].  An exception will be thrown if
-  /// the position of the [updatedValue] would cause an overrun past the [width].
-  LogicValue withSet(int startIndex, LogicValue updatedValue) {
-    if (startIndex + updatedValue.width > width) {
+  /// the position of the [update] would cause an overrun past the [width].
+  LogicValue withSet(int startIndex, LogicValue update) {
+    if (startIndex + update.width > width) {
       throw Exception(
-          'Width of updatedValue $updatedValue at startIndex $startIndex would'
+          'Width of updatedValue $update at startIndex $startIndex would'
           'overrun the width of the original ($width).');
     }
 
     return [
-      getRange(startIndex + updatedValue.width, width),
-      updatedValue,
+      getRange(startIndex + update.width, width),
+      update,
       getRange(0, startIndex),
     ].swizzle();
   }
