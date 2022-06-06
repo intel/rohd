@@ -1,3 +1,6 @@
+## 0.3.1
+- Fixed a bug (introduced in v0.3.0) where `WaveDumper` doesn't properly dump multi-bit values to VCD (https://github.com/intel/rohd/issues/129).
+
 ## 0.3.0
 - Breaking: Merged `LogicValue` and `LogicValues` into one type called `LogicValue`.
 - Deprecation: Aligned `LogicValue` to `Logic` by renaming `length` to `width`.
