@@ -16,8 +16,8 @@ import 'package:test/test.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a) {
-    a = addInput('a', a);
-    addOutput('b') <= ~a;
+    a = addInput('a', a, width: a.width);
+    addOutput('b', width: a.width) <= ~a;
   }
 }
 
@@ -190,6 +190,52 @@ void main() {
     expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
         equals(true));
     expect(confirmValue(vcdContents, 'a', 35, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('multi-bit value', () async {
+    var a = Logic(name: 'a', width: 8);
+    var mod = SimpleModule(a);
+    await mod.build();
+
+    var dumpName = 'multiBit';
+
+    createTemporaryDump(mod, dumpName);
+    a.inject(0x5a);
+
+    Simulator.registerAction(10, () => a.put(0xa5));
+    await Simulator.run();
+
+    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofInt(0x5a, 8)),
+        equals(true));
+    expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofInt(0xa5, 8)),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('multi-bit value mixed invalid', () async {
+    var a = Logic(name: 'a', width: 8);
+    var mod = SimpleModule(a);
+    await mod.build();
+
+    var dumpName = 'multiBitInvalid';
+
+    createTemporaryDump(mod, dumpName);
+    a.inject(LogicValue.ofString('01xzzx10'));
+
+    Simulator.registerAction(10, () => a.put(LogicValue.ofString('0x0x1z1z')));
+    await Simulator.run();
+
+    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('01xzzx10')),
+        equals(true));
+    expect(confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0x0x1z1z')),
         equals(true));
 
     deleteTemporaryDump(dumpName);
