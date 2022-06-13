@@ -577,6 +577,57 @@ var b = pipeline.get(a);
 </code></pre>
 <p>You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the <code>PipelineStageInfo</code> object is just accessed as normal, so other logic can optionally sit outside of the pipeline object.</p>
 <p>ROHD also includes a version of <code>Pipeline</code> that supports a ready/valid protocol called <a href="https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html"><code>ReadyValidPipeline</code></a>.  The syntax looks the same, but has some additional parameters for readys and valids.</p>
+<h3 id="finite-state-machines">Finite State Machines</h3>
+<p>ROHD has a built-in syntax for handling FSMs in a simple &amp; refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that <code>StateMachine</code> consumes the <code>clk</code> and <code>reset</code> signals. Also accepts the reset state to transition to <code>resetState</code> along with the <code>List</code> of <code>states</code> of the FSM.</p>
+<pre class="language-dart"><code class="language-dart">class TrafficTestModule extends Module {
+  TrafficTestModule(Logic traffic, Logic reset) {
+    traffic = addInput('traffic', traffic, width: traffic.width);
+    var northLight = addOutput('northLight', width: traffic.width);
+    var eastLight = addOutput('eastLight', width: traffic.width);
+    var clk = SimpleClockGenerator(10).clk;
+    reset = addInput('reset', reset);
+    var states = [
+      State&lt;LightStates&gt;(LightStates.northFlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.northSlowing,
+        traffic.eq(Direction.both()): LightStates.northSlowing,
+      }, actions: [
+        northLight &lt; LightColor.green(),
+        eastLight &lt; LightColor.red(),
+      ]),
+      State&lt;LightStates&gt;(LightStates.northSlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.both()): LightStates.eastFlowing,
+      }, actions: [
+        northLight &lt; LightColor.yellow(),
+        eastLight &lt; LightColor.red(),
+      ]),
+      State&lt;LightStates&gt;(LightStates.eastFlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.eastSlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.eastSlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.both()): LightStates.eastSlowing,
+      }, actions: [
+        northLight &lt; LightColor.red(),
+        eastLight &lt; LightColor.green(),
+      ]),
+      State&lt;LightStates&gt;(LightStates.eastSlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.both()): LightStates.northFlowing,
+      }, actions: [
+        northLight &lt; LightColor.red(),
+        eastLight &lt; LightColor.yellow(),
+      ]),
+    ];
+    StateMachine&lt;LightStates&gt;(clk, reset, LightStates.northFlowing, states);
+  }
+}
+</code></pre>
 <h2 id="rohd-simulator">ROHD Simulator</h2>
 <p>The ROHD simulator is a static class accessible as <a href="https://intel.github.io/rohd/rohd/Simulator-class.html"><code>Simulator</code></a> which implements a simple event-based simulator.  All <code>Logic</code>s in Dart have <code>glitch</code> events which propogate values to connected <code>Logic</code>s downstream.  In this way, ROHD propogates values across the entire graph representation of the hardware (without any <code>Simulator</code> involvement required).  The simulator has a concept of (unitless) time, and arbitrary Dart functions can be registered to occur at arbitraty times in the simulator.  Asking the simulator to run causes it to iterate through all registered timestamps and execute the functions in chronological order.  When these functions deposit signals on <code>Logic</code>s, it propogates values across the hardware.  The simulator has a number of events surrounding execution of a timestamp tick so that things like <code>FlipFlop</code>s can know when clocks and signals are glitch-free.</p>
 <ul>
