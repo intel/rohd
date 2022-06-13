@@ -8,21 +8,32 @@
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
 
+import 'dart:collection';
+
 import 'package:rohd/rohd.dart';
 import 'dart:math';
 
-// Simple class for fsm [StateMachine].
+// Simple class for FSM [StateMachine].
+//
+// Abstraction for representing Finite state machines (FSM).
 // Contains the logic for performing the state transitions.
 class StateMachine<StateIdentifier> {
   /// List containig objects of class [State].
-  List<State<StateIdentifier>> states;
+  List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
+  final List<State<StateIdentifier>> _states;
 
   /// A map to store the state identifier as the key and the object as the value
   final Map<StateIdentifier, State> _stateLookup = {};
+
+  /// A map to store the state object as the key and the index of the state in _states as the value.
   final Map<State, int> _stateValueLookup = {};
 
-  /// The clk and reset signals to the FSM.
-  final Logic clk, reset;
+  /// The clk signals to the FSM.
+  final Logic clk;
+
+  /// The reset signal to the FSM.
+  final Logic reset;
+
   // The reset state of the FSM to default to when the reset signal is high.
   final StateIdentifier resetState;
 
@@ -32,21 +43,23 @@ class StateMachine<StateIdentifier> {
   /// The next state of the FSM.
   final Logic nextState;
 
-  static int logBase(num x, num base) => (log(x) / log(base)).ceil();
+  static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
 
-  final int stateWidth;
+  /// Width of the state.
+  final int _stateWidth;
 
-  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts the reset state to transition to [resetState] along with the [List] of states of the FSM.
+  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts the reset state to transition to [resetState] along with the [List] of _states of the FSM.
   ///
   /// If a [reset] signal is provided the FSM transitions to the [resetState] on the next clock cycle.
-  StateMachine(this.clk, this.reset, this.resetState, this.states)
-      : stateWidth = logBase(states.length, 2),
+  StateMachine(this.clk, this.reset, this.resetState, this._states)
+      : _stateWidth = _logBase(_states.length, 2),
         currentState =
-            Logic(name: 'currentState', width: logBase(states.length, 2)),
-        nextState = Logic(name: 'nextState', width: logBase(states.length, 2)) {
+            Logic(name: 'currentState', width: _logBase(_states.length, 2)),
+        nextState =
+            Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
     var stateCounter = 0;
 
-    for (var state in states) {
+    for (var state in _states) {
       _stateLookup[state.identifier] = state;
       _stateValueLookup[state] = stateCounter++;
     }
@@ -54,9 +67,9 @@ class StateMachine<StateIdentifier> {
     Combinational([
       Case(
           currentState,
-          states
-              .map((state) =>
-                  CaseItem(Const(_stateValueLookup[state], width: stateWidth), [
+          _states
+              .map((state) => CaseItem(
+                      Const(_stateValueLookup[state], width: _stateWidth), [
                     ...state.actions,
                     Case(
                         Const(1),

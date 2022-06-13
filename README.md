@@ -175,12 +175,6 @@ x.value.toInt()
 
 // a BigInt
 x.value.toBigInt()
-
-// constructing a LogicValue a handful of different ways
-LogicValue.ofString('0101xz01');                      // 0b0101xz01
-LogicValue.of([LogicValue.one, LogicValue.zero]);     // 0b10
-[LogicValue.z, LogicValue.x].swizzle();               // 0bzx
-LogicValue.ofInt(15, 4);                              // 0xf
 ```
 
 You can create `LogicValue`s using a variety of constructors including `ofInt`, `ofBigInt`, `filled` (like '0, '1, 'x, etc. in SystemVerilog), and `of` (which takes any `Iterable<LogicValue>`).
@@ -211,8 +205,7 @@ var x = Const(5, width:16);
 There is a convenience function for converting binary to an integer:
 ```dart
 // this is equvialent to and shorter than int.parse('010101', radix:2)
-// you can put underscores to help with readability, they are ignored
-bin('01_0101')
+bin('010101')
 ```
 
 ### Assignment
@@ -245,7 +238,7 @@ a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of oper
 ```
 
 ### Shift Operations
-Dart has [implemented the triple shift](https://github.com/dart-lang/language/blob/master/accepted/2.14/triple-shift-operator/feature-specification.md) operator (>>>) in the opposite way as is [implemented in SystemVerilog](https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html).  That is to say in Dart, >>> means *logical* shift right (fill with 0's), and >> means *arithmetic* shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).
+Dart has [implemented the triple shift](https://github.com/dart-lang/language/blob/master/accepted/future-releases/triple-shift-operator/feature-specification.md) operator (>>>) in the opposite way as is [implemented in SystemVerilog](https://www.nandland.com/verilog/examples/example-shift-operator-verilog.html).  That is to say in Dart, >>> means *logical* shift right (fill with 0's), and >> means *arithmetic* shift right (maintaining sign).  ROHD keeps consistency with Dart's implementation to avoid introducing confusion within Dart code you write (whether ROHD or plain Dart).
 
 ```dart
 a << b    // logical shift left
@@ -254,7 +247,7 @@ a >>> b   // logical shift right
 ```
 
 ### Bus ranges and swizzling
-Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.  Slicing, swizzling, etc. are also accessible on `LogicValue`s.
+Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.
 ```dart
 var a = Logic(width:8),
     b = Logic(width:3),
@@ -278,11 +271,7 @@ e <= [d, c, b].swizzle();
 e <= [b, c, d].rswizzle();
 ```
 
-ROHD does not support assignment to a subset of a bus.  That is, you *cannot* do something like `e[3] <= d`.  Instead, you can use the `withSet` function to get a copy with that subset of the bus assigned to something else.  This applies for both `Logic` and `LogicValue`.  For example:
-```dart
-// reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
-e = e.withSet(3, d);
-```
+ROHD does not (currently) support assignment to a subset of a bus.  That is, you *cannot* do something like `e[3] <= d`.  If you need to build a bus from a collection of other signals, use swizzling.
 
 ### Modules
 [`Module`](https://intel.github.io/rohd/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
@@ -384,7 +373,7 @@ ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/rohd/Con
 
 Conditional statements are executed imperatively and in order, just like the contents of `always` blocks in SystemVerilog.  `_Always` blocks in ROHD map 1-to-1 with SystemVerilog `always` statements when converted.
 
-Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/rohd/ConditionalAssign-class.html) object instead of `<=`.  The right hand side a `ConditionalAssign` can be anything that can be `put` onto a `Logic`, which includes `int`s.  If you're looking to fill the width of something, use `Const` with the `fill = true`.
+Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/rohd/ConditionalAssign-class.html) object instead of `<=`.
 
 #### `If`
 Below is an example of an [`If`](https://intel.github.io/rohd/rohd/If-class.html) statement in ROHD:
@@ -401,7 +390,7 @@ Combinational([
       q < 13,
   ], orElse: [
       y < 0,
-      z < Const(1, width: 4, fill: true),
+      z < 1,
   ])])
 ]);
 ```
@@ -640,6 +629,60 @@ var b = pipeline.get(a);
 You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just accessed as normal, so other logic can optionally sit outside of the pipeline object.
 
 ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
+
+### Pipelines
+ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that [`stateMachine`] consumes the`clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of _states of the FSM.
+
+```dart
+class TrafficTestModule extends Module {
+  TrafficTestModule(Logic traffic, Logic reset) {
+    traffic = addInput('traffic', traffic, width: traffic.width);
+    var northLight = addOutput('northLight', width: traffic.width);
+    var eastLight = addOutput('eastLight', width: traffic.width);
+    var clk = SimpleClockGenerator(10).clk;
+    reset = addInput('reset', reset);
+    var states = [
+      State<LightStates>(LightStates.northFlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.northSlowing,
+        traffic.eq(Direction.both()): LightStates.northSlowing,
+      }, actions: [
+        northLight < LightColor.green(),
+        eastLight < LightColor.red(),
+      ]),
+      State<LightStates>(LightStates.northSlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.both()): LightStates.eastFlowing,
+      }, actions: [
+        northLight < LightColor.yellow(),
+        eastLight < LightColor.red(),
+      ]),
+      State<LightStates>(LightStates.eastFlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.eastSlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.eastSlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
+        traffic.eq(Direction.both()): LightStates.eastSlowing,
+      }, actions: [
+        northLight < LightColor.red(),
+        eastLight < LightColor.green(),
+      ]),
+      State<LightStates>(LightStates.eastSlowing, events: {
+        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.eastTraffic()): LightStates.northFlowing,
+        traffic.eq(Direction.both()): LightStates.northFlowing,
+      }, actions: [
+        northLight < LightColor.red(),
+        eastLight < LightColor.yellow(),
+      ]),
+    ];
+    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
+  }
+}
+```
 
 ## ROHD Simulator
 

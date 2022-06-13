@@ -13,22 +13,6 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 enum MyStates { state1, state2, state3, state4 }
-enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
-
-class Direction extends Const {
-  Direction._(int value) : super(value, width: 2);
-  Direction.noTraffic() : this._(bin('00'));
-  Direction.northTraffic() : this._(bin('01'));
-  Direction.eastTraffic() : this._(bin('10'));
-  Direction.both() : this._(bin('11'));
-}
-
-class LightColor extends Const {
-  LightColor._(int value) : super(value, width: 2);
-  LightColor.green() : this._(bin('00'));
-  LightColor.yellow() : this._(bin('01'));
-  LightColor.red() : this._(bin('10'));
-}
 
 class TestModule extends Module {
   TestModule(Logic a, Logic c, Logic reset) {
@@ -53,8 +37,25 @@ class TestModule extends Module {
   }
 }
 
-class TestModule1 extends Module {
-  TestModule1(Logic traffic, Logic reset) {
+enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
+
+class Direction extends Const {
+  Direction._(int value) : super(value, width: 2);
+  Direction.noTraffic() : this._(bin('00'));
+  Direction.northTraffic() : this._(bin('01'));
+  Direction.eastTraffic() : this._(bin('10'));
+  Direction.both() : this._(bin('11'));
+}
+
+class LightColor extends Const {
+  LightColor._(int value) : super(value, width: 2);
+  LightColor.green() : this._(bin('00'));
+  LightColor.yellow() : this._(bin('01'));
+  LightColor.red() : this._(bin('10'));
+}
+
+class TrafficTestModule extends Module {
+  TrafficTestModule(Logic traffic, Logic reset) {
     traffic = addInput('traffic', traffic, width: traffic.width);
     var northLight = addOutput('northLight', width: traffic.width);
     var eastLight = addOutput('eastLight', width: traffic.width);
@@ -125,7 +126,7 @@ void main() {
     });
 
     test('traffic light fsm', () async {
-      var pipem = TestModule1(Logic(width: 2), Logic());
+      var pipem = TrafficTestModule(Logic(width: 2), Logic());
       await pipem.build();
 
       var vectors = [
