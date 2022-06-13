@@ -48,7 +48,7 @@ class StateMachine<StateIdentifier> {
   /// Width of the state.
   final int _stateWidth;
 
-  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts the reset state to transition to [resetState] along with the [List] of _states of the FSM.
+  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts the reset state to transition to [resetState] along with the [List] of [_states] of the FSM.
   ///
   /// If a [reset] signal is provided the FSM transitions to the [resetState] on the next clock cycle.
   StateMachine(this.clk, this.reset, this.resetState, this._states)
