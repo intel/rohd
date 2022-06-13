@@ -631,7 +631,7 @@ You can also optionally add stalls and reset values for signals in the pipeline.
 ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
 
 ### FSM
-ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that [`stateMachine`] consumes the`clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of _states of the FSM.
+ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that `stateMachine` consumes the `clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of _states of the FSM.
 
 ```dart
 class TrafficTestModule extends Module {
