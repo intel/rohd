@@ -28,7 +28,7 @@ class StateMachine<StateIdentifier> {
   /// A map to store the state object as the key and the index of the state in _states as the value.
   final Map<State, int> _stateValueLookup = {};
 
-  /// The clk signals to the FSM.
+  /// The clock signal to the FSM.
   final Logic clk;
 
   /// The reset signal to the FSM.
@@ -106,7 +106,7 @@ class State<StateIdentifier> {
   /// A map of the possible conditions that might be true and the next state that the FSM needs to transition to in each of those cases.
   final Map<Logic, StateIdentifier> events;
 
-  /// Actions to  perform while the FSM is in this state.
+  /// Actions to perform while the FSM is in this state.
   final List<Conditional> actions;
 
   State(this.identifier, {required this.events, required this.actions});
