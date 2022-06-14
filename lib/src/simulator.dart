@@ -92,6 +92,8 @@ class Simulator {
   ///
   /// Note: values deposited on [Module]s from the previous simulation remain.
   static Future<void> reset() async {
+    if (_simulationEndRequested) await simulationEnded;
+
     _currentTimestamp = 0;
     _simulationEndRequested = false;
     _maxSimTime = -1;

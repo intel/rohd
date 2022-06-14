@@ -49,4 +49,11 @@ void main() {
     expect(tooFar, equals(false));
     expect(farEnough, equals(true));
   });
+
+  test('simulator reset waits for simulation to complete', () async {
+    Simulator.registerAction(100, () => Simulator.endSimulation());
+    Simulator.registerAction(100, () => Simulator.reset());
+    Simulator.registerAction(100, () => true);
+    await Simulator.run();
+  });
 }
