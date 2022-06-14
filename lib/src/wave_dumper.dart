@@ -172,7 +172,10 @@ class WaveDumper {
   void _writeSignalValueUpdate(Logic signal) {
     var updateValue = signal.width > 1
         ? 'b' +
-            signal.value.reversed.toList().map((e) => e.toString()).join() +
+            signal.value.reversed
+                .toList()
+                .map((e) => e.toString(includeWidth: false))
+                .join() +
             ' '
         : signal.value.toString(includeWidth: false);
     var marker = _signalToMarkerMap[signal];

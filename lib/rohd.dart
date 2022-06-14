@@ -11,5 +11,6 @@ export 'src/external.dart';
 export 'src/synthesizers/synthesizers.dart';
 export 'src/swizzle.dart';
 export 'src/values/values.dart';
+export 'src/state_machine.dart';
 // ignore: unused_import
 import 'src/values/values.dart';
