@@ -360,6 +360,12 @@ class Divide extends _TwoInputBitwiseGate {
       : super((a, b) => a / b, '/', a, b, name: name);
 }
 
+/// A two-input modulo module.
+class Modulo extends _TwoInputBitwiseGate {
+  Modulo(Logic a, dynamic b, {String name = 'modulo'})
+      : super((a, b) => a % b, '%', a, b, name: name);
+}
+
 /// A two-input equality comparison module.
 class Equals extends _TwoInputComparisonGate {
   Equals(Logic a, dynamic b, {String name = 'equals'})

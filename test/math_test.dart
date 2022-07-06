@@ -20,6 +20,7 @@ class MathTestModule extends Module {
   Logic get aMinusB => output('a_minus_b');
   Logic get aTimesB => output('a_times_b');
   Logic get aDividedByB => output('a_dividedby_b');
+  Logic get aModuloB => output('a_modulo_b');
 
   Logic get aPlusConst => output('a_plus_const');
   Logic get aMinusConst => output('a_minus_const');
@@ -37,6 +38,7 @@ class MathTestModule extends Module {
     var aMinusB = addOutput('a_minus_b', width: a.width);
     var aTimesB = addOutput('a_times_b', width: a.width);
     var aDividedByB = addOutput('a_dividedby_b', width: a.width);
+    var aModuloB = addOutput('a_modulo_b', width: a.width);
 
     var aPlusConst = addOutput('a_plus_const', width: a.width);
     var aMinusConst = addOutput('a_minus_const', width: a.width);
@@ -47,6 +49,7 @@ class MathTestModule extends Module {
     aMinusB <= a - b;
     aTimesB <= a * b;
     aDividedByB <= a / b;
+    aModuloB <= a % b;
 
     aPlusConst <= a + c;
     aMinusConst <= a - c;
@@ -68,6 +71,7 @@ void main() {
       'a_minus_b': 8,
       'a_times_b': 8,
       'a_dividedby_b': 8,
+      'a_modulo_b': 8,
       'a_plus_const': 8,
       'a_minus_const': 8,
       'a_times_const': 8,
@@ -137,6 +141,23 @@ void main() {
         Vector({'a': 5, 'b': 2}, {'a_dividedby_b': 2}),
         Vector({'a': 9, 'b': 3}, {'a_dividedby_b': 3}),
         Vector({'a': 6}, {'a_dividedby_const': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('modulo', () async {
+      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      var vectors = [
+        Vector({'a': 0, 'b': 0}, {'a_modulo_b': LogicValue.x}),
+        Vector({'a': 1, 'b': 0}, {'a_modulo_b': LogicValue.x}),
+        Vector({'a': 4, 'b': 2}, {'a_modulo_b': 0}),
+        Vector({'a': 5, 'b': 2}, {'a_modulo_b': 1}),
+        Vector({'a': 9, 'b': 3}, {'a_modulo_b': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(

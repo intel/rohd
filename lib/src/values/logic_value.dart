@@ -437,6 +437,10 @@ abstract class LogicValue {
   /// WARNING: Signed math is not fully tested.
   LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
+  /// Modulo operation.
+  ///
+  LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
+
   /// Executes mathematical operations between two [LogicValue]s
   ///
   /// Handles width and bounds checks as well as proper conversion between different types of representation.

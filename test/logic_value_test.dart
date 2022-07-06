@@ -492,7 +492,32 @@ void main() {
           // length mismatch
           () => LogicValue.ofString('0000') - LogicValue.ofString('000100'),
           throwsA(isA<Exception>()));
+
+      expect(
+          // % normal
+          LogicValue.ofString('0001') % LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0001')) // 1 % 3 = 1
+          );
+      expect(
+          // % normal
+          LogicValue.ofString('0100') % LogicValue.ofString('0010'),
+          equals(LogicValue.ofString('0000')) // 4 % 2 = 0
+          );
+      expect(
+          // % 0 mod
+          LogicValue.ofString('0000') % LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0000')) // 0 % 3 = 0
+          );
+      expect(
+          // mod-by-0
+          () => LogicValue.ofString('0100') % LogicValue.ofString('0000'),
+          throwsA(isA<Exception>()));
+      expect(
+          // % num by num
+          LogicValue.ofString('0100') % LogicValue.ofString('0100'),
+          equals(LogicValue.ofString('0000')));
     });
+
     test('muldiv', () {
       expect(
           // * normal
