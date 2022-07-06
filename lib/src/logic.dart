@@ -287,6 +287,9 @@ class Logic {
   /// WARNING: Signed math is not fully tested.
   Logic operator /(dynamic other) => Divide(this, other).y;
 
+  /// Modulo operation.
+  Logic operator %(Logic other) => Modulo(this, other).y;
+
   /// Arithmetic right-shift.
   Logic operator >>(Logic other) => ARShift(this, other).y;
 

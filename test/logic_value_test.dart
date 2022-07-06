@@ -493,29 +493,30 @@ void main() {
           () => LogicValue.ofString('0000') - LogicValue.ofString('000100'),
           throwsA(isA<Exception>()));
     });
-    test('muldiv', () {
+
+    test('modulo', () {
       expect(
-          // * normal
-          LogicValue.ofString('0001') * LogicValue.ofString('0011'),
-          equals(LogicValue.ofString('0011')) // 1 * 3 = 3
+          // % normal
+          LogicValue.ofString('0001') % LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0001')) // 1 % 3 = 1
           );
       expect(
-          // / normal
-          LogicValue.ofString('0100') / LogicValue.ofString('0010'),
-          equals(LogicValue.ofString('0010')) // 4 / 2 = 2
+          // % normal
+          LogicValue.ofString('0100') % LogicValue.ofString('0010'),
+          equals(LogicValue.ofString('0000')) // 4 % 2 = 0
           );
       expect(
-          // / truncate
-          LogicValue.ofString('0100') / LogicValue.ofString('0011'),
-          equals(LogicValue.ofString('0001')) // 4 / 3 = 1 (integer division)
+          // % 0 mod
+          LogicValue.ofString('0000') % LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0000')) // 0 % 3 = 0
           );
       expect(
-          // div-by-0
-          () => LogicValue.ofString('0100') / LogicValue.ofString('0000'),
+          // mod-by-0
+          () => LogicValue.ofString('0100') % LogicValue.ofString('0000'),
           throwsA(isA<Exception>()));
       expect(
-          // * overflow
-          LogicValue.ofString('0100') * LogicValue.ofString('0100'),
+          // % num by num
+          LogicValue.ofString('0100') % LogicValue.ofString('0100'),
           equals(LogicValue.ofString('0000')));
     });
   });
