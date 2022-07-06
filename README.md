@@ -237,6 +237,7 @@ a_plus_b  <=  a + b;   // addition
 a_sub_b   <=  a - b;   // subtraction
 a_times_b <=  a * b;   // multiplication
 a_div_b   <=  a / b;   // division
+a_mod_b   <=  a % b;   // modulo
 a_eq_b    <=  a.eq(b)  // equality              NOTE: == is for Object equality of Logic's
 a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assignment
 a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
