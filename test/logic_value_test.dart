@@ -517,6 +517,32 @@ void main() {
           LogicValue.ofString('0100') % LogicValue.ofString('0100'),
           equals(LogicValue.ofString('0000')));
     });
+
+    test('muldiv', () {
+      expect(
+          // * normal
+          LogicValue.ofString('0001') * LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0011')) // 1 * 3 = 3
+          );
+      expect(
+          // / normal
+          LogicValue.ofString('0100') / LogicValue.ofString('0010'),
+          equals(LogicValue.ofString('0010')) // 4 / 2 = 2
+          );
+      expect(
+          // / truncate
+          LogicValue.ofString('0100') / LogicValue.ofString('0011'),
+          equals(LogicValue.ofString('0001')) // 4 / 3 = 1 (integer division)
+          );
+      expect(
+          // div-by-0
+          () => LogicValue.ofString('0100') / LogicValue.ofString('0000'),
+          throwsA(isA<Exception>()));
+      expect(
+          // * overflow
+          LogicValue.ofString('0100') * LogicValue.ofString('0100'),
+          equals(LogicValue.ofString('0000')));
+    });
   });
 
   group('not and reductions', () {
