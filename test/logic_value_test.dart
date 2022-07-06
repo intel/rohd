@@ -492,9 +492,7 @@ void main() {
           // length mismatch
           () => LogicValue.ofString('0000') - LogicValue.ofString('000100'),
           throwsA(isA<Exception>()));
-    });
 
-    test('modulo', () {
       expect(
           // % normal
           LogicValue.ofString('0001') % LogicValue.ofString('0011'),
