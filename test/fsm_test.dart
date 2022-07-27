@@ -45,6 +45,11 @@ class Direction extends Const {
   Direction.northTraffic() : this._(bin('01'));
   Direction.eastTraffic() : this._(bin('10'));
   Direction.both() : this._(bin('11'));
+
+  static Logic isEastActive(Logic dir) =>
+      dir.eq(Direction.eastTraffic()) | dir.eq(Direction.both());
+  static Logic isNorthActive(Logic dir) =>
+      dir.eq(Direction.northTraffic()) | dir.eq(Direction.both());
 }
 
 class LightColor extends Const {
@@ -61,39 +66,35 @@ class TrafficTestModule extends Module {
     var eastLight = addOutput('eastLight', width: traffic.width);
     var clk = SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
+
+    // var eastActive = traffic[1];
+    // traffic.eq(Direction.eastTraffic()) | traffic.eq(Direction.both());
+    // var northActive = traffic[0];
+    // traffic.eq(Direction.northTraffic()) | traffic.eq(Direction.both());
+
     var states = [
       State<LightStates>(LightStates.northFlowing, events: {
-        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
-        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
-        traffic.eq(Direction.eastTraffic()): LightStates.northSlowing,
-        traffic.eq(Direction.both()): LightStates.northSlowing,
+        ~Direction.isEastActive(traffic): LightStates.northFlowing,
+        Direction.isEastActive(traffic): LightStates.northSlowing,
       }, actions: [
         northLight < LightColor.green(),
         eastLight < LightColor.red(),
       ]),
       State<LightStates>(LightStates.northSlowing, events: {
-        traffic.eq(Direction.noTraffic()): LightStates.eastFlowing,
-        traffic.eq(Direction.northTraffic()): LightStates.eastFlowing,
-        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
-        traffic.eq(Direction.both()): LightStates.eastFlowing,
+        Const(1): LightStates.eastFlowing,
       }, actions: [
         northLight < LightColor.yellow(),
         eastLight < LightColor.red(),
       ]),
       State<LightStates>(LightStates.eastFlowing, events: {
-        traffic.eq(Direction.noTraffic()): LightStates.eastSlowing,
-        traffic.eq(Direction.northTraffic()): LightStates.eastSlowing,
-        traffic.eq(Direction.eastTraffic()): LightStates.eastFlowing,
-        traffic.eq(Direction.both()): LightStates.eastSlowing,
+        ~Direction.isNorthActive(traffic): LightStates.eastFlowing,
+        Direction.isNorthActive(traffic): LightStates.eastSlowing,
       }, actions: [
         northLight < LightColor.red(),
         eastLight < LightColor.green(),
       ]),
       State<LightStates>(LightStates.eastSlowing, events: {
-        traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
-        traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
-        traffic.eq(Direction.eastTraffic()): LightStates.northFlowing,
-        traffic.eq(Direction.both()): LightStates.northFlowing,
+        Const(1): LightStates.northFlowing,
       }, actions: [
         northLight < LightColor.red(),
         eastLight < LightColor.yellow(),
