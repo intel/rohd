@@ -10,6 +10,11 @@ Anyone interested in participating in ROHD is more than welcome to help!
 ROHD adopts the Contributor Covenant v1.4 for the code of conduct.  It can be accessed [here](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md).
 
 ## Getting Help
+### Chat on Discord
+Discord is a free online instant messaging app which you can use directly in your web browser or install to your device.  Feel free to join to look around at the conversations and have a real-time discussion with the ROHD community.  This a great place to ask questions, get help, engage with the rest of the community, and discuss new ideas.
+
+Join the Discord server here: https://discord.com/invite/jubxF84yGw
+
 ### Issues
 If something doesn't seem right, you're stuck, there's a critical feature/enhancement missing, you find a bug, etc. then filing an issue on the GitHub repository is a great option.  Please try to provide as much detail as possible.  Complete, stand-alone reproduction instructions are extremely helpful for bugs!
 

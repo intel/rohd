@@ -1,5 +1,6 @@
 [![Tests](https://github.com/intel/rohd/actions/workflows/test.yml/badge.svg)](https://github.com/intel/rohd/actions/workflows/test.yml)
 [![Docs](https://github.com/intel/rohd/actions/workflows/docs.yml/badge.svg)](https://intel.github.io/rohd/rohd/rohd-library.html)
+[![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
@@ -81,7 +82,7 @@ import 'package:rohd/rohd.dart';
 
 There are complete API docs available at https://intel.github.io/rohd/rohd/rohd-library.html.
 
-If you need some help, you can visit our [Discussions](https://github.com/intel/rohd/discussions) page.  This is a friendly place where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
+If you need some help, you can join the [Discord server](https://discord.com/invite/jubxF84yGw) or visit our [Discussions](https://github.com/intel/rohd/discussions) page.  These are friendly places where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
 
 You also may be interested to join the [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
 
