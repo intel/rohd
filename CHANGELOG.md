@@ -1,3 +1,9 @@
+## 0.3.2
+- Added the `StateMachine` abstraction for finite state machines.
+- Added support for the modulo `%` operator.
+- Added ability to register actions to be executed at the end of the simulation.
+- Modified the `WaveDumper` to write to the `.vcd` file asynchronously to improve simulation performance while waveform dumping is enabled (https://github.com/intel/rohd/issues/3)
+
 ## 0.3.1
 - Fixed a bug (introduced in v0.3.0) where `WaveDumper` doesn't properly dump multi-bit values to VCD (https://github.com/intel/rohd/issues/129).
 
