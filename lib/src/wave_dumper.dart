@@ -26,6 +26,9 @@ class WaveDumper {
   /// The file to write dumped output waveform to.
   final File _outputFile;
 
+  /// A sink to write contents into [_outputFile].
+  late final IOSink _outFileSink;
+
   /// A counter for tracking signal names in the VCD file.
   int _signalMarkerIdx = 0;
 
@@ -51,6 +54,8 @@ class WaveDumper {
           'Module must be built before passed to dumper.  Call build() first.');
     }
 
+    _outFileSink = _outputFile.openWrite();
+
     _collectAllSignals();
 
     _writeHeader();
@@ -66,9 +71,22 @@ class WaveDumper {
       }
     });
 
-    Simulator.simulationEnded.then((args) {
+    Simulator.registerEndOfSimulationAction(() async {
       _captureTimestamp(Simulator.time);
+
+      await _terminate();
     });
+  }
+
+  /// Writes [contents] to the output file.
+  void _writeToFile(String contents) {
+    _outFileSink.write(contents);
+  }
+
+  /// Terminates the waveform dumping, including closing the file.
+  Future<void> _terminate() async {
+    await _outFileSink.flush();
+    await _outFileSink.close();
   }
 
   /// Registers all signal value changes to write updates to the dumped VCD.
@@ -113,7 +131,7 @@ class WaveDumper {
 \$end
 \$timescale $timescale \$end
 ''';
-    _outputFile.writeAsStringSync(header);
+    _writeToFile(header);
   }
 
   /// Writes the scope of the VCD, including signal and hierarchy declarations, as well as initial values.
@@ -121,11 +139,11 @@ class WaveDumper {
     var scopeString = _computeScopeString(module);
     scopeString += '\$enddefinitions \$end\n';
     scopeString += '\$dumpvars\n';
-    _outputFile.writeAsStringSync(scopeString, mode: FileMode.append);
+    _writeToFile(scopeString);
     for (var element in _signalToMarkerMap.keys) {
       _writeSignalValueUpdate(element);
     }
-    _outputFile.writeAsStringSync('\$end\n', mode: FileMode.append);
+    _writeToFile('\$end\n');
   }
 
   /// Generates the top of the scope string (signal and hierarchy definitions).
@@ -160,7 +178,7 @@ class WaveDumper {
   /// Writes the current timestamp to the VCD.
   void _captureTimestamp(int timestamp) {
     var timestampString = '#$timestamp\n';
-    _outputFile.writeAsStringSync(timestampString, mode: FileMode.append);
+    _writeToFile(timestampString);
 
     for (var signal in _changedLogicsThisTimestamp) {
       _writeSignalValueUpdate(signal);
@@ -180,7 +198,7 @@ class WaveDumper {
         : signal.value.toString(includeWidth: false);
     var marker = _signalToMarkerMap[signal];
     var updateString = '$updateValue$marker\n';
-    _outputFile.writeAsStringSync(updateString, mode: FileMode.append);
+    _writeToFile(updateString);
   }
 }
 
