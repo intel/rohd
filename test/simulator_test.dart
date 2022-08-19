@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -55,5 +57,26 @@ void main() {
     Simulator.registerAction(100, () => Simulator.reset());
     Simulator.registerAction(100, () => true);
     await Simulator.run();
+  });
+
+  test('simulator end of action waits before ending', () async {
+    var endOfSimActionExecuted = false;
+    Simulator.registerAction(100, () => true);
+    Simulator.registerEndOfSimulationAction(
+        () => endOfSimActionExecuted = true);
+    unawaited(Simulator.simulationEnded
+        .then((value) => expect(endOfSimActionExecuted, isTrue)));
+    await Simulator.run();
+  });
+
+  test('simulator end of action waits async before ending', () async {
+    var endOfSimActionExecuted = false;
+    Simulator.registerAction(100, () => true);
+    Simulator.registerEndOfSimulationAction(() async {
+      await Future.delayed(Duration(microseconds: 10));
+      endOfSimActionExecuted = true;
+    });
+    await Simulator.run();
+    expect(endOfSimActionExecuted, isTrue);
   });
 }

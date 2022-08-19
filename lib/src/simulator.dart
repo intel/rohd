@@ -56,6 +56,9 @@ class Simulator {
   /// Functions to be executed as soon as possible by the [Simulator].
   static final Queue<Function()> _injectedActions = Queue<Function()>();
 
+  /// Functions to be executed at the end of the simulation.
+  static final Queue<Function()> _endOfSimulationActions = Queue<Function()>();
+
   /// Emits an event before any other actions take place on the tick.
   static Stream get preTick => _preTickController.stream;
 
@@ -131,6 +134,13 @@ class Simulator {
       _pendingTimestamps[timestamp] = [];
     }
     _pendingTimestamps[timestamp]!.add(action);
+  }
+
+  /// Registers an arbitrary [action] to be executed at the end of the simulation.
+  ///
+  /// The simulation will not be marked as ended until these actions complete.
+  static void registerEndOfSimulationAction(Function() action) {
+    _endOfSimulationActions.add(action);
   }
 
   /// Adds an arbitrary [action] to be executed as soon as possible, during the current
@@ -218,9 +228,16 @@ class Simulator {
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick(); // make this async so that await-ing events works
     }
+
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
       logger.warning('Simulation ended due to maximum simulation time.');
     }
+
+    while (_endOfSimulationActions.isNotEmpty) {
+      var endOfSimAction = _endOfSimulationActions.removeFirst();
+      await endOfSimAction();
+    }
+
     _simulationEndedCompleter.complete();
     await simulationEnded;
   }
