@@ -68,6 +68,8 @@
         &#39;Module must be built before passed to dumper.  Call build() first.&#39;);
   }
 
+  _outFileSink = _outputFile.openWrite();
+
   _collectAllSignals();
 
   _writeHeader();
@@ -83,8 +85,10 @@
     }
   });
 
-  Simulator.simulationEnded.then((args) {
+  Simulator.registerEndOfSimulationAction(() async {
     _captureTimestamp(Simulator.time);
+
+    await _terminate();
   });
 }</code></pre>
 </section>
