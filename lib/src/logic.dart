@@ -444,25 +444,10 @@ class Logic {
   /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
   /// zero-width signal is returned.
   Logic getRange(int startIndex, int endIndex) {
-    // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
-    var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
-    var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
-
-    if (modifiedEndIndex < modifiedStartIndex) {
-      throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
-    }
-    if (modifiedEndIndex > width) {
-      throw Exception('End ($endIndex) must be less than width ($width).');
-    }
-    if (modifiedStartIndex < 0) {
-      throw Exception(
-          'Start ($startIndex) must be greater than or equal to 0.');
-    }
-    if (modifiedEndIndex == modifiedStartIndex) {
+    if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
-    return slice(modifiedEndIndex - 1, modifiedStartIndex);
+    return slice(endIndex - 1, startIndex);
   }
 
   /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
