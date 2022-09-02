@@ -433,7 +433,12 @@ class Logic {
   /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
   /// to the original signal.
   Logic slice(int endIndex, int startIndex) {
-    return BusSubset(this, startIndex, endIndex).subset;
+    // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
+    var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
+    var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+
+    // Create a new bus subset
+    return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
@@ -447,7 +452,11 @@ class Logic {
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
-    return slice(endIndex - 1, startIndex);
+
+    // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
+    var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
+    var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
   /// Returns a new [Logic] with width [newWidth] where new bits added are zeros

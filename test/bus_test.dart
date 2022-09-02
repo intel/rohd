@@ -42,6 +42,9 @@ class BusTestModule extends Module {
     var aBJoined = addOutput('a_b_joined', width: a.width + b.width);
     var aPlusB = addOutput('a_plus_b', width: a.width);
     var a1 = addOutput('a1');
+    var aNegativeShrunk = addOutput('a_neg_shrunk', width: 3);
+    var aRNegativeSliced = addOutput('a_r_neg_sliced', width: 5);
+    var aNegativeRange = addOutput('a_neg_range', width: 3);
 
     aBar <= ~a;
     aAndB <= a & b;
@@ -52,6 +55,9 @@ class BusTestModule extends Module {
     aBJoined <= [b, a].swizzle();
     a1 <= a[1];
     aPlusB <= a + b;
+    aNegativeShrunk <= a.slice(-6, 0);
+    aRNegativeSliced <= a.slice(-5, -1);
+    aNegativeRange <= a.getRange(-3, 8);
   }
 }
 
@@ -148,7 +154,10 @@ void main() {
       'a_reversed': 8,
       'a_range': 3,
       'a_b_joined': 16,
-      'a_plus_b': 8
+      'a_plus_b': 8,
+      'a_neg_shrunk': 3,
+      'a_r_neg_sliced': 5,
+      'a_neg_range': 3
     };
     test('NotGate bus', () async {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
@@ -190,6 +199,9 @@ void main() {
         Vector({'a': 0}, {'a_shrunk': 0}),
         Vector({'a': 0xff}, {'a_shrunk': bin('111')}),
         Vector({'a': 0xf5}, {'a_shrunk': 5}),
+        Vector({'a': 0}, {'a_neg_shrunk': 0}),
+        Vector({'a': 0xff}, {'a_neg_shrunk': bin('111')}),
+        Vector({'a': 0xf5}, {'a_neg_shrunk': 5})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -205,6 +217,9 @@ void main() {
         Vector({'a': 0}, {'a_rsliced': 0}),
         Vector({'a': 0xff}, {'a_rsliced': bin('11111')}),
         Vector({'a': 0xf5}, {'a_rsliced': 0xf}),
+        Vector({'a': 0}, {'a_r_neg_sliced': 0}),
+        Vector({'a': 0xff}, {'a_r_neg_sliced': bin('11111')}),
+        Vector({'a': 0xf5}, {'a_r_neg_sliced': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -235,6 +250,9 @@ void main() {
         Vector({'a': 0}, {'a_range': 0}),
         Vector({'a': 0xff}, {'a_range': 7}),
         Vector({'a': bin('10100101')}, {'a_range': bin('101')}),
+        Vector({'a': 0}, {'a_neg_range': 0}),
+        Vector({'a': 0xff}, {'a_neg_range': 7}),
+        Vector({'a': bin('10100101')}, {'a_neg_range': bin('101')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(

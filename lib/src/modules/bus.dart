@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:test/expect.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
 ///
@@ -30,29 +31,23 @@ class BusSubset extends Module with InlineSystemVerilog {
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {String name = 'bussubset'})
       : super(name: name) {
-    // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
-    var modifiedStartIndex =
-        (startIndex < 0) ? bus.width + startIndex : startIndex;
-    var modifiedEndIndex = (endIndex < 0) ? bus.width + endIndex : endIndex;
-
     // If a converted index value is still -ve then it's an Index out of bounds on a Logic Bus
-    if (modifiedStartIndex < 0 || modifiedEndIndex < 0) {
+    if (startIndex < 0 || endIndex < 0) {
       throw Exception(
-          'Start ($startIndex=$modifiedStartIndex) and End ($endIndex=$modifiedEndIndex) must be greater than or equal to 0.');
+          'Start ($startIndex) and End ($endIndex) must be greater than or equal to 0.');
     }
     // If the +ve indices are more than Logic bus width, Index out of bounds
-    if (modifiedEndIndex > bus.width - 1 ||
-        modifiedStartIndex > bus.width - 1) {
+    if (endIndex > bus.width - 1 || startIndex > bus.width - 1) {
       throw Exception(
           'Index out of bounds, indices $startIndex and $endIndex must be less than width');
     }
 
     _original = Module.unpreferredName('original_' + bus.name);
-    _subset = Module.unpreferredName(
-        'subset_${modifiedEndIndex}_${modifiedStartIndex}_' + bus.name);
+    _subset =
+        Module.unpreferredName('subset_${endIndex}_${startIndex}_' + bus.name);
 
     addInput(_original, bus, width: bus.width);
-    var newWidth = (modifiedEndIndex - modifiedStartIndex).abs() + 1;
+    var newWidth = (endIndex - startIndex).abs() + 1;
     addOutput(_subset, width: newWidth);
     subset
         .makeUnassignable(); // so that people can't do a slice assign, not (yet?) implemented

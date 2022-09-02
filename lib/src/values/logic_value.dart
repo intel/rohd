@@ -287,18 +287,20 @@ abstract class LogicValue {
   /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
   /// zero-width value is returned.
   LogicValue getRange(int startIndex, int endIndex) {
-    if (endIndex < startIndex) {
+    var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
+    var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
           'End ($endIndex) cannot be less than start ($startIndex).');
     }
-    if (endIndex > width) {
+    if (modifiedEndIndex > width) {
       throw Exception('End ($endIndex) must be less than width ($width).');
     }
-    if (startIndex < 0) {
+    if (modifiedStartIndex < 0) {
       throw Exception(
           'Start ($startIndex) must be greater than or equal to 0.');
     }
-    return _getRange(startIndex, endIndex);
+    return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
 
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
