@@ -284,8 +284,9 @@ abstract class LogicValue {
 
   /// Returns a subset [LogicValue].  It is inclusive of [startIndex], exclusive of [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
+  /// [startIndex] must come before the [endIndex] on position. If [startIndex] and [endIndex] are equal, then a
   /// zero-width value is returned.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   LogicValue getRange(int startIndex, int endIndex) {
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
     var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;

@@ -424,14 +424,17 @@ class Logic {
   }
 
   /// Accesses the [index]th bit of this signal.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  /// -([width]) <= [index] < [width]
   Logic operator [](int index) {
     return slice(index, index);
   }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex], both inclusive.
   ///
-  /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
+  /// If [endIndex] comes before the [startIndex] on position, the returned value will be reversed relative
   /// to the original signal.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   Logic slice(int endIndex, int startIndex) {
     // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
@@ -446,8 +449,9 @@ class Logic {
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
+  /// [startIndex] must come before the [endIndex]. If [startIndex] and [endIndex] are equal, then a
   /// zero-width signal is returned.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   Logic getRange(int startIndex, int endIndex) {
     if (endIndex == startIndex) {
       return Const(0, width: 0);
@@ -456,6 +460,10 @@ class Logic {
     // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
     var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedEndIndex < modifiedStartIndex) {
+      throw Exception(
+          'End ($endIndex) cannot be less than start ($startIndex).');
+    }
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
