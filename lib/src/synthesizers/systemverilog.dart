@@ -581,6 +581,8 @@ class _SynthLogic {
       throw Exception(
           'This _SynthLogic ($this) cannot be renamed to $constant.');
     }
+    _mergedNameSynthLogic
+        ?.mergeConst(constant); // in case we're changing direction of merge
     _mergedNameSynthLogic = null;
     _mergedConst = constant;
     _needsDeclaration = false;
