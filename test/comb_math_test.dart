@@ -8,9 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class ExampleModule extends Module {
@@ -67,6 +66,25 @@ class StagedExample extends Module {
   }
 }
 
+class PropExample extends Module {
+  Logic get b => output('b');
+  PropExample(Logic a) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+
+    var inner = Logic(name: 'inner', width: 8);
+    var inner2 = Logic(name: 'inner2', width: 8);
+
+    inner2 <= inner;
+
+    Combinational([
+      inner < 0xf,
+      b < a & inner2,
+      inner < 0,
+    ]);
+  }
+}
+
 class ReducedExample extends Module {
   ReducedExample(Logic codepoint) {
     codepoint = addInput('codepoint', codepoint, width: 21);
@@ -92,46 +110,94 @@ void main() {
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
     final codepoint = Logic(width: 21);
-    final exampleModule = ExampleModule(codepoint);
-    await exampleModule.build();
+    final mod = ExampleModule(codepoint);
+    await mod.build();
     final codepoints = '†† †† † † q†† †'.runes;
+
+    var vectors = <Vector>[];
     for (final inputCodepoint in codepoints) {
       codepoint.put(inputCodepoint);
+      LogicValue expected;
       if (inputCodepoint == 8224) {
-        expect(exampleModule.bytes.value, equals(LogicValue.ofInt(0xe2, 32)));
+        expected = LogicValue.ofInt(0xe2, 32);
       } else {
-        expect(exampleModule.bytes.value,
-            equals(LogicValue.filled(32, LogicValue.x)));
+        expected = LogicValue.filled(32, LogicValue.x);
       }
+      vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': expected}));
     }
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+
+    //TODO: enable SV compare once bit slice on expressions is fixed
+
+    // var simResult = SimCompare.iverilogVector(
+    //     mod.generateSynth(), mod.runtimeType.toString(), vectors,
+    //     signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+    // expect(simResult, equals(true));
   });
 
   test('reduced example', () async {
     final codepoint = Logic(width: 21);
-    final exampleModule = ReducedExample(codepoint);
-    await exampleModule.build();
+    final mod = ReducedExample(codepoint);
+    await mod.build();
     final codepoints = '†'.runes;
+
+    var vectors = <Vector>[];
     for (final inputCodepoint in codepoints) {
       codepoint.put(inputCodepoint);
+      vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': 0x808}));
     }
-    expect(exampleModule.bytes.value.isValid, isTrue);
-    expect(exampleModule.bytes.value, equals(LogicValue.ofInt(0x808, 32)));
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    var simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+    expect(simResult, equals(true));
   });
 
   test('simpler example', () async {
     var a = Logic(name: 'a', width: 8);
     var mod = SimplerExample(a);
     await mod.build();
-    a.put(0xff);
-    expect(mod.b.value, equals(LogicValue.ofString('00001111')));
+
+    var vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    var simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {'a': 8, 'b': 8});
+    expect(simResult, equals(true));
   });
 
   test('staged example', () async {
     var a = Logic(name: 'a', width: 8);
     var mod = StagedExample(a);
     await mod.build();
-    a.put(0xff);
-    expect(mod.b.value, equals(LogicValue.ofString('00001111')));
+
+    var vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    var simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {'a': 8, 'b': 8});
+    expect(simResult, equals(true));
+  });
+
+  test('propagation example', () async {
+    var a = Logic(name: 'a', width: 8);
+    var mod = PropExample(a);
+    await mod.build();
+
+    var vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    var simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {'a': 8, 'b': 8});
+    expect(simResult, equals(true));
   });
 
   //TODO: another test with some signals in between to test propagation

@@ -79,7 +79,5 @@ void main() {
           signalToWidthMap: {'b': 3});
       expect(simResult, equals(true));
     });
-
-    //TODO: Add a test for Logic swizzle that's not symmetric!
   });
 }
