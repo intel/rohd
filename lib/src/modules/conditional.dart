@@ -135,6 +135,10 @@ class Combinational extends _Always {
     }
   }
 
+  /// Recursively collects a list of all [Logic]s that this should be sensitive to
+  /// beyond direct inputs.
+  ///
+  /// Use [alreadyParsed] to prevent searching down paths already searched.
   Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
     Set<Logic>? collection;
 
@@ -177,7 +181,6 @@ class Combinational extends _Always {
           // otherwise, we have some sensitivities to send back
           collection ??= {};
           collection.addAll(subSensitivities);
-          // collection.add(dst);
           if (dst.isInput) {
             // collect all the inputs of this module too as sensitivities
             collection.addAll(dst.parentModule!.inputs.values);
@@ -201,7 +204,6 @@ class Combinational extends _Always {
     }
 
     _isExecuting = true;
-    // print('@${Simulator.time} $name executing');
 
     // combinational must always drive all outputs or else you get X!
     for (var element in _assignedReceiverToOutputMap.values) {

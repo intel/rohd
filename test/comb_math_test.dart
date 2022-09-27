@@ -198,6 +198,4 @@ void main() {
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));
   });
-
-  //TODO: another test with some signals in between to test propagation
 }
