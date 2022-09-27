@@ -123,9 +123,11 @@ class Combinational extends _Always {
     }
 
     // combinational must always drive all outputs or else you get X!
-    for (var receiverOutputPair in _assignedReceiverToOutputMap.entries) {
-      if (!drivenLogics.contains(receiverOutputPair.key)) {
-        receiverOutputPair.value.put(LogicValue.x, fill: true);
+    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+      for (var receiverOutputPair in _assignedReceiverToOutputMap.entries) {
+        if (!drivenLogics.contains(receiverOutputPair.key)) {
+          receiverOutputPair.value.put(LogicValue.x, fill: true);
+        }
       }
     }
 
