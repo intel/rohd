@@ -117,6 +117,7 @@ class SimCompare {
     bool dumpWaves = false,
     Map<String, int> signalToWidthMap = const {},
     List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
   }) {
     String signalDeclaration(String signalName) {
       if (signalToWidthMap.containsKey(signalName)) {
@@ -172,9 +173,13 @@ class SimCompare {
         ['-g2012', tmpTestFile, '-o', tmpOutput] + iverilogExtraArgs);
     bool printIfContentsAndCheckError(dynamic output) {
       if (output.toString().isNotEmpty) print(output);
-      return output
-          .toString()
-          .contains(RegExp('error|unable|warning', caseSensitive: false));
+      return output.toString().contains(RegExp(
+          [
+            'error',
+            'unable',
+            if (!allowWarnings) 'warning',
+          ].join('|'),
+          caseSensitive: false));
     }
 
     if (printIfContentsAndCheckError(compileResult.stdout)) return false;
