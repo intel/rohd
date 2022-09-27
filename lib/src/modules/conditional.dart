@@ -135,8 +135,15 @@ class Combinational extends _Always {
     }
   }
 
-  Set<Logic>? _collectSensitivities(Logic src) {
+  Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
     Set<Logic>? collection;
+
+    alreadyParsed ??= {};
+    if (alreadyParsed.contains(src)) {
+      // we're in a loop or already traversed this path, abandon it
+      return null;
+    }
+    alreadyParsed.add(src);
 
     var dstConnections = src.dstConnections.toSet();
     if (src.isInput) {
@@ -156,7 +163,7 @@ class Combinational extends _Always {
         collection ??= {};
       } else {
         // otherwise, let's look deeper to see if any others down the path are sensitivities
-        var subSensitivities = _collectSensitivities(dst);
+        var subSensitivities = _collectSensitivities(dst, alreadyParsed);
 
         if (subSensitivities == null) {
           // if we get null, then it was a dead end
