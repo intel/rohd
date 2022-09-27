@@ -39,7 +39,10 @@ class BusSubset extends Module with InlineSystemVerilog {
           'Index out of bounds, indices $startIndex and $endIndex must be less than width-1');
     }
 
-    _original = Module.unpreferredName('original_' + bus.name);
+    // original name can't be unpreferred because you cannot do a bit slice on expressions
+    // in SystemVerilog, and other expressions could have been in-lined
+    _original = 'original_' + bus.name;
+
     _subset =
         Module.unpreferredName('subset_${endIndex}_${startIndex}_' + bus.name);
 
