@@ -118,23 +118,18 @@ class Swizzle extends Module with InlineSystemVerilog {
     }
     addOutput(_out, width: outputWidth);
 
+    _execute(); // for initial values
     for (var swizzleInput in _swizzleInputs) {
-      // var startIdx = _swizzleInputs.getRange(0, _swizzleInputs.indexOf(swizzleInput)).map((e) => e.width).reduce((a, b) => a+b);
-      var startIdx = 0;
-      for (var xsi in _swizzleInputs) {
-        if (xsi == swizzleInput) break;
-        startIdx += xsi.width;
-      }
-      _execute(startIdx, swizzleInput, null); // for initial values
       swizzleInput.glitch.listen((args) {
-        _execute(startIdx, swizzleInput, args);
+        _execute();
       });
     }
   }
 
   /// Executes the functional behavior of this gate.
-  void _execute(int startIdx, Logic swizzleInput, LogicValueChanged? args) {
-    var updatedVal = out.value.withSet(startIdx, swizzleInput.value);
+  void _execute() {
+    var updatedVal =
+        _swizzleInputs.reversed.map((e) => e.value).toList().swizzle();
     out.put(updatedVal);
   }
 
