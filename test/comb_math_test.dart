@@ -27,6 +27,9 @@ class ExampleModule extends Module {
                 .slice(7, 0)
                 .zeroExtend(32),
         count < count - 2,
+      ], orElse: [
+        // this is necessary for x's in iverilog (https://github.com/steveicarus/iverilog/issues/776)
+        bytes < LogicValue.filled(32, LogicValue.x)
       ]),
     ]);
   }
@@ -105,8 +108,6 @@ void main() {
     Simulator.reset();
   });
 
-  //TODO: make these tests use simcompare
-
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
     final codepoint = Logic(width: 21);
@@ -128,12 +129,10 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
 
-    //TODO: enable SV compare once bit slice on expressions is fixed
-
-    // var simResult = SimCompare.iverilogVector(
-    //     mod.generateSynth(), mod.runtimeType.toString(), vectors,
-    //     signalToWidthMap: {'codepoint': 21, 'bytes': 32});
-    // expect(simResult, equals(true));
+    var simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+    expect(simResult, equals(true));
   });
 
   test('reduced example', () async {
