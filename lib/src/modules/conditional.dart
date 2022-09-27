@@ -18,7 +18,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   final List<Conditional> conditionals;
 
+  /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+
+  /// A mapping from internal driver signals to designated [Module] inputs.
   final Map<Logic, Logic> _assignedDriverToInputMap = {};
 
   final Uniquifier _portUniquifier = Uniquifier();
@@ -93,15 +96,85 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
+///
+/// Note that it is necessary to build this module and any sensitive dependencies
+/// in order for sensitivity detection to work properly in all cases.
 class Combinational extends _Always {
   Combinational(List<Conditional> conditionals, {String name = 'combinational'})
       : super(conditionals, name: name) {
     _execute(); // for initial values
-    for (var element in _assignedDriverToInputMap.keys) {
-      element.glitch.listen((args) {
+    for (var driver in _assignedDriverToInputMap.keys) {
+      driver.glitch.listen((args) {
         _execute();
       });
     }
+  }
+
+  @override
+  Future<void> build() async {
+    // any glitch on an input to an output's sensitivity should trigger re-execution
+    _listenToSensitivities();
+
+    await super.build();
+  }
+
+  /// Sets up additional glitch listening for sensitive modules.
+  void _listenToSensitivities() {
+    var sensitivities = <Logic>{};
+    for (var out in outputs.values) {
+      var newSensitivities = _collectSensitivities(out);
+      if (newSensitivities != null) {
+        sensitivities.addAll(newSensitivities);
+      }
+    }
+
+    for (var sensitivity in sensitivities) {
+      sensitivity.glitch.listen((args) {
+        _execute();
+      });
+    }
+  }
+
+  Set<Logic>? _collectSensitivities(Logic src) {
+    Set<Logic>? collection;
+
+    var dstConnections = src.dstConnections.toSet();
+    if (src.isInput) {
+      // we're at the input to another module, grab all the outputs of it and continue searching
+      dstConnections.addAll(src.parentModule!.outputs.values);
+    }
+
+    if (dstConnections.isEmpty) {
+      // we've reached the end of the line and not hit an input to this Combinational
+      return null;
+    }
+
+    for (var dst in dstConnections) {
+      // if any of these are an input to this Combinational, then we've found a sensitivity
+      if (dst.isInput && dst.parentModule! == this) {
+        // make sure we have something to return
+        collection ??= {};
+      } else {
+        // otherwise, let's look deeper to see if any others down the path are sensitivities
+        var subSensitivities = _collectSensitivities(dst);
+
+        if (subSensitivities == null) {
+          // if we get null, then it was a dead end
+          continue;
+        } else {
+          // otherwise, we have some sensitivities to send back
+          collection ??= {};
+          collection.addAll(subSensitivities);
+          // collection.add(dst);
+          if (dst.isInput) {
+            // collect all the inputs of this module too as sensitivities
+            collection.addAll(dst.parentModule!.inputs.values);
+          }
+        }
+      }
+    }
+
+    return collection;
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to detect reentrance.
