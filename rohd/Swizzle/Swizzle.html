@@ -72,16 +72,10 @@
   }
   addOutput(_out, width: outputWidth);
 
+  _execute(); &#47;&#47; for initial values
   for (var swizzleInput in _swizzleInputs) {
-    &#47;&#47; var startIdx = _swizzleInputs.getRange(0, _swizzleInputs.indexOf(swizzleInput)).map((e) =&gt; e.width).reduce((a, b) =&gt; a+b);
-    var startIdx = 0;
-    for (var xsi in _swizzleInputs) {
-      if (xsi == swizzleInput) break;
-      startIdx += xsi.width;
-    }
-    _execute(startIdx, swizzleInput, null); &#47;&#47; for initial values
     swizzleInput.glitch.listen((args) {
-      _execute(startIdx, swizzleInput, args);
+      _execute();
     });
   }
 }</code></pre>

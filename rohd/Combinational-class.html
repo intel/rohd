@@ -52,6 +52,8 @@
 <section class="desc markdown">
   <p>Represents a block of combinational logic.</p>
 <p>This is similar to an <code>always_comb</code> block in SystemVerilog.</p>
+<p>Note that it is necessary to build this module and any sensitive dependencies
+in order for sensitivity detection to work properly in all cases.</p>
 </section>
 
 
@@ -122,7 +124,7 @@
 
 </dt>
 <dd class="inherited">
-  Indicates whether this <a href="../rohd/Module-class.html">Module</a> has had the <a href="../rohd/Module/build.html">build()</a> method called on it.
+  Indicates whether this <a href="../rohd/Module-class.html">Module</a> has had the <a href="../rohd/Combinational/build.html">build()</a> method called on it.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -210,7 +212,7 @@
 
 </dt>
 <dd class="inherited">
-  If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the <a href="../rohd/Module/build.html">build</a> will fail.
+  If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the <a href="../rohd/Combinational/build.html">build</a> will fail.
   <div class="features">final, inherited</div>
 
 </dd>
@@ -254,7 +256,7 @@
 
 </dt>
 <dd class="inherited">
-  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Module/build.html">build</a> this will be a guaranteed unique name within its scope.
+  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Combinational/build.html">build</a> this will be a guaranteed unique name within its scope.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -320,16 +322,16 @@
 
 </dd>
 
-        <dt id="build" class="callable inherited">
-  <span class="name"><a href="../rohd/Module/build.html">build</a></span><span class="signature">(<wbr>)
+        <dt id="build" class="callable">
+  <span class="name"><a href="../rohd/Combinational/build.html">build</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.1/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Builds the <a href="../rohd/Module-class.html">Module</a> and all <a href="../rohd/Module/subModules.html">subModules</a> within it.
-  <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/mustCallSuper-constant.html">mustCallSuper</a>, inherited</div>
+  <div class="features">override</div>
 
 </dd>
 
@@ -640,7 +642,7 @@
     <li class="inherited"><a href="../rohd/Module/addOutput.html">addOutput</a></li>
     <li><a href="../rohd/Combinational/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
     <li><a href="../rohd/Combinational/assignOperator.html">assignOperator</a></li>
-    <li class="inherited"><a href="../rohd/Module/build.html">build</a></li>
+    <li><a href="../rohd/Combinational/build.html">build</a></li>
     <li class="inherited"><a href="../rohd/Module/generateSynth.html">generateSynth</a></li>
     <li class="inherited"><a href="../rohd/Module/hierarchy.html">hierarchy</a></li>
     <li class="inherited"><a href="../rohd/Module/hierarchyString.html">hierarchyString</a></li>
