@@ -201,7 +201,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
       _verilogInternalNets(),
       _verilogAssignments(),
       _verilogSubModuleInstantiations(moduleToInstanceTypeMap),
-    ].join('\n');
+    ].where((element) => element.isNotEmpty).join('\n');
   }
 
   String _verilogPorts() {

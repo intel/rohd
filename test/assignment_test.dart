@@ -41,7 +41,7 @@ void main() {
       exampleModule.generateSynth(),
       exampleModule.runtimeType.toString(),
       vectors,
-      allowWarnings: true,
+      allowWarnings: true, // since always_comb has no sensitivities
     );
     expect(simResult, equals(true));
   });
