@@ -21,8 +21,7 @@
 </head>
 
 
-<body data-base-href="../../"
-      data-using-base-href="false">
+<body data-base-href="../../" data-using-base-href="false">
 
 <div id="overlay-under-drawer"></div>
 
@@ -51,9 +50,9 @@
 
     <section class="multi-line-signature">
       <span class="name ">BusSubset</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-bus"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">bus</span>, </span></li>
-<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.17.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
-<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.17.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.17.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.1/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
+<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.1/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -75,7 +74,10 @@
         &#39;Index out of bounds, indices $startIndex and $endIndex must be less than width-1&#39;);
   }
 
-  _original = Module.unpreferredName(&#39;original_&#39; + bus.name);
+  &#47;&#47; original name can&#39;t be unpreferred because you cannot do a bit slice on expressions
+  &#47;&#47; in SystemVerilog, and other expressions could have been in-lined
+  _original = &#39;original_&#39; + bus.name;
+
   _subset =
       Module.unpreferredName(&#39;subset_${endIndex}_${startIndex}_&#39; + bus.name);
 
@@ -120,7 +122,7 @@
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li><a href="../../rohd/BusSubset/endIndex.html">endIndex</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.17.6/dart-core/Object/hashCode.html">hashCode</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.1/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../../rohd/Module/name.html">name</a></li>
@@ -129,7 +131,7 @@
     <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveName.html">reserveName</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.17.6/dart-core/Object/runtimeType.html">runtimeType</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.1/dart-core/Object/runtimeType.html">runtimeType</a></li>
     <li class="inherited"><a href="../../rohd/Module/signals.html">signals</a></li>
     <li><a href="../../rohd/BusSubset/startIndex.html">startIndex</a></li>
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
@@ -149,12 +151,12 @@
     <li class="inherited"><a href="../../rohd/Module/isInput.html">isInput</a></li>
     <li class="inherited"><a href="../../rohd/Module/isOutput.html">isOutput</a></li>
     <li class="inherited"><a href="../../rohd/Module/isPort.html">isPort</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.17.6/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.1/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
     <li class="inherited"><a href="../../rohd/Module/output.html">output</a></li>
     <li class="inherited"><a href="../../rohd/Module/toString.html">toString</a></li>
 
     <li class="section-title inherited"><a href="../../rohd/BusSubset-class.html#operators">Operators</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.17.6/dart-core/Object/operator_equals.html">operator ==</a></li>
+    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.1/dart-core/Object/operator_equals.html">operator ==</a></li>
 
 
 
@@ -180,7 +182,7 @@
 
 
 <script src="../../static-assets/highlight.pack.js?v1"></script>
-<script src="../../static-assets/script.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
 
 
 
