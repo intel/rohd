@@ -147,6 +147,11 @@ class Combinational extends _Always {
 
     var dstConnections = src.dstConnections.toSet();
     if (src.isInput) {
+      if (src.parentModule! is Sequential) {
+        // sequential logic can't be a sensitivity, so ditch those
+        return null;
+      }
+
       // we're at the input to another module, grab all the outputs of it and continue searching
       dstConnections.addAll(src.parentModule!.outputs.values);
     }
@@ -196,6 +201,7 @@ class Combinational extends _Always {
     }
 
     _isExecuting = true;
+    // print('@${Simulator.time} $name executing');
 
     // combinational must always drive all outputs or else you get X!
     for (var element in _assignedReceiverToOutputMap.values) {
