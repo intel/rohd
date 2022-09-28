@@ -17,3 +17,4 @@ dependencies:
 
 dev_dependencies:
   lints: ^1.0.1
+  benchmark_harness: ^2.2.0
