@@ -424,8 +424,12 @@ class Logic {
   }
 
   /// Accesses the [index]th bit of this signal.
-  Logic operator [](int index) {
-    return slice(index, index);
+  Logic operator [](dynamic index) {
+      if (index is Logic) {
+          return IndexGate(this, index).y;
+      }
+
+      return this.getRange(index, index + 1);
   }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex], both inclusive.

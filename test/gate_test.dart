@@ -92,6 +92,17 @@ class MuxWrapper extends Module {
   }
 }
 
+class IndexGateTestModule extends Module {
+  IndexGateTestModule(Logic a, Logic b): super(name: 'indexgatetestmodule') {
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    var bitSet = addOutput('a_indexedby_b', width: 1);
+
+    bitSet <= a[b];
+  }
+}
+
+
 void main() {
   tearDown(() {
     Simulator.reset();
@@ -419,6 +430,20 @@ void main() {
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('Index by Logic test', () async {
+      var gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      var vectors = [
+        Vector({'a': 14, 'b': 0}, {'a_indexedby_b': 0}),
+        Vector({'a': 14, 'b': 2}, {'a_indexedby_b': 1})
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {'a': 8, 'b': 8});
       expect(simResult, equals(true));
     });
   });

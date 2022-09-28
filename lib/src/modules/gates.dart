@@ -282,7 +282,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
     var bLogic = b is Logic ? b : Const(b, width: a.width);
 
     _a = Module.unpreferredName('a_' + a.name);
-    _b = Module.unpreferredName('b_' + b.name);
+    _b = Module.unpreferredName('b_' + b.name); 
     _y = Module.unpreferredName('${a.name}_${name}_${bLogic.name}');
 
     addInput(_a, a, width: a.width);
@@ -511,5 +511,66 @@ class Mux extends Module with InlineSystemVerilog {
     var d1 = inputs[_d1]!;
     var control = inputs[_control]!;
     return '$control ? $d1 : $d0';
+  }
+}
+
+/// A generic two-input bit index gate [Module].
+///
+/// It always takes two inputs and has one output of width 1.
+class IndexGate extends Module with InlineSystemVerilog {
+  late final String _a, _b, _y;
+
+  /// The primary input to this gate.
+  Logic get a => input(_a);
+
+  /// The bit index for this gate.
+  Logic get b => input(_b);
+
+  /// The output of this gate.
+  Logic get y => output(_y);
+
+  /// Constructs a two-input bit index gate for an abitrary custom functional implementation.
+  ///
+  /// The bit [_b] will be indexed as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use _a[index], where index is a Const(_b)
+  IndexGate(Logic a, Logic b): super() {
+    _a = 'a_${a.name}';
+    _b = 'b_${b.name}';
+    _y = Module.unpreferredName('${a.name}_indexby_${b.name}');
+
+    addInput(_a, a, width: a.width);
+    addInput(_b, b, width: b.width);
+    addOutput(_y, width: 1);
+
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    a.glitch.listen((args) {
+      _execute();
+    });
+    b.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+      if (b.hasValidValue()) {
+          var indexVal = b.value.toInt();
+          y.put(a.getRange(indexVal, indexVal + 1).value);
+      } else {
+          y.put(LogicValue.x);
+      }
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
+    var target = inputs[_a]!;
+    var idx = inputs[_b]!;
+    return '$target[$idx]';
   }
 }
