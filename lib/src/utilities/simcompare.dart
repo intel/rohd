@@ -62,8 +62,13 @@ class Vector {
 }
 
 class SimCompare {
-  static Future<void> checkFunctionalVector(
-      Module module, List<Vector> vectors) async {
+  /// Runs a ROHD simulation where each of the [vectors] is executed per clock cycle
+  /// sequentially.
+  ///
+  /// If [enableChecking] is set to false, then it will drive the simulation but not
+  /// check that the outputs match.
+  static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
+      {bool enableChecking = true}) async {
     var timestamp = 1;
     for (var vector in vectors) {
       // print('Running vector: $vector');
@@ -73,33 +78,35 @@ class SimCompare {
           module.input(signalName).put(value);
         }
 
-        Simulator.postTick.first.then((value) {
-          for (var signalName in vector.expectedOutputValues.keys) {
-            var value = vector.expectedOutputValues[signalName];
-            var o = module.output(signalName);
-            var errorReason =
-                'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
-            if (value is int) {
-              if (!o.value.isValid) {
-                // invalid value causes exception without helpful message, so throw it
-                throw Exception(errorReason);
-              }
-              expect(o.value.toInt(), equals(value), reason: errorReason);
-            } else if (value is LogicValue) {
-              if (o.width > 1 &&
-                  (value == LogicValue.x || value == LogicValue.z)) {
-                for (var oBit in o.value.toList()) {
-                  expect(oBit, equals(value), reason: errorReason);
+        if (enableChecking) {
+          Simulator.postTick.first.then((value) {
+            for (var signalName in vector.expectedOutputValues.keys) {
+              var value = vector.expectedOutputValues[signalName];
+              var o = module.output(signalName);
+              var errorReason =
+                  'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
+              if (value is int) {
+                if (!o.value.isValid) {
+                  // invalid value causes exception without helpful message, so throw it
+                  throw Exception(errorReason);
+                }
+                expect(o.value.toInt(), equals(value), reason: errorReason);
+              } else if (value is LogicValue) {
+                if (o.width > 1 &&
+                    (value == LogicValue.x || value == LogicValue.z)) {
+                  for (var oBit in o.value.toList()) {
+                    expect(oBit, equals(value), reason: errorReason);
+                  }
+                } else {
+                  expect(o.value, equals(value));
                 }
               } else {
-                expect(o.value, equals(value));
+                throw Exception(
+                    'Value type ${value.runtimeType} is not supported (yet?)');
               }
-            } else {
-              throw Exception(
-                  'Value type ${value.runtimeType} is not supported (yet?)');
             }
-          }
-        });
+          });
+        }
       });
       timestamp += Vector.period;
     }

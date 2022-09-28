@@ -205,13 +205,18 @@ class Combinational extends _Always {
 
     _isExecuting = true;
 
-    // combinational must always drive all outputs or else you get X!
-    for (var element in _assignedReceiverToOutputMap.values) {
-      element.put(LogicValue.x, fill: true);
+    var drivenLogics = <Logic>{};
+    for (var element in conditionals) {
+      drivenLogics.addAll(element.execute());
     }
 
-    for (var element in conditionals) {
-      element.execute();
+    // combinational must always drive all outputs or else you get X!
+    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+      for (var receiverOutputPair in _assignedReceiverToOutputMap.entries) {
+        if (!drivenLogics.contains(receiverOutputPair.key)) {
+          receiverOutputPair.value.put(LogicValue.x, fill: true);
+        }
+      }
     }
 
     _isExecuting = false;
@@ -441,7 +446,7 @@ abstract class Conditional {
   ///
   /// Returns a [List] of all [Logic] signals which were driven during execution.
   @protected
-  List<Logic> execute();
+  Set<Logic> execute();
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s receivers.
   List<Logic> getReceivers();
@@ -491,9 +496,9 @@ class ConditionalAssign extends Conditional {
   List<Conditional> getConditionals() => [];
 
   @override
-  List<Logic> execute() {
+  Set<Logic> execute() {
     receiverOutput(receiver).put(driverValue(driver));
-    return [receiver];
+    return {receiver};
   }
 
   @override
@@ -569,15 +574,15 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (var receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
       }
-      return [];
+      return {};
     }
 
     CaseItem? foundMatch;
@@ -775,8 +780,8 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
 
     for (var iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
@@ -901,8 +906,8 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
     if (driverValue(condition)[0] == LogicValue.one) {
       for (var conditional in then) {
         drivenLogics.addAll(conditional.execute());
