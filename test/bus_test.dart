@@ -42,6 +42,7 @@ class BusTestModule extends Module {
     var aBJoined = addOutput('a_b_joined', width: a.width + b.width);
     var aPlusB = addOutput('a_plus_b', width: a.width);
     var a1 = addOutput('a1');
+    var expressionBitSelect = addOutput('expression_bit_select', width: 4);
 
     aBar <= ~a;
     aAndB <= a & b;
@@ -52,6 +53,8 @@ class BusTestModule extends Module {
     aBJoined <= [b, a].swizzle();
     a1 <= a[1];
     aPlusB <= a + b;
+    expressionBitSelect <=
+        [aBJoined, aShrunk, aRange, aRSliced, aPlusB].swizzle().slice(3, 0);
   }
 }
 
@@ -148,7 +151,8 @@ void main() {
       'a_reversed': 8,
       'a_range': 3,
       'a_b_joined': 16,
-      'a_plus_b': 8
+      'a_plus_b': 8,
+      'expression_bit_select': 4,
     };
     test('NotGate bus', () async {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
@@ -289,6 +293,19 @@ void main() {
       var simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('expression bit select', () async {
+      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      var vectors = [
+        Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      var simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
   });

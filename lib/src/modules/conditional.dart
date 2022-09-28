@@ -18,7 +18,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   final List<Conditional> conditionals;
 
+  /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+
+  /// A mapping from internal driver signals to designated [Module] inputs.
   final Map<Logic, Logic> _assignedDriverToInputMap = {};
 
   final Uniquifier _portUniquifier = Uniquifier();
@@ -93,15 +96,100 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
+///
+/// Note that it is necessary to build this module and any sensitive dependencies
+/// in order for sensitivity detection to work properly in all cases.
 class Combinational extends _Always {
   Combinational(List<Conditional> conditionals, {String name = 'combinational'})
       : super(conditionals, name: name) {
     _execute(); // for initial values
-    for (var element in _assignedDriverToInputMap.keys) {
-      element.glitch.listen((args) {
+    for (var driver in _assignedDriverToInputMap.keys) {
+      driver.glitch.listen((args) {
         _execute();
       });
     }
+  }
+
+  @override
+  Future<void> build() async {
+    // any glitch on an input to an output's sensitivity should trigger re-execution
+    _listenToSensitivities();
+
+    await super.build();
+  }
+
+  /// Sets up additional glitch listening for sensitive modules.
+  void _listenToSensitivities() {
+    var sensitivities = <Logic>{};
+    for (var out in outputs.values) {
+      var newSensitivities = _collectSensitivities(out);
+      if (newSensitivities != null) {
+        sensitivities.addAll(newSensitivities);
+      }
+    }
+
+    for (var sensitivity in sensitivities) {
+      sensitivity.glitch.listen((args) {
+        _execute();
+      });
+    }
+  }
+
+  /// Recursively collects a list of all [Logic]s that this should be sensitive to
+  /// beyond direct inputs.
+  ///
+  /// Use [alreadyParsed] to prevent searching down paths already searched.
+  Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
+    Set<Logic>? collection;
+
+    alreadyParsed ??= {};
+    if (alreadyParsed.contains(src)) {
+      // we're in a loop or already traversed this path, abandon it
+      return null;
+    }
+    alreadyParsed.add(src);
+
+    var dstConnections = src.dstConnections.toSet();
+    if (src.isInput) {
+      if (src.parentModule! is Sequential) {
+        // sequential logic can't be a sensitivity, so ditch those
+        return null;
+      }
+
+      // we're at the input to another module, grab all the outputs of it and continue searching
+      dstConnections.addAll(src.parentModule!.outputs.values);
+    }
+
+    if (dstConnections.isEmpty) {
+      // we've reached the end of the line and not hit an input to this Combinational
+      return null;
+    }
+
+    for (var dst in dstConnections) {
+      // if any of these are an input to this Combinational, then we've found a sensitivity
+      if (dst.isInput && dst.parentModule! == this) {
+        // make sure we have something to return
+        collection ??= {};
+      } else {
+        // otherwise, let's look deeper to see if any others down the path are sensitivities
+        var subSensitivities = _collectSensitivities(dst, alreadyParsed);
+
+        if (subSensitivities == null) {
+          // if we get null, then it was a dead end
+          continue;
+        } else {
+          // otherwise, we have some sensitivities to send back
+          collection ??= {};
+          collection.addAll(subSensitivities);
+          if (dst.isInput) {
+            // collect all the inputs of this module too as sensitivities
+            collection.addAll(dst.parentModule!.inputs.values);
+          }
+        }
+      }
+    }
+
+    return collection;
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to detect reentrance.
@@ -117,13 +205,18 @@ class Combinational extends _Always {
 
     _isExecuting = true;
 
-    // combinational must always drive all outputs or else you get X!
-    for (var element in _assignedReceiverToOutputMap.values) {
-      element.put(LogicValue.x, fill: true);
+    var drivenLogics = <Logic>{};
+    for (var element in conditionals) {
+      drivenLogics.addAll(element.execute());
     }
 
-    for (var element in conditionals) {
-      element.execute();
+    // combinational must always drive all outputs or else you get X!
+    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+      for (var receiverOutputPair in _assignedReceiverToOutputMap.entries) {
+        if (!drivenLogics.contains(receiverOutputPair.key)) {
+          receiverOutputPair.value.put(LogicValue.x, fill: true);
+        }
+      }
     }
 
     _isExecuting = false;
@@ -353,7 +446,7 @@ abstract class Conditional {
   ///
   /// Returns a [List] of all [Logic] signals which were driven during execution.
   @protected
-  List<Logic> execute();
+  Set<Logic> execute();
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s receivers.
   List<Logic> getReceivers();
@@ -403,9 +496,9 @@ class ConditionalAssign extends Conditional {
   List<Conditional> getConditionals() => [];
 
   @override
-  List<Logic> execute() {
+  Set<Logic> execute() {
     receiverOutput(receiver).put(driverValue(driver));
-    return [receiver];
+    return {receiver};
   }
 
   @override
@@ -481,15 +574,15 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (var receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
       }
-      return [];
+      return {};
     }
 
     CaseItem? foundMatch;
@@ -687,8 +780,8 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
 
     for (var iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
@@ -813,8 +906,8 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    var drivenLogics = <Logic>{};
     if (driverValue(condition)[0] == LogicValue.one) {
       for (var conditional in then) {
         drivenLogics.addAll(conditional.execute());

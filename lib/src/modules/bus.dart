@@ -39,7 +39,10 @@ class BusSubset extends Module with InlineSystemVerilog {
           'Index out of bounds, indices $startIndex and $endIndex must be less than width-1');
     }
 
-    _original = Module.unpreferredName('original_' + bus.name);
+    // original name can't be unpreferred because you cannot do a bit slice on expressions
+    // in SystemVerilog, and other expressions could have been in-lined
+    _original = 'original_' + bus.name;
+
     _subset =
         Module.unpreferredName('subset_${endIndex}_${startIndex}_' + bus.name);
 
@@ -115,23 +118,18 @@ class Swizzle extends Module with InlineSystemVerilog {
     }
     addOutput(_out, width: outputWidth);
 
+    _execute(); // for initial values
     for (var swizzleInput in _swizzleInputs) {
-      // var startIdx = _swizzleInputs.getRange(0, _swizzleInputs.indexOf(swizzleInput)).map((e) => e.width).reduce((a, b) => a+b);
-      var startIdx = 0;
-      for (var xsi in _swizzleInputs) {
-        if (xsi == swizzleInput) break;
-        startIdx += xsi.width;
-      }
-      _execute(startIdx, swizzleInput, null); // for initial values
       swizzleInput.glitch.listen((args) {
-        _execute(startIdx, swizzleInput, args);
+        _execute();
       });
     }
   }
 
   /// Executes the functional behavior of this gate.
-  void _execute(int startIdx, Logic swizzleInput, LogicValueChanged? args) {
-    var updatedVal = out.value.withSet(startIdx, swizzleInput.value);
+  void _execute() {
+    var updatedVal =
+        _swizzleInputs.reversed.map((e) => e.value).toList().swizzle();
     out.put(updatedVal);
   }
 
