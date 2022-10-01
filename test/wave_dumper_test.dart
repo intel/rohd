@@ -24,20 +24,18 @@ class SimpleModule extends Module {
 const tempDumpDir = 'tmp_test';
 
 /// Gets the path of the VCD file based on a name.
-String temporaryDumpPath(String name) {
-  return '$tempDumpDir/temp_dump_$name.vcd';
-}
+String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
 /// Attaches a [WaveDumper] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
-  var tmpDumpFile = temporaryDumpPath(name);
+  final tmpDumpFile = temporaryDumpPath(name);
   WaveDumper(module, outputPath: tmpDumpFile);
 }
 
 /// Deletes the temporary VCD file associated with [name].
 void deleteTemporaryDump(String name) {
-  var tmpDumpFile = temporaryDumpPath(name);
+  final tmpDumpFile = temporaryDumpPath(name);
   File(tmpDumpFile).deleteSync();
 }
 
@@ -51,7 +49,7 @@ enum VCDParseState { findSig, findDumpVars, findValue }
 /// cases where only one signal is named [signalName] across all scopes.
 bool confirmValue(
     String vcdContents, String signalName, int timestamp, LogicValue value) {
-  var lines = vcdContents.split('\n');
+  final lines = vcdContents.split('\n');
 
   String? sigName;
   int? width;
@@ -60,14 +58,14 @@ bool confirmValue(
 
   VCDParseState state = VCDParseState.findSig;
 
-  var sigNameRegexp = RegExp(r'\s*\$var\swire\s(\d+)\s(\S*)\s(\S*)\s\$end');
+  final sigNameRegexp = RegExp(r'\s*\$var\swire\s(\d+)\s(\S*)\s(\S*)\s\$end');
   for (var line in lines) {
     if (state == VCDParseState.findSig) {
       if (sigNameRegexp.hasMatch(line)) {
-        var match = sigNameRegexp.firstMatch(line)!;
-        int w = int.parse(match.group(1)!);
-        var sName = match.group(2)!;
-        var lName = match.group(3)!;
+        final match = sigNameRegexp.firstMatch(line)!;
+        final int w = int.parse(match.group(1)!);
+        final sName = match.group(2)!;
+        final lName = match.group(3)!;
 
         if (lName == signalName) {
           sigName = sName;
@@ -105,11 +103,11 @@ void main() {
   });
 
   test('attach dumper after put', () async {
-    var a = Logic(name: 'a');
-    var mod = SimpleModule(a);
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
     await mod.build();
 
-    var dumpName = 'dumpAfterPut';
+    const dumpName = 'dumpAfterPut';
 
     a.put(1);
     createTemporaryDump(mod, dumpName);
@@ -117,7 +115,7 @@ void main() {
     Simulator.registerAction(10, () => a.put(0));
     await Simulator.run();
 
-    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
         equals(true));
@@ -130,11 +128,11 @@ void main() {
   });
 
   test('attach dumper before put', () async {
-    var a = Logic(name: 'a');
-    var mod = SimpleModule(a);
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
     await mod.build();
 
-    var dumpName = 'dumpBeforePut';
+    const dumpName = 'dumpBeforePut';
 
     createTemporaryDump(mod, dumpName);
     a.inject(1);
@@ -143,7 +141,7 @@ void main() {
     Simulator.registerAction(20, () => a.put(1));
     await Simulator.run();
 
-    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
         equals(true));
@@ -158,14 +156,14 @@ void main() {
   });
 
   test('multiple injects in the same timestamp', () async {
-    var clk = SimpleClockGenerator(10).clk;
-    var a = Logic(name: 'a');
-    var mod = SimpleModule(a);
+    final clk = SimpleClockGenerator(10).clk;
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
     a <= clk;
 
     await mod.build();
 
-    var dumpName = 'multiInject';
+    const dumpName = 'multiInject';
 
     createTemporaryDump(mod, dumpName);
 
@@ -181,7 +179,7 @@ void main() {
 
     await Simulator.simulationEnded;
 
-    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('0')),
         equals(true));
@@ -196,11 +194,11 @@ void main() {
   });
 
   test('multi-bit value', () async {
-    var a = Logic(name: 'a', width: 8);
-    var mod = SimpleModule(a);
+    final a = Logic(name: 'a', width: 8);
+    final mod = SimpleModule(a);
     await mod.build();
 
-    var dumpName = 'multiBit';
+    const dumpName = 'multiBit';
 
     createTemporaryDump(mod, dumpName);
     a.inject(0x5a);
@@ -208,7 +206,7 @@ void main() {
     Simulator.registerAction(10, () => a.put(0xa5));
     await Simulator.run();
 
-    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofInt(0x5a, 8)),
         equals(true));
@@ -219,11 +217,11 @@ void main() {
   });
 
   test('multi-bit value mixed invalid', () async {
-    var a = Logic(name: 'a', width: 8);
-    var mod = SimpleModule(a);
+    final a = Logic(name: 'a', width: 8);
+    final mod = SimpleModule(a);
     await mod.build();
 
-    var dumpName = 'multiBitInvalid';
+    const dumpName = 'multiBitInvalid';
 
     createTemporaryDump(mod, dumpName);
     a.inject(LogicValue.ofString('01xzzx10'));
@@ -231,7 +229,7 @@ void main() {
     Simulator.registerAction(10, () => a.put(LogicValue.ofString('0x0x1z1z')));
     await Simulator.run();
 
-    var vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
     expect(confirmValue(vcdContents, 'a', 0, LogicValue.ofString('01xzzx10')),
         equals(true));

@@ -25,7 +25,7 @@ class Passthrough extends Module {
   }
 
   void _setup() {
-    var inner = Logic(name: 'inner');
+    final inner = Logic(name: 'inner');
     inner <= a;
     b <= inner;
   }

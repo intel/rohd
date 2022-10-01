@@ -20,29 +20,28 @@ class DelaySignal extends Module {
   final int depth;
 
   DelaySignal(Logic en, Logic inputVal,
-      {this.bitWidth = 4, this.depth = 5, name = 'movingSum'})
+      {this.bitWidth = 4, this.depth = 5, String name = 'movingSum'})
       : super(name: name) {
     en = addInput('en', en);
     inputVal = addInput('inputVal', inputVal, width: bitWidth);
-    // clk = addInput('clk', clk);
-    var clk = SimpleClockGenerator(10).clk;
-    List<Logic> _z = List<Logic>.generate(
+    final clk = SimpleClockGenerator(10).clk;
+    final z = List<Logic>.generate(
         depth, (index) => Logic(width: bitWidth, name: 'z$index'));
 
-    var out = addOutput('out', width: bitWidth);
+    final out = addOutput('out', width: bitWidth);
 
-    List<ConditionalAssign> _zList = [_z[0] < inputVal];
-    for (int i = 0; i < _z.length; i++) {
-      if (i == _z.length - 1) {
-        _zList.add(out < _z[i]);
+    final zList = <ConditionalAssign>[z[0] < inputVal];
+    for (var i = 0; i < z.length; i++) {
+      if (i == z.length - 1) {
+        zList.add(out < z[i]);
       } else {
-        _zList.add(_z[i + 1] < _z[i]);
+        zList.add(z[i + 1] < z[i]);
       }
     }
 
     Sequential(clk, [
       IfBlock([
-        Iff(en, _zList),
+        Iff(en, zList),
         Else([
           out < 0,
         ])
@@ -52,20 +51,20 @@ class DelaySignal extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
+  tearDown(() async {
+    await Simulator.reset();
   });
 
   test('simple pipeline', () async {
-    var dut = DelaySignal(
+    final dut = DelaySignal(
       Logic(),
       Logic(width: 4),
     );
     await dut.build();
 
-    var signalToWidthMap = {'inputVal': 4, 'out': 4};
+    final signalToWidthMap = {'inputVal': 4, 'out': 4};
 
-    var vectors = [
+    final vectors = [
       Vector({'inputVal': 0, 'en': 1}, {}),
       Vector({'inputVal': 1, 'en': 0}, {}),
       Vector({'inputVal': 2, 'en': 0}, {}),
@@ -80,7 +79,7 @@ void main() {
       Vector({}, {'out': 5}),
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
       dut.generateSynth(),
       dut.runtimeType.toString(),
       vectors,

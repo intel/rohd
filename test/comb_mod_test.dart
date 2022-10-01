@@ -24,11 +24,11 @@ class IncrModule extends Module {
 class ReuseExample extends Module {
   ReuseExample(Logic a) {
     a = addInput('a', a, width: a.width);
-    var b = addOutput('b', width: a.width);
+    final b = addOutput('b', width: a.width);
 
-    Logic intermediate = Logic(name: 'intermediate', width: a.width);
+    final Logic intermediate = Logic(name: 'intermediate', width: a.width);
 
-    var inc = IncrModule(intermediate);
+    final inc = IncrModule(intermediate);
 
     Combinational([
       intermediate < a,
@@ -43,9 +43,9 @@ class ReuseExample extends Module {
 class DuplicateExample extends Module {
   DuplicateExample(Logic a) {
     a = addInput('a', a, width: a.width);
-    var b = addOutput('b', width: a.width);
+    final b = addOutput('b', width: a.width);
 
-    Logic intermediate = Logic(name: 'intermediate', width: a.width);
+    final Logic intermediate = Logic(name: 'intermediate', width: a.width);
 
     Combinational([
       intermediate < a,
@@ -63,28 +63,28 @@ void main() {
   });
 
   test('module reuse should apply twice', () async {
-    var mod = ReuseExample(Logic(width: 8));
+    final mod = ReuseExample(Logic(width: 8));
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));
   });
 
   test('module duplication should apply twice', () async {
-    var mod = DuplicateExample(Logic(width: 8));
+    final mod = DuplicateExample(Logic(width: 8));
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));

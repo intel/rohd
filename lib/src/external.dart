@@ -10,17 +10,19 @@
 
 import 'package:rohd/rohd.dart';
 
-/// Represents a [Module] whose definition exists outside of this framework in SystemVerilog.
+/// Represents a [Module] whose definition exists outside of this framework
+/// in SystemVerilog.
 ///
-/// This is useful for interacting with SystemVerilog modules.
-/// You can add custom behavior for how to synthesize the generated SystemVerilog
-/// as well as extend functionality with behavioral models or cosimulation.
+/// This is useful for interacting with SystemVerilog modules. You can add
+/// custom behavior for how to synthesize the generated SystemVerilog as well
+/// as extend functionality with behavioral models or cosimulation.
 abstract class ExternalSystemVerilogModule extends Module
     with CustomSystemVerilog {
   /// The name of the top SystemVerilog module.
   final String topModuleName;
 
-  /// A map of parameter names and values to be passed to the SystemVerilog module.
+  /// A map of parameter names and values to be passed to the SystemVerilog
+  /// module.
   final Map<String, String>? parameters;
 
   ExternalSystemVerilogModule(
@@ -34,11 +36,10 @@ abstract class ExternalSystemVerilogModule extends Module
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
-    return SystemVerilogSynthesizer.instantiationVerilogWithParameters(
-        this, topModuleName, instanceName, inputs, outputs,
-        parameters: parameters, forceStandardInstantiation: true);
-  }
+          Map<String, String> inputs, Map<String, String> outputs) =>
+      SystemVerilogSynthesizer.instantiationVerilogWithParameters(
+          this, topModuleName, instanceName, inputs, outputs,
+          parameters: parameters, forceStandardInstantiation: true);
 }
 
 @Deprecated('Use ExternalSystemVerilogModule instead.')

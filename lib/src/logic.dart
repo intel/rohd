@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// logic.dart
-/// Definition of basic signals, like Logic, and their behavior in the simulator, as well as basic operations on them
+/// Definition of basic signals, like Logic, and their behavior in the
+/// simulator, as well as basic operations on them
 ///
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -12,7 +13,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'utilities/synchronous_propagator.dart';
+import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 /// Represents the event of a [Logic] changing value.
 class LogicValueChanged {
@@ -34,7 +35,8 @@ class Const extends Logic {
   ///
   /// If [val] is a [LogicValue], the [width] is inferred from it.
   /// Otherwise, if [width] is not specified, the default [width] is 1.
-  /// If [fill] is set to `true`, the value is extended across [width] (like `'` in SystemVerilog).
+  /// If [fill] is set to `true`, the value is extended across
+  /// [width] (like `'` in SystemVerilog).
   Const(dynamic val, {int? width, bool fill = false})
       : super(
             name: 'const_$val',
@@ -70,7 +72,8 @@ class Logic {
   /// The current active value of this signal.
   LogicValue get value => _currentValue;
 
-  /// The current active value of this signal if it has width 1, as a [LogicValue].
+  /// The current active value of this signal if it has width 1, as
+  /// a [LogicValue].
   ///
   /// Throws an Exception if width is not 1.
   @Deprecated('Use `value` instead.'
@@ -79,7 +82,8 @@ class Logic {
 
   /// The current valid active value of this signal as an [int].
   ///
-  /// Throws an exception if the signal is not valid or can't be represented as an [int].
+  /// Throws an exception if the signal is not valid or can't be represented
+  /// as an [int].
   @Deprecated('Use value.toInt() instead.')
   int get valueInt => value.toInt();
 
@@ -95,15 +99,16 @@ class Logic {
   /// Returns `true` iff *all* bits of the current value are floating (`z`).
   bool isFloating() => value.isFloating;
 
-  /// The `Logic` signal that is driving [this], if any.
+  /// The [Logic] signal that is driving `this`, if any.
   Logic? get srcConnection => _srcConnection;
   Logic? _srcConnection;
 
-  /// An [Iterable] of all [Logic]s that are being directly driven by [this].
+  /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
   Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
   final Set<Logic> _dstConnections = {};
 
-  /// Notifies [this] that [dstConnection] is now directly connected to the output of [this].
+  /// Notifies `this` that [dstConnection] is now directly connected to the
+  /// output of `this`.
   void _registerConnection(Logic dstConnection) =>
       _dstConnections.add(dstConnection);
 
@@ -127,7 +132,8 @@ class Logic {
   /// per [Simulator] tick, iff the value of the [Logic] has changed.
   Stream<LogicValueChanged> get changed {
     if (!_changedBeingWatched) {
-      // only do these simulator subscriptions if someone has asked for them! saves performance!
+      // only do these simulator subscriptions if someone has asked for
+      // them! saves performance!
       _changedBeingWatched = true;
 
       Simulator.preTick.listen((event) {
@@ -143,14 +149,16 @@ class Logic {
   }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
-  /// per [Simulator] tick, iff the value of the [Logic] has changed from `1` to `0`.
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `1` to `0`.
   Stream<LogicValueChanged> get negedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
           ignoreInvalid: true));
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
-  /// per [Simulator] tick, iff the value of the [Logic] has changed from `0` to `1`.
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `0` to `1`.
   Stream<LogicValueChanged> get posedge => changed.where((args) =>
       width == 1 &&
       LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
@@ -170,62 +178,69 @@ class Logic {
 
   /// The [Module] that this [Logic] exists within.
   ///
-  /// This only gets populated after its parent [Module], if it exists, has been built.
+  /// This only gets populated after its parent [Module], if it exists,
+  /// has been built.
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
   /// Sets the value of [parentModule] to [newParentModule].
   ///
-  /// This should *only* be called by [Module.build()].  It is used to optimize search.
+  /// This should *only* be called by [Module.build()].  It is used to
+  /// optimize search.
   @protected
   set parentModule(Module? newParentModule) => _parentModule = newParentModule;
 
   /// Returns true iff this signal is an input of its parent [Module].
   ///
-  /// Note: [parentModule] is not populated until after its parent [Module], if it exists, has been built.
-  /// If no parent [Module] exists, returns false.
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isInput => _parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
   ///
-  /// Note: [parentModule] is not populated until after its parent [Module], if it exists, has been built.
-  /// If no parent [Module] exists, returns false.
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isOutput => _parentModule?.isOutput(this) ?? false;
 
   /// Returns true iff this signal is an input or output of its parent [Module].
   ///
-  /// Note: [parentModule] is not populated until after its parent [Module], if it exists, has been built.
-  /// If no parent [Module] exists, returns false.
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isPort => isInput || isOutput;
 
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
-  /// The default value for [width] is 1.  The [name] should be synthesizable to the desired output (e.g. SystemVerilog).
+  /// The default value for [width] is 1.  The [name] should be synthesizable
+  /// to the desired output (e.g. SystemVerilog).
   Logic({String? name, this.width = 1})
       : name = name ?? 's${_signalIdx++}',
-        assert(width >= 0),
-        _currentValue = LogicValue.filled(width, LogicValue.z);
+        _currentValue = LogicValue.filled(width, LogicValue.z) {
+    if (width < 0) {
+      throw Exception('Logic width must be greater than or equal to 0.');
+    }
+  }
 
   @override
-  String toString() {
-    return 'Logic($width): $name';
-  }
+  String toString() => 'Logic($width): $name';
 
   /// Throws an exception if this [Logic] cannot be connected to another signal.
   void _assertConnectable(Logic other) {
     if (_srcConnection != null) {
       throw Exception(
-          'This signal "$this" is already connected to "$srcConnection", so it cannot be connected to "$other".');
+          'This signal "$this" is already connected to "$srcConnection",'
+          ' so it cannot be connected to "$other".');
     }
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise should not be assigned.');
+          'It may be a constant expression or otherwise should'
+          ' not be assigned.');
     }
   }
 
   /// Connects this [Logic] directly to [other].
   ///
-  /// Every time [other] transitions (`glitch`es), this signal will transition the same way.
+  /// Every time [other] transitions (`glitch`es), this signal will transition
+  /// the same way.
   void gets(Logic other) {
     _assertConnectable(other);
 
@@ -239,12 +254,14 @@ class Logic {
   void _connect(Logic other) {
     if (other.width != width) {
       throw Exception('Bus widths must match.'
-          'Cannot connect $this to $other which have different widths.');
+          ' Cannot connect $this to $other which have different widths.');
     }
 
     _unassignable = true;
 
-    if (value != other.value) put(other.value);
+    if (value != other.value) {
+      put(other.value);
+    }
     other.glitch.listen((args) {
       put(other.value);
     });
@@ -326,11 +343,13 @@ class Logic {
   /// Conditional assignment operator.
   ///
   /// Represents conditionally asigning the value of another signal to this.
-  /// Returns an instance of [ConditionalAssign] to be be passed to a [Conditional].
+  /// Returns an instance of [ConditionalAssign] to be be passed to a
+  /// [Conditional].
   ConditionalAssign operator <(dynamic other) {
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise should not be assigned.');
+          'It may be a constant expression or otherwise'
+          ' should not be assigned.');
     }
 
     if (other is Logic) {
@@ -358,7 +377,8 @@ class Logic {
   /// This function is used for propogating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   ///
-  /// If [fill] is set, all bits of the signal gets set to [val], similar to `'` in SystemVerilog.
+  /// If [fill] is set, all bits of the signal gets set to [val], similar
+  /// to `'` in SystemVerilog.
   void put(dynamic val, {bool fill = false}) {
     LogicValue newValue;
     if (val is int) {
@@ -412,37 +432,36 @@ class Logic {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    var _prevValue = _currentValue;
+    final prevValue = _currentValue;
     _currentValue = newValue;
 
     // sends out a glitch if the value deposited has changed
-    if (_currentValue != _prevValue) {
+    if (_currentValue != prevValue) {
       _isPutting = true;
-      _glitchController.add(LogicValueChanged(_currentValue, _prevValue));
+      _glitchController.add(LogicValueChanged(_currentValue, prevValue));
       _isPutting = false;
     }
   }
 
   /// Accesses the [index]th bit of this signal.
-  Logic operator [](int index) {
-    return slice(index, index);
-  }
+  Logic operator [](int index) => slice(index, index);
 
-  /// Accesses a subset of this signal from [startIndex] to [endIndex], both inclusive.
+  /// Accesses a subset of this signal from [startIndex] to [endIndex],
+  /// both inclusive.
   ///
-  /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
-  /// to the original signal.
-  Logic slice(int endIndex, int startIndex) {
-    return BusSubset(this, startIndex, endIndex).subset;
-  }
+  /// If [endIndex] is less than [startIndex], the returned value will be
+  /// reversed relative to the original signal.
+  Logic slice(int endIndex, int startIndex) =>
+      BusSubset(this, startIndex, endIndex).subset;
 
   /// Returns a version of this [Logic] with the bit order reversed.
   Logic get reversed => slice(0, width - 1);
 
-  /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of [endIndex].
+  /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
+  /// [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
-  /// zero-width signal is returned.
+  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex]
+  /// are equal, then a zero-width signal is returned.
   Logic getRange(int startIndex, int endIndex) {
     if (endIndex < startIndex) {
       throw Exception(
@@ -464,8 +483,8 @@ class Logic {
   /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
   /// as the most significant bits.
   ///
-  /// The [newWidth] must be greater than or equal to the current width or an exception
-  /// will be thrown.
+  /// The [newWidth] must be greater than or equal to the current width or an
+  /// exception will be thrown.
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
@@ -477,12 +496,13 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns a new [Logic] with width [newWidth] where new bits added are sign bits
-  /// as the most significant bits.  The sign is determined using two's complement, so
-  /// it takes the most significant bit of the original signal and extends with that.
+  /// Returns a new [Logic] with width [newWidth] where new bits added are sign
+  /// bits as the most significant bits.  The sign is determined using two's
+  /// complement, so it takes the most significant bit of the original signal
+  /// and extends with that.
   ///
-  /// The [newWidth] must be greater than or equal to the current width or an exception
-  /// will be thrown.
+  /// The [newWidth] must be greater than or equal to the current width or
+  /// an exception will be thrown.
   Logic signExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
@@ -502,13 +522,13 @@ class Logic {
   /// up until [startIndex] + [update]`.width` set to [update] instead
   /// of their original value.
   ///
-  /// The return signal will be the same [width].  An exception will be thrown if
-  /// the position of the [update] would cause an overrun past the [width].
+  /// The return signal will be the same [width].  An exception will be thrown
+  /// if the position of the [update] would cause an overrun past the [width].
   Logic withSet(int startIndex, Logic update) {
     if (startIndex + update.width > width) {
       throw Exception(
           'Width of updatedValue $update at startIndex $startIndex would'
-          'overrun the width of the original ($width).');
+          ' overrun the width of the original ($width).');
     }
 
     return [

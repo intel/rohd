@@ -32,8 +32,9 @@ class PipelineBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> run() async {
-    // ideally there would be more vectors in here... just copy paste from test for now
-    var vectors = [
+    // ideally there would be more vectors in here... just copy paste
+    // from test for now
+    final vectors = [
       Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
       Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
       Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
@@ -59,7 +60,8 @@ class PipelineBenchmark extends AsyncBenchmarkBase {
     await SimCompare.checkFunctionalVector(_rvPipelineModule, vectors,
         enableChecking: false);
 
-    // sucks but this appears to be necessary since it runs 10x with this package
+    // sucks but this appears to be necessary since it runs 10x with
+    // this package
     await Simulator.reset();
   }
 }

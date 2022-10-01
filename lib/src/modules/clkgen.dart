@@ -10,14 +10,16 @@
 
 import 'package:rohd/rohd.dart';
 
-/// A very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
+/// A very simple clock generator.  Generates a non-synthesizable SystemVerilog
+/// representation.
 class SimpleClockGenerator extends Module with CustomSystemVerilog {
   final int clockPeriod;
 
   /// The generated clock.
   Logic get clk => output('clk');
 
-  /// Constructs a very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
+  /// Constructs a very simple clock generator.  Generates a non-synthesizable
+  /// SystemVerilog representation.
   ///
   /// Set the frequency via [clockPeriod].
   SimpleClockGenerator(this.clockPeriod, {String name = 'clkgen'})
@@ -40,7 +42,7 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
           'SimpleClockGenerator has exactly one output and no inputs,'
           ' but saw inputs $inputs and outputs $outputs.');
     }
-    var clk = outputs['clk']!;
+    final clk = outputs['clk']!;
     return '''
 // $instanceName
 initial begin

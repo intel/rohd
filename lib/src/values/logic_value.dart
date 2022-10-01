@@ -16,7 +16,8 @@ typedef LogicValues = LogicValue;
 
 /// An immutable 4-value representation of an arbitrary number of bits.
 ///
-/// Each bit of [LogicValue] can be represented as a [LogicValue] of `0`, `1`, `x` (contention), or `z` (floating).
+/// Each bit of [LogicValue] can be represented as a [LogicValue]
+/// of `0`, `1`, `x` (contention), or `z` (floating).
 @Immutable()
 abstract class LogicValue {
   /// The number of bits in an int.
@@ -157,17 +158,17 @@ abstract class LogicValue {
       return _SmallLogicValue(0, 0, 0);
     }
 
-    var valueString = _valueString(stringRepresentation);
-    var invalidString = _invalidString(stringRepresentation);
-    var width = stringRepresentation.length;
+    final valueString = _valueString(stringRepresentation);
+    final invalidString = _invalidString(stringRepresentation);
+    final width = stringRepresentation.length;
 
     if (width <= _INT_BITS) {
-      var value = int.parse(valueString, radix: 2);
-      var invalid = int.parse(invalidString, radix: 2);
+      final value = int.parse(valueString, radix: 2);
+      final invalid = int.parse(invalidString, radix: 2);
       return _SmallLogicValue(value, invalid, width);
     } else {
-      var value = BigInt.parse(valueString, radix: 2);
-      var invalid = BigInt.parse(invalidString, radix: 2);
+      final value = BigInt.parse(valueString, radix: 2);
+      final invalid = BigInt.parse(invalidString, radix: 2);
       if (invalid.sign == 0) {
         if (value.sign == 0) {
           return LogicValue.filled(width, LogicValue.zero);
@@ -204,8 +205,12 @@ abstract class LogicValue {
   /// Returns true iff the width and all bits of [this] are equal to [other].
   @override
   bool operator ==(Object other) {
-    if (other is! LogicValue) return false;
-    if (other.width != width) return false;
+    if (other is! LogicValue) {
+      return false;
+    }
+    if (other.width != width) {
+      return false;
+    }
     return _equals(other);
   }
 
@@ -335,7 +340,9 @@ abstract class LogicValue {
   /// Throws an Exception if width is not 1.
   @Deprecated('Check `width` separately to see if single-bit.')
   LogicValue get bit {
-    if (width != 1) throw Exception('Width must be 1, but was $width.');
+    if (width != 1) {
+      throw Exception('Width must be 1, but was $width.');
+    }
     return this;
   }
 
@@ -353,7 +360,9 @@ abstract class LogicValue {
   ///
   /// Throws an exception if the value is invalid.
   bool toBool() {
-    if (!isValid) throw Exception('Cannot convert value "$this" to bool');
+    if (!isValid) {
+      throw Exception('Cannot convert value "$this" to bool');
+    }
     if (width != 1) {
       throw Exception(
           'Only single bit values can be converted to a bool, but found width $width in $this');
@@ -420,47 +429,55 @@ abstract class LogicValue {
   /// Addition operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
   /// Modulo operation.
   ///
+  // ignore: avoid_dynamic_calls
   LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
 
   /// Executes mathematical operations between two [LogicValue]s
   ///
-  /// Handles width and bounds checks as well as proper conversion between different types of representation.
+  /// Handles width and bounds checks as well as proper conversion between
+  /// different types of representation.
   LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw Exception(
-          'Improper argument ${other.runtimeType}, should be int, LogicValue, or BigInt.');
+      throw Exception('Improper argument ${other.runtimeType}, should be int,'
+          ' LogicValue, or BigInt.');
     }
     if (other is LogicValue && other.width != width) {
       throw Exception('Widths  must match, but found "$this" and "$other".');
     }
 
-    if (!isValid) return LogicValue.filled(width, LogicValue.x);
+    if (!isValid) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
     if (other is LogicValue && !other.isValid) {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
     if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
-      var a = toBigInt();
-      var b = other is BigInt
+      final a = toBigInt();
+      final b = other is BigInt
           ? other
           : other is int
               ? BigInt.from(other)
@@ -468,40 +485,49 @@ abstract class LogicValue {
                   ? other.toBigInt()
                   : throw Exception(
                       'Unexpected big type: ${other.runtimeType}.');
-      return LogicValue.ofBigInt(op(a, b), width);
+      return LogicValue.ofBigInt(op(a, b) as BigInt, width);
     } else {
-      var a = toInt();
-      var b = other is int ? other : (other as LogicValue).toInt();
-      return LogicValue.ofInt(op(a, b), width);
+      final a = toInt();
+      final b = other is int ? other : (other as LogicValue).toInt();
+      return LogicValue.ofInt(op(a, b) as int, width);
     }
   }
 
   /// Equal-to operation.
   ///
-  /// This is different from [==] because it returns a [LogicValue] instead of a [bool].
-  /// It does a logical comparison of the two values, rather than exact equality.  For
-  /// example, if one of the two values is invalid, [eq] will return `x`.
+  /// This is different from [==] because it returns a [LogicValue] instead
+  /// of a [bool].  It does a logical comparison of the two values, rather
+  /// than exact equality.  For example, if one of the two values is invalid,
+  /// [eq] will return `x`.
   LogicValue eq(dynamic other) => _doCompare(other, (a, b) => a == b);
 
   /// Less-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator <(dynamic other) => _doCompare(other, (a, b) => a < b);
+  LogicValue operator <(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator >(dynamic other) => _doCompare(other, (a, b) => a > b);
+  LogicValue operator >(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator <=(dynamic other) => _doCompare(other, (a, b) => a <= b);
+  LogicValue operator <=(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator >=(dynamic other) => _doCompare(other, (a, b) => a >= b);
+  LogicValue operator >=(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a >= b) as bool);
 
   /// Executes comparison operations between two [LogicValue]s
   ///
@@ -515,8 +541,12 @@ abstract class LogicValue {
       throw Exception('Widths must match, but found "$this" and "$other"');
     }
 
-    if (!isValid) return LogicValue.x;
-    if (other is LogicValue && !other.isValid) return LogicValue.x;
+    if (!isValid) {
+      return LogicValue.x;
+    }
+    if (other is LogicValue && !other.isValid) {
+      return LogicValue.x;
+    }
 
     dynamic a, b;
     if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
@@ -548,10 +578,14 @@ abstract class LogicValue {
 
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
-    if (width == 0) return this;
+    if (width == 0) {
+      return this;
+    }
     int shamtInt;
     if (shamt is LogicValue) {
-      if (!shamt.isValid) return LogicValue.filled(width, LogicValue.x);
+      if (!shamt.isValid) {
+        return LogicValue.filled(width, LogicValue.x);
+      }
       shamtInt = shamt.toInt();
     } else if (shamt is int) {
       shamtInt = shamt;
@@ -588,7 +622,7 @@ abstract class LogicValue {
   /// Only returns true from 0 -> 1.  If [previousValue] or [newValue] is invalid, an Exception will be
   /// thrown, unless [ignoreInvalid] is set to `true`.
   static bool isPosedge(LogicValue previousValue, LogicValue newValue,
-      {ignoreInvalid = false}) {
+      {bool ignoreInvalid = false}) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 
@@ -604,7 +638,7 @@ abstract class LogicValue {
   /// Only returns true from 1 -> 0.  If [previousValue] or [newValue] is invalid, an Exception will be
   /// thrown, unless [ignoreInvalid] is set to `true`.
   static bool isNegedge(LogicValue previousValue, LogicValue newValue,
-      {ignoreInvalid = false}) {
+      {bool ignoreInvalid = false}) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 

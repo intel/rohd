@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule3_test.dart
-/// Unit tests for a hierarchy of multiple modules and multiple instantiation (another type)
+/// Unit tests for a hierarchy of multiple modules and
+/// multiple instantiation (another type)
 ///
 /// 2021 June 30
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -10,8 +11,8 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/passthrough.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 // mostly all outputs
 class InnerModule2 extends Module {

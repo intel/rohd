@@ -1,13 +1,36 @@
 
-include: package:lints/recommended.yaml
+# Lints set up with some guidance from here:
+# https://rydmike.com/blog_flutter_linting.html
+
+include: package:all_lint_rules_community/all.yaml
+
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  
+  errors:
+    # Without ignore here, we cause import of all_lint_rules to warn, because some rules conflict.
+    # We explicitly enabled even conflicting rules and are fixing the conflicts in this file.
+    # Put it to warning temporarily, if you need troubleshoot lint rule settings.
+    included_file_warning: ignore
+
+    # Treat missing required parameters as an error, not as a hint or a warning.
+    missing_required_param: error
+
+    # Treat missing returns as an error, not as a hint or a warning.
+    missing_return: error
 
 linter:
   rules:
-    - always_declare_return_types
-    - prefer_single_quotes
-    - unawaited_futures
-    - avoid_void_async
-
-analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+    prefer_double_quotes: false
+    require_trailing_commas: false
+    sort_constructors_first: false
+    unnecessary_final: false
+    always_specify_types: false
+    unnecessary_statements: false
+    prefer_final_parameters: false
+    avoid_annotating_with_dynamic: false
+    prefer_relative_imports: false

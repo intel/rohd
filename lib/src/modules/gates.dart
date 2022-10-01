@@ -48,7 +48,7 @@ class NotGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 1) throw Exception('Gate has exactly one input.');
-    var a = inputs[_a]!;
+    final a = inputs[_a]!;
     return '~$a';
   }
 }
@@ -77,7 +77,7 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   _OneInputUnaryGate(this._op, this._opStr, Logic a, {String name = 'ugate'})
       : super(name: name) {
     _a = Module.unpreferredName(a.name);
-    _y = Module.unpreferredName(name + '_' + a.name);
+    _y = Module.unpreferredName('${name}_${a.name}');
     addInput(_a, a, width: a.width);
     addOutput(_y);
     _setup();
@@ -99,7 +99,7 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 1) throw Exception('Gate has exactly one input.');
-    var a = inputs[_a]!;
+    final a = inputs[_a]!;
     return '$_opStr$a';
   }
 }
@@ -136,10 +136,10 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
           'Input widths must match, but found $a and $b with different widths.');
     }
 
-    var bLogic = b is Logic ? b : Const(b, width: a.width);
+    final bLogic = b is Logic ? b : Const(b, width: a.width);
 
-    _a = Module.unpreferredName('a_' + a.name);
-    _b = Module.unpreferredName('b_' + bLogic.name);
+    _a = Module.unpreferredName('a_${a.name}');
+    _b = Module.unpreferredName('b_${bLogic.name}');
     _y = Module.unpreferredName('${a.name}_${name}_${bLogic.name}');
 
     addInput(_a, a, width: a.width);
@@ -175,8 +175,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
-    var a = inputs[_a]!;
-    var b = inputs[_b]!;
+    final a = inputs[_a]!;
+    final b = inputs[_b]!;
     return '$a $_opStr $b';
   }
 }
@@ -212,10 +212,10 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
           'Input widths must match, but found $a and $b with different widths.');
     }
 
-    var bLogic = b is Logic ? b : Const(b, width: a.width);
+    final bLogic = b is Logic ? b : Const(b, width: a.width);
 
-    _a = Module.unpreferredName('a_' + a.name);
-    _b = Module.unpreferredName('b_' + bLogic.name);
+    _a = Module.unpreferredName('a_${a.name}');
+    _b = Module.unpreferredName('b_${bLogic.name}');
     _y = Module.unpreferredName('${a.name}_${name}_${bLogic.name}');
 
     addInput(_a, a, width: a.width);
@@ -244,8 +244,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
-    var a = inputs[_a]!;
-    var b = inputs[_b]!;
+    final a = inputs[_a]!;
+    final b = inputs[_b]!;
     return '$a $_opStr $b';
   }
 }
@@ -279,10 +279,10 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   _ShiftGate(this._op, this._opStr, Logic a, dynamic b,
       {String name = 'gate2', this.signed = false})
       : super(name: name) {
-    var bLogic = b is Logic ? b : Const(b, width: a.width);
+    final bLogic = b is Logic ? b : Const(b, width: a.width);
 
-    _a = Module.unpreferredName('a_' + a.name);
-    _b = Module.unpreferredName('b_' + b.name);
+    _a = Module.unpreferredName('a_${a.name}');
+    _b = Module.unpreferredName('b_${bLogic.name}');
     _y = Module.unpreferredName('${a.name}_${name}_${bLogic.name}');
 
     addInput(_a, a, width: a.width);
@@ -311,9 +311,9 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
-    var a = inputs[_a]!;
-    var b = inputs[_b]!;
-    var aStr = signed ? '\$signed($a)' : a;
+    final a = inputs[_a]!;
+    final b = inputs[_b]!;
+    final aStr = signed ? '\$signed($a)' : a;
     return '$aStr $_opStr $b';
   }
 }
@@ -465,9 +465,9 @@ class Mux extends Module with InlineSystemVerilog {
       throw Exception('d0 ($d0) and d1 ($d1) must be same width');
     }
 
-    _control = Module.unpreferredName('control_' + control.name);
-    _d0 = Module.unpreferredName('d0_' + d0.name);
-    _d1 = Module.unpreferredName('d1_' + d1.name);
+    _control = Module.unpreferredName('control_${control.name}');
+    _d0 = Module.unpreferredName('d0_${d0.name}');
+    _d1 = Module.unpreferredName('d1_${d1.name}');
     _y = Module.unpreferredName('y');
 
     addInput(_control, control);
@@ -507,9 +507,9 @@ class Mux extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 3) throw Exception('Mux2 has exactly three inputs.');
-    var d0 = inputs[_d0]!;
-    var d1 = inputs[_d1]!;
-    var control = inputs[_control]!;
+    final d0 = inputs[_d0]!;
+    final d1 = inputs[_d1]!;
+    final control = inputs[_control]!;
     return '$control ? $d1 : $d0';
   }
 }
