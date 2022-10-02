@@ -34,3 +34,4 @@ linter:
     prefer_final_parameters: false
     avoid_annotating_with_dynamic: false
     prefer_relative_imports: false
+    avoid_classes_with_only_static_members: false

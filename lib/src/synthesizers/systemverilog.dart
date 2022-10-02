@@ -394,7 +394,7 @@ class _SynthModuleDefinition {
           if (!logicsToTraverse.contains(driver)) {
             logicsToTraverse.add(driver);
           }
-          assignments.add(_SynthAssignment(synthDriver!, synthReceiver));
+          assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
       } else if (driver == null && receiver.hasValidValue()) {
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
@@ -419,25 +419,27 @@ class _SynthModuleDefinition {
   }
 
   void _collapseChainableModules() {
-    // collapse multiple lines of in-line assignments into one where they are unnamed one-liners
+    // collapse multiple lines of in-line assignments into one where they are
+    // unnamed one-liners
     //  for example, be capable of creating lines like:
     //      assign x = a & b & c & _d_and_e
     //      assign _d_and_e = d & e
     //      assign y = _d_and_e
 
     // Also feed collapsed chained modules into other modules
-    // Need to consider order of operations in systemverilog or else add () everywhere! (for now add the parentheses)
+    // Need to consider order of operations in systemverilog or else add ()
+    // everywhere! (for now add the parentheses)
 
     // Algorithm:
     //  - find submodule instantiations that are inlineable
     //  - filter to those who only output as input to one other module
-    //  - pass an override to the submodule instantiation that the corresponding input should map
-    //    to the output of another submodule instantiation
+    //  - pass an override to the submodule instantiation that the corresponding
+    //    input should map to the output of another submodule instantiation
     // do not collapse if signal feeds to multiple inputs of other modules
 
     final inlineableSubmoduleInstantiations = module.subModules
         .whereType<InlineSystemVerilog>()
-        .map((subModule) => _getSynthSubModuleInstantiation(subModule));
+        .map(_getSynthSubModuleInstantiation);
 
     final signalNameUsage = <String,
         int>{}; // number of times each signal name is used by any module
@@ -467,8 +469,7 @@ class _SynthModuleDefinition {
     });
 
     // don't collapse inline modules for preferred names
-    singleUseNames =
-        singleUseNames.where((name) => Module.isUnpreferred(name)).toSet();
+    singleUseNames = singleUseNames.where(Module.isUnpreferred).toSet();
 
     final singleUsageInlineableSubmoduleInstantiations =
         inlineableSubmoduleInstantiations.where((submoduleInstantiation) =>
@@ -479,8 +480,8 @@ class _SynthModuleDefinition {
         <String, _SynthSubModuleInstantiation>{};
     for (final submoduleInstantiation
         in singleUsageInlineableSubmoduleInstantiations) {
-      final outputSynthLogic = submoduleInstantiation.outputMapping.keys.first;
-      outputSynthLogic.clearDeclaration();
+      final outputSynthLogic = submoduleInstantiation.outputMapping.keys.first
+        ..clearDeclaration();
       submoduleInstantiation.clearDeclaration();
       synthLogicNameToInlineableSynthSubmoduleMap[outputSynthLogic.name] =
           submoduleInstantiation;
@@ -531,8 +532,9 @@ class _SynthModuleDefinition {
         }
       }
       prevAssignmentCount = assignments.length;
-      assignments.clear();
-      assignments.addAll(reducedAssignments);
+      assignments
+        ..clear()
+        ..addAll(reducedAssignments);
     }
   }
 }

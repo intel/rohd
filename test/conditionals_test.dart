@@ -7,17 +7,16 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class LoopyCombModule extends Module {
   Logic get a => input('a');
   Logic get x => output('x');
   LoopyCombModule(Logic a) : super(name: 'loopycombmodule') {
     a = addInput('a', a);
-    var x = addOutput('x');
+    final x = addOutput('x');
 
     Combinational([
       x < a,
@@ -30,9 +29,9 @@ class CaseModule extends Module {
   CaseModule(Logic a, Logic b) : super(name: 'casemodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    var c = addOutput('c');
-    var d = addOutput('d');
-    var e = addOutput('e');
+    final c = addOutput('c');
+    final d = addOutput('d');
+    final e = addOutput('e');
 
     Combinational([
       Case(
@@ -68,8 +67,8 @@ class IfBlockModule extends Module {
   IfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    var c = addOutput('c');
-    var d = addOutput('d');
+    final c = addOutput('c');
+    final d = addOutput('d');
 
     Combinational([
       IfBlock([
@@ -85,8 +84,8 @@ class ElseIfBlockModule extends Module {
   ElseIfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    var c = addOutput('c');
-    var d = addOutput('d');
+    final c = addOutput('c');
+    final d = addOutput('d');
 
     Combinational([
       IfBlock([
@@ -102,12 +101,12 @@ class CombModule extends Module {
   CombModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    var y = addOutput('y');
-    var z = addOutput('z');
-    var x = addOutput('x');
+    final y = addOutput('y');
+    final z = addOutput('z');
+    final x = addOutput('x');
 
     d = addInput('d', d, width: d.width);
-    var q = addOutput('q', width: d.width);
+    final q = addOutput('q', width: d.width);
 
     Combinational([
       If(a, then: [
@@ -133,12 +132,12 @@ class SequentialModule extends Module {
   SequentialModule(Logic a, Logic b, Logic d) : super(name: 'ffmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    var y = addOutput('y');
-    var z = addOutput('z');
-    var x = addOutput('x');
+    final y = addOutput('y');
+    final z = addOutput('z');
+    final x = addOutput('x');
 
     d = addInput('d', d, width: d.width);
-    var q = addOutput('q', width: d.width);
+    final q = addOutput('q', width: d.width);
 
     Sequential(SimpleClockGenerator(10).clk, [
       If(a, then: [
@@ -161,13 +160,11 @@ class SequentialModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('functional', () {
     test('conditional loopy comb', () async {
-      var mod = LoopyCombModule(Logic());
+      final mod = LoopyCombModule(Logic());
       await mod.build();
       mod.a.put(1);
       expect(mod.x.value.toInt(), equals(0));
@@ -176,9 +173,9 @@ void main() {
 
   group('simcompare', () {
     test('conditional comb', () async {
-      var mod = CombModule(Logic(), Logic(), Logic(width: 10));
+      final mod = CombModule(Logic(), Logic(), Logic(width: 10));
       await mod.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0, 'd': 5},
             {'y': 0, 'z': 1, 'x': LogicValue.x, 'q': LogicValue.x}),
         Vector({'a': 0, 'b': 1, 'd': 6},
@@ -187,61 +184,61 @@ void main() {
         Vector({'a': 1, 'b': 1, 'd': 8}, {'y': 1, 'z': 1, 'x': 1, 'q': 8}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 10, 'q': 10});
       expect(simResult, equals(true));
     });
 
     test('iffblock comb', () async {
-      var mod = IfBlockModule(Logic(), Logic());
+      final mod = IfBlockModule(Logic(), Logic());
       await mod.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1}),
         Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
     test('elseifblock comb', () async {
-      var mod = ElseIfBlockModule(Logic(), Logic());
+      final mod = ElseIfBlockModule(Logic(), Logic());
       await mod.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1}),
         Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
     test('case comb', () async {
-      var mod = CaseModule(Logic(), Logic());
+      final mod = CaseModule(Logic(), Logic());
       await mod.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1, 'e': 0}),
         Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0, 'e': 0}),
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0, 'e': 1}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1, 'e': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
     test('conditional ff', () async {
-      var mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
+      final mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
       await mod.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 1, 'd': 1}, {}),
         Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
         Vector({'a': 0, 'b': 1, 'd': 3}, {'y': 0, 'z': 1, 'x': 0, 'q': 1}),
@@ -250,7 +247,7 @@ void main() {
         Vector({}, {'y': 1, 'z': 1, 'x': 0, 'q': 5}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));

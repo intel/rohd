@@ -62,9 +62,8 @@ abstract class _Always extends Module with CustomSystemVerilog {
       Map<String, String> outputsNameMap, String assignOperator) {
     var contents = '';
     for (final conditional in conditionals) {
-      contents += conditional.verilogContents(
-              1, inputsNameMap, outputsNameMap, assignOperator) +
-          '\n';
+      contents += '${conditional.verilogContents(
+              1, inputsNameMap, outputsNameMap, assignOperator)}\n';
     }
     return contents;
   }

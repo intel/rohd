@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule4_test.dart
-/// Unit tests for a hierarchy of multiple modules and multiple instantiation (another type)
+/// Unit tests for a hierarchy of multiple modules and multiple instantiation
+/// (another type)
 ///
 /// 2021 June 30
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -24,7 +25,7 @@ class InnerModule2 extends Module {
 class InnerModule1 extends Module {
   InnerModule1(Logic y) : super(name: 'innermodule1') {
     y = addInput('y', y);
-    var m = Logic();
+    final m = Logic();
     m <= Passthrough(InnerModule2().z).b | y;
   }
 }
@@ -37,12 +38,10 @@ class TopModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   test('multimodules4', () async {
-    var ftm = TopModule(Logic());
+    final ftm = TopModule(Logic());
     await ftm.build();
 
     // find a module with 'z' output 2 levels deep
@@ -52,10 +51,11 @@ void main() {
             .isNotEmpty)
         .isNotEmpty);
 
-    var synth = ftm.generateSynth();
+    final synth = ftm.generateSynth();
 
     // "z = 1" means it correctly traversed down from inputs
-    assert(synth.contains('z = 1'));
+    assert(synth.contains('z = 1'),
+        'Should correctly traverse from inputs to z=1');
 
     // print(ftm.hierarchy());
     // File('tmp4.sv').writeAsStringSync(synth);

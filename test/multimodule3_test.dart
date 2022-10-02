@@ -38,25 +38,23 @@ class TopModule extends Module {
   Logic get x => output('x');
   TopModule() : super(name: 'topmod') {
     addOutput('x');
-    var im1 = InnerModule1();
+    final im1 = InnerModule1();
     x <= im1.y | im1.m;
   }
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
     test('multimodules3', () async {
-      var ftm = TopModule();
+      final ftm = TopModule();
       await ftm.build();
-      var vectors = [
+      final vectors = [
         Vector({}, {'x': 1}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });

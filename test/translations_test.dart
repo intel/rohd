@@ -7,10 +7,9 @@
 /// 2021 May 20
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class FlopArrayPort {
   final Logic en, ptr, data;
@@ -67,7 +66,7 @@ class FlopArray extends Module {
 
   void _buildLogic() {
     // create local storage bank
-    var storageBank = List<Logic>.generate(
+    final storageBank = List<Logic>.generate(
         numEntries, (i) => Logic(name: 'storageBank_$i', width: dwidth));
 
     // Sequential(lclk, [  // normally this should be here
@@ -95,11 +94,9 @@ class FlopArray extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
-  var signalToWidthMap = {
+  final signalToWidthMap = {
     'wrData0': 16,
     'wrData1': 16,
     'wrPtr0': 6,
@@ -113,19 +110,19 @@ void main() {
   group('simcompare', () {
     test('translation', () async {
       var numRdPorts = 2, numWrPorts = 2;
-      var ftm = FlopArray(
+      final ftm = FlopArray(
         Logic(),
         Logic(),
-        List<Logic>.generate(numRdPorts, (index) => Logic(width: 1)),
+        List<Logic>.generate(numRdPorts, (index) => Logic()),
         List<Logic>.generate(numRdPorts, (index) => Logic(width: 6)),
-        List<Logic>.generate(numWrPorts, (index) => Logic(width: 1)),
+        List<Logic>.generate(numWrPorts, (index) => Logic()),
         List<Logic>.generate(numWrPorts, (index) => Logic(width: 6)),
         List<Logic>.generate(numWrPorts, (index) => Logic(width: 16)),
       );
       await ftm.build();
       // File('tmp.sv').writeAsStringSync(ftm.generateSynth())
       // WaveDumper(ftm);
-      var vectors = [
+      final vectors = [
         Vector({'lrst': 0}, {}),
         Vector({'lrst': 1}, {}),
         Vector({'lrst': 1, 'wrEn0': 0, 'rdEn0': 0, 'wrEn1': 0, 'rdEn1': 0}, {}),
@@ -135,7 +132,7 @@ void main() {
         Vector({'wrEn1': 0, 'rdEn0': 0}, {'rdData0': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));

@@ -53,17 +53,17 @@ bool confirmValue(
 
   String? sigName;
   int? width;
-  int currentTime = 0;
+  var currentTime = 0;
   LogicValue? currentValue;
 
-  VCDParseState state = VCDParseState.findSig;
+  var state = VCDParseState.findSig;
 
   final sigNameRegexp = RegExp(r'\s*\$var\swire\s(\d+)\s(\S*)\s(\S*)\s\$end');
-  for (var line in lines) {
+  for (final line in lines) {
     if (state == VCDParseState.findSig) {
       if (sigNameRegexp.hasMatch(line)) {
         final match = sigNameRegexp.firstMatch(line)!;
-        final int w = int.parse(match.group(1)!);
+        final w = int.parse(match.group(1)!);
         final sName = match.group(2)!;
         final lName = match.group(3)!;
 
@@ -74,7 +74,7 @@ bool confirmValue(
         }
       }
     } else if (state == VCDParseState.findDumpVars) {
-      if (line.contains('\$dumpvars')) {
+      if (line.contains(r'$dumpvars')) {
         state = VCDParseState.findValue;
       }
     } else if (state == VCDParseState.findValue) {
@@ -98,9 +98,7 @@ bool confirmValue(
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   test('attach dumper after put', () async {
     final a = Logic(name: 'a');

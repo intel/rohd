@@ -32,10 +32,10 @@ class SynchronousPropagator<T> {
 class SynchronousEmitter<T> {
   /// Registers a new listener [f] to be notified with an event of
   /// type [T] as an argument whenever that event is to be emitted.
-  void listen(Function(T args) f) => _actions.add(f);
+  void listen(void Function(T args) f) => _actions.add(f);
 
   /// A [List] of actions to perform for each event.
-  final List<Function(T)> _actions = <Function(T)>[];
+  final List<void Function(T)> _actions = <void Function(T)>[];
 
   /// Returns `true` iff this is currently emitting.
   ///
@@ -46,7 +46,7 @@ class SynchronousEmitter<T> {
   /// Sends out [t] to all listeners.
   void _propagate(T t) {
     _isEmitting = true;
-    for (var action in _actions) {
+    for (final action in _actions) {
       action(t);
     }
     _isEmitting = false;

@@ -71,9 +71,10 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
 
   /// Constructs a unary gate for an abitrary custom functional implementation.
   ///
-  /// The function [_op] is executed as the custom functional behavior.  When this
-  /// [Module] is in-lined as SystemVerilog, it will use [_opStr] as the prefix to the
-  /// input signal name (e.g. if [_opStr] was "&", generated SystemVerilog may look like "&a").
+  /// The function [_op] is executed as the custom functional behavior.  When
+  /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as the
+  /// prefix to the input signal name (e.g. if [_opStr] was "&", generated
+  /// SystemVerilog may look like "&a").
   _OneInputUnaryGate(this._op, this._opStr, Logic a, {String name = 'ugate'})
       : super(name: name) {
     _a = Module.unpreferredName(a.name);
@@ -106,7 +107,8 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
 
 /// A generic two-input bitwise gate [Module].
 ///
-/// It always takes two inputs and has one output.  All ports have the same width.
+/// It always takes two inputs and has one output.  All ports have the
+/// same width.
 abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// Name for a port of this module.
   late final String _a, _b, _y;
@@ -123,11 +125,13 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   final LogicValue Function(LogicValue a, LogicValue b) _op;
   final String _opStr;
 
-  /// Constructs a two-input bitwise gate for an abitrary custom functional implementation.
+  /// Constructs a two-input bitwise gate for an abitrary custom functional
+  /// implementation.
   ///
-  /// The function [_op] is executed as the custom functional behavior.  When this
-  /// [Module] is in-lined as SystemVerilog, it will use [_opStr] as a String between the two input
-  /// signal names (e.g. if [_opStr] was "&", generated SystemVerilog may look like "a & b").
+  /// The function [_op] is executed as the custom functional behavior.  When
+  /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
+  /// String between the two input signal names (e.g. if [_opStr] was "&",
+  /// generated SystemVerilog may look like "a & b").
   _TwoInputBitwiseGate(this._op, this._opStr, Logic a, dynamic b,
       {String name = 'gate2'})
       : super(name: name) {
@@ -199,11 +203,13 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   final LogicValue Function(LogicValue a, LogicValue b) _op;
   final String _opStr;
 
-  /// Constructs a two-input comparison gate for an abitrary custom functional implementation.
+  /// Constructs a two-input comparison gate for an abitrary custom functional
+  /// implementation.
   ///
-  /// The function [_op] is executed as the custom functional behavior.  When this
-  /// [Module] is in-lined as SystemVerilog, it will use [_opStr] as a String between the two input
-  /// signal names (e.g. if [_opStr] was ">", generated SystemVerilog may look like "a > b").
+  /// The function [_op] is executed as the custom functional behavior.  When
+  /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
+  /// String between the two input signal names (e.g. if [_opStr] was ">",
+  /// generated SystemVerilog may look like "a > b").
   _TwoInputComparisonGate(this._op, this._opStr, Logic a, dynamic b,
       {String name = 'cmp2'})
       : super(name: name) {
@@ -252,7 +258,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
 /// A generic two-input shift gate [Module].
 ///
-/// It always takes two inputs and has one output of equal width to the primary of the input.
+/// It always takes two inputs and has one output of equal width to the primary
+/// of the input.
 class _ShiftGate extends Module with InlineSystemVerilog {
   late final String _a, _b, _y;
 
@@ -271,11 +278,13 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// Whether or not this gate operates on a signed number.
   final bool signed;
 
-  /// Constructs a two-input shift gate for an abitrary custom functional implementation.
+  /// Constructs a two-input shift gate for an abitrary custom functional
+  /// implementation.
   ///
-  /// The function [_op] is executed as the custom functional behavior.  When this
-  /// [Module] is in-lined as SystemVerilog, it will use [_opStr] as a String between the two input
-  /// signal names (e.g. if [_opStr] was ">>", generated SystemVerilog may look like "a >> b").
+  /// The function [_op] is executed as the custom functional behavior.  When
+  /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
+  /// String between the two input signal names (e.g. if [_opStr] was ">>",
+  /// generated SystemVerilog may look like "a >> b").
   _ShiftGate(this._op, this._opStr, Logic a, dynamic b,
       {String name = 'gate2', this.signed = false})
       : super(name: name) {

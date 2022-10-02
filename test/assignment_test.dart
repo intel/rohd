@@ -7,10 +7,9 @@
 /// 2022 September 19
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class ExampleModule extends Module {
   ExampleModule() {
@@ -33,11 +32,11 @@ void main() {
     final exampleModule = ExampleModule();
     await exampleModule.build();
 
-    var vectors = [
+    final vectors = [
       Vector({}, {'out': 1}),
     ];
     await SimCompare.checkFunctionalVector(exampleModule, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
       exampleModule.generateSynth(),
       exampleModule.runtimeType.toString(),
       vectors,

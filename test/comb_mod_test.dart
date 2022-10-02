@@ -26,7 +26,7 @@ class ReuseExample extends Module {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: a.width);
 
-    final Logic intermediate = Logic(name: 'intermediate', width: a.width);
+    final intermediate = Logic(name: 'intermediate', width: a.width);
 
     final inc = IncrModule(intermediate);
 
@@ -45,7 +45,7 @@ class DuplicateExample extends Module {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: a.width);
 
-    final Logic intermediate = Logic(name: 'intermediate', width: a.width);
+    final intermediate = Logic(name: 'intermediate', width: a.width);
 
     Combinational([
       intermediate < a,
@@ -58,9 +58,7 @@ class DuplicateExample extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   test('module reuse should apply twice', () async {
     final mod = ReuseExample(Logic(width: 8));
