@@ -35,6 +35,7 @@ abstract class Sanitizer {
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {
+      // ignore: use_string_buffers
       newName += '_';
     }
 

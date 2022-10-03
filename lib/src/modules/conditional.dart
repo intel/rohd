@@ -60,12 +60,13 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   String _alwaysContents(Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var contents = '';
+    final contents = StringBuffer();
     for (final conditional in conditionals) {
-      contents += '${conditional.verilogContents(
-              1, inputsNameMap, outputsNameMap, assignOperator)}\n';
+      final subContents = conditional.verilogContents(
+          1, inputsNameMap, outputsNameMap, assignOperator);
+      contents.write('$subContents\n');
     }
-    return contents;
+    return contents.toString();
   }
 
   /// The "always" part of the `always` block when generating SystemVerilog.
@@ -701,7 +702,7 @@ class Case extends Conditional {
     } else if (conditionalType == ConditionalType.unique) {
       caseHeader = 'unique $caseType';
     }
-    var verilog = '$padding$caseHeader ($expressionName) \n';
+    final verilog = StringBuffer('$padding$caseHeader ($expressionName) \n');
     final subPadding = Conditional.calcPadding(indent + 2);
     for (final item in items) {
       final conditionName = inputsNameMap[driverInput(item.value).name];
@@ -709,24 +710,26 @@ class Case extends Conditional {
           .map((conditional) => conditional.verilogContents(
               indent + 4, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
-      verilog += '''$subPadding$conditionName : begin
+      verilog.write('''
+$subPadding$conditionName : begin
 $caseContents
 ${subPadding}end
-''';
+''');
     }
     if (defaultItem != null) {
       final defaultCaseContents = defaultItem!
           .map((conditional) => conditional.verilogContents(
               indent + 4, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
-      verilog += '''${subPadding}default : begin
+      verilog.write('''
+${subPadding}default : begin
 $defaultCaseContents
 ${subPadding}end
-''';
+''');
     }
-    verilog += '${padding}endcase\n';
+    verilog.write('${padding}endcase\n');
 
-    return verilog;
+    return verilog.toString();
   }
 }
 
@@ -859,7 +862,7 @@ class IfBlock extends Conditional {
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
     final padding = Conditional.calcPadding(indent);
-    var verilog = '';
+    final verilog = StringBuffer();
     for (final iff in iffs) {
       if (iff is Else && iff != iffs.last) {
         throw Exception('Else must come last in an IfBlock.');
@@ -876,13 +879,14 @@ class IfBlock extends Conditional {
               indent + 2, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
       final condition = iff is! Else ? '($conditionName)' : '';
-      verilog += '''$padding$header$condition begin
+      verilog.write('''
+$padding$header$condition begin
 $ifContents
-${padding}end ''';
+${padding}end ''');
     }
-    verilog += '\n';
+    verilog.write('\n');
 
-    return verilog;
+    return verilog.toString();
   }
 }
 

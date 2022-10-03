@@ -151,7 +151,7 @@ class WaveDumper {
     final moduleSignalUniquifier = Uniquifier();
     final padding = List.filled(indent, '  ').join();
     var scopeString = '$padding\$scope module ${m.uniqueInstanceName} \$end\n';
-    var innerScopeString = '';
+    final innerScopeString = StringBuffer();
     for (final sig in m.signals) {
       if (!_signalToMarkerMap.containsKey(sig)) {
         continue;
@@ -162,17 +162,18 @@ class WaveDumper {
       var signalName = Sanitizer.sanitizeSV(sig.name);
       signalName = moduleSignalUniquifier.getUniqueName(
           initialName: signalName, reserved: sig.isPort);
-      innerScopeString +=
-          '  $padding\$var wire $width $marker $signalName \$end\n';
+      innerScopeString
+          .write('  $padding\$var wire $width $marker $signalName \$end\n');
     }
     for (final subModule in m.subModules) {
-      innerScopeString += _computeScopeString(subModule, indent: indent + 1);
+      innerScopeString
+          .write(_computeScopeString(subModule, indent: indent + 1));
     }
     if (innerScopeString.isEmpty) {
       // no need to dump empty scopes
       return '';
     }
-    scopeString += innerScopeString;
+    scopeString += innerScopeString.toString();
     scopeString += '$padding\$upscope \$end\n';
     return scopeString;
   }

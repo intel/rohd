@@ -448,11 +448,11 @@ abstract class Module {
   /// this [Module].
   String hierarchyString([int indent = 0]) {
     final padding = List.filled(indent, '  ').join();
-    var hier = '$padding> ${toString()}';
+    final hier = StringBuffer('$padding> ${toString()}');
     for (final module in _modules) {
-      hier += '\n${module.hierarchyString(indent + 1)}';
+      hier.write('\n${module.hierarchyString(indent + 1)}');
     }
-    return hier;
+    return hier.toString();
   }
 
   /// Returns a synthesized version of this [Module].

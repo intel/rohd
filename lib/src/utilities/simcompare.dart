@@ -32,7 +32,7 @@ class Vector {
         ? '0x${expected.toRadixString(16)}'
         : expected.toString();
     final expectedValStr = (expected is LogicValue && expected.width == 1)
-        ? "'$expected"
+        ? "'${expected.toString(includeWidth: false)}"
         : expected.toString();
 
     if (expected is! int && expected is! LogicValue) {
