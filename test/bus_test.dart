@@ -35,16 +35,33 @@ class BusTestModule extends Module {
 
     var aBar = addOutput('a_bar', width: a.width);
     var aAndB = addOutput('a_and_b', width: a.width);
-    var aShrunk = addOutput('a_shrunk', width: 3);
-    var aRSliced = addOutput('a_rsliced', width: 5);
-    var aReversed = addOutput('a_reversed', width: a.width);
-    var aRange = addOutput('a_range', width: 3);
+
     var aBJoined = addOutput('a_b_joined', width: a.width + b.width);
     var aPlusB = addOutput('a_plus_b', width: a.width);
     var a1 = addOutput('a1');
-    var aNegativeShrunk = addOutput('a_neg_shrunk', width: 3);
-    var aRNegativeSliced = addOutput('a_r_neg_sliced', width: 5);
-    var aNegativeRange = addOutput('a_neg_range', width: 3);
+    // Slicing with Positive Indices
+    var aShrunk1 = addOutput('a_shrunk', width: 3);
+    var aShrunk2 = addOutput('a_shrunk', width: 3);
+    var aShrunk3 = addOutput('a_shrunk', width: 3);
+    // Slicing with negative indices
+    var aNegativeShrunk1 = addOutput('a_neg_shrunk1', width: 3);
+    var aNegativeShrunk2 = addOutput('a_neg_shrunk2', width: 3);
+    var aNegativeShrunk3 = addOutput('a_neg_shrunk3', width: 3);
+    // Logic Reverse value
+    var aReversed = addOutput('a_reversed', width: a.width);
+    // Slicing and reversing the value
+    var aRSliced1 = addOutput('a_rsliced', width: 5);
+    var aRSliced2 = addOutput('a_rsliced', width: 5);
+    var aRSliced3 = addOutput('a_rsliced', width: 5);
+    // Slicing and reversing the value via negative indices
+    var aRNegativeSliced1 = addOutput('a_r_neg_sliced1', width: 5);
+    var aRNegativeSliced2 = addOutput('a_r_neg_sliced2', width: 5);
+    var aRNegativeSliced3 = addOutput('a_r_neg_sliced3', width: 5);
+    // Getting the range of consecutive values over the Logic (subset)
+    var aRange = addOutput('a_range', width: 3);
+    var aNegativeRange1 = addOutput('a_neg_range1', width: 3);
+    var aNegativeRange2 = addOutput('a_neg_range2', width: 3);
+    var aNegativeRange3 = addOutput('a_neg_range3', width: 3);
 
     aBar <= ~a;
     aAndB <= a & b;
@@ -55,9 +72,9 @@ class BusTestModule extends Module {
     aBJoined <= [b, a].swizzle();
     a1 <= a[1];
     aPlusB <= a + b;
-    aNegativeShrunk <= a.slice(-6, 0);
-    aRNegativeSliced <= a.slice(-5, -1);
-    aNegativeRange <= a.getRange(-3, 8);
+    aNegativeShrunk1 <= a.slice(-6, 0);
+    aRNegativeSliced1 <= a.slice(-5, -1);
+    aNegativeRange1 <= a.getRange(-3, 8);
   }
 }
 
@@ -196,12 +213,12 @@ void main() {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       var vectors = [
-        Vector({'a': 0}, {'a_shrunk': 0}),
-        Vector({'a': 0xff}, {'a_shrunk': bin('111')}),
-        Vector({'a': 0xf5}, {'a_shrunk': 5}),
-        Vector({'a': 0}, {'a_neg_shrunk': 0}),
-        Vector({'a': 0xff}, {'a_neg_shrunk': bin('111')}),
-        Vector({'a': 0xf5}, {'a_neg_shrunk': 5})
+        Vector({'a': 0}, {'a_shrunk1': 0}),
+        Vector({'a': 0xff}, {'a_shrunk1': bin('111')}),
+        Vector({'a': 0xf5}, {'a_shrunk1': 5}),
+        Vector({'a': 0}, {'a_neg_shrunk1': 0}),
+        Vector({'a': 0xff}, {'a_neg_shrunk1': bin('111')}),
+        Vector({'a': 0xf5}, {'a_neg_shrunk1': 5})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -214,12 +231,12 @@ void main() {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       var vectors = [
-        Vector({'a': 0}, {'a_rsliced': 0}),
-        Vector({'a': 0xff}, {'a_rsliced': bin('11111')}),
-        Vector({'a': 0xf5}, {'a_rsliced': 0xf}),
-        Vector({'a': 0}, {'a_r_neg_sliced': 0}),
-        Vector({'a': 0xff}, {'a_r_neg_sliced': bin('11111')}),
-        Vector({'a': 0xf5}, {'a_r_neg_sliced': 0xf}),
+        Vector({'a': 0}, {'a_rsliced1': 0}),
+        Vector({'a': 0xff}, {'a_rsliced1': bin('11111')}),
+        Vector({'a': 0xf5}, {'a_rsliced1': 0xf}),
+        Vector({'a': 0}, {'a_r_neg_sliced1': 0}),
+        Vector({'a': 0xff}, {'a_r_neg_sliced1': bin('11111')}),
+        Vector({'a': 0xf5}, {'a_r_neg_sliced1': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -232,9 +249,9 @@ void main() {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       var vectors = [
-        Vector({'a': 0}, {'a_reversed': 0}),
-        Vector({'a': 0xff}, {'a_reversed': 0xff}),
-        Vector({'a': 0xf5}, {'a_reversed': 0xaf}),
+        Vector({'a': 0}, {'a_reversed1': 0}),
+        Vector({'a': 0xff}, {'a_reversed1': 0xff}),
+        Vector({'a': 0xf5}, {'a_reversed1': 0xaf}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -247,12 +264,12 @@ void main() {
       var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       var vectors = [
-        Vector({'a': 0}, {'a_range': 0}),
-        Vector({'a': 0xff}, {'a_range': 7}),
-        Vector({'a': bin('10100101')}, {'a_range': bin('101')}),
-        Vector({'a': 0}, {'a_neg_range': 0}),
-        Vector({'a': 0xff}, {'a_neg_range': 7}),
-        Vector({'a': bin('10100101')}, {'a_neg_range': bin('101')}),
+        Vector({'a': 0}, {'a_range1': 0}),
+        Vector({'a': 0xff}, {'a_range1': 7}),
+        Vector({'a': bin('10100101')}, {'a_range1': bin('101')}),
+        Vector({'a': 0}, {'a_neg_range1': 0}),
+        Vector({'a': 0xff}, {'a_neg_range1': 7}),
+        Vector({'a': bin('10100101')}, {'a_neg_range1': bin('101')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(

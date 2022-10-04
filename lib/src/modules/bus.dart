@@ -9,7 +9,6 @@
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:test/expect.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
 ///

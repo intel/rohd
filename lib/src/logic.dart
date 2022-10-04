@@ -424,8 +424,23 @@ class Logic {
   }
 
   /// Accesses the [index]th bit of this signal.
-  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
+  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   /// -([width]) <= [index] < [width]
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Positive Indexing
+  /// nextVal <= val[3]; // output: 0
+  ///
+  /// // Negative Indexing
+  /// nextVal <= val[-3]; // output: 1
+  ///
+  /// // Error case
+  /// nextVal <= val[-9]; // Error!: allowed values [-8, 7]
+  /// ```
+  ///
   Logic operator [](int index) {
     return slice(index, index);
   }
@@ -435,6 +450,17 @@ class Logic {
   /// If [endIndex] comes before the [startIndex] on position, the returned value will be reversed relative
   /// to the original signal.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Negative Slicing
+  /// nextVal <= val.slice(val.width - 1, -3); // output: 0b110011
+  ///
+  /// // Positive Slicing
+  /// nextVal <= val.slice(5, 0); // output: 0b110011
+  /// ```
+  ///
   Logic slice(int endIndex, int startIndex) {
     // Given start and end index, if either of them are seen to be -ve index value(s) then conver them to a +ve index value(s)
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
@@ -449,9 +475,20 @@ class Logic {
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of [endIndex].
   ///
-  /// [startIndex] must come before the [endIndex]. If [startIndex] and [endIndex] are equal, then a
+  /// The [startIndex] must come before the [endIndex]. If [startIndex] and [endIndex] are equal, then a
   /// zero-width signal is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Negative getRange
+  /// nextVal <= val.getRange(val.width - 1, -3); // output: 0b110011
+  ///
+  /// // Positive getRange
+  /// nextVal <= val.getRange(5, 0); // output: 0b110011
+  /// ```
+  ///
   Logic getRange(int startIndex, int endIndex) {
     if (endIndex == startIndex) {
       return Const(0, width: 0);

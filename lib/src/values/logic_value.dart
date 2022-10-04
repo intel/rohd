@@ -268,12 +268,29 @@ abstract class LogicValue {
   }
 
   /// Returns the `i`th bit of this [LogicValue]
+  ///
+  /// The [index] provided can be positive or negative. For positive [index], the
+  /// indexing is performed from front of the LogicValue. For negative [index],
+  /// the indexing started from last index and goes to front.
+  /// Note: the [index] value must follow, -width <= [index] < width
+  ///
+  /// ```dart [TODO]
+  /// var bitValue = Logic(name: "bit_value", width: 8);
+  /// bitValue <= 0xf5; // Assign a LogicValue literal to our new variable
+  /// // Positive Indexing
+  /// var bitIndexValue = bitValue[2];
+  /// print(bitIndexValue); // This prints `1b'0x1`
+  /// // Negative Indexing
+  /// var bitIndexValue = bitValue[-2];
+  /// print(bitIndexValue); // This prints `1b'0x0`
+  /// ```
   LogicValue operator [](int index) {
-    if (index >= width || index < 0) {
+    var modifiedIndex = (index < 0) ? width + index : index;
+    if (modifiedIndex >= width || modifiedIndex < 0) {
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $index.', width);
+          'Index out of range: $index (=$modifiedIndex).', width);
     }
-    return _getIndex(index);
+    return _getIndex(modifiedIndex);
   }
 
   /// Returns the `i`th bit of this [LogicValue].  Performs no boundary checks.
@@ -286,7 +303,7 @@ abstract class LogicValue {
   ///
   /// [startIndex] must come before the [endIndex] on position. If [startIndex] and [endIndex] are equal, then a
   /// zero-width value is returned.
-  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   LogicValue getRange(int startIndex, int endIndex) {
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
     var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
@@ -314,6 +331,17 @@ abstract class LogicValue {
   ///
   /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
   /// to the original value.
+  ///
+  /// ```dart [TODO]
+  /// var bitValue = Logic(name: "bit_value", width: 8);
+  /// bitValue <= 0x; // Assign a LogicValue literal to our new variable
+  /// // Positive Indexing
+  /// var bitIndexValue = bitValue[2];
+  /// print(bitIndexValue); // This prints `1b'0x1`
+  /// // Negative Indexing
+  /// var bitIndexValue = bitValue[-2];
+  /// print(bitIndexValue); // This prints `1b'0x0`
+  /// ```
   LogicValue slice(int endIndex, int startIndex) {
     if (startIndex <= endIndex) {
       return getRange(startIndex, endIndex + 1);
