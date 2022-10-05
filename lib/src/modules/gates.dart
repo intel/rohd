@@ -514,33 +514,33 @@ class Mux extends Module with InlineSystemVerilog {
   }
 }
 
-/// A generic two-input bit index gate [Module].
+/// A two-input bit index gate [Module].
 ///
 /// It always takes two inputs and has one output of width 1.
 class IndexGate extends Module with InlineSystemVerilog {
-  late final String _a, _b, _y;
+  late final String _originalName, _indexName, _selectionName;
 
   /// The primary input to this gate.
-  Logic get a => input(_a);
+  Logic get _original => input(_originalName);
 
   /// The bit index for this gate.
-  Logic get b => input(_b);
+  Logic get _index => input(_indexName);
 
   /// The output of this gate.
-  Logic get y => output(_y);
+  Logic get selection => output(_selectionName);
 
   /// Constructs a two-input bit index gate for an abitrary custom functional implementation.
   ///
-  /// The bit [_b] will be indexed as an output.
-  /// [Module] is in-lined as SystemVerilog, it will use _a[index], where index is a Const(_b)
-  IndexGate(Logic a, Logic b): super() {
-    _a = 'a_${a.name}';
-    _b = 'b_${b.name}';
-    _y = Module.unpreferredName('${a.name}_indexby_${b.name}');
+  /// The bit [index] will be indexed as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use original[target], where target is [index.value.toInt()]
+  IndexGate(Logic _original, Logic _index): super() {
+    _originalName = 'original_${_original.name}';
+    _indexName = Module.unpreferredName('index_${_index.name}');
+    _selectionName = Module.unpreferredName('${_original.name}_indexby_${_index.name}');
 
-    addInput(_a, a, width: a.width);
-    addInput(_b, b, width: b.width);
-    addOutput(_y, width: 1);
+    addInput(_originalName, _original, width: _original.width);
+    addInput(_indexName, _index, width: _index.width);
+    addOutput(_selectionName, width: 1);
 
     _setup();
   }
@@ -548,29 +548,29 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-    a.glitch.listen((args) {
+    _original.glitch.listen((args) {
       _execute();
     });
-    b.glitch.listen((args) {
+    _index.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-      if (b.hasValidValue()) {
-          var indexVal = b.value.toInt();
-          y.put(a.getRange(indexVal, indexVal + 1).value);
+      if (_index.hasValidValue()) {
+          var indexVal = _index.value.toInt();
+          selection.put(_original.value.getRange(indexVal, indexVal + 1));
       } else {
-          y.put(LogicValue.x);
+          selection.put(LogicValue.x);
       }
   }
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
-    var target = inputs[_a]!;
-    var idx = inputs[_b]!;
+    var target = inputs[_originalName]!;
+    var idx = inputs[_indexName]!;
     return '$target[$idx]';
   }
 }
