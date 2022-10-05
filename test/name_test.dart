@@ -7,6 +7,8 @@
 /// 2022 March 7
 /// Author: Max Korbel <max.korbel@intel.com>
 
+// ignore_for_file: avoid_positional_boolean_parameters
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -64,7 +66,9 @@ void main() {
     });
     test('reserved throws exception with conflicts', () async {
       final mod = TopModule(Logic(), false, true);
-      expect(() async => await mod.build(), throwsException);
+      expect(() async {
+        await mod.build();
+      }, throwsException);
     });
   });
 }

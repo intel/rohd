@@ -86,6 +86,7 @@ abstract class Module {
   /// named [name].
   ///
   /// Logic within this [Module] should consume this signal.
+  @protected //TODO?
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
@@ -477,8 +478,3 @@ abstract class Module {
             .join('\n\n////////////////////\n\n');
   }
 }
-
-//TODO: generate multiple SV files, one module per file
-//TODO: add ability to add a header to generated files (e.g. copyright)
-
-//TODO: warnings for unconnected ports?

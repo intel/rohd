@@ -28,8 +28,7 @@ void main() {
     Simulator.setMaxSimTime(timeLimit);
     void register100inFuture() {
       // print('@${Simulator.time} registering again!');
-      Simulator.registerAction(
-          Simulator.time + 100, register100inFuture);
+      Simulator.registerAction(Simulator.time + 100, register100inFuture);
     }
 
     register100inFuture();
@@ -71,7 +70,7 @@ void main() {
     var endOfSimActionExecuted = false;
     Simulator.registerAction(100, () => true);
     Simulator.registerEndOfSimulationAction(() async {
-      await Future.delayed(const Duration(microseconds: 10));
+      await Future<void>.delayed(const Duration(microseconds: 10));
       endOfSimActionExecuted = true;
     });
     await Simulator.run();

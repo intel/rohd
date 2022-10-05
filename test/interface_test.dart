@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+// ignore_for_file: avoid_multiple_declarations_per_line
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 

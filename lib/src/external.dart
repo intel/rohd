@@ -25,6 +25,11 @@ abstract class ExternalSystemVerilogModule extends Module
   /// module.
   final Map<String, String>? parameters;
 
+  /// Constructs an instance of an externally defined SystemVerilog module.
+  ///
+  /// The name of the SystemVerilog module should match [topModuleName] exactly.
+  /// The [name] will be the instance name when referred to in generated
+  /// SystemVerilog.
   ExternalSystemVerilogModule(
       {required this.topModuleName,
       this.parameters,
@@ -42,5 +47,6 @@ abstract class ExternalSystemVerilogModule extends Module
           parameters: parameters, forceStandardInstantiation: true);
 }
 
+/// Deprecated - Use [ExternalSystemVerilogModule] instead.
 @Deprecated('Use ExternalSystemVerilogModule instead.')
 typedef ExternalModule = ExternalSystemVerilogModule;

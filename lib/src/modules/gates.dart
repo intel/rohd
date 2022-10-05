@@ -12,8 +12,11 @@ import 'package:rohd/rohd.dart';
 
 /// A gate [Module] that performs bit-wise inversion.
 class NotGate extends Module with InlineSystemVerilog {
-  /// Name for a port of this module.
-  late final String _a, _out;
+  /// Name for the input of this inverter.
+  late final String _a;
+
+  /// Name for the output of this inverter.
+  late final String _out;
 
   /// The input to this [NotGate].
   Logic get a => input(_a);
@@ -47,7 +50,9 @@ class NotGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) throw Exception('Gate has exactly one input.');
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
+    }
     final a = inputs[_a]!;
     return '~$a';
   }
@@ -57,8 +62,11 @@ class NotGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes one input, and the output width is always 1.
 class _OneInputUnaryGate extends Module with InlineSystemVerilog {
-  /// Name for a port of this module.
-  late final String _a, _y;
+  /// Name for the input port of this module.
+  late final String _a;
+
+  /// Name for the output port of this module.
+  late final String _y;
 
   /// The input to this gate.
   Logic get a => input(_a);
@@ -99,7 +107,9 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) throw Exception('Gate has exactly one input.');
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
+    }
     final a = inputs[_a]!;
     return '$_opStr$a';
   }
@@ -110,8 +120,14 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
 /// It always takes two inputs and has one output.  All ports have the
 /// same width.
 abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
-  /// Name for a port of this module.
-  late final String _a, _b, _y;
+  /// Name for a first input port of this module.
+  late final String _a;
+
+  /// Name for a second input port of this module.
+  late final String _b;
+
+  /// Name for the output port of this module.
+  late final String _y;
 
   /// An input to this gate.
   Logic get a => input(_a);
@@ -136,8 +152,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
       {String name = 'gate2'})
       : super(name: name) {
     if (b is Logic && a.width != b.width) {
-      throw Exception(
-          'Input widths must match, but found $a and $b with different widths.');
+      throw Exception('Input widths must match,'
+          ' but found $a and $b with different widths.');
     }
 
     final bLogic = b is Logic ? b : Const(b, width: a.width);
@@ -169,7 +185,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
     dynamic toPut;
     try {
       toPut = _op(a.value, b.value);
-    } catch (e) {
+    } on Exception {
       // in case of things like divide by 0
       toPut = LogicValue.x;
     }
@@ -178,7 +194,9 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
     final a = inputs[_a]!;
     final b = inputs[_b]!;
     return '$a $_opStr $b';
@@ -189,7 +207,14 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs of the same width and has one 1-bit output.
 abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
-  late final String _a, _b, _y;
+  /// Name for a first input port of this module.
+  late final String _a;
+
+  /// Name for a second input port of this module.
+  late final String _b;
+
+  /// Name for the output port of this module.
+  late final String _y;
 
   /// An input to this gate.
   Logic get a => input(_a);
@@ -214,8 +239,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
       {String name = 'cmp2'})
       : super(name: name) {
     if (b is Logic && a.width != b.width) {
-      throw Exception(
-          'Input widths must match, but found $a and $b with different widths.');
+      throw Exception('Input widths must match,'
+          ' but found $a and $b with different widths.');
     }
 
     final bLogic = b is Logic ? b : Const(b, width: a.width);
@@ -249,7 +274,9 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
     final a = inputs[_a]!;
     final b = inputs[_b]!;
     return '$a $_opStr $b';
@@ -261,7 +288,14 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 /// It always takes two inputs and has one output of equal width to the primary
 /// of the input.
 class _ShiftGate extends Module with InlineSystemVerilog {
-  late final String _a, _b, _y;
+  /// Name for the main input port of this module.
+  late final String _a;
+
+  /// Name for the shift amount input port of this module.
+  late final String _b;
+
+  /// Name for the output port of this module.
+  late final String _y;
 
   /// The primary input to this gate.
   Logic get a => input(_a);
@@ -319,7 +353,9 @@ class _ShiftGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
     final a = inputs[_a]!;
     final b = inputs[_b]!;
     final aStr = signed ? '\$signed($a)' : a;
@@ -451,7 +487,17 @@ class LShift extends _ShiftGate {
 /// If [control] has value `1`, then [y] gets [d1].
 /// If [control] has value `0`, then [y] gets [d0].
 class Mux extends Module with InlineSystemVerilog {
-  late final String _control, _d0, _d1, _y;
+  /// Name for the control signal of this mux.
+  late final String _control;
+
+  /// Name for the input selected when control is 0.
+  late final String _d0;
+
+  /// Name for the input selected when control is 1.
+  late final String _d1;
+
+  /// Name for the output port of this mux.
+  late final String _y;
 
   /// The control signal for this [Mux].
   Logic get control => input(_control);
@@ -515,7 +561,9 @@ class Mux extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 3) throw Exception('Mux2 has exactly three inputs.');
+    if (inputs.length != 3) {
+      throw Exception('Mux2 has exactly three inputs.');
+    }
     final d0 = inputs[_d0]!;
     final d1 = inputs[_d1]!;
     final control = inputs[_control]!;

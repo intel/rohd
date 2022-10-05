@@ -58,7 +58,7 @@ void main() {
           Vector({'a': 0x5a}, {'b': 0x5a}),
         ], 8, ExtendType.zero);
       });
-      test('zero extend with less width throws exception', () {
+      test('zero extend with less width throws exception', () async {
         expect(() => extendVectors([], 6, ExtendType.zero), throwsException);
       });
       test('sign extend with same width returns same thing', () async {
@@ -68,7 +68,7 @@ void main() {
           Vector({'a': 0x5a}, {'b': 0x5a}),
         ], 8, ExtendType.sign);
       });
-      test('sign extend with less width throws exception', () {
+      test('sign extend with less width throws exception', () async {
         expect(() => extendVectors([], 6, ExtendType.sign), throwsException);
       });
       test('zero extend pads 0s', () async {
@@ -102,10 +102,10 @@ void main() {
         expect(simResult, equals(true));
       }
 
-      test('setting with bigger number throws exception', () {
+      test('setting with bigger number throws exception', () async {
         expect(() => withSetVectors([], 0, 9), throwsException);
       });
-      test('setting with number in middle overrun throws exception', () {
+      test('setting with number in middle overrun throws exception', () async {
         expect(() => withSetVectors([], 4, 5), throwsException);
       });
       test('setting same width returns only new', () async {

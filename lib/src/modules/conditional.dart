@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -302,7 +304,7 @@ class Sequential extends _Always {
       // uses values directly
       _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
 
-      driverInput.glitch.listen((event) {
+      driverInput.glitch.listen((event) async {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
@@ -312,14 +314,14 @@ class Sequential extends _Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            Simulator.postTick.first.then((value) {
+            unawaited(Simulator.postTick.first.then((value) {
               // once the tick has completed, we can update the override maps
               for (final driverInput in _driverInputsPendingPostUpdate) {
                 _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
               }
               _driverInputsPendingPostUpdate.clear();
               _pendingPostUpdate = false;
-            });
+            }));
           }
           _pendingPostUpdate = true;
         }
@@ -329,15 +331,15 @@ class Sequential extends _Always {
     // listen to every clock glitch to see if we need to execute
     for (var i = 0; i < _clks.length; i++) {
       final clk = _clks[i];
-      clk.glitch.listen((event) {
+      clk.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
         _preTickClkValues[i] ??= event.previousValue;
         if (!_pendingExecute) {
-          Simulator.clkStable.first.then((value) {
+          unawaited(Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          });
+          }));
         }
         _pendingExecute = true;
       });
@@ -963,24 +965,31 @@ class If extends Conditional {
         .map((conditional) => conditional.verilogContents(
             indent + 2, inputsNameMap, outputsNameMap, assignOperator))
         .join('\n');
-    var verilog = '''${padding}if($conditionName) begin
+    var verilog = '''
+${padding}if($conditionName) begin
 $ifContents
 ${padding}end ''';
     if (orElse.isNotEmpty) {
-      verilog += '''else begin
+      verilog += '''
+else begin
 $elseContents
 ${padding}end ''';
     }
-    verilog += '\n';
 
-    return verilog;
+    return '$verilog\n';
   }
 }
 
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
-  /// Name for a port of this module.
-  late final String _clk, _d, _q;
+  /// Name for the clk of this flop.
+  late final String _clk;
+
+  /// Name for the input of this flop.
+  late final String _d;
+
+  /// Name for the output of this flop.
+  late final String _q;
 
   /// The clock, posedge triggered.
   Logic get clk => input(_clk);

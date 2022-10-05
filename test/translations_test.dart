@@ -7,6 +7,9 @@
 /// 2021 May 20
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
+// ignore_for_file: avoid_multiple_declarations_per_line
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -79,14 +82,14 @@ class FlopArray extends Module {
         ...List.generate(
             numEntries,
             (entry) => [
-                  ..._wrPorts.map(
-                      (wrPort) => // set storage bank if write enable and pointer matches
-                          If(wrPort.en & wrPort.ptr.eq(entry),
-                              then: [storageBank[entry] < wrPort.data])),
-                  ..._rdPorts.map(
-                      (rdPort) => // read storage bank if read enable and pointer matches
-                          If(rdPort.en & rdPort.ptr.eq(entry),
-                              then: [rdPort.data < storageBank[entry]])),
+                  ..._wrPorts.map((wrPort) =>
+                      // set storage bank if write enable and pointer matches
+                      If(wrPort.en & wrPort.ptr.eq(entry),
+                          then: [storageBank[entry] < wrPort.data])),
+                  ..._rdPorts.map((rdPort) =>
+                      // read storage bank if read enable and pointer matches
+                      If(rdPort.en & rdPort.ptr.eq(entry),
+                          then: [rdPort.data < storageBank[entry]])),
                 ]).expand((e) => e) // flatten
       ]),
     ]);
@@ -109,7 +112,8 @@ void main() {
 
   group('simcompare', () {
     test('translation', () async {
-      var numRdPorts = 2, numWrPorts = 2;
+      const numRdPorts = 2;
+      const numWrPorts = 2;
       final ftm = FlopArray(
         Logic(),
         Logic(),

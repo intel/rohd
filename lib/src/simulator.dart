@@ -93,8 +93,8 @@ class Simulator {
       StreamController.broadcast(sync: true);
 
   /// Completes when the simulation has completed.
-  static Future get simulationEnded => _simulationEndedCompleter.future;
-  static Completer _simulationEndedCompleter = Completer();
+  static Future<void> get simulationEnded => _simulationEndedCompleter.future;
+  static Completer<void> _simulationEndedCompleter = Completer<void>();
 
   /// Returns true iff the simulation has completed.
   static bool get simulationHasEnded => _simulationEndedCompleter.isCompleted;
@@ -144,6 +144,7 @@ class Simulator {
   ///
   /// You should set this for your simulations so that you don't get infinite
   /// simulation.
+  // ignore: use_setters_to_change_properties
   static void setMaxSimTime(int newMaxSimTime) {
     _maxSimTime = newMaxSimTime;
   }
@@ -223,21 +224,27 @@ class Simulator {
   /// Performs the actual execution of a collection of actions for a [tick()].
   static Future<void> tickExecute(void Function() toExecute) async {
     _phase = SimulatorPhase.beforeTick;
-    _preTickController.add(null); // useful for flop sampling
+
+    // useful for flop sampling
+    _preTickController.add(null);
 
     _phase = SimulatorPhase.mainTick;
-    _startTickController.add(
-        null); // useful for things that need to trigger every tick without other input
+
+    // useful for things that need to trigger every tick without other input
+    _startTickController.add(null);
     toExecute();
 
     _phase = SimulatorPhase.clkStable;
-    _clkStableController.add(null); // useful for flop clk input stability
+
+    // useful for flop clk input stability
+    _clkStableController.add(null);
 
     await _executeInjectedActions();
 
     _phase = SimulatorPhase.outOfTick;
-    _postTickController
-        .add(null); // useful for determination of signal settling
+
+    // useful for determination of signal settling
+    _postTickController.add(null);
   }
 
   /// Halts the simulation.  Allows the current [tick] to finish, if there

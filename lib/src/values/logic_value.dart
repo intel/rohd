@@ -267,14 +267,20 @@ abstract class LogicValue {
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @override
-  String toString({bool includeWidth = true}) => isValid && includeWidth
-      ? "$width'h${width > _INT_BITS ? toBigInt().toRadixString(16) : toInt().toRadixString(16)}"
-      : [
-          if (includeWidth) "$width'b",
-          List<String>.generate(width, (index) => this[index]._bitString())
-              .reversed
-              .join()
-        ].join();
+  String toString({bool includeWidth = true}) {
+    if (isValid && includeWidth) {
+      final hexValue = width > _INT_BITS
+          ? toBigInt().toRadixString(16)
+          : toInt().toRadixString(16);
+      return "$width'h$hexValue";
+    } else {
+      return [
+        if (includeWidth) "$width'b",
+        ...List<String>.generate(width, (index) => this[index]._bitString())
+            .reversed
+      ].join();
+    }
+  }
 
   String _bitString() {
     if (width != 1) {

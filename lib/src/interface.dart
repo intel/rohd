@@ -14,6 +14,7 @@ import 'package:rohd/rohd.dart';
 
 /// An extension of [Logic] useful for [Interface] definitions.
 class Port extends Logic {
+  // /// Constructs a [Logic] asdf
   Port(String name, [int width = 1]) : super(name: name, width: width);
 }
 

@@ -190,8 +190,12 @@ class WaveDumper {
 
   /// Writes the current value of [signal] to the VCD.
   void _writeSignalValueUpdate(Logic signal) {
+    final binaryValue = signal.value.reversed
+        .toList()
+        .map((e) => e.toString(includeWidth: false))
+        .join();
     final updateValue = signal.width > 1
-        ? 'b${signal.value.reversed.toList().map((e) => e.toString(includeWidth: false)).join()} '
+        ? 'b$binaryValue '
         : signal.value.toString(includeWidth: false);
     final marker = _signalToMarkerMap[signal];
     final updateString = '$updateValue$marker\n';

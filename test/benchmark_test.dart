@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 import '../benchmark/benchmarks.dart';
 
 void main() {
-  test('pipeline benchmark', () {
-    PipelineBenchmark().measure();
+  test('pipeline benchmark', () async {
+    await PipelineBenchmark().measure();
   });
 }
