@@ -93,12 +93,12 @@ class MuxWrapper extends Module {
 }
 
 class IndexGateTestModule extends Module {
-  IndexGateTestModule(Logic a, Logic b): super(name: 'indexgatetestmodule') {
-    a = addInput('a', a, width: a.width);
-    b = addInput('b', b, width: b.width);
-    var bitSet = addOutput('a_indexedby_b', width: 1);
+  IndexGateTestModule(Logic original, Logic index): super(name: 'indexgatetestmodule') {
+    original = addInput('original', original, width: original.width);
+    index = addInput('index', index, width: index.width);
+    var bitSet = addOutput('index_output', width: 1);
 
-    bitSet <= a[b];
+    bitSet <= original[index];
   }
 }
 
@@ -433,18 +433,37 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('Index by Logic test', () async {
+    test('Index Logic by Logic test', () async {
       var gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       var vectors = [
-        Vector({'a': 14, 'b': 0}, {'a_indexedby_b': 0}),
-        Vector({'a': 14, 'b': 2}, {'a_indexedby_b': 1})
+        Vector({'original': 14, 'index': 0}, {'index_output': 0}),
+        Vector({'original': 14, 'index': 2}, {'index_output': 1}),
+        Vector({'original': 14, 'index': LogicValue.x}, {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.x, 'index': LogicValue.x}, 
+            {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.x, 'index': 0}, {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {'a': 8, 'b': 8});
+          signalToWidthMap: {'original': 8, 'index': 8});
       expect(simResult, equals(true));
     });
+
+    test('Index Logic by an Integer test', () {
+      var testLogic = Logic(width: 8);
+      testLogic.put(14);
+      expect(testLogic[0].value.toInt(), 0);
+      expect(testLogic[2].value.toInt(), 1);
+      expect(() => testLogic[10], throwsException);
+    });
+
+    test('Index Logic by does not accept input other than int or Logic', () {
+      var testLogic = Logic(width: 8);
+      testLogic.put(14);
+      expect(() => testLogic[10.05], throwsException);
+    });
+
   });
 }
