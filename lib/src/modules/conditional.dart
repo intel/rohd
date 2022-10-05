@@ -103,6 +103,8 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// dependencies in order for sensitivity detection to work properly
 /// in all cases.
 class Combinational extends _Always {
+  /// Constructs a new [Combinational] which executes [conditionals] in order
+  /// procedurally.
   Combinational(List<Conditional> conditionals, {String name = 'combinational'})
       : super(conditionals, name: name) {
     _execute(); // for initial values
@@ -238,6 +240,7 @@ class Combinational extends _Always {
   String assignOperator() => '=';
 }
 
+/// Deprecated: use [Sequential] instead.
 @Deprecated('Use Sequential instead')
 typedef FF = Sequential;
 
@@ -508,6 +511,7 @@ class ConditionalAssign extends Conditional {
   /// The output of this assignment.
   final Logic driver;
 
+  /// Conditionally assigns [receiver] to the value of [driver].
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
       throw Exception('Width for $receiver and $driver must match but do not.');
@@ -545,6 +549,7 @@ class CaseItem {
   /// A [List] of [Conditional]s to execute when [value] is matched.
   final List<Conditional> then;
 
+  /// Executes [then] when [value] matches.
   CaseItem(this.value, this.then);
 
   @override
@@ -563,7 +568,16 @@ class CaseItem {
 /// [unique] indicates that for a given expression, only one item will match.
 /// If multiple items match the expression, an exception will be thrown.
 /// If there is no match and no default item, an exception will also be thrown.
-enum ConditionalType { none, unique, priority }
+enum ConditionalType {
+  /// There are no special checking or expectations.
+  none,
+
+  /// Expect that exactly one condition is true.
+  unique,
+
+  /// Expect that at least one condition is true, and the first one is executed.
+  priority
+}
 
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
 /// is executed.
@@ -589,6 +603,9 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  /// Whenever an item in [items] matches [expression], it will be executed.
+  ///
+  /// If none of [items] match, then [defaultItem] is executed.
   Case(this.expression, this.items,
       {this.defaultItem, this.conditionalType = ConditionalType.none});
 
@@ -743,6 +760,10 @@ ${subPadding}end
 /// Does not support SystemVerilog's `?` syntax, which is exactly functionally
 /// equivalent to `z` syntax.
 class CaseZ extends Case {
+  /// Whenever an item in [items] matches [expression], it will be executed, but
+  /// the definition of matches allows for `z` to be a wildcard.
+  ///
+  /// If none of [items] match, then [defaultItem] is executed.
   CaseZ(Logic expression, List<CaseItem> items,
       {List<Conditional>? defaultItem,
       ConditionalType conditionalType = ConditionalType.none})
@@ -777,6 +798,7 @@ class ElseIf {
   /// The [Conditional]s to execute if [condition] is satisfied.
   final List<Conditional> then;
 
+  /// If [condition] is 1, then [then] will be executed.
   ElseIf(this.condition, this.then);
 }
 
@@ -789,6 +811,8 @@ typedef Iff = ElseIf;
 ///
 /// This should come last in [IfBlock].
 class Else extends Iff {
+  /// If none of the proceding [Iff] or [ElseIf] are executed, then
+  /// [then] will be executed.
   Else(List<Conditional> then) : super(Const(1), then);
 }
 
@@ -806,6 +830,8 @@ class IfBlock extends Conditional {
   /// make thefirst item an [ElseIf], it will act just like an [Iff].
   final List<Iff> iffs;
 
+  /// Checks the conditions for [iffs] in order and executes the first one
+  /// whose condition is enabled.
   IfBlock(this.iffs);
 
   @override
@@ -903,6 +929,7 @@ class If extends Conditional {
   /// The condition that decides if [then] or [orElse] is executed.
   final Logic condition;
 
+  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
   If(this.condition, {this.then = const [], this.orElse = const []});
 
   @override
@@ -1000,6 +1027,7 @@ class FlipFlop extends Module with CustomSystemVerilog {
   /// The output of the flop.
   Logic get q => output(_q);
 
+  /// Constructs a flip flop which is positive edge triggered on [clk].
   FlipFlop(Logic clk, Logic d, {String name = 'flipflop'}) : super(name: name) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');

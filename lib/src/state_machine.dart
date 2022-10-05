@@ -34,7 +34,7 @@ class StateMachine<StateIdentifier> {
   /// The reset signal to the FSM.
   final Logic reset;
 
-  // The reset state of the FSM to default to when the reset signal is high.
+  /// The reset state of the FSM to default to when the reset signal is high.
   final StateIdentifier resetState;
 
   /// The current state of the FSM.
@@ -113,5 +113,7 @@ class State<StateIdentifier> {
   /// Actions to perform while the FSM is in this state.
   final List<Conditional> actions;
 
+  /// Represents a state named [identifier] with a definition of [events]
+  /// and [actions] associated with that state.
   State(this.identifier, {required this.events, required this.actions});
 }

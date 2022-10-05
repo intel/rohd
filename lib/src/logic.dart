@@ -23,6 +23,8 @@ class LogicValueChanged {
   /// The previous value of the [Logic].
   final LogicValue previousValue;
 
+  /// Represents the event of a [Logic] changing value from [previousValue]
+  /// to [newValue].
   LogicValueChanged(this.newValue, this.previousValue);
 
   @override
@@ -53,6 +55,9 @@ class Logic {
 
   // special quiet flag to prevent <= and < where inappropriate
   bool _unassignable = false;
+
+  /// Makes it so that this signal cannot be assigned by any full (`<=`) or
+  /// conditional (`<`) assignment.
   void makeUnassignable() => _unassignable = true;
 
   /// The name of this signal.

@@ -32,6 +32,8 @@ abstract class SynthesisResult {
   /// A [Map] from [Module] instances to synthesis instance type names.
   final Map<Module, String> moduleToInstanceTypeMap;
 
+  /// Represents a constant computed synthesis result for [module] given
+  /// the provided type mapping in [moduleToInstanceTypeMap].
   const SynthesisResult(this.module, this.moduleToInstanceTypeMap);
 
   /// Whether two implementations are identical or not

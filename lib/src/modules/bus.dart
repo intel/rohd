@@ -33,6 +33,8 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// End index of the subset.
   final int endIndex;
 
+  /// Constructs a [Module] that accesses a subset from [bus] which ranges
+  /// from [startIndex] to [endIndex] (inclusive of both).
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {String name = 'bussubset'})
       : super(name: name) {
@@ -117,14 +119,16 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   final List<Logic> _swizzleInputs = [];
 
+  /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {String name = 'swizzle'}) : super(name: name) {
     var idx = 0;
     var outputWidth = 0;
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
       final inputName = Module.unpreferredName('in${idx++}');
-      addInput(inputName, signal, width: signal.width);
-      _swizzleInputs.add(input(inputName));
+      _swizzleInputs.add(
+        addInput(inputName, signal, width: signal.width),
+      );
       outputWidth += signal.width;
     }
     addOutput(_out, width: outputWidth);

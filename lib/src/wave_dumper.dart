@@ -48,6 +48,8 @@ class WaveDumper {
   /// signals that have changed up until that point at this saved time value.
   var _currentDumpingTimestamp = Simulator.time;
 
+  /// Attaches a [WaveDumper] to record all signal changes in a simulation of
+  /// [module] in a VCD file at [outputPath].
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
       : _outputFile = File(outputPath) {
     if (!module.hasBuilt) {
@@ -203,5 +205,6 @@ class WaveDumper {
   }
 }
 
+/// Deprecated: use [WaveDumper] instead.
 @Deprecated('Use WaveDumper instead')
 typedef Dumper = WaveDumper;

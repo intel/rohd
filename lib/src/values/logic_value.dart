@@ -10,6 +10,7 @@
 
 part of values;
 
+/// Deprecated: use [LogicValue] instead.
 @Deprecated('Use `LogicValue` instead.'
     '  `LogicValues` and `LogicValue` have been merged into one type.')
 typedef LogicValues = LogicValue;

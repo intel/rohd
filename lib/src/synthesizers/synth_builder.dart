@@ -30,6 +30,8 @@ class SynthBuilder {
   /// [Uniquifier] for instance type names.
   final Uniquifier _instanceTypeUniquifier = Uniquifier();
 
+  /// Constructs a [SynthBuilder] based on the [top] module and
+  /// using [synthesizer] for generating outputs.
   SynthBuilder(this.top, this.synthesizer) {
     final modulesToParse = <Module>[top];
     for (var i = 0; i < modulesToParse.length; i++) {

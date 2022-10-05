@@ -16,17 +16,35 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+/// Represents a single test case to check in a single clock cycle.
+///
+/// Useful for testing equivalent behavior in different simulation environments.
 class Vector {
-  static const int period = 10;
-  static const int offset = 2;
+  /// The period of the clock used for each vector
+  static const int _period = 10;
+
+  /// The offset from the clock edge to perform checks.
+  static const int _offset = 2;
+
+  /// A map of input names in a [Module] to associated values to drive
+  /// in this vector.
   final Map<String, dynamic> inputValues;
+
+  /// A map of output names in a [Module] to associated values to expect
+  /// on those outputs for this vector.
   final Map<String, dynamic> expectedOutputValues;
+
+  /// A single vector to test in a simulation with provided inputs and
+  /// expected outputs.
   Vector(this.inputValues, this.expectedOutputValues);
 
   @override
   String toString() => '$inputValues => $expectedOutputValues';
 
-  String errorCheckString(
+  /// Computes a SystemVerilog code string that checks in a SystemVerilog
+  /// simulation whether a signal [sigName] has the [expected] value given
+  /// the [inputValues].
+  String _errorCheckString(
       String sigName, dynamic expected, String inputValues) {
     final expectedHexStr = expected is int
         ? '0x${expected.toRadixString(16)}'
@@ -45,25 +63,28 @@ class Vector {
         ' but found $sigName=0x%x with inputs $inputValues", $sigName));';
   }
 
+  /// Converts this vector into a SystemVerilog check.
   String toTbVerilog() {
     final assignments = inputValues.keys
         .map((signalName) => '$signalName = ${inputValues[signalName]};')
         .join('\n');
     final checks = expectedOutputValues.keys
-        .map((signalName) => errorCheckString(signalName,
+        .map((signalName) => _errorCheckString(signalName,
             expectedOutputValues[signalName], inputValues.toString()))
         .join('\n');
     final tbVerilog = [
       assignments,
-      '#$offset',
+      '#$_offset',
       checks,
-      '#${period - offset}',
+      '#${_period - _offset}',
     ].join('\n');
     return tbVerilog;
   }
 }
 
-class SimCompare {
+/// A utility class for checking a collection of [Vector]s against
+/// different simulators.
+abstract class SimCompare {
   /// Runs a ROHD simulation where each of the [vectors] is executed per
   /// clock cycle sequentially.
   ///
@@ -77,6 +98,7 @@ class SimCompare {
       Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
+          // ignore: invalid_use_of_protected_member
           module.input(signalName).put(value);
         }
 
@@ -112,14 +134,15 @@ class SimCompare {
           });
         }
       });
-      timestamp += Vector.period;
+      timestamp += Vector._period;
     }
-    Simulator.registerAction(timestamp + Vector.period,
+    Simulator.registerAction(timestamp + Vector._period,
         () {}); // just so it does one more thing at the end
-    Simulator.setMaxSimTime(timestamp + 2 * Vector.period);
+    Simulator.setMaxSimTime(timestamp + 2 * Vector._period);
     await Simulator.run();
   }
 
+  /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     String generatedVerilog,
     String topModule,

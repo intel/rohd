@@ -26,8 +26,8 @@ class Uniquifier {
 
   /// A [Set] of names that are reserved, including originally pre-reserved ones
   /// and ones already taken.
-  final Set<String> _reservedNames;
   Set<String> get reservedNames => UnmodifiableSetView(_reservedNames);
+  final Set<String> _reservedNames;
 
   /// Constructs a new [Uniquifier], optionally with a set of
   /// pre-[reservedNames].

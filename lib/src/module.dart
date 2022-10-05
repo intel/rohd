@@ -86,7 +86,7 @@ abstract class Module {
   /// named [name].
   ///
   /// Logic within this [Module] should consume this signal.
-  @protected //TODO?
+  @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
@@ -141,6 +141,14 @@ abstract class Module {
   /// or else it will fail.
   final bool reserveDefinitionName;
 
+  /// Constructs a new [Module] with instance name [name] and definition
+  /// name [definitionName].
+  ///
+  /// If [reserveName] is set, then the model will not build if it's unable
+  /// to keep from uniquifying (changing) [name] to avoid conflicts.
+  ///
+  /// If [reserveDefinitionName] is set, then code generation will fail if
+  /// it is unable to keep from uniquifying [definitionName] to avoid conflicts.
   Module(
       {this.name = 'unnamed_module',
       this.reserveName = false,

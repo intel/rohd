@@ -13,6 +13,10 @@ import 'package:rohd/rohd.dart';
 /// A very simple clock generator.  Generates a non-synthesizable SystemVerilog
 /// representation.
 class SimpleClockGenerator extends Module with CustomSystemVerilog {
+  /// The number of time units between repetitions of this clock.
+  ///
+  /// For example, if the [clockPeriod] is 10, then the frequency is 1/10,
+  /// and the time between positive edges of the generated clock is 10.
   final int clockPeriod;
 
   /// The generated clock.

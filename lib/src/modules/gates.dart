@@ -365,102 +365,139 @@ class _ShiftGate extends Module with InlineSystemVerilog {
 
 /// A two-input AND gate.
 class And2Gate extends _TwoInputBitwiseGate {
+  /// Calculates the AND of [a] and [b].
   And2Gate(Logic a, Logic b, {String name = 'and'})
       : super((a, b) => a & b, '&', a, b, name: name);
 }
 
 /// A two-input OR gate.
 class Or2Gate extends _TwoInputBitwiseGate {
+  /// Calculates the OR of [a] and [b].
   Or2Gate(Logic a, Logic b, {String name = 'or'})
       : super((a, b) => a | b, '|', a, b, name: name);
 }
 
 /// A two-input XOR gate.
 class Xor2Gate extends _TwoInputBitwiseGate {
+  /// Calculates the XOR of [a] and [b].
   Xor2Gate(Logic a, Logic b, {String name = 'xor'})
       : super((a, b) => a ^ b, '^', a, b, name: name);
 }
 
 /// A two-input addition module.
 class Add extends _TwoInputBitwiseGate {
+  /// Calculates the sum of [a] and [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   Add(Logic a, dynamic b, {String name = 'add'})
       : super((a, b) => a + b, '+', a, b, name: name);
 }
 
 /// A two-input subtraction module.
 class Subtract extends _TwoInputBitwiseGate {
+  /// Calculates the difference between [a] and [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   Subtract(Logic a, dynamic b, {String name = 'subtract'})
       : super((a, b) => a - b, '-', a, b, name: name);
 }
 
 /// A two-input multiplication module.
 class Multiply extends _TwoInputBitwiseGate {
+  /// Calculates the product of [a] and [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   Multiply(Logic a, dynamic b, {String name = 'multiply'})
       : super((a, b) => a * b, '*', a, b, name: name);
 }
 
 /// A two-input divison module.
 class Divide extends _TwoInputBitwiseGate {
+  /// Calculates [a] divided by [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   Divide(Logic a, dynamic b, {String name = 'divide'})
       : super((a, b) => a / b, '/', a, b, name: name);
 }
 
 /// A two-input modulo module.
 class Modulo extends _TwoInputBitwiseGate {
+  /// Calculates the module of [a] % [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   Modulo(Logic a, dynamic b, {String name = 'modulo'})
       : super((a, b) => a % b, '%', a, b, name: name);
 }
 
 /// A two-input equality comparison module.
 class Equals extends _TwoInputComparisonGate {
+  /// Calculates whether [a] and [b] are equal.
+  ///
+  /// [b] can be either a [Logic] or [int].
   Equals(Logic a, dynamic b, {String name = 'equals'})
       : super((a, b) => a.eq(b), '==', a, b, name: name);
 }
 
 /// A two-input comparison module for less-than.
 class LessThan extends _TwoInputComparisonGate {
+  /// Calculates whether [a] is less than [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   LessThan(Logic a, dynamic b, {String name = 'lessthan'})
       : super((a, b) => a < b, '<', a, b, name: name);
 }
 
 /// A two-input comparison module for greater-than.
 class GreaterThan extends _TwoInputComparisonGate {
+  /// Calculates whether [a] is greater than [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   GreaterThan(Logic a, dynamic b, {String name = 'greaterthan'})
       : super((a, b) => a > b, '>', a, b, name: name);
 }
 
 /// A two-input comparison module for less-than-or-equal-to.
 class LessThanOrEqual extends _TwoInputComparisonGate {
+  /// Calculates whether [a] is less than or equal to [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   LessThanOrEqual(Logic a, dynamic b, {String name = 'lessthanorequal'})
       : super((a, b) => a <= b, '<=', a, b, name: name);
 }
 
 /// A two-input comparison module for greater-than-or-equal-to.
 class GreaterThanOrEqual extends _TwoInputComparisonGate {
+  /// Calculates whether [a] is greater than or equal to [b].
+  ///
+  /// [b] can be either a [Logic] or [int].
   GreaterThanOrEqual(Logic a, dynamic b, {String name = 'greaterthanorequal'})
       : super((a, b) => a >= b, '>=', a, b, name: name);
 }
 
 /// A unary AND gate.
 class AndUnary extends _OneInputUnaryGate {
+  /// Calculates whether all bits of [a] are high.
   AndUnary(Logic a, {String name = 'uand'})
       : super((a) => a.and(), '&', a, name: name);
 }
 
 /// A unary OR gate.
 class OrUnary extends _OneInputUnaryGate {
+  /// Calculates whether any bits of [a] are high.
   OrUnary(Logic a, {String name = 'uor'})
       : super((a) => a.or(), '|', a, name: name);
 }
 
 /// A unary XOR gate.
 class XorUnary extends _OneInputUnaryGate {
+  /// Calculates the parity of the bits of [a].
   XorUnary(Logic a, {String name = 'uxor'})
       : super((a) => a.xor(), '^', a, name: name);
 }
 
 /// A logical right-shift module.
 class RShift extends _ShiftGate {
+  /// Calculates the value of [a] shifted right (logically) by [shamt].
   RShift(Logic a, Logic shamt, {String name = 'rshift'})
       :
         // Note: >>> vs >> is backwards for SystemVerilog and Dart
@@ -469,6 +506,7 @@ class RShift extends _ShiftGate {
 
 /// An arithmetic right-shift module.
 class ARShift extends _ShiftGate {
+  /// Calculates the value of [a] shifted right (arithmetically) by [shamt].
   ARShift(Logic a, Logic shamt, {String name = 'arshift'})
       :
         // Note: >>> vs >> is backwards for SystemVerilog and Dart
@@ -478,6 +516,7 @@ class ARShift extends _ShiftGate {
 
 /// A logical left-shift module.
 class LShift extends _ShiftGate {
+  /// Calculates the value of [a] shifted left by [shamt].
   LShift(Logic a, Logic shamt, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', a, shamt, name: name);
 }
@@ -511,6 +550,8 @@ class Mux extends Module with InlineSystemVerilog {
   /// Output port of the [Mux].
   Logic get y => output(_y);
 
+  /// Constructs a multiplexer which passes [d0] or [d1] to [y] depending
+  /// on if [control] is 0 or 1, respectively.
   Mux(Logic control, Logic d1, Logic d0, {String name = 'mux'})
       : super(name: name) {
     if (control.width != 1) {

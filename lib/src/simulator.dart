@@ -14,7 +14,19 @@ import 'package:logging/logging.dart';
 import 'package:rohd/rohd.dart';
 
 /// An enum for the various phases of the [Simulator].
-enum SimulatorPhase { outOfTick, beforeTick, mainTick, clkStable }
+enum SimulatorPhase {
+  /// Not during an active simulator tick.
+  outOfTick,
+
+  /// Before the tick has started executing.  Useful for flop sampling.
+  beforeTick,
+
+  /// Most events happen here, lots of glitches.
+  mainTick,
+
+  /// All glitchiness has completed, clocks should be stable now.
+  clkStable
+}
 
 /// A functional event-based static simulator for logic behavior.
 ///
