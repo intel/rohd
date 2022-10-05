@@ -186,11 +186,9 @@ void main() {
           LogicValue.isPosedge(LogicValue.one, LogicValue.z,
               ignoreInvalid: true),
           equals(false));
-      expect(
-          () => LogicValue.isPosedge(LogicValue.x, LogicValue.one),
+      expect(() => LogicValue.isPosedge(LogicValue.x, LogicValue.one),
           throwsA(isA<Exception>()));
-      expect(
-          () => LogicValue.isPosedge(LogicValue.one, LogicValue.z),
+      expect(() => LogicValue.isPosedge(LogicValue.one, LogicValue.z),
           throwsA(isA<Exception>()));
     });
     test('isNegEdge', () {
@@ -206,11 +204,9 @@ void main() {
           LogicValue.isNegedge(LogicValue.one, LogicValue.z,
               ignoreInvalid: true),
           equals(false));
-      expect(
-          () => LogicValue.isNegedge(LogicValue.x, LogicValue.one),
+      expect(() => LogicValue.isNegedge(LogicValue.x, LogicValue.one),
           throwsA(isA<Exception>()));
-      expect(
-          () => LogicValue.isNegedge(LogicValue.one, LogicValue.z),
+      expect(() => LogicValue.isNegedge(LogicValue.one, LogicValue.z),
           throwsA(isA<Exception>()));
     });
   });
