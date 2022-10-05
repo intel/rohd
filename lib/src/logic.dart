@@ -423,13 +423,15 @@ class Logic {
     }
   }
 
-  /// Accesses the [index]th bit of this signal.
+  /// Accesses the [index]th bit of this signal, where index can be [int] or [Logic].
+  /// Throws Exception when index is not in range or index is neither [int] or [Logic].
   Logic operator [](dynamic index) {
-      if (index is Logic) {
-          return IndexGate(this, index).y;
-      }
-
+    if (index is Logic) {
+      return IndexGate(this, index).selection;
+    } else if (index is int) {
       return this.getRange(index, index + 1);
+    }
+    throw Exception('Expected [int] or [Logic]');
   }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex], both inclusive.
