@@ -16,7 +16,5 @@ dependencies:
   test: ^1.17.3
 
 dev_dependencies:
-  all_lint_rules_community: ^0.0.15
   benchmark_harness: ^2.2.0
-  lints: ^2.0.0
   
