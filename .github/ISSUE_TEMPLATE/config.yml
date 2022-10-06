@@ -1,8 +1,14 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
+
 contact_links:
-  - name: GitHub Community Support
-    url: https://github.com/orgs/community/discussions
-    about: Please ask and answer questions here.
-  - name: GitHub Security Bug Bounty
-    url: https://bounty.github.com/
-    about: Please report security vulnerabilities here.
+  - name: ROHD Discussions
+    url: https://github.com/intel/rohd/discussions
+    about: Ask questions - get answers.
+
+  - name: ROHD Discord
+    url: https://discord.com/invite/jubxF84yGw
+    about: Instant communication... if someone is online.
+
+  - name: ROHD Forum
+    url: https://github.com/intel/rohd/wiki/ROHD-Forum
+    about: Public periodic meeting for users and developers to discuss topics related to ROHD.
