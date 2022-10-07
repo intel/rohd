@@ -18,7 +18,7 @@ body:
     attributes:
       label: To Reproduce
       description: If possible, please include code that reproduces the failure.
-      value: |
+      placeholder: |
         Steps to reproduce the behavior:
         1. Use class ... for ...
         2. Run a simulation with ...
