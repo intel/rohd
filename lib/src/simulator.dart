@@ -11,21 +11,39 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:logging/logging.dart';
+import 'package:rohd/rohd.dart';
 
 /// An enum for the various phases of the [Simulator].
-enum SimulatorPhase { outOfTick, beforeTick, mainTick, clkStable }
+enum SimulatorPhase {
+  /// Not during an active simulator tick.
+  outOfTick,
+
+  /// Before the tick has started executing.  Useful for flop sampling.
+  beforeTick,
+
+  /// Most events happen here, lots of glitches.
+  mainTick,
+
+  /// All glitchiness has completed, clocks should be stable now.
+  clkStable
+}
 
 /// A functional event-based static simulator for logic behavior.
 ///
 /// Each tick of the simulator steps through the following events and phases:
-/// - [preTick]                   (event): Occurs at the very start of a tick, before anything else occurs.
+/// - [preTick]                   (event): Occurs at the very start of a tick,
+///                                        before anything else occurs.
 ///                                        This is useful for flop sampling.
 /// - [SimulatorPhase.beforeTick] (phase)
-/// - [startTick]                 (event): The beginning of the "meat" of the tick.
-/// - [SimulatorPhase.mainTick]   (phase): Most events happen here, lots of glitches.
-/// - [clkStable]                 (event): All glitchiness has completed, clocks should be stable now.
+/// - [startTick]                 (event): The beginning of the "meat" of the
+///                                        tick.
+/// - [SimulatorPhase.mainTick]   (phase): Most events happen here, lots of
+///                                        glitches.
+/// - [clkStable]                 (event): All glitchiness has completed, clocks
+///                                        should be stable now.
 /// - [SimulatorPhase.clkStable]  (phase)
-/// - [postTick]                  (event): The tick has completed, all values should be settled.
+/// - [postTick]                  (event): The tick has completed, all values
+///                                        should be settled.
 /// - [SimulatorPhase.outOfTick]  (phase): Not during an active simulator tick.
 ///
 /// Functional behavior modelling subscribes to [Simulator] events and/or queries the [SimulatorPhase].
@@ -54,35 +72,41 @@ class Simulator {
       SplayTreeMap<int, List<void Function()>>();
 
   /// Functions to be executed as soon as possible by the [Simulator].
-  static final Queue<Function()> _injectedActions = Queue<Function()>();
+  ///
+  /// Actions may return [Future]s, which will be `await`ed.
+  static final Queue<dynamic Function()> _injectedActions =
+      Queue<dynamic Function()>();
 
   /// Functions to be executed at the end of the simulation.
-  static final Queue<Function()> _endOfSimulationActions = Queue<Function()>();
+  ///
+  /// Actions may return [Future]s, which will be `await`ed.
+  static final Queue<dynamic Function()> _endOfSimulationActions =
+      Queue<dynamic Function()>();
 
   /// Emits an event before any other actions take place on the tick.
-  static Stream get preTick => _preTickController.stream;
+  static Stream<void> get preTick => _preTickController.stream;
 
   /// Emits an event at the start of actions within a tick.
-  static Stream get startTick => _startTickController.stream;
+  static Stream<void> get startTick => _startTickController.stream;
 
   /// Emits an event when most events are complete, and clocks are stable.
-  static Stream get clkStable => _clkStableController.stream;
+  static Stream<void> get clkStable => _clkStableController.stream;
 
   /// Emits an event after all events are completed.
-  static Stream get postTick => _postTickController.stream;
+  static Stream<void> get postTick => _postTickController.stream;
 
-  static StreamController _preTickController =
+  static StreamController<void> _preTickController =
       StreamController.broadcast(sync: true);
-  static StreamController _startTickController =
+  static StreamController<void> _startTickController =
       StreamController.broadcast(sync: true);
-  static StreamController _clkStableController =
+  static StreamController<void> _clkStableController =
       StreamController.broadcast(sync: true);
-  static StreamController _postTickController =
+  static StreamController<void> _postTickController =
       StreamController.broadcast(sync: true);
 
   /// Completes when the simulation has completed.
-  static Future get simulationEnded => _simulationEndedCompleter.future;
-  static Completer _simulationEndedCompleter = Completer();
+  static Future<void> get simulationEnded => _simulationEndedCompleter.future;
+  static Completer<void> _simulationEndedCompleter = Completer<void>();
 
   /// Returns true iff the simulation has completed.
   static bool get simulationHasEnded => _simulationEndedCompleter.isCompleted;
@@ -95,15 +119,25 @@ class Simulator {
   ///
   /// Note: values deposited on [Module]s from the previous simulation remain.
   static Future<void> reset() async {
-    if (_simulationEndRequested) await simulationEnded;
+    if (_simulationEndRequested) {
+      await simulationEnded;
+    }
 
     _currentTimestamp = 0;
     _simulationEndRequested = false;
     _maxSimTime = -1;
-    if (!_preTickController.isClosed) await _preTickController.close();
-    if (!_startTickController.isClosed) await _startTickController.close();
-    if (!_clkStableController.isClosed) await _clkStableController.close();
-    if (!_postTickController.isClosed) await _postTickController.close();
+    if (!_preTickController.isClosed) {
+      await _preTickController.close();
+    }
+    if (!_startTickController.isClosed) {
+      await _startTickController.close();
+    }
+    if (!_clkStableController.isClosed) {
+      await _clkStableController.close();
+    }
+    if (!_postTickController.isClosed) {
+      await _postTickController.close();
+    }
     _preTickController = StreamController.broadcast(sync: true);
     _startTickController = StreamController.broadcast(sync: true);
     _clkStableController = StreamController.broadcast(sync: true);
@@ -117,9 +151,12 @@ class Simulator {
     _injectedActions.clear();
   }
 
-  /// Sets a time, after which, the [Simulator] will halt processing of new actions.
+  /// Sets a time, after which, the [Simulator] will halt processing of new
+  /// actions.
   ///
-  /// You should set this for your simulations so that you don't get infinite simulation.
+  /// You should set this for your simulations so that you don't get infinite
+  /// simulation.
+  // ignore: use_setters_to_change_properties
   static void setMaxSimTime(int newMaxSimTime) {
     _maxSimTime = newMaxSimTime;
   }
@@ -127,8 +164,8 @@ class Simulator {
   /// Registers an abritrary [action] to be executed at [timestamp] time.
   static void registerAction(int timestamp, void Function() action) {
     if (timestamp <= _currentTimestamp) {
-      throw Exception(
-          'Cannot add timestamp "$timestamp" in the past.  Current time is ${Simulator.time}');
+      throw Exception('Cannot add timestamp "$timestamp" in the past.'
+          '  Current time is ${Simulator.time}');
     }
     if (!_pendingTimestamps.containsKey(timestamp)) {
       _pendingTimestamps[timestamp] = [];
@@ -136,19 +173,24 @@ class Simulator {
     _pendingTimestamps[timestamp]!.add(action);
   }
 
-  /// Registers an arbitrary [action] to be executed at the end of the simulation.
+  /// Registers an arbitrary [action] to be executed at the end of the
+  /// simulation.
   ///
   /// The simulation will not be marked as ended until these actions complete.
-  static void registerEndOfSimulationAction(Function() action) {
+  ///
+  /// If [action] returns a [Future], it will be `await`ed.
+  static void registerEndOfSimulationAction(dynamic Function() action) {
     _endOfSimulationActions.add(action);
   }
 
-  /// Adds an arbitrary [action] to be executed as soon as possible, during the current
-  /// simulation tick if possible.
+  /// Adds an arbitrary [action] to be executed as soon as possible, during the
+  /// current simulation tick if possible.
   ///
-  /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]), it will execute in
-  /// a new tick in the same timestamp.
-  static void injectAction(Function() action) {
+  /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]),
+  /// it will execute in a new tick in the same timestamp.
+  ///
+  /// If [action] returns a [Future], it will be `await`ed.
+  static void injectAction(dynamic Function() action) {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
   }
@@ -157,6 +199,8 @@ class Simulator {
   ///
   /// Takes the simulator through all actions within the next pending
   /// timestamp, and passes through all events and phases on the way.
+  ///
+  /// If there are no timestamps pending to execute, nothing will execute.
   static Future<void> tick() async {
     if (_injectedActions.isNotEmpty) {
       // injected actions will automatically be executed during tickExecute
@@ -166,16 +210,15 @@ class Simulator {
       return;
     }
 
-    var nextTimeStamp = _pendingTimestamps.firstKey();
+    final nextTimeStamp = _pendingTimestamps.firstKey();
     if (nextTimeStamp == null) {
-      print('No more to tick.');
       return;
     }
 
     _currentTimestamp = nextTimeStamp;
-    // print("Tick: $_currentTimestamp");
+
     await tickExecute(() {
-      for (var func in _pendingTimestamps[nextTimeStamp]!) {
+      for (final func in _pendingTimestamps[nextTimeStamp]!) {
         func();
       }
     });
@@ -185,7 +228,7 @@ class Simulator {
   /// Executes all pending injected actions.
   static Future<void> _executeInjectedActions() async {
     while (_injectedActions.isNotEmpty) {
-      var injectedFunction = _injectedActions.removeFirst();
+      final injectedFunction = _injectedActions.removeFirst();
       await injectedFunction();
     }
   }
@@ -193,24 +236,31 @@ class Simulator {
   /// Performs the actual execution of a collection of actions for a [tick()].
   static Future<void> tickExecute(void Function() toExecute) async {
     _phase = SimulatorPhase.beforeTick;
-    _preTickController.add(null); // useful for flop sampling
+
+    // useful for flop sampling
+    _preTickController.add(null);
 
     _phase = SimulatorPhase.mainTick;
-    _startTickController.add(
-        null); // useful for things that need to trigger every tick without other input
+
+    // useful for things that need to trigger every tick without other input
+    _startTickController.add(null);
     toExecute();
 
     _phase = SimulatorPhase.clkStable;
-    _clkStableController.add(null); // useful for flop clk input stability
+
+    // useful for flop clk input stability
+    _clkStableController.add(null);
 
     await _executeInjectedActions();
 
     _phase = SimulatorPhase.outOfTick;
-    _postTickController
-        .add(null); // useful for determination of signal settling
+
+    // useful for determination of signal settling
+    _postTickController.add(null);
   }
 
-  /// Halts the simulation.  Allows the current [tick] to finish, if there is one.
+  /// Halts the simulation.  Allows the current [tick] to finish, if there
+  /// is one.
   static void endSimulation() {
     _simulationEndRequested = true;
   }
@@ -234,7 +284,7 @@ class Simulator {
     }
 
     while (_endOfSimulationActions.isNotEmpty) {
-      var endOfSimAction = _endOfSimulationActions.removeFirst();
+      final endOfSimAction = _endOfSimulationActions.removeFirst();
       await endOfSimAction();
     }
 

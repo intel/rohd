@@ -7,10 +7,9 @@
 /// 2021 May 21
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class MathTestModule extends Module {
   Logic get a => input('a');
@@ -30,20 +29,22 @@ class MathTestModule extends Module {
   final int c;
   MathTestModule(Logic a, Logic b, {this.c = 5})
       : super(name: 'gatetestmodule') {
-    if (a.width != b.width) throw Exception('a and b must be same width');
+    if (a.width != b.width) {
+      throw Exception('a and b must be same width');
+    }
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
-    var aPlusB = addOutput('a_plus_b', width: a.width);
-    var aMinusB = addOutput('a_minus_b', width: a.width);
-    var aTimesB = addOutput('a_times_b', width: a.width);
-    var aDividedByB = addOutput('a_dividedby_b', width: a.width);
-    var aModuloB = addOutput('a_modulo_b', width: a.width);
+    final aPlusB = addOutput('a_plus_b', width: a.width);
+    final aMinusB = addOutput('a_minus_b', width: a.width);
+    final aTimesB = addOutput('a_times_b', width: a.width);
+    final aDividedByB = addOutput('a_dividedby_b', width: a.width);
+    final aModuloB = addOutput('a_modulo_b', width: a.width);
 
-    var aPlusConst = addOutput('a_plus_const', width: a.width);
-    var aMinusConst = addOutput('a_minus_const', width: a.width);
-    var aTimesConst = addOutput('a_times_const', width: a.width);
-    var aDividedByConst = addOutput('a_dividedby_const', width: a.width);
+    final aPlusConst = addOutput('a_plus_const', width: a.width);
+    final aMinusConst = addOutput('a_minus_const', width: a.width);
+    final aTimesConst = addOutput('a_times_const', width: a.width);
+    final aDividedByConst = addOutput('a_dividedby_const', width: a.width);
 
     aPlusB <= a + b;
     aMinusB <= a - b;
@@ -59,12 +60,10 @@ class MathTestModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
-    var signalToWidthMap = {
+    final signalToWidthMap = {
       'a': 8,
       'b': 8,
       'a_plus_b': 8,
@@ -79,9 +78,9 @@ void main() {
     };
 
     test('addition', () async {
-      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_plus_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_plus_b': 1}),
         Vector({'a': 1, 'b': 0}, {'a_plus_b': 1}),
@@ -92,16 +91,16 @@ void main() {
         // Vector({'a': -6, 'b': 2}, {'a_plus_b': -4}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('subtraction', () async {
-      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_minus_b': 0}),
         Vector({'a': 1, 'b': 0}, {'a_minus_b': 1}),
         Vector({'a': 0xff, 'b': 0xff}, {'a_minus_b': 0}),
@@ -109,32 +108,32 @@ void main() {
         Vector({'a': 6}, {'a_minus_const': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('multiplication', () async {
-      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_times_b': 0}),
         Vector({'a': 1, 'b': 1}, {'a_times_b': 1}),
         Vector({'a': 3, 'b': 4}, {'a_times_b': 12}),
         Vector({'a': 6}, {'a_times_const': 30}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('division', () async {
-      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_dividedby_b': LogicValue.x}),
         Vector({'a': 1, 'b': 0}, {'a_dividedby_b': LogicValue.x}),
         Vector({'a': 4, 'b': 2}, {'a_dividedby_b': 2}),
@@ -143,16 +142,16 @@ void main() {
         Vector({'a': 6}, {'a_dividedby_const': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('modulo', () async {
-      var gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_modulo_b': LogicValue.x}),
         Vector({'a': 1, 'b': 0}, {'a_modulo_b': LogicValue.x}),
         Vector({'a': 4, 'b': 2}, {'a_modulo_b': 0}),
@@ -160,7 +159,7 @@ void main() {
         Vector({'a': 9, 'b': 3}, {'a_modulo_b': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));

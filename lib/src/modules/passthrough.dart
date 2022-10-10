@@ -15,9 +15,11 @@ class Passthrough extends Module {
   /// The input port.
   Logic get a => input('a');
 
-  // The output port.
+  /// The output port.
   Logic get b => output('b');
 
+  /// Constructs a simple pass-through module that performs no operations
+  /// between [a] and [b].
   Passthrough(Logic a, [String name = 'passthrough']) : super(name: name) {
     addInput('a', a);
     addOutput('b');
@@ -25,7 +27,7 @@ class Passthrough extends Module {
   }
 
   void _setup() {
-    var inner = Logic(name: 'inner');
+    final inner = Logic(name: 'inner');
     inner <= a;
     b <= inner;
   }

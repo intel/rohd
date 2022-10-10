@@ -7,13 +7,13 @@
 /// 2021 May 10
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'dart:async';
+
 // import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class Counter extends Module {
   final int width;
@@ -22,9 +22,9 @@ class Counter extends Module {
     en = addInput('en', en);
     reset = addInput('reset', reset);
 
-    var val = addOutput('val', width: width);
+    final val = addOutput('val', width: width);
 
-    var nextVal = Logic(name: 'nextVal', width: width);
+    final nextVal = Logic(name: 'nextVal', width: width);
 
     nextVal <= val + 1;
 
@@ -42,14 +42,12 @@ class Counter extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
     test('counter', () async {
-      var reset = Logic();
-      var counter = Counter(Logic(), reset);
+      final reset = Logic();
+      final counter = Counter(Logic(), reset);
       await counter.build();
       // WaveDumper(counter);
       // File('tmp_counter.sv').writeAsStringSync(counter.generateSynth());
@@ -60,7 +58,7 @@ void main() {
                 expect(counter.val.value.toInt(), equals(0));
               })));
 
-      var vectors = [
+      final vectors = [
         Vector({'en': 0, 'reset': 0}, {}),
         Vector({'en': 0, 'reset': 1}, {'val': 0}),
         Vector({'en': 1, 'reset': 1}, {'val': 0}),
@@ -74,7 +72,7 @@ void main() {
         Vector({'en': 0, 'reset': 0}, {'val': 5}),
       ];
       await SimCompare.checkFunctionalVector(counter, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           counter.generateSynth(), counter.runtimeType.toString(), vectors,
           signalToWidthMap: {'val': 8});
       expect(simResult, equals(true));

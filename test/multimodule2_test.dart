@@ -2,15 +2,16 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule2_test.dart
-/// Unit tests for a hierarchy of multiple modules and multiple instantiation (another type)
+/// Unit tests for a hierarchy of multiple modules and multiple
+/// instantiation (another type)
 ///
 /// 2021 June 28
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class Doublesync extends Module {
   Logic get dso => output('dso');
@@ -25,7 +26,7 @@ class Doublesync extends Module {
 
 class DSWrap extends Module {
   Logic get sigSyncWrap => output('sig_sync_wrap');
-  DSWrap(Logic clk, Logic sig, bool isAsync) : super(name: 'dswrap') {
+  DSWrap(Logic clk, Logic sig) : super(name: 'dswrap') {
     sig = addInput('sig', sig);
     clk = addInput('clk', clk);
     addOutput('sig_sync_wrap');
@@ -36,21 +37,21 @@ class DSWrap extends Module {
 class TopModule extends Module {
   TopModule(Logic sig) : super(name: 'top') {
     sig = addInput('sig', sig);
-    var sigSync = addOutput('sig_sync');
-    sigSync <= DSWrap(SimpleClockGenerator(10).clk, sig, true).sigSyncWrap;
+    final sigSync = addOutput('sig_sync');
+    sigSync <= DSWrap(SimpleClockGenerator(10).clk, sig).sigSyncWrap;
   }
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
+  tearDown(() async {
+    await Simulator.reset();
   });
 
   group('simcompare', () {
     test('multimodules2', () async {
-      var ftm = TopModule(Logic());
+      final ftm = TopModule(Logic());
       await ftm.build();
-      var vectors = [
+      final vectors = [
         Vector({'sig': 0}, {}),
         Vector({'sig': 0}, {}),
         Vector({'sig': 0}, {}),
@@ -60,7 +61,7 @@ void main() {
         Vector({'sig': 1}, {'sig_sync': 1}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
