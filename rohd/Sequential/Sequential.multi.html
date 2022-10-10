@@ -68,7 +68,7 @@
     {String name = &#39;sequential&#39;})
     : super(conditionals, name: name) {
   for (var i = 0; i &lt; clks.length; i++) {
-    var clk = clks[i];
+    final clk = clks[i];
     if (clk.width &gt; 1) {
       throw Exception(&#39;Each clk must be 1 bit, but saw $clk.&#39;);
     }

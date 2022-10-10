@@ -80,7 +80,8 @@
           <span class="name"><a href="../rohd/Pipeline/Pipeline.html">Pipeline</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-stages">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span><span class="parameter" id="-param-stalls"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a>?</span>&gt;</span>?</span> <span class="parameter-name">stalls</span>, </span><span class="parameter" id="-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span><span class="parameter" id="-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>}</span>)</span>
         </dt>
         <dd>
-          Constructs a simple pipeline, separating arbitrary combinational logic by flop stages.
+          Constructs a simple pipeline, separating arbitrary combinational logic by
+flop stages.
         </dd>
     </dl>
   </section>
@@ -150,8 +151,8 @@
 
 </dt>
 <dd>
-  Gets the pipelined version of <code>logic</code>.  By default <code>stageIndex</code> is the last
-stage (the output of the pipeline).
+  Gets the pipelined version of <code>logic</code>.  By default <code>stageIndex</code> is the
+last stage (the output of the pipeline).
   
 
 </dd>

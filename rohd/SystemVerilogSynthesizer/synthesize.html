@@ -66,7 +66,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Synthesizes <code>module</code> into a <a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a>, given the mapping in <code>moduleToInstanceTypeMap</code>.</p>
+  <p>Synthesizes <code>module</code> into a <a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a>, given the mapping in
+<code>moduleToInstanceTypeMap</code>.</p>
 </section>
 
 
@@ -75,9 +76,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 SynthesisResult synthesize(
-    Module module, Map&lt;Module, String&gt; moduleToInstanceTypeMap) {
-  return _SystemVerilogSynthesisResult(module, moduleToInstanceTypeMap);
-}</code></pre>
+        Module module, Map&lt;Module, String&gt; moduleToInstanceTypeMap) =&gt;
+    _SystemVerilogSynthesisResult(module, moduleToInstanceTypeMap);</code></pre>
 </section>
 
 

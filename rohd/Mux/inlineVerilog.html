@@ -65,10 +65,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Generates custom SystemVerilog to be injected in place of the output port's corresponding signal name.</p>
-<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are
-passed into those ports in the generated SystemVerilog.</p>
-<p>The output will be appropriately wrapped with parentheses to guarantee proper order of operations.</p>
+  <p>Generates custom SystemVerilog to be injected in place of the output
+port's corresponding signal name.</p>
+<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
+the signals that are passed into those ports in the generated
+SystemVerilog.</p>
+<p>The output will be appropriately wrapped with parentheses to guarantee
+proper order of operations.</p>
 </section>
 
 
@@ -77,10 +80,12 @@ passed into those ports in the generated SystemVerilog.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 3) throw Exception(&#39;Mux2 has exactly three inputs.&#39;);
-  var d0 = inputs[_d0]!;
-  var d1 = inputs[_d1]!;
-  var control = inputs[_control]!;
+  if (inputs.length != 3) {
+    throw Exception(&#39;Mux2 has exactly three inputs.&#39;);
+  }
+  final d0 = inputs[_d0]!;
+  final d1 = inputs[_d1]!;
+  final control = inputs[_control]!;
   return &#39;$control ? $d1 : $d0&#39;;
 }</code></pre>
 </section>

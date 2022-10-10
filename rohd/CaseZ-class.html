@@ -50,9 +50,11 @@
 
     
 <section class="desc markdown">
-  <p>A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in the expression.</p>
+  <p>A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in
+the expression.</p>
 <p>Any <code>z</code> in the value of a <a href="../rohd/CaseItem-class.html">CaseItem</a> will act as a wildcard.</p>
-<p>Does not support SystemVerilog's <code>?</code> syntax, which is exactly functionally equivalent to <code>z</code> syntax.</p>
+<p>Does not support SystemVerilog's <code>?</code> syntax, which is exactly functionally
+equivalent to <code>z</code> syntax.</p>
 </section>
 
 
@@ -87,7 +89,8 @@
           <span class="name"><a href="../rohd/CaseZ/CaseZ.html">CaseZ</a></span><span class="signature">(<span class="parameter" id="-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="-param-items"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="-param-defaultItem">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>}</span>)</span>
         </dt>
         <dd>
-          
+          Whenever an item in <code>items</code> matches <code>expression</code>, it will be executed, but
+the definition of matches allows for <code>z</code> to be a wildcard.
         </dd>
     </dl>
   </section>
@@ -113,8 +116,8 @@
 
 </dt>
 <dd class="inherited">
-  The type of case block this is, for special attributes (e.g. <a href="../rohd/ConditionalType.html">ConditionalType.unique</a>,
-<a href="../rohd/ConditionalType.html">ConditionalType.priority</a>).
+  The type of case block this is, for special attributes
+(e.g. <a href="../rohd/ConditionalType.html">ConditionalType.unique</a>, <a href="../rohd/ConditionalType.html">ConditionalType.priority</a>).
   <div class="features">final, inherited</div>
 
 </dd>
@@ -158,7 +161,8 @@
 
 </dt>
 <dd class="inherited">
-  An ordered collection of <code>CaseItem</code>s to search through for a match to <a href="../rohd/Case/expression.html">expression</a>.
+  An ordered collection of <code>CaseItem</code>s to search through for a match
+to <a href="../rohd/Case/expression.html">expression</a>.
   <div class="features">final, inherited</div>
 
 </dd>
@@ -204,7 +208,8 @@
 
 </dt>
 <dd class="inherited">
-  Gets the value that should be used for execution for the input port associated with <code>driver</code>.
+  Gets the value that should be used for execution for the input port
+associated with <code>driver</code>.
   <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a>, inherited</div>
 
 </dd>
@@ -230,7 +235,8 @@
 
 </dt>
 <dd class="inherited">
-  Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code> (not including itself).
+  Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code>
+(not including itself).
   <div class="features">inherited</div>
 
 </dd>
@@ -256,7 +262,8 @@
 
 </dt>
 <dd class="inherited">
-  Lists <em>all</em> receivers, recursively including all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s receivers.
+  Lists <em>all</em> receivers, recursively including all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s
+receivers.
   <div class="features">inherited</div>
 
 </dd>

@@ -65,10 +65,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Generates custom SystemVerilog to be injected in place of the output port's corresponding signal name.</p>
-<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are
-passed into those ports in the generated SystemVerilog.</p>
-<p>The output will be appropriately wrapped with parentheses to guarantee proper order of operations.</p>
+  <p>Generates custom SystemVerilog to be injected in place of the output
+port's corresponding signal name.</p>
+<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
+the signals that are passed into those ports in the generated
+SystemVerilog.</p>
+<p>The output will be appropriately wrapped with parentheses to guarantee
+proper order of operations.</p>
 </section>
 
 
@@ -77,10 +80,12 @@ passed into those ports in the generated SystemVerilog.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 2) throw Exception(&#39;Gate has exactly two inputs.&#39;);
-  var a = inputs[_a]!;
-  var b = inputs[_b]!;
-  var aStr = signed ? &#39;\$signed($a)&#39; : a;
+  if (inputs.length != 2) {
+    throw Exception(&#39;Gate has exactly two inputs.&#39;);
+  }
+  final a = inputs[_a]!;
+  final b = inputs[_b]!;
+  final aStr = signed ? &#39;\$signed($a)&#39; : a;
   return &#39;$aStr $_opStr $b&#39;;
 }</code></pre>
 </section>

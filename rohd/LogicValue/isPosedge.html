@@ -54,7 +54,7 @@
 <span class="returntype"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span>
 <span class="name ">isPosedge</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isPosedge-param-previousValue"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span></li>
 <li><span class="parameter" id="isPosedge-param-newValue"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span></li>
-<li><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation">dynamic</span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span></li>
+<li><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span></li>
 </ol>)
 
       
@@ -63,8 +63,9 @@
     
 <section class="desc markdown">
   <p>Returns true iff the transition represents a positive edge.</p>
-<p>Only returns true from 0 -&gt; 1.  If <code>previousValue</code> or <code>newValue</code> is invalid, an Exception will be
-thrown, unless <code>ignoreInvalid</code> is set to <code>true</code>.</p>
+<p>Only returns true from 0 -&gt; 1.  If <code>previousValue</code> or <code>newValue</code> is
+invalid, an Exception will be thrown, unless <code>ignoreInvalid</code> is set
+to <code>true</code>.</p>
 </section>
 
 
@@ -72,7 +73,7 @@ thrown, unless <code>ignoreInvalid</code> is set to <code>true</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static bool isPosedge(LogicValue previousValue, LogicValue newValue,
-    {ignoreInvalid = false}) {
+    {bool ignoreInvalid = false}) {
   _assertSingleBit(previousValue);
   _assertSingleBit(newValue);
 

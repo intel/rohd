@@ -67,7 +67,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Registers a signal as an input to this <a href="../../rohd/Module-class.html">Module</a> and returns an input port that can be consumed.</p>
+  <p>Registers a signal as an input to this <a href="../../rohd/Module-class.html">Module</a> and returns an input port
+that can be consumed.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input()</a>.</p>
 </section>
 
@@ -79,8 +80,8 @@
 Logic addInput(String name, Logic x, {int width = 1}) {
   _checkForSafePortName(name);
   if (x.width != width) {
-    throw Exception(
-        &#39;Port width mismatch, signal &quot;$x&quot; does not have specified width &quot;$width&quot;.&#39;);
+    throw Exception(&#39;Port width mismatch, signal &quot;$x&quot; does not&#39;
+        &#39; have specified width &quot;$width&quot;.&#39;);
   }
   _inputs[name] = Logic(name: name, width: width)..gets(x);
 

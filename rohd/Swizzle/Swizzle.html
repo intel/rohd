@@ -55,6 +55,9 @@
     </section>
 
     
+<section class="desc markdown">
+  <p>Constructs a <a href="../../rohd/Module-class.html">Module</a> which concatenates <code>signals</code> into one large <a href="../../rohd/Swizzle/out.html">out</a>.</p>
+</section>
 
 
     
@@ -63,17 +66,18 @@
   <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {String name = &#39;swizzle&#39;}) : super(name: name) {
   var idx = 0;
   var outputWidth = 0;
-  for (var signal in signals.reversed) {
+  for (final signal in signals.reversed) {
     &#47;&#47;reverse so bit 0 is the last thing in the input list
-    var inputName = Module.unpreferredName(&#39;in${idx++}&#39;);
-    addInput(inputName, signal, width: signal.width);
-    _swizzleInputs.add(input(inputName));
+    final inputName = Module.unpreferredName(&#39;in${idx++}&#39;);
+    _swizzleInputs.add(
+      addInput(inputName, signal, width: signal.width),
+    );
     outputWidth += signal.width;
   }
   addOutput(_out, width: outputWidth);
 
   _execute(); &#47;&#47; for initial values
-  for (var swizzleInput in _swizzleInputs) {
+  for (final swizzleInput in _swizzleInputs) {
     swizzleInput.glitch.listen((args) {
       _execute();
     });

@@ -75,7 +75,7 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String alwaysVerilogStatement(Map&lt;String, String&gt; inputs) {
-  String triggers =
+  final triggers =
       _clks.map((clk) =&gt; &#39;posedge ${inputs[clk.name]}&#39;).join(&#39; or &#39;);
   return &#39;always_ff @($triggers)&#39;;
 }</code></pre>

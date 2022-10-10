@@ -61,17 +61,18 @@
     </section>
     
 <section class="desc markdown">
-  <p>Adds an arbitrary <code>action</code> to be executed as soon as possible, during the current
-simulation tick if possible.</p>
-<p>If the injection occurs outside of a tick (<a href="../../rohd/SimulatorPhase.html">SimulatorPhase.outOfTick</a>), it will execute in
-a new tick in the same timestamp.</p>
+  <p>Adds an arbitrary <code>action</code> to be executed as soon as possible, during the
+current simulation tick if possible.</p>
+<p>If the injection occurs outside of a tick (<a href="../../rohd/SimulatorPhase.html">SimulatorPhase.outOfTick</a>),
+it will execute in a new tick in the same timestamp.</p>
+<p>If <code>action</code> returns a <a href="https://api.dart.dev/stable/2.18.2/dart-async/Future-class.html">Future</a>, it will be <code>await</code>ed.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void injectAction(Function() action) {
+  <pre class="language-dart"><code class="language-dart">static void injectAction(dynamic Function() action) {
   &#47;&#47; adds an action to be executed in the current timestamp
   _injectedActions.addLast(action);
 }</code></pre>

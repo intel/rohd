@@ -71,8 +71,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static void registerAction(int timestamp, void Function() action) {
   if (timestamp &lt;= _currentTimestamp) {
-    throw Exception(
-        &#39;Cannot add timestamp &quot;$timestamp&quot; in the past.  Current time is ${Simulator.time}&#39;);
+    throw Exception(&#39;Cannot add timestamp &quot;$timestamp&quot; in the past.&#39;
+        &#39;  Current time is ${Simulator.time}&#39;);
   }
   if (!_pendingTimestamps.containsKey(timestamp)) {
     _pendingTimestamps[timestamp] = [];

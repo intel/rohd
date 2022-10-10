@@ -63,19 +63,18 @@
 <section class="desc markdown">
   <p>Returns a staged version of <code>identifier</code> at the current stage, adjusted
 by the amount of <code>stageAdjustment</code>.</p>
-<p>Typically, your pipeline will consist of a lot of <code>p.get(x)</code> type calls, but
-if you want to combinationally access a value of a signal from another stage,
-you can access it relatively using <code>stageAdjustment</code>.  For example, <code>p.get(x, -1)</code>
-will access the value of <code>x</code> one stage prior.</p>
+<p>Typically, your pipeline will consist of a lot of <code>p.get(x)</code> type calls,
+but if you want to combinationally access a value of a signal from another
+stage, you can access it relatively using <code>stageAdjustment</code>.  For
+example, <code>p.get(x, -1)</code> will access the value of <code>x</code> one stage prior.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic get(Logic identifier, [int stageAdjustment = 0]) {
-  return _pipeline.get(identifier, stage + stageAdjustment);
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic get(Logic identifier, [int stageAdjustment = 0]) =&gt;
+    _pipeline.get(identifier, stage + stageAdjustment);</code></pre>
 </section>
 
 

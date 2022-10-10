@@ -65,7 +65,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns true iff the width and all bits of <a href="../../rohd/LogicValue-class.html">this</a> are equal to <code>other</code>.</p>
+  <p>Returns true iff the width and all bits of <code>this</code> are equal to <code>other</code>.</p>
 </section>
 
 
@@ -74,8 +74,12 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 bool operator ==(Object other) {
-  if (other is! LogicValue) return false;
-  if (other.width != width) return false;
+  if (other is! LogicValue) {
+    return false;
+  }
+  if (other.width != width) {
+    return false;
+  }
   return _equals(other);
 }</code></pre>
 </section>

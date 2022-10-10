@@ -97,14 +97,14 @@ will be dropped.</p>
         reset: reset,
         resetValues: resetValues,
       ) {
-  var valid = validPipeIn;
+  final valid = validPipeIn;
 
-  var stalls = _stages.map((stage) =&gt; stage.stall).toList();
-  stalls.removeLast(); &#47;&#47; garbage value at the end
+  final stalls = _stages.map((stage) =&gt; stage.stall).toList()
+    ..removeLast(); &#47;&#47; garbage value at the end
 
-  var readys =
-      List.generate(stages.length, (index) =&gt; Logic(name: &#39;ready_$index&#39;));
-  readys.add(readyPipeOut);
+  final readys =
+      List.generate(stages.length, (index) =&gt; Logic(name: &#39;ready_$index&#39;))
+        ..add(readyPipeOut);
 
   for (var i = 0; i &lt; stalls.length; i++) {
     readys[i] &lt;= ~get(valid, i + 1) | readys[i + 1];

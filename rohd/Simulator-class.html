@@ -53,14 +53,19 @@
   <p>A functional event-based static simulator for logic behavior.</p>
 <p>Each tick of the simulator steps through the following events and phases:</p>
 <ul>
-<li><a href="../rohd/Simulator/preTick.html">preTick</a>                   (event): Occurs at the very start of a tick, before anything else occurs.
+<li><a href="../rohd/Simulator/preTick.html">preTick</a>                   (event): Occurs at the very start of a tick,
+                                     before anything else occurs.
                                      This is useful for flop sampling.</li>
 <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase.beforeTick</a> (phase)</li>
-<li><a href="../rohd/Simulator/startTick.html">startTick</a>                 (event): The beginning of the "meat" of the tick.</li>
-<li><a href="../rohd/SimulatorPhase.html">SimulatorPhase.mainTick</a>   (phase): Most events happen here, lots of glitches.</li>
-<li><a href="../rohd/Simulator/clkStable.html">clkStable</a>                 (event): All glitchiness has completed, clocks should be stable now.</li>
+<li><a href="../rohd/Simulator/startTick.html">startTick</a>                 (event): The beginning of the "meat" of the
+                                     tick.</li>
+<li><a href="../rohd/SimulatorPhase.html">SimulatorPhase.mainTick</a>   (phase): Most events happen here, lots of
+                                     glitches.</li>
+<li><a href="../rohd/Simulator/clkStable.html">clkStable</a>                 (event): All glitchiness has completed, clocks
+                                     should be stable now.</li>
 <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase.clkStable</a>  (phase)</li>
-<li><a href="../rohd/Simulator/postTick.html">postTick</a>                  (event): The tick has completed, all values should be settled.</li>
+<li><a href="../rohd/Simulator/postTick.html">postTick</a>                  (event): The tick has completed, all values
+                                     should be settled.</li>
 <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase.outOfTick</a>  (phase): Not during an active simulator tick.</li>
 </ul>
 <p>Functional behavior modelling subscribes to <a href="../rohd/Simulator-class.html">Simulator</a> events and/or queries the <a href="../rohd/SimulatorPhase.html">SimulatorPhase</a>.</p>
@@ -173,7 +178,7 @@
     <dl class="properties">
         <dt id="clkStable" class="property">
   <span class="name"><a href="../rohd/Simulator/clkStable.html">clkStable</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -206,7 +211,7 @@
 
         <dt id="postTick" class="property">
   <span class="name"><a href="../rohd/Simulator/postTick.html">postTick</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -217,7 +222,7 @@
 
         <dt id="preTick" class="property">
   <span class="name"><a href="../rohd/Simulator/preTick.html">preTick</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -228,7 +233,7 @@
 
         <dt id="simulationEnded" class="property">
   <span class="name"><a href="../rohd/Simulator/simulationEnded.html">simulationEnded</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Future-class.html">Future</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -250,7 +255,7 @@
 
         <dt id="startTick" class="property">
   <span class="name"><a href="../rohd/Simulator/startTick.html">startTick</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -284,7 +289,8 @@
 
 </dt>
 <dd>
-  Halts the simulation.  Allows the current <a href="../rohd/Simulator/tick.html">tick</a> to finish, if there is one.
+  Halts the simulation.  Allows the current <a href="../rohd/Simulator/tick.html">tick</a> to finish, if there
+is one.
   
 
 </dd>
@@ -310,8 +316,8 @@
 
 </dt>
 <dd>
-  Adds an arbitrary <code>action</code> to be executed as soon as possible, during the current
-simulation tick if possible.
+  Adds an arbitrary <code>action</code> to be executed as soon as possible, during the
+current simulation tick if possible.
   
 
 </dd>
@@ -337,7 +343,8 @@ simulation tick if possible.
 
 </dt>
 <dd>
-  Registers an arbitrary <code>action</code> to be executed at the end of the simulation.
+  Registers an arbitrary <code>action</code> to be executed at the end of the
+simulation.
   
 
 </dd>
@@ -377,7 +384,8 @@ it finishes or is stopped.
 
 </dt>
 <dd>
-  Sets a time, after which, the <a href="../rohd/Simulator-class.html">Simulator</a> will halt processing of new actions.
+  Sets a time, after which, the <a href="../rohd/Simulator-class.html">Simulator</a> will halt processing of new
+actions.
   
 
 </dd>

@@ -57,6 +57,10 @@
     </section>
 
     
+<section class="desc markdown">
+  <p>Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../../rohd/Mux/y.html">y</a> depending
+on if <code>control</code> is 0 or 1, respectively.</p>
+</section>
 
 
     
@@ -71,9 +75,9 @@
     throw Exception(&#39;d0 ($d0) and d1 ($d1) must be same width&#39;);
   }
 
-  _control = Module.unpreferredName(&#39;control_&#39; + control.name);
-  _d0 = Module.unpreferredName(&#39;d0_&#39; + d0.name);
-  _d1 = Module.unpreferredName(&#39;d1_&#39; + d1.name);
+  _control = Module.unpreferredName(&#39;control_${control.name}&#39;);
+  _d0 = Module.unpreferredName(&#39;d0_${d0.name}&#39;);
+  _d1 = Module.unpreferredName(&#39;d1_${d1.name}&#39;);
   _y = Module.unpreferredName(&#39;y&#39;);
 
   addInput(_control, control);

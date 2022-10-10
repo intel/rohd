@@ -70,21 +70,27 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tickExecute(void Function() toExecute) async {
   _phase = SimulatorPhase.beforeTick;
-  _preTickController.add(null); &#47;&#47; useful for flop sampling
+
+  &#47;&#47; useful for flop sampling
+  _preTickController.add(null);
 
   _phase = SimulatorPhase.mainTick;
-  _startTickController.add(
-      null); &#47;&#47; useful for things that need to trigger every tick without other input
+
+  &#47;&#47; useful for things that need to trigger every tick without other input
+  _startTickController.add(null);
   toExecute();
 
   _phase = SimulatorPhase.clkStable;
-  _clkStableController.add(null); &#47;&#47; useful for flop clk input stability
+
+  &#47;&#47; useful for flop clk input stability
+  _clkStableController.add(null);
 
   await _executeInjectedActions();
 
   _phase = SimulatorPhase.outOfTick;
-  _postTickController
-      .add(null); &#47;&#47; useful for determination of signal settling
+
+  &#47;&#47; useful for determination of signal settling
+  _postTickController.add(null);
 }</code></pre>
 </section>
 

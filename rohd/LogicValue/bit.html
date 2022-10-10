@@ -69,8 +69,11 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Check `width` separately to see if single-bit.&#39;)
+&#47;&#47; ignore: avoid_returning_this
 LogicValue get bit {
-  if (width != 1) throw Exception(&#39;Width must be 1, but was $width.&#39;);
+  if (width != 1) {
+    throw Exception(&#39;Width must be 1, but was $width.&#39;);
+  }
   return this;
 }</code></pre>
 </section>

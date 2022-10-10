@@ -67,7 +67,8 @@
     
 <section class="desc markdown">
   <p>Creates a line of SystemVerilog that instantiates <code>module</code>.</p>
-<p>The instantiation will create it as type <code>instanceType</code> and name <code>instanceName</code>.</p>
+<p>The instantiation will create it as type <code>instanceType</code> and name
+<code>instanceName</code>.</p>
 <p><code>inputs</code> and <code>outputs</code> map <code>module</code> input/output name to a verilog signal name.
 For example:
 To generate this SystemVerilog:  <code>sig_c = sig_a &amp; sig_b</code>
@@ -97,19 +98,19 @@ outputs: <code>{ 'c' : 'sig_c' }</code></p>
   }
 
   &#47;&#47;non-custom needs more details
-  var connections = [];
+  final connections = &lt;String&gt;[];
   module.inputs.forEach((signalName, logic) {
     connections.add(&#39;.$signalName(${inputs[signalName]})&#39;);
   });
   module.outputs.forEach((signalName, logic) {
     connections.add(&#39;.$signalName(${outputs[signalName]})&#39;);
   });
-  var connectionsStr = connections.join(&#39;,&#39;);
+  final connectionsStr = connections.join(&#39;,&#39;);
   var parameterString = &#39;&#39;;
   if (parameters != null) {
-    parameterString = &#39;#(&#39; +
-        parameters.entries.map((e) =&gt; &#39;.${e.key}(${e.value})&#39;).join(&#39;,&#39;) +
-        &#39;)&#39;;
+    final parameterContents =
+        parameters.entries.map((e) =&gt; &#39;.${e.key}(${e.value})&#39;).join(&#39;,&#39;);
+    parameterString = &#39;#($parameterContents)&#39;;
   }
   return &#39;$instanceType $parameterString $instanceName($connectionsStr);&#39;;
 }</code></pre>

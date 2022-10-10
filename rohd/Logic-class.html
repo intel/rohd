@@ -96,7 +96,8 @@
 
 </dt>
 <dd>
-  The current active value of this signal if it has width 1, as a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
+  The current active value of this signal if it has width 1, as
+a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `value` instead.&#39; &#39;  Check `width` separately to confirm single-bit.&#39;), read-only</div>
 
 </dd>
@@ -119,7 +120,7 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <a href="../rohd/Logic-class.html">this</a>.
+  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
   <div class="features">read-only</div>
 
 </dd>
@@ -198,7 +199,8 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 </dt>
 <dd>
   A <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
-per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>1</code> to <code>0</code>.
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
+from <code>1</code> to <code>0</code>.
   <div class="features">read-only</div>
 
 </dd>
@@ -257,7 +259,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 </dt>
 <dd>
   A <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
-per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>0</code> to <code>1</code>.
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
+from <code>0</code> to <code>1</code>.
   <div class="features">read-only</div>
 
 </dd>
@@ -290,7 +293,7 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd>
-  The <code>Logic</code> signal that is driving <a href="../rohd/Logic-class.html">this</a>, if any.
+  The <a href="../rohd/Logic-class.html">Logic</a> signal that is driving <code>this</code>, if any.
   <div class="features">read-only</div>
 
 </dd>
@@ -382,7 +385,8 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd>
-  Returns a subset <a href="../rohd/Logic-class.html">Logic</a>.  It is inclusive of <code>startIndex</code>, exclusive of <code>endIndex</code>.
+  Returns a subset <a href="../rohd/Logic-class.html">Logic</a>.  It is inclusive of <code>startIndex</code>, exclusive of
+<code>endIndex</code>.
   
 
 </dd>
@@ -473,7 +477,8 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd>
-  
+  Makes it so that this signal cannot be assigned by any full (<code>&lt;=</code>) or
+conditional (<code>&lt;</code>) assignment.
   
 
 </dd>
@@ -526,9 +531,10 @@ for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Si
 
 </dt>
 <dd>
-  Returns a new <a href="../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are sign bits
-as the most significant bits.  The sign is determined using two's complement, so
-it takes the most significant bit of the original signal and extends with that.
+  Returns a new <a href="../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are sign
+bits as the most significant bits.  The sign is determined using two's
+complement, so it takes the most significant bit of the original signal
+and extends with that.
   
 
 </dd>
@@ -541,7 +547,8 @@ it takes the most significant bit of the original signal and extends with that.
 
 </dt>
 <dd>
-  Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>, both inclusive.
+  Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>,
+both inclusive.
   
 
 </dd>

@@ -61,11 +61,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Gets the pipelined version of <code>logic</code>.  By default <code>stageIndex</code> is the last
-stage (the output of the pipeline).</p>
+  <p>Gets the pipelined version of <code>logic</code>.  By default <code>stageIndex</code> is the
+last stage (the output of the pipeline).</p>
 <p>If the signal is not already a part of this <a href="../../rohd/Pipeline-class.html">Pipeline</a>, the signal will be
-added to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>.  Use <code>stageIndex</code> to select the value of <code>logic</code> at a
-specific stage of the pipeline.</p>
+added to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>.  Use <code>stageIndex</code> to select the value of <code>logic</code>
+at a specific stage of the pipeline.</p>
 </section>
 
 
@@ -73,11 +73,13 @@ specific stage of the pipeline.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic get(Logic logic, [int? stageIndex]) {
-  if (!_isRegistered(logic)) _add(logic);
+  if (!_isRegistered(logic)) {
+    _add(logic);
+  }
 
-  stageIndex = stageIndex ?? _stages.length - 1;
+  stageIndex ??= _stages.length - 1;
 
-  var stageLogic = _stages[stageIndex].main[logic]!;
+  final stageLogic = _stages[stageIndex].main[logic]!;
   return stageLogic;
 }</code></pre>
 </section>

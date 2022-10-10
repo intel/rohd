@@ -65,7 +65,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Converts <code>bool</code> <code>value</code> to a valid <a href="../../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either one or zero.</p>
+  <p>Converts <code>bool</code> <code>value</code> to a valid <a href="../../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
+one or zero.</p>
 </section>
 
 
@@ -73,6 +74,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `ofBool` instead.&#39;)
+&#47;&#47; ignore: avoid_positional_boolean_parameters
 static LogicValue fromBool(bool value) =&gt; ofBool(value);</code></pre>
 </section>
 

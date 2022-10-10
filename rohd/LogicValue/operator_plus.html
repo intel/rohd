@@ -68,7 +68,8 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator +(dynamic other) =&gt; _doMath(other, (a, b) =&gt; a + b);</code></pre>
+  <pre class="language-dart"><code class="language-dart">&#47;&#47; ignore: avoid_dynamic_calls
+LogicValue operator +(dynamic other) =&gt; _doMath(other, (a, b) =&gt; a + b);</code></pre>
 </section>
 
 

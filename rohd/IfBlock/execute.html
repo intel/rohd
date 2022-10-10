@@ -65,7 +65,8 @@
     
 <section class="desc markdown">
   <p>Executes the functionality represented by this <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
-<p>Returns a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of all <code>Logic</code> signals which were driven during execution.</p>
+<p>Returns a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of all <code>Logic</code> signals which were driven during
+execution.</p>
 </section>
 
 
@@ -74,17 +75,17 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 Set&lt;Logic&gt; execute() {
-  var drivenLogics = &lt;Logic&gt;{};
+  final drivenLogics = &lt;Logic&gt;{};
 
-  for (var iff in iffs) {
+  for (final iff in iffs) {
     if (driverValue(iff.condition)[0] == LogicValue.one) {
-      for (var conditional in iff.then) {
+      for (final conditional in iff.then) {
         drivenLogics.addAll(conditional.execute());
       }
       break;
     } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
       &#47;&#47; x and z propagation
-      for (var receiver in getReceivers()) {
+      for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(iff.condition)[0]);
       }
       break;

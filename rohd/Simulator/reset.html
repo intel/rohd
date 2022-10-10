@@ -68,15 +68,25 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; reset() async {
-  if (_simulationEndRequested) await simulationEnded;
+  if (_simulationEndRequested) {
+    await simulationEnded;
+  }
 
   _currentTimestamp = 0;
   _simulationEndRequested = false;
   _maxSimTime = -1;
-  if (!_preTickController.isClosed) await _preTickController.close();
-  if (!_startTickController.isClosed) await _startTickController.close();
-  if (!_clkStableController.isClosed) await _clkStableController.close();
-  if (!_postTickController.isClosed) await _postTickController.close();
+  if (!_preTickController.isClosed) {
+    await _preTickController.close();
+  }
+  if (!_startTickController.isClosed) {
+    await _startTickController.close();
+  }
+  if (!_clkStableController.isClosed) {
+    await _clkStableController.close();
+  }
+  if (!_postTickController.isClosed) {
+    await _postTickController.close();
+  }
   _preTickController = StreamController.broadcast(sync: true);
   _startTickController = StreamController.broadcast(sync: true);
   _clkStableController = StreamController.broadcast(sync: true);

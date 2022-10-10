@@ -59,11 +59,12 @@
     </section>
     
 <section class="desc markdown">
-  <p>Performs a concatenation operation on the list of signals, where index 0 of this list is
-the <em>most</em> significant bit(s).</p>
-<p>This is the one you should use if you're writing something like SystemVerilog's <code>{}</code> notation.
-If you call <a href="../../rohd/LogicSwizzle/swizzle.html">swizzle</a> on <code>[a, b, c]</code> you would get a single output <a href="../../rohd/Logic-class.html">Logic</a> where the bits in <code>a</code>
-are the most significant (highest) bits.</p>
+  <p>Performs a concatenation operation on the list of signals, where index 0
+of this list is the <em>most</em> significant bit(s).</p>
+<p>This is the one you should use if you're writing something like
+SystemVerilog's <code>{}</code> notation. If you call <a href="../../rohd/LogicSwizzle/swizzle.html">swizzle</a> on <code>[a, b, c]</code> you
+would get a single output <a href="../../rohd/Logic-class.html">Logic</a> where the bits in <code>a</code> are the most
+significant (highest) bits.</p>
 <p>If you want the opposite, check out <a href="../../rohd/LogicSwizzle/rswizzle.html">rswizzle</a>.</p>
 </section>
 

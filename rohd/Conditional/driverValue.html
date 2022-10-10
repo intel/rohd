@@ -65,7 +65,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Gets the value that should be used for execution for the input port associated with <code>driver</code>.</p>
+  <p>Gets the value that should be used for execution for the input port
+associated with <code>driver</code>.</p>
 </section>
 
 
@@ -73,11 +74,10 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
-LogicValue driverValue(Logic driver) {
-  return _driverValueOverrideMap.containsKey(driverInput(driver))
-      ? _driverValueOverrideMap[driverInput(driver)]!
-      : _assignedDriverToInputMap[driver]!.value;
-}</code></pre>
+LogicValue driverValue(Logic driver) =&gt;
+    _driverValueOverrideMap.containsKey(driverInput(driver))
+        ? _driverValueOverrideMap[driverInput(driver)]!
+        : _assignedDriverToInputMap[driver]!.value;</code></pre>
 </section>
 
 

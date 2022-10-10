@@ -61,7 +61,8 @@
 
 
 <section class="desc markdown">
-  <p>If this module has a <a href="../../rohd/Module/parent.html">parent</a>, after <a href="../../rohd/Module/build.html">build</a> this will be a guaranteed unique name within its scope.</p>
+  <p>If this module has a <a href="../../rohd/Module/parent.html">parent</a>, after <a href="../../rohd/Module/build.html">build</a> this will be a guaranteed
+unique name within its scope.</p>
 </section>
 
 
@@ -69,8 +70,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String get uniqueInstanceName =&gt; hasBuilt || reserveName
     ? _uniqueInstanceName
-    : throw Exception(
-        &#39;Module must be built to access uniquified name.  Call build() before accessing this.&#39;);</code></pre>
+    : throw Exception(&#39;Module must be built to access uniquified name.&#39;
+        &#39;  Call build() before accessing this.&#39;);</code></pre>
 </section>
 
 </section>

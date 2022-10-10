@@ -69,10 +69,12 @@
     
 <section class="desc markdown">
   <p>Returns a <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> of SystemVerilog to be used in generated output.</p>
-<p>The <code>indent</code> is used for pretty-printing, and should generally be incremented for sub-<a href="../../rohd/Conditional-class.html">Conditional</a>s.
-The <code>inputsNameMap</code> and <code>outputsNameMap</code> are a mapping from port names to SystemVerilog variable
-names for inputs and outputs, respectively.  The <code>assignOperator</code> is the SystemVerilog operator
-that should be used for any assignments within this <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
+<p>The <code>indent</code> is used for pretty-printing, and should generally be
+incremented for sub-<a href="../../rohd/Conditional-class.html">Conditional</a>s. The <code>inputsNameMap</code> and
+<code>outputsNameMap</code> are a mapping from port names to SystemVerilog variable
+names for inputs and outputs, respectively.  The <code>assignOperator</code> is the
+SystemVerilog operator that should be used for any assignments within
+this <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
 </section>
 
 
@@ -82,31 +84,32 @@ that should be used for any assignments within this <a href="../../rohd/Conditio
   <pre class="language-dart"><code class="language-dart">@override
 String verilogContents(int indent, Map&lt;String, String&gt; inputsNameMap,
     Map&lt;String, String&gt; outputsNameMap, String assignOperator) {
-  var padding = Conditional.calcPadding(indent);
-  var verilog = &#39;&#39;;
-  for (var iff in iffs) {
+  final padding = Conditional.calcPadding(indent);
+  final verilog = StringBuffer();
+  for (final iff in iffs) {
     if (iff is Else &amp;&amp; iff != iffs.last) {
       throw Exception(&#39;Else must come last in an IfBlock.&#39;);
     }
-    var header = iff == iffs.first
+    final header = iff == iffs.first
         ? &#39;if&#39;
         : iff is Else
             ? &#39;else&#39;
             : &#39;else if&#39;;
 
-    var conditionName = inputsNameMap[driverInput(iff.condition).name];
-    var ifContents = iff.then
+    final conditionName = inputsNameMap[driverInput(iff.condition).name];
+    final ifContents = iff.then
         .map((conditional) =&gt; conditional.verilogContents(
             indent + 2, inputsNameMap, outputsNameMap, assignOperator))
         .join(&#39;\n&#39;);
-    var condition = iff is! Else ? &#39;($conditionName)&#39; : &#39;&#39;;
-    verilog += &#39;&#39;&#39;$padding$header$condition begin
+    final condition = iff is! Else ? &#39;($conditionName)&#39; : &#39;&#39;;
+    verilog.write(&#39;&#39;&#39;
+$padding$header$condition begin
 $ifContents
-${padding}end &#39;&#39;&#39;;
+${padding}end &#39;&#39;&#39;);
   }
-  verilog += &#39;\n&#39;;
+  verilog.write(&#39;\n&#39;);
 
-  return verilog;
+  return verilog.toString();
 }</code></pre>
 </section>
 

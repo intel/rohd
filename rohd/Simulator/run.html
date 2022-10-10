@@ -84,7 +84,7 @@ it finishes or is stopped.</p>
   }
 
   while (_endOfSimulationActions.isNotEmpty) {
-    var endOfSimAction = _endOfSimulationActions.removeFirst();
+    final endOfSimAction = _endOfSimulationActions.removeFirst();
     await endOfSimAction();
   }
 

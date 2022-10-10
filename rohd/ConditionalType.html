@@ -59,11 +59,11 @@
 <p>The default type is <a href="../rohd/ConditionalType.html">none</a>.  The <a href="../rohd/ConditionalType.html">unique</a> and <a href="../rohd/ConditionalType.html">priority</a> values have
 behavior similar to what is implemented in SystemVerilog.</p>
 <p><a href="../rohd/ConditionalType.html">priority</a> indicates that the decisions must be executed in the same order
-that they are listed, and that every legal scenario is included.  An exception
-will be thrown if there is no match to a scenario.</p>
-<p><a href="../rohd/ConditionalType.html">unique</a> indicates that for a given expression, only one item will match.  If
-multiple items match the expression, an exception will be thrown.  If there is no
-match and no default item, an exception will also be thrown.</p>
+that they are listed, and that every legal scenario is included.
+An exception will be thrown if there is no match to a scenario.</p>
+<p><a href="../rohd/ConditionalType.html">unique</a> indicates that for a given expression, only one item will match.
+If multiple items match the expression, an exception will be thrown.
+If there is no match and no default item, an exception will also be thrown.</p>
 </section>
 
 
@@ -111,7 +111,7 @@ match and no default item, an exception will also be thrown.</p>
 
 </dt>
 <dd>
-  
+  <p>There are no special checking or expectations.</p>
   
 
   <div>
@@ -126,7 +126,7 @@ match and no default item, an exception will also be thrown.</p>
 
 </dt>
 <dd>
-  
+  <p>Expect that exactly one condition is true.</p>
   
 
   <div>
@@ -141,7 +141,7 @@ match and no default item, an exception will also be thrown.</p>
 
 </dt>
 <dd>
-  
+  <p>Expect that at least one condition is true, and the first one is executed.</p>
   
 
   <div>

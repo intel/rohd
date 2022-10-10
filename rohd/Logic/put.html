@@ -66,7 +66,8 @@ for <a href="../../rohd/Logic/changed.html">changed</a> in this <a href="../../r
 <p>The type of <code>val</code> should be an <code>int</code>, <a href="https://api.dart.dev/stable/2.18.2/dart-core/BigInt-class.html">BigInt</a>, <code>bool</code>, or <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <p>This function is used for propogating glitches through connected signals.
 Use this function for custom definitions of <a href="../../rohd/Module-class.html">Module</a> behavior.</p>
-<p>If <code>fill</code> is set, all bits of the signal gets set to <code>val</code>, similar to <code>'</code> in SystemVerilog.</p>
+<p>If <code>fill</code> is set, all bits of the signal gets set to <code>val</code>, similar
+to <code>'</code> in SystemVerilog.</p>
 </section>
 
 
@@ -126,13 +127,13 @@ Use this function for custom definitions of <a href="../../rohd/Module-class.htm
     newValue = LogicValue.filled(width, LogicValue.x);
   }
 
-  var _prevValue = _currentValue;
+  final prevValue = _currentValue;
   _currentValue = newValue;
 
   &#47;&#47; sends out a glitch if the value deposited has changed
-  if (_currentValue != _prevValue) {
+  if (_currentValue != prevValue) {
     _isPutting = true;
-    _glitchController.add(LogicValueChanged(_currentValue, _prevValue));
+    _glitchController.add(LogicValueChanged(_currentValue, prevValue));
     _isPutting = false;
   }
 }</code></pre>

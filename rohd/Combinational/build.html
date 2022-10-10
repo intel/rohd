@@ -65,14 +65,17 @@
     
 <section class="desc markdown">
   <p>Builds the <a href="../../rohd/Module-class.html">Module</a> and all <a href="../../rohd/Module/subModules.html">subModules</a> within it.</p>
-<p>It is recommended not to override <a href="../../rohd/Combinational/build.html">build()</a> nor put logic in <a href="../../rohd/Combinational/build.html">build()</a> unless
-you have good reason to do so.  Aim to build up relevant logic in the constructor.</p>
+<p>It is recommended not to override <a href="../../rohd/Combinational/build.html">build()</a> nor put logic in <a href="../../rohd/Combinational/build.html">build()</a>
+unless you have good reason to do so.  Aim to build up relevant logic in
+the constructor.</p>
 <p>All logic within this <a href="../../rohd/Module-class.html">Module</a> <em>must</em> be defined <em>before</em> the call to
-<code>super.build()</code>.  When overriding this method, you should call <code>super.build()</code>
-as the last thing that you do, and you must always call it.</p>
-<p>This method traverses connectivity inwards from this <a href="../../rohd/Module-class.html">Module</a>'s <a href="../../rohd/Module/inputs.html">inputs</a> and <a href="../../rohd/Module/outputs.html">outputs</a>
-to determine which <a href="../../rohd/Module-class.html">Module</a>s are contained within it.  During this process, it
-will set a variety of additional information within the hierarchy.</p>
+<code>super.build()</code>.  When overriding this method, you should call
+<code>super.build()</code> as the last thing that you do, and you must always call
+it.</p>
+<p>This method traverses connectivity inwards from this <a href="../../rohd/Module-class.html">Module</a>'s <a href="../../rohd/Module/inputs.html">inputs</a>
+and <a href="../../rohd/Module/outputs.html">outputs</a> to determine which <a href="../../rohd/Module-class.html">Module</a>s are contained within it.
+During this process, it will set a variety of additional information
+within the hierarchy.</p>
 <p>This function can be used to consume real wallclock time for things like
 starting up interactions with independent processes (e.g. cosimulation).</p>
 <p>This function should only be called one time per <a href="../../rohd/Module-class.html">Module</a>.</p>
@@ -84,7 +87,8 @@ starting up interactions with independent processes (e.g. cosimulation).</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 Future&lt;void&gt; build() async {
-  &#47;&#47; any glitch on an input to an output&#39;s sensitivity should trigger re-execution
+  &#47;&#47; any glitch on an input to an output&#39;s sensitivity should
+  &#47;&#47; trigger re-execution
   _listenToSensitivities();
 
   await super.build();

@@ -62,6 +62,7 @@
   <p>A single simulation tick.</p>
 <p>Takes the simulator through all actions within the next pending
 timestamp, and passes through all events and phases on the way.</p>
+<p>If there are no timestamps pending to execute, nothing will execute.</p>
 </section>
 
 
@@ -77,16 +78,15 @@ timestamp, and passes through all events and phases on the way.</p>
     return;
   }
 
-  var nextTimeStamp = _pendingTimestamps.firstKey();
+  final nextTimeStamp = _pendingTimestamps.firstKey();
   if (nextTimeStamp == null) {
-    print(&#39;No more to tick.&#39;);
     return;
   }
 
   _currentTimestamp = nextTimeStamp;
-  &#47;&#47; print(&quot;Tick: $_currentTimestamp&quot;);
+
   await tickExecute(() {
-    for (var func in _pendingTimestamps[nextTimeStamp]!) {
+    for (final func in _pendingTimestamps[nextTimeStamp]!) {
       func();
     }
   });

@@ -64,7 +64,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code> (not including itself).</p>
+  <p>Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code>
+(not including itself).</p>
 <p>Recursively calls down through sub-<code>Conditional</code>s.</p>
 </section>
 
@@ -73,15 +74,10 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-List&lt;Conditional&gt; getConditionals() {
-  return [
-    ...items
-        .map((item) =&gt; item.then)
-        .expand((conditional) =&gt; conditional)
-        .toList(),
-    ...defaultItem ?? []
-  ];
-}</code></pre>
+List&lt;Conditional&gt; getConditionals() =&gt; [
+      ...items.map((item) =&gt; item.then).expand((conditional) =&gt; conditional),
+      ...defaultItem ?? []
+    ];</code></pre>
 </section>
 
 

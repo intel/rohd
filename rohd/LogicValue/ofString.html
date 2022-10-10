@@ -60,11 +60,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../../rohd/LogicValue-class.html">LogicValue</a> into a <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<p>The <code>stringRepresentation</code> should only contain bit values (e.g. no <code>0b</code> at the start).
-The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th character in <code>stringRepresentation</code>
-corresponds to the <code>length - i - 1</code>th bit.  That is, the last character of <code>stringRepresentation</code> will be
-the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+  <p>Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../../rohd/LogicValue-class.html">LogicValue</a> into a
+<a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+<p>The <code>stringRepresentation</code> should only contain bit values (e.g. no <code>0b</code>
+at the start). The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that
+the <code>i</code>th character in <code>stringRepresentation</code> corresponds to the
+<code>length - i - 1</code>th bit.  That is, the last character of
+<code>stringRepresentation</code> will be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <pre class="language-dart"><code class="language-dart">var stringRepresentation = '1x0';
 var lv = LogicValue.ofString(stringRepresentation);
 print(lv); // This prints `3b'1x0`
@@ -77,20 +79,20 @@ print(lv); // This prints `3b'1x0`
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValue ofString(String stringRepresentation) {
   if (stringRepresentation.isEmpty) {
-    return _SmallLogicValue(0, 0, 0);
+    return const _SmallLogicValue(0, 0, 0);
   }
 
-  var valueString = _valueString(stringRepresentation);
-  var invalidString = _invalidString(stringRepresentation);
-  var width = stringRepresentation.length;
+  final valueString = _valueString(stringRepresentation);
+  final invalidString = _invalidString(stringRepresentation);
+  final width = stringRepresentation.length;
 
   if (width &lt;= _INT_BITS) {
-    var value = int.parse(valueString, radix: 2);
-    var invalid = int.parse(invalidString, radix: 2);
+    final value = int.parse(valueString, radix: 2);
+    final invalid = int.parse(invalidString, radix: 2);
     return _SmallLogicValue(value, invalid, width);
   } else {
-    var value = BigInt.parse(valueString, radix: 2);
-    var invalid = BigInt.parse(invalidString, radix: 2);
+    final value = BigInt.parse(valueString, radix: 2);
+    final invalid = BigInt.parse(invalidString, radix: 2);
     if (invalid.sign == 0) {
       if (value.sign == 0) {
         return LogicValue.filled(width, LogicValue.zero);

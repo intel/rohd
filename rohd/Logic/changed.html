@@ -70,7 +70,8 @@ per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value 
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed {
   if (!_changedBeingWatched) {
-    &#47;&#47; only do these simulator subscriptions if someone has asked for them! saves performance!
+    &#47;&#47; only do these simulator subscriptions if someone has asked for
+    &#47;&#47; them! saves performance!
     _changedBeingWatched = true;
 
     Simulator.preTick.listen((event) {

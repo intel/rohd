@@ -73,13 +73,14 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getDrivers() {
-  var drivers = &lt;Logic&gt;[];
-  for (var iff in iffs) {
-    drivers.add(iff.condition);
-    drivers.addAll(iff.then
-        .map((conditional) =&gt; conditional.getDrivers())
-        .expand((driver) =&gt; driver)
-        .toList());
+  final drivers = &lt;Logic&gt;[];
+  for (final iff in iffs) {
+    drivers
+      ..add(iff.condition)
+      ..addAll(iff.then
+          .map((conditional) =&gt; conditional.getDrivers())
+          .expand((driver) =&gt; driver)
+          .toList());
   }
   return drivers;
 }</code></pre>

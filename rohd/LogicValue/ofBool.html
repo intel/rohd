@@ -60,14 +60,16 @@
     </section>
     
 <section class="desc markdown">
-  <p>Converts <code>bool</code> <code>value</code> to a valid <a href="../../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either one or zero.</p>
+  <p>Converts <code>bool</code> <code>value</code> to a valid <a href="../../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
+one or zero.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue ofBool(bool value) =&gt; value ? one : zero;</code></pre>
+  <pre class="language-dart"><code class="language-dart">&#47;&#47; ignore: avoid_positional_boolean_parameters
+static LogicValue ofBool(bool value) =&gt; value ? one : zero;</code></pre>
 </section>
 
 

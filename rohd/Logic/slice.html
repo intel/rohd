@@ -61,18 +61,18 @@
     </section>
     
 <section class="desc markdown">
-  <p>Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>, both inclusive.</p>
-<p>If <code>endIndex</code> is less than <code>startIndex</code>, the returned value will be reversed relative
-to the original signal.</p>
+  <p>Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>,
+both inclusive.</p>
+<p>If <code>endIndex</code> is less than <code>startIndex</code>, the returned value will be
+reversed relative to the original signal.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic slice(int endIndex, int startIndex) {
-  return BusSubset(this, startIndex, endIndex).subset;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic slice(int endIndex, int startIndex) =&gt;
+    BusSubset(this, startIndex, endIndex).subset;</code></pre>
 </section>
 
 

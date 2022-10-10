@@ -61,8 +61,9 @@
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.</p>
-<p>The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th entry in <code>it</code> corresponds
-to the <code>i</code>th bit.  That is, the 0th element of <code>it</code> will be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+<p>The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th entry in
+<code>it</code> corresponds to the <code>i</code>th bit.  That is, the 0th element of <code>it</code> will
+be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <pre class="language-dart"><code class="language-dart">var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
 var lv = LogicValue.of(it);
 print(lv); // This prints `3b'1x0`

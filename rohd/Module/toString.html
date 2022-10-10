@@ -81,9 +81,8 @@ mainly for debugging or logging.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String toString() {
-  return &#39;&quot;$name&quot; ($runtimeType)  :  ${_inputs.keys.toString()} =&gt; ${_outputs.keys.toString()}&#39;;
-}</code></pre>
+String toString() =&gt; &#39;&quot;$name&quot; ($runtimeType)  :&#39;
+    &#39;  ${_inputs.keys.toString()} =&gt; ${_outputs.keys.toString()}&#39;;</code></pre>
 </section>
 
 

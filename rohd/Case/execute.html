@@ -65,7 +65,8 @@
     
 <section class="desc markdown">
   <p>Executes the functionality represented by this <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
-<p>Returns a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of all <code>Logic</code> signals which were driven during execution.</p>
+<p>Returns a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of all <code>Logic</code> signals which were driven during
+execution.</p>
 </section>
 
 
@@ -74,11 +75,11 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 Set&lt;Logic&gt; execute() {
-  var drivenLogics = &lt;Logic&gt;{};
+  final drivenLogics = &lt;Logic&gt;{};
 
   if (!expression.value.isValid) {
     &#47;&#47; if expression has X or Z, then propogate X&#39;s!
-    for (var receiver in getReceivers()) {
+    for (final receiver in getReceivers()) {
       receiverOutput(receiver).put(LogicValue.x);
     }
     return {};
@@ -86,10 +87,10 @@ Set&lt;Logic&gt; execute() {
 
   CaseItem? foundMatch;
 
-  for (var item in items) {
+  for (final item in items) {
     &#47;&#47; match on the first matchinig item
     if (isMatch(item.value.value)) {
-      for (var conditional in item.then) {
+      for (final conditional in item.then) {
         drivenLogics.addAll(conditional.execute());
       }
       if (foundMatch != null &amp;&amp; conditionalType == ConditionalType.unique) {
@@ -108,7 +109,7 @@ Set&lt;Logic&gt; execute() {
 
   &#47;&#47; no items matched
   if (foundMatch == null &amp;&amp; defaultItem != null) {
-    for (var conditional in defaultItem!) {
+    for (final conditional in defaultItem!) {
       drivenLogics.addAll(conditional.execute());
     }
   } else if (foundMatch == null &amp;&amp;

@@ -55,6 +55,10 @@
     </section>
 
     
+<section class="desc markdown">
+  <p>Constructs a new <a href="../../rohd/Combinational-class.html">Combinational</a> which executes <code>conditionals</code> in order
+procedurally.</p>
+</section>
 
 
     
@@ -63,7 +67,7 @@
   <pre class="language-dart"><code class="language-dart">Combinational(List&lt;Conditional&gt; conditionals, {String name = &#39;combinational&#39;})
     : super(conditionals, name: name) {
   _execute(); &#47;&#47; for initial values
-  for (var driver in _assignedDriverToInputMap.keys) {
+  for (final driver in _assignedDriverToInputMap.keys) {
     driver.glitch.listen((args) {
       _execute();
     });

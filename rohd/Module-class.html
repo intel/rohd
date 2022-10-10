@@ -50,7 +50,8 @@
 
     
 <section class="desc markdown">
-  <p>Represents a synthesizable hardware entity with clearly defined interface boundaries.</p>
+  <p>Represents a synthesizable hardware entity with clearly defined interface
+boundaries.</p>
 <p>Any hardware to be synthesized must be contained within a <a href="../rohd/Module-class.html">Module</a>.
 This construct is similar to a SystemVerilog <code>module</code>.</p>
 </section>
@@ -109,7 +110,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
           <span class="name"><a href="../rohd/Module/Module.html">Module</a></span><span class="signature">(<span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;unnamed_module&#39;</span>, </span><span class="parameter" id="-param-reserveName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveName</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">definitionName</span>, </span><span class="parameter" id="-param-reserveDefinitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveDefinitionName</span> = <span class="default-value">false</span>}</span>)</span>
         </dt>
         <dd>
-          
+          Constructs a new <a href="../rohd/Module-class.html">Module</a> with instance name <a href="../rohd/Module/name.html">name</a> and definition
+name <code>definitionName</code>.
         </dd>
     </dl>
   </section>
@@ -124,7 +126,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  The definition name of this <a href="../rohd/Module-class.html">Module</a> used when instantiating instances in generated code.
+  The definition name of this <a href="../rohd/Module-class.html">Module</a> used when instantiating instances in
+generated code.
   <div class="features">read-only</div>
 
 </dd>
@@ -157,7 +160,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  A map from input port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code> signals.
+  A map from input port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
+signals.
   <div class="features">read-only</div>
 
 </dd>
@@ -168,7 +172,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a> which are <em>not</em> an input or output port of this <a href="../rohd/Module-class.html">Module</a>.
+  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a> which are
+<em>not</em> an input or output port of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features">read-only</div>
 
 </dd>
@@ -190,7 +195,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  A map from output port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code> signals.
+  A map from output port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
+signals.
   <div class="features">read-only</div>
 
 </dd>
@@ -212,7 +218,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  If true, guarantees <a href="../rohd/Module/definitionName.html">definitionName</a> is maintained by a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>, or else it will fail.
+  If true, guarantees <a href="../rohd/Module/definitionName.html">definitionName</a> is maintained by a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>,
+or else it will fail.
   <div class="features">final</div>
 
 </dd>
@@ -223,7 +230,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the <a href="../rohd/Module/build.html">build</a> will fail.
+  If true, guarantees <a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a> matches <a href="../rohd/Module/name.html">name</a> or else the
+<a href="../rohd/Module/build.html">build</a> will fail.
   <div class="features">final</div>
 
 </dd>
@@ -245,7 +253,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a>, including inputs, outputs, and internal signals of this <a href="../rohd/Module-class.html">Module</a>.
+  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a>, including
+inputs, outputs, and internal signals of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features">read-only</div>
 
 </dd>
@@ -267,7 +276,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Module/build.html">build</a> this will be a guaranteed unique name within its scope.
+  If this module has a <a href="../rohd/Module/parent.html">parent</a>, after <a href="../rohd/Module/build.html">build</a> this will be a guaranteed
+unique name within its scope.
   <div class="features">read-only</div>
 
 </dd>
@@ -289,7 +299,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Registers a signal as an input to this <a href="../rohd/Module-class.html">Module</a> and returns an input port that can be consumed.
+  Registers a signal as an input to this <a href="../rohd/Module-class.html">Module</a> and returns an input port
+that can be consumed.
   <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a></div>
 
 </dd>
@@ -302,7 +313,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Registers an output to this <a href="../rohd/Module-class.html">Module</a> and returns an output port that can be driven.
+  Registers an output to this <a href="../rohd/Module-class.html">Module</a> and returns an output port that
+can be driven.
   <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a></div>
 
 </dd>
@@ -341,7 +353,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Returns an <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of <code>Module</code>s representing the hierarchical path to this <code>Module</code>.
+  Returns an <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of <code>Module</code>s representing the hierarchical path to
+this <code>Module</code>.
   
 
 </dd>
@@ -354,7 +367,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Returns a pretty-print <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../rohd/Module-class.html">Module</a>s within this <a href="../rohd/Module-class.html">Module</a>.
+  Returns a pretty-print <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../rohd/Module-class.html">Module</a>s within
+this <a href="../rohd/Module-class.html">Module</a>.
   
 
 </dd>
@@ -367,8 +381,9 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Accesses the <a href="../rohd/Logic-class.html">Logic</a> associated with this <a href="../rohd/Module-class.html">Module</a>s input port named <code>name</code>.
-  
+  Accesses the <a href="../rohd/Logic-class.html">Logic</a> associated with this <a href="../rohd/Module-class.html">Module</a>s input port
+named <code>name</code>.
+  <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a></div>
 
 </dd>
 
@@ -380,7 +395,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as the input port of this <a href="../rohd/Module-class.html">Module</a> with the same name.
+  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as the input port of this
+<a href="../rohd/Module-class.html">Module</a> with the same name.
   
 
 </dd>
@@ -393,7 +409,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as the output port of this <a href="../rohd/Module-class.html">Module</a> with the same name.
+  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as the output port of this
+<a href="../rohd/Module-class.html">Module</a> with the same name.
   
 
 </dd>
@@ -406,7 +423,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as an input or output port of this <a href="../rohd/Module-class.html">Module</a> with the same name.
+  Returns true iff <code>net</code> is the same <a href="../rohd/Logic-class.html">Logic</a> as an input or output port of
+this <a href="../rohd/Module-class.html">Module</a> with the same name.
   
 
 </dd>
@@ -432,7 +450,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Accesses the <a href="../rohd/Logic-class.html">Logic</a> associated with this <a href="../rohd/Module-class.html">Module</a>s output port named <code>name</code>.
+  Accesses the <a href="../rohd/Logic-class.html">Logic</a> associated with this <a href="../rohd/Module-class.html">Module</a>s output port
+named <code>name</code>.
   
 
 </dd>
@@ -499,7 +518,8 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
 
 </dt>
 <dd>
-  Makes a signal name "unpreferred" when considering between multiple possible signal names.
+  Makes a signal name "unpreferred" when considering between multiple
+possible signal names.
   <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a></div>
 
 </dd>

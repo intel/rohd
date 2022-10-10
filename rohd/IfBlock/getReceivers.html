@@ -64,7 +64,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Lists <em>all</em> receivers, recursively including all sub-<a href="../../rohd/Conditional-class.html">Conditional</a>s receivers.</p>
+  <p>Lists <em>all</em> receivers, recursively including all sub-<a href="../../rohd/Conditional-class.html">Conditional</a>s
+receivers.</p>
 </section>
 
 
@@ -73,8 +74,8 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getReceivers() {
-  var receivers = &lt;Logic&gt;[];
-  for (var iff in iffs) {
+  final receivers = &lt;Logic&gt;[];
+  for (final iff in iffs) {
     receivers.addAll(iff.then
         .map((conditional) =&gt; conditional.getReceivers())
         .expand((receiver) =&gt; receiver)

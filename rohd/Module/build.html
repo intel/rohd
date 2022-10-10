@@ -65,14 +65,17 @@
     
 <section class="desc markdown">
   <p>Builds the <a href="../../rohd/Module-class.html">Module</a> and all <a href="../../rohd/Module/subModules.html">subModules</a> within it.</p>
-<p>It is recommended not to override <a href="../../rohd/Module/build.html">build()</a> nor put logic in <a href="../../rohd/Module/build.html">build()</a> unless
-you have good reason to do so.  Aim to build up relevant logic in the constructor.</p>
+<p>It is recommended not to override <a href="../../rohd/Module/build.html">build()</a> nor put logic in <a href="../../rohd/Module/build.html">build()</a>
+unless you have good reason to do so.  Aim to build up relevant logic in
+the constructor.</p>
 <p>All logic within this <a href="../../rohd/Module-class.html">Module</a> <em>must</em> be defined <em>before</em> the call to
-<code>super.build()</code>.  When overriding this method, you should call <code>super.build()</code>
-as the last thing that you do, and you must always call it.</p>
-<p>This method traverses connectivity inwards from this <a href="../../rohd/Module-class.html">Module</a>'s <a href="../../rohd/Module/inputs.html">inputs</a> and <a href="../../rohd/Module/outputs.html">outputs</a>
-to determine which <a href="../../rohd/Module-class.html">Module</a>s are contained within it.  During this process, it
-will set a variety of additional information within the hierarchy.</p>
+<code>super.build()</code>.  When overriding this method, you should call
+<code>super.build()</code> as the last thing that you do, and you must always call
+it.</p>
+<p>This method traverses connectivity inwards from this <a href="../../rohd/Module-class.html">Module</a>'s <a href="../../rohd/Module/inputs.html">inputs</a>
+and <a href="../../rohd/Module/outputs.html">outputs</a> to determine which <a href="../../rohd/Module-class.html">Module</a>s are contained within it.
+During this process, it will set a variety of additional information
+within the hierarchy.</p>
 <p>This function can be used to consume real wallclock time for things like
 starting up interactions with independent processes (e.g. cosimulation).</p>
 <p>This function should only be called one time per <a href="../../rohd/Module-class.html">Module</a>.</p>
@@ -91,17 +94,17 @@ Future&lt;void&gt; build() async {
 
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module
-  for (var output in _outputs.values) {
+  for (final output in _outputs.values) {
     await _traceOutputForModuleContents(output, dontAddSignal: true);
   }
   &#47;&#47; 2) trace from inputs of all modules to inputs of this module
-  for (var input in _inputs.values) {
+  for (final input in _inputs.values) {
     await _traceInputForModuleContents(input, dontAddSignal: true);
   }
 
   &#47;&#47; set unique module instance names for submodules
-  var uniquifier = Uniquifier();
-  for (var module in _modules) {
+  final uniquifier = Uniquifier();
+  for (final module in _modules) {
     module._uniqueInstanceName = uniquifier.getUniqueName(
         initialName: Sanitizer.sanitizeSV(module.name),
         reserved: module.reserveName);

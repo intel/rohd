@@ -56,13 +56,18 @@
     </section>
 
     
+<section class="desc markdown">
+  <p>Constructs a flip flop which is positive edge triggered on <code>clk</code>.</p>
+</section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">FlipFlop(Logic clk, Logic d, {String name = &#39;flipflop&#39;}) : super(name: name) {
-  if (clk.width != 1) throw Exception(&#39;clk must be 1 bit&#39;);
+  if (clk.width != 1) {
+    throw Exception(&#39;clk must be 1 bit&#39;);
+  }
   _clk = Module.unpreferredName(&#39;clk&#39;);
   _d = Module.unpreferredName(&#39;d&#39;);
   _q = Module.unpreferredName(&#39;q&#39;);

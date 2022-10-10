@@ -64,8 +64,8 @@
   <p>Returns a copy of this <a href="../../rohd/Logic-class.html">Logic</a> with the bits starting from <code>startIndex</code>
 up until <code>startIndex</code> + <code>update</code><code>.width</code> set to <code>update</code> instead
 of their original value.</p>
-<p>The return signal will be the same <a href="../../rohd/Logic/width.html">width</a>.  An exception will be thrown if
-the position of the <code>update</code> would cause an overrun past the <a href="../../rohd/Logic/width.html">width</a>.</p>
+<p>The return signal will be the same <a href="../../rohd/Logic/width.html">width</a>.  An exception will be thrown
+if the position of the <code>update</code> would cause an overrun past the <a href="../../rohd/Logic/width.html">width</a>.</p>
 </section>
 
 
@@ -76,7 +76,7 @@ the position of the <code>update</code> would cause an overrun past the <a href=
   if (startIndex + update.width &gt; width) {
     throw Exception(
         &#39;Width of updatedValue $update at startIndex $startIndex would&#39;
-        &#39;overrun the width of the original ($width).&#39;);
+        &#39; overrun the width of the original ($width).&#39;);
   }
 
   return [

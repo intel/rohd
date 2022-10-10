@@ -66,7 +66,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Adds a collection of ports to this <a href="../../rohd/Interface-class.html">Interface</a>, each associated with all of <code>tags</code>.</p>
+  <p>Adds a collection of ports to this <a href="../../rohd/Interface-class.html">Interface</a>, each associated with all
+of <code>tags</code>.</p>
 <p>All names of ports are gotten from the names of the <code>ports</code>.</p>
 </section>
 
@@ -76,7 +77,7 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 void setPorts(List&lt;Logic&gt; ports, [List&lt;TagType&gt;? tags]) {
-  for (var port in ports) {
+  for (final port in ports) {
     _setPort(port, tags: tags);
   }
 }</code></pre>

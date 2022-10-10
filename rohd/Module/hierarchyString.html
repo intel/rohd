@@ -60,7 +60,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns a pretty-print <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../../rohd/Module-class.html">Module</a>s within this <a href="../../rohd/Module-class.html">Module</a>.</p>
+  <p>Returns a pretty-print <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../../rohd/Module-class.html">Module</a>s within
+this <a href="../../rohd/Module-class.html">Module</a>.</p>
 </section>
 
 
@@ -68,12 +69,12 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String hierarchyString([int indent = 0]) {
-  var padding = List.filled(indent, &#39;  &#39;).join();
-  var hier = padding + &#39;&gt; &#39; + toString();
-  for (var module in _modules) {
-    hier += &#39;\n&#39; + module.hierarchyString(indent + 1);
+  final padding = List.filled(indent, &#39;  &#39;).join();
+  final hier = StringBuffer(&#39;$padding&gt; ${toString()}&#39;);
+  for (final module in _modules) {
+    hier.write(&#39;\n${module.hierarchyString(indent + 1)}&#39;);
   }
-  return hier;
+  return hier.toString();
 }</code></pre>
 </section>
 

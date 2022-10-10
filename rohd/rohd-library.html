@@ -103,7 +103,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  A block of <a href="../rohd/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../rohd/CaseItem/value.html">CaseItem.value</a> is executed.
+  A block of <a href="../rohd/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../rohd/CaseItem/value.html">CaseItem.value</a>
+is executed.
 </dd>
 
         <dt id="CaseItem">
@@ -119,7 +120,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in the expression.
+  A special version of <a href="../rohd/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in
+the expression.
 </dd>
 
         <dt id="Combinational">
@@ -135,7 +137,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  Represents an some logical assignments or actions that will only happen under certain conditions.
+  Represents an some logical assignments or actions that will only happen
+under certain conditions.
 </dd>
 
         <dt id="ConditionalAssign">
@@ -191,7 +194,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework in SystemVerilog.
+  Represents a <a href="../rohd/Module-class.html">Module</a> whose definition exists outside of this framework
+in SystemVerilog.
 </dd>
 
         <dt id="FlipFlop">
@@ -231,7 +235,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  Represents a chain of blocks of code to be conditionally executed, like <code>if</code>/<code>else if</code>/<code>else</code>.
+  Represents a chain of blocks of code to be conditionally executed, like
+<code>if</code>/<code>else if</code>/<code>else</code>.
 </dd>
 
         <dt id="Interface">
@@ -295,7 +300,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  Represents a synthesizable hardware entity with clearly defined interface boundaries.
+  Represents a synthesizable hardware entity with clearly defined interface
+boundaries.
 </dd>
 
         <dt id="Modulo">
@@ -399,7 +405,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  A very simple clock generator.  Generates a non-synthesizable SystemVerilog representation.
+  A very simple clock generator.  Generates a non-synthesizable SystemVerilog
+representation.
 </dd>
 
         <dt id="Simulator">
@@ -423,7 +430,7 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  
+  Simple class for FSM <a href="../rohd/StateMachine-class.html">StateMachine</a>.
 </dd>
 
         <dt id="Subtract">
@@ -447,7 +454,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  A generic class which can convert a module into a generated output using a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
+  A generic class which can convert a module into a generated output using
+a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
 </dd>
 
         <dt id="SynthesisResult">
@@ -471,7 +479,8 @@ SPDX-License-Identifier: BSD-3-Clause</p>
 
 </dt>
 <dd>
-  A <a href="../rohd/Synthesizer-class.html">Synthesizer</a> which generates equivalent SystemVerilog as the given <a href="../rohd/Module-class.html">Module</a>.
+  A <a href="../rohd/Synthesizer-class.html">Synthesizer</a> which generates equivalent SystemVerilog as the
+given <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
         <dt id="WaveDumper">
@@ -519,8 +528,8 @@ injected in generated output instead of instantiating a separate <code>module</c
 
 </dt>
 <dd>
-  Allows a <a href="../rohd/Module-class.html">Module</a> to define a special type of <a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a> which can
-be inlined within other SystemVerilog code.
+  Allows a <a href="../rohd/Module-class.html">Module</a> to define a special type of <a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a> which
+can be inlined within other SystemVerilog code.
 </dd>
 
       </dl>
@@ -578,8 +587,8 @@ be inlined within other SystemVerilog code.
 
 </dt>
 <dd>
-  Performs a concatenation operation on the list of signals, where index 0 of <code>signals</code> is
-the <em>least</em> significant bit(s).
+  Performs a concatenation operation on the list of signals, where index 0 of
+<code>signals</code> is the <em>least</em> significant bit(s).
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `List&lt;Logic&gt;.rswizzle()` instead&#39;)</div>
 
 </dd>
@@ -592,8 +601,8 @@ the <em>least</em> significant bit(s).
 
 </dt>
 <dd>
-  Performs a concatenation operation on the list of signals, where index 0 of <code>signals</code> is
-the <em>most</em> significant bit(s).
+  Performs a concatenation operation on the list of signals, where index 0 of
+<code>signals</code> is the <em>most</em> significant bit(s).
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `List&lt;Logic&gt;.swizzle()` instead&#39;)</div>
 
 </dd>
@@ -637,7 +646,7 @@ the <em>most</em> significant bit(s).
 
 </dt>
 <dd>
-  
+  Deprecated: use <a href="../rohd/WaveDumper-class.html">WaveDumper</a> instead.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use WaveDumper instead&#39;)</div>
 
 </dd>
@@ -652,7 +661,7 @@ the <em>most</em> significant bit(s).
 
 </dt>
 <dd>
-  
+  Deprecated - Use <a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a> instead.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use ExternalSystemVerilogModule instead.&#39;)</div>
 
 </dd>
@@ -667,7 +676,7 @@ the <em>most</em> significant bit(s).
 
 </dt>
 <dd>
-  
+  Deprecated: use <a href="../rohd/Sequential-class.html">Sequential</a> instead.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use Sequential instead&#39;)</div>
 
 </dd>
@@ -682,7 +691,7 @@ the <em>most</em> significant bit(s).
 
 </dt>
 <dd>
-  A conditional block to execute only if <a href="../rohd/ElseIf/condition.html">condition</a> is satisified.
+  A conditional block to execute only if <code>condition</code> is satisified.
   
 
 </dd>
@@ -697,7 +706,7 @@ the <em>most</em> significant bit(s).
 
 </dt>
 <dd>
-  
+  Deprecated: use <a href="../rohd/LogicValue-class.html">LogicValue</a> instead.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `LogicValue` instead.&#39; &#39;  `LogicValues` and `LogicValue` have been merged into one type.&#39;)</div>
 
 </dd>

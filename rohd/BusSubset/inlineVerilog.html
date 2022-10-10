@@ -65,10 +65,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Generates custom SystemVerilog to be injected in place of the output port's corresponding signal name.</p>
-<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are
-passed into those ports in the generated SystemVerilog.</p>
-<p>The output will be appropriately wrapped with parentheses to guarantee proper order of operations.</p>
+  <p>Generates custom SystemVerilog to be injected in place of the output
+port's corresponding signal name.</p>
+<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
+the signals that are passed into those ports in the generated
+SystemVerilog.</p>
+<p>The output will be appropriately wrapped with parentheses to guarantee
+proper order of operations.</p>
 </section>
 
 
@@ -80,17 +83,18 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   if (inputs.length != 1) {
     throw Exception(&#39;BusSubset has exactly one input, but saw $inputs.&#39;);
   }
-  var a = inputs[_original]!;
+  final a = inputs[_original]!;
 
-  &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus, so do it manually
+  &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus,
+  &#47;&#47; so do it manually
   if (startIndex &gt; endIndex) {
-    return &#39;{&#39; +
+    final swizzleContents =
         List.generate(startIndex - endIndex + 1, (i) =&gt; &#39;$a[${endIndex + i}]&#39;)
-            .join(&#39;,&#39;) +
-        &#39;}&#39;;
+            .join(&#39;,&#39;);
+    return &#39;{$swizzleContents}&#39;;
   }
 
-  var sliceString =
+  final sliceString =
       startIndex == endIndex ? &#39;[$startIndex]&#39; : &#39;[$endIndex:$startIndex]&#39;;
   return &#39;$a$sliceString&#39;;
 }</code></pre>

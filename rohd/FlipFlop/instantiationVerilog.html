@@ -68,11 +68,13 @@
     </section>
     
 <section class="desc markdown">
-  <p>Generates custom SystemVerilog to be injected in place of a <code>module</code> instantiation.</p>
-<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name, respectively of
-the module that would have been instantiated had it not been overridden.  The <a href="https://api.dart.dev/stable/2.18.2/dart-core/Map-class.html">Map</a>s
-<code>inputs</code> and <code>outputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
-the signals that are passed into those ports in the generated SystemVerilog.</p>
+  <p>Generates custom SystemVerilog to be injected in place of a <code>module</code>
+instantiation.</p>
+<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name,
+respectively of the module that would have been instantiated had it not
+been overridden.  The <a href="https://api.dart.dev/stable/2.18.2/dart-core/Map-class.html">Map</a>s <code>inputs</code> and <code>outputs</code> are a mapping from the
+<a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are passed into
+those ports in the generated SystemVerilog.</p>
 </section>
 
 
@@ -85,9 +87,9 @@ String instantiationVerilog(String instanceType, String instanceName,
   if (inputs.length != 2 || outputs.length != 1) {
     throw Exception(&#39;FlipFlop has exactly two inputs and one output.&#39;);
   }
-  var clk = inputs[_clk]!;
-  var d = inputs[_d]!;
-  var q = outputs[_q]!;
+  final clk = inputs[_clk]!;
+  final d = inputs[_d]!;
+  final q = outputs[_q]!;
   return &#39;always_ff @(posedge $clk) $q &lt;= $d;  &#47;&#47; $instanceName&#39;;
 }</code></pre>
 </section>

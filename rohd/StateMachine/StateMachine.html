@@ -58,8 +58,11 @@
 
     
 <section class="desc markdown">
-  <p>Constructs a simple FSM, using the <a href="../../rohd/StateMachine/clk.html">clk</a> and <a href="../../rohd/StateMachine/reset.html">reset</a> signals. Also accepts the reset state to transition to <a href="../../rohd/StateMachine/resetState.html">resetState</a> along with the <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of <code>_states</code> of the FSM.</p>
-<p>If a <a href="../../rohd/StateMachine/reset.html">reset</a> signal is provided the FSM transitions to the <a href="../../rohd/StateMachine/resetState.html">resetState</a> on the next clock cycle.</p>
+  <p>Constructs a simple FSM, using the <a href="../../rohd/StateMachine/clk.html">clk</a> and <a href="../../rohd/StateMachine/reset.html">reset</a> signals. Also accepts
+the reset state to transition to <a href="../../rohd/StateMachine/resetState.html">resetState</a> along with the <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of
+<code>_states</code> of the FSM.</p>
+<p>If a <a href="../../rohd/StateMachine/reset.html">reset</a> signal is provided the FSM transitions to the <a href="../../rohd/StateMachine/resetState.html">resetState</a>
+on the next clock cycle.</p>
 </section>
 
 
@@ -74,7 +77,7 @@
           Logic(name: &#39;nextState&#39;, width: _logBase(_states.length, 2)) {
   var stateCounter = 0;
 
-  for (var state in _states) {
+  for (final state in _states) {
     _stateLookup[state.identifier] = state;
     _stateValueLookup[state] = stateCounter++;
   }

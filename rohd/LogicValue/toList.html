@@ -59,9 +59,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element is 1 bit.</p>
-<p>The order of the created <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> will be such that the <code>i</code>th entry of it corresponds
-to the <code>i</code>th bit.  That is, the 0th element of the list will be the 0th bit of this <code>LogicValue</code>.</p>
+  <p>Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element
+is 1 bit.</p>
+<p>The order of the created <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> will be such that the <code>i</code>th entry of it
+corresponds to the <code>i</code>th bit.  That is, the 0th element of the list will
+be the 0th bit of this <code>LogicValue</code>.</p>
 <pre class="language-dart"><code class="language-dart">var lv = LogicValue.ofString('1x0');
 var it = lv.toList();
 print(lv); // This prints `[1'h0, 1'bx, 1'h1]`

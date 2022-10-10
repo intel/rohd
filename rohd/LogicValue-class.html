@@ -51,7 +51,8 @@
     
 <section class="desc markdown">
   <p>An immutable 4-value representation of an arbitrary number of bits.</p>
-<p>Each bit of <a href="../rohd/LogicValue-class.html">LogicValue</a> can be represented as a <a href="../rohd/LogicValue-class.html">LogicValue</a> of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code> (floating).</p>
+<p>Each bit of <a href="../rohd/LogicValue-class.html">LogicValue</a> can be represented as a <a href="../rohd/LogicValue-class.html">LogicValue</a>
+of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code> (floating).</p>
 </section>
 
 
@@ -68,7 +69,7 @@
   <dt>Annotations</dt>
   <dd>
     <ul class="annotation-list clazz-relationships">
-        <li>@<a href="https://pub.dev/documentation/meta/1.8.0/meta/Immutable-class.html">Immutable</a>()</li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.8.0/meta/immutable-constant.html">immutable</a></li>
     </ul>
   </dd>
       </dl>
@@ -141,7 +142,8 @@
 
 </dt>
 <dd>
-  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with the order of all bits in the reverse order of this <a href="../rohd/LogicValue-class.html">LogicValue</a>
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with the order of all bits in the reverse order
+of this <a href="../rohd/LogicValue-class.html">LogicValue</a>
   <div class="features">read-only</div>
 
 </dd>
@@ -211,8 +213,9 @@
 
 </dt>
 <dd>
-  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where the most significant
-bits for indices beyond the original <a href="../rohd/LogicValue/width.html">width</a> are set to <code>fill</code>.
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where the most
+significant bits for indices beyond the original <a href="../rohd/LogicValue/width.html">width</a> are set
+to <code>fill</code>.
   
 
 </dd>
@@ -225,7 +228,8 @@ bits for indices beyond the original <a href="../rohd/LogicValue/width.html">wid
 
 </dt>
 <dd>
-  Returns a subset <a href="../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>startIndex</code>, exclusive of <code>endIndex</code>.
+  Returns a subset <a href="../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>startIndex</code>, exclusive
+of <code>endIndex</code>.
   
 
 </dd>
@@ -264,9 +268,10 @@ bits for indices beyond the original <a href="../rohd/LogicValue/width.html">wid
 
 </dt>
 <dd>
-  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are sign bits
-as the most significant bits.  The sign is determined using two's complement, so
-it takes the most significant bit of the original value and extends with that.
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are
+sign bits as the most significant bits.  The sign is determined using
+two's complement, so it takes the most significant bit of the original
+value and extends with that.
   
 
 </dd>
@@ -279,7 +284,8 @@ it takes the most significant bit of the original value and extends with that.
 
 </dt>
 <dd>
-  Accesses a subset of this <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>startIndex</code> to <code>endIndex</code>, both inclusive.
+  Accesses a subset of this <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>startIndex</code> to <code>endIndex</code>,
+both inclusive.
   
 
 </dd>
@@ -331,7 +337,8 @@ it takes the most significant bit of the original value and extends with that.
 
 </dt>
 <dd>
-  Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element is 1 bit.
+  Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element
+is 1 bit.
   
 
 </dd>
@@ -344,8 +351,8 @@ it takes the most significant bit of the original value and extends with that.
 
 </dt>
 <dd>
-  Converts this <a href="../rohd/LogicValue-class.html">LogicValue</a> to a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a>, including a decorator at the front
-in SystemVerilog style.
+  Converts this <a href="../rohd/LogicValue-class.html">LogicValue</a> to a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a>, including a decorator at
+the front in SystemVerilog style.
   <div class="features">override</div>
 
 </dd>
@@ -358,9 +365,9 @@ in SystemVerilog style.
 
 </dt>
 <dd>
-  Returns a copy of this <a href="../rohd/LogicValue-class.html">LogicValue</a> with the bits starting from <code>startIndex</code>
-up until <code>startIndex</code> + <code>update</code><code>.width</code> set to <code>update</code> instead
-of their original value.
+  Returns a copy of this <a href="../rohd/LogicValue-class.html">LogicValue</a> with the bits starting from
+<code>startIndex</code> up until <code>startIndex</code> + <code>update</code><code>.width</code> set to <code>update</code>
+instead of their original value.
   
 
 </dd>
@@ -386,8 +393,8 @@ of their original value.
 
 </dt>
 <dd>
-  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are zeros
-as the most significant bits.
+  Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with width <code>newWidth</code> where new bits added are
+zeros as the most significant bits.
   
 
 </dd>
@@ -525,7 +532,7 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Returns true iff the width and all bits of <a href="../rohd/LogicValue-class.html">this</a> are equal to <code>other</code>.
+  Returns true iff the width and all bits of <code>this</code> are equal to <code>other</code>.
   <div class="features">override</div>
 
 </dd>
@@ -649,7 +656,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> with the <code>width</code> number of bits, where every bit has the same value of <code>fill</code>.
+  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> with the <code>width</code> number of bits, where every
+bit has the same value of <code>fill</code>.
   
 
 </dd>
@@ -675,7 +683,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number of bits.
+  Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
+number of bits.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofBigInt` instead.&#39;)</div>
 
 </dd>
@@ -688,7 +697,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either one or zero.
+  Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
+one or zero.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofBool` instead.&#39;)</div>
 
 </dd>
@@ -701,7 +711,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number of bits.
+  Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
+number of bits.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofInt` instead.&#39;)</div>
 
 </dd>
@@ -714,13 +725,14 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
+  Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
+<a href="../rohd/LogicValue-class.html">LogicValue</a>.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofString` instead.&#39;)</div>
 
 </dd>
 
         <dt id="isNegedge" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/isNegedge.html">isNegedge</a></span><span class="signature">(<wbr><span class="parameter" id="isNegedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isNegedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isNegedge-param-ignoreInvalid">{<span class="type-annotation">dynamic</span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/LogicValue/isNegedge.html">isNegedge</a></span><span class="signature">(<wbr><span class="parameter" id="isNegedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isNegedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isNegedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
@@ -733,7 +745,7 @@ as the most significant bits.
 </dd>
 
         <dt id="isPosedge" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/isPosedge.html">isPosedge</a></span><span class="signature">(<wbr><span class="parameter" id="isPosedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isPosedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation">dynamic</span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/LogicValue/isPosedge.html">isPosedge</a></span><span class="signature">(<wbr><span class="parameter" id="isPosedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isPosedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
@@ -766,7 +778,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number of bits.
+  Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
+number of bits.
   
 
 </dd>
@@ -779,7 +792,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either one or zero.
+  Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
+one or zero.
   
 
 </dd>
@@ -792,7 +806,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number of bits.
+  Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number
+of bits.
   
 
 </dd>
@@ -805,7 +820,8 @@ as the most significant bits.
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
+  Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
+<a href="../rohd/LogicValue-class.html">LogicValue</a>.
   
 
 </dd>

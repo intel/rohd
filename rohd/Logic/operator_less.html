@@ -62,7 +62,8 @@
 <section class="desc markdown">
   <p>Conditional assignment operator.</p>
 <p>Represents conditionally asigning the value of another signal to this.
-Returns an instance of <a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a> to be be passed to a <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
+Returns an instance of <a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a> to be be passed to a
+<a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
 </section>
 
 
@@ -72,7 +73,8 @@ Returns an instance of <a href="../../rohd/ConditionalAssign-class.html">Conditi
   <pre class="language-dart"><code class="language-dart">ConditionalAssign operator &lt;(dynamic other) {
   if (_unassignable) {
     throw Exception(&#39;This signal &quot;$this&quot; has been marked as unassignable.  &#39;
-        &#39;It may be a constant expression or otherwise should not be assigned.&#39;);
+        &#39;It may be a constant expression or otherwise&#39;
+        &#39; should not be assigned.&#39;);
   }
 
   if (other is Logic) {

@@ -73,13 +73,14 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 List&lt;Logic&gt; getDrivers() {
-  var drivers = &lt;Logic&gt;[expression];
-  for (var item in items) {
-    drivers.add(item.value);
-    drivers.addAll(item.then
-        .map((conditional) =&gt; conditional.getDrivers())
-        .expand((driver) =&gt; driver)
-        .toList());
+  final drivers = &lt;Logic&gt;[expression];
+  for (final item in items) {
+    drivers
+      ..add(item.value)
+      ..addAll(item.then
+          .map((conditional) =&gt; conditional.getDrivers())
+          .expand((driver) =&gt; driver)
+          .toList());
   }
   if (defaultItem != null) {
     drivers.addAll(defaultItem!

@@ -84,7 +84,7 @@
           <span class="name"><a href="../rohd/Port/Port.html">Port</a></span><span class="signature">(<span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="-param-width">[<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>]</span>)</span>
         </dt>
         <dd>
-          
+          Constructs a <a href="../rohd/Logic-class.html">Logic</a> intended to be used for ports in an <a href="../rohd/Interface-class.html">Interface</a>.
         </dd>
     </dl>
   </section>
@@ -99,7 +99,8 @@
 
 </dt>
 <dd class="inherited">
-  The current active value of this signal if it has width 1, as a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
+  The current active value of this signal if it has width 1, as
+a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
   <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `value` instead.&#39; &#39;  Check `width` separately to confirm single-bit.&#39;), read-only, inherited</div>
 
 </dd>
@@ -122,7 +123,7 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd class="inherited">
-  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <a href="../rohd/Port-class.html">this</a>.
+  An <a href="https://api.dart.dev/stable/2.18.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -201,7 +202,8 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 </dt>
 <dd class="inherited">
   A <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
-per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>1</code> to <code>0</code>.
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
+from <code>1</code> to <code>0</code>.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -260,7 +262,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 </dt>
 <dd class="inherited">
   A <a href="https://api.dart.dev/stable/2.18.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
-per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed from <code>0</code> to <code>1</code>.
+per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
+from <code>0</code> to <code>1</code>.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -293,7 +296,7 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd class="inherited">
-  The <code>Logic</code> signal that is driving <a href="../rohd/Port-class.html">this</a>, if any.
+  The <a href="../rohd/Logic-class.html">Logic</a> signal that is driving <code>this</code>, if any.
   <div class="features">read-only, inherited</div>
 
 </dd>
@@ -385,7 +388,8 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd class="inherited">
-  Returns a subset <a href="../rohd/Logic-class.html">Logic</a>.  It is inclusive of <code>startIndex</code>, exclusive of <code>endIndex</code>.
+  Returns a subset <a href="../rohd/Logic-class.html">Logic</a>.  It is inclusive of <code>startIndex</code>, exclusive of
+<code>endIndex</code>.
   <div class="features">inherited</div>
 
 </dd>
@@ -476,7 +480,8 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dt>
 <dd class="inherited">
-  
+  Makes it so that this signal cannot be assigned by any full (<code>&lt;=</code>) or
+conditional (<code>&lt;</code>) assignment.
   <div class="features">inherited</div>
 
 </dd>
@@ -529,9 +534,10 @@ for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Si
 
 </dt>
 <dd class="inherited">
-  Returns a new <a href="../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are sign bits
-as the most significant bits.  The sign is determined using two's complement, so
-it takes the most significant bit of the original signal and extends with that.
+  Returns a new <a href="../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are sign
+bits as the most significant bits.  The sign is determined using two's
+complement, so it takes the most significant bit of the original signal
+and extends with that.
   <div class="features">inherited</div>
 
 </dd>
@@ -544,7 +550,8 @@ it takes the most significant bit of the original signal and extends with that.
 
 </dt>
 <dd class="inherited">
-  Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>, both inclusive.
+  Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>,
+both inclusive.
   <div class="features">inherited</div>
 
 </dd>

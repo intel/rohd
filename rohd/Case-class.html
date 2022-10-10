@@ -50,11 +50,12 @@
 
     
 <section class="desc markdown">
-  <p>A block of <a href="../rohd/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../rohd/CaseItem/value.html">CaseItem.value</a> is executed.</p>
-<p>Searches for which of <a href="../rohd/Case/items.html">items</a> appropriately matches <a href="../rohd/Case/expression.html">expression</a>, then executes the
-matching <a href="../rohd/CaseItem-class.html">CaseItem</a>.  If <a href="../rohd/Case/defaultItem.html">defaultItem</a> is specified, and no other item matches, then
-that one is executed.  Use <a href="../rohd/Case/conditionalType.html">conditionalType</a> to modify behavior in ways similar to
-what is available in SystemVerilog.</p>
+  <p>A block of <a href="../rohd/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../rohd/CaseItem/value.html">CaseItem.value</a>
+is executed.</p>
+<p>Searches for which of <a href="../rohd/Case/items.html">items</a> appropriately matches <a href="../rohd/Case/expression.html">expression</a>, then
+executes the matching <a href="../rohd/CaseItem-class.html">CaseItem</a>.  If <a href="../rohd/Case/defaultItem.html">defaultItem</a> is specified, and no
+other item matches, then that one is executed.  Use <a href="../rohd/Case/conditionalType.html">conditionalType</a> to
+modify behavior in ways similar to what is available in SystemVerilog.</p>
 </section>
 
 
@@ -92,7 +93,7 @@ what is available in SystemVerilog.</p>
           <span class="name"><a href="../rohd/Case/Case.html">Case</a></span><span class="signature">(<span class="parameter" id="-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="-param-items"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="-param-defaultItem">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>}</span>)</span>
         </dt>
         <dd>
-          
+          Whenever an item in <a href="../rohd/Case/items.html">items</a> matches <a href="../rohd/Case/expression.html">expression</a>, it will be executed.
         </dd>
     </dl>
   </section>
@@ -118,8 +119,8 @@ what is available in SystemVerilog.</p>
 
 </dt>
 <dd>
-  The type of case block this is, for special attributes (e.g. <a href="../rohd/ConditionalType.html">ConditionalType.unique</a>,
-<a href="../rohd/ConditionalType.html">ConditionalType.priority</a>).
+  The type of case block this is, for special attributes
+(e.g. <a href="../rohd/ConditionalType.html">ConditionalType.unique</a>, <a href="../rohd/ConditionalType.html">ConditionalType.priority</a>).
   <div class="features">final</div>
 
 </dd>
@@ -163,7 +164,8 @@ what is available in SystemVerilog.</p>
 
 </dt>
 <dd>
-  An ordered collection of <code>CaseItem</code>s to search through for a match to <a href="../rohd/Case/expression.html">expression</a>.
+  An ordered collection of <code>CaseItem</code>s to search through for a match
+to <a href="../rohd/Case/expression.html">expression</a>.
   <div class="features">final</div>
 
 </dd>
@@ -209,7 +211,8 @@ what is available in SystemVerilog.</p>
 
 </dt>
 <dd class="inherited">
-  Gets the value that should be used for execution for the input port associated with <code>driver</code>.
+  Gets the value that should be used for execution for the input port
+associated with <code>driver</code>.
   <div class="features">@<a href="https://pub.dev/documentation/meta/1.8.0/meta/protected-constant.html">protected</a>, inherited</div>
 
 </dd>
@@ -235,7 +238,8 @@ what is available in SystemVerilog.</p>
 
 </dt>
 <dd>
-  Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code> (not including itself).
+  Lists of <em>all</em> <code>Conditional</code>s contained within this <code>Conditional</code>
+(not including itself).
   <div class="features">override</div>
 
 </dd>
@@ -261,7 +265,8 @@ what is available in SystemVerilog.</p>
 
 </dt>
 <dd>
-  Lists <em>all</em> receivers, recursively including all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s receivers.
+  Lists <em>all</em> receivers, recursively including all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s
+receivers.
   <div class="features">override</div>
 
 </dd>

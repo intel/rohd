@@ -49,6 +49,11 @@
 </h1></div>
 
     
+<section class="desc markdown">
+  <p>Simple class for FSM <a href="../rohd/StateMachine-class.html">StateMachine</a>.</p>
+<p>Abstraction for representing Finite state machines (FSM).
+Contains the logic for performing the state transitions.</p>
+</section>
 
 
 
@@ -61,7 +66,9 @@
           <span class="name"><a href="../rohd/StateMachine/StateMachine.html">StateMachine</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span><span class="parameter" id="-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span></span>)</span>
         </dt>
         <dd>
-          Constructs a simple FSM, using the <a href="../rohd/StateMachine/clk.html">clk</a> and <a href="../rohd/StateMachine/reset.html">reset</a> signals. Also accepts the reset state to transition to <a href="../rohd/StateMachine/resetState.html">resetState</a> along with the <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of <code>_states</code> of the FSM.
+          Constructs a simple FSM, using the <a href="../rohd/StateMachine/clk.html">clk</a> and <a href="../rohd/StateMachine/reset.html">reset</a> signals. Also accepts
+the reset state to transition to <a href="../rohd/StateMachine/resetState.html">resetState</a> along with the <a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a> of
+<code>_states</code> of the FSM.
         </dd>
     </dl>
   </section>
@@ -131,7 +138,7 @@
 
 </dt>
 <dd>
-  
+  The reset state of the FSM to default to when the reset signal is high.
   <div class="features">final</div>
 
 </dd>

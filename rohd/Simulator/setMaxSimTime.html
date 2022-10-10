@@ -60,15 +60,18 @@
     </section>
     
 <section class="desc markdown">
-  <p>Sets a time, after which, the <a href="../../rohd/Simulator-class.html">Simulator</a> will halt processing of new actions.</p>
-<p>You should set this for your simulations so that you don't get infinite simulation.</p>
+  <p>Sets a time, after which, the <a href="../../rohd/Simulator-class.html">Simulator</a> will halt processing of new
+actions.</p>
+<p>You should set this for your simulations so that you don't get infinite
+simulation.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void setMaxSimTime(int newMaxSimTime) {
+  <pre class="language-dart"><code class="language-dart">&#47;&#47; ignore: use_setters_to_change_properties
+static void setMaxSimTime(int newMaxSimTime) {
   _maxSimTime = newMaxSimTime;
 }</code></pre>
 </section>
