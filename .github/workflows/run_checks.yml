@@ -1,0 +1,38 @@
+name: Run Checks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  main:
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Verify formatting
+        run: tool/gh_actions/verify_formatting.sh
+
+      - name: Analyze project source
+        run: tool/gh_actions/analyze_source.sh
+
+      - name: Check documentation
+        run: tool/gh_actions/check_documentation.sh
+
+      - name: Install Icarus Verilog
+        run: tool/gh_actions/install_iverilog.sh
+
+      - name: Run tests
+        run: tool/gh_actions/run_tests.sh
