@@ -25,4 +25,6 @@ output=$(dart doc --validate-links --dry-run 2>&1 | tee /dev/tty)
 # In case of problems, the variable will contain a non-empty string.
 if [ -n "${output}" ]; then
   exit 1
+else
+  echo 'Documentation check successful!'
 fi

@@ -12,4 +12,9 @@
 
 set -euo pipefail
 
-dart format --output=none --set-exit-if-changed .
+if dart format --output=none --set-exit-if-changed .; then
+  echo 'Format check passed!'
+else
+  echo 'Please format your code (use "dart format .")!'
+  exit 1
+fi
