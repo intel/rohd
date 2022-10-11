@@ -18,8 +18,6 @@ set -euo pipefail
 #   https://github.com/dart-lang/dartdoc/issues/2907
 #   https://github.com/dart-lang/dartdoc/issues/1959
 
-declare output
-
 output=$(dart doc --validate-links --dry-run 2>&1 | tee /dev/tty)
 
 # In case of problems, the variable will contain a non-empty string.

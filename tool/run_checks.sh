@@ -12,10 +12,6 @@
 
 set -euo pipefail
 
-declare color_green
-declare color_yellow
-declare color_reset
-
 color_green=$(tput setaf 46)
 color_yellow=$(tput setaf 226)
 color_reset=$(tput sgr0)
