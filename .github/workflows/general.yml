@@ -1,4 +1,4 @@
-name: Run Checks
+name: General
 on:
   push:
     branches:
@@ -8,7 +8,8 @@ on:
       - main
 
 jobs:
-  main:
+  run-checks:
+    name: Run Checks
     permissions: {}
     timeout-minutes: 30
     runs-on: ubuntu-22.04
@@ -36,3 +37,30 @@ jobs:
 
       - name: Run tests
         run: tool/gh_actions/run_tests.sh
+
+jobs:
+  deploy-documentation:
+    name: Deploy Documentation
+    needs: run-checks
+    if: github.event_name == 'push'
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Generate documentation
+        run: tool/gh_actions/generate_documentation.sh
+
+      - name: Deploy documentation
+        uses: JamesIves/github-pages-deploy-action@4
+        with:
+          folder: doc/api
+          branch: docs
