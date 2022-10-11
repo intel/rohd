@@ -44,12 +44,12 @@ class BusTestModule extends Module {
   Logic get aNegativeRange2 => output('a_neg_range2');
   Logic get aNegativeRange3 => output('a_neg_range3');
   // --- Getters for operator[]
-  // Logic get aOperatorIndexing1 => output('a_operator_indexing1');
-  // Logic get aOperatorIndexing2 => output('a_operator_indexing2');
-  // Logic get aOperatorIndexing3 => output('a_operator_indexing3');
-  // Logic get aOperatorNegIndexing1 => output('a_operator_neg_indexing1');
-  // Logic get aOperatorNegIndexing2 => output('a_operator_neg_indexing2');
-  // Logic get aOperatorNegIndexing3 => output('a_operator_neg_indexing3');
+  Logic get aOperatorIndexing1 => output('a_operator_indexing1');
+  Logic get aOperatorIndexing2 => output('a_operator_indexing2');
+  Logic get aOperatorIndexing3 => output('a_operator_indexing3');
+  Logic get aOperatorNegIndexing1 => output('a_operator_neg_indexing1');
+  Logic get aOperatorNegIndexing2 => output('a_operator_neg_indexing2');
+  Logic get aOperatorNegIndexing3 => output('a_operator_neg_indexing3');
 
   BusTestModule(Logic a, Logic b) : super(name: 'bustestmodule') {
     // --- Declaration ---
@@ -94,14 +94,14 @@ class BusTestModule extends Module {
     var aNegativeRange1 = addOutput('a_neg_range1', width: 3);
     var aNegativeRange2 = addOutput('a_neg_range2', width: 2);
     var aNegativeRange3 = addOutput('a_neg_range3', width: 1);
-    // // Operator Indexing with positive index value
-    // var aOperatorIndexing1 = addOutput('a_operator_indexing1', width: 1);
-    // var aOperatorIndexing2 = addOutput('a_operator_indexing2', width: 1);
-    // var aOperatorIndexing3 = addOutput('a_operator_indexing3', width: 1);
-    // // Operator Indexing with negative index value
-    // var aOperatorNegIndexing1 = addOutput('a_operator_neg_indexing1', width: 1);
-    // var aOperatorNegIndexing2 = addOutput('a_operator_neg_indexing2', width: 1);
-    // var aOperatorNegIndexing3 = addOutput('a_operator_neg_indexing3', width: 1);
+    // Operator Indexing with positive index value
+    var aOperatorIndexing1 = addOutput('a_operator_indexing1', width: 1);
+    var aOperatorIndexing2 = addOutput('a_operator_indexing2', width: 1);
+    var aOperatorIndexing3 = addOutput('a_operator_indexing3', width: 1);
+    // Operator Indexing with negative index value
+    var aOperatorNegIndexing1 = addOutput('a_operator_neg_indexing1', width: 1);
+    var aOperatorNegIndexing2 = addOutput('a_operator_neg_indexing2', width: 1);
+    var aOperatorNegIndexing3 = addOutput('a_operator_neg_indexing3', width: 1);
 
     // --- Assignments ---
     aBar <= ~a;
@@ -132,12 +132,12 @@ class BusTestModule extends Module {
     aNegativeRange2 <= a.getRange(-2, 8);
     aNegativeRange3 <= a.getRange(-1, 8);
 
-    // aOperatorIndexing1 <= a[0];
-    // aOperatorIndexing2 <= a[a.width - 1];
-    // aOperatorIndexing3 <= a[4];
-    // aOperatorNegIndexing1 <= a[-1];
-    // aOperatorNegIndexing2 <= a[-2];
-    // aOperatorNegIndexing3 <= a[-a.width];
+    aOperatorIndexing1 <= a[0];
+    aOperatorIndexing2 <= a[a.width - 1];
+    aOperatorIndexing3 <= a[4];
+    aOperatorNegIndexing1 <= a[-a.width];
+    aOperatorNegIndexing2 <= a[-1];
+    aOperatorNegIndexing3 <= a[-2];
 
     aReversed <= a.reversed;
   }
@@ -201,19 +201,30 @@ void main() {
       expect(out.value.toInt(), equals(5));
     });
 
-    // test('Operator Indexing', () async {
-    //   var a = Logic(width: 8);
-    //   var b = Logic(width: 8);
-    //   var gtm = BusTestModule(a, b);
-    //   var out = gtm.aOperatorIndexing1;
-    //   await gtm.build();
-    //   a.put(0);
-    //   expect(out.value.toInt(), equals(0));
-    //   a.put(0xff);
-    //   expect(out.value.toInt(), equals(bin('1')));
-    //   a.put(0xc1);
-    //   expect(out.value.toInt(), equals(bin('1')));
-    // });
+    test('Operator Indexing', () async {
+      var a = Logic(width: 8);
+      var b = Logic(width: 8);
+      var gtm = BusTestModule(a, b);
+      var out1 = gtm.aOperatorIndexing1;
+      var out2 = gtm.aOperatorIndexing2;
+      var out3 = gtm.aOperatorIndexing3;
+      var out4 = gtm.aOperatorNegIndexing1;
+      var out5 = gtm.aOperatorNegIndexing2;
+      var out6 = gtm.aOperatorNegIndexing3;
+      await gtm.build();
+      a.put(bin('11111110'));
+      expect(out1.value.toInt(), equals(0));
+      a.put(bin('10000000'));
+      expect(out2.value.toInt(), equals(bin('1')));
+      a.put(bin('11101111'));
+      expect(out3.value.toInt(), equals(bin('0')));
+      a.put(bin('11111110'));
+      expect(out4.value.toInt(), equals(0));
+      a.put(bin('10000000'));
+      expect(out5.value.toInt(), equals(bin('1')));
+      a.put(bin('10111111'));
+      expect(out6.value.toInt(), equals(bin('0')));
+    });
 
     test('Bus swizzle', () async {
       var a = Logic(width: 8);

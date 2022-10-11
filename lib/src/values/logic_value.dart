@@ -274,21 +274,19 @@ abstract class LogicValue {
   /// the indexing started from last index and goes to front.
   /// Note: the [index] value must follow, -width <= [index] < width
   ///
-  /// ```dart [TODO]
-  /// var bitValue = Logic(name: "bit_value", width: 8);
-  /// bitValue <= 0xf5; // Assign a LogicValue literal to our new variable
-  /// // Positive Indexing
-  /// var bitIndexValue = bitValue[2];
-  /// print(bitIndexValue); // This prints `1b'0x1`
-  /// // Negative Indexing
-  /// var bitIndexValue = bitValue[-2];
-  /// print(bitIndexValue); // This prints `1b'0x0`
+  /// ```dart
+  /// LogicValue.ofString('1111')[2];  // equals(LogicValue.one)
+  /// LogicValue.ofString('0111')[-1]; // equals(LogicValue.zero)
+  /// LogicValue.ofString('0100')[-2]; // equals(LogicValue.one)
+  /// LogicValue.ofString('0101')[-5]; // Error - out of range
+  /// LogicValue.ofString('0101')[10]; // Error - out of range
   /// ```
+  ///
   LogicValue operator [](int index) {
     var modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $index (=$modifiedIndex).', width);
+          'Index out of range: $modifiedIndex (=$index).', width);
     }
     return _getIndex(modifiedIndex);
   }
@@ -304,6 +302,16 @@ abstract class LogicValue {
   /// [startIndex] must come before the [endIndex] on position. If [startIndex] and [endIndex] are equal, then a
   /// zero-width value is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  ///
+  /// ```dart [TODO]
+  /// LogicValue.ofString('0101').getRange(0, 2);   // equals(LogicValue.ofString('01'))
+  /// LogicValue.ofString('0101').getRange(1, -2);  // = LogicValue.zero
+  /// LogicValue.ofString('0101').getRange(-3, 4);  // equals(LogicValue.ofString('010'))
+  /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
+  /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
+  /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
+  /// ```
+  ///
   LogicValue getRange(int startIndex, int endIndex) {
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
     var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
@@ -335,7 +343,11 @@ abstract class LogicValue {
   /// to the original value.
   ///
   /// ```dart [TODO]
-  ///
+  /// LogicValue.ofString('xz01').slice(2, 1);    // equals(LogicValue.ofString('z0'))
+  /// LogicValue.ofString('xz01').slice(-2, -3);  // equals(LogicValue.ofString('z0'))
+  /// LogicValue.ofString('xz01').slice(1, 3);    // equals(LogicValue.ofString('0zx'))
+  /// LogicValue.ofString('xz01').slice(-3, -1);  // equals(LogicValue.ofString('0zx'))
+  /// LogicValue.ofString('xz01').slice(-2, -2);  // equals(LogicValue.ofString('z'))
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
