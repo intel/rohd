@@ -346,13 +346,14 @@ void main() {
           LogicValue.ofString('0101').getRange(-3, 4),
           equals(LogicValue.ofString('010')));
       expect(
-          // getRange - negative end index and start > end - error! start must be less than end
+          // getRange - negative end index and start > end - error! start must
+          // be less than end
           () => LogicValue.ofString('0101').getRange(-1, -2),
           throwsA(isA<Exception>()));
-      // expect( // TODO: Resolving this test seems to cause errors in other test cases
-      //     // getRange - negative end index and start = end | error! start must be less than end
-      //     () => LogicValue.ofString('0101').getRange(-1, -1),
-      //     throwsA(isA<Exception>()));
+      expect(
+          // getRange - same index results zero width value
+          () => LogicValue.ofString('0101').getRange(-1, -1),
+          LogicValue.ofString(''));
       expect(
           // getRange - bad inputs start > end
           () => LogicValue.ofString('0101').getRange(2, 1),

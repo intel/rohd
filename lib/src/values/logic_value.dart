@@ -306,9 +306,9 @@ abstract class LogicValue {
   /// Note: the [index] value must follow, -width <= [index] < width
   ///
   /// ```dart
-  /// LogicValue.ofString('1111')[2];  // equals(LogicValue.one)
-  /// LogicValue.ofString('0111')[-1]; // equals(LogicValue.zero)
-  /// LogicValue.ofString('0100')[-2]; // equals(LogicValue.one)
+  /// LogicValue.ofString('1111')[2];  // == LogicValue.one
+  /// LogicValue.ofString('0111')[-1]; // == LogicValue.zero
+  /// LogicValue.ofString('0100')[-2]; // == LogicValue.one
   /// LogicValue.ofString('0101')[-5]; // Error - out of range
   /// LogicValue.ofString('0101')[10]; // Error - out of range
   /// ```
@@ -337,9 +337,9 @@ abstract class LogicValue {
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   ///
   /// ```dart [TODO]
-  /// LogicValue.ofString('0101').getRange(0, 2);   // equals(LogicValue.ofString('01'))
-  /// LogicValue.ofString('0101').getRange(1, -2);  // = LogicValue.zero
-  /// LogicValue.ofString('0101').getRange(-3, 4);  // equals(LogicValue.ofString('010'))
+  /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
+  /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
+  /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
   /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
   /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
   /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
@@ -349,7 +349,6 @@ abstract class LogicValue {
     final modifiedStartIndex =
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
-    // TODO: modifiedEndIndex must not be less than or equal to start Index
     if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
           'End ($endIndex) cannot be less than start ($startIndex).');
@@ -380,11 +379,11 @@ abstract class LogicValue {
   /// reversed relative to the original value.
   ///
   /// ```dart [TODO]
-  /// LogicValue.ofString('xz01').slice(2, 1);    // equals(LogicValue.ofString('z0'))
-  /// LogicValue.ofString('xz01').slice(-2, -3);  // equals(LogicValue.ofString('z0'))
-  /// LogicValue.ofString('xz01').slice(1, 3);    // equals(LogicValue.ofString('0zx'))
-  /// LogicValue.ofString('xz01').slice(-3, -1);  // equals(LogicValue.ofString('0zx'))
-  /// LogicValue.ofString('xz01').slice(-2, -2);  // equals(LogicValue.ofString('z'))
+  /// LogicValue.ofString('xz01').slice(2, 1);    // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(-2, -3);  // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(1, 3);    // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-3, -1);  // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-2, -2);  // == LogicValue.ofString('z')
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
     final modifiedStartIndex =

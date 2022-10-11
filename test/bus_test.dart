@@ -283,13 +283,13 @@ void main() {
       'a_neg_range2': 2,
       'a_neg_range3': 1,
 
-      // // operator[]
-      // 'a_operator_indexing1': 3,
-      // 'a_operator_indexing2': 2,
-      // 'a_operator_indexing3': 1,
-      // 'a_operator_neg_indexing1': 3,
-      // 'a_operator_neg_indexing2': 2,
-      // 'a_operator_neg_indexing3': 1,
+      // operator[]
+      'a_operator_indexing1': 1,
+      'a_operator_indexing2': 1,
+      'a_operator_indexing3': 1,
+      'a_operator_neg_indexing1': 1,
+      'a_operator_neg_indexing2': 1,
+      'a_operator_neg_indexing3': 1,
 
       // Logic bus value Reversed
       'a_reversed': 8,
@@ -321,6 +321,26 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
         Vector({'a': 0xff, 'b': 0xaa}, {'a_and_b': 0xaa}),
       ];
+
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('Operator indexing', () async {
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      final vectors = [
+        Vector({'a': bin('11111110')}, {'a_operator_indexing1': 0}),
+        Vector({'a': bin('10000000')}, {'a_operator_indexing2': 1}),
+        Vector({'a': bin('11101111')}, {'a_operator_indexing3': 0}),
+        Vector({'a': bin('11111110')}, {'a_operator_neg_indexing1': 0}),
+        Vector({'a': bin('10000000')}, {'a_operator_neg_indexing2': 1}),
+        Vector({'a': bin('10111111')}, {'a_operator_neg_indexing3': 0}),
+      ];
+
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,

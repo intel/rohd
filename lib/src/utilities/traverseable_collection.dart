@@ -58,11 +58,7 @@ class TraverseableCollection<T> {
   ///
   /// The [index] must be a valid index of this collection, which means that
   /// index must be non-negative and less than [length].
-  /// Negative/Positive index values are allowed. (Negative index values are positioned from back)
-  T operator [](int index) {
-    final modifiedIndex = (index < 0) ? length + index : index;
-    return _list[modifiedIndex];
-  }
+  T operator [](int index) => _list[index];
 
   /// Whether [item] is in the collection.
   bool contains(T item) => _set.contains(item);
