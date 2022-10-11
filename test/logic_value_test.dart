@@ -352,7 +352,7 @@ void main() {
           throwsA(isA<Exception>()));
       expect(
           // getRange - same index results zero width value
-          () => LogicValue.ofString('0101').getRange(-1, -1),
+          LogicValue.ofString('0101').getRange(-1, -1),
           LogicValue.ofString(''));
       expect(
           // getRange - bad inputs start > end
