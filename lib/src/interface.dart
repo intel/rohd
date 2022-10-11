@@ -14,6 +14,7 @@ import 'package:rohd/rohd.dart';
 
 /// An extension of [Logic] useful for [Interface] definitions.
 class Port extends Logic {
+  /// Constructs a [Logic] intended to be used for ports in an [Interface].
   Port(String name, [int width = 1]) : super(name: name, width: width);
 }
 
@@ -30,7 +31,8 @@ class Port extends Logic {
 /// were consuming the same [Interface], and also breaks the rules for
 /// [Module] input and output connectivity.
 class Interface<TagType> {
-  /// Internal map from the [Interface]'s defined port name to an instance of a [Port].
+  /// Internal map from the [Interface]'s defined port name to an instance
+  /// of a [Port].
   ///
   /// Note that each port's name (`port.name`) does not necessarily match the
   /// keys of [_ports] if they have been uniquified.
@@ -42,8 +44,8 @@ class Interface<TagType> {
   /// keys of [_ports] if they have been uniquified.
   Map<String, Logic> get ports => UnmodifiableMapView(_ports);
 
-  /// Maps from the [Interface]'s defined port name to the set of tags associated with
-  /// that port.
+  /// Maps from the [Interface]'s defined port name to the set of tags
+  /// associated with that port.
   final Map<String, Set<TagType>> _portToTagMap = {};
 
   /// Accesses a port named [name].
@@ -53,24 +55,26 @@ class Interface<TagType> {
       ? _ports[name]!
       : throw Exception('Port name "$name" not found on this interface.');
 
-  /// Connects [module]'s inputs and outputs up to [srcInterface] and this [Interface].
+  /// Connects [module]'s inputs and outputs up to [srcInterface] and this
+  /// [Interface].
   ///
-  /// The [srcInterface] should be a new instance of the [Interface] to be used by [module] for
-  /// all input and output connectivity.  All signals in the interface with specified [TagType]
-  /// will be connected to the [Module] via [Module.addInput] or [Module.addOutput] based on
-  /// [inputTags] and [outputTags], respectively.  [uniquify] can be used to uniquifiy port names
-  /// by manipulating the original name of the port.
+  /// The [srcInterface] should be a new instance of the [Interface] to be used
+  /// by [module] for all input and output connectivity.  All signals in the
+  /// interface with specified [TagType] will be connected to the [Module] via
+  /// [Module.addInput] or [Module.addOutput] based on [inputTags] and
+  /// [outputTags], respectively.  [uniquify] can be used to uniquifiy
+  /// port names by manipulating the original name of the port.
   ///
-  /// If [inputTags] or [outputTags] is not specified, then, respectively, no inputs or outputs
-  /// will be added.
-  void connectIO(Module module, Interface srcInterface,
+  /// If [inputTags] or [outputTags] is not specified, then, respectively,
+  /// no inputs or outputs will be added.
+  void connectIO(Module module, Interface<dynamic> srcInterface,
       {Set<TagType>? inputTags,
       Set<TagType>? outputTags,
       String Function(String original)? uniquify}) {
-    uniquify = uniquify ?? (String original) => original;
+    uniquify ??= (original) => original;
 
     if (inputTags != null) {
-      for (var port in getPorts(inputTags).values) {
+      for (final port in getPorts(inputTags).values) {
         _setPort(
             // ignore: invalid_use_of_protected_member
             module.addInput(uniquify(port.name), srcInterface.port(port.name),
@@ -80,9 +84,9 @@ class Interface<TagType> {
     }
 
     if (outputTags != null) {
-      for (var port in getPorts(outputTags).values) {
+      for (final port in getPorts(outputTags).values) {
         // ignore: invalid_use_of_protected_member
-        var output = module.addOutput(uniquify(port.name), width: port.width);
+        final output = module.addOutput(uniquify(port.name), width: port.width);
         port <= output;
         srcInterface.port(port.name) <= port;
         _setPort(output, portName: port.name);
@@ -98,8 +102,8 @@ class Interface<TagType> {
     if (tags == null) {
       return ports;
     } else {
-      var matchingPorts = <String, Logic>{};
-      for (var tag in tags) {
+      final matchingPorts = <String, Logic>{};
+      for (final tag in tags) {
         matchingPorts.addEntries(_ports.keys
             .where(
                 (portName) => _portToTagMap[portName]?.contains(tag) ?? false)
@@ -110,7 +114,8 @@ class Interface<TagType> {
     }
   }
 
-  /// Adds a single new port to this [Interface], associated with [tags] and with name [portName].
+  /// Adds a single new port to this [Interface], associated with [tags]
+  /// and with name [portName].
   ///
   /// If no [portName] is specified, then [port]'s name is used.
   void _setPort(Logic port, {List<TagType>? tags, String? portName}) {
@@ -124,12 +129,13 @@ class Interface<TagType> {
     }
   }
 
-  /// Adds a collection of ports to this [Interface], each associated with all of [tags].
+  /// Adds a collection of ports to this [Interface], each associated with all
+  /// of [tags].
   ///
   /// All names of ports are gotten from the names of the [ports].
   @protected
   void setPorts(List<Logic> ports, [List<TagType>? tags]) {
-    for (var port in ports) {
+    for (final port in ports) {
       _setPort(port, tags: tags);
     }
   }

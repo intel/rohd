@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: ROHD Discussions
+    url: https://github.com/intel/rohd/discussions
+    about: Ask questions - get answers.
+
+  - name: ROHD Discord
+    url: https://discord.com/invite/jubxF84yGw
+    about: Instant communication... if someone is online.
+
+  - name: ROHD Forum
+    url: https://github.com/intel/rohd/wiki/ROHD-Forum
+    about: Public periodic meeting for users and developers to discuss topics related to ROHD.

@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
 
 // shorten some names to make tests read better
-final lv = LogicValue.ofString;
+const lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
 
 void main() {
@@ -186,13 +186,9 @@ void main() {
           LogicValue.isPosedge(LogicValue.one, LogicValue.z,
               ignoreInvalid: true),
           equals(false));
-      expect(
-          () => LogicValue.isPosedge(LogicValue.x, LogicValue.one,
-              ignoreInvalid: false),
+      expect(() => LogicValue.isPosedge(LogicValue.x, LogicValue.one),
           throwsA(isA<Exception>()));
-      expect(
-          () => LogicValue.isPosedge(LogicValue.one, LogicValue.z,
-              ignoreInvalid: false),
+      expect(() => LogicValue.isPosedge(LogicValue.one, LogicValue.z),
           throwsA(isA<Exception>()));
     });
     test('isNegEdge', () {
@@ -208,13 +204,9 @@ void main() {
           LogicValue.isNegedge(LogicValue.one, LogicValue.z,
               ignoreInvalid: true),
           equals(false));
-      expect(
-          () => LogicValue.isNegedge(LogicValue.x, LogicValue.one,
-              ignoreInvalid: false),
+      expect(() => LogicValue.isNegedge(LogicValue.x, LogicValue.one),
           throwsA(isA<Exception>()));
-      expect(
-          () => LogicValue.isNegedge(LogicValue.one, LogicValue.z,
-              ignoreInvalid: false),
+      expect(() => LogicValue.isNegedge(LogicValue.one, LogicValue.z),
           throwsA(isA<Exception>()));
     });
   });
@@ -277,7 +269,7 @@ void main() {
       expect(
           // toString
           LogicValue.ofString('0').toString(),
-          equals('1\'h0'));
+          equals("1'h0"));
       expect(
           // toList
           LogicValue.ofString('0101').toList(),

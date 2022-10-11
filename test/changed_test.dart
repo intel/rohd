@@ -14,16 +14,12 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   test('single changed multiple injections', () async {
-    var a = Logic();
-    a.put(0);
+    final a = Logic()..put(0);
 
-    var b = Logic();
-    b.put(0);
+    final b = Logic()..put(0);
 
     var numChangesDetected = 0;
 
@@ -43,16 +39,16 @@ void main() {
   });
 
   test('clk edge counter', () async {
-    var clk = SimpleClockGenerator(10).clk;
-    var b = Logic();
+    final clk = SimpleClockGenerator(10).clk;
+    final b = Logic();
 
-    bool val = false;
+    var val = false;
     clk.negedge.listen((event) async {
       b.inject(val);
       val = !val;
     });
 
-    var uniquePosedgeTimestamps = <int>{};
+    final uniquePosedgeTimestamps = <int>{};
     var count = 0;
     clk.posedge.listen((event) {
       uniquePosedgeTimestamps.add(Simulator.time);
@@ -66,10 +62,9 @@ void main() {
   });
 
   test('injection triggers edge', () async {
-    var a = Logic();
-    a.put(0);
+    final a = Logic()..put(0);
 
-    int numPosedges = 0;
+    var numPosedges = 0;
     a.posedge.listen((event) {
       numPosedges += 1;
     });
@@ -82,14 +77,14 @@ void main() {
   });
 
   test('injection triggers flop', () async {
-    var baseClk = SimpleClockGenerator(10).clk;
+    final baseClk = SimpleClockGenerator(10).clk;
 
-    var clk = Logic();
-    var d = Logic();
+    final clk = Logic();
+    final d = Logic();
 
-    var q = FlipFlop(clk, d).q;
+    final q = FlipFlop(clk, d).q;
 
-    bool qHadPosedge = false;
+    var qHadPosedge = false;
 
     Simulator.setMaxSimTime(100);
 

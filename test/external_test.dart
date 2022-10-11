@@ -30,9 +30,9 @@ class TopModule extends Module {
 
 void main() {
   test('instantiate', () async {
-    var mod = TopModule(Logic(width: 2));
+    final mod = TopModule(Logic(width: 2));
     await mod.build();
-    var sv = mod.generateSynth();
+    final sv = mod.generateSynth();
     expect(
         sv,
         contains(

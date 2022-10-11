@@ -15,15 +15,13 @@ import 'package:test/test.dart';
 class SwizzlyModule extends Module {
   SwizzlyModule(Logic a) {
     a = addInput('a', a, width: a.width);
-    var b = addOutput('b', width: a.width + 2);
-    b <= [Const(1), a, Const(1)].swizzle();
+    final b = addOutput('b', width: a.width + 3);
+    b <= [Const(0), Const(1), a, Const(1)].swizzle();
   }
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('LogicValue', () {
     test('simple swizzle', () {
@@ -53,30 +51,30 @@ void main() {
 
   group('Logic', () {
     test('simple swizzle', () async {
-      var mod = SwizzlyModule(Logic());
+      final mod = SwizzlyModule(Logic());
       await mod.build();
-      var vectors = [
-        Vector({'a': 0}, {'b': bin('101')}),
-        Vector({'a': 1}, {'b': bin('111')}),
+      final vectors = [
+        Vector({'a': 0}, {'b': bin('0101')}),
+        Vector({'a': 1}, {'b': bin('0111')}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {'b': 3});
+          signalToWidthMap: {'b': 4});
       expect(simResult, equals(true));
     });
 
     test('const 0-width swizzle', () async {
-      var mod = SwizzlyModule(Const(0, width: 0));
+      final mod = SwizzlyModule(Const(0, width: 0));
       await mod.build();
-      var vectors = [
-        Vector({}, {'b': bin('11')}),
-        Vector({}, {'b': bin('11')}),
+      final vectors = [
+        Vector({}, {'b': bin('011')}),
+        Vector({}, {'b': bin('011')}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {'b': 2});
+          signalToWidthMap: {'b': 3});
       expect(simResult, equals(true));
     });
   });

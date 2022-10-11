@@ -8,19 +8,23 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// An object capable of converting a module into some new output format
 abstract class Synthesizer {
-  /// Determines whether [module] needs a separate definition or can just be described in-line.
+  /// Determines whether [module] needs a separate definition or can just be
+  /// described in-line.
   bool generatesDefinition(Module module);
 
-  /// Synthesizes [module] into a [SynthesisResult], given the mapping in [moduleToInstanceTypeMap].
+  /// Synthesizes [module] into a [SynthesisResult], given the mapping in
+  /// [moduleToInstanceTypeMap].
   SynthesisResult synthesize(
       Module module, Map<Module, String> moduleToInstanceTypeMap);
 }
 
 /// An object representing the output of a Synthesizer
+@immutable
 abstract class SynthesisResult {
   /// The top level [Module] associated with this result.
   final Module module;
@@ -28,7 +32,9 @@ abstract class SynthesisResult {
   /// A [Map] from [Module] instances to synthesis instance type names.
   final Map<Module, String> moduleToInstanceTypeMap;
 
-  SynthesisResult(this.module, this.moduleToInstanceTypeMap);
+  /// Represents a constant computed synthesis result for [module] given
+  /// the provided type mapping in [moduleToInstanceTypeMap].
+  const SynthesisResult(this.module, this.moduleToInstanceTypeMap);
 
   /// Whether two implementations are identical or not
   ///

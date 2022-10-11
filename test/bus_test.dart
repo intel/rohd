@@ -7,10 +7,9 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class BusTestModule extends Module {
   // --- Getters ---
@@ -62,46 +61,47 @@ class BusTestModule extends Module {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
-    var aBar = addOutput('a_bar', width: a.width);
-    var aAndB = addOutput('a_and_b', width: a.width);
+    final aBar = addOutput('a_bar', width: a.width);
+    final aAndB = addOutput('a_and_b', width: a.width);
 
-    var aBJoined = addOutput('a_b_joined', width: a.width + b.width);
-    var aPlusB = addOutput('a_plus_b', width: a.width);
-    var a1 = addOutput('a1');
+    final aBJoined = addOutput('a_b_joined', width: a.width + b.width);
+    final aPlusB = addOutput('a_plus_b', width: a.width);
+    final a1 = addOutput('a1');
+    final expressionBitSelect = addOutput('expression_bit_select', width: 4);
 
     // Logic Reverse value
-    var aReversed = addOutput('a_reversed', width: a.width);
+    final aReversed = addOutput('a_reversed', width: a.width);
     // Slicing with Positive Indices
-    var aShrunk1 = addOutput('a_shrunk1', width: 3);
-    var aShrunk2 = addOutput('a_shrunk2', width: 2);
-    var aShrunk3 = addOutput('a_shrunk3', width: 1);
+    final aShrunk1 = addOutput('a_shrunk1', width: 3);
+    final aShrunk2 = addOutput('a_shrunk2', width: 2);
+    final aShrunk3 = addOutput('a_shrunk3');
     // Slicing with negative indices
-    var aNegativeShrunk1 = addOutput('a_neg_shrunk1', width: 3);
-    var aNegativeShrunk2 = addOutput('a_neg_shrunk2', width: 2);
-    var aNegativeShrunk3 = addOutput('a_neg_shrunk3', width: 1);
+    final aNegativeShrunk1 = addOutput('a_neg_shrunk1', width: 3);
+    final aNegativeShrunk2 = addOutput('a_neg_shrunk2', width: 2);
+    final aNegativeShrunk3 = addOutput('a_neg_shrunk3');
     // Slicing and reversing the value
-    var aRSliced1 = addOutput('a_rsliced1', width: 5);
-    var aRSliced2 = addOutput('a_rsliced2', width: 2);
-    var aRSliced3 = addOutput('a_rsliced3', width: 1);
+    final aRSliced1 = addOutput('a_rsliced1', width: 5);
+    final aRSliced2 = addOutput('a_rsliced2', width: 2);
+    final aRSliced3 = addOutput('a_rsliced3');
     // Slicing and reversing the value via negative indices
-    var aRNegativeSliced1 = addOutput('a_r_neg_sliced1', width: 5);
-    var aRNegativeSliced2 = addOutput('a_r_neg_sliced2', width: 2);
-    var aRNegativeSliced3 = addOutput('a_r_neg_sliced3', width: 1);
+    final aRNegativeSliced1 = addOutput('a_r_neg_sliced1', width: 5);
+    final aRNegativeSliced2 = addOutput('a_r_neg_sliced2', width: 2);
+    final aRNegativeSliced3 = addOutput('a_r_neg_sliced3');
     // Getting the range of consecutive values over the Logic (subset)
-    var aRange1 = addOutput('a_range1', width: 3);
-    var aRange2 = addOutput('a_range2', width: 2);
-    var aRange3 = addOutput('a_range3', width: 1);
-    var aNegativeRange1 = addOutput('a_neg_range1', width: 3);
-    var aNegativeRange2 = addOutput('a_neg_range2', width: 2);
-    var aNegativeRange3 = addOutput('a_neg_range3', width: 1);
+    final aRange1 = addOutput('a_range1', width: 3);
+    final aRange2 = addOutput('a_range2', width: 2);
+    final aRange3 = addOutput('a_range3');
+    final aNegativeRange1 = addOutput('a_neg_range1', width: 3);
+    final aNegativeRange2 = addOutput('a_neg_range2', width: 2);
+    final aNegativeRange3 = addOutput('a_neg_range3');
     // Operator Indexing with positive index value
-    var aOperatorIndexing1 = addOutput('a_operator_indexing1', width: 1);
-    var aOperatorIndexing2 = addOutput('a_operator_indexing2', width: 1);
-    var aOperatorIndexing3 = addOutput('a_operator_indexing3', width: 1);
+    final aOperatorIndexing1 = addOutput('a_operator_indexing1');
+    final aOperatorIndexing2 = addOutput('a_operator_indexing2');
+    final aOperatorIndexing3 = addOutput('a_operator_indexing3');
     // Operator Indexing with negative index value
-    var aOperatorNegIndexing1 = addOutput('a_operator_neg_indexing1', width: 1);
-    var aOperatorNegIndexing2 = addOutput('a_operator_neg_indexing2', width: 1);
-    var aOperatorNegIndexing3 = addOutput('a_operator_neg_indexing3', width: 1);
+    final aOperatorNegIndexing1 = addOutput('a_operator_neg_indexing1');
+    final aOperatorNegIndexing2 = addOutput('a_operator_neg_indexing2');
+    final aOperatorNegIndexing3 = addOutput('a_operator_neg_indexing3');
 
     // --- Assignments ---
     aBar <= ~a;
@@ -140,19 +140,20 @@ class BusTestModule extends Module {
     aOperatorNegIndexing3 <= a[-2];
 
     aReversed <= a.reversed;
+
+    expressionBitSelect <=
+        [aBJoined, aShrunk1, aRange1, aRSliced1, aPlusB].swizzle().slice(3, 0);
   }
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('functional', () {
     test('NotGate bus', () async {
-      var a = Logic(width: 8);
-      var gtm = BusTestModule(a, Logic(width: 8));
-      var out = gtm.aBar;
+      final a = Logic(width: 8);
+      final gtm = BusTestModule(a, Logic(width: 8));
+      final out = gtm.aBar;
       await gtm.build();
       a.put(0xff);
       expect(out.value.toInt(), equals(0));
@@ -165,10 +166,10 @@ void main() {
     });
 
     test('And2Gate bus', () async {
-      var a = Logic(width: 8);
-      var b = Logic(width: 8);
-      var gtm = BusTestModule(a, b);
-      var out = gtm.aAndB;
+      final a = Logic(width: 8);
+      final b = Logic(width: 8);
+      final gtm = BusTestModule(a, b);
+      final out = gtm.aAndB;
       await gtm.build();
       a.put(0);
       b.put(0);
@@ -188,10 +189,10 @@ void main() {
     });
 
     test('Bus shrink', () async {
-      var a = Logic(width: 8);
-      var b = Logic(width: 8);
-      var gtm = BusTestModule(a, b);
-      var out = gtm.aShrunk1;
+      final a = Logic(width: 8);
+      final b = Logic(width: 8);
+      final gtm = BusTestModule(a, b);
+      final out = gtm.aShrunk1;
       await gtm.build();
       a.put(0);
       expect(out.value.toInt(), equals(0));
@@ -202,15 +203,15 @@ void main() {
     });
 
     test('Operator Indexing', () async {
-      var a = Logic(width: 8);
-      var b = Logic(width: 8);
-      var gtm = BusTestModule(a, b);
-      var out1 = gtm.aOperatorIndexing1;
-      var out2 = gtm.aOperatorIndexing2;
-      var out3 = gtm.aOperatorIndexing3;
-      var out4 = gtm.aOperatorNegIndexing1;
-      var out5 = gtm.aOperatorNegIndexing2;
-      var out6 = gtm.aOperatorNegIndexing3;
+      final a = Logic(width: 8);
+      final b = Logic(width: 8);
+      final gtm = BusTestModule(a, b);
+      final out1 = gtm.aOperatorIndexing1;
+      final out2 = gtm.aOperatorIndexing2;
+      final out3 = gtm.aOperatorIndexing3;
+      final out4 = gtm.aOperatorNegIndexing1;
+      final out5 = gtm.aOperatorNegIndexing2;
+      final out6 = gtm.aOperatorNegIndexing3;
       await gtm.build();
       a.put(bin('11111110'));
       expect(out1.value.toInt(), equals(0));
@@ -227,10 +228,10 @@ void main() {
     });
 
     test('Bus swizzle', () async {
-      var a = Logic(width: 8);
-      var b = Logic(width: 8);
-      var gtm = BusTestModule(a, b);
-      var out = gtm.aBJoined;
+      final a = Logic(width: 8);
+      final b = Logic(width: 8);
+      final gtm = BusTestModule(a, b);
+      final out = gtm.aBJoined;
       await gtm.build();
       a.put(0);
       b.put(0);
@@ -251,7 +252,7 @@ void main() {
   });
 
   group('simcompare', () {
-    var signalToWidthMap = {
+    final signalToWidthMap = {
       'a': 8,
       'b': 8,
       'a_bar': 8,
@@ -291,28 +292,29 @@ void main() {
       // 'a_operator_neg_indexing3': 1,
 
       // Logic bus value Reversed
-      'a_reversed': 8
+      'a_reversed': 8,
+      'expression_bit_select': 4,
     };
     test('NotGate bus', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0xff}, {'a_bar': 0}),
         Vector({'a': 0}, {'a_bar': 0xff}),
         Vector({'a': 0x55}, {'a_bar': 0xaa}),
         Vector({'a': 1}, {'a_bar': 0xfe}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('And2Gate bus', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_and_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_and_b': 0}),
         Vector({'a': 1, 'b': 0}, {'a_and_b': 0}),
@@ -320,16 +322,16 @@ void main() {
         Vector({'a': 0xff, 'b': 0xaa}, {'a_and_b': 0xaa}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus shrink', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         // Positive Indexing
         // Test set 1
         Vector({'a': 0}, {'a_shrunk1': 0}),
@@ -359,16 +361,16 @@ void main() {
         Vector({'a': 0xba}, {'a_neg_shrunk3': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus reverse slice', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         // Positive Indexing
         // Test set 1
         Vector({'a': 0}, {'a_rsliced1': 0}),
@@ -398,31 +400,31 @@ void main() {
         Vector({'a': 0xaf}, {'a_r_neg_sliced3': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus reversed', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0}, {'a_reversed': 0}),
         Vector({'a': 0xff}, {'a_reversed': 0xff}),
         Vector({'a': 0xf5}, {'a_reversed': 0xaf}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus range', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         // Positive Indexing
         // Test set 1
         Vector({'a': 0}, {'a_range1': 0}),
@@ -452,16 +454,16 @@ void main() {
         Vector({'a': bin('10000000')}, {'a_neg_range3': bin('1')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus swizzle', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_b_joined': 0}),
         Vector({'a': 0xff, 'b': 0xff}, {'a_b_joined': 0xffff}),
         Vector({'a': 0xff, 'b': 0}, {'a_b_joined': 0xff}),
@@ -469,31 +471,31 @@ void main() {
         Vector({'a': 0xaa, 'b': 0x55}, {'a_b_joined': 0x55aa}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('Bus bit', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0}, {'a1': 0}),
         Vector({'a': 0xff}, {'a1': 1}),
         Vector({'a': 0xf5}, {'a1': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));
     });
 
     test('add busses', () async {
-      var gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'a': 0, 'b': 0}, {'a_plus_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_plus_b': 1}),
         Vector({'a': 1, 'b': 0}, {'a_plus_b': 1}),
@@ -501,9 +503,22 @@ void main() {
         Vector({'a': 6, 'b': 7}, {'a_plus_b': 13}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('expression bit select', () async {
+      final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      final vectors = [
+        Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
   });

@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -18,7 +20,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   final List<Conditional> conditionals;
 
+  /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+
+  /// A mapping from internal driver signals to designated [Module] inputs.
   final Map<Logic, Logic> _assignedDriverToInputMap = {};
 
   final Uniquifier _portUniquifier = Uniquifier();
@@ -26,10 +31,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   _Always(this.conditionals, {String name = 'always'}) : super(name: name) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
-    for (var conditional in conditionals) {
-      for (var driver in conditional.getDrivers()) {
+    for (final conditional in conditionals) {
+      for (final driver in conditional.getDrivers()) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
-          var inputName = _portUniquifier.getUniqueName(
+          final inputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
                   Sanitizer.sanitizeSV('in${idx}_${driver.name}')));
           addInput(inputName, driver, width: driver.width);
@@ -37,9 +42,9 @@ abstract class _Always extends Module with CustomSystemVerilog {
           idx++;
         }
       }
-      for (var receiver in conditional.getReceivers()) {
+      for (final receiver in conditional.getReceivers()) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
-          var outputName = _portUniquifier.getUniqueName(
+          final outputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
                   Sanitizer.sanitizeSV('out${idx}_${receiver.name}')));
           addOutput(outputName, width: receiver.width);
@@ -57,13 +62,13 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   String _alwaysContents(Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var contents = '';
-    for (var conditional in conditionals) {
-      contents += conditional.verilogContents(
-              1, inputsNameMap, outputsNameMap, assignOperator) +
-          '\n';
+    final contents = StringBuffer();
+    for (final conditional in conditionals) {
+      final subContents = conditional.verilogContents(
+          1, inputsNameMap, outputsNameMap, assignOperator);
+      contents.write('$subContents\n');
     }
-    return contents;
+    return contents.toString();
   }
 
   /// The "always" part of the `always` block when generating SystemVerilog.
@@ -93,37 +98,137 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
+///
+/// Note that it is necessary to build this module and any sensitive
+/// dependencies in order for sensitivity detection to work properly
+/// in all cases.
 class Combinational extends _Always {
+  /// Constructs a new [Combinational] which executes [conditionals] in order
+  /// procedurally.
   Combinational(List<Conditional> conditionals, {String name = 'combinational'})
       : super(conditionals, name: name) {
     _execute(); // for initial values
-    for (var element in _assignedDriverToInputMap.keys) {
-      element.glitch.listen((args) {
+    for (final driver in _assignedDriverToInputMap.keys) {
+      driver.glitch.listen((args) {
         _execute();
       });
     }
   }
 
-  /// Keeps track of whether this block is already mid-execution, in order to detect reentrance.
+  @override
+  Future<void> build() async {
+    // any glitch on an input to an output's sensitivity should
+    // trigger re-execution
+    _listenToSensitivities();
+
+    await super.build();
+  }
+
+  /// Sets up additional glitch listening for sensitive modules.
+  void _listenToSensitivities() {
+    final sensitivities = <Logic>{};
+    for (final out in outputs.values) {
+      final newSensitivities = _collectSensitivities(out);
+      if (newSensitivities != null) {
+        sensitivities.addAll(newSensitivities);
+      }
+    }
+
+    for (final sensitivity in sensitivities) {
+      sensitivity.glitch.listen((args) {
+        _execute();
+      });
+    }
+  }
+
+  /// Recursively collects a list of all [Logic]s that this should be sensitive
+  /// to beyond direct inputs.
+  ///
+  /// Use [alreadyParsed] to prevent searching down paths already searched.
+  Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
+    Set<Logic>? collection;
+
+    alreadyParsed ??= {};
+    if (alreadyParsed.contains(src)) {
+      // we're in a loop or already traversed this path, abandon it
+      return null;
+    }
+    alreadyParsed.add(src);
+
+    final dstConnections = src.dstConnections.toSet();
+    if (src.isInput) {
+      if (src.parentModule! is Sequential) {
+        // sequential logic can't be a sensitivity, so ditch those
+        return null;
+      }
+
+      // we're at the input to another module, grab all the outputs of it and
+      // continue searching
+      dstConnections.addAll(src.parentModule!.outputs.values);
+    }
+
+    if (dstConnections.isEmpty) {
+      // we've reached the end of the line and not hit an input to this
+      // Combinational
+      return null;
+    }
+
+    for (final dst in dstConnections) {
+      // if any of these are an input to this Combinational, then we've found
+      // a sensitivity
+      if (dst.isInput && dst.parentModule! == this) {
+        // make sure we have something to return
+        collection ??= {};
+      } else {
+        // otherwise, let's look deeper to see if any others down the path
+        // are sensitivities
+        final subSensitivities = _collectSensitivities(dst, alreadyParsed);
+
+        if (subSensitivities == null) {
+          // if we get null, then it was a dead end
+          continue;
+        } else {
+          // otherwise, we have some sensitivities to send back
+          collection ??= {};
+          collection.addAll(subSensitivities);
+          if (dst.isInput) {
+            // collect all the inputs of this module too as sensitivities
+            collection.addAll(dst.parentModule!.inputs.values);
+          }
+        }
+      }
+    }
+
+    return collection;
+  }
+
+  /// Keeps track of whether this block is already mid-execution, in order to
+  /// detect reentrance.
   bool _isExecuting = false;
 
   /// Performs the functional behavior of this block.
   void _execute() {
     if (_isExecuting) {
-      // this combinational is already executing, which means an input has changed as a result
-      // of some output of this combinational changing.  this is imperative style, so don't loop
+      // this combinational is already executing, which means an input has
+      // changed as a result of some output of this combinational changing.
+      // this is imperative style, so don't loop
       return;
     }
 
     _isExecuting = true;
 
-    // combinational must always drive all outputs or else you get X!
-    for (var element in _assignedReceiverToOutputMap.values) {
-      element.put(LogicValue.x, fill: true);
+    final drivenLogics = <Logic>{};
+    for (final element in conditionals) {
+      drivenLogics.addAll(element.execute());
     }
 
-    for (var element in conditionals) {
-      element.execute();
+    // combinational must always drive all outputs or else you get X!
+    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+      for (final receiverOutputPair in _assignedReceiverToOutputMap.entries) {
+        if (!drivenLogics.contains(receiverOutputPair.key)) {
+          receiverOutputPair.value.put(LogicValue.x, fill: true);
+        }
+      }
     }
 
     _isExecuting = false;
@@ -135,13 +240,14 @@ class Combinational extends _Always {
   String assignOperator() => '=';
 }
 
+/// Deprecated: use [Sequential] instead.
 @Deprecated('Use Sequential instead')
 typedef FF = Sequential;
 
 /// Represents a block of sequential logic.
 ///
-/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge triggered by
-/// either one trigger or multiple with [Sequential.multi].
+/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge
+/// triggered by either one trigger or multiple with [Sequential.multi].
 class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
@@ -156,7 +262,7 @@ class Sequential extends _Always {
       {String name = 'sequential'})
       : super(conditionals, name: name) {
     for (var i = 0; i < clks.length; i++) {
-      var clk = clks[i];
+      final clk = clks[i];
       if (clk.width > 1) {
         throw Exception('Each clk must be 1 bit, but saw $clk.');
       }
@@ -170,16 +276,19 @@ class Sequential extends _Always {
     _setup();
   }
 
-  /// A map from input [Logic]s to the values that should be used for computations on the edge.
+  /// A map from input [Logic]s to the values that should be used for
+  /// computations on the edge.
   final Map<Logic, LogicValue> _inputToPreTickInputValuesMap = {};
 
   /// The value of the clock before the tick.
   final List<LogicValue?> _preTickClkValues = [];
 
-  /// Keeps track of whether the clock has glitched and an [_execute] is necessary.
+  /// Keeps track of whether the clock has glitched and an [_execute] is
+  /// necessary.
   bool _pendingExecute = false;
 
-  /// A set of drivers whose values in [_inputToPreTickInputValuesMap] need updating after the tick completes.
+  /// A set of drivers whose values in [_inputToPreTickInputValuesMap] need
+  /// updating after the tick completes.
   final Set<Logic> _driverInputsPendingPostUpdate = {};
 
   /// Keeps track of whether values need to be updated post-tick.
@@ -188,31 +297,34 @@ class Sequential extends _Always {
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
     // one time is enough, it's a final map
-    for (var element in conditionals) {
+    for (final element in conditionals) {
       element._updateOverrideMap(_inputToPreTickInputValuesMap);
     }
 
     // listen to every input of this `Sequential` for changes
-    for (var driverInput in _assignedDriverToInputMap.values) {
-      // pre-fill the _inputToPreTickInputValuesMap so that nothing ever uses values directly
+    for (final driverInput in _assignedDriverToInputMap.values) {
+      // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
+      // uses values directly
       _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
 
-      driverInput.glitch.listen((event) {
+      driverInput.glitch.listen((event) async {
         if (Simulator.phase != SimulatorPhase.clkStable) {
-          // if the change happens not when the clocks are stable, immediately update the map
+          // if the change happens not when the clocks are stable, immediately
+          // update the map
           _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
         } else {
-          // if this is during stable clocks, it's probably another flop driving it, so hold onto it for later
+          // if this is during stable clocks, it's probably another flop
+          // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            Simulator.postTick.first.then((value) {
+            unawaited(Simulator.postTick.first.then((value) {
               // once the tick has completed, we can update the override maps
-              for (var driverInput in _driverInputsPendingPostUpdate) {
+              for (final driverInput in _driverInputsPendingPostUpdate) {
                 _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
               }
               _driverInputsPendingPostUpdate.clear();
               _pendingPostUpdate = false;
-            });
+            }));
           }
           _pendingPostUpdate = true;
         }
@@ -221,16 +333,16 @@ class Sequential extends _Always {
 
     // listen to every clock glitch to see if we need to execute
     for (var i = 0; i < _clks.length; i++) {
-      var clk = _clks[i];
-      clk.glitch.listen((event) {
+      final clk = _clks[i];
+      clk.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
         _preTickClkValues[i] ??= event.previousValue;
         if (!_pendingExecute) {
-          Simulator.clkStable.first.then((value) {
+          unawaited(Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          });
+          }));
         }
         _pendingExecute = true;
       });
@@ -238,10 +350,11 @@ class Sequential extends _Always {
   }
 
   void _execute() {
-    bool anyClkInvalid = false;
-    bool anyClkPosedge = false;
+    var anyClkInvalid = false;
+    var anyClkPosedge = false;
     for (var i = 0; i < _clks.length; i++) {
-      // if the pre-tick value is null, then it should have the same value as it currently does
+      // if the pre-tick value is null, then it should have the same value as
+      // it currently does
       if (!_clks[i].value.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
         anyClkInvalid = true;
         break;
@@ -253,18 +366,18 @@ class Sequential extends _Always {
     }
 
     if (anyClkInvalid) {
-      for (var receiverOutput in _assignedReceiverToOutputMap.values) {
+      for (final receiverOutput in _assignedReceiverToOutputMap.values) {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      var allDrivenSignals = <Logic>[];
-      for (var element in conditionals) {
+      final allDrivenSignals = <Logic>[];
+      for (final element in conditionals) {
         allDrivenSignals.addAll(element.execute());
       }
       if (allDrivenSignals.length != allDrivenSignals.toSet().length) {
-        var alreadySet = <Logic>{};
-        var redrivenSignals = <Logic>{};
-        for (var signal in allDrivenSignals) {
+        final alreadySet = <Logic>{};
+        final redrivenSignals = <Logic>{};
+        for (final signal in allDrivenSignals) {
           if (alreadySet.contains(signal)) {
             redrivenSignals.add(signal);
           }
@@ -283,7 +396,7 @@ class Sequential extends _Always {
 
   @override
   String alwaysVerilogStatement(Map<String, String> inputs) {
-    String triggers =
+    final triggers =
         _clks.map((clk) => 'posedge ${inputs[clk.name]}').join(' or ');
     return 'always_ff @($triggers)';
   }
@@ -292,28 +405,33 @@ class Sequential extends _Always {
   String assignOperator() => '<=';
 }
 
-/// Represents an some logical assignments or actions that will only happen under certain conditions.
+/// Represents an some logical assignments or actions that will only happen
+/// under certain conditions.
 abstract class Conditional {
-  /// A [Map] from receiver [Logic] signals passed into this [Conditional] to the appropriate output logic port.
+  /// A [Map] from receiver [Logic] signals passed into this [Conditional] to
+  /// the appropriate output logic port.
   late Map<Logic, Logic> _assignedReceiverToOutputMap;
 
-  /// A [Map] from driver [Logic] signals passed into this [Conditional] to the appropriate input logic port.
+  /// A [Map] from driver [Logic] signals passed into this [Conditional] to
+  /// the appropriate input logic port.
   late Map<Logic, Logic> _assignedDriverToInputMap;
 
-  /// A [Map] of override [LogicValue]s for driver [Logic]s of this [Conditional].
+  /// A [Map] of override [LogicValue]s for driver [Logic]s of
+  /// this [Conditional].
   ///
   /// This is used for things like [Sequential]'s pre-tick values.
   Map<Logic, LogicValue> _driverValueOverrideMap = {};
 
-  /// Updates the values of [_assignedReceiverToOutputMap] and [_assignedDriverToInputMap] and
-  /// passes them down to all sub-[Conditional]s as well.
+  /// Updates the values of [_assignedReceiverToOutputMap] and
+  /// [_assignedDriverToInputMap] and passes them down to all
+  /// sub-[Conditional]s as well.
   void _updateAssignmentMaps(
     Map<Logic, Logic> assignedReceiverToOutputMap,
     Map<Logic, Logic> assignedDriverToInputMap,
   ) {
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
-    for (var conditional in getConditionals()) {
+    for (final conditional in getConditionals()) {
       conditional._updateAssignmentMaps(
           assignedReceiverToOutputMap, assignedDriverToInputMap);
     }
@@ -324,64 +442,68 @@ abstract class Conditional {
   void _updateOverrideMap(Map<Logic, LogicValue> driverValueOverrideMap) {
     // this is for always_ff pre-tick values
     _driverValueOverrideMap = driverValueOverrideMap;
-    for (var conditional in getConditionals()) {
+    for (final conditional in getConditionals()) {
       conditional._updateOverrideMap(driverValueOverrideMap);
     }
   }
 
-  /// Gets the value that should be used for execution for the input port associated with [driver].
+  /// Gets the value that should be used for execution for the input port
+  /// associated with [driver].
   @protected
-  LogicValue driverValue(Logic driver) {
-    return _driverValueOverrideMap.containsKey(driverInput(driver))
-        ? _driverValueOverrideMap[driverInput(driver)]!
-        : _assignedDriverToInputMap[driver]!.value;
-  }
+  LogicValue driverValue(Logic driver) =>
+      _driverValueOverrideMap.containsKey(driverInput(driver))
+          ? _driverValueOverrideMap[driverInput(driver)]!
+          : _assignedDriverToInputMap[driver]!.value;
 
   /// Gets the input port associated with [driver].
   @protected
-  Logic driverInput(Logic driver) {
-    return _assignedDriverToInputMap[driver]!;
-  }
+  Logic driverInput(Logic driver) => _assignedDriverToInputMap[driver]!;
 
   /// Gets the output port associated with [receiver].
   @protected
-  Logic receiverOutput(Logic receiver) {
-    return _assignedReceiverToOutputMap[receiver]!;
-  }
+  Logic receiverOutput(Logic receiver) =>
+      _assignedReceiverToOutputMap[receiver]!;
 
   /// Executes the functionality represented by this [Conditional].
   ///
-  /// Returns a [List] of all [Logic] signals which were driven during execution.
+  /// Returns a [List] of all [Logic] signals which were driven during
+  /// execution.
   @protected
-  List<Logic> execute();
+  Set<Logic> execute();
 
-  /// Lists *all* receivers, recursively including all sub-[Conditional]s receivers.
+  /// Lists *all* receivers, recursively including all sub-[Conditional]s
+  /// receivers.
   List<Logic> getReceivers();
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
   List<Logic> getDrivers();
 
-  /// Lists of *all* [Conditional]s contained within this [Conditional] (not including itself).
+  /// Lists of *all* [Conditional]s contained within this [Conditional]
+  /// (not including itself).
   ///
   /// Recursively calls down through sub-[Conditional]s.
   List<Conditional> getConditionals();
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///
-  /// The [indent] is used for pretty-printing, and should generally be incremented for sub-[Conditional]s.
-  /// The [inputsNameMap] and [outputsNameMap] are a mapping from port names to SystemVerilog variable
-  /// names for inputs and outputs, respectively.  The [assignOperator] is the SystemVerilog operator
-  /// that should be used for any assignments within this [Conditional].
+  /// The [indent] is used for pretty-printing, and should generally be
+  /// incremented for sub-[Conditional]s. The [inputsNameMap] and
+  /// [outputsNameMap] are a mapping from port names to SystemVerilog variable
+  /// names for inputs and outputs, respectively.  The [assignOperator] is the
+  /// SystemVerilog operator that should be used for any assignments within
+  /// this [Conditional].
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator);
 
-  /// Calculates an amount of padding to provie at the beginning of each new line based on [indent].
+  /// Calculates an amount of padding to provie at the beginning of each new
+  /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 }
 
 /// An assignment that only happens under certain conditions.
 ///
-/// [Logic] has a short-hand for creating [ConditionalAssign] via the `<` operator.
+/// [Logic] has a short-hand for creating [ConditionalAssign] via the
+///  `<` operator.
 class ConditionalAssign extends Conditional {
   /// The input to this assignment.
   final Logic receiver;
@@ -389,6 +511,7 @@ class ConditionalAssign extends Conditional {
   /// The output of this assignment.
   final Logic driver;
 
+  /// Conditionally assigns [receiver] to the value of [driver].
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
       throw Exception('Width for $receiver and $driver must match but do not.');
@@ -403,17 +526,17 @@ class ConditionalAssign extends Conditional {
   List<Conditional> getConditionals() => [];
 
   @override
-  List<Logic> execute() {
+  Set<Logic> execute() {
     receiverOutput(receiver).put(driverValue(driver));
-    return [receiver];
+    return {receiver};
   }
 
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var padding = Conditional.calcPadding(indent);
-    var driverName = inputsNameMap[driverInput(driver).name]!;
-    var receiverName = outputsNameMap[receiverOutput(receiver).name]!;
+    final padding = Conditional.calcPadding(indent);
+    final driverName = inputsNameMap[driverInput(driver).name]!;
+    final receiverName = outputsNameMap[receiverOutput(receiver).name]!;
     return '$padding$receiverName $assignOperator $driverName;';
   }
 }
@@ -426,6 +549,7 @@ class CaseItem {
   /// A [List] of [Conditional]s to execute when [value] is matched.
   final List<Conditional> then;
 
+  /// Executes [then] when [value] matches.
   CaseItem(this.value, this.then);
 
   @override
@@ -438,66 +562,79 @@ class CaseItem {
 /// behavior similar to what is implemented in SystemVerilog.
 ///
 /// [priority] indicates that the decisions must be executed in the same order
-/// that they are listed, and that every legal scenario is included.  An exception
-/// will be thrown if there is no match to a scenario.
+/// that they are listed, and that every legal scenario is included.
+/// An exception will be thrown if there is no match to a scenario.
 ///
-/// [unique] indicates that for a given expression, only one item will match.  If
-/// multiple items match the expression, an exception will be thrown.  If there is no
-/// match and no default item, an exception will also be thrown.
-enum ConditionalType { none, unique, priority }
+/// [unique] indicates that for a given expression, only one item will match.
+/// If multiple items match the expression, an exception will be thrown.
+/// If there is no match and no default item, an exception will also be thrown.
+enum ConditionalType {
+  /// There are no special checking or expectations.
+  none,
 
-/// A block of [CaseItem]s where only the one with a matching [CaseItem.value] is executed.
+  /// Expect that exactly one condition is true.
+  unique,
+
+  /// Expect that at least one condition is true, and the first one is executed.
+  priority
+}
+
+/// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
+/// is executed.
 ///
-/// Searches for which of [items] appropriately matches [expression], then executes the
-/// matching [CaseItem].  If [defaultItem] is specified, and no other item matches, then
-/// that one is executed.  Use [conditionalType] to modify behavior in ways similar to
-/// what is available in SystemVerilog.
+/// Searches for which of [items] appropriately matches [expression], then
+/// executes the matching [CaseItem].  If [defaultItem] is specified, and no
+/// other item matches, then that one is executed.  Use [conditionalType] to
+/// modify behavior in ways similar to what is available in SystemVerilog.
 class Case extends Conditional {
   /// A logical signal to match against.
   final Logic expression;
 
-  /// An ordered collection of [CaseItem]s to search through for a match to [expression].
+  /// An ordered collection of [CaseItem]s to search through for a match
+  /// to [expression].
   final List<CaseItem> items;
 
   /// The default to execute when there was no match with any other [CaseItem]s.
   final List<Conditional>? defaultItem;
 
-  /// The type of case block this is, for special attributes (e.g. [ConditionalType.unique],
-  /// [ConditionalType.priority]).
+  /// The type of case block this is, for special attributes
+  /// (e.g. [ConditionalType.unique], [ConditionalType.priority]).
   ///
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
+
+  /// Whenever an item in [items] matches [expression], it will be executed.
+  ///
+  /// If none of [items] match, then [defaultItem] is executed.
   Case(this.expression, this.items,
       {this.defaultItem, this.conditionalType = ConditionalType.none});
 
   /// Returns true iff [value] matches the expressions current value.
   @protected
-  bool isMatch(LogicValue value) {
-    return expression.value == value;
-  }
+  bool isMatch(LogicValue value) => expression.value == value;
 
   /// Returns the SystemVerilog keyword to represent this case block.
   @protected
   String get caseType => 'case';
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    final drivenLogics = <Logic>{};
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (var receiver in getReceivers()) {
+      for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
       }
-      return [];
+      return {};
     }
 
     CaseItem? foundMatch;
 
-    for (var item in items) {
+    for (final item in items) {
       // match on the first matchinig item
       if (isMatch(item.value.value)) {
-        for (var conditional in item.then) {
+        for (final conditional in item.then) {
           drivenLogics.addAll(conditional.execute());
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
@@ -516,7 +653,7 @@ class Case extends Conditional {
 
     // no items matched
     if (foundMatch == null && defaultItem != null) {
-      for (var conditional in defaultItem!) {
+      for (final conditional in defaultItem!) {
         drivenLogics.addAll(conditional.execute());
       }
     } else if (foundMatch == null &&
@@ -530,25 +667,21 @@ class Case extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() {
-    return [
-      ...items
-          .map((item) => item.then)
-          .expand((conditional) => conditional)
-          .toList(),
-      ...defaultItem ?? []
-    ];
-  }
+  List<Conditional> getConditionals() => [
+        ...items.map((item) => item.then).expand((conditional) => conditional),
+        ...defaultItem ?? []
+      ];
 
   @override
   List<Logic> getDrivers() {
-    var drivers = <Logic>[expression];
-    for (var item in items) {
-      drivers.add(item.value);
-      drivers.addAll(item.then
-          .map((conditional) => conditional.getDrivers())
-          .expand((driver) => driver)
-          .toList());
+    final drivers = <Logic>[expression];
+    for (final item in items) {
+      drivers
+        ..add(item.value)
+        ..addAll(item.then
+            .map((conditional) => conditional.getDrivers())
+            .expand((driver) => driver)
+            .toList());
     }
     if (defaultItem != null) {
       drivers.addAll(defaultItem!
@@ -561,8 +694,8 @@ class Case extends Conditional {
 
   @override
   List<Logic> getReceivers() {
-    var receivers = <Logic>[];
-    for (var item in items) {
+    final receivers = <Logic>[];
+    for (final item in items) {
       receivers.addAll(item.then
           .map((conditional) => conditional.getReceivers())
           .expand((receiver) => receiver)
@@ -580,49 +713,57 @@ class Case extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var padding = Conditional.calcPadding(indent);
-    var expressionName = inputsNameMap[driverInput(expression).name];
+    final padding = Conditional.calcPadding(indent);
+    final expressionName = inputsNameMap[driverInput(expression).name];
     var caseHeader = caseType;
     if (conditionalType == ConditionalType.priority) {
       caseHeader = 'priority $caseType';
     } else if (conditionalType == ConditionalType.unique) {
       caseHeader = 'unique $caseType';
     }
-    var verilog = '$padding$caseHeader ($expressionName) \n';
-    var subPadding = Conditional.calcPadding(indent + 2);
-    for (var item in items) {
-      var conditionName = inputsNameMap[driverInput(item.value).name];
-      var caseContents = item.then
+    final verilog = StringBuffer('$padding$caseHeader ($expressionName) \n');
+    final subPadding = Conditional.calcPadding(indent + 2);
+    for (final item in items) {
+      final conditionName = inputsNameMap[driverInput(item.value).name];
+      final caseContents = item.then
           .map((conditional) => conditional.verilogContents(
               indent + 4, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
-      verilog += '''$subPadding$conditionName : begin
+      verilog.write('''
+$subPadding$conditionName : begin
 $caseContents
 ${subPadding}end
-''';
+''');
     }
     if (defaultItem != null) {
-      var defaultCaseContents = defaultItem!
+      final defaultCaseContents = defaultItem!
           .map((conditional) => conditional.verilogContents(
               indent + 4, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
-      verilog += '''${subPadding}default : begin
+      verilog.write('''
+${subPadding}default : begin
 $defaultCaseContents
 ${subPadding}end
-''';
+''');
     }
-    verilog += '${padding}endcase\n';
+    verilog.write('${padding}endcase\n');
 
-    return verilog;
+    return verilog.toString();
   }
 }
 
-/// A special version of [Case] which can do wildcard matching via `z` in the expression.
+/// A special version of [Case] which can do wildcard matching via `z` in
+/// the expression.
 ///
 /// Any `z` in the value of a [CaseItem] will act as a wildcard.
 ///
-/// Does not support SystemVerilog's `?` syntax, which is exactly functionally equivalent to `z` syntax.
+/// Does not support SystemVerilog's `?` syntax, which is exactly functionally
+/// equivalent to `z` syntax.
 class CaseZ extends Case {
+  /// Whenever an item in [items] matches [expression], it will be executed, but
+  /// the definition of matches allows for `z` to be a wildcard.
+  ///
+  /// If none of [items] match, then [defaultItem] is executed.
   CaseZ(Logic expression, List<CaseItem> items,
       {List<Conditional>? defaultItem,
       ConditionalType conditionalType = ConditionalType.none})
@@ -657,10 +798,11 @@ class ElseIf {
   /// The [Conditional]s to execute if [condition] is satisfied.
   final List<Conditional> then;
 
+  /// If [condition] is 1, then [then] will be executed.
   ElseIf(this.condition, this.then);
 }
 
-/// A conditional block to execute only if [condition] is satisified.
+/// A conditional block to execute only if `condition` is satisified.
 ///
 /// Intended for use with [IfBlock].
 typedef Iff = ElseIf;
@@ -669,36 +811,42 @@ typedef Iff = ElseIf;
 ///
 /// This should come last in [IfBlock].
 class Else extends Iff {
+  /// If none of the proceding [Iff] or [ElseIf] are executed, then
+  /// [then] will be executed.
   Else(List<Conditional> then) : super(Const(1), then);
 }
 
-/// Represents a chain of blocks of code to be conditionally executed, like `if`/`else if`/`else`.
+/// Represents a chain of blocks of code to be conditionally executed, like
+/// `if`/`else if`/`else`.
 ///
-/// This is functionally equivalent to chaining together [If]s, but this syntax is a little nicer
+/// This is functionally equivalent to chaining together [If]s, but this syntax
+/// is a little nicer
 /// for long chains.
 class IfBlock extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
   /// The first item should be an [Iff], and if an [Else] is included it must
-  /// be the last item.  Any other items should be [ElseIf].  It is okay to make the
-  /// first item an [ElseIf], it will act just like an [Iff].
+  /// be the last item.  Any other items should be [ElseIf].  It is okay to
+  /// make thefirst item an [ElseIf], it will act just like an [Iff].
   final List<Iff> iffs;
 
+  /// Checks the conditions for [iffs] in order and executes the first one
+  /// whose condition is enabled.
   IfBlock(this.iffs);
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    final drivenLogics = <Logic>{};
 
-    for (var iff in iffs) {
+    for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
-        for (var conditional in iff.then) {
+        for (final conditional in iff.then) {
           drivenLogics.addAll(conditional.execute());
         }
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
         // x and z propagation
-        for (var receiver in getReceivers()) {
+        for (final receiver in getReceivers()) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
         }
         break;
@@ -709,30 +857,27 @@ class IfBlock extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() {
-    return iffs
-        .map((iff) => iff.then)
-        .expand((conditional) => conditional)
-        .toList();
-  }
+  List<Conditional> getConditionals() =>
+      iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
 
   @override
   List<Logic> getDrivers() {
-    var drivers = <Logic>[];
-    for (var iff in iffs) {
-      drivers.add(iff.condition);
-      drivers.addAll(iff.then
-          .map((conditional) => conditional.getDrivers())
-          .expand((driver) => driver)
-          .toList());
+    final drivers = <Logic>[];
+    for (final iff in iffs) {
+      drivers
+        ..add(iff.condition)
+        ..addAll(iff.then
+            .map((conditional) => conditional.getDrivers())
+            .expand((driver) => driver)
+            .toList());
     }
     return drivers;
   }
 
   @override
   List<Logic> getReceivers() {
-    var receivers = <Logic>[];
-    for (var iff in iffs) {
+    final receivers = <Logic>[];
+    for (final iff in iffs) {
       receivers.addAll(iff.then
           .map((conditional) => conditional.getReceivers())
           .expand((receiver) => receiver)
@@ -744,31 +889,32 @@ class IfBlock extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var padding = Conditional.calcPadding(indent);
-    var verilog = '';
-    for (var iff in iffs) {
+    final padding = Conditional.calcPadding(indent);
+    final verilog = StringBuffer();
+    for (final iff in iffs) {
       if (iff is Else && iff != iffs.last) {
         throw Exception('Else must come last in an IfBlock.');
       }
-      var header = iff == iffs.first
+      final header = iff == iffs.first
           ? 'if'
           : iff is Else
               ? 'else'
               : 'else if';
 
-      var conditionName = inputsNameMap[driverInput(iff.condition).name];
-      var ifContents = iff.then
+      final conditionName = inputsNameMap[driverInput(iff.condition).name];
+      final ifContents = iff.then
           .map((conditional) => conditional.verilogContents(
               indent + 2, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
-      var condition = iff is! Else ? '($conditionName)' : '';
-      verilog += '''$padding$header$condition begin
+      final condition = iff is! Else ? '($conditionName)' : '';
+      verilog.write('''
+$padding$header$condition begin
 $ifContents
-${padding}end ''';
+${padding}end ''');
     }
-    verilog += '\n';
+    verilog.write('\n');
 
-    return verilog;
+    return verilog.toString();
   }
 }
 
@@ -783,15 +929,16 @@ class If extends Conditional {
   /// The condition that decides if [then] or [orElse] is executed.
   final Logic condition;
 
+  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
   If(this.condition, {this.then = const [], this.orElse = const []});
 
   @override
   List<Logic> getReceivers() {
-    var allReceivers = <Logic>[];
-    for (var element in then) {
+    final allReceivers = <Logic>[];
+    for (final element in then) {
       allReceivers.addAll(element.getReceivers());
     }
-    for (var element in orElse) {
+    for (final element in orElse) {
       allReceivers.addAll(element.getReceivers());
     }
     return allReceivers;
@@ -799,11 +946,11 @@ class If extends Conditional {
 
   @override
   List<Logic> getDrivers() {
-    var allDrivers = <Logic>[condition];
-    for (var element in then) {
+    final allDrivers = <Logic>[condition];
+    for (final element in then) {
       allDrivers.addAll(element.getDrivers());
     }
-    for (var element in orElse) {
+    for (final element in orElse) {
       allDrivers.addAll(element.getDrivers());
     }
     return allDrivers;
@@ -813,19 +960,19 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  List<Logic> execute() {
-    var drivenLogics = <Logic>[];
+  Set<Logic> execute() {
+    final drivenLogics = <Logic>{};
     if (driverValue(condition)[0] == LogicValue.one) {
-      for (var conditional in then) {
+      for (final conditional in then) {
         drivenLogics.addAll(conditional.execute());
       }
     } else if (driverValue(condition)[0] == LogicValue.zero) {
-      for (var conditional in orElse) {
+      for (final conditional in orElse) {
         drivenLogics.addAll(conditional.execute());
       }
     } else {
       // x and z propagation
-      for (var receiver in getReceivers()) {
+      for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
       }
     }
@@ -835,34 +982,41 @@ class If extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    var padding = Conditional.calcPadding(indent);
-    var conditionName = inputsNameMap[driverInput(condition).name];
-    var ifContents = then
+    final padding = Conditional.calcPadding(indent);
+    final conditionName = inputsNameMap[driverInput(condition).name];
+    final ifContents = then
         .map((conditional) => conditional.verilogContents(
             indent + 2, inputsNameMap, outputsNameMap, assignOperator))
         .join('\n');
-    var elseContents = orElse
+    final elseContents = orElse
         .map((conditional) => conditional.verilogContents(
             indent + 2, inputsNameMap, outputsNameMap, assignOperator))
         .join('\n');
-    var verilog = '''${padding}if($conditionName) begin
+    var verilog = '''
+${padding}if($conditionName) begin
 $ifContents
 ${padding}end ''';
     if (orElse.isNotEmpty) {
-      verilog += '''else begin
+      verilog += '''
+else begin
 $elseContents
 ${padding}end ''';
     }
-    verilog += '\n';
 
-    return verilog;
+    return '$verilog\n';
   }
 }
 
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
-  /// Name for a port of this module.
-  late final String _clk, _d, _q;
+  /// Name for the clk of this flop.
+  late final String _clk;
+
+  /// Name for the input of this flop.
+  late final String _d;
+
+  /// Name for the output of this flop.
+  late final String _q;
 
   /// The clock, posedge triggered.
   Logic get clk => input(_clk);
@@ -873,8 +1027,11 @@ class FlipFlop extends Module with CustomSystemVerilog {
   /// The output of the flop.
   Logic get q => output(_q);
 
+  /// Constructs a flip flop which is positive edge triggered on [clk].
   FlipFlop(Logic clk, Logic d, {String name = 'flipflop'}) : super(name: name) {
-    if (clk.width != 1) throw Exception('clk must be 1 bit');
+    if (clk.width != 1) {
+      throw Exception('clk must be 1 bit');
+    }
     _clk = Module.unpreferredName('clk');
     _d = Module.unpreferredName('d');
     _q = Module.unpreferredName('q');
@@ -895,9 +1052,9 @@ class FlipFlop extends Module with CustomSystemVerilog {
     if (inputs.length != 2 || outputs.length != 1) {
       throw Exception('FlipFlop has exactly two inputs and one output.');
     }
-    var clk = inputs[_clk]!;
-    var d = inputs[_d]!;
-    var q = outputs[_q]!;
+    final clk = inputs[_clk]!;
+    final d = inputs[_d]!;
+    final q = outputs[_q]!;
     return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
   }
 }
