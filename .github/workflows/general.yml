@@ -59,7 +59,7 @@ jobs:
         run: tool/gh_actions/generate_documentation.sh
 
       - name: Deploy documentation
-        uses: JamesIves/github-pages-deploy-action@4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: doc/api
           branch: docs
