@@ -18,7 +18,9 @@ set -euo pipefail
 #   https://github.com/dart-lang/dartdoc/issues/2907
 #   https://github.com/dart-lang/dartdoc/issues/1959
 
-output=$(dart doc --validate-links --dry-run 2>&1 | tee /dev/tty)
+output=$(dart doc --validate-links --dry-run 2>&1 | tee)
+
+echo "${output}"
 
 # In case of problems, the variable will contain a non-empty string.
 if [ -z "${output}" ]; then
