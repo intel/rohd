@@ -307,16 +307,18 @@ abstract class LogicValue {
   LogicValue getRange(int startIndex, int endIndex) {
     var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
     var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    // TODO: modifiedEndIndex must not be less than or equal to start Index
     if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
           'End ($endIndex) cannot be less than start ($startIndex).');
     }
     if (modifiedEndIndex > width) {
-      throw Exception('End ($endIndex) must be less than width ($width).');
+      throw Exception(
+          'End $modifiedEndIndex(=$endIndex) must be less than width ($width).');
     }
     if (modifiedStartIndex < 0) {
       throw Exception(
-          'Start ($startIndex) must be greater than or equal to 0.');
+          'Start $modifiedStartIndex(=$startIndex) must be greater than or equal to 0.');
     }
     return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
@@ -333,20 +335,15 @@ abstract class LogicValue {
   /// to the original value.
   ///
   /// ```dart [TODO]
-  /// var bitValue = Logic(name: "bit_value", width: 8);
-  /// bitValue <= 0x; // Assign a LogicValue literal to our new variable
-  /// // Positive Indexing
-  /// var bitIndexValue = bitValue[2];
-  /// print(bitIndexValue); // This prints `1b'0x1`
-  /// // Negative Indexing
-  /// var bitIndexValue = bitValue[-2];
-  /// print(bitIndexValue); // This prints `1b'0x0`
+  ///
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
-    if (startIndex <= endIndex) {
-      return getRange(startIndex, endIndex + 1);
+    var modifiedStartIndex = (startIndex < 0) ? width + startIndex : startIndex;
+    var modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedStartIndex <= modifiedEndIndex) {
+      return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {
-      return getRange(endIndex, startIndex + 1).reversed;
+      return getRange(modifiedEndIndex, modifiedStartIndex + 1).reversed;
     }
   }
 
