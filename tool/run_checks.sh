@@ -12,31 +12,42 @@
 
 set -euo pipefail
 
+declare color_green
+declare color_yellow
+declare color_reset
+
+color_green=$(tput setaf 46)
+color_yellow=$(tput setaf 226)
+color_reset=$(tput sgr0)
+
 # Install dependencies
-printf '\n%s\n' 'Step: Install dependencies'
+printf '\n%s\n' "${color_yellow}Step: Install dependencies${color_reset}"
 tool/gh_actions/install_dependencies.sh
 
 # Verify formatting
-printf '\n%s\n' 'Step: Verify formatting'
+printf '\n%s\n' "${color_yellow}Step: Verify formatting${color_reset}"
 tool/gh_actions/verify_formatting.sh
 
 # Analyze project source
-printf '\n%s\n' 'Step: Analyze project source'
+printf '\n%s\n' "${color_yellow}Step: Analyze project source${color_reset}"
 tool/gh_actions/analyze_source.sh
 
 # Check documentation
-printf '\n%s\n' 'Step: Check documentation'
+printf '\n%s\n' "${color_yellow}Step: Check documentation${color_reset}"
 tool/gh_actions/check_documentation.sh
 
 # Check Icarus Verilog
-printf '\n%s\n' 'Step: Check Icarus Verilog'
-if ! which iverilog; then
-  echo 'Please install Icarus Verilog (iverilog, recommended version: 11)!'
+printf '\n%s\n' "${color_yellow}Step: Check Icarus Verilog${color_reset}"
+if which iverilog; then
+  echo 'Icarus Verilog found.'
+else
+  echo 'Failure: please install Icarus Verilog (iverilog, recommended version: 11)!'
   exit 1
 fi
 
 # Run tests
-printf '\n%s\n' 'Step: Run tests'
+printf '\n%s\n' "${color_yellow}Step: Run tests${color_reset}"
 tool/gh_actions/run_tests.sh
 
-printf '\n%s\n\n' 'Run Checks: SUCCESS'
+# Result
+printf '\n%s\n\n' "${color_yellow}Result: ${color_green}SUCCESS${color_reset}"
