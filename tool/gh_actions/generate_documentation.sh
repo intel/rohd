@@ -10,12 +10,7 @@
 # Author: Chykon
 #
 
-### WARNING ###
-# The "x" option outputs all script commands. This allows you to track
-# the progress of the execution, but MAY REVEAL ANY SECRETS PASSED TO THE SCRIPT!
-set -euxo pipefail
-
-#=============#
+set -euo pipefail
 
 # See script "check_documentation.sh" for a note on processing "dart doc" output.
 
