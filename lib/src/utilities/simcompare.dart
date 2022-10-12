@@ -205,9 +205,6 @@ abstract class SimCompare {
     File(tmpTestFile).writeAsStringSync(testbench);
     final compileResult = Process.runSync('iverilog',
         ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
-    // [TODO] Old verilog code
-    // final compileResult = Process.runSync('iverilog',
-    //     ['-g2012', tmpTestFile, '-o', tmpOutput] + iverilogExtraArgs);
     bool printIfContentsAndCheckError(dynamic output) {
       if (output.toString().isNotEmpty) {
         print(output);

@@ -303,7 +303,7 @@ abstract class LogicValue {
   /// the indexing is performed from front of the LogicValue.
   /// For negative [index], the indexing started from last index and
   /// goes to front.
-  /// Note: the [index] value must follow, -width <= [index] < width
+  /// Note: the [index] value must follow, -[width] <= [index] < [width]
   ///
   /// ```dart
   /// LogicValue.ofString('1111')[2];  // == LogicValue.one
@@ -317,7 +317,7 @@ abstract class LogicValue {
     final modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $modifiedIndex (=$index).', width);
+          'Index out of range: $modifiedIndex(=$index).', width);
     }
     return _getIndex(modifiedIndex);
   }
@@ -351,7 +351,8 @@ abstract class LogicValue {
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
     if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
+          'End $modifiedEndIndex(=$endIndex) cannot be less than start '
+          '$modifiedStartIndex(=$startIndex).');
     }
     if (modifiedEndIndex > width) {
       throw Exception(

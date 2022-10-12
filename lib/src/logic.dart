@@ -455,12 +455,12 @@ class Logic {
   ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
-  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b00001000"
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
   /// // Positive Indexing
   /// nextVal <= val[3]; // output: 1
   ///
   /// // Negative Indexing
-  /// nextVal <= val[-5]; // output: 1
+  /// nextVal <= val[-5]; // output: 1, also val[3] == val[-5]
   ///
   /// // Error cases
   /// nextVal <= val[-9]; // Error!: allowed values [-8, 7]
@@ -504,8 +504,7 @@ class Logic {
   /// [endIndex].
   ///
   /// The [startIndex] must come before the [endIndex]. If [startIndex] and
-  /// [endIndex] are equal, then a
-  /// zero-width signal is returned.
+  /// [endIndex] are equal, then a zero-width signal is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   ///
   /// ```dart
@@ -530,7 +529,8 @@ class Logic {
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
     if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
+          'End $modifiedEndIndex(=$endIndex) cannot be less than start'
+          ' $modifiedStartIndex(=$startIndex).');
     }
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
