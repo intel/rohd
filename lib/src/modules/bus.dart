@@ -38,13 +38,18 @@ class BusSubset extends Module with InlineSystemVerilog {
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {String name = 'bussubset'})
       : super(name: name) {
+    // If a converted index value is still -ve then it's an Index out of bounds
+    // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
-      throw Exception('Cannot access negative indices!'
-          '  Indices $startIndex and/or $endIndex are invalid.');
+      throw Exception(
+          'Start ($startIndex) and End ($endIndex) must be greater than or '
+          'equal to 0.');
     }
+    // If the +ve indices are more than Logic bus width, Index out of bounds
     if (endIndex > bus.width - 1 || startIndex > bus.width - 1) {
-      throw Exception('Index out of bounds, indices $startIndex and'
-          ' $endIndex must be less than width-1');
+      throw Exception(
+          'Index out of bounds, indices $startIndex and $endIndex must be less'
+          ' than ${bus.width}');
     }
 
     // original name can't be unpreferred because you cannot do a bit slice

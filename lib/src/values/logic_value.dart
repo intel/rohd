@@ -298,12 +298,28 @@ abstract class LogicValue {
   }
 
   /// Returns the `i`th bit of this [LogicValue]
+  ///
+  /// The [index] provided can be positive or negative. For positive [index],
+  /// the indexing is performed from front of the LogicValue.
+  /// For negative [index], the indexing started from last index and
+  /// goes to front.
+  /// Note: the [index] value must follow, -[width] <= [index] < [width]
+  ///
+  /// ```dart
+  /// LogicValue.ofString('1111')[2];  // == LogicValue.one
+  /// LogicValue.ofString('0111')[-1]; // == LogicValue.zero
+  /// LogicValue.ofString('0100')[-2]; // == LogicValue.one
+  /// LogicValue.ofString('0101')[-5]; // Error - out of range
+  /// LogicValue.ofString('0101')[10]; // Error - out of range
+  /// ```
+  ///
   LogicValue operator [](int index) {
-    if (index >= width || index < 0) {
+    final modifiedIndex = (index < 0) ? width + index : index;
+    if (modifiedIndex >= width || modifiedIndex < 0) {
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $index.', width);
+          'Index out of range: $modifiedIndex(=$index).', width);
     }
-    return _getIndex(index);
+    return _getIndex(modifiedIndex);
   }
 
   /// Returns the `i`th bit of this [LogicValue].  Performs no boundary checks.
@@ -316,21 +332,39 @@ abstract class LogicValue {
   /// Returns a subset [LogicValue].  It is inclusive of [startIndex], exclusive
   /// of [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex]
-  /// are equal, then a zero-width value is returned.
+  /// [startIndex] must come before the [endIndex] on position. If [startIndex]
+  /// and [endIndex] are equal, then a zero-width value is returned.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  ///
+  /// ```dart [TODO]
+  /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
+  /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
+  /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
+  /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
+  /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
+  /// ```
+  ///
   LogicValue getRange(int startIndex, int endIndex) {
-    if (endIndex < startIndex) {
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
+          'End $modifiedEndIndex(=$endIndex) cannot be less than start '
+          '$modifiedStartIndex(=$startIndex).');
     }
-    if (endIndex > width) {
-      throw Exception('End ($endIndex) must be less than width ($width).');
-    }
-    if (startIndex < 0) {
+    if (modifiedEndIndex > width) {
       throw Exception(
-          'Start ($startIndex) must be greater than or equal to 0.');
+          'End $modifiedEndIndex(=$endIndex) must be less than width'
+          ' ($width).');
     }
-    return _getRange(startIndex, endIndex);
+    if (modifiedStartIndex < 0) {
+      throw Exception(
+          'Start $modifiedStartIndex(=$startIndex) must be greater than or '
+          'equal to 0.');
+    }
+    return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
 
   /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of
@@ -344,11 +378,22 @@ abstract class LogicValue {
   ///
   /// If [endIndex] is less than [startIndex], the returned value will be
   /// reversed relative to the original value.
+  ///
+  /// ```dart [TODO]
+  /// LogicValue.ofString('xz01').slice(2, 1);    // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(-2, -3);  // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(1, 3);    // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-3, -1);  // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-2, -2);  // == LogicValue.ofString('z')
+  /// ```
   LogicValue slice(int endIndex, int startIndex) {
-    if (startIndex <= endIndex) {
-      return getRange(startIndex, endIndex + 1);
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedStartIndex <= modifiedEndIndex) {
+      return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {
-      return getRange(endIndex, startIndex + 1).reversed;
+      return getRange(modifiedEndIndex, modifiedStartIndex + 1).reversed;
     }
   }
 

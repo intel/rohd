@@ -449,15 +449,53 @@ class Logic {
   }
 
   /// Accesses the [index]th bit of this signal.
+  ///
+  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  /// -([width]) <= [index] < [width]
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Positive Indexing
+  /// nextVal <= val[3]; // output: 1
+  ///
+  /// // Negative Indexing
+  /// nextVal <= val[-5]; // output: 1, also val[3] == val[-5]
+  ///
+  /// // Error cases
+  /// nextVal <= val[-9]; // Error!: allowed values [-8, 7]
+  /// nextVal <= val[8]; // Error!: allowed values [-8, 7]
+  /// ```
+  ///
   Logic operator [](int index) => slice(index, index);
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
   ///
-  /// If [endIndex] is less than [startIndex], the returned value will be
-  /// reversed relative to the original signal.
-  Logic slice(int endIndex, int startIndex) =>
-      BusSubset(this, startIndex, endIndex).subset;
+  /// If [endIndex] comes before the [startIndex] on position, the returned
+  /// value will be reversed relative to the original signal.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Negative Slicing
+  /// nextVal <= val.slice(val.width - 1, -3); // = val.slice(7,5) & output: 0b110, where the output.width=3
+  ///
+  /// // Positive Slicing
+  /// nextVal <= val.slice(5, 0); // = val.slice(-3, -8) & output: 0b001110, where the output.width=6
+  /// ```
+  ///
+  Logic slice(int endIndex, int startIndex) {
+    // Given start and end index, if either of them are seen to be -ve index
+    // value(s) then convert them to a +ve index value(s)
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+
+    // Create a new bus subset
+    return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
+  }
 
   /// Returns a version of this [Logic] with the bit order reversed.
   Logic get reversed => slice(0, width - 1);
@@ -465,24 +503,36 @@ class Logic {
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex]
-  /// are equal, then a zero-width signal is returned.
+  /// The [startIndex] must come before the [endIndex]. If [startIndex] and
+  /// [endIndex] are equal, then a zero-width signal is returned.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
+  /// ```dart
+  /// Logic nextVal = addOutput('nextVal', width: width);
+  /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+  /// // Negative getRange
+  /// nextVal <= val.getRange(-3, val.width); // = val.getRange(5,8) & output: 0b110, where the output.width=3
+  ///
+  /// // Positive getRange
+  /// nextVal <= val.getRange(0, 6); // = val.slice(0, -2) & output: 0b001110, where the output.width=6
+  /// ```
+  ///
   Logic getRange(int startIndex, int endIndex) {
-    if (endIndex < startIndex) {
-      throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
-    }
-    if (endIndex > width) {
-      throw Exception('End ($endIndex) must be less than width ($width).');
-    }
-    if (startIndex < 0) {
-      throw Exception(
-          'Start ($startIndex) must be greater than or equal to 0.');
-    }
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
-    return slice(endIndex - 1, startIndex);
+
+    // Given start and end index, if either of them are seen to be -ve index
+    // value(s) then conver them to a +ve index value(s)
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedEndIndex < modifiedStartIndex) {
+      throw Exception(
+          'End $modifiedEndIndex(=$endIndex) cannot be less than start'
+          ' $modifiedStartIndex(=$startIndex).');
+    }
+    return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 
   /// Returns a new [Logic] with width [newWidth] where new bits added are zeros
