@@ -15,7 +15,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
 ///
-/// Outputs to vcd format at [outputPath].  [module] must be built prior to attaching the [WaveDumper].
+/// Outputs to vcd format at [outputPath].  [module] must be built prior to
+/// attaching the [WaveDumper].
 class WaveDumper {
   /// The [Module] being dumped.
   final Module module;
@@ -37,8 +38,8 @@ class WaveDumper {
 
   /// A set of all [Logic]s that have changed in this timestamp so far.
   ///
-  /// This spans across multiple inject or changed events if they are in the same
-  /// timestamp of the [Simulator].
+  /// This spans across multiple inject or changed events if they are in the
+  /// same timestamp of the [Simulator].
   final Set<Logic> _changedLogicsThisTimestamp = <Logic>{};
 
   /// The timestamp which is currently being collected for a dump.
@@ -47,6 +48,8 @@ class WaveDumper {
   /// signals that have changed up until that point at this saved time value.
   var _currentDumpingTimestamp = Simulator.time;
 
+  /// Attaches a [WaveDumper] to record all signal changes in a simulation of
+  /// [module] in a VCD file at [outputPath].
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
       : _outputFile = File(outputPath) {
     if (!module.hasBuilt) {
@@ -91,10 +94,10 @@ class WaveDumper {
 
   /// Registers all signal value changes to write updates to the dumped VCD.
   void _collectAllSignals() {
-    var modulesToParse = <Module>[module];
+    final modulesToParse = <Module>[module];
     for (var i = 0; i < modulesToParse.length; i++) {
-      var m = modulesToParse[i];
-      for (var sig in m.signals) {
+      final m = modulesToParse[i];
+      for (final sig in m.signals) {
         if (sig is Const) {
           // constant values are "boring" to inspect
           continue;
@@ -105,7 +108,7 @@ class WaveDumper {
           _changedLogicsThisTimestamp.add(sig);
         });
       }
-      for (var subm in m.subModules) {
+      for (final subm in m.subModules) {
         if (subm is InlineSystemVerilog) {
           // the InlineSystemVerilog modules are "boring" to inspect
           continue;
@@ -117,9 +120,9 @@ class WaveDumper {
 
   /// Writes the top header for the VCD file.
   void _writeHeader() {
-    var dateString = DateTime.now().toIso8601String();
-    var timescale = '1ps';
-    var header = '''
+    final dateString = DateTime.now().toIso8601String();
+    const timescale = '1ps';
+    final header = '''
 \$date
   $dateString
 \$end
@@ -134,73 +137,74 @@ class WaveDumper {
     _writeToFile(header);
   }
 
-  /// Writes the scope of the VCD, including signal and hierarchy declarations, as well as initial values.
+  /// Writes the scope of the VCD, including signal and hierarchy declarations,
+  /// as well as initial values.
   void _writeScope() {
     var scopeString = _computeScopeString(module);
     scopeString += '\$enddefinitions \$end\n';
     scopeString += '\$dumpvars\n';
     _writeToFile(scopeString);
-    for (var element in _signalToMarkerMap.keys) {
-      _writeSignalValueUpdate(element);
-    }
+    _signalToMarkerMap.keys.forEach(_writeSignalValueUpdate);
     _writeToFile('\$end\n');
   }
 
   /// Generates the top of the scope string (signal and hierarchy definitions).
   String _computeScopeString(Module m, {int indent = 0}) {
-    var moduleSignalUniquifier = Uniquifier();
-    var padding = List.filled(indent, '  ').join();
+    final moduleSignalUniquifier = Uniquifier();
+    final padding = List.filled(indent, '  ').join();
     var scopeString = '$padding\$scope module ${m.uniqueInstanceName} \$end\n';
-    var innerScopeString = '';
-    for (var sig in m.signals) {
-      if (!_signalToMarkerMap.containsKey(sig)) continue;
+    final innerScopeString = StringBuffer();
+    for (final sig in m.signals) {
+      if (!_signalToMarkerMap.containsKey(sig)) {
+        continue;
+      }
 
-      var width = sig.width;
-      var marker = _signalToMarkerMap[sig];
+      final width = sig.width;
+      final marker = _signalToMarkerMap[sig];
       var signalName = Sanitizer.sanitizeSV(sig.name);
       signalName = moduleSignalUniquifier.getUniqueName(
           initialName: signalName, reserved: sig.isPort);
-      innerScopeString +=
-          '  $padding\$var wire $width $marker $signalName \$end\n';
+      innerScopeString
+          .write('  $padding\$var wire $width $marker $signalName \$end\n');
     }
-    for (var subModule in m.subModules) {
-      innerScopeString += _computeScopeString(subModule, indent: indent + 1);
+    for (final subModule in m.subModules) {
+      innerScopeString
+          .write(_computeScopeString(subModule, indent: indent + 1));
     }
     if (innerScopeString.isEmpty) {
       // no need to dump empty scopes
       return '';
     }
-    scopeString += innerScopeString;
+    scopeString += innerScopeString.toString();
     scopeString += '$padding\$upscope \$end\n';
     return scopeString;
   }
 
   /// Writes the current timestamp to the VCD.
   void _captureTimestamp(int timestamp) {
-    var timestampString = '#$timestamp\n';
+    final timestampString = '#$timestamp\n';
     _writeToFile(timestampString);
 
-    for (var signal in _changedLogicsThisTimestamp) {
-      _writeSignalValueUpdate(signal);
-    }
-    _changedLogicsThisTimestamp.clear();
+    _changedLogicsThisTimestamp
+      ..forEach(_writeSignalValueUpdate)
+      ..clear();
   }
 
   /// Writes the current value of [signal] to the VCD.
   void _writeSignalValueUpdate(Logic signal) {
-    var updateValue = signal.width > 1
-        ? 'b' +
-            signal.value.reversed
-                .toList()
-                .map((e) => e.toString(includeWidth: false))
-                .join() +
-            ' '
+    final binaryValue = signal.value.reversed
+        .toList()
+        .map((e) => e.toString(includeWidth: false))
+        .join();
+    final updateValue = signal.width > 1
+        ? 'b$binaryValue '
         : signal.value.toString(includeWidth: false);
-    var marker = _signalToMarkerMap[signal];
-    var updateString = '$updateValue$marker\n';
+    final marker = _signalToMarkerMap[signal];
+    final updateString = '$updateValue$marker\n';
     _writeToFile(updateString);
   }
 }
 
+/// Deprecated: use [WaveDumper] instead.
 @Deprecated('Use WaveDumper instead')
 typedef Dumper = WaveDumper;

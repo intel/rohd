@@ -14,7 +14,7 @@ import 'package:test/test.dart';
 class TopModule extends Module {
   TopModule(Logic a) : super(name: 'topmodule') {
     a = addInput('a_top', a);
-    var bundle = addOutput('bundle_top', width: 3);
+    final bundle = addOutput('bundle_top', width: 3);
     bundle <= SubModule(a).bundle;
   }
 }
@@ -23,11 +23,11 @@ class SubModule extends Module {
   Logic get bundle => output('bundle');
   SubModule(Logic a) : super(name: 'submodule') {
     a = addInput('a', a);
-    var b = addOutput('b');
-    var c = addOutput('c');
-    var d = addOutput('d');
-    var e = addOutput('e');
-    var bundle = addOutput('bundle', width: 3);
+    final b = addOutput('b');
+    final c = addOutput('c');
+    final d = addOutput('d');
+    final e = addOutput('e');
+    final bundle = addOutput('bundle', width: 3);
 
     b <= a;
     c <= b;
@@ -39,15 +39,15 @@ class SubModule extends Module {
 
 void main() {
   test('out depends on out', () async {
-    var mod = TopModule(Logic());
+    final mod = TopModule(Logic());
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a_top': 0}, {'bundle_top': 1}),
       Vector({'a_top': 1}, {'bundle_top': 6}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'bundle_top': 3});
     expect(simResult, equals(true));

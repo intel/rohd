@@ -11,11 +11,13 @@
 
 part of values;
 
-/// A [LogicValue] whose number of bits is less than or equal to the size of an int.
+/// A [LogicValue] whose number of bits is less than or equal to the size of
+/// an int.
 ///
-/// The implementation uses two ints to represent the 4-value value.  Each 0 and 1 bit in [_value]
-/// represents a 0 or 1, respectively, if the corresponding bit in [_invalid] is 0; otherwise, each
-/// 0 and 1 bit in [_value] represents a x or z, respectively.
+/// The implementation uses two ints to represent the 4-value value.  Each 0 and
+/// 1 bit in [_value] represents a 0 or 1, respectively, if the corresponding
+/// bit in [_invalid] is 0; otherwise, each 0 and 1 bit in [_value] represents
+/// a x or z, respectively.
 ///
 /// | [_value]  | [_invalid] | 4-value |
 /// |-----------|------------|---------|
@@ -40,15 +42,20 @@ class _SmallLogicValue extends LogicValue {
   }
 
   const _SmallLogicValue(int value, int invalid, int width)
-      : assert(width <= LogicValue._INT_BITS),
+      : assert(width <= LogicValue._INT_BITS,
+            '_SmallLogicValue should have low number of bits'),
         _value = ((1 << width) - 1) & value,
         _invalid = ((1 << width) - 1) & invalid,
         super._(width);
 
   @override
   bool _equals(Object other) {
-    if (other is _FilledLogicValue) return other == this;
-    if (other is! _SmallLogicValue) return false;
+    if (other is _FilledLogicValue) {
+      return other == this;
+    }
+    if (other is! _SmallLogicValue) {
+      return false;
+    }
     return _value == other._value && _invalid == other._invalid;
   }
 
@@ -57,14 +64,14 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   LogicValue _getIndex(int index) {
-    var bitValue = ((_value >> index) & 1) == 1;
-    var bitInvalid = ((_invalid >> index) & 1) == 1;
+    final bitValue = ((_value >> index) & 1) == 1;
+    final bitInvalid = ((_invalid >> index) & 1) == 1;
     return _bitsToLogicValue(bitValue, bitInvalid);
   }
 
   @override
   LogicValue _getRange(int start, int end) {
-    var newWidth = end - start;
+    final newWidth = end - start;
     return _SmallLogicValue((_value >> start) & _maskOfWidth(newWidth),
         (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
   }
@@ -98,8 +105,9 @@ class _SmallLogicValue extends LogicValue {
     if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
-    var eitherZero = (~_value & ~_invalid) | (~other._value & ~other._invalid);
+    final eitherInvalid = _invalid | other._invalid;
+    final eitherZero =
+        (~_value & ~_invalid) | (~other._value & ~other._invalid);
     return _SmallLogicValue(
         ~eitherInvalid & ~eitherZero, eitherInvalid & ~eitherZero, width);
   }
@@ -109,8 +117,8 @@ class _SmallLogicValue extends LogicValue {
     if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
-    var eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
+    final eitherInvalid = _invalid | other._invalid;
+    final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
     return _SmallLogicValue(eitherOne, eitherInvalid & ~eitherOne, width);
   }
 
@@ -119,7 +127,7 @@ class _SmallLogicValue extends LogicValue {
     if (other is! _SmallLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
+    final eitherInvalid = _invalid | other._invalid;
     return _SmallLogicValue(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
   }
@@ -140,7 +148,9 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   LogicValue xor() {
-    if (!isValid) return LogicValue.x;
+    if (!isValid) {
+      return LogicValue.x;
+    }
     var shiftedValue = _value;
     var result = 0;
     while (shiftedValue != 0) {

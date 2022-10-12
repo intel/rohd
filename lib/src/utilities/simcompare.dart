@@ -8,31 +8,49 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+/// Represents a single test case to check in a single clock cycle.
+///
+/// Useful for testing equivalent behavior in different simulation environments.
 class Vector {
-  static const int period = 10;
-  static const int offset = 2;
+  /// The period of the clock used for each vector
+  static const int _period = 10;
+
+  /// The offset from the clock edge to perform checks.
+  static const int _offset = 2;
+
+  /// A map of input names in a [Module] to associated values to drive
+  /// in this vector.
   final Map<String, dynamic> inputValues;
+
+  /// A map of output names in a [Module] to associated values to expect
+  /// on those outputs for this vector.
   final Map<String, dynamic> expectedOutputValues;
+
+  /// A single vector to test in a simulation with provided inputs and
+  /// expected outputs.
   Vector(this.inputValues, this.expectedOutputValues);
 
   @override
-  String toString() {
-    return '$inputValues => $expectedOutputValues';
-  }
+  String toString() => '$inputValues => $expectedOutputValues';
 
-  String errorCheckString(
+  /// Computes a SystemVerilog code string that checks in a SystemVerilog
+  /// simulation whether a signal [sigName] has the [expected] value given
+  /// the [inputValues].
+  String _errorCheckString(
       String sigName, dynamic expected, String inputValues) {
-    String expectedHexStr = expected is int
-        ? '0x' + expected.toRadixString(16)
+    final expectedHexStr = expected is int
+        ? '0x${expected.toRadixString(16)}'
         : expected.toString();
-    String expectedValStr = (expected is LogicValue && expected.width == 1)
-        ? "'" + expected.toString(includeWidth: false)
+    final expectedValStr = (expected is LogicValue && expected.width == 1)
+        ? "'${expected.toString(includeWidth: false)}"
         : expected.toString();
 
     if (expected is! int && expected is! LogicValue) {
@@ -40,61 +58,69 @@ class Vector {
           'Support for ${expected.runtimeType} is not supported (yet?).');
     }
 
-    return 'if($sigName !== $expectedValStr) \$error(\$sformatf("Expected $sigName=$expectedHexStr, but found $sigName=0x%x with inputs $inputValues", $sigName));';
+    return 'if($sigName !== $expectedValStr) '
+        '\$error(\$sformatf("Expected $sigName=$expectedHexStr,'
+        ' but found $sigName=0x%x with inputs $inputValues", $sigName));';
   }
 
+  /// Converts this vector into a SystemVerilog check.
   String toTbVerilog() {
-    var assignments = inputValues.keys
+    final assignments = inputValues.keys
         .map((signalName) => '$signalName = ${inputValues[signalName]};')
         .join('\n');
-    var checks = expectedOutputValues.keys
-        .map((signalName) => errorCheckString(signalName,
+    final checks = expectedOutputValues.keys
+        .map((signalName) => _errorCheckString(signalName,
             expectedOutputValues[signalName], inputValues.toString()))
         .join('\n');
-    var tbVerilog = [
+    final tbVerilog = [
       assignments,
-      '#$offset',
+      '#$_offset',
       checks,
-      '#${period - offset}',
+      '#${_period - _offset}',
     ].join('\n');
     return tbVerilog;
   }
 }
 
-class SimCompare {
-  /// Runs a ROHD simulation where each of the [vectors] is executed per clock cycle
-  /// sequentially.
+/// A utility class for checking a collection of [Vector]s against
+/// different simulators.
+abstract class SimCompare {
+  /// Runs a ROHD simulation where each of the [vectors] is executed per
+  /// clock cycle sequentially.
   ///
-  /// If [enableChecking] is set to false, then it will drive the simulation but not
-  /// check that the outputs match.
+  /// If [enableChecking] is set to false, then it will drive the simulation
+  /// but not check that the outputs match.
   static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
       {bool enableChecking = true}) async {
     var timestamp = 1;
-    for (var vector in vectors) {
+    for (final vector in vectors) {
       // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () {
-        for (var signalName in vector.inputValues.keys) {
-          var value = vector.inputValues[signalName];
+        for (final signalName in vector.inputValues.keys) {
+          final value = vector.inputValues[signalName];
+          // ignore: invalid_use_of_protected_member
           module.input(signalName).put(value);
         }
 
         if (enableChecking) {
           Simulator.postTick.first.then((value) {
-            for (var signalName in vector.expectedOutputValues.keys) {
-              var value = vector.expectedOutputValues[signalName];
-              var o = module.output(signalName);
-              var errorReason =
-                  'For vector #${vectors.indexOf(vector)} $vector, expected $o to be $value, but it was ${o.value}.';
+            for (final signalName in vector.expectedOutputValues.keys) {
+              final value = vector.expectedOutputValues[signalName];
+              final o = module.output(signalName);
+              final errorReason =
+                  'For vector #${vectors.indexOf(vector)} $vector,'
+                  ' expected $o to be $value, but it was ${o.value}.';
               if (value is int) {
                 if (!o.value.isValid) {
-                  // invalid value causes exception without helpful message, so throw it
+                  // invalid value causes exception without helpful message,
+                  // so throw it
                   throw Exception(errorReason);
                 }
                 expect(o.value.toInt(), equals(value), reason: errorReason);
               } else if (value is LogicValue) {
                 if (o.width > 1 &&
                     (value == LogicValue.x || value == LogicValue.z)) {
-                  for (var oBit in o.value.toList()) {
+                  for (final oBit in o.value.toList()) {
                     expect(oBit, equals(value), reason: errorReason);
                   }
                 } else {
@@ -108,14 +134,15 @@ class SimCompare {
           });
         }
       });
-      timestamp += Vector.period;
+      timestamp += Vector._period;
     }
-    Simulator.registerAction(timestamp + Vector.period,
+    Simulator.registerAction(timestamp + Vector._period,
         () {}); // just so it does one more thing at the end
-    Simulator.setMaxSimTime(timestamp + 2 * Vector.period);
+    Simulator.setMaxSimTime(timestamp + 2 * Vector._period);
     await Simulator.run();
   }
 
+  /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     String generatedVerilog,
     String topModule,
@@ -128,39 +155,39 @@ class SimCompare {
   }) {
     String signalDeclaration(String signalName) {
       if (signalToWidthMap.containsKey(signalName)) {
-        var width = signalToWidthMap[signalName]!;
+        final width = signalToWidthMap[signalName]!;
         return '[${width - 1}:0] $signalName';
       } else {
         return signalName;
       }
     }
 
-    var allSignals = vectors
+    final allSignals = vectors
         .map((e) => [...e.inputValues.keys, ...e.expectedOutputValues.keys])
         .reduce((a, b) => [...a, ...b])
         .toSet();
-    var localDeclarations =
-        allSignals.map((e) => 'logic ' + signalDeclaration(e) + ';').join('\n');
-    var moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
-    var moduleInstance = '$topModule dut($moduleConnections);';
-    var stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
+    final localDeclarations =
+        allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
+    final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
+    final moduleInstance = '$topModule dut($moduleConnections);';
+    final stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
 
-    var uniqueId = (generatedVerilog +
-            localDeclarations +
-            stimulus +
-            moduleInstance)
-        .hashCode; // so that when they run in parallel, they dont step on each other
-    var dir = 'tmp_test';
-    var tmpTestFile = '$dir/tmp_test$uniqueId.sv';
-    var tmpOutput = '$dir/tmp_out$uniqueId';
-    var tmpVcdFile = '$dir/tmp_waves_$uniqueId.vcd';
+    // so that when they run in parallel, they dont step on each other
+    final uniqueId =
+        (generatedVerilog + localDeclarations + stimulus + moduleInstance)
+            .hashCode;
 
-    var waveDumpCode = '''
+    const dir = 'tmp_test';
+    final tmpTestFile = '$dir/tmp_test$uniqueId.sv';
+    final tmpOutput = '$dir/tmp_out$uniqueId';
+    final tmpVcdFile = '$dir/tmp_waves_$uniqueId.vcd';
+
+    final waveDumpCode = '''
 \$dumpfile("$tmpVcdFile");
 \$dumpvars(0,dut);
 ''';
 
-    var testbench = [
+    final testbench = [
       generatedVerilog,
       'module tb;',
       localDeclarations,
@@ -169,17 +196,19 @@ class SimCompare {
       if (dumpWaves) waveDumpCode,
       '#1',
       stimulus,
-      '\$finish;', // so the test doesn't run forever if there's a clock generator
+      r'$finish;', // so the test doesn't run forever if there's a clock gen
       'end',
       'endmodule',
     ].join('\n');
 
     Directory(dir).createSync(recursive: true);
     File(tmpTestFile).writeAsStringSync(testbench);
-    var compileResult = Process.runSync('iverilog',
-        ['-g2012', tmpTestFile, '-o', tmpOutput] + iverilogExtraArgs);
+    final compileResult = Process.runSync('iverilog',
+        ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
     bool printIfContentsAndCheckError(dynamic output) {
-      if (output.toString().isNotEmpty) print(output);
+      if (output.toString().isNotEmpty) {
+        print(output);
+      }
       return output.toString().contains(RegExp(
           [
             'error',
@@ -189,17 +218,29 @@ class SimCompare {
           caseSensitive: false));
     }
 
-    if (printIfContentsAndCheckError(compileResult.stdout)) return false;
-    if (printIfContentsAndCheckError(compileResult.stderr)) return false;
-    var simResult = Process.runSync('vvp', [tmpOutput]);
-    if (printIfContentsAndCheckError(simResult.stdout)) return false;
-    if (printIfContentsAndCheckError(simResult.stderr)) return false;
+    if (printIfContentsAndCheckError(compileResult.stdout)) {
+      return false;
+    }
+    if (printIfContentsAndCheckError(compileResult.stderr)) {
+      return false;
+    }
+
+    final simResult = Process.runSync('vvp', [tmpOutput]);
+    if (printIfContentsAndCheckError(simResult.stdout)) {
+      return false;
+    }
+    if (printIfContentsAndCheckError(simResult.stderr)) {
+      return false;
+    }
+
     if (!dontDeleteTmpFiles) {
       try {
         File(tmpOutput).deleteSync();
         File(tmpTestFile).deleteSync();
-        if (dumpWaves) File(tmpVcdFile).deleteSync();
-      } catch (e) {
+        if (dumpWaves) {
+          File(tmpVcdFile).deleteSync();
+        }
+      } on Exception catch (e) {
         print("Couldn't delete: $e");
         return false;
       }

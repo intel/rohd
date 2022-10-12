@@ -2,15 +2,15 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// tree_test.dart
-/// Testing a recursive tree of arbitrary two input operations, based on a Chisel example
+/// Testing a recursive tree of arbitrary two input operations,
+/// based on a Chisel example
 ///
 /// 2021 May 20
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class TreeOfTwoInputModules extends Module {
   final Logic Function(Logic a, Logic b) _op;
@@ -31,10 +31,10 @@ class TreeOfTwoInputModules extends Module {
     if (_seq.length == 1) {
       out <= _seq[0];
     } else {
-      var a = TreeOfTwoInputModules(
+      final a = TreeOfTwoInputModules(
               _seq.getRange(0, _seq.length ~/ 2).toList(), _op)
           .out;
-      var b = TreeOfTwoInputModules(
+      final b = TreeOfTwoInputModules(
               _seq.getRange(_seq.length ~/ 2, _seq.length).toList(), _op)
           .out;
       out <= _op(a, b);
@@ -43,19 +43,17 @@ class TreeOfTwoInputModules extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
     test('tree', () async {
-      var mod = TreeOfTwoInputModules(
+      final mod = TreeOfTwoInputModules(
           List<Logic>.generate(16, (index) => Logic(width: 8)),
-          (Logic a, Logic b) => Mux(a > b, a, b).y);
+          (a, b) => Mux(a > b, a, b).y);
       await mod.build();
       // File('tmp_tree.sv').writeAsStringSync(mod.generateSynth());
 
-      var vectors = [
+      final vectors = [
         Vector({
           for (var i in List<int>.generate(16, (index) => index)) 'seq$i': i
         }, {
@@ -63,8 +61,8 @@ void main() {
         }),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      var simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString() + '_3', vectors,
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), '${mod.runtimeType}_3', vectors,
           signalToWidthMap: {
             ...{
               for (var i in List<int>.generate(16, (index) => index)) 'seq$i': 8

@@ -10,14 +10,16 @@
 
 part of values;
 
+/// Deprecated: use [LogicValue] instead.
 @Deprecated('Use `LogicValue` instead.'
     '  `LogicValues` and `LogicValue` have been merged into one type.')
 typedef LogicValues = LogicValue;
 
 /// An immutable 4-value representation of an arbitrary number of bits.
 ///
-/// Each bit of [LogicValue] can be represented as a [LogicValue] of `0`, `1`, `x` (contention), or `z` (floating).
-@Immutable()
+/// Each bit of [LogicValue] can be represented as a [LogicValue]
+/// of `0`, `1`, `x` (contention), or `z` (floating).
+@immutable
 abstract class LogicValue {
   /// The number of bits in an int.
   // ignore: constant_identifier_names
@@ -42,43 +44,53 @@ abstract class LogicValue {
   @Deprecated('Use `width` instead.')
   int get length => width;
 
-  const LogicValue._(this.width) : assert(width >= 0);
+  const LogicValue._(this.width)
+      : assert(width >= 0, 'Width must be greater than or equal to 0.');
 
-  /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either one or zero.
+  /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
+  /// one or zero.
+  // ignore: avoid_positional_boolean_parameters
   static LogicValue ofBool(bool value) => value ? one : zero;
 
-  /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either one or zero.
+  /// Converts `bool` [value] to a valid [LogicValue] with 1 bits either
+  /// one or zero.
   @Deprecated('Use `ofBool` instead.')
+  // ignore: avoid_positional_boolean_parameters
   static LogicValue fromBool(bool value) => ofBool(value);
 
-  /// Converts `int` [value] to a valid [LogicValue] with [width] number of bits.
+  /// Converts `int` [value] to a valid [LogicValue] with [width] number
+  /// of bits.
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofInt(int value, int width) => width > _INT_BITS
       ? _BigLogicValue(BigInt.from(value), BigInt.zero, width)
       : _SmallLogicValue(value, 0, width);
 
-  /// Converts `int` [value] to a valid [LogicValue] with [width] number of bits.
+  /// Converts `int` [value] to a valid [LogicValue] with [width]
+  /// number of bits.
   ///
   /// [width] must be greater than or equal to 0.
   @Deprecated('Use `ofInt` instead.')
   static LogicValue fromInt(int value, int width) => ofInt(value, width);
 
-  /// Converts `BigInt` [value] to a valid [LogicValue] with [width] number of bits.
+  /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
+  /// number of bits.
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofBigInt(BigInt value, int width) => width > _INT_BITS
       ? _BigLogicValue(value, BigInt.zero, width)
       : _SmallLogicValue(value.toInt(), 0, width);
 
-  /// Converts `BigInt` [value] to a valid [LogicValue] with [width] number of bits.
+  /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
+  /// number of bits.
   ///
   /// [width] must be greater than or equal to 0.
   @Deprecated('Use `ofBigInt` instead.')
   static LogicValue fromBigInt(BigInt value, int width) =>
       ofBigInt(value, width);
 
-  /// Constructs a [LogicValue] with the [width] number of bits, where every bit has the same value of [fill].
+  /// Constructs a [LogicValue] with the [width] number of bits, where every
+  /// bit has the same value of [fill].
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue filled(int width, LogicValue fill) =>
@@ -102,8 +114,9 @@ abstract class LogicValue {
 
   /// Constructs a [LogicValue] from [it].
   ///
-  /// The order of the created [LogicValue] will be such that the `i`th entry in [it] corresponds
-  /// to the `i`th bit.  That is, the 0th element of [it] will be the 0th bit of the returned [LogicValue].
+  /// The order of the created [LogicValue] will be such that the `i`th entry in
+  /// [it] corresponds to the `i`th bit.  That is, the 0th element of [it] will
+  /// be the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
@@ -115,8 +128,9 @@ abstract class LogicValue {
 
   /// Constructs a [LogicValue] from [it].
   ///
-  /// The order of the created [LogicValue] will be such that the `i`th entry in [it] corresponds
-  /// to the `i`th bit.  That is, the 0th element of [it] will be the 0th bit of the returned [LogicValue].
+  /// The order of the created [LogicValue] will be such that the `i`th entry
+  /// in [it] corresponds to the `i`th bit.  That is, the 0th element of [it]
+  /// will be the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
@@ -130,22 +144,26 @@ abstract class LogicValue {
   static bool _bigIntIsFilled(BigInt x, int width) =>
       (x | _BigLogicValue._maskOfWidth(width)) == x;
 
-  /// Returns a [String] representing the `_value` to be used by implementations relying on `_value` and `_invalid`.
+  /// Returns a [String] representing the `_value` to be used by implementations
+  /// relying on `_value` and `_invalid`.
   static String _valueString(String stringRepresentation) =>
       stringRepresentation.replaceAllMapped(
           RegExp('[xz]'), (m) => m[0] == 'x' ? '0' : '1');
 
-  /// Returns a [String] representing the `_invalid` to be used by implementations relying on `_value` and `_invalid`.
+  /// Returns a [String] representing the `_invalid` to be used by
+  /// implementations relying on `_value` and `_invalid`.
   static String _invalidString(String stringRepresentation) =>
       stringRepresentation.replaceAllMapped(
           RegExp('[1xz]'), (m) => m[0] == '1' ? '0' : '1');
 
-  /// Converts a binary [String] representation of a [LogicValue] into a [LogicValue].
+  /// Converts a binary [String] representation of a [LogicValue] into a
+  /// [LogicValue].
   ///
-  /// The [stringRepresentation] should only contain bit values (e.g. no `0b` at the start).
-  /// The order of the created [LogicValue] will be such that the `i`th character in [stringRepresentation]
-  /// corresponds to the `length - i - 1`th bit.  That is, the last character of [stringRepresentation] will be
-  /// the 0th bit of the returned [LogicValue].
+  /// The [stringRepresentation] should only contain bit values (e.g. no `0b`
+  /// at the start). The order of the created [LogicValue] will be such that
+  /// the `i`th character in [stringRepresentation] corresponds to the
+  /// `length - i - 1`th bit.  That is, the last character of
+  /// [stringRepresentation] will be the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var stringRepresentation = '1x0';
@@ -154,20 +172,20 @@ abstract class LogicValue {
   /// ```
   static LogicValue ofString(String stringRepresentation) {
     if (stringRepresentation.isEmpty) {
-      return _SmallLogicValue(0, 0, 0);
+      return const _SmallLogicValue(0, 0, 0);
     }
 
-    var valueString = _valueString(stringRepresentation);
-    var invalidString = _invalidString(stringRepresentation);
-    var width = stringRepresentation.length;
+    final valueString = _valueString(stringRepresentation);
+    final invalidString = _invalidString(stringRepresentation);
+    final width = stringRepresentation.length;
 
     if (width <= _INT_BITS) {
-      var value = int.parse(valueString, radix: 2);
-      var invalid = int.parse(invalidString, radix: 2);
+      final value = int.parse(valueString, radix: 2);
+      final invalid = int.parse(invalidString, radix: 2);
       return _SmallLogicValue(value, invalid, width);
     } else {
-      var value = BigInt.parse(valueString, radix: 2);
-      var invalid = BigInt.parse(invalidString, radix: 2);
+      final value = BigInt.parse(valueString, radix: 2);
+      final invalid = BigInt.parse(invalidString, radix: 2);
       if (invalid.sign == 0) {
         if (value.sign == 0) {
           return LogicValue.filled(width, LogicValue.zero);
@@ -185,12 +203,14 @@ abstract class LogicValue {
     }
   }
 
-  /// Converts a binary [String] representation of a [LogicValue] into a [LogicValue].
+  /// Converts a binary [String] representation of a [LogicValue] into a
+  /// [LogicValue].
   ///
-  /// The [stringRepresentation] should only contain bit values (e.g. no `0b` at the start).
-  /// The order of the created [LogicValue] will be such that the `i`th character in [stringRepresentation]
-  /// corresponds to the `length - i - 1`th bit.  That is, the last character of [stringRepresentation] will be
-  /// the 0th bit of the returned [LogicValue].
+  /// The [stringRepresentation] should only contain bit values (e.g. no `0b`
+  /// at the start). The order of the created [LogicValue] will be such that
+  /// the `i`th character in [stringRepresentation] corresponds to the
+  /// `length - i - 1`th bit.  That is, the last character of
+  /// [stringRepresentation] will be the 0th bit of the returned [LogicValue].
   ///
   /// ```dart
   /// var stringRepresentation = '1x0';
@@ -201,25 +221,31 @@ abstract class LogicValue {
   static LogicValue fromString(String stringRepresentation) =>
       ofString(stringRepresentation);
 
-  /// Returns true iff the width and all bits of [this] are equal to [other].
+  /// Returns true iff the width and all bits of `this` are equal to [other].
   @override
   bool operator ==(Object other) {
-    if (other is! LogicValue) return false;
-    if (other.width != width) return false;
+    if (other is! LogicValue) {
+      return false;
+    }
+    if (other.width != width) {
+      return false;
+    }
     return _equals(other);
   }
 
-  /// Returns true iff all bits of [this] are equal to [other].
+  /// Returns true iff all bits of `this` are equal to [other].
   bool _equals(Object other);
 
   @override
   int get hashCode => _hashCode;
   int get _hashCode;
 
-  /// Returns a this [LogicValue] as a [List<LogicValue>] where every element is 1 bit.
+  /// Returns a this [LogicValue] as a [List<LogicValue>] where every element
+  /// is 1 bit.
   ///
-  /// The order of the created [List] will be such that the `i`th entry of it corresponds
-  /// to the `i`th bit.  That is, the 0th element of the list will be the 0th bit of this [LogicValue].
+  /// The order of the created [List] will be such that the `i`th entry of it
+  /// corresponds to the `i`th bit.  That is, the 0th element of the list will
+  /// be the 0th bit of this [LogicValue].
   ///
   /// ```dart
   /// var lv = LogicValue.ofString('1x0');
@@ -229,29 +255,33 @@ abstract class LogicValue {
   List<LogicValue> toList() =>
       List<LogicValue>.generate(width, (index) => this[index]).toList();
 
-  /// Converts this [LogicValue] to a binary [String], including a decorator at the front
-  /// in SystemVerilog style.
+  /// Converts this [LogicValue] to a binary [String], including a decorator at
+  /// the front in SystemVerilog style.
   ///
-  /// The first digits before the `b` (for binary) or `h` (for hex) are the width
-  /// of the value.  If [includeWidth] is set to false, then the width of the bus and
-  /// decorator will not be included in the generated String and it will print in binary.
+  /// The first digits before the `b` (for binary) or `h` (for hex) are the
+  /// width of the value.  If [includeWidth] is set to false, then the width of
+  /// the bus and decorator will not be included in the generated String and
+  /// it will print in binary.
   ///
   /// ```dart
   /// var lv = LogicValue.ofString('1x0');
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @override
-  String toString({bool includeWidth = true}) => isValid && includeWidth
-      ? "$width'h" +
-          (width > _INT_BITS
-              ? toBigInt().toRadixString(16)
-              : toInt().toRadixString(16))
-      : [
-          if (includeWidth) "$width'b",
-          List<String>.generate(width, (index) => this[index]._bitString())
-              .reversed
-              .join()
-        ].join();
+  String toString({bool includeWidth = true}) {
+    if (isValid && includeWidth) {
+      final hexValue = width > _INT_BITS
+          ? toBigInt().toRadixString(16)
+          : toInt().toRadixString(16);
+      return "$width'h$hexValue";
+    } else {
+      return [
+        if (includeWidth) "$width'b",
+        ...List<String>.generate(width, (index) => this[index]._bitString())
+            .reversed
+      ].join();
+    }
+  }
 
   String _bitString() {
     if (width != 1) {
@@ -268,54 +298,102 @@ abstract class LogicValue {
   }
 
   /// Returns the `i`th bit of this [LogicValue]
+  ///
+  /// The [index] provided can be positive or negative. For positive [index],
+  /// the indexing is performed from front of the LogicValue.
+  /// For negative [index], the indexing started from last index and
+  /// goes to front.
+  /// Note: the [index] value must follow, -[width] <= [index] < [width]
+  ///
+  /// ```dart
+  /// LogicValue.ofString('1111')[2];  // == LogicValue.one
+  /// LogicValue.ofString('0111')[-1]; // == LogicValue.zero
+  /// LogicValue.ofString('0100')[-2]; // == LogicValue.one
+  /// LogicValue.ofString('0101')[-5]; // Error - out of range
+  /// LogicValue.ofString('0101')[10]; // Error - out of range
+  /// ```
+  ///
   LogicValue operator [](int index) {
-    if (index >= width || index < 0) {
+    final modifiedIndex = (index < 0) ? width + index : index;
+    if (modifiedIndex >= width || modifiedIndex < 0) {
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $index.', width);
+          'Index out of range: $modifiedIndex(=$index).', width);
     }
-    return _getIndex(index);
+    return _getIndex(modifiedIndex);
   }
 
   /// Returns the `i`th bit of this [LogicValue].  Performs no boundary checks.
   LogicValue _getIndex(int index);
 
-  /// Returns a new [LogicValue] with the order of all bits in the reverse order of this [LogicValue]
+  /// Returns a new [LogicValue] with the order of all bits in the reverse order
+  /// of this [LogicValue]
   LogicValue get reversed;
 
-  /// Returns a subset [LogicValue].  It is inclusive of [startIndex], exclusive of [endIndex].
+  /// Returns a subset [LogicValue].  It is inclusive of [startIndex], exclusive
+  /// of [endIndex].
   ///
-  /// [startIndex] must be less than [endIndex]. If [startIndex] and [endIndex] are equal, then a
-  /// zero-width value is returned.
+  /// [startIndex] must come before the [endIndex] on position. If [startIndex]
+  /// and [endIndex] are equal, then a zero-width value is returned.
+  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  ///
+  /// ```dart [TODO]
+  /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
+  /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
+  /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
+  /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
+  /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
+  /// ```
+  ///
   LogicValue getRange(int startIndex, int endIndex) {
-    if (endIndex < startIndex) {
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedEndIndex < modifiedStartIndex) {
       throw Exception(
-          'End ($endIndex) cannot be less than start ($startIndex).');
+          'End $modifiedEndIndex(=$endIndex) cannot be less than start '
+          '$modifiedStartIndex(=$startIndex).');
     }
-    if (endIndex > width) {
-      throw Exception('End ($endIndex) must be less than width ($width).');
-    }
-    if (startIndex < 0) {
+    if (modifiedEndIndex > width) {
       throw Exception(
-          'Start ($startIndex) must be greater than or equal to 0.');
+          'End $modifiedEndIndex(=$endIndex) must be less than width'
+          ' ($width).');
     }
-    return _getRange(startIndex, endIndex);
+    if (modifiedStartIndex < 0) {
+      throw Exception(
+          'Start $modifiedStartIndex(=$startIndex) must be greater than or '
+          'equal to 0.');
+    }
+    return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
 
-  /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of [end].
-  /// Performs no boundary checks.
+  /// Returns a subset [LogicValue].  It is inclusive of [start], exclusive of
+  /// [end]. Performs no boundary checks.
   ///
   /// If [start] and [end] are equal, then a zero-width signal is returned.
   LogicValue _getRange(int start, int end);
 
-  /// Accesses a subset of this [LogicValue] from [startIndex] to [endIndex], both inclusive.
+  /// Accesses a subset of this [LogicValue] from [startIndex] to [endIndex],
+  /// both inclusive.
   ///
-  /// If [endIndex] is less than [startIndex], the returned value will be reversed relative
-  /// to the original value.
+  /// If [endIndex] is less than [startIndex], the returned value will be
+  /// reversed relative to the original value.
+  ///
+  /// ```dart [TODO]
+  /// LogicValue.ofString('xz01').slice(2, 1);    // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(-2, -3);  // == LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(1, 3);    // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-3, -1);  // == LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-2, -2);  // == LogicValue.ofString('z')
+  /// ```
   LogicValue slice(int endIndex, int startIndex) {
-    if (startIndex <= endIndex) {
-      return getRange(startIndex, endIndex + 1);
+    final modifiedStartIndex =
+        (startIndex < 0) ? width + startIndex : startIndex;
+    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    if (modifiedStartIndex <= modifiedEndIndex) {
+      return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {
-      return getRange(endIndex, startIndex + 1).reversed;
+      return getRange(modifiedEndIndex, modifiedStartIndex + 1).reversed;
     }
   }
 
@@ -334,14 +412,18 @@ abstract class LogicValue {
   ///
   /// Throws an Exception if width is not 1.
   @Deprecated('Check `width` separately to see if single-bit.')
+  // ignore: avoid_returning_this
   LogicValue get bit {
-    if (width != 1) throw Exception('Width must be 1, but was $width.');
+    if (width != 1) {
+      throw Exception('Width must be 1, but was $width.');
+    }
     return this;
   }
 
   /// Converts valid a [LogicValue] to an [int].
   ///
-  /// Throws an `Exception` if not [isValid] or the width doesn't fit in an [int].
+  /// Throws an `Exception` if not [isValid] or the width doesn't fit in
+  /// an [int].
   int toInt();
 
   /// Converts valid a [LogicValue] to an [int].
@@ -353,12 +435,14 @@ abstract class LogicValue {
   ///
   /// Throws an exception if the value is invalid.
   bool toBool() {
-    if (!isValid) throw Exception('Cannot convert value "$this" to bool');
-    if (width != 1) {
-      throw Exception(
-          'Only single bit values can be converted to a bool, but found width $width in $this');
+    if (!isValid) {
+      throw Exception('Cannot convert value "$this" to bool');
     }
-    return this == LogicValue.one ? true : false;
+    if (width != 1) {
+      throw Exception('Only single bit values can be converted to a bool,'
+          ' but found width $width in $this');
+    }
+    return this == LogicValue.one;
   }
 
   /// Returns a new [LogicValue] with every bit inverted.
@@ -420,47 +504,55 @@ abstract class LogicValue {
   /// Addition operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   ///
   /// WARNING: Signed math is not fully tested.
+  // ignore: avoid_dynamic_calls
   LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
   /// Modulo operation.
   ///
+  // ignore: avoid_dynamic_calls
   LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
 
   /// Executes mathematical operations between two [LogicValue]s
   ///
-  /// Handles width and bounds checks as well as proper conversion between different types of representation.
+  /// Handles width and bounds checks as well as proper conversion between
+  /// different types of representation.
   LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw Exception(
-          'Improper argument ${other.runtimeType}, should be int, LogicValue, or BigInt.');
+      throw Exception('Improper argument ${other.runtimeType}, should be int,'
+          ' LogicValue, or BigInt.');
     }
     if (other is LogicValue && other.width != width) {
       throw Exception('Widths  must match, but found "$this" and "$other".');
     }
 
-    if (!isValid) return LogicValue.filled(width, LogicValue.x);
+    if (!isValid) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
     if (other is LogicValue && !other.isValid) {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
     if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
-      var a = toBigInt();
-      var b = other is BigInt
+      final a = toBigInt();
+      final b = other is BigInt
           ? other
           : other is int
               ? BigInt.from(other)
@@ -468,57 +560,72 @@ abstract class LogicValue {
                   ? other.toBigInt()
                   : throw Exception(
                       'Unexpected big type: ${other.runtimeType}.');
-      return LogicValue.ofBigInt(op(a, b), width);
+      return LogicValue.ofBigInt(op(a, b) as BigInt, width);
     } else {
-      var a = toInt();
-      var b = other is int ? other : (other as LogicValue).toInt();
-      return LogicValue.ofInt(op(a, b), width);
+      final a = toInt();
+      final b = other is int ? other : (other as LogicValue).toInt();
+      return LogicValue.ofInt(op(a, b) as int, width);
     }
   }
 
   /// Equal-to operation.
   ///
-  /// This is different from [==] because it returns a [LogicValue] instead of a [bool].
-  /// It does a logical comparison of the two values, rather than exact equality.  For
-  /// example, if one of the two values is invalid, [eq] will return `x`.
+  /// This is different from [==] because it returns a [LogicValue] instead
+  /// of a [bool].  It does a logical comparison of the two values, rather
+  /// than exact equality.  For example, if one of the two values is invalid,
+  /// [eq] will return `x`.
   LogicValue eq(dynamic other) => _doCompare(other, (a, b) => a == b);
 
   /// Less-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator <(dynamic other) => _doCompare(other, (a, b) => a < b);
+  LogicValue operator <(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator >(dynamic other) => _doCompare(other, (a, b) => a > b);
+  LogicValue operator >(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator <=(dynamic other) => _doCompare(other, (a, b) => a <= b);
+  LogicValue operator <=(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   ///
   /// WARNING: Signed math is not fully tested.
-  LogicValue operator >=(dynamic other) => _doCompare(other, (a, b) => a >= b);
+  LogicValue operator >=(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doCompare(other, (a, b) => (a >= b) as bool);
 
   /// Executes comparison operations between two [LogicValue]s
   ///
-  /// Handles width and bounds checks as well as proper conversion between different types of representation.
+  /// Handles width and bounds checks as well as proper conversion between
+  /// different types of representation.
   LogicValue _doCompare(dynamic other, bool Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw Exception(
-          'Improper arguments ${other.runtimeType}, should be int, LogicValue, or BigInt.');
+      throw Exception('Improper arguments ${other.runtimeType},'
+          ' should be int, LogicValue, or BigInt.');
     }
     if (other is LogicValue && other.width != width) {
       throw Exception('Widths must match, but found "$this" and "$other"');
     }
 
-    if (!isValid) return LogicValue.x;
-    if (other is LogicValue && !other.isValid) return LogicValue.x;
+    if (!isValid) {
+      return LogicValue.x;
+    }
+    if (other is LogicValue && !other.isValid) {
+      return LogicValue.x;
+    }
 
-    dynamic a, b;
+    dynamic a;
+    dynamic b;
     if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
       a = toBigInt();
       b = other is BigInt
@@ -548,10 +655,14 @@ abstract class LogicValue {
 
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
-    if (width == 0) return this;
+    if (width == 0) {
+      return this;
+    }
     int shamtInt;
     if (shamt is LogicValue) {
-      if (!shamt.isValid) return LogicValue.filled(width, LogicValue.x);
+      if (!shamt.isValid) {
+        return LogicValue.filled(width, LogicValue.x);
+      }
       shamtInt = shamt.toInt();
     } else if (shamt is int) {
       shamtInt = shamt;
@@ -585,10 +696,11 @@ abstract class LogicValue {
 
   /// Returns true iff the transition represents a positive edge.
   ///
-  /// Only returns true from 0 -> 1.  If [previousValue] or [newValue] is invalid, an Exception will be
-  /// thrown, unless [ignoreInvalid] is set to `true`.
+  /// Only returns true from 0 -> 1.  If [previousValue] or [newValue] is
+  /// invalid, an Exception will be thrown, unless [ignoreInvalid] is set
+  /// to `true`.
   static bool isPosedge(LogicValue previousValue, LogicValue newValue,
-      {ignoreInvalid = false}) {
+      {bool ignoreInvalid = false}) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 
@@ -601,10 +713,11 @@ abstract class LogicValue {
 
   /// Returns true iff the transition represents a negative edge.
   ///
-  /// Only returns true from 1 -> 0.  If [previousValue] or [newValue] is invalid, an Exception will be
-  /// thrown, unless [ignoreInvalid] is set to `true`.
+  /// Only returns true from 1 -> 0.  If [previousValue] or [newValue] is
+  /// invalid, an Exception will be thrown, unless [ignoreInvalid] is set
+  /// to `true`.
   static bool isNegedge(LogicValue previousValue, LogicValue newValue,
-      {ignoreInvalid = false}) {
+      {bool ignoreInvalid = false}) {
     _assertSingleBit(previousValue);
     _assertSingleBit(newValue);
 
@@ -615,11 +728,12 @@ abstract class LogicValue {
     return previousValue == LogicValue.one && newValue == LogicValue.zero;
   }
 
-  /// Returns a new [LogicValue] with width [newWidth] where the most significant
-  /// bits for indices beyond the original [width] are set to [fill].
+  /// Returns a new [LogicValue] with width [newWidth] where the most
+  /// significant bits for indices beyond the original [width] are set
+  /// to [fill].
   ///
-  /// The [newWidth] must be greater than or equal to the current width or an exception
-  /// will be thrown. [fill] must be a single bit ([width]=1).
+  /// The [newWidth] must be greater than or equal to the current width or an
+  /// exception will be thrown. [fill] must be a single bit ([width]=1).
   LogicValue extend(int newWidth, LogicValue fill) {
     if (newWidth < width) {
       throw Exception(
@@ -634,28 +748,25 @@ abstract class LogicValue {
     ].swizzle();
   }
 
-  /// Returns a new [LogicValue] with width [newWidth] where new bits added are zeros
-  /// as the most significant bits.
+  /// Returns a new [LogicValue] with width [newWidth] where new bits added are
+  /// zeros as the most significant bits.
   ///
-  /// The [newWidth] must be greater than or equal to the current width or an exception
-  /// will be thrown.
-  LogicValue zeroExtend(int newWidth) {
-    return extend(newWidth, LogicValue.zero);
-  }
+  /// The [newWidth] must be greater than or equal to the current width or an
+  /// exception will be thrown.
+  LogicValue zeroExtend(int newWidth) => extend(newWidth, LogicValue.zero);
 
-  /// Returns a new [LogicValue] with width [newWidth] where new bits added are sign bits
-  /// as the most significant bits.  The sign is determined using two's complement, so
-  /// it takes the most significant bit of the original value and extends with that.
+  /// Returns a new [LogicValue] with width [newWidth] where new bits added are
+  /// sign bits as the most significant bits.  The sign is determined using
+  /// two's complement, so it takes the most significant bit of the original
+  /// value and extends with that.
   ///
-  /// The [newWidth] must be greater than or equal to the current width or an exception
-  /// will be thrown.
-  LogicValue signExtend(int newWidth) {
-    return extend(newWidth, this[width - 1]);
-  }
+  /// The [newWidth] must be greater than or equal to the current width or an
+  /// exception will be thrown.
+  LogicValue signExtend(int newWidth) => extend(newWidth, this[width - 1]);
 
-  /// Returns a copy of this [LogicValue] with the bits starting from [startIndex]
-  /// up until [startIndex] + [update]`.width` set to [update] instead
-  /// of their original value.
+  /// Returns a copy of this [LogicValue] with the bits starting from
+  /// [startIndex] up until [startIndex] + [update]`.width` set to [update]
+  /// instead of their original value.
   ///
   /// The return value will be the same [width].  An exception will be thrown if
   /// the position of the [update] would cause an overrun past the [width].
@@ -663,7 +774,7 @@ abstract class LogicValue {
     if (startIndex + update.width > width) {
       throw Exception(
           'Width of updatedValue $update at startIndex $startIndex would'
-          'overrun the width of the original ($width).');
+          ' overrun the width of the original ($width).');
     }
 
     return [

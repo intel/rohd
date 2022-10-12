@@ -751,7 +751,7 @@ You can read more about SystemVerilog here: https://en.wikipedia.org/wiki/System
 
 ### Chisel
 Chisel is a domain specific language (DSL) built on top of <a href="https://www.scala-lang.org/">Scala</a>, which is built on top of the Java virtual machine (JVM).  The goals of Chisel are somewhat aligned with the goals of ROHD.  Chisel can also convert to SystemVerilog.
-- The syntax of Scala (and thus Chisel) is probably less familiar-feeling to most hardware engineers, and is arguably more verbose and subjectively uglier than ROHD with Dart.
+- The syntax of Scala (and thus Chisel) is probably less familiar-feeling to most hardware engineers, and it can be more verbose than ROHD with Dart.
 - Scala and the JVM are arguably less user friendly to debug than Dart code.
 - Chisel is focused mostly on the hardware *designer* rather than the *validator*.  Many of the design choices for the language are centered around making it easier to parameterize and synthesize logic.  ROHD was created with validators in mind.
 - Chisel generates logic that's closer to a netlist than what a similar implementation in SystemVerilog would look like.  This can make it difficult to debug or validate generated code.  ROHD generates structurally similar SystemVerilog that looks close to how you might write it.

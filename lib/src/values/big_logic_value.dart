@@ -12,8 +12,8 @@ part of values;
 
 /// A [LogicValue] whose number of bits is greater than the size of an [int].
 ///
-/// The implementation is similar to [_SmallLogicValue], except it uses [BigInt].
-///
+/// The implementation is similar to [_SmallLogicValue], except it uses
+/// [BigInt].
 class _BigLogicValue extends LogicValue {
   late final BigInt _value;
   late final BigInt _invalid;
@@ -28,7 +28,8 @@ class _BigLogicValue extends LogicValue {
   }
 
   _BigLogicValue(BigInt value, BigInt invalid, int width)
-      : assert(width > LogicValue._INT_BITS),
+      : assert(width > LogicValue._INT_BITS,
+            '_BigLogicValue should only be used for large values'),
         super._(width) {
     _value = _mask & value;
     _invalid = _mask & invalid;
@@ -36,8 +37,12 @@ class _BigLogicValue extends LogicValue {
 
   @override
   bool _equals(Object other) {
-    if (other is _FilledLogicValue) return other == this;
-    if (other is! _BigLogicValue) return false;
+    if (other is _FilledLogicValue) {
+      return other == this;
+    }
+    if (other is! _BigLogicValue) {
+      return false;
+    }
     return _value == other._value && _invalid == other._invalid;
   }
 
@@ -46,14 +51,14 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _getIndex(int index) {
-    var bitValue = (_value >> index).isOdd;
-    var bitInvalid = (_invalid >> index).isOdd;
+    final bitValue = (_value >> index).isOdd;
+    final bitInvalid = (_invalid >> index).isOdd;
     return _bitsToLogicValue(bitValue, bitInvalid);
   }
 
   @override
   LogicValue _getRange(int start, int end) {
-    var newWidth = end - start;
+    final newWidth = end - start;
     if (newWidth > LogicValue._INT_BITS) {
       return _BigLogicValue((_value >> start) & _maskOfWidth(newWidth),
           (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
@@ -83,8 +88,9 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  int toInt() => throw Exception(
-      'LogicValue width $width is too long to convert to int. Use toBigInt() instead.');
+  int toInt() =>
+      throw Exception('LogicValue width $width is too long to convert to int.'
+          ' Use toBigInt() instead.');
 
   @override
   LogicValue operator ~() =>
@@ -95,8 +101,9 @@ class _BigLogicValue extends LogicValue {
     if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
-    var eitherZero = (~_value & ~_invalid) | (~other._value & ~other._invalid);
+    final eitherInvalid = _invalid | other._invalid;
+    final eitherZero =
+        (~_value & ~_invalid) | (~other._value & ~other._invalid);
     return _BigLogicValue(
         ~eitherInvalid & ~eitherZero, eitherInvalid & ~eitherZero, width);
   }
@@ -106,8 +113,8 @@ class _BigLogicValue extends LogicValue {
     if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
-    var eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
+    final eitherInvalid = _invalid | other._invalid;
+    final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
     return _BigLogicValue(eitherOne, eitherInvalid & ~eitherOne, width);
   }
 
@@ -116,7 +123,7 @@ class _BigLogicValue extends LogicValue {
     if (other is! _BigLogicValue) {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
-    var eitherInvalid = _invalid | other._invalid;
+    final eitherInvalid = _invalid | other._invalid;
     return _BigLogicValue(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
   }
@@ -137,7 +144,9 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue xor() {
-    if (!isValid) return LogicValue.x;
+    if (!isValid) {
+      return LogicValue.x;
+    }
     var shiftedValue = _value;
     var result = 0;
     while (shiftedValue != BigInt.zero) {
@@ -162,11 +171,11 @@ class _BigLogicValue extends LogicValue {
   LogicValue _shiftArithmeticRight(int shamt) => !isValid
       ? _FilledLogicValue(_LogicValueEnum.x, width)
       : _BigLogicValue(
-          ((_value |
+          (_value |
                   (this[width - 1] == LogicValue.one
                       ? ((_mask >> (width - shamt)) << (width - shamt))
                       : BigInt.zero)) >>
-              shamt),
+              shamt,
           _invalid >> shamt,
           width);
 }
