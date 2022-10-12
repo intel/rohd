@@ -20,22 +20,22 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
-      - name: Install dependencies
+      - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
 
-      - name: Verify formatting
+      - name: Verify project formatting
         run: tool/gh_actions/verify_formatting.sh
 
       - name: Analyze project source
         run: tool/gh_actions/analyze_source.sh
 
-      - name: Check documentation
+      - name: Check project documentation
         run: tool/gh_actions/check_documentation.sh
 
-      - name: Install Icarus Verilog
+      - name: Install software - Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
 
-      - name: Run tests
+      - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
   deploy-documentation:
@@ -53,13 +53,13 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
-      - name: Install dependencies
+      - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
 
-      - name: Generate documentation
+      - name: Generate project documentation
         run: tool/gh_actions/generate_documentation.sh
 
-      - name: Deploy documentation
+      - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: doc/api

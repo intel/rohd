@@ -20,11 +20,10 @@ set -euo pipefail
 
 output=$(dart doc --validate-links --dry-run 2>&1 | tee)
 
-echo "${output}"
-
 # In case of problems, the variable will contain a non-empty string.
 if [ -z "${output}" ]; then
-  echo 'Documentation check successful!'
+  echo 'Documentation check passed!'
 else
+  echo "${output}"
   exit 1
 fi
