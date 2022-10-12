@@ -18,10 +18,10 @@ class TestModule extends Module {
   TestModule(Logic a, Logic c, Logic reset) {
     a = addInput('a', a);
     c = addInput('c', c, width: c.width);
-    var b = addOutput('b', width: c.width);
-    var clk = SimpleClockGenerator(10).clk;
+    final b = addOutput('b', width: c.width);
+    final clk = SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
-    var states = [
+    final states = [
       State<MyStates>(MyStates.state1, events: {
         a: MyStates.state2,
         ~a: MyStates.state3
@@ -57,11 +57,11 @@ class LightColor extends Const {
 class TrafficTestModule extends Module {
   TrafficTestModule(Logic traffic, Logic reset) {
     traffic = addInput('traffic', traffic, width: traffic.width);
-    var northLight = addOutput('northLight', width: traffic.width);
-    var eastLight = addOutput('eastLight', width: traffic.width);
-    var clk = SimpleClockGenerator(10).clk;
+    final northLight = addOutput('northLight', width: traffic.width);
+    final eastLight = addOutput('eastLight', width: traffic.width);
+    final clk = SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
-    var states = [
+    final states = [
       State<LightStates>(LightStates.northFlowing, events: {
         traffic.eq(Direction.noTraffic()): LightStates.northFlowing,
         traffic.eq(Direction.northTraffic()): LightStates.northFlowing,
@@ -104,32 +104,30 @@ class TrafficTestModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
     test('simple fsm', () async {
-      var pipem = TestModule(Logic(), Logic(), Logic());
+      final pipem = TestModule(Logic(), Logic(), Logic());
       await pipem.build();
 
-      var vectors = [
+      final vectors = [
         Vector({'reset': 1, 'a': 0, 'c': 0}, {}),
         Vector({'reset': 0}, {'b': 0}),
         Vector({}, {'b': 1}),
         Vector({'c': 1}, {'b': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
     test('traffic light fsm', () async {
-      var pipem = TrafficTestModule(Logic(width: 2), Logic());
+      final pipem = TrafficTestModule(Logic(width: 2), Logic());
       await pipem.build();
 
-      var vectors = [
+      final vectors = [
         Vector({'reset': 1, 'traffic': 00}, {}),
         Vector({
           'reset': 0
@@ -149,7 +147,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
           signalToWidthMap: {'traffic': 2, 'northLight': 2, 'eastLight': 2});
 

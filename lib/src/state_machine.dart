@@ -7,26 +7,26 @@
 /// 2022 April 22
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
-
 import 'dart:collection';
-
-import 'package:rohd/rohd.dart';
 import 'dart:math';
 
-// Simple class for FSM [StateMachine].
-//
-// Abstraction for representing Finite state machines (FSM).
-// Contains the logic for performing the state transitions.
+import 'package:rohd/rohd.dart';
+
+/// Simple class for FSM [StateMachine].
+///
+/// Abstraction for representing Finite state machines (FSM).
+/// Contains the logic for performing the state transitions.
 class StateMachine<StateIdentifier> {
   /// List containig objects of class [State].
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
 
   /// A map to store the state identifier as the key and the object as the value
-  final Map<StateIdentifier, State> _stateLookup = {};
+  final Map<StateIdentifier, State<StateIdentifier>> _stateLookup = {};
 
-  /// A map to store the state object as the key and the index of the state in _states as the value.
-  final Map<State, int> _stateValueLookup = {};
+  /// A map to store the state object as the key and the index of the state in
+  /// _states as the value.
+  final Map<State<StateIdentifier>, int> _stateValueLookup = {};
 
   /// The clock signal to the FSM.
   final Logic clk;
@@ -34,7 +34,7 @@ class StateMachine<StateIdentifier> {
   /// The reset signal to the FSM.
   final Logic reset;
 
-  // The reset state of the FSM to default to when the reset signal is high.
+  /// The reset state of the FSM to default to when the reset signal is high.
   final StateIdentifier resetState;
 
   /// The current state of the FSM.
@@ -48,9 +48,12 @@ class StateMachine<StateIdentifier> {
   /// Width of the state.
   final int _stateWidth;
 
-  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts the reset state to transition to [resetState] along with the [List] of [_states] of the FSM.
+  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts
+  /// the reset state to transition to [resetState] along with the [List] of
+  /// [_states] of the FSM.
   ///
-  /// If a [reset] signal is provided the FSM transitions to the [resetState] on the next clock cycle.
+  /// If a [reset] signal is provided the FSM transitions to the [resetState]
+  /// on the next clock cycle.
   StateMachine(this.clk, this.reset, this.resetState, this._states)
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
@@ -59,7 +62,7 @@ class StateMachine<StateIdentifier> {
             Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
     var stateCounter = 0;
 
-    for (var state in _states) {
+    for (final state in _states) {
       _stateLookup[state.identifier] = state;
       _stateValueLookup[state] = stateCounter++;
     }
@@ -103,11 +106,14 @@ class State<StateIdentifier> {
   /// Identifier or name of the state.
   final StateIdentifier identifier;
 
-  /// A map of the possible conditions that might be true and the next state that the FSM needs to transition to in each of those cases.
+  /// A map of the possible conditions that might be true and the next state
+  /// that the FSM needs to transition to in each of those cases.
   final Map<Logic, StateIdentifier> events;
 
   /// Actions to perform while the FSM is in this state.
   final List<Conditional> actions;
 
+  /// Represents a state named [identifier] with a definition of [events]
+  /// and [actions] associated with that state.
   State(this.identifier, {required this.events, required this.actions});
 }

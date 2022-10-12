@@ -7,6 +7,8 @@
 /// 2022 March 7
 /// Author: Max Korbel <max.korbel@intel.com>
 
+// ignore_for_file: avoid_positional_boolean_parameters
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -36,35 +38,37 @@ class SpeciallyNamedModule extends Module {
 void main() {
   group('definition name', () {
     test('respected with no conflicts', () async {
-      var mod = SpeciallyNamedModule(Logic(), false, false);
+      final mod = SpeciallyNamedModule(Logic(), false, false);
       await mod.build();
       expect(mod.generateSynth(), contains('module specialName('));
     });
     test('uniquified with conflicts', () async {
-      var mod = TopModule(Logic(), false, false);
+      final mod = TopModule(Logic(), false, false);
       await mod.build();
-      var sv = mod.generateSynth();
+      final sv = mod.generateSynth();
       expect(sv, contains('module specialName('));
       expect(sv, contains('module specialName_0('));
     });
     test('reserved throws exception with conflicts', () async {
-      var mod = TopModule(Logic(), true, false);
+      final mod = TopModule(Logic(), true, false);
       await mod.build();
-      expect(() => mod.generateSynth(), throwsException);
+      expect(mod.generateSynth, throwsException);
     });
   });
 
   group('instance name', () {
     test('uniquified with conflicts', () async {
-      var mod = TopModule(Logic(), false, false);
+      final mod = TopModule(Logic(), false, false);
       await mod.build();
-      var sv = mod.generateSynth();
+      final sv = mod.generateSynth();
       expect(sv, contains('specialNameInstance('));
       expect(sv, contains('specialNameInstance_0('));
     });
     test('reserved throws exception with conflicts', () async {
-      var mod = TopModule(Logic(), false, true);
-      expect(() async => await mod.build(), throwsException);
+      final mod = TopModule(Logic(), false, true);
+      expect(() async {
+        await mod.build();
+      }, throwsException);
     });
   });
 }
