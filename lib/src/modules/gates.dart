@@ -631,10 +631,11 @@ class IndexGate extends Module with InlineSystemVerilog {
   ///
   /// The bit [index] will be indexed as an output.
   /// [Module] is in-lined as SystemVerilog, it will use original[target], where target is [index.value.toInt()]
-  IndexGate(Logic _original, Logic _index): super() {
+  IndexGate(Logic _original, Logic _index) : super() {
     _originalName = 'original_${_original.name}';
     _indexName = Module.unpreferredName('index_${_index.name}');
-    _selectionName = Module.unpreferredName('${_original.name}_indexby_${_index.name}');
+    _selectionName =
+        Module.unpreferredName('${_original.name}_indexby_${_index.name}');
 
     addInput(_originalName, _original, width: _original.width);
     addInput(_indexName, _index, width: _index.width);
@@ -656,12 +657,12 @@ class IndexGate extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-      if (_index.hasValidValue()) {
-          var indexVal = _index.value.toInt();
-          selection.put(_original.value.getRange(indexVal, indexVal + 1));
-      } else {
-          selection.put(LogicValue.x);
-      }
+    if (_index.hasValidValue()) {
+      var indexVal = _index.value.toInt();
+      selection.put(_original.value.getRange(indexVal, indexVal + 1));
+    } else {
+      selection.put(LogicValue.x);
+    }
   }
 
   @override

@@ -92,7 +92,8 @@ class MuxWrapper extends Module {
 }
 
 class IndexGateTestModule extends Module {
-  IndexGateTestModule(Logic original, Logic index): super(name: 'indexgatetestmodule') {
+  IndexGateTestModule(Logic original, Logic index)
+      : super(name: 'indexgatetestmodule') {
     original = addInput('original', original, width: original.width);
     index = addInput('index', index, width: index.width);
     var bitSet = addOutput('index_output', width: 1);
@@ -100,7 +101,6 @@ class IndexGateTestModule extends Module {
     bitSet <= original[index];
   }
 }
-
 
 void main() {
   tearDown(Simulator.reset);
@@ -436,10 +436,12 @@ void main() {
       var vectors = [
         Vector({'original': 14, 'index': 0}, {'index_output': 0}),
         Vector({'original': 14, 'index': 2}, {'index_output': 1}),
-        Vector({'original': 14, 'index': LogicValue.x}, {'index_output': LogicValue.x}),
-        Vector({'original': LogicValue.x, 'index': LogicValue.x}, 
+        Vector({'original': 14, 'index': LogicValue.x},
             {'index_output': LogicValue.x}),
-        Vector({'original': LogicValue.x, 'index': 0}, {'index_output': LogicValue.x})
+        Vector({'original': LogicValue.x, 'index': LogicValue.x},
+            {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.x, 'index': 0},
+            {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       var simResult = SimCompare.iverilogVector(
@@ -461,6 +463,5 @@ void main() {
       testLogic.put(14);
       expect(() => testLogic[10.05], throwsException);
     });
-
   });
 }
