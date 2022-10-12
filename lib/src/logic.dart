@@ -449,7 +449,11 @@ class Logic {
   }
 
   /// Accesses the [index]th bit of this signal.
+  ///
   /// Accepts both [int] and [Logic] as [index].
+  ///
+  /// Throws [Exception] when index is not an [int] or [Logic].
+  ///
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   /// -([width]) <= [index] < [width]
   ///
