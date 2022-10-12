@@ -69,13 +69,18 @@ from <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> to <a href=".
   <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
     {String name = &#39;bussubset&#39;})
     : super(name: name) {
+  &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
+  &#47;&#47; on a Logic Bus
   if (startIndex &lt; 0 || endIndex &lt; 0) {
-    throw Exception(&#39;Cannot access negative indices!&#39;
-        &#39;  Indices $startIndex and&#47;or $endIndex are invalid.&#39;);
+    throw Exception(
+        &#39;Start ($startIndex) and End ($endIndex) must be greater than or &#39;
+        &#39;equal to 0.&#39;);
   }
+  &#47;&#47; If the +ve indices are more than Logic bus width, Index out of bounds
   if (endIndex &gt; bus.width - 1 || startIndex &gt; bus.width - 1) {
-    throw Exception(&#39;Index out of bounds, indices $startIndex and&#39;
-        &#39; $endIndex must be less than width-1&#39;);
+    throw Exception(
+        &#39;Index out of bounds, indices $startIndex and $endIndex must be less&#39;
+        &#39; than ${bus.width}&#39;);
   }
 
   &#47;&#47; original name can&#39;t be unpreferred because you cannot do a bit slice

@@ -61,6 +61,17 @@
     
 <section class="desc markdown">
   <p>Returns the <code>i</code>th bit of this <a href="../../rohd/LogicValue-class.html">LogicValue</a></p>
+<p>The <code>index</code> provided can be positive or negative. For positive <code>index</code>,
+the indexing is performed from front of the LogicValue.
+For negative <code>index</code>, the indexing started from last index and
+goes to front.
+Note: the <code>index</code> value must follow, -<a href="../../rohd/LogicValue/width.html">width</a> &lt;= <code>index</code> &lt; <a href="../../rohd/LogicValue/width.html">width</a></p>
+<pre class="language-dart"><code class="language-dart">LogicValue.ofString('1111')[2];  // == LogicValue.one
+LogicValue.ofString('0111')[-1]; // == LogicValue.zero
+LogicValue.ofString('0100')[-2]; // == LogicValue.one
+LogicValue.ofString('0101')[-5]; // Error - out of range
+LogicValue.ofString('0101')[10]; // Error - out of range
+</code></pre>
 </section>
 
 
@@ -68,11 +79,12 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue operator [](int index) {
-  if (index &gt;= width || index &lt; 0) {
+  final modifiedIndex = (index &lt; 0) ? width + index : index;
+  if (modifiedIndex &gt;= width || modifiedIndex &lt; 0) {
     throw IndexError(index, this, &#39;LogicValueIndexOutOfRange&#39;,
-        &#39;Index out of range: $index.&#39;, width);
+        &#39;Index out of range: $modifiedIndex(=$index).&#39;, width);
   }
-  return _getIndex(index);
+  return _getIndex(modifiedIndex);
 }</code></pre>
 </section>
 

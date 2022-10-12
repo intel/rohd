@@ -63,8 +63,16 @@
 <section class="desc markdown">
   <p>Returns a subset <a href="../../rohd/LogicValue-class.html">LogicValue</a>.  It is inclusive of <code>startIndex</code>, exclusive
 of <code>endIndex</code>.</p>
-<p><code>startIndex</code> must be less than <code>endIndex</code>. If <code>startIndex</code> and <code>endIndex</code>
-are equal, then a zero-width value is returned.</p>
+<p><code>startIndex</code> must come before the <code>endIndex</code> on position. If <code>startIndex</code>
+and <code>endIndex</code> are equal, then a zero-width value is returned.
+Negative/Positive index values are allowed. (The negative indexing starts from the end=<a href="../../rohd/LogicValue/width.html">width</a>-1)</p>
+<pre class="language-dart"><code class="language-dart">LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
+LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
+LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start &gt; end - error! start must be less than end
+LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start &gt; end
+LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end &gt; length-1
+</code></pre>
 </section>
 
 
@@ -72,18 +80,25 @@ are equal, then a zero-width value is returned.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue getRange(int startIndex, int endIndex) {
-  if (endIndex &lt; startIndex) {
+  final modifiedStartIndex =
+      (startIndex &lt; 0) ? width + startIndex : startIndex;
+  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
+  if (modifiedEndIndex &lt; modifiedStartIndex) {
     throw Exception(
-        &#39;End ($endIndex) cannot be less than start ($startIndex).&#39;);
+        &#39;End $modifiedEndIndex(=$endIndex) cannot be less than start &#39;
+        &#39;$modifiedStartIndex(=$startIndex).&#39;);
   }
-  if (endIndex &gt; width) {
-    throw Exception(&#39;End ($endIndex) must be less than width ($width).&#39;);
-  }
-  if (startIndex &lt; 0) {
+  if (modifiedEndIndex &gt; width) {
     throw Exception(
-        &#39;Start ($startIndex) must be greater than or equal to 0.&#39;);
+        &#39;End $modifiedEndIndex(=$endIndex) must be less than width&#39;
+        &#39; ($width).&#39;);
   }
-  return _getRange(startIndex, endIndex);
+  if (modifiedStartIndex &lt; 0) {
+    throw Exception(
+        &#39;Start $modifiedStartIndex(=$startIndex) must be greater than or &#39;
+        &#39;equal to 0.&#39;);
+  }
+  return _getRange(modifiedStartIndex, modifiedEndIndex);
 }</code></pre>
 </section>
 

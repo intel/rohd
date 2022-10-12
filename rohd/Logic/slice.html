@@ -63,16 +63,33 @@
 <section class="desc markdown">
   <p>Accesses a subset of this signal from <code>startIndex</code> to <code>endIndex</code>,
 both inclusive.</p>
-<p>If <code>endIndex</code> is less than <code>startIndex</code>, the returned value will be
-reversed relative to the original signal.</p>
+<p>If <code>endIndex</code> comes before the <code>startIndex</code> on position, the returned
+value will be reversed relative to the original signal.
+Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)</p>
+<pre class="language-dart"><code class="language-dart">Logic nextVal = addOutput('nextVal', width: width);
+// Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+// Negative Slicing
+nextVal &lt;= val.slice(val.width - 1, -3); // = val.slice(7,5) &amp; output: 0b110, where the output.width=3
+
+// Positive Slicing
+nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, where the output.width=6
+</code></pre>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic slice(int endIndex, int startIndex) =&gt;
-    BusSubset(this, startIndex, endIndex).subset;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic slice(int endIndex, int startIndex) {
+  &#47;&#47; Given start and end index, if either of them are seen to be -ve index
+  &#47;&#47; value(s) then convert them to a +ve index value(s)
+  final modifiedStartIndex =
+      (startIndex &lt; 0) ? width + startIndex : startIndex;
+  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
+
+  &#47;&#47; Create a new bus subset
+  return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
+}</code></pre>
 </section>
 
 

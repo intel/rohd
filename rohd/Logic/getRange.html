@@ -63,8 +63,17 @@
 <section class="desc markdown">
   <p>Returns a subset <a href="../../rohd/Logic-class.html">Logic</a>.  It is inclusive of <code>startIndex</code>, exclusive of
 <code>endIndex</code>.</p>
-<p><code>startIndex</code> must be less than <code>endIndex</code>. If <code>startIndex</code> and <code>endIndex</code>
-are equal, then a zero-width signal is returned.</p>
+<p>The <code>startIndex</code> must come before the <code>endIndex</code>. If <code>startIndex</code> and
+<code>endIndex</code> are equal, then a zero-width signal is returned.
+Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)</p>
+<pre class="language-dart"><code class="language-dart">Logic nextVal = addOutput('nextVal', width: width);
+// Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+// Negative getRange
+nextVal &lt;= val.getRange(-3, val.width); // = val.getRange(5,8) &amp; output: 0b110, where the output.width=3
+
+// Positive getRange
+nextVal &lt;= val.getRange(0, 6); // = val.slice(0, -2) &amp; output: 0b001110, where the output.width=6
+</code></pre>
 </section>
 
 
@@ -72,21 +81,21 @@ are equal, then a zero-width signal is returned.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic getRange(int startIndex, int endIndex) {
-  if (endIndex &lt; startIndex) {
-    throw Exception(
-        &#39;End ($endIndex) cannot be less than start ($startIndex).&#39;);
-  }
-  if (endIndex &gt; width) {
-    throw Exception(&#39;End ($endIndex) must be less than width ($width).&#39;);
-  }
-  if (startIndex &lt; 0) {
-    throw Exception(
-        &#39;Start ($startIndex) must be greater than or equal to 0.&#39;);
-  }
   if (endIndex == startIndex) {
     return Const(0, width: 0);
   }
-  return slice(endIndex - 1, startIndex);
+
+  &#47;&#47; Given start and end index, if either of them are seen to be -ve index
+  &#47;&#47; value(s) then conver them to a +ve index value(s)
+  final modifiedStartIndex =
+      (startIndex &lt; 0) ? width + startIndex : startIndex;
+  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
+  if (modifiedEndIndex &lt; modifiedStartIndex) {
+    throw Exception(
+        &#39;End $modifiedEndIndex(=$endIndex) cannot be less than start&#39;
+        &#39; $modifiedStartIndex(=$startIndex).&#39;);
+  }
+  return slice(modifiedEndIndex - 1, modifiedStartIndex);
 }</code></pre>
 </section>
 

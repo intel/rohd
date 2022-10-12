@@ -61,6 +61,20 @@
     
 <section class="desc markdown">
   <p>Accesses the <code>index</code>th bit of this signal.</p>
+<p>Negative/Positive index values are allowed. (The negative indexing starts from the end=<a href="../../rohd/Logic/width.html">width</a>-1)
+-(<a href="../../rohd/Logic/width.html">width</a>) &lt;= <code>index</code> &lt; <a href="../../rohd/Logic/width.html">width</a></p>
+<pre class="language-dart"><code class="language-dart">Logic nextVal = addOutput('nextVal', width: width);
+// Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
+// Positive Indexing
+nextVal &lt;= val[3]; // output: 1
+
+// Negative Indexing
+nextVal &lt;= val[-5]; // output: 1, also val[3] == val[-5]
+
+// Error cases
+nextVal &lt;= val[-9]; // Error!: allowed values [-8, 7]
+nextVal &lt;= val[8]; // Error!: allowed values [-8, 7]
+</code></pre>
 </section>
 
 
