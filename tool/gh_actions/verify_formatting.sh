@@ -15,6 +15,7 @@ set -euo pipefail
 if dart format --output=none --set-exit-if-changed .; then
   echo 'Format check passed!'
 else
+  declare -r exit_code=${?}
   echo 'Format check failed: please format your code (use "dart format .")!'
-  exit 1
+  exit ${exit_code}
 fi

@@ -38,12 +38,15 @@ jobs:
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
+      - name: Check folder - tmp_test
+        run: tool/gh_actions/check_folder_tmp_test.sh
+
   deploy-documentation:
     name: Deploy Documentation
     needs: run-checks
     if: github.event_name == 'push'
     permissions:
-      contents: write
+      contents: write # required for "JamesIves/github-pages-deploy-action"
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
