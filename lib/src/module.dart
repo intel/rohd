@@ -12,20 +12,21 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-/// Represents a synthesizable hardware entity with clearly defined interface boundaries.
+/// Represents a synthesizable hardware entity with clearly defined interface
+/// boundaries.
 ///
 /// Any hardware to be synthesized must be contained within a [Module].
 /// This construct is similar to a SystemVerilog `module`.
 abstract class Module {
   /// The name of this [Module].
   ///
-  /// This is not necessarily the same as the instance name in generated code.  For that,
-  /// see [uniqueInstanceName].  If you set [reserveName], then it is guaranteed to match
-  /// or else the [build] will fail.
+  /// This is not necessarily the same as the instance name in generated code.
+  /// For that, see [uniqueInstanceName].  If you set [reserveName], then it
+  /// is guaranteed to match or else the [build] will fail.
   final String name;
 
   /// An internal list of sub-modules.
@@ -44,15 +45,18 @@ abstract class Module {
 
   /// The parent [Module] of this [Module].
   ///
-  /// This only gets populated after its parent [Module], if it exists, has been built.
+  /// This only gets populated after its parent [Module], if it exists, has
+  /// been built.
   Module? get parent => _parent;
   Module?
       _parent; // a cached copy of the parent, useful for debug and efficiency
 
-  /// A map from input port names to this [Module] to corresponding [Logic] signals.
+  /// A map from input port names to this [Module] to corresponding [Logic]
+  /// signals.
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
-  /// A map from output port names to this [Module] to corresponding [Logic] signals.
+  /// A map from output port names to this [Module] to corresponding [Logic]
+  /// signals.
   Map<String, Logic> get outputs =>
       UnmodifiableMapView<String, Logic>(_outputs);
 
@@ -61,13 +65,15 @@ abstract class Module {
   /// This only gets populated after this [Module] has been built.
   Iterable<Module> get subModules => UnmodifiableListView<Module>(_modules);
 
-  /// An [Iterable] of all [Logic]s contained within this [Module] which are *not* an input or output port of this [Module].
+  /// An [Iterable] of all [Logic]s contained within this [Module] which are
+  /// *not* an input or output port of this [Module].
   ///
   /// This does not contain any signals within submodules.
   Iterable<Logic> get internalSignals =>
       UnmodifiableListView<Logic>(_internalSignals);
 
-  /// An [Iterable] of all [Logic]s contained within this [Module], including inputs, outputs, and internal signals of this [Module].
+  /// An [Iterable] of all [Logic]s contained within this [Module], including
+  /// inputs, outputs, and internal signals of this [Module].
   ///
   /// This does not contain any signals within submodules.
   Iterable<Logic> get signals => CombinedListView([
@@ -76,53 +82,73 @@ abstract class Module {
         UnmodifiableListView(internalSignals),
       ]);
 
-  /// Accesses the [Logic] associated with this [Module]s input port named [name].
+  /// Accesses the [Logic] associated with this [Module]s input port
+  /// named [name].
   ///
   /// Logic within this [Module] should consume this signal.
+  @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
           'Input name "$name" not found as an input to this Module.');
 
-  /// Accesses the [Logic] associated with this [Module]s output port named [name].
+  /// Accesses the [Logic] associated with this [Module]s output port
+  /// named [name].
   ///
-  /// Logic outside of this [Module] should consume this signal.  It is okay to consume this within this [Module] as well.
+  /// Logic outside of this [Module] should consume this signal.  It is okay
+  /// to consume this within this [Module] as well.
   Logic output(String name) => _outputs.containsKey(name)
       ? _outputs[name]!
       : throw Exception(
           'Output name "$name" not found as an output of this Module.');
 
-  /// Returns true iff [net] is the same [Logic] as the input port of this [Module] with the same name.
+  /// Returns true iff [net] is the same [Logic] as the input port of this
+  /// [Module] with the same name.
   bool isInput(Logic net) => _inputs[net.name] == net;
 
-  /// Returns true iff [net] is the same [Logic] as the output port of this [Module] with the same name.
+  /// Returns true iff [net] is the same [Logic] as the output port of this
+  /// [Module] with the same name.
   bool isOutput(Logic net) => _outputs[net.name] == net;
 
-  /// Returns true iff [net] is the same [Logic] as an input or output port of this [Module] with the same name.
+  /// Returns true iff [net] is the same [Logic] as an input or output port of
+  /// this [Module] with the same name.
   bool isPort(Logic net) => isInput(net) || isOutput(net);
 
-  /// If this module has a [parent], after [build] this will be a guaranteed unique name within its scope.
+  /// If this module has a [parent], after [build] this will be a guaranteed
+  /// unique name within its scope.
   String get uniqueInstanceName => hasBuilt || reserveName
       ? _uniqueInstanceName
-      : throw Exception(
-          'Module must be built to access uniquified name.  Call build() before accessing this.');
+      : throw Exception('Module must be built to access uniquified name.'
+          '  Call build() before accessing this.');
   String _uniqueInstanceName;
 
-  /// If true, guarantees [uniqueInstanceName] matches [name] or else the [build] will fail.
+  /// If true, guarantees [uniqueInstanceName] matches [name] or else the
+  /// [build] will fail.
   final bool reserveName;
 
-  /// The definition name of this [Module] used when instantiating instances in generated code.
+  /// The definition name of this [Module] used when instantiating instances in
+  /// generated code.
   ///
-  /// By default, if none is provided at construction time, the definition name is the same
-  /// as the [runtimeType].
+  /// By default, if none is provided at construction time, the definition name
+  /// is the same as the [runtimeType].
   ///
-  /// This could become uniquified by a [Synthesizer] unless [reserveDefinitionName] is set.
+  /// This could become uniquified by a [Synthesizer] unless
+  /// [reserveDefinitionName] is set.
   String get definitionName => _definitionName ?? runtimeType.toString();
   final String? _definitionName;
 
-  /// If true, guarantees [definitionName] is maintained by a [Synthesizer], or else it will fail.
+  /// If true, guarantees [definitionName] is maintained by a [Synthesizer],
+  /// or else it will fail.
   final bool reserveDefinitionName;
 
+  /// Constructs a new [Module] with instance name [name] and definition
+  /// name [definitionName].
+  ///
+  /// If [reserveName] is set, then the model will not build if it's unable
+  /// to keep from uniquifying (changing) [name] to avoid conflicts.
+  ///
+  /// If [reserveDefinitionName] is set, then code generation will fail if
+  /// it is unable to keep from uniquifying [definitionName] to avoid conflicts.
   Module(
       {this.name = 'unnamed_module',
       this.reserveName = false,
@@ -131,18 +157,19 @@ abstract class Module {
       : _uniqueInstanceName = name,
         _definitionName = definitionName;
 
-  /// Returns an [Iterable] of [Module]s representing the hierarchical path to this [Module].
+  /// Returns an [Iterable] of [Module]s representing the hierarchical path to
+  /// this [Module].
   ///
   /// The first element of the [Iterable] is the top-most hierarchy.
   /// The last element of the [Iterable] is this [Module].
   /// Only returns valid information after [build].
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
-      throw Exception(
-          'Module must be built before accessing hierarchy.  Call build() before executing this.');
+      throw Exception('Module must be built before accessing hierarchy.'
+          '  Call build() before executing this.');
     }
     Module? pModule = this;
-    var hierarchyQueue = Queue<Module>();
+    final hierarchyQueue = Queue<Module>();
     while (pModule != null) {
       hierarchyQueue.addFirst(pModule);
       pModule = pModule.parent;
@@ -156,16 +183,19 @@ abstract class Module {
 
   /// Builds the [Module] and all [subModules] within it.
   ///
-  /// It is recommended not to override [build()] nor put logic in [build()] unless
-  /// you have good reason to do so.  Aim to build up relevant logic in the constructor.
+  /// It is recommended not to override [build()] nor put logic in [build()]
+  /// unless you have good reason to do so.  Aim to build up relevant logic in
+  /// the constructor.
   ///
   /// All logic within this [Module] *must* be defined *before* the call to
-  /// `super.build()`.  When overriding this method, you should call `super.build()`
-  /// as the last thing that you do, and you must always call it.
+  /// `super.build()`.  When overriding this method, you should call
+  /// `super.build()` as the last thing that you do, and you must always call
+  /// it.
   ///
-  /// This method traverses connectivity inwards from this [Module]'s [inputs] and [outputs]
-  /// to determine which [Module]s are contained within it.  During this process, it
-  /// will set a variety of additional information within the hierarchy.
+  /// This method traverses connectivity inwards from this [Module]'s [inputs]
+  /// and [outputs] to determine which [Module]s are contained within it.
+  /// During this process, it will set a variety of additional information
+  /// within the hierarchy.
   ///
   /// This function can be used to consume real wallclock time for things like
   /// starting up interactions with independent processes (e.g. cosimulation).
@@ -180,17 +210,17 @@ abstract class Module {
 
     // construct the list of modules within this module
     // 1) trace from outputs of this module back to inputs of this module
-    for (var output in _outputs.values) {
+    for (final output in _outputs.values) {
       await _traceOutputForModuleContents(output, dontAddSignal: true);
     }
     // 2) trace from inputs of all modules to inputs of this module
-    for (var input in _inputs.values) {
+    for (final input in _inputs.values) {
       await _traceInputForModuleContents(input, dontAddSignal: true);
     }
 
     // set unique module instance names for submodules
-    var uniquifier = Uniquifier();
-    for (var module in _modules) {
+    final uniquifier = Uniquifier();
+    for (final module in _modules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
           initialName: Sanitizer.sanitizeSV(module.name),
           reserved: module.reserveName);
@@ -217,44 +247,47 @@ abstract class Module {
   /// A prefix to add to the beginning of any port name that is "unpreferred".
   static String get _unpreferredPrefix => '_';
 
-  /// Makes a signal name "unpreferred" when considering between multiple possible signal names.
+  /// Makes a signal name "unpreferred" when considering between multiple
+  /// possible signal names.
   ///
-  /// When logic is synthesized out (e.g. to SystemVerilog), there are cases where two
-  /// signals might be logically equivalent (e.g. directly connected to each other).  In
-  /// those scenarios, one of the two signals is collapsed into the other.  If one of the two
-  /// signals is "unpreferred", it will chose the other one for the final signal name.  Marking
-  /// signals as "unpreferred" can have the effect of making generated output easier to read.
+  /// When logic is synthesized out (e.g. to SystemVerilog), there are cases
+  /// where two signals might be logically equivalent (e.g. directly connected
+  /// to each other).  In those scenarios, one of the two signals is collapsed
+  /// into the other.  If one of the two signals is "unpreferred", it will
+  /// choose the other one for the final signal name.  Marking signals as
+  /// "unpreferred" can have the effect of making generated output easier to
+  /// read.
   @protected
-  static String unpreferredName(String name) {
-    return _unpreferredPrefix + name;
-  }
+  static String unpreferredName(String name) => _unpreferredPrefix + name;
 
   /// Returns true iff the signal name is "unpreferred".
   ///
   /// See documentation for [unpreferredName] for more details.
-  static bool isUnpreferred(String name) {
-    return name.startsWith(_unpreferredPrefix);
-  }
+  static bool isUnpreferred(String name) => name.startsWith(_unpreferredPrefix);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
-    if (isOutput(signal)) return;
+    if (isOutput(signal)) {
+      return;
+    }
 
     if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
       // we've already parsed down this path
       return;
     }
 
-    var subModule = signal.isInput ? signal.parentModule : null;
+    final subModule = signal.isInput ? signal.parentModule : null;
 
-    var subModuleParent = subModule?.parent;
+    final subModuleParent = subModule?.parent;
 
     if (!dontAddSignal && signal.isOutput) {
-      // somehow we have reached the output of a module which is not a submodule nor this module, bad!
+      // somehow we have reached the output of a module which is not a submodule
+      // nor this module, bad!
       throw Exception('Violation of input/output rules in $this on $signal.'
-          '  Logic within a Module should only consume inputs and drive outputs of that Module.'
-          '  See https://github.com/intel/rohd#modules for more information.');
+          '  Logic within a Module should only consume inputs and drive outputs'
+          ' of that Module.  See https://github.com/intel/rohd#modules for'
+          ' more information.');
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -265,15 +298,16 @@ abstract class Module {
     if (subModule != null &&
         subModule != this &&
         (subModuleParent == null || subModuleParent == this)) {
-      // if the subModuleParent hasn't been set, or it is the current module, then trace it
+      // if the subModuleParent hasn't been set, or it is the current module,
+      // then trace it
       if (subModuleParent != this) {
         await _addAndBuildModule(subModule);
       }
-      for (var subModuleOutput in subModule._outputs.values) {
+      for (final subModuleOutput in subModule._outputs.values) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
       }
-      for (var subModuleInput in subModule._inputs.values) {
+      for (final subModuleInput in subModule._inputs.values) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
@@ -287,7 +321,7 @@ abstract class Module {
             ' another input of the same module.');
       }
 
-      for (var dstConnection in signal.dstConnections) {
+      for (final dstConnection in signal.dstConnections) {
         if (signal.isOutput &&
             dstConnection.isOutput &&
             signal.parentModule! == dstConnection.parentModule!) {
@@ -306,21 +340,25 @@ abstract class Module {
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
   Future<void> _traceOutputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
-    if (isInput(signal)) return;
+    if (isInput(signal)) {
+      return;
+    }
 
     if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
       // we've already parsed down this path
       return;
     }
 
-    var subModule = signal.isOutput ? signal.parentModule : null;
+    final subModule = signal.isOutput ? signal.parentModule : null;
 
-    var subModuleParent = subModule?.parent;
+    final subModuleParent = subModule?.parent;
 
     if (!dontAddSignal && signal.isInput) {
-      // somehow we have reached the input of a module which is not a submodule nor this module, bad!
+      // somehow we have reached the input of a module which is not a submodule
+      // nor this module, bad!
       throw Exception('Violation of input/output rules in $this on $signal.'
-          '  Logic within a Module should only consume inputs and drive outputs of that Module.'
+          '  Logic within a Module should only consume inputs and drive outputs'
+          ' of that Module.'
           '  See https://github.com/intel/rohd#modules for more information.');
     }
 
@@ -332,15 +370,16 @@ abstract class Module {
     if (subModule != null &&
         subModule != this &&
         (subModuleParent == null || subModuleParent == this)) {
-      // if the subModuleParent hasn't been set, or it is the current module, then trace it
+      // if the subModuleParent hasn't been set, or it is the current module,
+      // then trace it
       if (subModuleParent != this) {
         await _addAndBuildModule(subModule);
       }
-      for (var subModuleInput in subModule._inputs.values) {
+      for (final subModuleInput in subModule._inputs.values) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
-      for (var subModuleOutput in subModule._outputs.values) {
+      for (final subModuleOutput in subModule._outputs.values) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
       }
@@ -356,7 +395,7 @@ abstract class Module {
 
   /// Registers a signal as an internal signal.
   void _addInternalSignal(Logic signal) {
-    assert(!signal.isPort);
+    assert(!signal.isPort, 'Should not be adding a port as an internal signal');
 
     _internalSignals.add(signal);
 
@@ -368,22 +407,24 @@ abstract class Module {
   void _checkForSafePortName(String name) {
     if (!Sanitizer.isSanitary(name)) {
       throw Exception(
-          'Invalid name "$name", must be legal SystemVerilog and not collide with any keywords.');
+          'Invalid name "$name", must be legal SystemVerilog and not collide'
+          ' with any keywords.');
     }
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');
     }
   }
 
-  /// Registers a signal as an input to this [Module] and returns an input port that can be consumed.
+  /// Registers a signal as an input to this [Module] and returns an input port
+  /// that can be consumed.
   ///
   /// The return value is the same as what is returned by [input()].
   @protected
   Logic addInput(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
-      throw Exception(
-          'Port width mismatch, signal "$x" does not have specified width "$width".');
+      throw Exception('Port width mismatch, signal "$x" does not'
+          ' have specified width "$width".');
     }
     _inputs[name] = Logic(name: name, width: width)..gets(x);
 
@@ -393,7 +434,8 @@ abstract class Module {
     return _inputs[name]!;
   }
 
-  /// Registers an output to this [Module] and returns an output port that can be driven.
+  /// Registers an output to this [Module] and returns an output port that
+  /// can be driven.
   ///
   /// The return value is the same as what is returned by [output()].
   @protected
@@ -408,18 +450,18 @@ abstract class Module {
   }
 
   @override
-  String toString() {
-    return '"$name" ($runtimeType)  :  ${_inputs.keys.toString()} => ${_outputs.keys.toString()}';
-  }
+  String toString() => '"$name" ($runtimeType)  :'
+      '  ${_inputs.keys.toString()} => ${_outputs.keys.toString()}';
 
-  /// Returns a pretty-print [String] of the heirarchy of all [Module]s within this [Module].
+  /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
+  /// this [Module].
   String hierarchyString([int indent = 0]) {
-    var padding = List.filled(indent, '  ').join();
-    var hier = padding + '> ' + toString();
-    for (var module in _modules) {
-      hier += '\n' + module.hierarchyString(indent + 1);
+    final padding = List.filled(indent, '  ').join();
+    final hier = StringBuffer('$padding> ${toString()}');
+    for (final module in _modules) {
+      hier.write('\n${module.hierarchyString(indent + 1)}');
     }
-    return hier;
+    return hier.toString();
   }
 
   /// Returns a synthesized version of this [Module].
@@ -431,7 +473,7 @@ abstract class Module {
       throw Exception('Module has not yet built!  Must call build() first.');
     }
 
-    var synthHeader = '''
+    final synthHeader = '''
 /**
  * Generated by ROHD - www.github.com/intel/rohd
  * Generation time: ${DateTime.now()}
@@ -444,8 +486,3 @@ abstract class Module {
             .join('\n\n////////////////////\n\n');
   }
 }
-
-//TODO: generate multiple SV files, one module per file
-//TODO: add ability to add a header to generated files (e.g. copyright)
-
-//TODO: warnings for unconnected ports?

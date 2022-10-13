@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 class FlyingOutputModule extends Module {
   FlyingOutputModule(Logic a) : super(name: 'flyingoutput') {
     a = addInput('a', a);
-    var y = addOutput('y');
+    final y = addOutput('y');
     y <= BadSubModuleOut(a).y;
   }
 }
@@ -29,7 +29,7 @@ class BadSubModuleOut extends Module {
 class FlyingInputModule extends Module {
   FlyingInputModule(Logic b) : super(name: 'flyinginput') {
     b = addInput('b', b);
-    var x = addOutput('x');
+    final x = addOutput('x');
     x <= BadSubModuleIn(b).x;
   }
 }
@@ -44,46 +44,44 @@ class BadSubModuleIn extends Module {
 
 class DoubledInputModule extends Module {
   DoubledInputModule(Logic a) : super(name: 'doubledinput') {
-    var aInner = addInput('a', a);
+    final aInner = addInput('a', a);
     addInput('b', aInner);
   }
 }
 
 class DoubledGappedInputModule extends Module {
   DoubledGappedInputModule(Logic a) : super(name: 'doubledgappedinput') {
-    var aInner = addInput('a', a);
+    final aInner = addInput('a', a);
     addInput('b', Logic()..gets(~aInner));
   }
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   test('flying output', () async {
-    var mod = FlyingOutputModule(Logic());
+    final mod = FlyingOutputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
   test('flying input', () async {
-    var mod = FlyingInputModule(Logic());
+    final mod = FlyingInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
   test('doubled input', () async {
-    var mod = DoubledInputModule(Logic());
+    final mod = DoubledInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);
   });
 
   test('doubled gapped input', () async {
-    var mod = DoubledGappedInputModule(Logic());
+    final mod = DoubledGappedInputModule(Logic());
     expect(() async {
       await mod.build();
     }, throwsException);

@@ -41,8 +41,8 @@ class _FilledLogicValue extends LogicValue {
         return other._value == other._mask && other._invalid == other._mask;
       }
     }
-    throw Exception(
-        'Unexpected unknown comparison between $runtimeType and ${other.runtimeType}.');
+    throw Exception('Unexpected unknown comparison between $runtimeType'
+        ' and ${other.runtimeType}.');
   }
 
   @override
@@ -78,8 +78,8 @@ class _FilledLogicValue extends LogicValue {
   @override
   int toInt() {
     if (width > LogicValue._INT_BITS) {
-      throw Exception(
-          'LogicValue width $width is too long to convert to int. Use toBigInt() instead.');
+      throw Exception('LogicValue width $width is too long to convert to int.'
+          ' Use toBigInt() instead.');
     }
     if (_value == _LogicValueEnum.one) {
       return _SmallLogicValue._maskOfWidth(width);
@@ -184,7 +184,9 @@ class _FilledLogicValue extends LogicValue {
   @override
   LogicValue _xor2(LogicValue other) {
     if (other is _FilledLogicValue) {
-      if (!isValid || !other.isValid) return LogicValue.x;
+      if (!isValid || !other.isValid) {
+        return LogicValue.x;
+      }
       return ((_value == _LogicValueEnum.one) ^
               (other._value == _LogicValueEnum.one))
           ? _FilledLogicValue(_LogicValueEnum.one, width)

@@ -7,10 +7,9 @@
 /// 2021 May 21
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:test/test.dart';
 
 class ComparisonTestModule extends Module {
   final int c;
@@ -22,17 +21,17 @@ class ComparisonTestModule extends Module {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
-    var aEqB = addOutput('a_eq_b');
-    var aLtB = addOutput('a_lt_b');
-    var aLteB = addOutput('a_lte_b');
-    var aGtB = addOutput('a_gt_b');
-    var aGteB = addOutput('a_gte_b');
+    final aEqB = addOutput('a_eq_b');
+    final aLtB = addOutput('a_lt_b');
+    final aLteB = addOutput('a_lte_b');
+    final aGtB = addOutput('a_gt_b');
+    final aGteB = addOutput('a_gte_b');
 
-    var aEqC = addOutput('a_eq_c');
-    var aLtC = addOutput('a_lt_c');
-    var aLteC = addOutput('a_lte_c');
-    var aGtC = addOutput('a_gt_c');
-    var aGteC = addOutput('a_gte_c');
+    final aEqC = addOutput('a_eq_c');
+    final aLtC = addOutput('a_lt_c');
+    final aLteC = addOutput('a_lte_c');
+    final aGtC = addOutput('a_gt_c');
+    final aGteC = addOutput('a_gte_c');
 
     aEqB <= a.eq(b);
     aLtB <= a.lt(b);
@@ -49,20 +48,18 @@ class ComparisonTestModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   group('simcompare', () {
-    var signalToWidthMap = {
+    final signalToWidthMap = {
       'a': 8,
       'b': 8,
     };
 
     test('compares', () async {
-      var gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({
           'a': 0,
           'b': 0
@@ -110,7 +107,7 @@ void main() {
         }),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: signalToWidthMap);
       expect(simResult, equals(true));

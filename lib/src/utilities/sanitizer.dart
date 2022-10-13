@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// sanitizer.dart
-/// Sanitizes strings so they don't collide with generated code in other languages (e.g. SystemVerilog)
+/// Sanitizes strings so they don't collide with generated code in other
+/// languages (e.g. SystemVerilog)
 ///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -12,29 +13,29 @@
 
 /// A utility for ensuring generated code is "sanitary".
 ///
-/// "Sanitary" means it doesn't have any characters illegal in generated languages,
-/// doesn't collide with keywords in generated languages, and has a valid variable
-/// name in generated languages.
+/// "Sanitary" means it doesn't have any characters illegal in generated
+/// languages, doesn't collide with keywords in generated languages, and has a
+/// valid variable name in generated languages.
 abstract class Sanitizer {
   /// Returns true iff [name] needs no renaming to be "sanitary".
-  static bool isSanitary(String name) {
-    return name == sanitizeSV(name);
-  }
+  static bool isSanitary(String name) => name == sanitizeSV(name);
 
-  /// Returns a modified version of [initialName] which is guaranteed to be "sanitary".
+  /// Returns a modified version of [initialName] which is guaranteed to be
+  /// "sanitary".
   static String sanitizeSV(String initialName) {
     var newName = initialName;
 
     // get rid of any weird characters, replace with `_`
-    newName = newName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+    newName = newName.replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
 
     // can't start with a number
-    if (newName.startsWith(RegExp(r'[0-9]'))) {
-      newName = 's' + newName;
+    if (newName.startsWith(RegExp('[0-9]'))) {
+      newName = 's$newName';
     }
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {
+      // ignore: use_string_buffers
       newName += '_';
     }
 

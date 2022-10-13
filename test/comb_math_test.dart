@@ -43,7 +43,7 @@ class SimplerExample extends Module {
     a = addInput('a', a, width: 8);
     addOutput('b', width: 8);
 
-    var inner = Logic(name: 'inner', width: 8);
+    final inner = Logic(name: 'inner', width: 8);
 
     Combinational([
       inner < 0xf,
@@ -59,7 +59,7 @@ class StagedExample extends Module {
     a = addInput('a', a, width: 8);
     addOutput('b', width: 8);
 
-    var inner = Logic(name: 'inner', width: 4);
+    final inner = Logic(name: 'inner', width: 4);
 
     Combinational([
       inner < 0xf,
@@ -75,8 +75,8 @@ class PropExample extends Module {
     a = addInput('a', a, width: 8);
     addOutput('b', width: 8);
 
-    var inner = Logic(name: 'inner', width: 8);
-    var inner2 = Logic(name: 'inner2', width: 8);
+    final inner = Logic(name: 'inner', width: 8);
+    final inner2 = Logic(name: 'inner2', width: 8);
 
     inner2 <= inner;
 
@@ -104,9 +104,7 @@ class ReducedExample extends Module {
 }
 
 void main() {
-  tearDown(() {
-    Simulator.reset();
-  });
+  tearDown(Simulator.reset);
 
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
@@ -115,7 +113,7 @@ void main() {
     await mod.build();
     final codepoints = '†† †† † † q†† †'.runes;
 
-    var vectors = <Vector>[];
+    final vectors = <Vector>[];
     for (final inputCodepoint in codepoints) {
       codepoint.put(inputCodepoint);
       LogicValue expected;
@@ -129,7 +127,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
 
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'codepoint': 21, 'bytes': 32});
     expect(simResult, equals(true));
@@ -141,59 +139,59 @@ void main() {
     await mod.build();
     final codepoints = '†'.runes;
 
-    var vectors = <Vector>[];
+    final vectors = <Vector>[];
     for (final inputCodepoint in codepoints) {
       codepoint.put(inputCodepoint);
       vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': 0x808}));
     }
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'codepoint': 21, 'bytes': 32});
     expect(simResult, equals(true));
   });
 
   test('simpler example', () async {
-    var a = Logic(name: 'a', width: 8);
-    var mod = SimplerExample(a);
+    final a = Logic(name: 'a', width: 8);
+    final mod = SimplerExample(a);
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));
   });
 
   test('staged example', () async {
-    var a = Logic(name: 'a', width: 8);
-    var mod = StagedExample(a);
+    final a = Logic(name: 'a', width: 8);
+    final mod = StagedExample(a);
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));
   });
 
   test('propagation example', () async {
-    var a = Logic(name: 'a', width: 8);
-    var mod = PropExample(a);
+    final a = Logic(name: 'a', width: 8);
+    final mod = PropExample(a);
     await mod.build();
 
-    var vectors = [
+    final vectors = [
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    var simResult = SimCompare.iverilogVector(
+    final simResult = SimCompare.iverilogVector(
         mod.generateSynth(), mod.runtimeType.toString(), vectors,
         signalToWidthMap: {'a': 8, 'b': 8});
     expect(simResult, equals(true));
