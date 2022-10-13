@@ -204,7 +204,7 @@ abstract class SimCompare {
     Directory(dir).createSync(recursive: true);
     File(tmpTestFile).writeAsStringSync(testbench);
     final compileResult = Process.runSync('iverilog',
-        ['-g2012', tmpTestFile, '-o', tmpOutput] + iverilogExtraArgs);
+        ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
     bool printIfContentsAndCheckError(dynamic output) {
       if (output.toString().isNotEmpty) {
         print(output);
