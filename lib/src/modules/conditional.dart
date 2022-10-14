@@ -28,7 +28,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {String name = 'always'}) : super(name: name) {
+  _Always(this.conditionals, {super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
     for (final conditional in conditionals) {
@@ -105,8 +105,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 class Combinational extends _Always {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
-  Combinational(List<Conditional> conditionals, {String name = 'combinational'})
-      : super(conditionals, name: name) {
+  Combinational(super.conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
       driver.glitch.listen((args) {
@@ -764,11 +763,9 @@ class CaseZ extends Case {
   /// the definition of matches allows for `z` to be a wildcard.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
-  CaseZ(Logic expression, List<CaseItem> items,
-      {List<Conditional>? defaultItem,
-      ConditionalType conditionalType = ConditionalType.none})
-      : super(expression, items,
-            defaultItem: defaultItem, conditionalType: conditionalType);
+  CaseZ(super.expression, super.items,
+      {super.defaultItem,
+      super.conditionalType});
 
   @override
   String get caseType => 'casez';
@@ -1028,7 +1025,7 @@ class FlipFlop extends Module with CustomSystemVerilog {
   Logic get q => output(_q);
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
-  FlipFlop(Logic clk, Logic d, {String name = 'flipflop'}) : super(name: name) {
+  FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }

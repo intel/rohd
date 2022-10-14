@@ -101,7 +101,7 @@ class Pipeline {
       List<Logic> signals = const [],
       Map<Logic, Const> resetValues = const {},
       this.reset}) {
-    _stages = stages.map((stage) => _PipeStage(stage)).toList();
+    _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
     if (_numStages == 0) {
@@ -271,21 +271,18 @@ class ReadyValidPipeline extends Pipeline {
   /// If contents are pushed in when the pipeline is not ready, they
   /// will be dropped.
   ReadyValidPipeline(
-    Logic clk,
+    super.clk,
     this.validPipeIn,
     this.readyPipeOut, {
     List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-    Map<Logic, Const> resetValues = const {},
+    super.resetValues,
     List<Logic> signals = const [],
-    Logic? reset,
+    super.reset,
   }) : super(
-          clk,
           stages: stages,
           signals: [validPipeIn, ...signals],
           stalls: List.generate(
               stages.length, (index) => Logic(name: 'stall_$index')),
-          reset: reset,
-          resetValues: resetValues,
         ) {
     final valid = validPipeIn;
 

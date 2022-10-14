@@ -41,12 +41,12 @@ class _SmallLogicValue extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  const _SmallLogicValue(int value, int invalid, int width)
+  const _SmallLogicValue(int value, int invalid, super.width)
       : assert(width <= LogicValue._INT_BITS,
             '_SmallLogicValue should have low number of bits'),
         _value = ((1 << width) - 1) & value,
         _invalid = ((1 << width) - 1) & invalid,
-        super._(width);
+        super._();
 
   @override
   bool _equals(Object other) {

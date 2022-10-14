@@ -22,8 +22,7 @@ class Counter extends Module {
   // This counter supports any width, determined at run-time
   final int width;
   Counter(Logic en, Logic reset, Logic clk,
-      {this.width = 8, String name = 'counter'})
-      : super(name: name) {
+      {this.width = 8, super.name = 'counter'}) {
     // Register inputs and outputs of the module in the constructor.
     // Module logic must consume registered inputs and output to registered
     // outputs.

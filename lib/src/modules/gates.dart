@@ -27,7 +27,7 @@ class NotGate extends Module with InlineSystemVerilog {
   /// Constructs a [NotGate] with [a] as its input.
   ///
   /// You can optionally set [name] to name this [Module].
-  NotGate(Logic a, {String name = 'not'}) : super(name: name) {
+  NotGate(Logic a, {super.name = 'not'}) {
     _a = Module.unpreferredName(a.name);
     _out = Module.unpreferredName('${a.name}_b');
     addInput(_a, a, width: a.width);
@@ -552,8 +552,7 @@ class Mux extends Module with InlineSystemVerilog {
 
   /// Constructs a multiplexer which passes [d0] or [d1] to [y] depending
   /// on if [control] is 0 or 1, respectively.
-  Mux(Logic control, Logic d1, Logic d0, {String name = 'mux'})
-      : super(name: name) {
+  Mux(Logic control, Logic d1, Logic d0, {super.name = 'mux'}) {
     if (control.width != 1) {
       throw Exception('Control must be single bit Logic, but found $control.');
     }
