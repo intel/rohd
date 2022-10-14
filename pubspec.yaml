@@ -7,7 +7,7 @@ issue_tracker: https://github.com/intel/rohd/issues
 documentation: https://intel.github.io/rohd/rohd/rohd-library.html
 
 environment:
-  sdk: '>=2.14.0 <3.0.0'
+  sdk: '>=2.18.0 <3.0.0'
 
 dependencies:
   collection: ^1.15.0
@@ -17,4 +17,3 @@ dependencies:
 
 dev_dependencies:
   benchmark_harness: ^2.2.0
-  
