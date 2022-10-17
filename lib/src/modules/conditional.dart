@@ -28,7 +28,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {String name = 'always'}) : super(name: name) {
+  _Always(this.conditionals, {super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
     for (final conditional in conditionals) {
@@ -1025,7 +1025,7 @@ class FlipFlop extends Module with CustomSystemVerilog {
   Logic get q => output(_q);
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
-  FlipFlop(Logic clk, Logic d, {String name = 'flipflop'}) : super(name: name) {
+  FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }

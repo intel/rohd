@@ -20,9 +20,8 @@ class FirFilter extends Module {
   final int bitWidth;
   final int depth;
   FirFilter(Logic en, Logic resetB, Logic clk, Logic inputVal, List<int> coef,
-      {this.bitWidth = 16, String name = 'FirFilter'})
-      : depth = coef.length,
-        super(name: name) {
+      {this.bitWidth = 16, super.name = 'FirFilter'})
+      : depth = coef.length {
     // Register inputs and outputs of the module in the constructor
     // Module logic must consume registered inputs and output to
     // registered outputs

@@ -1,0 +1,69 @@
+name: General
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-checks:
+    name: Run Checks
+    permissions: {}
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install project dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Verify project formatting
+        run: tool/gh_actions/verify_formatting.sh
+
+      - name: Analyze project source
+        run: tool/gh_actions/analyze_source.sh
+
+      - name: Check project documentation
+        run: tool/gh_actions/check_documentation.sh
+
+      - name: Install software - Icarus Verilog
+        run: tool/gh_actions/install_iverilog.sh
+
+      - name: Run project tests
+        run: tool/gh_actions/run_tests.sh
+
+      - name: Check folder - tmp_test
+        run: tool/gh_actions/check_folder_tmp_test.sh
+
+  deploy-documentation:
+    name: Deploy Documentation
+    needs: run-checks
+    if: github.event_name == 'push'
+    permissions:
+      contents: write # required for "JamesIves/github-pages-deploy-action"
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install project dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Generate project documentation
+        run: tool/gh_actions/generate_documentation.sh
+
+      - name: Deploy generated documentation
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: doc/api
+          branch: docs

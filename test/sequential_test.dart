@@ -20,8 +20,7 @@ class DelaySignal extends Module {
   final int depth;
 
   DelaySignal(Logic en, Logic inputVal,
-      {this.bitWidth = 4, this.depth = 5, String name = 'movingSum'})
-      : super(name: name) {
+      {this.bitWidth = 4, this.depth = 5, super.name = 'movingSum'}) {
     en = addInput('en', en);
     inputVal = addInput('inputVal', inputVal, width: bitWidth);
     final clk = SimpleClockGenerator(10).clk;
