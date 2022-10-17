@@ -96,7 +96,7 @@ class IndexGateTestModule extends Module {
       : super(name: 'indexgatetestmodule') {
     original = addInput('original', original, width: original.width);
     index = addInput('index', index, width: index.width);
-    var bitSet = addOutput('index_output', width: 1);
+    final bitSet = addOutput('index_output', width: 1);
 
     bitSet <= original[index];
   }
@@ -431,9 +431,9 @@ void main() {
     });
 
     test('Index Logic by Logic test', () async {
-      var gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
+      final gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      var vectors = [
+      final vectors = [
         Vector({'original': 14, 'index': 0}, {'index_output': 0}),
         Vector({'original': 14, 'index': 2}, {'index_output': 1}),
         Vector({'original': 14, 'index': LogicValue.x},
@@ -444,14 +444,14 @@ void main() {
             {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      var simResult = SimCompare.iverilogVector(
+      final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: {'original': 8, 'index': 8});
       expect(simResult, equals(true));
     });
 
     test('Index Logic by an Integer test', () {
-      var testLogic = Logic(width: 8);
+      final testLogic = Logic(width: 8);
       testLogic.put(14);
       expect(testLogic[0].value.toInt(), 0);
       expect(testLogic[2].value.toInt(), 1);
@@ -459,7 +459,7 @@ void main() {
     });
 
     test('Index Logic by does not accept input other than int or Logic', () {
-      var testLogic = Logic(width: 8);
+      final testLogic = Logic(width: 8);
       testLogic.put(14);
       expect(() => testLogic[10.05], throwsException);
     });

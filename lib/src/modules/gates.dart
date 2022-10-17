@@ -658,7 +658,7 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// Executes the functional behavior of this gate.
   void _execute() {
     if (_index.hasValidValue()) {
-      var indexVal = _index.value.toInt();
+      final indexVal = _index.value.toInt();
       selection.put(_original.value.getRange(indexVal, indexVal + 1));
     } else {
       selection.put(LogicValue.x);
@@ -668,8 +668,8 @@ class IndexGate extends Module with InlineSystemVerilog {
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
-    var target = inputs[_originalName]!;
-    var idx = inputs[_indexName]!;
+    final target = inputs[_originalName]!;
+    final idx = inputs[_indexName]!;
     return '$target[$idx]';
   }
 }

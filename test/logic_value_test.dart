@@ -81,12 +81,12 @@ void main() {
       expect(LogicValue.z.toString(), equals("1'bz"));
       expect(LogicValue.one.toBool(), equals(true));
       expect(LogicValue.zero.toBool(), equals(false));
-      expect(() => LogicValue.x.toBool(), throwsA(isA<Exception>()));
-      expect(() => LogicValue.z.toBool(), throwsA(isA<Exception>()));
+      expect(LogicValue.x.toBool, throwsA(isA<Exception>()));
+      expect(LogicValue.z.toBool, throwsA(isA<Exception>()));
       expect(LogicValue.one.toInt(), equals(1));
       expect(LogicValue.zero.toInt(), equals(0));
-      expect(() => LogicValue.x.toInt(), throwsA(isA<Exception>()));
-      expect(() => LogicValue.z.toInt(), throwsA(isA<Exception>()));
+      expect(LogicValue.x.toInt, throwsA(isA<Exception>()));
+      expect(LogicValue.z.toInt, throwsA(isA<Exception>()));
       expect(LogicValue.ofString(''), equals(LogicValue.ofInt(1, 0)));
       expect(
           <LogicValue>[].swizzle(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
