@@ -59,7 +59,7 @@
 <section class="desc markdown">
   <p>Constructs an instance of an externally defined SystemVerilog module.</p>
 <p>The name of the SystemVerilog module should match <a href="../../rohd/ExternalSystemVerilogModule/topModuleName.html">topModuleName</a> exactly.
-The <code>name</code> will be the instance name when referred to in generated
+The <a href="../../rohd/Module/name.html">name</a> will be the instance name when referred to in generated
 SystemVerilog.</p>
 </section>
 
@@ -70,11 +70,8 @@ SystemVerilog.</p>
   <pre class="language-dart"><code class="language-dart">ExternalSystemVerilogModule(
     {required this.topModuleName,
     this.parameters,
-    String name = &#39;external_module&#39;})
-    : super(
-          name: name,
-          definitionName: topModuleName,
-          reserveDefinitionName: true);</code></pre>
+    super.name = &#39;external_module&#39;})
+    : super(definitionName: topModuleName, reserveDefinitionName: true);</code></pre>
 </section>
 
 

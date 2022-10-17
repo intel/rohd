@@ -66,8 +66,7 @@ on if <code>control</code> is 0 or 1, respectively.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {String name = &#39;mux&#39;})
-    : super(name: name) {
+  <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {super.name = &#39;mux&#39;}) {
   if (control.width != 1) {
     throw Exception(&#39;Control must be single bit Logic, but found $control.&#39;);
   }

@@ -81,21 +81,18 @@ will be dropped.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">ReadyValidPipeline(
-  Logic clk,
+  super.clk,
   this.validPipeIn,
   this.readyPipeOut, {
   List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
-  Map&lt;Logic, Const&gt; resetValues = const {},
+  super.resetValues,
   List&lt;Logic&gt; signals = const [],
-  Logic? reset,
+  super.reset,
 }) : super(
-        clk,
         stages: stages,
         signals: [validPipeIn, ...signals],
         stalls: List.generate(
             stages.length, (index) =&gt; Logic(name: &#39;stall_$index&#39;)),
-        reset: reset,
-        resetValues: resetValues,
       ) {
   final valid = validPipeIn;
 

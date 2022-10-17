@@ -58,20 +58,17 @@
 
     
 <section class="desc markdown">
-  <p>Whenever an item in <code>items</code> matches <code>expression</code>, it will be executed, but
+  <p>Whenever an item in <a href="../../rohd/Case/items.html">items</a> matches <a href="../../rohd/Case/expression.html">expression</a>, it will be executed, but
 the definition of matches allows for <code>z</code> to be a wildcard.</p>
-<p>If none of <code>items</code> match, then <code>defaultItem</code> is executed.</p>
+<p>If none of <a href="../../rohd/Case/items.html">items</a> match, then <a href="../../rohd/Case/defaultItem.html">defaultItem</a> is executed.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">CaseZ(Logic expression, List&lt;CaseItem&gt; items,
-    {List&lt;Conditional&gt;? defaultItem,
-    ConditionalType conditionalType = ConditionalType.none})
-    : super(expression, items,
-          defaultItem: defaultItem, conditionalType: conditionalType);</code></pre>
+  <pre class="language-dart"><code class="language-dart">CaseZ(super.expression, super.items,
+    {super.defaultItem, super.conditionalType});</code></pre>
 </section>
 
 

@@ -67,8 +67,7 @@ from <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> to <a href=".
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
-    {String name = &#39;bussubset&#39;})
-    : super(name: name) {
+    {super.name = &#39;bussubset&#39;}) {
   &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
   &#47;&#47; on a Logic Bus
   if (startIndex &lt; 0 || endIndex &lt; 0) {

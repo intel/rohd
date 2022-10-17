@@ -91,7 +91,7 @@ a stage's stall is asserted, the output of that stage will not change.</p>
     List&lt;Logic&gt; signals = const [],
     Map&lt;Logic, Const&gt; resetValues = const {},
     this.reset}) {
-  _stages = stages.map((stage) =&gt; _PipeStage(stage)).toList();
+  _stages = stages.map(_PipeStage.new).toList();
   _stages.add(_PipeStage((p) =&gt; [])); &#47;&#47; output stage
 
   if (_numStages == 0) {

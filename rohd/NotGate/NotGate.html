@@ -57,14 +57,14 @@
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/NotGate-class.html">NotGate</a> with <code>a</code> as its input.</p>
-<p>You can optionally set <code>name</code> to name this <a href="../../rohd/Module-class.html">Module</a>.</p>
+<p>You can optionally set <a href="../../rohd/Module/name.html">name</a> to name this <a href="../../rohd/Module-class.html">Module</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">NotGate(Logic a, {String name = &#39;not&#39;}) : super(name: name) {
+  <pre class="language-dart"><code class="language-dart">NotGate(Logic a, {super.name = &#39;not&#39;}) {
   _a = Module.unpreferredName(a.name);
   _out = Module.unpreferredName(&#39;${a.name}_b&#39;);
   addInput(_a, a, width: a.width);

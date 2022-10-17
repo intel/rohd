@@ -63,7 +63,7 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {String name = &#39;swizzle&#39;}) : super(name: name) {
+  <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {super.name = &#39;swizzle&#39;}) {
   var idx = 0;
   var outputWidth = 0;
   for (final signal in signals.reversed) {
