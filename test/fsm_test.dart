@@ -40,7 +40,7 @@ class TestModule extends Module {
 enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
 
 class Direction extends Const {
-  Direction._(int value) : super(value, width: 2);
+  Direction._(int super.value) : super(width: 2);
   Direction.noTraffic() : this._(bin('00'));
   Direction.northTraffic() : this._(bin('01'));
   Direction.eastTraffic() : this._(bin('10'));
@@ -48,7 +48,7 @@ class Direction extends Const {
 }
 
 class LightColor extends Const {
-  LightColor._(int value) : super(value, width: 2);
+  LightColor._(int super.value) : super(width: 2);
   LightColor.green() : this._(bin('00'));
   LightColor.yellow() : this._(bin('01'));
   LightColor.red() : this._(bin('10'));

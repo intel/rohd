@@ -26,8 +26,7 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
   /// SystemVerilog representation.
   ///
   /// Set the frequency via [clockPeriod].
-  SimpleClockGenerator(this.clockPeriod, {String name = 'clkgen'})
-      : super(name: name) {
+  SimpleClockGenerator(this.clockPeriod, {super.name = 'clkgen'}) {
     addOutput('clk');
 
     clk.glitch.listen((args) {

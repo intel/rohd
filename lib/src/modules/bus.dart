@@ -36,8 +36,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
   BusSubset(Logic bus, this.startIndex, this.endIndex,
-      {String name = 'bussubset'})
-      : super(name: name) {
+      {super.name = 'bussubset'}) {
     // If a converted index value is still -ve then it's an Index out of bounds
     // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
@@ -125,7 +124,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   final List<Logic> _swizzleInputs = [];
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
-  Swizzle(List<Logic> signals, {String name = 'swizzle'}) : super(name: name) {
+  Swizzle(List<Logic> signals, {super.name = 'swizzle'}) {
     var idx = 0;
     var outputWidth = 0;
     for (final signal in signals.reversed) {

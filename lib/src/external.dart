@@ -33,11 +33,8 @@ abstract class ExternalSystemVerilogModule extends Module
   ExternalSystemVerilogModule(
       {required this.topModuleName,
       this.parameters,
-      String name = 'external_module'})
-      : super(
-            name: name,
-            definitionName: topModuleName,
-            reserveDefinitionName: true);
+      super.name = 'external_module'})
+      : super(definitionName: topModuleName, reserveDefinitionName: true);
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
