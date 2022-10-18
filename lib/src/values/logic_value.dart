@@ -180,8 +180,8 @@ abstract class LogicValue {
     final width = stringRepresentation.length;
 
     if (width <= _INT_BITS) {
-      final value = int.parse(valueString, radix: 2);
-      final invalid = int.parse(invalidString, radix: 2);
+      final value = _unsignedBinaryParse(valueString);
+      final invalid = _unsignedBinaryParse(invalidString);
       return _SmallLogicValue(value, invalid, width);
     } else {
       final value = BigInt.parse(valueString, radix: 2);
@@ -791,7 +791,24 @@ enum _ShiftType { left, right, arithmeticRight }
 /// Converts a binary [String] representation to a binary [int].
 ///
 /// Ignores all '_' in the provided binary.
-int bin(String s) => int.parse(s.replaceAll('_', ''), radix: 2);
+int bin(String s) => _unsignedBinaryParse(s.replaceAll('_', ''));
+
+/// Parses [source] as a binary integer, similarly to [int.parse].
+///
+/// If [source] interpreted as a positive signed integer would be larger than
+/// the maximum allowed by [int], then [int.parse] will throw an exception. This
+/// function will instead properly interpret it as an unsigned integer.
+int _unsignedBinaryParse(String source) {
+  final val = int.tryParse(source, radix: 2);
+  if (val != null) {
+    return val;
+  } else {
+    final hex = BigInt.parse(source, radix: 2).toRadixString(16);
+
+    // With `0x` in front of a hex literal, it will be interpreted as unsigned.
+    return int.parse('0x$hex');
+  }
+}
 
 /// Enum for a [LogicValue]'s value.
 enum _LogicValueEnum { zero, one, x, z }
