@@ -87,8 +87,8 @@ print(lv); // This prints `3b'1x0`
   final width = stringRepresentation.length;
 
   if (width &lt;= _INT_BITS) {
-    final value = int.parse(valueString, radix: 2);
-    final invalid = int.parse(invalidString, radix: 2);
+    final value = _unsignedBinaryParse(valueString);
+    final invalid = _unsignedBinaryParse(invalidString);
     return _SmallLogicValue(value, invalid, width);
   } else {
     final value = BigInt.parse(valueString, radix: 2);
