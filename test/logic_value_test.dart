@@ -91,6 +91,9 @@ void main() {
       expect(
           <LogicValue>[].swizzle(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
     });
+    test('big unsigned int string', () {
+      expect(LogicValue.ofString('1' * 64), equals(LogicValue.ofInt(-1, 64)));
+    });
     test('unary', () {
       expect(LogicValue.one.isValid, equals(true));
       expect(LogicValue.zero.isValid, equals(true));
