@@ -78,11 +78,11 @@ an exception will be thrown.</p>
         &#39;New width $newWidth must be greater than or equal to width $width.&#39;);
   }
   return [
-    Mux(
+    mux(
       this[width - 1],
       Const(1, width: newWidth - width, fill: true),
       Const(0, width: newWidth - width),
-    ).y,
+    ),
     this,
   ].swizzle();
 }</code></pre>

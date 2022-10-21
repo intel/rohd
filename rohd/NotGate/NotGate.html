@@ -49,14 +49,14 @@
 </h1></div>
 
     <section class="multi-line-signature">
-      <span class="name ">NotGate</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-a"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">a</span>, </span></li>
+      <span class="name ">NotGate</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-in_"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in_</span>, </span></li>
 <li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;not&#39;</span>}</span></li>
 </ol>)
     </section>
 
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/NotGate-class.html">NotGate</a> with <code>a</code> as its input.</p>
+  <p>Constructs a <a href="../../rohd/NotGate-class.html">NotGate</a> with <code>in_</code> as its input.</p>
 <p>You can optionally set <a href="../../rohd/Module/name.html">name</a> to name this <a href="../../rohd/Module-class.html">Module</a>.</p>
 </section>
 
@@ -64,11 +64,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">NotGate(Logic a, {super.name = &#39;not&#39;}) {
-  _a = Module.unpreferredName(a.name);
-  _out = Module.unpreferredName(&#39;${a.name}_b&#39;);
-  addInput(_a, a, width: a.width);
-  addOutput(_out, width: a.width);
+  <pre class="language-dart"><code class="language-dart">NotGate(Logic in_, {super.name = &#39;not&#39;}) {
+  _inName = Module.unpreferredName(in_.name);
+  _outName = Module.unpreferredName(&#39;${in_.name}_b&#39;);
+  addInput(_inName, in_, width: in_.width);
+  addOutput(_outName, width: in_.width);
   _setup();
 }</code></pre>
 </section>
@@ -101,7 +101,6 @@
     <li class="section-title">
       <a href="../../rohd/NotGate-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/NotGate/a.html">a</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>

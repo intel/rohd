@@ -51,8 +51,8 @@
     
 <section class="desc markdown">
   <p>A mux (multiplexer) module.</p>
-<p>If <a href="../rohd/Mux/control.html">control</a> has value <code>1</code>, then <a href="../rohd/Mux/y.html">y</a> gets <a href="../rohd/Mux/d1.html">d1</a>.
-If <a href="../rohd/Mux/control.html">control</a> has value <code>0</code>, then <a href="../rohd/Mux/y.html">y</a> gets <a href="../rohd/Mux/d0.html">d0</a>.</p>
+<p>If <code>_control</code> has value <code>1</code>, then <a href="../rohd/Mux/out.html">out</a> gets <code>_d1</code>.
+If <code>_control</code> has value <code>0</code>, then <a href="../rohd/Mux/out.html">out</a> gets <code>_d0</code>.</p>
 </section>
 
 
@@ -92,7 +92,7 @@ If <a href="../rohd/Mux/control.html">control</a> has value <code>0</code>, then
           <span class="name"><a href="../rohd/Mux/Mux.html">Mux</a></span><span class="signature">(<span class="parameter" id="-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="-param-d1"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="-param-d0"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>}</span>)</span>
         </dt>
         <dd>
-          Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../rohd/Mux/y.html">y</a> depending
+          Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../rohd/Mux/out.html">out</a> depending
 on if <code>control</code> is 0 or 1, respectively.
         </dd>
     </dl>
@@ -102,39 +102,6 @@ on if <code>control</code> is 0 or 1, respectively.
       <h2>Properties</h2>
 
       <dl class="properties">
-        <dt id="control" class="property">
-  <span class="name"><a href="../rohd/Mux/control.html">control</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd>
-  The control signal for this <a href="../rohd/Mux-class.html">Mux</a>.
-  <div class="features">read-only</div>
-
-</dd>
-
-        <dt id="d0" class="property">
-  <span class="name"><a href="../rohd/Mux/d0.html">d0</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd>
-  <a href="../rohd/Mux-class.html">Mux</a> input propogated when <a href="../rohd/Mux/y.html">y</a> is <code>0</code>.
-  <div class="features">read-only</div>
-
-</dd>
-
-        <dt id="d1" class="property">
-  <span class="name"><a href="../rohd/Mux/d1.html">d1</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd>
-  <a href="../rohd/Mux-class.html">Mux</a> input propogated when <a href="../rohd/Mux/y.html">y</a> is <code>1</code>.
-  <div class="features">read-only</div>
-
-</dd>
-
         <dt id="definitionName" class="property inherited">
   <span class="name"><a href="../rohd/Module/definitionName.html">definitionName</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> 
@@ -201,6 +168,17 @@ signals.
 <dd class="inherited">
   The name of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features">final, inherited</div>
+
+</dd>
+
+        <dt id="out" class="property">
+  <span class="name"><a href="../rohd/Mux/out.html">out</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
+
+</dt>
+<dd>
+  Output port of the <a href="../rohd/Mux-class.html">Mux</a>.
+  <div class="features">read-only</div>
 
 </dd>
 
@@ -298,13 +276,13 @@ unique name within its scope.
 </dd>
 
         <dt id="y" class="property">
-  <span class="name"><a href="../rohd/Mux/y.html">y</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Mux/y.html">y</a></span>
   <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
 
 </dt>
 <dd>
   Output port of the <a href="../rohd/Mux-class.html">Mux</a>.
-  <div class="features">read-only</div>
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.3/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `out` or `mux` instead.&#39;), read-only</div>
 
 </dd>
 
@@ -638,6 +616,7 @@ named <code>name</code>.
 
   <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
   <li><a href="../rohd/bin.html">bin</a></li>
+  <li><a href="../rohd/mux.html">mux</a></li>
   <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
   <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
 
@@ -666,15 +645,13 @@ named <code>name</code>.
     <li class="section-title">
       <a href="../rohd/Mux-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../rohd/Mux/control.html">control</a></li>
-    <li><a href="../rohd/Mux/d0.html">d0</a></li>
-    <li><a href="../rohd/Mux/d1.html">d1</a></li>
     <li class="inherited"><a href="../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../rohd/Module/name.html">name</a></li>
+    <li><a href="../rohd/Mux/out.html">out</a></li>
     <li class="inherited"><a href="../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -683,7 +660,7 @@ named <code>name</code>.
     <li class="inherited"><a href="../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li><a href="../rohd/Mux/y.html">y</a></li>
+    <li><a class="deprecated" href="../rohd/Mux/y.html">y</a></li>
 
     <li class="section-title"><a href="../rohd/Mux-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../rohd/Module/addInput.html">addInput</a></li>

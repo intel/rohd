@@ -83,10 +83,10 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   if (inputs.length != 2) {
     throw Exception(&#39;Gate has exactly two inputs.&#39;);
   }
-  final a = inputs[_a]!;
-  final b = inputs[_b]!;
-  final aStr = signed ? &#39;\$signed($a)&#39; : a;
-  return &#39;$aStr $_opStr $b&#39;;
+  final in_ = inputs[_inName]!;
+  final shiftAmount = inputs[_shiftAmountName]!;
+  final aStr = signed ? &#39;\$signed($in_)&#39; : in_;
+  return &#39;$aStr $_opStr $shiftAmount&#39;;
 }</code></pre>
 </section>
 
@@ -118,14 +118,13 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li class="section-title inherited">
       <a href="../../rohd/ARShift-class.html#instance-properties">Properties</a>
     </li>
-    <li class="inherited"><a href="../../rohd/ARShift/a.html">a</a></li>
-    <li class="inherited"><a href="../../rohd/ARShift/b.html">b</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../../rohd/Module/name.html">name</a></li>
+    <li class="inherited"><a href="../../rohd/ARShift/out.html">out</a></li>
     <li class="inherited"><a href="../../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -135,7 +134,6 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li class="inherited"><a href="../../rohd/ARShift/signed.html">signed</a></li>
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li class="inherited"><a href="../../rohd/ARShift/y.html">y</a></li>
 
     <li class="section-title inherited"><a href="../../rohd/ARShift-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>

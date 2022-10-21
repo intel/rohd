@@ -58,7 +58,7 @@
 
     
 <section class="desc markdown">
-  <p>Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../../rohd/Mux/y.html">y</a> depending
+  <p>Constructs a multiplexer which passes <code>d0</code> or <code>d1</code> to <a href="../../rohd/Mux/out.html">out</a> depending
 on if <code>control</code> is 0 or 1, respectively.</p>
 </section>
 
@@ -74,15 +74,15 @@ on if <code>control</code> is 0 or 1, respectively.</p>
     throw Exception(&#39;d0 ($d0) and d1 ($d1) must be same width&#39;);
   }
 
-  _control = Module.unpreferredName(&#39;control_${control.name}&#39;);
-  _d0 = Module.unpreferredName(&#39;d0_${d0.name}&#39;);
-  _d1 = Module.unpreferredName(&#39;d1_${d1.name}&#39;);
-  _y = Module.unpreferredName(&#39;y&#39;);
+  _controlName = Module.unpreferredName(&#39;control_${control.name}&#39;);
+  _d0Name = Module.unpreferredName(&#39;d0_${d0.name}&#39;);
+  _d1Name = Module.unpreferredName(&#39;d1_${d1.name}&#39;);
+  _outName = Module.unpreferredName(&#39;out&#39;);
 
-  addInput(_control, control);
-  addInput(_d0, d0, width: d0.width);
-  addInput(_d1, d1, width: d1.width);
-  addOutput(_y, width: d0.width);
+  addInput(_controlName, control);
+  addInput(_d0Name, d0, width: d0.width);
+  addInput(_d1Name, d1, width: d1.width);
+  addOutput(_outName, width: d0.width);
 
   _setup();
 }</code></pre>
@@ -116,15 +116,13 @@ on if <code>control</code> is 0 or 1, respectively.</p>
     <li class="section-title">
       <a href="../../rohd/Mux-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/Mux/control.html">control</a></li>
-    <li><a href="../../rohd/Mux/d0.html">d0</a></li>
-    <li><a href="../../rohd/Mux/d1.html">d1</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../../rohd/Module/name.html">name</a></li>
+    <li><a href="../../rohd/Mux/out.html">out</a></li>
     <li class="inherited"><a href="../../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -133,7 +131,7 @@ on if <code>control</code> is 0 or 1, respectively.</p>
     <li class="inherited"><a href="../../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li><a href="../../rohd/Mux/y.html">y</a></li>
+    <li><a class="deprecated" href="../../rohd/Mux/y.html">y</a></li>
 
     <li class="section-title"><a href="../../rohd/Mux-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>

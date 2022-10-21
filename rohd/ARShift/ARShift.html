@@ -49,25 +49,25 @@
 </h1></div>
 
     <section class="multi-line-signature">
-      <span class="name ">ARShift</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-a"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">a</span>, </span></li>
-<li><span class="parameter" id="-param-shamt"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">shamt</span>, </span></li>
+      <span class="name ">ARShift</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-in_"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in_</span>, </span></li>
+<li><span class="parameter" id="-param-shiftAmount"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">shiftAmount</span>, </span></li>
 <li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;arshift&#39;</span>}</span></li>
 </ol>)
     </section>
 
     
 <section class="desc markdown">
-  <p>Calculates the value of <code>a</code> shifted right (arithmetically) by <code>shamt</code>.</p>
+  <p>Calculates the value of <code>in_</code> shifted right (arithmetically) by
+<code>shiftAmount</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ARShift(Logic a, Logic shamt, {String name = &#39;arshift&#39;})
-    :
-      &#47;&#47; Note: &gt;&gt;&gt; vs &gt;&gt; is backwards for SystemVerilog and Dart
-      super((a, shamt) =&gt; a &gt;&gt; shamt, &#39;&gt;&gt;&gt;&#39;, a, shamt,
+  <pre class="language-dart"><code class="language-dart">ARShift(Logic in_, Logic shiftAmount, {String name = &#39;arshift&#39;})
+    : &#47;&#47; Note: &gt;&gt;&gt; vs &gt;&gt; is backwards for SystemVerilog and Dart
+      super((a, shamt) =&gt; a &gt;&gt; shamt, &#39;&gt;&gt;&gt;&#39;, in_, shiftAmount,
           name: name, signed: true);</code></pre>
 </section>
 
@@ -99,14 +99,13 @@
     <li class="section-title inherited">
       <a href="../../rohd/ARShift-class.html#instance-properties">Properties</a>
     </li>
-    <li class="inherited"><a href="../../rohd/ARShift/a.html">a</a></li>
-    <li class="inherited"><a href="../../rohd/ARShift/b.html">b</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../../rohd/Module/name.html">name</a></li>
+    <li class="inherited"><a href="../../rohd/ARShift/out.html">out</a></li>
     <li class="inherited"><a href="../../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -116,7 +115,6 @@
     <li class="inherited"><a href="../../rohd/ARShift/signed.html">signed</a></li>
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li class="inherited"><a href="../../rohd/ARShift/y.html">y</a></li>
 
     <li class="section-title inherited"><a href="../../rohd/ARShift-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>

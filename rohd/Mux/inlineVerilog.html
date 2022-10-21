@@ -83,9 +83,9 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   if (inputs.length != 3) {
     throw Exception(&#39;Mux2 has exactly three inputs.&#39;);
   }
-  final d0 = inputs[_d0]!;
-  final d1 = inputs[_d1]!;
-  final control = inputs[_control]!;
+  final d0 = inputs[_d0Name]!;
+  final d1 = inputs[_d1Name]!;
+  final control = inputs[_controlName]!;
   return &#39;$control ? $d1 : $d0&#39;;
 }</code></pre>
 </section>
@@ -118,15 +118,13 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li class="section-title">
       <a href="../../rohd/Mux-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/Mux/control.html">control</a></li>
-    <li><a href="../../rohd/Mux/d0.html">d0</a></li>
-    <li><a href="../../rohd/Mux/d1.html">d1</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../../rohd/Module/name.html">name</a></li>
+    <li><a href="../../rohd/Mux/out.html">out</a></li>
     <li class="inherited"><a href="../../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -135,7 +133,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li class="inherited"><a href="../../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li><a href="../../rohd/Mux/y.html">y</a></li>
+    <li><a class="deprecated" href="../../rohd/Mux/y.html">y</a></li>
 
     <li class="section-title"><a href="../../rohd/Mux-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>

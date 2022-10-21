@@ -83,7 +83,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   if (inputs.length != 1) {
     throw Exception(&#39;Gate has exactly one input.&#39;);
   }
-  final a = inputs[_a]!;
+  final a = inputs[_inName]!;
   return &#39;~$a&#39;;
 }</code></pre>
 </section>
@@ -116,7 +116,6 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li class="section-title">
       <a href="../../rohd/NotGate-class.html#instance-properties">Properties</a>
     </li>
-    <li><a href="../../rohd/NotGate/a.html">a</a></li>
     <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>

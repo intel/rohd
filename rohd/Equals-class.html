@@ -81,10 +81,10 @@
 
     <dl class="constructor-summary-list">
         <dt id="Equals" class="callable">
-          <span class="name"><a href="../rohd/Equals/Equals.html">Equals</a></span><span class="signature">(<span class="parameter" id="-param-a"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">a</span>, </span><span class="parameter" id="-param-b"><span class="type-annotation">dynamic</span> <span class="parameter-name">b</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;equals&#39;</span>}</span>)</span>
+          <span class="name"><a href="../rohd/Equals/Equals.html">Equals</a></span><span class="signature">(<span class="parameter" id="-param-in0"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in0</span>, </span><span class="parameter" id="-param-in1"><span class="type-annotation">dynamic</span> <span class="parameter-name">in1</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;equals&#39;</span>}</span>)</span>
         </dt>
         <dd>
-          Calculates whether <code>a</code> and <code>b</code> are equal.
+          Calculates whether <code>in0</code> and <code>in1</code> are equal.
         </dd>
     </dl>
   </section>
@@ -93,28 +93,6 @@
       <h2>Properties</h2>
 
       <dl class="properties">
-        <dt id="a" class="property inherited">
-  <span class="name"><a href="../rohd/Equals/a.html">a</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd class="inherited">
-  An input to this gate.
-  <div class="features">read-only, inherited</div>
-
-</dd>
-
-        <dt id="b" class="property inherited">
-  <span class="name"><a href="../rohd/Equals/b.html">b</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
-
-</dt>
-<dd class="inherited">
-  An input to this gate.
-  <div class="features">read-only, inherited</div>
-
-</dd>
-
         <dt id="definitionName" class="property inherited">
   <span class="name"><a href="../rohd/Module/definitionName.html">definitionName</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.3/dart-core/String-class.html">String</a></span> 
@@ -181,6 +159,17 @@ signals.
 <dd class="inherited">
   The name of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features">final, inherited</div>
+
+</dd>
+
+        <dt id="out" class="property inherited">
+  <span class="name"><a href="../rohd/Equals/out.html">out</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
+
+</dt>
+<dd class="inherited">
+  The output of this gate.
+  <div class="features">read-only, inherited</div>
 
 </dd>
 
@@ -278,13 +267,13 @@ unique name within its scope.
 </dd>
 
         <dt id="y" class="property inherited">
-  <span class="name"><a href="../rohd/Equals/y.html">y</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Equals/y.html">y</a></span>
   <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
 
 </dt>
 <dd class="inherited">
   The output of this gate.
-  <div class="features">read-only, inherited</div>
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.3/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `out` instead.&#39;), read-only, inherited</div>
 
 </dd>
 
@@ -618,6 +607,7 @@ named <code>name</code>.
 
   <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
   <li><a href="../rohd/bin.html">bin</a></li>
+  <li><a href="../rohd/mux.html">mux</a></li>
   <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
   <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
 
@@ -646,14 +636,13 @@ named <code>name</code>.
     <li class="section-title inherited">
       <a href="../rohd/Equals-class.html#instance-properties">Properties</a>
     </li>
-    <li class="inherited"><a href="../rohd/Equals/a.html">a</a></li>
-    <li class="inherited"><a href="../rohd/Equals/b.html">b</a></li>
     <li class="inherited"><a href="../rohd/Module/definitionName.html">definitionName</a></li>
     <li class="inherited"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></li>
     <li class="inherited"><a href="https://api.dart.dev/stable/2.18.3/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="../rohd/Module/inputs.html">inputs</a></li>
     <li class="inherited"><a href="../rohd/Module/internalSignals.html">internalSignals</a></li>
     <li class="inherited"><a href="../rohd/Module/name.html">name</a></li>
+    <li class="inherited"><a href="../rohd/Equals/out.html">out</a></li>
     <li class="inherited"><a href="../rohd/Module/outputs.html">outputs</a></li>
     <li class="inherited"><a href="../rohd/Module/parent.html">parent</a></li>
     <li class="inherited"><a href="../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
@@ -662,7 +651,7 @@ named <code>name</code>.
     <li class="inherited"><a href="../rohd/Module/signals.html">signals</a></li>
     <li class="inherited"><a href="../rohd/Module/subModules.html">subModules</a></li>
     <li class="inherited"><a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></li>
-    <li class="inherited"><a href="../rohd/Equals/y.html">y</a></li>
+    <li class="inherited"><a class="deprecated" href="../rohd/Equals/y.html">y</a></li>
 
     <li class="section-title inherited"><a href="../rohd/Equals-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="../rohd/Module/addInput.html">addInput</a></li>
