@@ -244,6 +244,7 @@ a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assi
 a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
 a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of operations, > needs parentheses in this case
 a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of operations, >= needs parentheses in this case
+answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```
 
 ### Shift Operations
