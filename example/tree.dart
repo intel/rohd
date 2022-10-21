@@ -68,7 +68,7 @@ Future<void> main({bool noPrint = false}) async {
   // You could instantiate this module with some code such as:
   final tree = TreeOfTwoInputModules(
       List<Logic>.generate(16, (index) => Logic(width: 8)),
-      (a, b) => Mux(a > b, a, b).y);
+      (a, b) => mux(a > b, a, b));
 
   /// This instantiation code generates a list of sixteen 8-bit logic signals.
   /// The operation to be performed (`_op`) is to create a `Mux` which returns

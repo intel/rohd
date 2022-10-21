@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// gate_test.dart
@@ -87,7 +87,7 @@ class MuxWrapper extends Module {
     d1 = addInput('d1', d1, width: d1.width);
     final y = addOutput('y', width: d0.width);
 
-    y <= Mux(control, d1, d0).y;
+    y <= Mux(control, d1, d0).out;
   }
 }
 
