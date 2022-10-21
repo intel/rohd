@@ -18,29 +18,26 @@ import 'package:rohd/rohd.dart';
 /// as extend functionality with behavioral models or cosimulation.
 abstract class ExternalSystemVerilogModule extends Module
     with CustomSystemVerilog {
-  /// The name of the top SystemVerilog module.
-  final String topModuleName;
-
   /// A map of parameter names and values to be passed to the SystemVerilog
   /// module.
   final Map<String, String>? parameters;
 
   /// Constructs an instance of an externally defined SystemVerilog module.
   ///
-  /// The name of the SystemVerilog module should match [topModuleName] exactly.
-  /// The [name] will be the instance name when referred to in generated
-  /// SystemVerilog.
-  ExternalSystemVerilogModule(
-      {required this.topModuleName,
-      this.parameters,
-      super.name = 'external_module'})
-      : super(definitionName: topModuleName, reserveDefinitionName: true);
+  /// The name of the SystemVerilog module should match [definitionName]
+  /// exactly. The [name] will be the instance name when referred to in
+  /// generated SystemVerilog.
+  ExternalSystemVerilogModule({
+    required String definitionName,
+    this.parameters,
+    super.name = 'external_module',
+  }) : super(definitionName: definitionName, reserveDefinitionName: true);
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
           Map<String, String> inputs, Map<String, String> outputs) =>
       SystemVerilogSynthesizer.instantiationVerilogWithParameters(
-          this, topModuleName, instanceName, inputs, outputs,
+          this, definitionName, instanceName, inputs, outputs,
           parameters: parameters, forceStandardInstantiation: true);
 }
 
