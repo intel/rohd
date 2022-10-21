@@ -8,7 +8,6 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// An object capable of converting a module into some new output format
