@@ -281,69 +281,69 @@ class Logic {
   Logic operator ~() => NotGate(this).out;
 
   /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).y;
+  Logic operator &(Logic other) => And2Gate(this, other).out;
 
   /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).y;
+  Logic operator |(Logic other) => Or2Gate(this, other).out;
 
   /// Logical bitwise XOR.
-  Logic operator ^(Logic other) => Xor2Gate(this, other).y;
+  Logic operator ^(Logic other) => Xor2Gate(this, other).out;
 
   /// Addition.
   ///
   /// WARNING: Signed math is not fully tested.
-  Logic operator +(dynamic other) => Add(this, other).y;
+  Logic operator +(dynamic other) => Add(this, other).out;
 
   /// Subtraction.
   ///
   /// WARNING: Signed math is not fully tested.
-  Logic operator -(dynamic other) => Subtract(this, other).y;
+  Logic operator -(dynamic other) => Subtract(this, other).out;
 
   /// Multiplication.
   ///
   /// WARNING: Signed math is not fully tested.
-  Logic operator *(dynamic other) => Multiply(this, other).y;
+  Logic operator *(dynamic other) => Multiply(this, other).out;
 
   /// Division.
   ///
   /// WARNING: Signed math is not fully tested.
-  Logic operator /(dynamic other) => Divide(this, other).y;
+  Logic operator /(dynamic other) => Divide(this, other).out;
 
   /// Modulo operation.
-  Logic operator %(Logic other) => Modulo(this, other).y;
+  Logic operator %(Logic other) => Modulo(this, other).out;
 
   /// Arithmetic right-shift.
-  Logic operator >>(Logic other) => ARShift(this, other).y;
+  Logic operator >>(Logic other) => ARShift(this, other).out;
 
   /// Logical left-shift.
-  Logic operator <<(Logic other) => LShift(this, other).y;
+  Logic operator <<(Logic other) => LShift(this, other).out;
 
   /// Logical right-shift.
-  Logic operator >>>(Logic other) => RShift(this, other).y;
+  Logic operator >>>(Logic other) => RShift(this, other).out;
 
   /// Unary AND.
-  Logic and() => AndUnary(this).y;
+  Logic and() => AndUnary(this).out;
 
   /// Unary OR.
-  Logic or() => OrUnary(this).y;
+  Logic or() => OrUnary(this).out;
 
   /// Unary XOR.
-  Logic xor() => XorUnary(this).y;
+  Logic xor() => XorUnary(this).out;
 
   /// Logical equality.
-  Logic eq(dynamic other) => Equals(this, other).y;
+  Logic eq(dynamic other) => Equals(this, other).out;
 
   /// Less-than.
-  Logic lt(dynamic other) => LessThan(this, other).y;
+  Logic lt(dynamic other) => LessThan(this, other).out;
 
   /// Less-than-or-equal-to.
-  Logic lte(dynamic other) => LessThanOrEqual(this, other).y;
+  Logic lte(dynamic other) => LessThanOrEqual(this, other).out;
 
   /// Greater-than.
-  Logic operator >(dynamic other) => GreaterThan(this, other).y;
+  Logic operator >(dynamic other) => GreaterThan(this, other).out;
 
   /// Greater-than-or-equal-to.
-  Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).y;
+  Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
   /// Conditional assignment operator.
   ///
@@ -564,11 +564,11 @@ class Logic {
           'New width $newWidth must be greater than or equal to width $width.');
     }
     return [
-      Mux(
+      mux(
         this[width - 1],
         Const(1, width: newWidth - width, fill: true),
         Const(0, width: newWidth - width),
-      ).y,
+      ),
       this,
     ].swizzle();
   }
