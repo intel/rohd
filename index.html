@@ -645,7 +645,7 @@ var b = pipeline.get(a);
 <li>To add an action to the Simulator in the <em>current</em> timestep, use <code>Simulator.injectAction</code>.</li>
 </ul>
 <h2 id="instantiation-of-external-modules">Instantiation of External Modules</h2>
-<p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html"><code>ExternalSystemVerilogModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalSystemVerilogModule</code>, it will instantiate instances of the specified <code>topModuleName</code>.  This is useful for integration related activities.</p>
+<p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html"><code>ExternalSystemVerilogModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalSystemVerilogModule</code>, it will instantiate instances of the specified <code>definitionName</code>.  This is useful for integration related activities.</p>
 <p>There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an <code>ExternalSystemVerilogModule</code> planned for release soon.</p>
 <h2 id="unit-testing">Unit Testing</h2>
 <p>Dart has a great unit testing package available on pub.dev: <a href="https://pub.dev/packages/test">https://pub.dev/packages/test</a></p>
