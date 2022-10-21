@@ -713,7 +713,7 @@ The ROHD simulator is a static class accessible as [`Simulator`](https://intel.g
 
 ## Instantiation of External Modules
 
-ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `topModuleName`.  This is useful for integration related activities.
+ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `definitionName`.  This is useful for integration related activities.
 
 There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalSystemVerilogModule` planned for release soon.
 
