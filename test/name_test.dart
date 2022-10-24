@@ -12,6 +12,13 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+class DefinitionName {
+  String definitionName;
+  bool isCheck;
+
+  DefinitionName({required this.definitionName, required this.isCheck});
+}
+
 class TopModule extends Module {
   TopModule(Logic a, bool causeDefConflict, bool causeInstConflict)
       : super(name: 'topModule') {
