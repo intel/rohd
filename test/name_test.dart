@@ -11,12 +11,18 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
+import 'dart:io';
 
-class DefinitionName {
-  String definitionName;
-  bool isCheck;
-
-  DefinitionName({required this.definitionName, required this.isCheck});
+class ValidDefNameModule extends Module {
+  ValidDefNameModule(Logic a, String defName)
+      : super(
+          name: 'specialNameInstance',
+          reserveName: false,
+          definitionName: defName,
+          reserveDefinitionName: true,
+        ) {
+    addInput('a', a, width: a.width);
+  }
 }
 
 class TopModule extends Module {
@@ -44,6 +50,17 @@ class SpeciallyNamedModule extends Module {
 
 void main() {
   group('definition name', () {
+    test('should return true if definition name is sanitized.', () async {
+      final mod = ValidDefNameModule(Logic(), '/--**definitionName+');
+      await mod.build();
+
+      final res = mod.generateSynth();
+      final out = File('output.txt').openWrite();
+      out.write(res);
+
+      expect(res, contains('_____definitionName_'));
+    });
+
     test('respected with no conflicts', () async {
       final mod = SpeciallyNamedModule(Logic(), false, false);
       await mod.build();
