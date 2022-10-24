@@ -134,7 +134,8 @@ abstract class Module {
   ///
   /// This could become uniquified by a [Synthesizer] unless
   /// [reserveDefinitionName] is set.
-  String get definitionName => _definitionName ?? runtimeType.toString();
+  String get definitionName =>
+      Sanitizer.sanitizeSV(_definitionName ?? runtimeType.toString());
   final String? _definitionName;
 
   /// If true, guarantees [definitionName] is maintained by a [Synthesizer],
