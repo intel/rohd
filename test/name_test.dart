@@ -11,7 +11,6 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
-import 'dart:io';
 
 class ValidDefNameModule extends Module {
   ValidDefNameModule(Logic a, String defName)
