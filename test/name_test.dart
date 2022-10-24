@@ -50,7 +50,8 @@ class SpeciallyNamedModule extends Module {
 
 void main() {
   group('definition name', () {
-    test('should return true if definition name is sanitized.', () async {
+    test('should return sanitized definition name if given invalid syntax',
+        () async {
       final mod = ValidDefNameModule(Logic(), '/--**definitionName+');
       await mod.build();
 
