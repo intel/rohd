@@ -54,12 +54,8 @@ void main() {
         () async {
       final mod = ValidDefNameModule(Logic(), '/--**definitionName+');
       await mod.build();
-
-      final res = mod.generateSynth();
-      final out = File('output.txt').openWrite();
-      out.write(res);
-
-      expect(res, contains('_____definitionName_'));
+      final sv = mod.generateSynth();
+      expect(sv, contains('_____definitionName_'));
     });
 
     test('respected with no conflicts', () async {
