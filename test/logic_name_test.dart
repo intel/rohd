@@ -1,6 +1,5 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
-import 'dart:io';
 
 class LogicTestModule extends Module {
   LogicTestModule(Logic a) {
