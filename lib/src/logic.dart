@@ -8,11 +8,12 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 /// Represents the event of a [Logic] changing value.
@@ -218,7 +219,7 @@ class Logic {
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
   Logic({String? name, this.width = 1})
-      : name = name ?? 's${_signalIdx++}',
+      : name = name == null ? 's${_signalIdx++}' : Sanitizer.sanitizeSV(name),
         _currentValue = LogicValue.filled(width, LogicValue.z) {
     if (width < 0) {
       throw Exception('Logic width must be greater than or equal to 0.');
