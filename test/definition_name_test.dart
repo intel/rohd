@@ -1,5 +1,6 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exception/name_exception.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
 class DefinitionName {
@@ -21,6 +22,18 @@ class ValidDefNameModule extends Module {
           reserveDefinitionName: defName.isReserved,
         ) {
     addInput('a', a, width: a.width);
+  }
+}
+
+class RunTimeNameModule extends ValidDefNameModule {
+  String mockRunTimeString;
+
+  RunTimeNameModule(super.a, super.defName, this.mockRunTimeString);
+  @override
+  String get definitionName {
+    const String? mockDefinitionName = null;
+
+    return Sanitizer.sanitizeSV(mockDefinitionName ?? mockRunTimeString);
   }
 }
 
@@ -78,13 +91,31 @@ void main() {
       final sv = mod.generateSynth();
       expect(sv, contains('_____definitionName_'));
     });
-    test('WHEN definition name is null, THEN expected to auto initialize name.',
-        () async {
-      final defName = DefinitionName(name: null, isReserved: false);
-      final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      final sv = mod.generateSynth();
-      expect(sv, contains('module ValidDefNameModule('));
+    group('WHEN definition name is null,', () {
+      test('THEN expected to auto initialize name.', () async {
+        final defName = DefinitionName(name: null, isReserved: false);
+        final mod = ValidDefNameModule(Logic(), defName);
+        await mod.build();
+        final sv = mod.generateSynth();
+        expect(sv, contains('module ValidDefNameModule('));
+      });
+      test('AND runtimetype name is valid, THEN expect to run successfully',
+          () async {
+        final defName = DefinitionName(name: null, isReserved: false);
+        final mod = RunTimeNameModule(Logic(), defName, 'ValidDefNameModule');
+        await mod.build();
+        final sv = mod.generateSynth();
+        expect(sv, contains('module ValidDefNameModule('));
+      });
+      test(
+          'AND runtime type name is invalid, '
+          'THEN expect to sanitize the result', () async {
+        final defName = DefinitionName(name: null, isReserved: false);
+        final mod = RunTimeNameModule(Logic(), defName, 'bd1gdvua&&%#";;');
+        await mod.build();
+        final sv = mod.generateSynth();
+        expect(sv, contains('module bd1gdvua_______('));
+      });
     });
   });
 }
