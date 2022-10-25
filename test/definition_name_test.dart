@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exception/name_exception.dart';
 import 'package:test/test.dart';
 
 class DefinitionName {
@@ -42,16 +42,18 @@ void main() {
           name: DefinitionName.getInvalidName(), isReserved: true);
       final mod = ValidDefNameModule(Logic(), defName);
       await mod.build();
-      final sv = mod.generateSynth();
-      expect(sv, throwsException);
+      mod.generateSynth;
+
+      expect(mod.generateSynth,
+          throwsA((dynamic e) => e is InvalidReservedNameException));
     });
     test('WHEN definition name is null, THEN expect to throw exception.',
         () async {
       final defName = DefinitionName(name: null, isReserved: true);
       final mod = ValidDefNameModule(Logic(), defName);
       await mod.build();
-      final sv = mod.generateSynth();
-      expect(sv, throwsException);
+      expect(mod.generateSynth,
+          throwsA((dynamic e) => e is NullReservedNameException));
     });
   });
 
