@@ -7,12 +7,13 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exception/name_exception.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -134,7 +135,17 @@ abstract class Module {
   ///
   /// This could become uniquified by a [Synthesizer] unless
   /// [reserveDefinitionName] is set.
-  String get definitionName => _definitionName ?? runtimeType.toString();
+  String get definitionName {
+    if (reserveDefinitionName && _definitionName == null) {
+      throw NullReservedNameException();
+    } else if (reserveDefinitionName &&
+        Sanitizer.isSanitary(_definitionName!) != true) {
+      throw InvalidReservedNameException();
+    } else {
+      return Sanitizer.sanitizeSV(_definitionName ?? runtimeType.toString());
+    }
+  }
+
   final String? _definitionName;
 
   /// If true, guarantees [definitionName] is maintained by a [Synthesizer],
@@ -155,9 +166,7 @@ abstract class Module {
       String? definitionName,
       this.reserveDefinitionName = false})
       : _uniqueInstanceName = name,
-        _definitionName = definitionName == null
-            ? null
-            : Sanitizer.sanitizeSV(definitionName);
+        _definitionName = definitionName;
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
