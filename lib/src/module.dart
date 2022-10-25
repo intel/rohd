@@ -134,8 +134,7 @@ abstract class Module {
   ///
   /// This could become uniquified by a [Synthesizer] unless
   /// [reserveDefinitionName] is set.
-  String get definitionName =>
-      Sanitizer.sanitizeSV(_definitionName ?? runtimeType.toString());
+  String get definitionName => _definitionName ?? runtimeType.toString();
   final String? _definitionName;
 
   /// If true, guarantees [definitionName] is maintained by a [Synthesizer],
@@ -156,7 +155,9 @@ abstract class Module {
       String? definitionName,
       this.reserveDefinitionName = false})
       : _uniqueInstanceName = name,
-        _definitionName = definitionName;
+        _definitionName = definitionName == null
+            ? null
+            : Sanitizer.sanitizeSV(definitionName);
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
