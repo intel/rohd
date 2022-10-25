@@ -8,21 +8,9 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_positional_boolean_parameters
-
+import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
-
-class ValidDefNameModule extends Module {
-  ValidDefNameModule(Logic a, String defName)
-      : super(
-          name: 'specialNameInstance',
-          reserveName: false,
-          definitionName: defName,
-          reserveDefinitionName: true,
-        ) {
-    addInput('a', a, width: a.width);
-  }
-}
 
 class TopModule extends Module {
   TopModule(Logic a, bool causeDefConflict, bool causeInstConflict)
@@ -49,14 +37,6 @@ class SpeciallyNamedModule extends Module {
 
 void main() {
   group('definition name', () {
-    test('should return sanitized definition name if given invalid syntax',
-        () async {
-      final mod = ValidDefNameModule(Logic(), '/--**definitionName+');
-      await mod.build();
-      final sv = mod.generateSynth();
-      expect(sv, contains('_____definitionName_'));
-    });
-
     test('respected with no conflicts', () async {
       final mod = SpeciallyNamedModule(Logic(), false, false);
       await mod.build();
