@@ -1,5 +1,5 @@
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/name_exception.dart';
+import 'package:rohd/src/exceptions/name_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
