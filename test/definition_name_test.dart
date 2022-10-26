@@ -1,6 +1,5 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/name_exceptions.dart';
-import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
 class DefinitionName {
@@ -25,15 +24,10 @@ class ValidDefNameModule extends Module {
   }
 }
 
-class RunTimeNameModule extends ValidDefNameModule {
-  String mockRunTimeString;
-
-  RunTimeNameModule(super.a, super.defName, this.mockRunTimeString);
-  @override
-  String get definitionName {
-    const String? mockDefinitionName = null;
-
-    return Sanitizer.sanitizeSV(mockDefinitionName ?? mockRunTimeString);
+// ignore: camel_case_types
+class byte extends Module {
+  byte(Logic a) {
+    addInput('a', a, width: a.width);
   }
 }
 
@@ -95,22 +89,13 @@ void main() {
         final sv = mod.generateSynth();
         expect(sv, contains('module ValidDefNameModule('));
       });
-      test('AND runtimetype name is valid, THEN expect to run successfully',
-          () async {
-        final defName = DefinitionName(name: null, isReserved: false);
-        final mod = RunTimeNameModule(Logic(), defName, 'ValidDefNameModule');
-        await mod.build();
-        final sv = mod.generateSynth();
-        expect(sv, contains('module ValidDefNameModule('));
-      });
       test(
           'AND runtime type name is invalid, '
           'THEN expect to sanitize the result', () async {
-        final defName = DefinitionName(name: null, isReserved: false);
-        final mod = RunTimeNameModule(Logic(), defName, 'bd1gdvua&&%#";;');
+        final mod = byte(Logic());
         await mod.build();
         final sv = mod.generateSynth();
-        expect(sv, contains('module bd1gdvua_______('));
+        expect(sv, contains('module byte_'));
       });
     });
   });
