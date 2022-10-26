@@ -53,20 +53,16 @@ void main() {
         () async {
       final defName = DefinitionName(
           name: DefinitionName.getInvalidName(), isReserved: true);
-      final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      mod.generateSynth;
-
-      expect(mod.generateSynth,
-          throwsA((dynamic e) => e is InvalidReservedNameException));
+      expect(() async {
+        ValidDefNameModule(Logic(), defName);
+      }, throwsA((dynamic e) => e is InvalidReservedNameException));
     });
     test('WHEN definition name is null, THEN expect to throw exception.',
         () async {
       final defName = DefinitionName(name: null, isReserved: true);
-      final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      expect(mod.generateSynth,
-          throwsA((dynamic e) => e is NullReservedNameException));
+      expect(() async {
+        ValidDefNameModule(Logic(), defName);
+      }, throwsA((dynamic e) => e is NullReservedNameException));
     });
   });
 
