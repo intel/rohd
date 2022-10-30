@@ -1,3 +1,13 @@
+/// Copyright (C) 2022 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// logic_name_test.dart
+/// Unit tests for logic name initialization
+///
+/// 2022 October 26
+/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+///
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
