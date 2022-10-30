@@ -47,10 +47,7 @@ void main() {
       final defName =
           DefinitionName(name: DefinitionName.getValidName(), isReserved: true);
       final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      final sv = mod.generateSynth();
-      // Then it should return compile successfully
-      expect(sv, contains('module specialName('));
+      expect(mod.definitionName, equals('specialName'));
     });
     test('WHEN definition name is invalid, THEN expect to throw exception.',
         () async {
@@ -76,35 +73,26 @@ void main() {
       final defName = DefinitionName(
           name: DefinitionName.getValidName(), isReserved: false);
       final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      final sv = mod.generateSynth();
-      // Then it should return compile successfully
-      expect(sv, contains('module specialName('));
+      expect(mod.definitionName, equals('specialName'));
     });
     test('WHEN definition name is invalid, THEN expected to sanitize name.',
         () async {
       final defName = DefinitionName(
           name: DefinitionName.getInvalidName(), isReserved: false);
       final mod = ValidDefNameModule(Logic(), defName);
-      await mod.build();
-      final sv = mod.generateSynth();
-      expect(sv, contains('_____definitionName_'));
+      expect(mod.definitionName, equals('_____definitionName_'));
     });
     group('WHEN definition name is null,', () {
       test('THEN expected to auto initialize name.', () async {
         final defName = DefinitionName(name: null, isReserved: false);
         final mod = ValidDefNameModule(Logic(), defName);
-        await mod.build();
-        final sv = mod.generateSynth();
-        expect(sv, contains('module ValidDefNameModule('));
+        expect(mod.definitionName, equals('ValidDefNameModule'));
       });
       test(
           'AND runtime type name is invalid, '
           'THEN expect to sanitize the result', () async {
         final mod = byte(Logic());
-        await mod.build();
-        final sv = mod.generateSynth();
-        expect(sv, contains('module byte_'));
+        expect(mod.definitionName, equals('byte_'));
       });
     });
   });
