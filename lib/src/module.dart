@@ -123,6 +123,10 @@ abstract class Module {
           '  Call build() before accessing this.');
   String _uniqueInstanceName;
 
+  /// Return string type definition name if validation passed else throw exception.
+  ///
+  /// This validation method ensure that definition name is valid if
+  /// reserveDefinitionName set to True.
   static String? _nameValidation(
       String? definitionName, bool reserveDefinitionName) {
     if (reserveDefinitionName && definitionName == null) {
