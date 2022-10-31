@@ -679,3 +679,69 @@ class IndexGate extends Module with InlineSystemVerilog {
     return '$target[$idx]';
   }
 }
+
+/// A Replication Repeater [Module].
+///
+/// It takes two inputs (bitValue and width) and outputs a [Logic] representing
+/// the input bit repeated over the input width
+class ReplicationRepeater extends Module with InlineSystemVerilog {
+  late final String _inputName;
+  late final String _widthName;
+  late final String _outputName;
+
+  /// The primary input to this gate.
+  Logic get _input => input(_inputName);
+
+  /// The output width.
+  Logic get _width => input(_widthName);
+
+  /// The output of this gate.
+  Logic get replicated => output(_outputName);
+
+  /// Constructs a ReplicationRepeater
+  ///
+  /// The bit [bit] will be repeated over the [width] as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
+  ReplicationRepeater(Logic bit, int width) : super() {
+    _inputName = 'input_${bit.name}';
+    _widthName = Module.unpreferredName('width_$width');
+    _outputName = Module.unpreferredName('output_${bit.name}');
+
+    addInput(_inputName, bit, width: bit.width);
+    addInput(_widthName, Logic(width: 8)..put(width), width: 8);
+    addOutput(_outputName, width: width);
+
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    _input.glitch.listen((args) {
+      _execute();
+    });
+    _width.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+    if (_input.hasValidValue()) {
+      replicated.put(
+          Const(_input.value.toInt(), width: _width.value.toInt(), fill: true)
+              .value);
+    }
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
+
+    final target = inputs[_inputName]!;
+    final width = inputs[_widthName]!;
+    return '{$width{$target}}';
+  }
+}
