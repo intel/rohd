@@ -615,7 +615,9 @@ class Mux extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs and has one output of width 1.
 class IndexGate extends Module with InlineSystemVerilog {
-  late final String _originalName, _indexName, _selectionName;
+  late final String _originalName;
+  late final String _indexName;
+  late final String _selectionName;
 
   /// The primary input to this gate.
   Logic get _original => input(_originalName);
@@ -626,19 +628,21 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   Logic get selection => output(_selectionName);
 
-  /// Constructs a two-input bit index gate for an abitrary custom functional implementation.
+  /// Constructs a two-input bit index gate for an abitrary custom functional
+  /// implementation.
   ///
   /// The bit [index] will be indexed as an output.
-  /// [Module] is in-lined as SystemVerilog, it will use original[target], where target is [index.value.toInt()]
-  IndexGate(Logic _original, Logic _index) : super() {
-    _originalName = 'original_${_original.name}';
-    _indexName = Module.unpreferredName('index_${_index.name}');
+  /// [Module] is in-lined as SystemVerilog, it will use original[index], where
+  /// target is [index.value.toInt()]
+  IndexGate(Logic original, Logic index) : super() {
+    _originalName = 'original_${original.name}';
+    _indexName = Module.unpreferredName('index_${index.name}');
     _selectionName =
-        Module.unpreferredName('${_original.name}_indexby_${_index.name}');
+        Module.unpreferredName('${original.name}_indexby_${index.name}');
 
-    addInput(_originalName, _original, width: _original.width);
-    addInput(_indexName, _index, width: _index.width);
-    addOutput(_selectionName, width: 1);
+    addInput(_originalName, original, width: original.width);
+    addInput(_indexName, index, width: index.width);
+    addOutput(_selectionName);
 
     _setup();
   }
@@ -666,7 +670,10 @@ class IndexGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 2) throw Exception('Gate has exactly two inputs.');
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
+
     final target = inputs[_originalName]!;
     final idx = inputs[_indexName]!;
     return '$target[$idx]';

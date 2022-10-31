@@ -96,7 +96,7 @@ class IndexGateTestModule extends Module {
       : super(name: 'indexgatetestmodule') {
     original = addInput('original', original, width: original.width);
     index = addInput('index', index, width: index.width);
-    final bitSet = addOutput('index_output', width: 1);
+    final bitSet = addOutput('index_output');
 
     bitSet <= original[index];
   }
@@ -451,16 +451,14 @@ void main() {
     });
 
     test('Index Logic by an Integer test', () {
-      final testLogic = Logic(width: 8);
-      testLogic.put(14);
+      final testLogic = Logic(width: 8)..put(14);
       expect(testLogic[0].value.toInt(), 0);
       expect(testLogic[2].value.toInt(), 1);
       expect(() => testLogic[10], throwsException);
     });
 
     test('Index Logic by does not accept input other than int or Logic', () {
-      final testLogic = Logic(width: 8);
-      testLogic.put(14);
+      final testLogic = Logic(width: 8)..put(14);
       expect(() => testLogic[10.05], throwsException);
     });
   });
