@@ -475,7 +475,7 @@ class Logic {
     if (index is Logic) {
       return IndexGate(this, index).selection;
     } else if (index is int) {
-      return getRange(index, index + 1);
+      return slice(index, index);
     }
     throw Exception('Expected `int` or `Logic`');
   }
