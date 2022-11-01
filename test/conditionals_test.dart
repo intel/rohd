@@ -13,6 +13,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+import 'package:rohd/src/type/conditional_set.dart';
+
 class LoopyCombModule extends Module {
   Logic get a => input('a');
   Logic get x => output('x');
@@ -298,6 +300,18 @@ void main() {
   test('issue #144', () async {
     final mod =
         NewSequentialModule(Logic(), Logic(), Logic(width: 8), Logic(width: 8));
+
+    // final mySet = {Logic(name: 'a', width: 8), Logic(name: 'b', width: 10)}
+    // as ConditionalSet<Logic>;
+
+    final testLogicA = Logic(name: 'a', width: 10);
+    final testLogicB = Logic(name: 'b', width: 10);
+
+    final mySet = ConditionalSet<Logic>([testLogicA, testLogicB, testLogicA]);
+
+    // mySet.add(testLogicA);
+    print(mySet);
+
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
