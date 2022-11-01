@@ -7,6 +7,8 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+import 'dart:io';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -159,6 +161,44 @@ class SequentialModule extends Module {
   }
 }
 
+class NewSequentialModule extends Module {
+  NewSequentialModule(Logic a, Logic b, Logic d, Logic j)
+      : super(name: 'ffmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    final y = addOutput('y');
+    final z = addOutput('z');
+    final x = addOutput('x');
+    final q = addOutput('q', width: d.width);
+
+    d = addInput('d', d, width: d.width);
+
+    j = addInput('j', j, width: 8);
+    final k = addOutput('k', width: 8);
+    Sequential(SimpleClockGenerator(10).clk, [
+      If(a, then: [
+        k < k,
+        q < k,
+        q < d,
+        // q < j,
+        y < a,
+        z < b,
+        x < ~x, // invert x when a
+      ], orElse: [
+        x < a, // reset x to a when not a
+        If(b, then: [
+          y < b,
+          z < a
+        ], orElse: [
+          y < 0,
+          z < 1,
+        ])
+      ])
+    ]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -250,7 +290,23 @@ void main() {
       final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 8, 'q': 8});
+      File('temp.sv').writeAsStringSync(mod.generateSynth());
       expect(simResult, equals(true));
     });
+  });
+
+  test('issue #144', () async {
+    final mod =
+        NewSequentialModule(Logic(), Logic(), Logic(width: 8), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1}, {}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
+      Vector({'a': 0, 'b': 1, 'd': 3}, {'y': 0, 'z': 1, 'x': 0, 'q': 1}),
+      Vector({'a': 1, 'b': 0, 'd': 4}, {'y': 1, 'z': 0, 'x': 0, 'q': 1}),
+      Vector({'a': 1, 'b': 1, 'd': 5}, {'y': 1, 'z': 0, 'x': 1, 'q': 4}),
+      Vector({}, {'y': 1, 'z': 1, 'x': 0, 'q': 5}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
   });
 }
