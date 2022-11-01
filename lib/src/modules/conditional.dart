@@ -336,14 +336,22 @@ class Sequential extends _Always {
       clk.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
         _preTickClkValues[i] ??= event.previousValue;
-        if (!_pendingExecute) {
-          unawaited(Simulator.clkStable.first.then((value) {
-            // once the clocks are stable, execute the contents of the FF
-            _execute();
-            _pendingExecute = false;
-          }));
+
+        if (Simulator.phase == SimulatorPhase.clkStable) {
+          // this could be an output of a flop driving the clock of this
+          // flop, so execute immediately (e.g. clock divider)
+          _execute();
+          _pendingExecute = false;
+        } else {
+          if (!_pendingExecute) {
+            unawaited(Simulator.clkStable.first.then((value) {
+              // once the clocks are stable, execute the contents of the FF
+              _execute();
+              _pendingExecute = false;
+            }));
+          }
+          _pendingExecute = true;
         }
-        _pendingExecute = true;
       });
     }
   }
