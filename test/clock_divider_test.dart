@@ -1,3 +1,13 @@
+/// Copyright (C) 2022 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// clock_divider_test.dart
+/// Unit tests for a clock divider.
+///
+/// 2022 November 1
+/// Author: Max Korbel <max.korbel@intel.com>
+///
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
