@@ -454,7 +454,10 @@ class Logic {
   ///
   /// Throws [Exception] when index is not an [int] or [Logic].
   ///
-  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  /// Negative/Positive index values are allowed (only when index is an int).
+  /// When, index is a Logic, the index value is treated as an unsigned value.
+  /// The negative indexing starts from the end=[width]-1
+  ///
   /// -([width]) <= [index] < [width]
   ///
   /// ```dart
