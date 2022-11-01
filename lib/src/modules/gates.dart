@@ -633,7 +633,7 @@ class IndexGate extends Module with InlineSystemVerilog {
   ///
   /// The bit [index] will be indexed as an output.
   /// [Module] is in-lined as SystemVerilog, it will use original[index], where
-  /// target is [index.value.toInt()]
+  /// target is index's int value
   IndexGate(Logic original, Logic index) : super() {
     _originalName = 'original_${original.name}';
     _indexName = Module.unpreferredName('index_${index.name}');
