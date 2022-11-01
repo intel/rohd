@@ -60,6 +60,7 @@ class TwoCounters extends Module {
 }
 
 void main() {
+  tearDown(Simulator.reset);
   group('clock divider', () {
     final vectors = [
       Vector({'resetClks': 1, 'resetCounters': 1}, {}),
