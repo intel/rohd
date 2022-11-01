@@ -12,7 +12,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-import '../example/example.dart';
+import '../example/example.dart' as sync_reset;
+import 'counter_test.dart' as async_reset;
 
 class ClockDivider extends Module {
   Logic get clkOut => output('clkOut');
@@ -32,7 +33,7 @@ class ClockDivider extends Module {
 }
 
 class TwoCounters extends Module {
-  TwoCounters(Logic resetClks, Logic resetCounters) {
+  TwoCounters(Logic resetClks, Logic resetCounters, {required bool syncReset}) {
     resetClks = addInput('resetClks', resetClks);
     resetCounters = addInput('resetCounters', resetCounters);
 
@@ -40,16 +41,26 @@ class TwoCounters extends Module {
     final clkDiv = ClockDivider(clk, resetClks).clkOut;
 
     addOutput('cntFast', width: 8) <=
-        Counter(Const(1), resetCounters, clk, name: 'fastCounter').val;
+        (syncReset
+            ? sync_reset.Counter(Const(1), resetCounters, clk,
+                    name: 'fastCounter')
+                .val
+            : async_reset.Counter(Const(1), resetCounters,
+                    clkOverride: clk, name: 'fastCounter')
+                .val);
     addOutput('cntSlow', width: 8) <=
-        Counter(Const(1), resetCounters, clkDiv, name: 'slowCounter').val;
+        (syncReset
+            ? sync_reset.Counter(Const(1), resetCounters, clkDiv,
+                    name: 'slowCounter')
+                .val
+            : async_reset.Counter(Const(1), resetCounters,
+                    clkOverride: clkDiv, name: 'slowCounter')
+                .val);
   }
 }
 
 void main() {
-  test('clock divider', () async {
-    final mod = TwoCounters(Logic(), Logic());
-    await mod.build();
+  group('clock divider', () {
     final vectors = [
       Vector({'resetClks': 1, 'resetCounters': 1}, {}),
       Vector({'resetClks': 0, 'resetCounters': 1}, {}),
@@ -69,11 +80,28 @@ void main() {
       Vector(
           {'resetClks': 0, 'resetCounters': 0}, {'cntSlow': 3, 'cntFast': 6}),
     ];
+    final signalToWidthMap = {'cntSlow': 8, 'cntFast': 8};
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'cntSlow': 8, 'cntFast': 8});
-    expect(simResult, equals(true));
+    test('sync reset', () async {
+      final mod = TwoCounters(Logic(), Logic(), syncReset: true);
+      await mod.build();
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
+
+    test('async reset', () async {
+      final mod = TwoCounters(Logic(), Logic(), syncReset: false);
+      await mod.build();
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: signalToWidthMap);
+      expect(simResult, equals(true));
+    });
   });
 }

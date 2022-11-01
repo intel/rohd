@@ -18,7 +18,8 @@ import 'package:test/test.dart';
 class Counter extends Module {
   final int width;
   Logic get val => output('val');
-  Counter(Logic en, Logic reset, {this.width = 8}) : super(name: 'counter') {
+  Counter(Logic en, Logic reset,
+      {this.width = 8, Logic? clkOverride, super.name = 'counter'}) {
     en = addInput('en', en);
     reset = addInput('reset', reset);
 
@@ -29,7 +30,10 @@ class Counter extends Module {
     nextVal <= val + 1;
 
     Sequential.multi([
-      SimpleClockGenerator(10).clk,
+      if (clkOverride != null)
+        addInput('clk', clkOverride)
+      else
+        SimpleClockGenerator(10).clk,
       reset
     ], [
       If(reset, then: [
