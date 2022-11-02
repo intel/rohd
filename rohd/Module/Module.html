@@ -76,7 +76,8 @@ it is unable to keep from uniquifying <code>definitionName</code> to avoid confl
     String? definitionName,
     this.reserveDefinitionName = false})
     : _uniqueInstanceName = name,
-      _definitionName = definitionName;</code></pre>
+      _definitionName =
+          _nameValidation(definitionName, reserveDefinitionName);</code></pre>
 </section>
 
 
