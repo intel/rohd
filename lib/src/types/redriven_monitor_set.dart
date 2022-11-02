@@ -21,19 +21,18 @@ class RedrivenMonitorSet<T> extends SetBase<T> {
   final Set<T> _duplicates = <T>{};
 
   @override
-  bool add(dynamic value) {
+  bool add(T value) {
     if (_set.contains(value)) {
-      _duplicates.add(value as T);
+      _duplicates.add(value);
     }
 
-    return _set.add(value as T);
+    return _set.add(value);
   }
 
   /// The duplicate members in the collection
   ///
   /// Returns an [UnmodifiableSetView] if the collection contains duplicates
-  UnmodifiableSetView<T> get getDuplicates =>
-      UnmodifiableSetView(_duplicates.toSet());
+  UnmodifiableSetView<T> get getDuplicates => UnmodifiableSetView(_duplicates);
 
   /// Returns `true` if collection contains duplicates
   bool get isDuplicates => _duplicates.isNotEmpty;
