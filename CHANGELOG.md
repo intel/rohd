@@ -1,3 +1,18 @@
+## 0.4.0
+- Fixed a bug where generated SystemVerilog could apply bit slicing to an expression (https://github.com/intel/rohd/issues/163).
+- Fixed a bug where constant collapsing in SystemVerilog could erroneously remove constant assignments (https://github.com/intel/rohd/issues/159).
+- Fixed a bug where `Combinational` could have an incomplete sensitivity list causing incorrect simulation behavior (https://github.com/intel/rohd/issues/158).
+- Significantly improved simulation performance of `Combinational` (https://github.com/intel/rohd/issues/106).
+- Upgraded and made lints more strict within ROHD, leading to some quality and documentation improvements.
+- Added a feature allowing negative indexing to access relative to the end of a `Logic` or `LogicValue` (https://github.com/intel/rohd/issues/99).
+- Breaking: Increased minimum Dart SDK version to 2.18.0.
+- Fixed a bug when parsing unsigned large binary integers (https://github.com/intel/rohd/issues/183).
+- Exposed `SynthesisResult`s from the `SynthBuilder`, making it easier to generate SystemVerilog modules into independent files (https://github.com/intel/rohd/issues/172).
+- Breaking: Renamed `topModuleName` to `definitionName` in `ExternalSystemVerilogModule` (https://github.com/intel/rohd/issues/169).
+- Added the `mux` function as a shortcut for building a `Mux` and returning the output of it (https://github.com/intel/rohd/issues/13).
+- Deprecation: Improved naming of ports on basic gates, old port names remain accessible but deprecated for now (https://github.com/intel/rohd/issues/135).
+- Fixed list of reserved SystemVerilog keywords for sanitization (https://github.com/intel/rohd/issues/168).
+
 ## 0.3.2
 - Added the `StateMachine` abstraction for finite state machines.
 - Added support for the modulo `%` operator.

@@ -451,7 +451,14 @@ class Logic {
 
   /// Accesses the [index]th bit of this signal.
   ///
-  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  /// Accepts both [int] and [Logic] as [index].
+  ///
+  /// Throws [Exception] when index is not an [int] or [Logic].
+  ///
+  /// Negative/Positive index values are allowed (only when index is an int).
+  /// When, index is a Logic, the index value is treated as an unsigned value.
+  /// The negative indexing starts from the end=[width]-1
+  ///
   /// -([width]) <= [index] < [width]
   ///
   /// ```dart
@@ -468,7 +475,14 @@ class Logic {
   /// nextVal <= val[8]; // Error!: allowed values [-8, 7]
   /// ```
   ///
-  Logic operator [](int index) => slice(index, index);
+  Logic operator [](dynamic index) {
+    if (index is Logic) {
+      return IndexGate(this, index).selection;
+    } else if (index is int) {
+      return slice(index, index);
+    }
+    throw Exception('Expected `int` or `Logic`');
+  }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
