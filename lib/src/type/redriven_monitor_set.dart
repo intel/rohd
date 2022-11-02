@@ -12,23 +12,31 @@ import 'dart:core';
 
 import 'package:collection/collection.dart';
 
-/// Stackoverflow: https://stackoverflow.com/questions/14441620/custom-collection-in-dart
+/// A collection Set that monitor for redriven type or signal
+///
+/// [RedrivenMonitorSet] can be used if duplicate element are needed to be
+/// catch for certain usage.
 class RedrivenMonitorSet<T> extends SetBase<T> {
   final Set<T> _set = <T>{};
-  final Set<T> _duplicate = <T>{};
+  final Set<T> _duplicates = <T>{};
 
   @override
   bool add(dynamic value) {
     if (_set.contains(value)) {
-      _duplicate.add(value as T);
+      _duplicates.add(value as T);
     }
 
     return _set.add(value as T);
   }
 
-  /// create a UnmodifiableSetView (like getter)
-  UnmodifiableSetView<T> get duplicate =>
-      UnmodifiableSetView(_duplicate.toSet());
+  /// The duplicate members in the collection
+  ///
+  /// Returns an [UnmodifiableSetView] if the collection contains duplicates
+  UnmodifiableSetView<T> get getDuplicates =>
+      UnmodifiableSetView(_duplicates.toSet());
+
+  /// Returns `true` if collection contains duplicates
+  bool get isDuplicates => _duplicates.isNotEmpty;
 
   @override
   bool contains(Object? element) => _set.contains(element);
