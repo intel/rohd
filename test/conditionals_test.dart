@@ -13,7 +13,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-import 'package:rohd/src/type/conditional_set.dart';
+import 'package:rohd/src/type/redriven_monitor_set.dart';
 
 class LoopyCombModule extends Module {
   Logic get a => input('a');
@@ -307,8 +307,10 @@ void main() {
     final testLogicA = Logic(name: 'a', width: 10);
     final testLogicB = Logic(name: 'b', width: 10);
 
-    final mySet = ConditionalSet<Logic>([testLogicA, testLogicB, testLogicA]);
+    final mySet = RedrivenMonitorSet<Logic>();
 
+    mySet.add(testLogicA);
+    mySet.add(testLogicA);
     // mySet.add(testLogicA);
     print(mySet);
 
