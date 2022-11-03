@@ -220,7 +220,7 @@ class Combinational extends _Always {
 
     final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      element.executeNew(drivenLogics);
+      element.execute(drivenLogics);
     }
 
     // combinational must always drive all outputs or else you get X!
@@ -373,7 +373,7 @@ class Sequential extends _Always {
     } else if (anyClkPosedge) {
       final allDrivenSignals = RedrivenMonitorSet<Logic>();
       for (final element in conditionals) {
-        element.executeNew(allDrivenSignals);
+        element.execute(allDrivenSignals);
       }
       if (allDrivenSignals.isDuplicates) {
         throw Exception('Sequential drove the same signal(s) multiple times:'
@@ -458,12 +458,8 @@ abstract class Conditional {
       _assignedReceiverToOutputMap[receiver]!;
 
   /// Executes the functionality represented by this [Conditional].
-  ///
-  /// Returns a [List] of all [Logic] signals which were driven during
-  /// execution.
-
-  /// test
-  void executeNew(Set<Logic> myDrivenSignals);
+  @protected
+  void execute(Set<Logic> drivenSignals);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -519,10 +515,13 @@ class ConditionalAssign extends Conditional {
   @override
   List<Conditional> getConditionals() => [];
 
+  /// Assign [receiver] the value of the [driver].
+  ///
+  /// The [drivenSignals] is a collection of [receiver] in a Set.
   @override
-  void executeNew(Set<Logic> myDrivenSignal) {
+  void execute(Set<Logic> drivenSignals) {
     receiverOutput(receiver).put(driverValue(driver));
-    myDrivenSignal.add(receiver);
+    drivenSignals.add(receiver);
   }
 
   @override
@@ -612,7 +611,7 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  void executeNew(Set<Logic> myDrivenSignals) {
+  void execute(Set<Logic> drivenSignals) {
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (final receiver in getReceivers()) {
@@ -626,7 +625,7 @@ class Case extends Conditional {
       // match on the first matchinig item
       if (isMatch(item.value.value)) {
         for (final conditional in item.then) {
-          conditional.executeNew(myDrivenSignals);
+          conditional.execute(drivenSignals);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           throw Exception('Unique case statement had multiple matching cases.'
@@ -645,7 +644,7 @@ class Case extends Conditional {
     // no items matched
     if (foundMatch == null && defaultItem != null) {
       for (final conditional in defaultItem!) {
-        conditional.executeNew(myDrivenSignals);
+        conditional.execute(drivenSignals);
       }
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
@@ -821,13 +820,11 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  void executeNew(Set<Logic> myDrivenSignals) {
-    final drivenLogics = <Logic>{};
-
+  void execute(Set<Logic> drivenSignals) {
     for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
         for (final conditional in iff.then) {
-          conditional.executeNew(myDrivenSignals);
+          conditional.execute(drivenSignals);
         }
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
@@ -945,15 +942,15 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  void executeNew(Set<Logic> myDrivenSignals) {
+  void execute(Set<Logic> drivenSignals) {
     if (driverValue(condition)[0] == LogicValue.one) {
       // do this part first
       for (final conditional in then) {
-        conditional.executeNew(myDrivenSignals);
+        conditional.execute(drivenSignals);
       }
     } else if (driverValue(condition)[0] == LogicValue.zero) {
       for (final conditional in orElse) {
-        conditional.executeNew(myDrivenSignals);
+        conditional.execute(drivenSignals);
       }
     } else {
       // x and z propagation
