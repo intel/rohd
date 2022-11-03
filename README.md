@@ -7,6 +7,43 @@
 Rapid Open Hardware Development (ROHD) Framework
 ================================================
 
+## Table of Contents
+- [Describing Hardware in Dart with ROHD](#describing-hardware-in-dart-with-rohd)
+- [Why Dart?](#why-dart)
+- [Development Recommendations](#development-recommendations)
+- [Getting Started](#getting-started)
+- [Package Managers for Hardware](#package-managers-for-hardware)
+- [ROHD Syntax and Examples](#rohd-syntax-and-examples)
+  - [Counter Module Example](#a-full-example-of-a-counter-module)
+  - [Advance Example](#a-more-complex-example)
+  - [Logical Signals](#logical-signals)
+  - [Constants](#constants)
+  - [Assignment](#assignment)
+  - [Simple logical, mathematical, and comparison operations](#simple-logical-mathematical-and-comparison-operations)
+  - [Shift Operations](#shift-operations)
+  - [Bus ranges and swizzling](#bus-ranges-and-swizzling)
+  - [Modules](#modules)
+  - [Inputs, Outputs, Widths, and Getters](#inputs-outputs-widths-and-getters)
+  - [Sequentials](#sequentials)
+  - [Conditionals](#conditionals)
+  - [Interfaces](#interfaces)
+  - [Non-synthesizable signal deposition](#non-synthesizable-signal-deposition)
+  - [Custom module behavior with custom in-line SystemVerilog representation](#custom-module-behavior-with-custom-in-line-systemverilog-representation)
+  - [Pipelines](#pipelines)
+  - [Finite State Machines](#finite-state-machines)
+- [ROHD Simulator](#rohd-simulator)
+- [Instantiation of External Modules](#instantiation-of-external-modules)
+- [Unit Testing](#unit-testing)
+- [Contributing](#contributing)
+- [Comparison with Alternatives](#comparison-with-alternatives)
+  - [System Verilog](#systemverilog)
+  - [Chisel](#chisel)
+  - [MyHDL (Python)](#myhdl-python)
+  - [High-Level Synthesis (HLS)](#high-level-synthesis-hls)
+  - [Transaction Level Verilog (TL-Verilog)](#transaction-level-verilog-tl-verilog)
+  - [PyMTL](#pymtl)
+  - [cocotb](#cocotb)
+
 ## Describing Hardware in Dart with ROHD
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
 
@@ -332,7 +369,7 @@ class MyModule extends Module {
 All gates or functionality apart from assign statements in ROHD are implemented using Modules.
 
 
-#### Inputs, outputs, widths, and getters
+### Inputs, outputs, widths, and getters
 The default width of an input and output is 1.  You can control the width of ports using the `width` argument of `addInput()` and `addOutput()`.  You may choose to set them to a static number, based on some other variable, or even dynamically based on the width of input parameters.  These functions also return the input/output signal.
 
 It can be convenient to use dart getters for signal names so that accessing inputs and outputs of a module doesn't require calling `input()` and `output()` every time.  It also makes it easier to consume your module.
@@ -804,7 +841,7 @@ Read more about cocotb here: https://github.com/cocotb/cocotb or https://docs.co
 
 
 ----------------
-2021 August 6  
+2022 November 3
 Author: Max Korbel <<max.korbel@intel.com>>
 
  
