@@ -7,13 +7,9 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
-
-import 'package:rohd/src/type/redriven_monitor_set.dart';
 
 class LoopyCombModule extends Module {
   Logic get a => input('a');
@@ -292,37 +288,23 @@ void main() {
       final simResult = SimCompare.iverilogVector(
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 8, 'q': 8});
-      File('temp.sv').writeAsStringSync(mod.generateSynth());
       expect(simResult, equals(true));
     });
   });
 
-  test('issue #144', () async {
+  test('should return exception when there are multiple drivers for a flop.',
+      () async {
     final mod =
         NewSequentialModule(Logic(), Logic(), Logic(width: 8), Logic(width: 8));
-
-    // final mySet = {Logic(name: 'a', width: 8), Logic(name: 'b', width: 10)}
-    // as ConditionalSet<Logic>;
-
-    final testLogicA = Logic(name: 'a', width: 10);
-    final testLogicB = Logic(name: 'b', width: 10);
-
-    final mySet = RedrivenMonitorSet<Logic>();
-
-    mySet.add(testLogicA);
-    mySet.add(testLogicA);
-    // mySet.add(testLogicA);
-    print(mySet);
-
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
       Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
-      Vector({'a': 0, 'b': 1, 'd': 3}, {'y': 0, 'z': 1, 'x': 0, 'q': 1}),
-      Vector({'a': 1, 'b': 0, 'd': 4}, {'y': 1, 'z': 0, 'x': 0, 'q': 1}),
-      Vector({'a': 1, 'b': 1, 'd': 5}, {'y': 1, 'z': 0, 'x': 1, 'q': 4}),
-      Vector({}, {'y': 1, 'z': 1, 'x': 0, 'q': 5}),
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
+
+    // await SimCompare.checkFunctionalVector(mod, vectors);
+    expect(() async {
+      await SimCompare.checkFunctionalVector(mod, vectors);
+    }, throwsA((dynamic e) => e is Exception));
   });
 }

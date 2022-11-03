@@ -944,7 +944,6 @@ class If extends Conditional {
   @override
   void execute(Set<Logic> drivenSignals) {
     if (driverValue(condition)[0] == LogicValue.one) {
-      // do this part first
       for (final conditional in then) {
         conditional.execute(drivenSignals);
       }
