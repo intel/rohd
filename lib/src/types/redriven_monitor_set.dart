@@ -29,6 +29,11 @@ class RedrivenMonitorSet<T> extends SetBase<T> {
     return _set.add(value);
   }
 
+  @override
+  void addAll(Iterable<T> elements) {
+    _set.addAll(elements);
+  }
+
   /// The duplicate members in the collection
   ///
   /// Returns an [UnmodifiableSetView] if the collection contains duplicates
