@@ -11,7 +11,9 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/types/redriven_monitor_set.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -218,7 +220,7 @@ class Combinational extends _Always {
 
     final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      drivenLogics.addAll(element.execute());
+      element.executeNew(drivenLogics);
     }
 
     // combinational must always drive all outputs or else you get X!
@@ -369,21 +371,13 @@ class Sequential extends _Always {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      final allDrivenSignals = <Logic>[];
+      final allDrivenSignals = RedrivenMonitorSet<Logic>();
       for (final element in conditionals) {
-        allDrivenSignals.addAll(element.execute());
+        element.executeNew(allDrivenSignals);
       }
-      if (allDrivenSignals.length != allDrivenSignals.toSet().length) {
-        final alreadySet = <Logic>{};
-        final redrivenSignals = <Logic>{};
-        for (final signal in allDrivenSignals) {
-          if (alreadySet.contains(signal)) {
-            redrivenSignals.add(signal);
-          }
-          alreadySet.add(signal);
-        }
+      if (allDrivenSignals.isDuplicates) {
         throw Exception('Sequential drove the same signal(s) multiple times:'
-            ' $redrivenSignals.');
+            ' ${allDrivenSignals.getDuplicates}.');
       }
     }
 
@@ -467,8 +461,9 @@ abstract class Conditional {
   ///
   /// Returns a [List] of all [Logic] signals which were driven during
   /// execution.
-  @protected
-  Set<Logic> execute();
+
+  /// test
+  void executeNew(Set<Logic> myDrivenSignals);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -525,9 +520,9 @@ class ConditionalAssign extends Conditional {
   List<Conditional> getConditionals() => [];
 
   @override
-  Set<Logic> execute() {
+  void executeNew(Set<Logic> myDrivenSignal) {
     receiverOutput(receiver).put(driverValue(driver));
-    return {receiver};
+    myDrivenSignal.add(receiver);
   }
 
   @override
@@ -617,15 +612,12 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  Set<Logic> execute() {
-    final drivenLogics = <Logic>{};
-
+  void executeNew(Set<Logic> myDrivenSignals) {
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
       }
-      return {};
     }
 
     CaseItem? foundMatch;
@@ -634,7 +626,7 @@ class Case extends Conditional {
       // match on the first matchinig item
       if (isMatch(item.value.value)) {
         for (final conditional in item.then) {
-          drivenLogics.addAll(conditional.execute());
+          conditional.executeNew(myDrivenSignals);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           throw Exception('Unique case statement had multiple matching cases.'
@@ -653,7 +645,7 @@ class Case extends Conditional {
     // no items matched
     if (foundMatch == null && defaultItem != null) {
       for (final conditional in defaultItem!) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.executeNew(myDrivenSignals);
       }
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
@@ -661,8 +653,6 @@ class Case extends Conditional {
       throw Exception('$conditionalType case statement had no matching case,'
           ' and type was $conditionalType.');
     }
-
-    return drivenLogics;
   }
 
   @override
@@ -831,13 +821,13 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  Set<Logic> execute() {
+  void executeNew(Set<Logic> myDrivenSignals) {
     final drivenLogics = <Logic>{};
 
     for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
         for (final conditional in iff.then) {
-          drivenLogics.addAll(conditional.execute());
+          conditional.executeNew(myDrivenSignals);
         }
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
@@ -849,7 +839,6 @@ class IfBlock extends Conditional {
       }
       // if it's 0, then continue searching down the path
     }
-    return drivenLogics;
   }
 
   @override
@@ -956,15 +945,15 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  Set<Logic> execute() {
-    final drivenLogics = <Logic>{};
+  void executeNew(Set<Logic> myDrivenSignals) {
     if (driverValue(condition)[0] == LogicValue.one) {
+      // do this part first
       for (final conditional in then) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.executeNew(myDrivenSignals);
       }
     } else if (driverValue(condition)[0] == LogicValue.zero) {
       for (final conditional in orElse) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.executeNew(myDrivenSignals);
       }
     } else {
       // x and z propagation
@@ -972,7 +961,6 @@ class If extends Conditional {
         receiverOutput(receiver).put(driverValue(condition)[0]);
       }
     }
-    return drivenLogics;
   }
 
   @override
