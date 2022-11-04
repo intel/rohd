@@ -17,12 +17,16 @@ import 'counter_test.dart' as async_reset;
 
 class ClockDivider extends Module {
   Logic get clkOut => output('clkOut');
-  ClockDivider(Logic clkIn, Logic reset) : super(name: 'clockDivider') {
+  ClockDivider(Logic clkIn, Logic reset, {bool syncReset = true})
+      : super(name: 'clockDivider') {
     clkIn = addInput('clkIn', clkIn);
     reset = addInput('reset', reset);
     final clkOut = addOutput('clkOut');
 
-    Sequential(clkIn, [
+    Sequential.multi([
+      clkIn,
+      if (!syncReset) reset
+    ], [
       If(
         reset,
         then: [clkOut < 0],
@@ -38,7 +42,7 @@ class TwoCounters extends Module {
     resetCounters = addInput('resetCounters', resetCounters);
 
     final clk = SimpleClockGenerator(10).clk;
-    final clkDiv = ClockDivider(clk, resetClks).clkOut;
+    final clkDiv = ClockDivider(clk, resetClks, syncReset: syncReset).clkOut;
 
     addOutput('cntFast', width: 8) <=
         (syncReset
