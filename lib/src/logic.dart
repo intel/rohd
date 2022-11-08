@@ -592,4 +592,25 @@ class Logic {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  /// Returns true if the [Logic] calling this function is in [List] else false.
+  ///
+  /// The list can be [Logic] or [int] or [bool] or [BigInt] or mix of all
+  /// ([dynamic]) supplied
+  ///
+  bool isIn(List<dynamic> list) {
+    /* 
+      Iterate through list of Logic, LogicVal, int or bool. 
+      Homogeneous (all elements same) or Hetrogeneous (mix of types) array 
+    */
+    for (final logicVar in list) {
+      if ((logicVar is Logic && logicVar.value == value) ||
+          (logicVar is LogicValue && logicVar == value) ||
+          ((logicVar is int || logicVar is bool || logicVar is BigInt) &&
+              Const(logicVar).value == value)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
