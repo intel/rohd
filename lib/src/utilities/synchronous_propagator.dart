@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+/***/
+
 /// A controller for a [SynchronousEmitter] that allows for
 /// adding of events of type [T] to be emitted.
 class SynchronousPropagator<T> {

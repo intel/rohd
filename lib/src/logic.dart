@@ -48,20 +48,17 @@ class Const extends Logic {
   }
 }
 
-/// Represents a logical signal of any width which can change values.
-class Logic {
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _signalIdx = 0;
+/// Represents a physical wire which shares a common value with one or
+/// more [Logic]s.
+class _Wire {
+  _Wire({required this.width})
+      : _currentValue = LogicValue.filled(width, LogicValue.z);
 
-  // special quiet flag to prevent <= and < where inappropriate
-  bool _unassignable = false;
+  /// The current active value of this signal.
+  LogicValue get value => _currentValue;
 
-  /// Makes it so that this signal cannot be assigned by any full (`<=`) or
-  /// conditional (`<`) assignment.
-  void makeUnassignable() => _unassignable = true;
-
-  /// The name of this signal.
-  final String name;
+  /// The number of bits in this signal.
+  final int width;
 
   /// The current active value of this signal.
   LogicValue _currentValue;
@@ -70,52 +67,6 @@ class Logic {
   ///
   /// This is useful for detecting when to trigger an edge.
   LogicValue? _preTickValue;
-
-  /// The number of bits in this signal.
-  final int width;
-
-  /// The current active value of this signal.
-  LogicValue get value => _currentValue;
-
-  /// The current active value of this signal if it has width 1, as
-  /// a [LogicValue].
-  ///
-  /// Throws an Exception if width is not 1.
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  LogicValue get bit => _currentValue.bit;
-
-  /// The current valid active value of this signal as an [int].
-  ///
-  /// Throws an exception if the signal is not valid or can't be represented
-  /// as an [int].
-  @Deprecated('Use value.toInt() instead.')
-  int get valueInt => value.toInt();
-
-  /// The current valid active value of this signal as a [BigInt].
-  ///
-  /// Throws an exception if the signal is not valid.
-  @Deprecated('Use value.toBigInt() instead.')
-  BigInt get valueBigInt => value.toBigInt();
-
-  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  bool hasValidValue() => _currentValue.isValid;
-
-  /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  bool isFloating() => value.isFloating;
-
-  /// The [Logic] signal that is driving `this`, if any.
-  Logic? get srcConnection => _srcConnection;
-  Logic? _srcConnection;
-
-  /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
-  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
-  final Set<Logic> _dstConnections = {};
-
-  /// Notifies `this` that [dstConnection] is now directly connected to the
-  /// output of `this`.
-  void _registerConnection(Logic dstConnection) =>
-      _dstConnections.add(dstConnection);
 
   /// A stream of [LogicValueChanged] events for every time the signal
   /// transitions at any time during a [Simulator] tick.
@@ -181,6 +132,201 @@ class Logic {
   /// value at the end of a [Simulator] tick from `1` to `0`.
   Future<LogicValueChanged> get nextNegedge => negedge.first;
 
+  /// Injects a value onto this signal in the current [Simulator] tick.
+  ///
+  /// This function calls [put()] in [Simulator.injectAction()].
+  void inject(dynamic val, {bool fill = false}) {
+    Simulator.injectAction(() => put(val, fill: fill));
+  }
+
+  /// Keeps track of whether there is an active put, to detect reentrance.
+  bool _isPutting = false;
+
+  /// Puts a value [val] onto this signal, which may or may not be picked up
+  /// for [changed] in this [Simulator] tick.
+  ///
+  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
+  ///
+  /// This function is used for propogating glitches through connected signals.
+  /// Use this function for custom definitions of [Module] behavior.
+  ///
+  /// If [fill] is set, all bits of the signal gets set to [val], similar
+  /// to `'` in SystemVerilog.
+  void put(dynamic val, {bool fill = false}) {
+    LogicValue newValue;
+    if (val is int) {
+      if (fill) {
+        newValue = LogicValue.filled(
+            width,
+            val == 0
+                ? LogicValue.zero
+                : val == 1
+                    ? LogicValue.one
+                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+      } else {
+        newValue = LogicValue.ofInt(val, width);
+      }
+    } else if (val is BigInt) {
+      if (fill) {
+        newValue = LogicValue.filled(
+            width,
+            val == BigInt.zero
+                ? LogicValue.zero
+                : val == BigInt.one
+                    ? LogicValue.one
+                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+      } else {
+        newValue = LogicValue.ofBigInt(val, width);
+      }
+    } else if (val is bool) {
+      newValue = LogicValue.ofInt(val ? 1 : 0, width);
+    } else if (val is LogicValue) {
+      if (val.width == 1 &&
+          (val == LogicValue.x || val == LogicValue.z || fill)) {
+        newValue = LogicValue.filled(width, val);
+      } else if (fill) {
+        throw Exception(
+            'Failed to fill value with $val.  To fill, it should be 1 bit.');
+      } else {
+        newValue = val;
+      }
+    } else {
+      throw Exception('Unrecognized value "$val" to deposit on this signal. '
+          'Unknown type ${val.runtimeType} cannot be deposited.');
+    }
+
+    if (newValue.width != width) {
+      throw Exception(
+          'Updated value width mismatch.  The width of $val should be $width.');
+    }
+
+    if (_isPutting) {
+      // if this is the result of a cycle, then contention!
+      newValue = LogicValue.filled(width, LogicValue.x);
+    }
+
+    final prevValue = _currentValue;
+    _currentValue = newValue;
+
+    // sends out a glitch if the value deposited has changed
+    if (_currentValue != prevValue) {
+      _isPutting = true;
+      _glitchController.add(LogicValueChanged(_currentValue, prevValue));
+      _isPutting = false;
+    }
+  }
+
+  /// Handles the actual connection of this [Logic] to [other].
+  void _connect(_Wire other) {
+    if (other.width != width) {
+      throw Exception('Bus widths must match.'
+          ' Cannot connect $this to $other which have different widths.');
+    }
+
+    if (value != other.value) {
+      put(other.value);
+    }
+    other.glitch.listen((args) {
+      put(other.value);
+    });
+  }
+}
+
+/// Represents a logical signal of any width which can change values.
+class Logic {
+  /// An internal counter for encouraging unique naming of unnamed signals.
+  static int _signalIdx = 0;
+
+  // special quiet flag to prevent <= and < where inappropriate
+  bool _unassignable = false;
+
+  /// Makes it so that this signal cannot be assigned by any full (`<=`) or
+  /// conditional (`<`) assignment.
+  void makeUnassignable() => _unassignable = true;
+
+  /// The name of this signal.
+  final String name;
+
+  _Wire _wire;
+
+  /// The number of bits in this signal.
+  int get width => _wire.width;
+
+  /// The current active value of this signal.
+  LogicValue get value => _wire._currentValue;
+
+  /// The current active value of this signal if it has width 1, as
+  /// a [LogicValue].
+  ///
+  /// Throws an Exception if width is not 1.
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
+  LogicValue get bit => value.bit;
+
+  /// The current valid active value of this signal as an [int].
+  ///
+  /// Throws an exception if the signal is not valid or can't be represented
+  /// as an [int].
+  @Deprecated('Use value.toInt() instead.')
+  int get valueInt => value.toInt();
+
+  /// The current valid active value of this signal as a [BigInt].
+  ///
+  /// Throws an exception if the signal is not valid.
+  @Deprecated('Use value.toBigInt() instead.')
+  BigInt get valueBigInt => value.toBigInt();
+
+  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
+  bool hasValidValue() => value.isValid;
+
+  /// Returns `true` iff *all* bits of the current value are floating (`z`).
+  bool isFloating() => value.isFloating;
+
+  /// The [Logic] signal that is driving `this`, if any.
+  Logic? get srcConnection => _srcConnection;
+  Logic? _srcConnection;
+
+  /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
+  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
+  final Set<Logic> _dstConnections = {};
+
+  /// Notifies `this` that [dstConnection] is now directly connected to the
+  /// output of `this`.
+  void _registerConnection(Logic dstConnection) =>
+      _dstConnections.add(dstConnection);
+
+  /// A stream of [LogicValueChanged] events for every time the signal
+  /// transitions at any time during a [Simulator] tick.
+  ///
+  /// This event can occur more than once per edge, or even if there is no edge.
+  SynchronousEmitter<LogicValueChanged> get glitch => _wire.glitch;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed.
+  Stream<LogicValueChanged> get changed => _wire.changed;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `1` to `0`.
+  Stream<LogicValueChanged> get negedge => _wire.negedge;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `0` to `1`.
+  Stream<LogicValueChanged> get posedge => _wire.posedge;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick.
+  Future<LogicValueChanged> get nextChanged => _wire.changed.first;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `0` to `1`.
+  Future<LogicValueChanged> get nextPosedge => _wire.posedge.first;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `1` to `0`.
+  Future<LogicValueChanged> get nextNegedge => _wire.negedge.first;
+
   /// The [Module] that this [Logic] exists within.
   ///
   /// This only gets populated after its parent [Module], if it exists,
@@ -217,9 +363,9 @@ class Logic {
   ///
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
-  Logic({String? name, this.width = 1})
+  Logic({String? name, int width = 1})
       : name = name ?? 's${_signalIdx++}',
-        _currentValue = LogicValue.filled(width, LogicValue.z) {
+        _wire = _Wire(width: width) {
     if (width < 0) {
       throw Exception('Logic width must be greater than or equal to 0.');
     }
@@ -242,6 +388,24 @@ class Logic {
     }
   }
 
+  /// Injects a value onto this signal in the current [Simulator] tick.
+  ///
+  /// This function calls [put()] in [Simulator.injectAction()].
+  void inject(dynamic val, {bool fill = false}) =>
+      _wire.inject(val, fill: fill);
+
+  /// Puts a value [val] onto this signal, which may or may not be picked up
+  /// for [changed] in this [Simulator] tick.
+  ///
+  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
+  ///
+  /// This function is used for propogating glitches through connected signals.
+  /// Use this function for custom definitions of [Module] behavior.
+  ///
+  /// If [fill] is set, all bits of the signal gets set to [val], similar
+  /// to `'` in SystemVerilog.
+  void put(dynamic val, {bool fill = false}) => _wire.put(val, fill: fill);
+
   /// Connects this [Logic] directly to [other].
   ///
   /// Every time [other] transitions (`glitch`es), this signal will transition
@@ -257,19 +421,8 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
-    if (other.width != width) {
-      throw Exception('Bus widths must match.'
-          ' Cannot connect $this to $other which have different widths.');
-    }
-
     _unassignable = true;
-
-    if (value != other.value) {
-      put(other.value);
-    }
-    other.glitch.listen((args) {
-      put(other.value);
-    });
+    _wire._connect(other._wire);
   }
 
   /// Connects this [Logic] directly to another [Logic].
@@ -361,90 +514,6 @@ class Logic {
       return ConditionalAssign(this, other);
     } else {
       return ConditionalAssign(this, Const(other, width: width));
-    }
-  }
-
-  /// Injects a value onto this signal in the current [Simulator] tick.
-  ///
-  /// This function calls [put()] in [Simulator.injectAction()].
-  void inject(dynamic val, {bool fill = false}) {
-    Simulator.injectAction(() => put(val, fill: fill));
-  }
-
-  /// Keeps track of whether there is an active put, to detect reentrance.
-  bool _isPutting = false;
-
-  /// Puts a value [val] onto this signal, which may or may not be picked up
-  /// for [changed] in this [Simulator] tick.
-  ///
-  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
-  ///
-  /// This function is used for propogating glitches through connected signals.
-  /// Use this function for custom definitions of [Module] behavior.
-  ///
-  /// If [fill] is set, all bits of the signal gets set to [val], similar
-  /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) {
-    LogicValue newValue;
-    if (val is int) {
-      if (fill) {
-        newValue = LogicValue.filled(
-            width,
-            val == 0
-                ? LogicValue.zero
-                : val == 1
-                    ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
-      } else {
-        newValue = LogicValue.ofInt(val, width);
-      }
-    } else if (val is BigInt) {
-      if (fill) {
-        newValue = LogicValue.filled(
-            width,
-            val == BigInt.zero
-                ? LogicValue.zero
-                : val == BigInt.one
-                    ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
-      } else {
-        newValue = LogicValue.ofBigInt(val, width);
-      }
-    } else if (val is bool) {
-      newValue = LogicValue.ofInt(val ? 1 : 0, width);
-    } else if (val is LogicValue) {
-      if (val.width == 1 &&
-          (val == LogicValue.x || val == LogicValue.z || fill)) {
-        newValue = LogicValue.filled(width, val);
-      } else if (fill) {
-        throw Exception(
-            'Failed to fill value with $val.  To fill, it should be 1 bit.');
-      } else {
-        newValue = val;
-      }
-    } else {
-      throw Exception('Unrecognized value "$val" to deposit on this signal. '
-          'Unknown type ${val.runtimeType} cannot be deposited.');
-    }
-
-    if (newValue.width != width) {
-      throw Exception(
-          'Updated value width mismatch.  The width of $val should be $width.');
-    }
-
-    if (_isPutting) {
-      // if this is the result of a cycle, then contention!
-      newValue = LogicValue.filled(width, LogicValue.x);
-    }
-
-    final prevValue = _currentValue;
-    _currentValue = newValue;
-
-    // sends out a glitch if the value deposited has changed
-    if (_currentValue != prevValue) {
-      _isPutting = true;
-      _glitchController.add(LogicValueChanged(_currentValue, prevValue));
-      _isPutting = false;
     }
   }
 
