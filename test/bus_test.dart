@@ -251,12 +251,9 @@ void main() {
     });
 
     test('Logic IsIn List', () async {
-      final a = [
-        Logic(width: 8),
-        Logic(width: 8),
-        Logic(width: 8),
-        Logic(width: 8)
-      ];
+      final a = Logic(width: 8);
+      final listOfValue = [Logic(width: 8), Const(0).value, Const(10), 56];
+      a.isIn(listOfValue);
     });
   });
 

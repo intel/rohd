@@ -599,6 +599,8 @@ class Logic {
   /// ([dynamic]) supplied
   ///
   bool isIn(List<dynamic> list) {
+    // [TODO] Will this function return boolean results that are synthesizable?
+
     /* 
       Iterate through list of Logic, LogicVal, int or bool. 
       Homogeneous (all elements same) or Hetrogeneous (mix of types) array 
