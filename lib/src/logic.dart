@@ -345,6 +345,31 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
+  /// Pre-Increment (++var) or var+=incrVal
+  // ignore: prefer_expression_function_bodies
+  ConditionalAssign preIncr({Logic? incrVal}) {
+    return this < ((incrVal != null) ? this + incrVal : this + Const(1));
+  }
+
+  /// Pre-Decrement (--var)
+  // ignore: prefer_expression_function_bodies
+  ConditionalAssign preDecr({Logic? decrVal}) {
+    return this < ((decrVal != null) ? this - decrVal : this - Const(1));
+  }
+
+  /// Shorthand for multiplication assign (++var)
+  // ignore: prefer_expression_function_bodies
+  ConditionalAssign mulAssign(Logic mulVal) {
+    return this < this * mulVal;
+  }
+
+  /// Pre-Increment (++var)
+  // ignore: prefer_expression_function_bodies
+  ConditionalAssign divAssign(Logic? divVal) {
+    return this <
+        this / divVal; // [TODO] This needs to be tested on `/` operator
+  }
+
   /// Conditional assignment operator.
   ///
   /// Represents conditionally asigning the value of another signal to this.
