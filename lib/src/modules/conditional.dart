@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/conditional_exceptions.dart';
 import 'package:rohd/src/types/redriven_monitor_set.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -343,7 +344,12 @@ class Sequential extends _Always {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          }));
+          }).catchError(
+            (dynamic err) {
+              print('Caught ${err}');
+            },
+            // test: (err) => err.runtimeType == Exception,
+          ));
         }
         _pendingExecute = true;
       });
@@ -376,8 +382,8 @@ class Sequential extends _Always {
         element.execute(allDrivenSignals);
       }
       if (allDrivenSignals.isDuplicates) {
-        throw Exception('Sequential drove the same signal(s) multiple times:'
-            ' ${allDrivenSignals.getDuplicates}.');
+        throw SignalRedrivenException(
+            allDrivenSignals.getDuplicates.toString());
       }
     }
 
