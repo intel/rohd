@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
+
+import 'package:rohd/src/exceptions/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -292,8 +294,9 @@ void main() {
     });
   });
 
-  test('should return exception when there are multiple drivers for a flop.',
-      () async {
+  test(
+      'should return SignalRedrivenException when there are multiple drivers '
+      'for a flop.', () async {
     final mod =
         NewSequentialModule(Logic(), Logic(), Logic(width: 8), Logic(width: 8));
     await mod.build();
@@ -302,9 +305,12 @@ void main() {
       Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
     ];
 
-    // await SimCompare.checkFunctionalVector(mod, vectors);
-    expect(() async {
+    try {
       await SimCompare.checkFunctionalVector(mod, vectors);
-    }, throwsA((dynamic e) => e is Exception));
+      fail('Exception not thrown!');
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      expect(e.runtimeType, equals(SignalRedrivenException));
+    }
   });
 }
