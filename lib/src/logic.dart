@@ -92,16 +92,36 @@ class _Wire {
       // them! saves performance!
       _changedBeingWatched = true;
 
-      Simulator.preTick.listen((event) {
+      _preTickSubscription = Simulator.preTick.listen((event) {
         _preTickValue = value;
       });
-      Simulator.postTick.listen((event) {
+      _postTickSubscription = Simulator.postTick.listen((event) {
         if (value != _preTickValue && _preTickValue != null) {
           _changedController.add(LogicValueChanged(value, _preTickValue!));
         }
       });
     }
     return _changedController.stream;
+  }
+
+  /// The subscription to the [Simulator]'s `preTick`.
+  ///
+  /// Only non-null if [_changedBeingWatched] is true.
+  late final StreamSubscription<void> _preTickSubscription;
+
+  /// The subscription to the [Simulator]'s `postTick`.
+  ///
+  /// Only non-null if [_changedBeingWatched] is true.
+  late final StreamSubscription<void> _postTickSubscription;
+
+  /// Cancels all [Simulator] subscriptions and uses [newChanged] as the
+  /// source to replace all [changed] events for this [_Wire].
+  void _migrateChangedTriggers(Stream<LogicValueChanged> newChanged) {
+    if (_changedBeingWatched) {
+      unawaited(_preTickSubscription.cancel());
+      unawaited(_postTickSubscription.cancel());
+      newChanged.listen(_changedController.add);
+    }
   }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
@@ -424,6 +444,7 @@ class Logic {
     _unassignable = true;
     other._wire._glitchController.emitter
         .adopt(_wire._glitchController.emitter);
+    _wire._migrateChangedTriggers(other._wire.changed);
     _wire = other._wire;
   }
 

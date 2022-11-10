@@ -113,5 +113,23 @@ void main() {
     expect(qHadPosedge, equals(true));
   });
 
-  // TODO(mkorbel1): add tests that after merging two wires, changed and glitch and stuff still works!
+  test('reconnected signal still hits changed events', () async {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+
+    var detectedAChanged = false;
+    a.changed.listen((event) {
+      detectedAChanged = true;
+    });
+
+    a <= b;
+
+    Simulator.registerAction(100, () {
+      b.put(1);
+    });
+
+    await Simulator.run();
+
+    expect(detectedAChanged, isTrue);
+  });
 }
