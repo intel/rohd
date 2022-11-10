@@ -55,6 +55,9 @@ class Simulator {
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
 
+  /// Track if exception is thrown during the execution
+  static Exception? exception;
+
   /// The maximum time the simulation can run.
   ///
   /// If set to -1 (the default), it means there is no maximum time limit.
@@ -276,7 +279,11 @@ class Simulator {
     while (hasStepsRemaining() &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
-      await tick(); // make this async so that await-ing events works
+      await tick();
+    }
+
+    if (exception != null) {
+      throw exception!;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
