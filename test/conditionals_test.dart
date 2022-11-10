@@ -161,8 +161,8 @@ class SequentialModule extends Module {
   }
 }
 
-class NewSequentialModule extends Module {
-  NewSequentialModule(Logic a, Logic b, Logic d, Logic j)
+class SignalRedrivenSequentialModule extends Module {
+  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d, Logic j)
       : super(name: 'ffmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
@@ -181,7 +181,6 @@ class NewSequentialModule extends Module {
         k < k,
         q < k,
         q < d,
-        // q < j,
         y < a,
         z < b,
         x < ~x, // invert x when a
@@ -297,8 +296,8 @@ void main() {
   test(
       'should return SignalRedrivenException when there are multiple drivers '
       'for a flop.', () async {
-    final mod =
-        NewSequentialModule(Logic(), Logic(), Logic(width: 8), Logic(width: 8));
+    final mod = SignalRedrivenSequentialModule(
+        Logic(), Logic(), Logic(width: 8), Logic(width: 8));
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
