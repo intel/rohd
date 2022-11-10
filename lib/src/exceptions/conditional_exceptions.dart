@@ -7,8 +7,6 @@
 /// 2022 November 9
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
-import 'package:rohd/rohd.dart';
-
 class SignalRedrivenException implements Exception {
   late final String _message;
 
