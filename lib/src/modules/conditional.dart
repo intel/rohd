@@ -344,12 +344,11 @@ class Sequential extends _Always {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          }).catchError(
-            (dynamic err) {
-              print('Caught ${err}');
-            },
-            // test: (err) => err.runtimeType == Exception,
-          ));
+          }).catchError((dynamic err) {
+            if (err is Exception) {
+              Simulator.exception = err;
+            }
+          }));
         }
         _pendingExecute = true;
       });
