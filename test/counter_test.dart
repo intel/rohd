@@ -7,10 +7,8 @@
 /// 2021 May 10
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'dart:async';
-
-// import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -50,7 +48,8 @@ void main() {
       final counter = Counter(Logic(), reset);
       await counter.build();
       // WaveDumper(counter);
-      // File('tmp_counter.sv').writeAsStringSync(counter.generateSynth());
+
+      // TODO (mkorbel1): does this need to wait 1 timestep even?
 
       // check that 1 timestep after reset, the value has reset properly
       unawaited(reset.nextPosedge

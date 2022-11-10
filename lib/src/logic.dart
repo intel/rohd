@@ -121,7 +121,15 @@ class _Wire {
       unawaited(_preTickSubscription.cancel());
       unawaited(_postTickSubscription.cancel());
       newChanged.listen(_changedController.add);
+      _changedBeingWatched = false;
     }
+  }
+
+  /// Tells this [_Wire] to adopt all the behavior of [other] so that
+  /// it can replace [other].
+  void _adopt(_Wire other) {
+    _glitchController.emitter.adopt(other._glitchController.emitter);
+    other._migrateChangedTriggers(changed);
   }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
@@ -442,10 +450,18 @@ class Logic {
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
     _unassignable = true;
-    other._wire._glitchController.emitter
-        .adopt(_wire._glitchController.emitter);
-    _wire._migrateChangedTriggers(other._wire.changed);
-    _wire = other._wire;
+    _updateWire(other._wire);
+  }
+
+  /// Updates the current active [_Wire] for this [Logic] and also
+  /// notifies all downstream [Logic]s of the new source [_Wire].
+  void _updateWire(_Wire newWire) {
+    newWire._adopt(_wire);
+    _wire = newWire;
+
+    for (final dstConnection in dstConnections) {
+      dstConnection._updateWire(newWire);
+    }
   }
 
   /// Connects this [Logic] directly to another [Logic].
