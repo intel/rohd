@@ -655,3 +655,72 @@ class Mux extends Module with InlineSystemVerilog {
     return '$control ? $d1 : $d0';
   }
 }
+
+/// A two-input bit index gate [Module].
+///
+/// It always takes two inputs and has one output of width 1.
+class IndexGate extends Module with InlineSystemVerilog {
+  late final String _originalName;
+  late final String _indexName;
+  late final String _selectionName;
+
+  /// The primary input to this gate.
+  Logic get _original => input(_originalName);
+
+  /// The bit index for this gate.
+  Logic get _index => input(_indexName);
+
+  /// The output of this gate.
+  Logic get selection => output(_selectionName);
+
+  /// Constructs a two-input bit index gate for an abitrary custom functional
+  /// implementation.
+  ///
+  /// The bit [index] will be indexed as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use original[index], where
+  /// target is index's int value
+  IndexGate(Logic original, Logic index) : super() {
+    _originalName = 'original_${original.name}';
+    _indexName = Module.unpreferredName('index_${index.name}');
+    _selectionName =
+        Module.unpreferredName('${original.name}_indexby_${index.name}');
+
+    addInput(_originalName, original, width: original.width);
+    addInput(_indexName, index, width: index.width);
+    addOutput(_selectionName);
+
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    _original.glitch.listen((args) {
+      _execute();
+    });
+    _index.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+    if (_index.hasValidValue()) {
+      final indexVal = _index.value.toInt();
+      selection.put(_original.value.getRange(indexVal, indexVal + 1));
+    } else {
+      selection.put(LogicValue.x);
+    }
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 2) {
+      throw Exception('Gate has exactly two inputs.');
+    }
+
+    final target = inputs[_originalName]!;
+    final idx = inputs[_indexName]!;
+    return '$target[$idx]';
+  }
+}

@@ -126,8 +126,8 @@ abstract class Module {
   /// Return string type definition name if validation passed
   /// else throw exception.
   ///
-  /// This validation method ensure that definition name is valid if
-  /// reserveDefinitionName set to True.
+  /// This validation method ensure that [definitionName] is valid if
+  /// [reserveDefinitionName] set to `true`.
   static String? _nameValidation(
       String? definitionName, bool reserveDefinitionName) {
     if (reserveDefinitionName && definitionName == null) {
