@@ -216,20 +216,20 @@ class _Wire {
     }
   }
 
-  /// Handles the actual connection of this [Logic] to [other].
-  void _connect(_Wire other) {
-    if (other.width != width) {
-      throw Exception('Bus widths must match.'
-          ' Cannot connect $this to $other which have different widths.');
-    }
+  // /// Handles the actual connection of this [Logic] to [other].
+  // void _connect(_Wire other) {
+  //   if (other.width != width) {
+  //     throw Exception('Bus widths must match.'
+  //         ' Cannot connect $this to $other which have different widths.');
+  //   }
 
-    if (value != other.value) {
-      put(other.value);
-    }
-    other.glitch.listen((args) {
-      put(other.value);
-    });
-  }
+  //   if (value != other.value) {
+  //     put(other.value);
+  //   }
+  //   other.glitch.listen((args) {
+  //     put(other.value);
+  //   });
+  // }
 }
 
 /// Represents a logical signal of any width which can change values.
@@ -422,7 +422,9 @@ class Logic {
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
     _unassignable = true;
-    _wire._connect(other._wire);
+    other._wire._glitchController.emitter
+        .adopt(_wire._glitchController.emitter);
+    _wire = other._wire;
   }
 
   /// Connects this [Logic] directly to another [Logic].

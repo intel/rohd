@@ -112,4 +112,6 @@ void main() {
 
     expect(qHadPosedge, equals(true));
   });
+
+  // TODO(mkorbel1): add tests that after merging two wires, changed and glitch and stuff still works!
 }

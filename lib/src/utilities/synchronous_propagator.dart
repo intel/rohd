@@ -45,12 +45,24 @@ class SynchronousEmitter<T> {
   bool get isEmitting => _isEmitting;
   bool _isEmitting = false;
 
+  bool _adopted = false;
+
   /// Sends out [t] to all listeners.
   void _propagate(T t) {
     _isEmitting = true;
     for (final action in _actions) {
       action(t);
     }
+    // TODO(mkorbel1): put some assertion/counter in here to see if we're hitting this still?
+    if (_adopted) {
+      print('reran adopted!');
+    }
     _isEmitting = false;
+  }
+
+  void adopt(SynchronousEmitter<T> other) {
+    _actions.addAll(other._actions);
+    other._actions.clear();
+    other._adopted = true;
   }
 }
