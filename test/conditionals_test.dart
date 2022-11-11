@@ -161,37 +161,20 @@ class SequentialModule extends Module {
 }
 
 class SignalRedrivenSequentialModule extends Module {
-  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d, Logic j)
+  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d)
       : super(name: 'ffmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    final y = addOutput('y');
-    final z = addOutput('z');
-    final x = addOutput('x');
     final q = addOutput('q', width: d.width);
-
     d = addInput('d', d, width: d.width);
 
-    j = addInput('j', j, width: 8);
     final k = addOutput('k', width: 8);
     Sequential(SimpleClockGenerator(10).clk, [
       If(a, then: [
         k < k,
         q < k,
         q < d,
-        y < a,
-        z < b,
-        x < ~x, // invert x when a
-      ], orElse: [
-        x < a, // reset x to a when not a
-        If(b, then: [
-          y < b,
-          z < a
-        ], orElse: [
-          y < 0,
-          z < 1,
-        ])
       ])
     ]);
   }
@@ -295,8 +278,8 @@ void main() {
   test(
       'should return SignalRedrivenException when there are multiple drivers '
       'for a flop.', () async {
-    final mod = SignalRedrivenSequentialModule(
-        Logic(), Logic(), Logic(width: 8), Logic(width: 8));
+    final mod =
+        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
