@@ -306,8 +306,7 @@ void main() {
     try {
       await SimCompare.checkFunctionalVector(mod, vectors);
       fail('Exception not thrown!');
-      // ignore: avoid_catches_without_on_clauses
-    } catch (e) {
+    } on Exception catch (e) {
       expect(e.runtimeType, equals(SignalRedrivenException));
     }
   });
