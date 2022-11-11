@@ -12,7 +12,7 @@ import 'dart:core';
 
 import 'package:collection/collection.dart';
 
-/// A collection Set that monitor for redriven type or signal
+/// A Set collection that monitor for duplication
 ///
 /// [DuplicateDetectionSet] can be used if duplicate element are needed to be
 /// catch for certain usage.
