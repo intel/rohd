@@ -40,7 +40,7 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
   Set<T> get getDuplicates => UnmodifiableSetView(_duplicates);
 
   /// Returns `true` if collection contains duplicates
-  bool get isDuplicates => _duplicates.isNotEmpty;
+  bool get hasDuplicates => _duplicates.isNotEmpty;
 
   @override
   bool contains(Object? element) => _set.contains(element);

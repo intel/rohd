@@ -380,7 +380,7 @@ class Sequential extends _Always {
       for (final element in conditionals) {
         element.execute(allDrivenSignals);
       }
-      if (allDrivenSignals.isDuplicates) {
+      if (allDrivenSignals.hasDuplicates) {
         throw SignalRedrivenException(
             allDrivenSignals.getDuplicates.toString());
       }
