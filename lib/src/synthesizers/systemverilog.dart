@@ -9,7 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/traverseable_collection.dart';
+import 'package:rohd/src/types/traverseable_collection.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
