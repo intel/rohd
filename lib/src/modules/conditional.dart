@@ -14,7 +14,7 @@ import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditional_exceptions.dart';
-import 'package:rohd/src/types/redriven_monitor_set.dart';
+import 'package:rohd/src/types/duplicate_detection_set.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -376,7 +376,7 @@ class Sequential extends _Always {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      final allDrivenSignals = RedrivenMonitorSet<Logic>();
+      final allDrivenSignals = DuplicateDetectionSet<Logic>();
       for (final element in conditionals) {
         element.execute(allDrivenSignals);
       }

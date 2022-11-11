@@ -14,9 +14,9 @@ import 'package:collection/collection.dart';
 
 /// A collection Set that monitor for redriven type or signal
 ///
-/// [RedrivenMonitorSet] can be used if duplicate element are needed to be
+/// [DuplicateDetectionSet] can be used if duplicate element are needed to be
 /// catch for certain usage.
-class RedrivenMonitorSet<T> extends SetBase<T> {
+class DuplicateDetectionSet<T> extends SetBase<T> {
   final Set<T> _set = <T>{};
   final Set<T> _duplicates = <T>{};
 
@@ -36,7 +36,7 @@ class RedrivenMonitorSet<T> extends SetBase<T> {
 
   /// The duplicate members in the collection
   ///
-  /// Returns an [UnmodifiableSetView] if the collection contains duplicates
+  /// Returns an [UnmodifiableSetView] from DuplicateDetectionSet collection
   UnmodifiableSetView<T> get getDuplicates => UnmodifiableSetView(_duplicates);
 
   /// Returns `true` if collection contains duplicates
