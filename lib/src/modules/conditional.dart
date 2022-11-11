@@ -11,7 +11,6 @@
 import 'dart:async';
 
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditional_exceptions.dart';
 import 'package:rohd/src/types/duplicate_detection_set.dart';
