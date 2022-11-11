@@ -462,6 +462,9 @@ abstract class Conditional {
       _assignedReceiverToOutputMap[receiver]!;
 
   /// Executes the functionality represented by this [Conditional].
+  ///
+  /// [drivenSignals] of type Set<Logic> must be passed to the argument
+  /// to validate for redundance signals.
   @protected
   void execute(Set<Logic> drivenSignals);
 
@@ -519,9 +522,6 @@ class ConditionalAssign extends Conditional {
   @override
   List<Conditional> getConditionals() => [];
 
-  /// Assign [receiver] the value of the [driver].
-  ///
-  /// The [drivenSignals] is a collection of [receiver] in a Set.
   @override
   void execute(Set<Logic> drivenSignals) {
     receiverOutput(receiver).put(driverValue(driver));
@@ -621,6 +621,7 @@ class Case extends Conditional {
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
       }
+      return;
     }
 
     CaseItem? foundMatch;
