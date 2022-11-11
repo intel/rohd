@@ -31,7 +31,7 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
 
   @override
   void addAll(Iterable<T> elements) {
-    _set.addAll(elements);
+    elements.forEach(add);
   }
 
   /// The duplicate members in the collection
@@ -55,7 +55,12 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
   T? lookup(Object? element) => _set.lookup(element);
 
   @override
-  bool remove(Object? value) => _set.remove(value);
+  bool remove(Object? value) {
+    if (_set.contains(value) && _duplicates.contains(value)) {
+      throw Exception('Duplication value detected inside Set!');
+    }
+    return _set.remove(value);
+  }
 
   @override
   Set<T> toSet() => _set;
