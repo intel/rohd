@@ -131,6 +131,10 @@ abstract class SimCompare {
                     'Value type ${value.runtimeType} is not supported (yet?)');
               }
             }
+          }).catchError((dynamic err) {
+            if (err is Exception) {
+              Simulator.exception = err;
+            }
           });
         }
       });

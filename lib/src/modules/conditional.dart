@@ -318,14 +318,23 @@ class Sequential extends _Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            unawaited(Simulator.postTick.first.then((value) {
-              // once the tick has completed, we can update the override maps
-              for (final driverInput in _driverInputsPendingPostUpdate) {
-                _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
-              }
-              _driverInputsPendingPostUpdate.clear();
-              _pendingPostUpdate = false;
-            }));
+            unawaited(
+              Simulator.postTick.first.then(
+                (value) {
+                  // once the tick has completed, we can update the override maps
+                  for (final driverInput in _driverInputsPendingPostUpdate) {
+                    _inputToPreTickInputValuesMap[driverInput] =
+                        driverInput.value;
+                  }
+                  _driverInputsPendingPostUpdate.clear();
+                  _pendingPostUpdate = false;
+                },
+              ).catchError((dynamic err) {
+                if (err is Exception) {
+                  Simulator.exception = err;
+                }
+              }),
+            );
           }
           _pendingPostUpdate = true;
         }
