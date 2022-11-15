@@ -49,13 +49,8 @@ void main() {
       await counter.build();
       // WaveDumper(counter);
 
-      // TODO (mkorbel1): does this need to wait 1 timestep even?
-
-      // check that 1 timestep after reset, the value has reset properly
       unawaited(reset.nextPosedge
-          .then((value) => Simulator.registerAction(Simulator.time + 1, () {
-                expect(counter.val.value.toInt(), equals(0));
-              })));
+          .then((value) => expect(counter.val.value.toInt(), equals(0))));
 
       final vectors = [
         Vector({'en': 0, 'reset': 0}, {}),
