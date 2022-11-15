@@ -9,6 +9,7 @@
 ///
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -291,6 +292,24 @@ void main() {
       fail('Exception not thrown!');
     } on Exception catch (e) {
       expect(e.runtimeType, equals(SignalRedrivenException));
+    }
+  });
+
+  test(
+      'should return NonSupportedTypeException when '
+      'simcompare expected output values has invalid runtime type. ', () async {
+    final mod =
+        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1}, {}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 'invalid runtime type'}),
+    ];
+
+    try {
+      await SimCompare.checkFunctionalVector(mod, vectors);
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(NonSupportedTypeException));
     }
   });
 }

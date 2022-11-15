@@ -14,6 +14,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
@@ -107,6 +108,7 @@ abstract class SimCompare {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o = module.output(signalName);
+
               final errorReason =
                   'For vector #${vectors.indexOf(vector)} $vector,'
                   ' expected $o to be $value, but it was ${o.value}.';
@@ -127,8 +129,7 @@ abstract class SimCompare {
                   expect(o.value, equals(value));
                 }
               } else {
-                throw Exception(
-                    'Value type ${value.runtimeType} is not supported (yet?)');
+                throw NonSupportedTypeException(value.runtimeType.toString());
               }
             }
           }).catchError((dynamic err) {
