@@ -8,7 +8,7 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';

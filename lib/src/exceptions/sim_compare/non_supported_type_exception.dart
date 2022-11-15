@@ -19,7 +19,7 @@ class NonSupportedTypeException implements Exception {
   late final String _message;
 
   /// constructor for NonSupportedTypeException,
-  /// pass custom message to the constructor
+  /// pass custom String [message] to the constructor to override
   NonSupportedTypeException(String value,
       [String message = 'The runtimetype of expected vector is unsupported: '])
       : _message = message + value.runtimeType.toString();

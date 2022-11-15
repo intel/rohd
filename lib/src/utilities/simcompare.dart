@@ -14,7 +14,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
