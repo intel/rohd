@@ -132,21 +132,53 @@ class _Wire {
     other._migrateChangedTriggers(changed);
   }
 
+  /// Store the [negedge] stream to avoid creating multiple copies
+  /// of streams.
+  Stream<LogicValueChanged>? _negedge;
+
+  /// Store the [posedge] stream to avoid creating multiple copies
+  /// of streams.
+  Stream<LogicValueChanged>? _posedge;
+
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `1` to `0`.
-  Stream<LogicValueChanged> get negedge => changed.where((args) =>
-      width == 1 &&
-      LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
-          ignoreInvalid: true));
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get negedge {
+    if (width != 1) {
+      throw Exception(
+          'Can only detect negedge when width is 1, but was $width');
+    }
+
+    _negedge ??= changed.where((args) => LogicValue.isNegedge(
+          args.previousValue,
+          args.newValue,
+          ignoreInvalid: true,
+        ));
+
+    return _negedge!;
+  }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `0` to `1`.
-  Stream<LogicValueChanged> get posedge => changed.where((args) =>
-      width == 1 &&
-      LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
-          ignoreInvalid: true));
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get posedge {
+    if (width != 1) {
+      throw Exception(
+          'Can only detect posedge when width is 1, but was $width');
+    }
+
+    _posedge ??= changed.where((args) => LogicValue.isPosedge(
+          args.previousValue,
+          args.newValue,
+          ignoreInvalid: true,
+        ));
+
+    return _posedge!;
+  }
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick.
@@ -154,10 +186,14 @@ class _Wire {
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextPosedge => posedge.first;
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextNegedge => negedge.first;
 
   /// Injects a value onto this signal in the current [Simulator] tick.
@@ -243,21 +279,6 @@ class _Wire {
       _isPutting = false;
     }
   }
-
-  // /// Handles the actual connection of this [Logic] to [other].
-  // void _connect(_Wire other) {
-  //   if (other.width != width) {
-  //     throw Exception('Bus widths must match.'
-  //         ' Cannot connect $this to $other which have different widths.');
-  //   }
-
-  //   if (value != other.value) {
-  //     put(other.value);
-  //   }
-  //   other.glitch.listen((args) {
-  //     put(other.value);
-  //   });
-  // }
 }
 
 /// Represents a logical signal of any width which can change values.
@@ -265,7 +286,7 @@ class Logic {
   /// An internal counter for encouraging unique naming of unnamed signals.
   static int _signalIdx = 0;
 
-  // special quiet flag to prevent <= and < where inappropriate
+  // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
   /// Makes it so that this signal cannot be assigned by any full (`<=`) or
@@ -275,6 +296,9 @@ class Logic {
   /// The name of this signal.
   final String name;
 
+  /// The [_Wire] which holds the current value and listeners for this [Logic].
+  ///
+  /// May be a shared object between multiple [Logic]s.
   _Wire _wire;
 
   /// The number of bits in this signal.
@@ -336,11 +360,15 @@ class Logic {
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Stream<LogicValueChanged> get negedge => _wire.negedge;
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Stream<LogicValueChanged> get posedge => _wire.posedge;
 
   /// Triggers at most once, the next time that this [Logic] changes
@@ -349,10 +377,14 @@ class Logic {
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextPosedge => _wire.posedge.first;
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextNegedge => _wire.negedge.first;
 
   /// The [Module] that this [Logic] exists within.
