@@ -321,7 +321,8 @@ class Sequential extends _Always {
             unawaited(
               Simulator.postTick.first.then(
                 (value) {
-                  // once the tick has completed, we can update the override maps
+                  // once the tick has completed,
+                  // we can update the override maps
                   for (final driverInput in _driverInputsPendingPostUpdate) {
                     _inputToPreTickInputValuesMap[driverInput] =
                         driverInput.value;
