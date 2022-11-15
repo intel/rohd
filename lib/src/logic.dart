@@ -8,11 +8,12 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 /// Represents the event of a [Logic] changing value.
@@ -424,7 +425,7 @@ class Logic {
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
   Logic({String? name, int width = 1})
-      : name = name ?? 's${_signalIdx++}',
+      : name = name == null ? 's${_signalIdx++}' : Sanitizer.sanitizeSV(name),
         _wire = _Wire(width: width) {
     if (width < 0) {
       throw Exception('Logic width must be greater than or equal to 0.');
@@ -590,7 +591,14 @@ class Logic {
 
   /// Accesses the [index]th bit of this signal.
   ///
-  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  /// Accepts both [int] and [Logic] as [index].
+  ///
+  /// Throws [Exception] when index is not an [int] or [Logic].
+  ///
+  /// Negative/Positive index values are allowed (only when index is an int).
+  /// When, index is a Logic, the index value is treated as an unsigned value.
+  /// The negative indexing starts from the end=[width]-1
+  ///
   /// -([width]) <= [index] < [width]
   ///
   /// ```dart
@@ -607,7 +615,14 @@ class Logic {
   /// nextVal <= val[8]; // Error!: allowed values [-8, 7]
   /// ```
   ///
-  Logic operator [](int index) => slice(index, index);
+  Logic operator [](dynamic index) {
+    if (index is Logic) {
+      return IndexGate(this, index).selection;
+    } else if (index is int) {
+      return slice(index, index);
+    }
+    throw Exception('Expected `int` or `Logic`');
+  }
 
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
