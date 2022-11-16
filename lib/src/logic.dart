@@ -26,7 +26,7 @@ class LogicValueChanged {
 
   /// Represents the event of a [Logic] changing value from [previousValue]
   /// to [newValue].
-  LogicValueChanged(this.newValue, this.previousValue);
+  const LogicValueChanged(this.newValue, this.previousValue);
 
   @override
   String toString() => '$previousValue  -->  $newValue';
