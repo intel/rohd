@@ -9,12 +9,9 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
-import 'dart:async';
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 import 'package:rohd/src/utilities/configuration.dart';
+import 'package:test/test.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a, Logic b) {
