@@ -28,14 +28,18 @@ class SimpleModule extends Module {
   }
 }
 
-void main() {
-  group('ROHD version generator:', () {
-    test('should contains version number when sv is generated', () async {
-      final mod = SimpleModule(Logic(), Logic());
-      await mod.build();
-      final version = Configuration.getConfig['version'] as String;
+void main() async {
+  test('should contains version number and git hash when sv is generated',
+      () async {
+    final version = Configuration.getConfig['version'] as String;
+    final gitHash = Configuration.getConfig['git_hash'] as String;
 
-      expect(mod.generateSynth(), contains(version));
-    });
+    final mod = SimpleModule(Logic(), Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains(version));
+    expect(sv, contains(gitHash));
   });
 }

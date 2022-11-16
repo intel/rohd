@@ -25,6 +25,7 @@ abstract class Configuration {
       'name': yaml['name'] as String,
       'description': yaml['description'] as String,
       'version': yaml['version'] as String,
+      'git_hash': yaml['git_hash'] as String,
       'homepage': yaml['homepage'] as String,
       'repository': yaml['repository'] as String,
       'issue_tracker': yaml['issue_tracker'] as String,
