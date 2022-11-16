@@ -14,8 +14,7 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
-import 'package:path/path.dart';
-import 'package:yaml/yaml.dart';
+import 'package:rohd/src/utilities/configuration.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a, Logic b) {
@@ -30,18 +29,13 @@ class SimpleModule extends Module {
 }
 
 void main() {
-  group('ROHD version generator', () {
-    test('should contains ROHD version number when sv is generated', () async {
-      const config = './pubspec.yaml';
-      final f = File(config);
-      final yamlText = f.readAsStringSync();
-      final yaml = loadYaml(yamlText);
-      print(yaml['version']);
-
+  group('ROHD version generator:', () {
+    test('should contains version number when sv is generated', () async {
       final mod = SimpleModule(Logic(), Logic());
       await mod.build();
+      final version = Configuration.getConfig['version'] as String;
 
-      expect(mod.generateSynth(), contains(''));
+      expect(mod.generateSynth(), contains(version));
     });
   });
 }
