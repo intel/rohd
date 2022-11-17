@@ -140,3 +140,55 @@ class Interface<TagType> {
     }
   }
 }
+
+// TODO(mkorbel1): addSubInterface type of function
+
+enum PairDirection { producer, consumer, sharedInputs }
+
+class PairInterface extends Interface<PairDirection> {
+  /// TODO(): fix doc
+  PairInterface(
+      {List<Port>? consumerPorts,
+      List<Port>? producerPorts,
+      List<Port>? sharedInputPorts}) {
+    if (consumerPorts != null) {
+      setPorts(consumerPorts, [PairDirection.consumer]);
+    }
+    if (producerPorts != null) {
+      setPorts(producerPorts, [PairDirection.producer]);
+    }
+    if (sharedInputPorts != null) {
+      setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
+    }
+  }
+
+  static List<Port> _getMatchPorts(
+          Interface<PairDirection> otherInterface, PairDirection tag) =>
+      otherInterface
+          .getPorts({tag})
+          .entries
+          .map((e) => Port(e.key, e.value.width))
+          .toList();
+
+  PairInterface.match(Interface<PairDirection> otherInterface)
+      : this(
+            consumerPorts:
+                _getMatchPorts(otherInterface, PairDirection.consumer),
+            producerPorts:
+                _getMatchPorts(otherInterface, PairDirection.producer),
+            sharedInputPorts:
+                _getMatchPorts(otherInterface, PairDirection.sharedInputs));
+
+  void simpleConnect(
+      Module module, Interface<PairDirection> srcInterface, PairDirection role,
+      {String Function(String original)? uniquify}) {
+    super.connectIO(module, srcInterface,
+        inputTags: role == PairDirection.producer
+            ? {PairDirection.consumer}
+            : {PairDirection.producer},
+        outputTags: role == PairDirection.producer
+            ? {PairDirection.producer}
+            : {PairDirection.consumer},
+        uniquify: uniquify);
+  }
+}
