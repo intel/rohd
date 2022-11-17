@@ -2,18 +2,15 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// non_supported_type_exception.dart
-/// An exception that is thrown when simcompare
-/// yield difference result from expectation
+/// An exception that is thrown when runtimetype of expected
+/// vector output is not supported.
 ///
-/// 2022 November 15
+/// 2022 November 17
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
-import 'package:rohd/rohd.dart';
-
 /// Throws [NonSupportedTypeException] whenever the vectors
-/// expected from simulator comparison is difference from
-/// the output from [Module] simulated.
+/// expected from simulator comparison is invalid or unsupported.
 ///
 class NonSupportedTypeException implements Exception {
   late final String _message;
