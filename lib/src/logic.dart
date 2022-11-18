@@ -574,10 +574,10 @@ class Logic {
   /// an exception will be thrown.
   Logic signExtend(int newWidth) {
     if (width == 1) {
-      return ReplicationRepeater(this[width - 1], width).replicated;
+      return ReplicationOp(this, newWidth).replicated;
     } else if (newWidth > width) {
       return [
-        ReplicationRepeater(this[width - 1], newWidth - width).replicated,
+        ReplicationOp(this[width - 1], newWidth - width).replicated,
         this,
       ].swizzle();
     } else if (newWidth == width) {
