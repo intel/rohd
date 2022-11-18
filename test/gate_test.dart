@@ -102,17 +102,6 @@ class IndexGateTestModule extends Module {
   }
 }
 
-class IndexGateTestModule extends Module {
-  IndexGateTestModule(Logic original, Logic index)
-      : super(name: 'indexgatetestmodule') {
-    original = addInput('original', original, width: original.width);
-    index = addInput('index', index, width: index.width);
-    final bitSet = addOutput('index_output');
-
-    bitSet <= original[index];
-  }
-}
-
 void main() {
   tearDown(Simulator.reset);
 
