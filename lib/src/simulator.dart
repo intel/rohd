@@ -270,7 +270,7 @@ class Simulator {
   }
 
   /// End Simulation and return the exception
-  static void caughtException(Exception err) {
+  static void throwException(Exception err) {
     _exception = err;
   }
 
