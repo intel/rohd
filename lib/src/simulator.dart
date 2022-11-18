@@ -58,6 +58,8 @@ class Simulator {
   /// Track if exception is thrown during the execution
   static Exception? _exception;
 
+  static StackTrace? _stacktrace;
+
   /// The maximum time the simulation can run.
   ///
   /// If set to -1 (the default), it means there is no maximum time limit.
@@ -270,8 +272,9 @@ class Simulator {
   }
 
   /// End Simulation and return the exception
-  static void throwException(Exception err) {
+  static void throwException(Exception err, StackTrace stacktrace) {
     _exception = err;
+    _stacktrace = stacktrace;
   }
 
   /// Starts the simulation, executing all pending actions in time-order until
@@ -290,6 +293,7 @@ class Simulator {
     }
 
     if (_exception != null) {
+      logger.severe(_exception.toString(), _exception, _stacktrace);
       throw _exception!;
     }
 

@@ -132,9 +132,9 @@ abstract class SimCompare {
                 throw NonSupportedTypeException(value.runtimeType.toString());
               }
             }
-          }).catchError((dynamic err) {
+          }).catchError((dynamic err, dynamic stackTrace) {
             if (err is Exception) {
-              Simulator.throwException(err);
+              Simulator.throwException(err, stackTrace as StackTrace);
             }
           });
         }
