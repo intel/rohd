@@ -8,7 +8,6 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_positional_boolean_parameters
-
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 

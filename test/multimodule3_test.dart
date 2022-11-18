@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule3_test.dart
@@ -30,7 +30,7 @@ class InnerModule1 extends Module {
     addOutput('m');
     m <= Const(0);
     addOutput('y');
-    y <= Passthrough(InnerModule2().z).b;
+    y <= Passthrough(InnerModule2().z).out;
   }
 }
 

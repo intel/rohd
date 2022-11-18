@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// pipeline.dart
@@ -173,7 +173,7 @@ class Pipeline {
       final stall = _stages[index].stall;
       final ffAssign = ffAssigns[index] as ConditionalAssign;
       final driver = stall != null
-          ? Mux(stall, ffAssign.receiver, ffAssign.driver).y
+          ? mux(stall, ffAssign.receiver, ffAssign.driver)
           : ffAssign.driver;
       return ffAssign.receiver < driver;
     });

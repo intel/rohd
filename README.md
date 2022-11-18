@@ -2,7 +2,7 @@
 [![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/rohd/rohd-library.html)
 [![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-1.4-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
 Rapid Open Hardware Development (ROHD) Framework
 ================================================
@@ -244,6 +244,7 @@ a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assi
 a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
 a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of operations, > needs parentheses in this case
 a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of operations, >= needs parentheses in this case
+answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```
 
 ### Shift Operations
@@ -556,45 +557,50 @@ Note: changing a value directly with `put()` will propogate the value, but it wi
 Many of the basic built-in gates in Dart implement custom behavior.  An implementation of the NotGate is shown below as an example.  There is different syntax for functions which can be inlined versus those which cannot (the ~ can be inlined).  In this case, the `InlineSystemVerilog` mixin is used, but if it were not inlineable, you could use `CustomSystemVerilog`.  Note that it is mandatory to provide an initial value computation when the module is first created for non-sequential modules.
 
 ```dart
+/// A gate [Module] that performs bit-wise inversion.
 class NotGate extends Module with InlineSystemVerilog {
+  /// Name for the input of this inverter.
+  late final String _inName;
 
-  /// Name for a port of this module. 
-  late final String _a, _out;
-  
+  /// Name for the output of this inverter.
+  late final String _outName;
+
   /// The input to this [NotGate].
-  Logic get a => input(_a);
+  Logic get _in => input(_inName);
 
   /// The output of this [NotGate].
-  Logic get out => output(_out);
+  Logic get out => output(_outName);
 
-  NotGate(Logic a, {String name = 'not'}) : super(name: name) {
-    _a = Module.unpreferredName(a.name);
-    _out = Module.unpreferredName('${a.name}_b');
-    addInput(_a, a, width: a.width);
-    addOutput(_out, width: a.width);
+  /// Constructs a [NotGate] with [in_] as its input.
+  ///
+  /// You can optionally set [name] to name this [Module].
+  NotGate(Logic in_, {super.name = 'not'}) {
+    _inName = Module.unpreferredName(in_.name);
+    _outName = Module.unpreferredName('${in_.name}_b');
+    addInput(_inName, in_, width: in_.width);
+    addOutput(_outName, width: in_.width);
     _setup();
   }
 
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-
-    // Custom behavior should subscribe to 'glitch'
-    a.glitch.listen((args) {
+    _in.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    out.put(~a.value);
+    out.put(~_in.value);
   }
 
-  // specify how to convert this behavior to Verilog
   @override
-  String inlineVerilog(Map<String,String> inputs) {
-    if(inputs.length != 1) throw Exception('Gate has exactly one input.');
-    var a = inputs[_a]!;
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
+    }
+    final a = inputs[_inName]!;
     return '~$a';
   }
 }
@@ -713,7 +719,7 @@ The ROHD simulator is a static class accessible as [`Simulator`](https://intel.g
 
 ## Instantiation of External Modules
 
-ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `topModuleName`.  This is useful for integration related activities.
+ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `definitionName`.  This is useful for integration related activities.
 
 There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalSystemVerilogModule` planned for release soon.
 
