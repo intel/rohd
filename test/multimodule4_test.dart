@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule4_test.dart
@@ -26,7 +26,7 @@ class InnerModule1 extends Module {
   InnerModule1(Logic y) : super(name: 'innermodule1') {
     y = addInput('y', y);
     final m = Logic();
-    m <= Passthrough(InnerModule2().z).b | y;
+    m <= Passthrough(InnerModule2().z).out | y;
   }
 }
 
