@@ -332,7 +332,7 @@ class Sequential extends _Always {
                 },
               ).catchError((dynamic err) {
                 if (err is Exception) {
-                  Simulator.exception = err;
+                  Simulator.caughtException(err);
                 }
               }),
             );
@@ -355,7 +355,7 @@ class Sequential extends _Always {
             _pendingExecute = false;
           }).catchError((dynamic err) {
             if (err is Exception) {
-              Simulator.exception = err;
+              Simulator.caughtException(err);
             }
           }));
         }

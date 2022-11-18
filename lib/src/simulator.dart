@@ -56,7 +56,7 @@ class Simulator {
   static bool _simulationEndRequested = false;
 
   /// Track if exception is thrown during the execution
-  static Exception? exception;
+  static Exception? _exception;
 
   /// The maximum time the simulation can run.
   ///
@@ -128,6 +128,7 @@ class Simulator {
 
     _currentTimestamp = 0;
     _simulationEndRequested = false;
+    _exception = null;
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -268,6 +269,11 @@ class Simulator {
     _simulationEndRequested = true;
   }
 
+  /// End Simulation and return the exception
+  static void caughtException(Exception err) {
+    _exception = err;
+  }
+
   /// Starts the simulation, executing all pending actions in time-order until
   /// it finishes or is stopped.
   static Future<void> run() async {
@@ -277,13 +283,14 @@ class Simulator {
     }
 
     while (hasStepsRemaining() &&
+        _exception == null &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick();
     }
 
-    if (exception != null) {
-      throw exception!;
+    if (_exception != null) {
+      throw _exception!;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {

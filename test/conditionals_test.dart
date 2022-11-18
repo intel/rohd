@@ -298,8 +298,7 @@ void main() {
   test(
       'should return NonSupportedTypeException when '
       'simcompare expected output values has invalid runtime type. ', () async {
-    final mod =
-        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
+    final mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
@@ -308,6 +307,7 @@ void main() {
 
     try {
       await SimCompare.checkFunctionalVector(mod, vectors);
+      fail('Exception not thrown!');
     } on Exception catch (e) {
       expect(e.runtimeType, equals(NonSupportedTypeException));
     }
@@ -326,6 +326,7 @@ void main() {
 
     try {
       await SimCompare.checkFunctionalVector(mod, vectors);
+      fail('Exception not thrown!');
     } on Exception catch (e) {
       expect(e.runtimeType, equals(MismatchOutputValueException));
     }

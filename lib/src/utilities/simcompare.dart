@@ -134,7 +134,7 @@ abstract class SimCompare {
             }
           }).catchError((dynamic err) {
             if (err is Exception) {
-              Simulator.exception = err;
+              Simulator.caughtException(err);
             }
           });
         }
