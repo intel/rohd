@@ -680,37 +680,32 @@ class IndexGate extends Module with InlineSystemVerilog {
   }
 }
 
-/// A Replication Repeater [Module].
+/// A Replication Operator [Module].
 ///
-/// It takes two inputs (bitValue and width) and outputs a [Logic] representing
+/// It takes two inputs (bit and width) and outputs a [Logic] representing
 /// the input bit repeated over the input width
-class ReplicationRepeater extends Module with InlineSystemVerilog {
+class ReplicationOp extends Module with InlineSystemVerilog {
   late final String _inputName;
-  late final String _widthName;
   late final String _outputName;
+  // Width of the output signal
+  late final int _width;
 
   /// The primary input to this gate.
   Logic get _input => input(_inputName);
-
-  /// The output width.
-  Logic get _width => input(_widthName);
 
   /// The output of this gate.
   Logic get replicated => output(_outputName);
 
   /// Constructs a ReplicationRepeater
   ///
-  /// The bit [bit] will be repeated over the [width] as an output.
+  /// The bit [bit] will be repeated over the [_width] as an output.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
-  ReplicationRepeater(Logic bit, int width) : super() {
+  ReplicationOp(Logic bit, this._width) : super() {
     _inputName = 'input_${bit.name}';
-    _widthName = Module.unpreferredName('width_$width');
     _outputName = Module.unpreferredName('output_${bit.name}');
 
-    addInput(_inputName, bit, width: bit.width);
-    addInput(_widthName, Logic(width: 8)..put(width), width: 8);
-    addOutput(_outputName, width: width);
-
+    addInput(_inputName, bit);
+    addOutput(_outputName, width: _width);
     _setup();
   }
 
@@ -720,28 +715,21 @@ class ReplicationRepeater extends Module with InlineSystemVerilog {
     _input.glitch.listen((args) {
       _execute();
     });
-    _width.glitch.listen((args) {
-      _execute();
-    });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_input.hasValidValue()) {
-      replicated.put(
-          Const(_input.value.toInt(), width: _width.value.toInt(), fill: true)
-              .value);
-    }
+    replicated.put(_input.value, fill: true);
   }
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 2) {
-      throw Exception('Gate has exactly two inputs.');
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
     }
 
     final target = inputs[_inputName]!;
-    final width = inputs[_widthName]!;
+    final width = _width;
     return '{$width{$target}}';
   }
 }
