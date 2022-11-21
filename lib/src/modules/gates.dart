@@ -741,7 +741,7 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   /// The output of this gate.
   Logic get replicated => output(_outputName);
 
-  /// Constructs a ReplicationRepeater
+  /// Constructs a ReplicationOp
   ///
   /// The bit [bit] will be repeated over the [_width] as an output.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
