@@ -13,7 +13,6 @@ import 'package:rohd/rohd.dart';
 
 /// Throws [SignalRedrivenException] whenever a [Logic] signal
 /// is redriven for mutiple times in [Conditional].
-///
 class SignalRedrivenException implements Exception {
   late final String _message;
 
