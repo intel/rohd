@@ -20,9 +20,10 @@ class MismatchOutputValueException implements Exception {
   late final String _message;
 
   /// Displays output values that are different between
-  /// expected and simulated vectors with default error [message].
+  /// expected and simulated vectors with default error ([message]).
   ///
-  /// Creates a [MismatchOutputValueException] with an optional error [message].
+  /// Creates a [MismatchOutputValueException] with an
+  /// optional error ([message]).
   MismatchOutputValueException(
       List<Vector> vectors, Vector vector, Logic output, dynamic expectedValue,
       [String? message]) {

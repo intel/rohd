@@ -16,10 +16,10 @@ import 'package:rohd/src/utilities/simcompare.dart';
 class NonSupportedTypeException implements Exception {
   late final String _message;
 
-  /// Displays [vector] which have invalid or unsupported `runtimeType`
-  /// with default error [message].
+  /// Displays ([vector]) which have invalid or unsupported `runtimeType`
+  /// with default error ([message]).
   ///
-  /// Creates a [NonSupportedTypeException] with an optional error [message].
+  /// Creates a [NonSupportedTypeException] with an optional error ([message]).
   NonSupportedTypeException(String vector,
       [String message = 'The runtimetype of expected vector is unsupported: '])
       : _message = message + vector.runtimeType.toString();
