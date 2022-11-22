@@ -2,8 +2,8 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// invalid_output_value_exception.dart
-/// An exception that is thrown when simcompare
-/// yield difference result from expectation
+/// An exception that thrown when simcompare
+/// yield difference result from expectation.
 ///
 /// 2022 November 17
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
@@ -13,14 +13,16 @@ import 'package:rohd/rohd.dart';
 
 import 'package:rohd/src/utilities/simcompare.dart';
 
-/// Throws [MismatchOutputValueException] whenever the vectors
-/// expected from simulator comparison is difference from
-/// the output from [Module] simulated.
+/// An exception that thrown when the vectors
+/// expected from [SimCompare] are difference from
+/// [Module] simulated output.
 class MismatchOutputValueException implements Exception {
   late final String _message;
 
-  /// constructor for NonSupportedTypeException,
-  /// pass custom String [message] to the constructor to override
+  /// Displays output values that are different between
+  /// expected and simulated vectors.
+  ///
+  /// Creates a [MismatchOutputValueException] with an optional error [message].
   MismatchOutputValueException(
       List<Vector> vectors, Vector vector, Logic output, dynamic expectedValue,
       [String? message]) {
