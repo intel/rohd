@@ -8,7 +8,7 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
-import 'package:rohd/src/types/duplicate_detection_set.dart';
+import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:test/test.dart';
 
 void main() {

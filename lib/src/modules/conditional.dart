@@ -12,8 +12,8 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/types/duplicate_detection_set.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
