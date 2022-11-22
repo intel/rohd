@@ -16,7 +16,6 @@ import 'package:rohd/src/utilities/simcompare.dart';
 /// Throws [MismatchOutputValueException] whenever the vectors
 /// expected from simulator comparison is difference from
 /// the output from [Module] simulated.
-///
 class MismatchOutputValueException implements Exception {
   late final String _message;
 
