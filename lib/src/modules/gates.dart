@@ -730,10 +730,12 @@ class IndexGate extends Module with InlineSystemVerilog {
 /// It takes two inputs (bit and width) and outputs a [Logic] representing
 /// the input bit repeated over the input width
 class ReplicationOp extends Module with InlineSystemVerilog {
-  late final String _inputName;
-  late final String _outputName;
+  // input component name
+  final String _inputName;
+  // output component name
+  final String _outputName;
   // Width of the output signal
-  late final int _width;
+  final int _width;
 
   /// The primary input to this gate.
   Logic get _input => input(_inputName);
@@ -745,10 +747,9 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   ///
   /// The bit [bit] will be repeated over the [_width] as an output.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
-  ReplicationOp(Logic bit, this._width) : super() {
-    _inputName = 'input_${bit.name}';
-    _outputName = Module.unpreferredName('output_${bit.name}');
-
+  ReplicationOp(Logic bit, this._width)
+      : _inputName = 'input_${bit.name}',
+        _outputName = Module.unpreferredName('output_${bit.name}') {
     addInput(_inputName, bit);
     addOutput(_outputName, width: _width);
     _setup();
