@@ -12,7 +12,7 @@
 class InvalidReservedNameException implements Exception {
   late final String _message;
 
-  /// Display error message on invalid reserved name.
+  /// Display error [message] on invalid reserved name.
   ///
   /// Creates a [InvalidReservedNameException] with an optional error [message].
   InvalidReservedNameException(

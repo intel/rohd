@@ -15,7 +15,8 @@ import 'package:rohd/rohd.dart';
 class SignalRedrivenException implements Exception {
   late final String _message;
 
-  /// Displays [signals] that are driven multiple times.
+  /// Displays [signals] that are driven multiple times
+  /// with default error [message].
   ///
   /// Creates a [SignalRedrivenException] with an optional error [message].
   SignalRedrivenException(String signals,

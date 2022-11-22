@@ -12,7 +12,7 @@
 class NullReservedNameException implements Exception {
   late final String _message;
 
-  /// Display error message on `null` reserved name.
+  /// Display error [message] on `null` reserved name.
   ///
   /// Creates a [NullReservedNameException] with an optional error [message].
   NullReservedNameException(
