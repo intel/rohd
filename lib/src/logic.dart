@@ -574,18 +574,19 @@ class Logic {
   /// The [newWidth] must be greater than or equal to the current width or
   /// an exception will be thrown.
   Logic signExtend(int newWidth) {
-    if (newWidth < width) {
-      throw Exception(
-          'New width $newWidth must be greater than or equal to width $width.');
+    if (width == 1) {
+      return ReplicationOp(this, newWidth).replicated;
+    } else if (newWidth > width) {
+      return [
+        ReplicationOp(this[width - 1], newWidth - width).replicated,
+        this,
+      ].swizzle();
+    } else if (newWidth == width) {
+      return this;
     }
-    return [
-      mux(
-        this[width - 1],
-        Const(1, width: newWidth - width, fill: true),
-        Const(0, width: newWidth - width),
-      ),
-      this,
-    ].swizzle();
+
+    throw Exception(
+        'New width $newWidth must be greater than or equal to width $width.');
   }
 
   /// Returns a copy of this [Logic] with the bits starting from [startIndex]
