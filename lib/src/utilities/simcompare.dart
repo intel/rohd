@@ -132,11 +132,12 @@ abstract class SimCompare {
                 throw NonSupportedTypeException(value.runtimeType.toString());
               }
             }
-          }).catchError((dynamic err, dynamic stackTrace) {
-            if (err is Exception) {
-              Simulator.throwException(err, stackTrace as StackTrace);
-            }
-          });
+          }).catchError(
+            test: (error) => error is Exception,
+            (Object err, StackTrace stackTrace) {
+              Simulator.throwException(err as Exception, stackTrace);
+            },
+          );
         }
       });
       timestamp += Vector._period;

@@ -330,11 +330,12 @@ class Sequential extends _Always {
                   _driverInputsPendingPostUpdate.clear();
                   _pendingPostUpdate = false;
                 },
-              ).catchError((dynamic err, dynamic stackTrace) {
-                if (err is Exception) {
-                  Simulator.throwException(err, stackTrace as StackTrace);
-                }
-              }),
+              ).catchError(
+                test: (error) => error is Exception,
+                (Object err, StackTrace stackTrace) {
+                  Simulator.throwException(err as Exception, stackTrace);
+                },
+              ),
             );
           }
           _pendingPostUpdate = true;
@@ -353,11 +354,12 @@ class Sequential extends _Always {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          }).catchError((dynamic err, dynamic stackTrace) {
-            if (err is Exception) {
-              Simulator.throwException(err, stackTrace as StackTrace);
-            }
-          }));
+          }).catchError(
+            test: (error) => error is Exception,
+            (Object err, StackTrace stackTrace) {
+              Simulator.throwException(err as Exception, stackTrace);
+            },
+          ));
         }
         _pendingExecute = true;
       });
