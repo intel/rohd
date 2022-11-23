@@ -2,15 +2,15 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// version_hash_dumper_test.dart
-/// Tests to verify if ROHD version and git hash being dump to
-/// the generation of system verilog and wave dumper
+/// Tests to verify if ROHD configuration being output to
+/// the generation of system verilog.
 ///
 /// 2021 November 16
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/configuration.dart';
+import 'package:rohd/src/utilities/config.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
@@ -26,10 +26,8 @@ class SimpleModule extends Module {
 }
 
 void main() async {
-  test('should contains version number and git hash when sv is generated',
-      () async {
-    final version = Configuration.getConfig['version'] as String;
-    final gitHash = Configuration.getConfig['git_hash'] as String;
+  test('should contains ROHD version number when sv is generated', () async {
+    const version = Config.version;
 
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
@@ -37,6 +35,5 @@ void main() async {
     final sv = mod.generateSynth();
 
     expect(sv, contains(version));
-    expect(sv, contains(gitHash));
   });
 }
