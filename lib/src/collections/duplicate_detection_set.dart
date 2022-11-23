@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// redriven_monitor_set.dart
-/// A set that monitor for any redriven signal or type
+/// A set that monitor for duplication.
 ///
 /// 2022 November 2
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
@@ -12,12 +12,15 @@ import 'dart:core';
 
 import 'package:collection/collection.dart';
 
-/// A Set collection that monitor for duplication
+/// A Set collection that monitor for duplication.
 ///
-/// [DuplicateDetectionSet] can be used if duplicate element are needed to be
-/// catch for certain usage.
+/// The [DuplicateDetectionSet] is used to identify
+/// duplicate elements in the Set.
 class DuplicateDetectionSet<T> extends SetBase<T> {
+  /// The [Set] which contains unique values.
   final Set<T> _set = <T>{};
+
+  // The [Set] which contains duplicate values.
   final Set<T> _duplicates = <T>{};
 
   @override
