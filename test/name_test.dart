@@ -71,16 +71,6 @@ class RenameableModule extends Module {
   }
 }
 
-//TODO: test conflicts:
-// - inputName, outputName, internal signal name, module instance name, module definition name
-// test list
-// -port name != internal signal name
-// -port name != module instance name [internal and top]
-// -port_name != module definition name [internal and top]
-// -internal signal name != module instance name [internal and top]
-// -internal signal name != module definition name [internal and top]
-// -module definition name != module instance name
-
 enum NameType {
   inputPort,
   outputPort,
@@ -113,7 +103,6 @@ void main() {
     }
 
     Future<void> runTestGen(Map<NameType, String> names) async =>
-        //TODO: add a check that verilog has something in it!
         runTest(RenameableModule(
           Logic(name: names[NameType.inputPort]),
           outputPortName: names[NameType.outputPort]!,
