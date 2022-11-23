@@ -55,9 +55,10 @@ class Simulator {
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
 
-  /// Track if exception is thrown during the execution
+  /// Tracks for [Exception] thrown during [Simulator.run()].
   static Exception? _exception;
 
+  /// Tracks for [StackTrace] thrown during [Simulator.run()].
   static StackTrace? _stacktrace;
 
   /// The maximum time the simulation can run.
