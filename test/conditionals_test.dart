@@ -252,5 +252,10 @@ void main() {
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));
     });
+
+    test(
+        'should return true on single constructor usage when '
+        'there is only one conditionals',
+        () async {});
   });
 }
