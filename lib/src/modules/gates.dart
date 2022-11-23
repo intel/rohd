@@ -530,7 +530,7 @@ class XorUnary extends _OneInputUnaryGate {
 /// A logical right-shift module.
 class RShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (logically) by [shiftAmount].
-  RShift(Logic in_, Logic shiftAmount, {String name = 'rshift'})
+  RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
 }
@@ -539,7 +539,7 @@ class RShift extends _ShiftGate {
 class ARShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (arithmetically) by
   /// [shiftAmount].
-  ARShift(Logic in_, Logic shiftAmount, {String name = 'arshift'})
+  ARShift(Logic in_, dynamic shiftAmount, {String name = 'arshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
             name: name, signed: true);
@@ -548,7 +548,7 @@ class ARShift extends _ShiftGate {
 /// A logical left-shift module.
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
-  LShift(Logic in_, Logic shiftAmount, {String name = 'lshift'})
+  LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount, name: name);
 }
 
