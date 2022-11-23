@@ -54,6 +54,10 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
   @override
   T? lookup(Object? element) => _set.lookup(element);
 
+  /// Removes value from [DuplicateDetectionSet] collection.
+  ///
+  /// The [value] in [DuplicateDetectionSet] must not contain duplicates.
+  /// An [Exception] will be thrown if duplicates [value] found.
   @override
   bool remove(Object? value) {
     if (_set.contains(value) && _duplicates.contains(value)) {
