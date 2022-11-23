@@ -116,7 +116,8 @@ abstract class SimCompare {
                 if (!o.value.isValid) {
                   // invalid value causes exception without helpful message,
                   // so throw it
-                  throw MismatchOutputValueException(vectors, vector, o, value);
+                  expect(o.value.isValid, isTrue,
+                      reason: errorReason); // Doesn't this should be `isFalse`?
                 }
                 expect(o.value.toInt(), equals(value), reason: errorReason);
               } else if (value is LogicValue) {
