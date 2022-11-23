@@ -64,7 +64,7 @@ class RenameableModule extends Module {
     SpeciallyNamedModule(
       ~internalSignal,
       true,
-      true,
+      false,
       name: internalModuleInstanceName,
       definitionName: internalModuleDefinitionName,
     );
@@ -193,7 +193,7 @@ void main() {
       final mod = TopModule(Logic(), false, false);
       await mod.build();
       final sv = mod.generateSynth();
-      print(sv);
+
       expect(sv, contains('specialInstanceName('));
       expect(sv, contains('specialInstanceName_0('));
     });
