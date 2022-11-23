@@ -27,7 +27,7 @@ class MathTestModule extends Module {
     final aTimesB = addOutput('a_times_b', width: a.width);
     final aDividedByB = addOutput('a_dividedby_b', width: a.width);
     final aModuloB = addOutput('a_modulo_b', width: a.width);
-    final aModuleConst = addOutput('a_modulo_const', width: a.width);
+    final aModuloConst = addOutput('a_modulo_const', width: a.width);
 
     final aPlusConst = addOutput('a_plus_const', width: a.width);
     final aMinusConst = addOutput('a_minus_const', width: a.width);
@@ -47,7 +47,7 @@ class MathTestModule extends Module {
     aTimesB <= a * b;
     aDividedByB <= a / b;
     aModuloB <= a % b;
-    aModuleConst <= a % c;
+    aModuloConst <= a % c;
 
     aPlusConst <= a + c;
     aMinusConst <= a - c;
