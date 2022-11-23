@@ -131,6 +131,7 @@ class Simulator {
     _currentTimestamp = 0;
     _simulationEndRequested = false;
     _exception = null;
+    _stacktrace = null;
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
