@@ -56,10 +56,10 @@ class Simulator {
   static bool _simulationEndRequested = false;
 
   /// Tracks for [Exception] thrown during [Simulator.run()].
-  static Exception? _exception;
+  static List<Exception> _exception = [];
 
   /// Tracks for [StackTrace] thrown during [Simulator.run()].
-  static StackTrace? _stacktrace;
+  static List<StackTrace> _stacktrace = [];
 
   /// The maximum time the simulation can run.
   ///
@@ -131,8 +131,8 @@ class Simulator {
 
     _currentTimestamp = 0;
     _simulationEndRequested = false;
-    _exception = null;
-    _stacktrace = null;
+    _exception = [];
+    _stacktrace = [];
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -275,8 +275,8 @@ class Simulator {
 
   /// End Simulation and return the exception
   static void throwException(Exception err, StackTrace stacktrace) {
-    _exception = err;
-    _stacktrace = stacktrace;
+    _exception.add(err);
+    _stacktrace.add(stacktrace);
   }
 
   /// Starts the simulation, executing all pending actions in time-order until
@@ -288,15 +288,17 @@ class Simulator {
     }
 
     while (hasStepsRemaining() &&
-        _exception == null &&
+        _exception.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick();
     }
 
-    if (_exception != null) {
-      logger.severe(_exception.toString(), _exception, _stacktrace);
-      throw _exception!;
+    if (_exception.isNotEmpty) {
+      for (var i = 0; i < _exception.length; i++) {
+        logger.severe(_exception[i].toString(), _exception[i], _stacktrace[i]);
+        throw _exception[i];
+      }
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
