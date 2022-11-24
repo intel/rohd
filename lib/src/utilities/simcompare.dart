@@ -130,6 +130,7 @@ abstract class SimCompare {
             }
           }).catchError(
             test: (error) => error is Exception,
+            // ignore: avoid_types_on_closure_parameters
             (Object err, StackTrace stackTrace) {
               Simulator.throwException(err as Exception, stackTrace);
             },

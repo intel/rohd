@@ -15,7 +15,6 @@ import 'dart:collection';
 import 'package:logging/logging.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/simcompare.dart';
 
 /// An enum for the various phases of the [Simulator].
 enum SimulatorPhase {
