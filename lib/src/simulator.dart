@@ -292,6 +292,7 @@ class Simulator {
     }
 
     while (hasStepsRemaining() &&
+        _simExceptions.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick();
