@@ -113,12 +113,7 @@ abstract class SimCompare {
                   'For vector #${vectors.indexOf(vector)} $vector,'
                   ' expected $o to be $value, but it was ${o.value}.';
               if (value is int) {
-                if (!o.value.isValid) {
-                  // invalid value causes exception without helpful message,
-                  // so throw it
-                  expect(o.value.isValid, isTrue,
-                      reason: errorReason); // Doesn't this should be `isFalse`?
-                }
+                expect(o.value.isValid, isTrue, reason: errorReason);
                 expect(o.value.toInt(), equals(value), reason: errorReason);
               } else if (value is LogicValue) {
                 if (o.width > 1 &&

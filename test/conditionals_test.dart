@@ -312,18 +312,4 @@ void main() {
       expect(e.runtimeType, equals(NonSupportedTypeException));
     }
   });
-
-  test(
-      'should return False if simulator compare output '
-      'value is invalid.', () async {
-    final mod = CombModule(Logic(), Logic(), Logic(width: 10));
-    await mod.build();
-
-    final vectors = [
-      Vector(
-          {'a': 0, 'b': 0, 'd': 5}, {'y': 0, 'z': 1, 'x': 0, 'q': LogicValue.x})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-  });
 }

@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 /// Copyright (C) 2021 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
@@ -10,8 +11,11 @@
 
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:logging/logging.dart';
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 
 /// An enum for the various phases of the [Simulator].
 enum SimulatorPhase {
@@ -55,11 +59,8 @@ class Simulator {
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
 
-  /// Tracks for [Exception] thrown during [Simulator.run()].
-  static List<Exception> _exception = [];
-
-  /// Tracks for [StackTrace] thrown during [Simulator.run()].
-  static List<StackTrace> _stacktrace = [];
+  /// Change to public as this Simulator function is public api
+  static List<_SimulatorException> _simExceptions = [];
 
   /// The maximum time the simulation can run.
   ///
@@ -131,8 +132,9 @@ class Simulator {
 
     _currentTimestamp = 0;
     _simulationEndRequested = false;
-    _exception = [];
-    _stacktrace = [];
+
+    _simExceptions = [];
+
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -275,8 +277,7 @@ class Simulator {
 
   /// End Simulation and return the exception
   static void throwException(Exception err, StackTrace stacktrace) {
-    _exception.add(err);
-    _stacktrace.add(stacktrace);
+    _simExceptions.add(_SimulatorException(err, stacktrace));
   }
 
   /// Starts the simulation, executing all pending actions in time-order until
@@ -288,16 +289,15 @@ class Simulator {
     }
 
     while (hasStepsRemaining() &&
-        _exception.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
       await tick();
     }
 
-    if (_exception.isNotEmpty) {
-      for (var i = 0; i < _exception.length; i++) {
-        logger.severe(_exception[i].toString(), _exception[i], _stacktrace[i]);
-        throw _exception[i];
+    if (_simExceptions.isNotEmpty) {
+      for (final err in _simExceptions) {
+        logger.severe(err.exception.toString(), err.exception, err.stackTrace);
+        throw err.exception;
       }
     }
 
@@ -313,4 +313,19 @@ class Simulator {
     _simulationEndedCompleter.complete();
     await simulationEnded;
   }
+}
+
+class _SimulatorException {
+  /// Tracks for [Exception] thrown during [Simulator] `run()`.
+  final Exception _exceptions;
+
+  /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
+  final StackTrace _stackTraces;
+
+  _SimulatorException(Exception exception, StackTrace stackTrace)
+      : _exceptions = exception,
+        _stackTraces = stackTrace;
+
+  Exception get exception => _exceptions;
+  StackTrace get stackTrace => _stackTraces;
 }
