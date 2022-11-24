@@ -59,7 +59,7 @@ class Simulator {
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
 
-  /// Change to public as this Simulator function is public api
+  /// Tracks for [_SimulatorException] that are thrown during the simulation.
   static List<_SimulatorException> _simExceptions = [];
 
   /// The maximum time the simulation can run.
@@ -275,9 +275,12 @@ class Simulator {
     _simulationEndRequested = true;
   }
 
-  /// End Simulation and return the exception
-  static void throwException(Exception err, StackTrace stacktrace) {
-    _simExceptions.add(_SimulatorException(err, stacktrace));
+  /// Collect [exception] and [stacktrace] and add to [_simExceptions] `List`.
+  ///
+  /// Exceptions collected will be logged and thrown during the [run] process
+  /// on simulation.
+  static void throwException(Exception exception, StackTrace stacktrace) {
+    _simExceptions.add(_SimulatorException(exception, stacktrace));
   }
 
   /// Starts the simulation, executing all pending actions in time-order until
@@ -315,6 +318,7 @@ class Simulator {
   }
 }
 
+/// A simulator exception that produces object of exception and stack trace.
 class _SimulatorException {
   /// Tracks for [Exception] thrown during [Simulator] `run()`.
   final Exception _exceptions;
@@ -322,10 +326,14 @@ class _SimulatorException {
   /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
   final StackTrace _stackTraces;
 
+  /// Constructs a simulator exception, using [exception] and [stackTrace].
   _SimulatorException(Exception exception, StackTrace stackTrace)
       : _exceptions = exception,
         _stackTraces = stackTrace;
 
+  /// The exception thrown during the simulation process.
   Exception get exception => _exceptions;
+
+  /// The stack trace thrown during the simulation process.
   StackTrace get stackTrace => _stackTraces;
 }
