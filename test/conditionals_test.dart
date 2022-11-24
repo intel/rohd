@@ -159,6 +159,25 @@ class SequentialModule extends Module {
   }
 }
 
+class SingleIfModule extends Module {
+  SingleIfModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    // final y = addOutput('y');
+    // final z = addOutput('z');
+    // final x = addOutput('x');
+
+    // d = addInput('d', d, width: d.width);
+    final q = addOutput('q', width: d.width);
+
+    Combinational([
+      If(a, then: [
+        q < 1,
+      ])
+    ]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -254,8 +273,18 @@ void main() {
     });
 
     test(
-        'should return true on single constructor usage when '
-        'there is only one conditionals',
-        () async {});
+        'should return true on simcompare when '
+        'there is only one conditional in single costructor.', () async {
+      final mod = SingleIfModule(Logic(), Logic(), Logic(width: 10));
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'q': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors,
+          signalToWidthMap: {'d': 10, 'q': 10});
+      expect(simResult, equals(true));
+    });
   });
 }
