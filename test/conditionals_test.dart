@@ -160,21 +160,18 @@ class SequentialModule extends Module {
 }
 
 class SingleIfModule extends Module {
-  SingleIfModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
+  SingleIfModule(Logic a, Logic b) : super(name: 'combmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
-    // final y = addOutput('y');
-    // final z = addOutput('z');
-    // final x = addOutput('x');
 
-    // d = addInput('d', d, width: d.width);
-    final q = addOutput('q', width: d.width);
+    final q = addOutput('q');
+    final x = addOutput('x');
 
-    Combinational([
-      If(a, then: [
-        q < 1,
-      ])
-    ]);
+    Combinational(
+      [
+        If.s(a, q < 1, [x < 1]),
+      ],
+    );
   }
 }
 
@@ -274,16 +271,16 @@ void main() {
 
     test(
         'should return true on simcompare when '
-        'there is only one conditional in single costructor.', () async {
-      final mod = SingleIfModule(Logic(), Logic(), Logic(width: 10));
+        'execute if.s() for single if...else conditional.', () async {
+      final mod = SingleIfModule(Logic(), Logic());
       await mod.build();
       final vectors = [
         Vector({'a': 1}, {'q': 1}),
+        Vector({'a': 0}, {'x': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {'d': 10, 'q': 10});
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });
