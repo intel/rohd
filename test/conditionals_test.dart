@@ -160,7 +160,21 @@ class SequentialModule extends Module {
 }
 
 class SingleIfModule extends Module {
-  SingleIfModule(Logic a, Logic b) : super(name: 'combmodule') {
+  SingleIfModule(Logic a) : super(name: 'combmodule') {
+    a = addInput('a', a);
+
+    final q = addOutput('q');
+
+    Combinational(
+      [
+        If.s(a, q < 1),
+      ],
+    );
+  }
+}
+
+class SingleIfOrElseModule extends Module {
+  SingleIfOrElseModule(Logic a, Logic b) : super(name: 'combmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
 
@@ -169,7 +183,7 @@ class SingleIfModule extends Module {
 
     Combinational(
       [
-        If.s(a, q < 1, [x < 1]),
+        If.s(a, q < 1, x < 1),
       ],
     );
   }
@@ -271,8 +285,24 @@ void main() {
 
     test(
         'should return true on simcompare when '
-        'execute if.s() for single if...else conditional.', () async {
-      final mod = SingleIfModule(Logic(), Logic());
+        'execute if.s() for single if...else conditional without orElse.',
+        () async {
+      final mod = SingleIfModule(Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'q': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      expect(simResult, equals(true));
+    });
+
+    test(
+        'should return true on simcompare when '
+        'execute if.s() for single if...else conditional with orElse.',
+        () async {
+      final mod = SingleIfOrElseModule(Logic(), Logic());
       await mod.build();
       final vectors = [
         Vector({'a': 1}, {'q': 1}),

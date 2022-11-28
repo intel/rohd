@@ -917,7 +917,7 @@ ${padding}end ''');
 /// Represents a block of code to be conditionally executed, like `if`/`else`.
 class If extends Conditional {
   /// [Conditional]s to be executed if [condition] is true.
-  late final List<Conditional> then;
+  final List<Conditional> then;
 
   /// [Conditional]s to be executed if [condition] is not true.
   final List<Conditional> orElse;
@@ -928,12 +928,13 @@ class If extends Conditional {
   /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
   If(this.condition, {this.then = const [], this.orElse = const []});
 
-  /// If [condition] is 1, then [sig] is excutes.
+  /// If [condition] is 1, then [then] is excutes,
+  /// otherwise [orElse] is executed.
   ///
-  /// Use this constructor when you only have a single condition.
-  If.s(this.condition, Conditional sig, [this.orElse = const []]) {
-    then = [sig];
-  }
+  /// Use this constructor when you only have a single [then] condition.
+  /// An optional [orElse] condition can be passed.
+  If.s(Logic condition, Conditional then, [Conditional? orElse])
+      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
 
   @override
   List<Logic> getReceivers() {
