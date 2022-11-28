@@ -274,10 +274,10 @@ class Simulator {
     _simulationEndRequested = true;
   }
 
-  /// Collect [exception] and [stackTrace] and add to [_simExceptions] `List`.
+  /// Collects an [exception] and associated [stackTrace] triggered
+  /// asynchronously during simulation to be thrown synchronously by [run].
   ///
-  /// Exceptions collected will be logged and thrown during the [run] process
-  /// on simulation.
+  /// Calling this function will end the simulation after this [tick] completes.
   static void throwException(Exception exception, StackTrace stackTrace) {
     _simExceptions.add(_SimulatorException(exception, stackTrace));
   }
@@ -297,11 +297,9 @@ class Simulator {
       await tick();
     }
 
-    if (_simExceptions.isNotEmpty) {
-      for (final err in _simExceptions) {
-        logger.severe(err.exception.toString(), err.exception, err.stackTrace);
-        throw err.exception;
-      }
+    for (final err in _simExceptions) {
+      logger.severe(err.exception.toString(), err.exception, err.stackTrace);
+      throw err.exception;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
@@ -321,19 +319,19 @@ class Simulator {
 /// A simulator exception that produces object of exception and stack trace.
 class _SimulatorException {
   /// Tracks for [Exception] thrown during [Simulator] `run()`.
-  final Exception _exceptions;
+  final Exception _exception;
 
   /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
-  final StackTrace _stackTraces;
+  final StackTrace _stackTrace;
 
   /// Constructs a simulator exception, using [exception] and [stackTrace].
   _SimulatorException(Exception exception, StackTrace stackTrace)
-      : _exceptions = exception,
-        _stackTraces = stackTrace;
+      : _exception = exception,
+        _stackTrace = stackTrace;
 
   /// The exception thrown during the simulation process.
-  Exception get exception => _exceptions;
+  Exception get exception => _exception;
 
   /// The stack trace thrown during the simulation process.
-  StackTrace get stackTrace => _stackTraces;
+  StackTrace get stackTrace => _stackTrace;
 }
