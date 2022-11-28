@@ -324,10 +324,8 @@ class _SimulatorException {
   /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
   final StackTrace _stackTrace;
 
-  /// Constructs a simulator exception, using [exception] and [stackTrace].
-  _SimulatorException(Exception exception, StackTrace stackTrace)
-      : _exception = exception,
-        _stackTrace = stackTrace;
+  /// Constructs a simulator exception, using [_exception] and [_stackTrace].
+  _SimulatorException(this._exception, this._stackTrace);
 
   /// The exception thrown during the simulation process.
   Exception get exception => _exception;
