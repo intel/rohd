@@ -274,12 +274,12 @@ class Simulator {
     _simulationEndRequested = true;
   }
 
-  /// Collect [exception] and [stacktrace] and add to [_simExceptions] `List`.
+  /// Collect [exception] and [stackTrace] and add to [_simExceptions] `List`.
   ///
   /// Exceptions collected will be logged and thrown during the [run] process
   /// on simulation.
-  static void throwException(Exception exception, StackTrace stacktrace) {
-    _simExceptions.add(_SimulatorException(exception, stacktrace));
+  static void throwException(Exception exception, StackTrace stackTrace) {
+    _simExceptions.add(_SimulatorException(exception, stackTrace));
   }
 
   /// Starts the simulation, executing all pending actions in time-order until
