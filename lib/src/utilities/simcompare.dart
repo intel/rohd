@@ -144,6 +144,7 @@ abstract class SimCompare {
 
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
+    Module module,
     String generatedVerilog,
     String topModule,
     List<Vector> vectors, {
