@@ -80,6 +80,19 @@ class IfBlockModule extends Module {
   }
 }
 
+class SingleIfBlockModule extends Module {
+  SingleIfBlockModule(Logic a) : super(name: 'singleifblockmodule') {
+    a = addInput('a', a);
+    final c = addOutput('c');
+
+    Combinational([
+      IfBlock([
+        Iff.s(a, c < 1),
+      ])
+    ]);
+  }
+}
+
 class ElseIfBlockModule extends Module {
   ElseIfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
     a = addInput('a', a);
@@ -91,6 +104,21 @@ class ElseIfBlockModule extends Module {
       IfBlock([
         ElseIf(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
+        Else([c < 0, d < 1])
+      ])
+    ]);
+  }
+}
+
+class SingleElseIfBlockModule extends Module {
+  SingleElseIfBlockModule(Logic a) : super(name: 'singleifblockmodule') {
+    a = addInput('a', a);
+    final c = addOutput('c');
+    final d = addOutput('d');
+
+    Combinational([
+      IfBlock([
+        ElseIf.s(a, c < 1),
         Else([c < 0, d < 1])
       ])
     ]);
@@ -235,6 +263,18 @@ void main() {
       expect(simResult, equals(true));
     });
 
+    test('single iffblock comb', () async {
+      final mod = SingleIfBlockModule(Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'c': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      expect(simResult, equals(true));
+    });
+
     test('elseifblock comb', () async {
       final mod = ElseIfBlockModule(Logic(), Logic());
       await mod.build();
@@ -243,6 +283,19 @@ void main() {
         Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(
+          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('single elseifblock comb', () async {
+      final mod = SingleElseIfBlockModule(Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'c': 1}),
+        Vector({'a': 0}, {'c': 0, 'd': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(

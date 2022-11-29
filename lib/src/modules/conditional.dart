@@ -796,6 +796,11 @@ class ElseIf {
 
   /// If [condition] is 1, then [then] will be executed.
   ElseIf(this.condition, this.then);
+
+  /// If [condition] is 1, then [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  ElseIf.s(Logic condition, Conditional then) : this(condition, [then]);
 }
 
 /// A conditional block to execute only if `condition` is satisified.
