@@ -45,10 +45,6 @@ void main() {
     });
 
     test('flop bus', () async {
-      final signalToWidthMap = {
-        'a': 8,
-        'y': 8,
-      };
       final ftm = FlopTestModule(Logic(width: 8));
       await ftm.build();
       final vectors = [
