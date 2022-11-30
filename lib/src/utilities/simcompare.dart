@@ -155,9 +155,9 @@ abstract class SimCompare {
     bool allowWarnings = false,
   }) {
     String signalDeclaration(String signalName) {
-      if (signalToWidthMap.containsKey(signalName)) {
-        final width = signalToWidthMap[signalName]!;
-        return '[${width - 1}:0] $signalName';
+      final signals = module.signals.firstWhere((e) => e.name == signalName);
+      if (signals.width != 1) {
+        return '[${signals.width - 1}:0] $signalName';
       } else {
         return signalName;
       }
