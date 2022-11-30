@@ -306,8 +306,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -324,8 +323,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -343,8 +341,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -382,8 +379,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -421,8 +417,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -436,8 +431,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -475,8 +469,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -492,8 +485,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -507,8 +499,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -524,8 +515,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -537,8 +527,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

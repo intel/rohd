@@ -58,8 +58,6 @@ void main() {
       final pipem = SimplePipelineModule(Logic(width: 8));
       await pipem.build();
 
-      final signalToWidthMap = {'a': 8, 'b': 8};
-
       final vectors = [
         Vector({'a': 1}, {}),
         Vector({'a': 2}, {}),
@@ -71,8 +69,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -80,8 +77,6 @@ void main() {
       final pipem =
           RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic());
       await pipem.build();
-
-      final signalToWidthMap = {'a': 8, 'b': 8};
 
       final vectors = [
         Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
@@ -108,8 +103,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -117,8 +111,6 @@ void main() {
       final pipem =
           RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic());
       await pipem.build();
-
-      final signalToWidthMap = {'a': 8, 'b': 8};
 
       final vectors = [
         Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
@@ -167,8 +159,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -176,8 +167,6 @@ void main() {
       final pipem =
           RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic());
       await pipem.build();
-
-      final signalToWidthMap = {'a': 8, 'b': 8};
 
       final vectors = [
         Vector({'reset': 1, 'a': 0, 'validIn': 0, 'readyForOut': 0}, {}),
@@ -216,8 +205,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

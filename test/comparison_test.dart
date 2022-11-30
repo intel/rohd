@@ -51,11 +51,6 @@ void main() {
   tearDown(Simulator.reset);
 
   group('simcompare', () {
-    final signalToWidthMap = {
-      'a': 8,
-      'b': 8,
-    };
-
     test('compares', () async {
       final gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
@@ -108,8 +103,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

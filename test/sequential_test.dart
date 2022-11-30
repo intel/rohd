@@ -61,8 +61,6 @@ void main() {
     );
     await dut.build();
 
-    final signalToWidthMap = {'inputVal': 4, 'out': 4};
-
     final vectors = [
       Vector({'inputVal': 0, 'en': 1}, {}),
       Vector({'inputVal': 1, 'en': 0}, {}),
@@ -79,12 +77,7 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
     final simResult = SimCompare.iverilogVector(
-      dut,
-      dut.generateSynth(),
-      dut.runtimeType.toString(),
-      vectors,
-      signalToWidthMap: signalToWidthMap,
-    );
+        dut, dut.generateSynth(), dut.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 }

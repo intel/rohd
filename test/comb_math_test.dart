@@ -128,8 +128,7 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
 
     final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 
@@ -147,8 +146,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 
@@ -162,8 +160,7 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 
@@ -177,8 +174,7 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 
@@ -192,8 +188,7 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 }

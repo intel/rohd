@@ -150,7 +150,6 @@ abstract class SimCompare {
     List<Vector> vectors, {
     bool dontDeleteTmpFiles = false,
     bool dumpWaves = false,
-    Map<String, int> signalToWidthMap = const {},
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
   }) {

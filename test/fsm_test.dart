@@ -148,8 +148,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: {'traffic': 2, 'northLight': 2, 'eastLight': 2});
+          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
 
       expect(simResult, equals(true));
     });
