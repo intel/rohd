@@ -311,16 +311,16 @@ class Logic {
   Logic operator /(dynamic other) => Divide(this, other).out;
 
   /// Modulo operation.
-  Logic operator %(Logic other) => Modulo(this, other).out;
+  Logic operator %(dynamic other) => Modulo(this, other).out;
 
   /// Arithmetic right-shift.
-  Logic operator >>(Logic other) => ARShift(this, other).out;
+  Logic operator >>(dynamic other) => ARShift(this, other).out;
 
   /// Logical left-shift.
-  Logic operator <<(Logic other) => LShift(this, other).out;
+  Logic operator <<(dynamic other) => LShift(this, other).out;
 
   /// Logical right-shift.
-  Logic operator >>>(Logic other) => RShift(this, other).out;
+  Logic operator >>>(dynamic other) => RShift(this, other).out;
 
   /// Unary AND.
   Logic and() => AndUnary(this).out;
