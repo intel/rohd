@@ -146,7 +146,7 @@ abstract class SimCompare {
   static bool iverilogVector(
     Module module,
     List<Vector> vectors, {
-    String moduleName = '',
+    String? moduleName,
     bool dontDeleteTmpFiles = false,
     bool dumpWaves = false,
     List<String> iverilogExtraArgs = const [],
@@ -161,11 +161,11 @@ abstract class SimCompare {
       }
     }
 
-    final topModule = moduleName == '' ? module.definitionName : moduleName;
-    final allSignals = vectors
-        .map((e) => [...e.inputValues.keys, ...e.expectedOutputValues.keys])
-        .reduce((a, b) => [...a, ...b])
-        .toSet();
+    final topModule = moduleName ?? module.definitionName;
+    final allSignals = <String>{
+      for (final e in vectors) ...e.inputValues.keys,
+      for (final e in vectors) ...e.expectedOutputValues.keys,
+    };
     final localDeclarations =
         allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
