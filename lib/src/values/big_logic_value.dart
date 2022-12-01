@@ -21,7 +21,7 @@ extension BigLogicValueBigIntUtilities on BigInt {
       throw Exception('Cannot convert to BigInt when width $width'
           ' is greater than ${LogicValue._INT_BITS}');
     } else if (width == LogicValue._INT_BITS) {
-      // With `0x` in front of a hex literal, it will be interpreted as unsigned.
+      // With `0x` in front of a hex literal, will be interpreted as unsigned.
       return int.parse('0x${toRadixString(16)}');
     } else {
       return toInt();
