@@ -37,7 +37,7 @@ void main() {
           equals(LogicValue.ofString('zx01')));
     });
   });
-  group('LogicValue', () {
+  group('LogicValue of multi-bit', () {
     test('simple swizzle', () {
       expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].swizzle(),
           equals(LogicValue.ofString('10xz')));
@@ -46,6 +46,67 @@ void main() {
     test('simple rswizzle', () {
       expect([LogicValue.ofString('10'), LogicValue.ofString('xz')].rswizzle(),
           equals(LogicValue.ofString('xz10')));
+    });
+
+    test('64-bit swizzle', () {
+      expect(
+          List.generate(
+              32,
+              (index) => index.isEven
+                  ? LogicValue.ofString('10')
+                  : LogicValue.ofString('xz')).swizzle(),
+          equals(LogicValue.ofString('10xz' * 16)));
+    });
+    test('>64-bit swizzle single concat', () {
+      final str1 = '10xz' * 16;
+      final str2 = 'xz10' * 10;
+      expect([LogicValue.ofString(str2), LogicValue.ofString(str1)].swizzle(),
+          equals(LogicValue.ofString(str2 + str1)));
+    });
+    test('>64-bit swizzle', () {
+      expect(
+          List.generate(
+              40,
+              (index) => index.isEven
+                  ? LogicValue.ofString('10')
+                  : LogicValue.ofString('xz')).swizzle(),
+          equals(LogicValue.ofString('10xz' * 20)));
+    });
+
+    group('filled', () {
+      test('simple swizzle', () {
+        expect(
+            [LogicValue.ofString('1' * 4), LogicValue.ofString('1' * 4)]
+                .swizzle(),
+            equals(LogicValue.ofString('1' * 8)));
+      });
+      test('0-width both swizzle', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('')].swizzle(),
+            equals(LogicValue.ofString('')));
+      });
+      test('0-width lhs swizzle', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('111')].swizzle(),
+            equals(LogicValue.ofString('111')));
+      });
+      test('0-width rhs swizzle', () {
+        expect([LogicValue.ofString('111'), LogicValue.ofString('')].swizzle(),
+            equals(LogicValue.ofString('111')));
+      });
+    });
+
+    group('non-filled', () {
+      test('0-width both swizzle', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('')].swizzle(),
+            equals(LogicValue.ofString('')));
+      });
+      test('0-width lhs swizzle', () {
+        expect([LogicValue.ofString(''), LogicValue.ofString('1zx0')].swizzle(),
+            equals(LogicValue.ofString('1zx0')));
+      });
+      test('0-width rhs swizzle', () {
+        expect([LogicValue.ofString('1zx0'), LogicValue.ofString('')].swizzle(),
+            equals(LogicValue.ofString('1zx0')));
+      });
     });
   });
 

@@ -25,17 +25,20 @@ abstract class LogicValue {
   // ignore: constant_identifier_names
   static const int _INT_BITS = 64;
 
-  /// Logical value of `0`
+  /// Logical value of `0`.
   static const LogicValue zero = _FilledLogicValue(_LogicValueEnum.zero, 1);
 
-  /// Logical value of `1`
+  /// Logical value of `1`.
   static const LogicValue one = _FilledLogicValue(_LogicValueEnum.one, 1);
 
-  /// Logical value of `x`
+  /// Logical value of `x`.
   static const LogicValue x = _FilledLogicValue(_LogicValueEnum.x, 1);
 
-  /// Logical value of `z`
+  /// Logical value of `z`.
   static const LogicValue z = _FilledLogicValue(_LogicValueEnum.z, 1);
+
+  /// A zero-width value.
+  static const LogicValue empty = _FilledLogicValue(_LogicValueEnum.zero, 0);
 
   /// The number of bits in this `LogicValue`.
   final int width;
@@ -115,16 +118,56 @@ abstract class LogicValue {
   /// Constructs a [LogicValue] from [it].
   ///
   /// The order of the created [LogicValue] will be such that the `i`th entry in
-  /// [it] corresponds to the `i`th bit.  That is, the 0th element of [it] will
-  /// be the 0th bit of the returned [LogicValue].
+  /// [it] corresponds to the `i`th group of bits.  That is, the 0th element of
+  /// [it] will be the least significant chunk of bits of the returned
+  /// [LogicValue].  Bits within each element of [it] are kept in the same
+  /// order as they were originally.
   ///
+  /// For example:
   /// ```dart
-  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
+  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
   /// var lv = LogicValue.of(it);
-  /// print(lv); // This prints `3b'1x0`
+  /// print(lv); // This prints `6'b01xzx0`
   /// ```
-  static LogicValue of(Iterable<LogicValue> it) => LogicValue.ofString(
-      it.map((e) => e.toString(includeWidth: false)).toList().reversed.join());
+  ///
+  static LogicValue of(Iterable<LogicValue> it) => it.fold(LogicValue.empty,
+      (previousValue, element) => element._concatenate(previousValue));
+
+  /// Appends [other] to the least significant side of `this`.
+  ///
+  /// The new value will have `this`'s current value shifted left by
+  /// the width of [other].
+  LogicValue _concatenate(LogicValue other) {
+    final newWidth = width + other.width;
+    if (this is _FilledLogicValue &&
+        other is _FilledLogicValue &&
+        ((other.width == 0 || width == 0) || (other[0] == this[0]))) {
+      // can keep it filled
+      final filledValue =
+          other.width == 0 ? (this as _FilledLogicValue)._value : other._value;
+      return _FilledLogicValue(filledValue, newWidth);
+    } else if (newWidth > LogicValue._INT_BITS) {
+      // BigInt's only
+      return _BigLogicValue(_bigIntValue << other.width | other._bigIntValue,
+          _bigIntInvalid << other.width | other._bigIntInvalid, newWidth);
+    } else {
+      // int's ok
+      return _SmallLogicValue(_intValue << other.width | other._intValue,
+          _intInvalid << other.width | other._intInvalid, newWidth);
+    }
+  }
+
+  /// Returns `_value` in the form of a [BigInt].
+  BigInt get _bigIntValue;
+
+  /// Returns `_invalid` in the form of a [BigInt].
+  BigInt get _bigIntInvalid;
+
+  /// Returns `_value` in the form of an [int].
+  int get _intValue;
+
+  /// Returns `_invalid` in the form of an [int].
+  int get _intInvalid;
 
   /// Constructs a [LogicValue] from [it].
   ///

@@ -21,8 +21,13 @@ extension BigLogicValueBigIntUtilities on BigInt {
       throw Exception('Cannot convert to BigInt when width $width'
           ' is greater than ${LogicValue._INT_BITS}');
     } else if (width == LogicValue._INT_BITS) {
-      // With `0x` in front of a hex literal, will be interpreted as unsigned.
-      return int.parse('0x${toRadixString(16)}');
+      // When width is 64, `BigInt.toInt()` will clamp values assuming that
+      // it's a signed number.  To avoid that, if the width is 64, then do the
+      // conversion in two 32-bit chunks and bitwise-or them together.
+      const maskWidth = 32;
+      final mask = _BigLogicValue._maskOfWidth(maskWidth);
+      return (this & mask).toInt() |
+          (((this >> maskWidth) & mask).toInt() << maskWidth);
     } else {
       return toInt();
     }
@@ -198,4 +203,16 @@ class _BigLogicValue extends LogicValue {
               shamt,
           _invalid >> shamt,
           width);
+
+  @override
+  BigInt get _bigIntInvalid => _invalid;
+
+  @override
+  BigInt get _bigIntValue => _value;
+
+  @override
+  int get _intInvalid => _invalid.toIntUnsigned(width);
+
+  @override
+  int get _intValue => _value.toIntUnsigned(width);
 }
