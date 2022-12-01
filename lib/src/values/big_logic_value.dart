@@ -10,6 +10,25 @@
 
 part of values;
 
+/// Extends [BigInt] with utility functions that are useful for dealing with
+/// large bit vectors and conversion between types.
+extension BigLogicValueBigIntUtilities on BigInt {
+  /// Returns this [BigInt] as an [int].
+  ///
+  /// Always interprets the number as unsigned, and thus never clamps to fit.
+  int toIntUnsigned(int width) {
+    if (width > LogicValue._INT_BITS) {
+      throw Exception('Cannot convert to BigInt when width $width'
+          ' is greater than ${LogicValue._INT_BITS}');
+    } else if (width == LogicValue._INT_BITS) {
+      // With `0x` in front of a hex literal, it will be interpreted as unsigned.
+      return int.parse('0x${toRadixString(16)}');
+    } else {
+      return toInt();
+    }
+  }
+}
+
 /// A [LogicValue] whose number of bits is greater than the size of an [int].
 ///
 /// The implementation is similar to [_SmallLogicValue], except it uses
@@ -64,8 +83,9 @@ class _BigLogicValue extends LogicValue {
           (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
     } else {
       return _SmallLogicValue(
-          ((_value >> start) & _maskOfWidth(newWidth)).toInt(),
-          ((_invalid >> start) & _maskOfWidth(newWidth)).toInt(),
+          ((_value >> start) & _maskOfWidth(newWidth)).toIntUnsigned(newWidth),
+          ((_invalid >> start) & _maskOfWidth(newWidth))
+              .toIntUnsigned(newWidth),
           newWidth);
     }
   }
