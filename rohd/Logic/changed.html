@@ -68,23 +68,7 @@ per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value 
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed {
-  if (!_changedBeingWatched) {
-    &#47;&#47; only do these simulator subscriptions if someone has asked for
-    &#47;&#47; them! saves performance!
-    _changedBeingWatched = true;
-
-    Simulator.preTick.listen((event) {
-      _preTickValue = value;
-    });
-    Simulator.postTick.listen((event) {
-      if (value != _preTickValue &amp;&amp; _preTickValue != null) {
-        _changedController.add(LogicValueChanged(value, _preTickValue!));
-      }
-    });
-  }
-  return _changedController.stream;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get changed =&gt; _wire.changed;</code></pre>
 </section>
 
 </section>

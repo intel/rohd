@@ -56,8 +56,8 @@
 
     
 <section class="desc markdown">
-  <p>Constructs a new <a href="../../rohd/Logic-class.html">Logic</a> named <code>name</code> with <a href="../../rohd/Logic/width.html">width</a> bits.</p>
-<p>The default value for <a href="../../rohd/Logic/width.html">width</a> is 1.  The <code>name</code> should be synthesizable
+  <p>Constructs a new <a href="../../rohd/Logic-class.html">Logic</a> named <code>name</code> with <code>width</code> bits.</p>
+<p>The default value for <code>width</code> is 1.  The <code>name</code> should be synthesizable
 to the desired output (e.g. SystemVerilog).</p>
 </section>
 
@@ -65,9 +65,9 @@ to the desired output (e.g. SystemVerilog).</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic({String? name, this.width = 1})
+  <pre class="language-dart"><code class="language-dart">Logic({String? name, int width = 1})
     : name = name == null ? &#39;s${_signalIdx++}&#39; : Sanitizer.sanitizeSV(name),
-      _currentValue = LogicValue.filled(width, LogicValue.z) {
+      _wire = _Wire(width: width) {
   if (width &lt; 0) {
     throw Exception(&#39;Logic width must be greater than or equal to 0.&#39;);
   }

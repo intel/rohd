@@ -74,69 +74,7 @@ to <code>'</code> in SystemVerilog.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) {
-  LogicValue newValue;
-  if (val is int) {
-    if (fill) {
-      newValue = LogicValue.filled(
-          width,
-          val == 0
-              ? LogicValue.zero
-              : val == 1
-                  ? LogicValue.one
-                  : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
-    } else {
-      newValue = LogicValue.ofInt(val, width);
-    }
-  } else if (val is BigInt) {
-    if (fill) {
-      newValue = LogicValue.filled(
-          width,
-          val == BigInt.zero
-              ? LogicValue.zero
-              : val == BigInt.one
-                  ? LogicValue.one
-                  : throw Exception(&#39;Only can fill 0 or 1, but saw $val.&#39;));
-    } else {
-      newValue = LogicValue.ofBigInt(val, width);
-    }
-  } else if (val is bool) {
-    newValue = LogicValue.ofInt(val ? 1 : 0, width);
-  } else if (val is LogicValue) {
-    if (val.width == 1 &amp;&amp;
-        (val == LogicValue.x || val == LogicValue.z || fill)) {
-      newValue = LogicValue.filled(width, val);
-    } else if (fill) {
-      throw Exception(
-          &#39;Failed to fill value with $val.  To fill, it should be 1 bit.&#39;);
-    } else {
-      newValue = val;
-    }
-  } else {
-    throw Exception(&#39;Unrecognized value &quot;$val&quot; to deposit on this signal. &#39;
-        &#39;Unknown type ${val.runtimeType} cannot be deposited.&#39;);
-  }
-
-  if (newValue.width != width) {
-    throw Exception(
-        &#39;Updated value width mismatch.  The width of $val should be $width.&#39;);
-  }
-
-  if (_isPutting) {
-    &#47;&#47; if this is the result of a cycle, then contention!
-    newValue = LogicValue.filled(width, LogicValue.x);
-  }
-
-  final prevValue = _currentValue;
-  _currentValue = newValue;
-
-  &#47;&#47; sends out a glitch if the value deposited has changed
-  if (_currentValue != prevValue) {
-    _isPutting = true;
-    _glitchController.add(LogicValueChanged(_currentValue, prevValue));
-    _isPutting = false;
-  }
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) =&gt; _wire.put(val, fill: fill);</code></pre>
 </section>
 
 

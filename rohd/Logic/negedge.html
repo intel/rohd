@@ -64,15 +64,13 @@
   <p>A <a href="https://api.dart.dev/stable/2.18.5/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../../rohd/Logic-class.html">Logic</a> has changed
 from <code>1</code> to <code>0</code>.</p>
+<p>Throws an exception if <a href="../../rohd/Logic/width.html">width</a> is not <code>1</code>.</p>
 </section>
 
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get negedge =&gt; changed.where((args) =&gt;
-    width == 1 &amp;&amp;
-    LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
-        ignoreInvalid: true));</code></pre>
+  <pre class="language-dart"><code class="language-dart">Stream&lt;LogicValueChanged&gt; get negedge =&gt; _wire.negedge;</code></pre>
 </section>
 
 </section>
