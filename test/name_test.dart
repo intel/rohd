@@ -94,12 +94,8 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-        mod,
-        mod.generateSynth(),
-        mod.definitionName,
-        vectors,
-      );
+      final simResult =
+          SimCompare.iverilogVector(mod, mod.definitionName, vectors);
       expect(simResult, equals(true));
     }
 

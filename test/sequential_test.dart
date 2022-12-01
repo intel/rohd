@@ -76,8 +76,8 @@ void main() {
       Vector({}, {'out': 5}),
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
-    final simResult = SimCompare.iverilogVector(
-        dut, dut.generateSynth(), dut.runtimeType.toString(), vectors);
+    final simResult =
+        SimCompare.iverilogVector(dut, dut.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 }

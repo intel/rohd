@@ -102,8 +102,8 @@ void main() {
         }),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm, gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      final simResult =
+          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

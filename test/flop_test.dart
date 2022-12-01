@@ -39,8 +39,8 @@ void main() {
         Vector({'a': 0}, {'y': 0}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm, ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      final simResult =
+          SimCompare.iverilogVector(ftm, ftm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -55,8 +55,8 @@ void main() {
         Vector({'a': 0x1}, {'y': 0x55}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm, ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      final simResult =
+          SimCompare.iverilogVector(ftm, ftm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

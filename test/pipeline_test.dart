@@ -69,7 +69,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+          pipem, pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -103,7 +103,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+          pipem, pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -159,7 +159,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+          pipem, pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
 
@@ -205,7 +205,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       final simResult = SimCompare.iverilogVector(
-          pipem, pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+          pipem, pipem.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
     });
   });

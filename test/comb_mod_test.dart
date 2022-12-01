@@ -68,8 +68,8 @@ void main() {
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    final simResult =
+        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 
@@ -81,8 +81,8 @@ void main() {
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod, mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    final simResult =
+        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
     expect(simResult, equals(true));
   });
 }
