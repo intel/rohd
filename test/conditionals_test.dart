@@ -159,6 +159,34 @@ class SequentialModule extends Module {
   }
 }
 
+class MultipleConditionalModule extends Module {
+  MultipleConditionalModule(Logic a, Logic b, Logic d)
+      : super(name: 'multiplecondmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final c = addOutput('c');
+    final d = addOutput('d');
+
+    final Conditional condOne = c < 1;
+
+    Combinational([
+      IfBlock([
+        ElseIf(a, [condOne]),
+        ElseIf(b, [condOne]),
+        Else([c < 0, d < 1])
+      ])
+    ]);
+
+    Combinational([
+      IfBlock([
+        ElseIf(a, [condOne]),
+        ElseIf(b, [condOne]),
+        Else([c < 0, d < 1])
+      ])
+    ]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -251,6 +279,22 @@ void main() {
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));
+    });
+
+    test('multiple conditional ff', () async {
+      final mod = MultipleConditionalModule(Logic(), Logic(), Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1, 'b': 0}, {'c': 1}),
+        Vector({'a': 0, 'b': 1}, {'c': 1}),
+      ];
+
+      try {
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        fail('Exception not thrown!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, equals(Exception));
+      }
     });
   });
 }
