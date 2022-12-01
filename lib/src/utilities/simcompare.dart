@@ -145,8 +145,8 @@ abstract class SimCompare {
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
-    String topModule,
     List<Vector> vectors, {
+    String moduleName = '',
     bool dontDeleteTmpFiles = false,
     bool dumpWaves = false,
     List<String> iverilogExtraArgs = const [],
@@ -161,6 +161,7 @@ abstract class SimCompare {
       }
     }
 
+    final topModule = moduleName == '' ? module.definitionName : moduleName;
     final allSignals = vectors
         .map((e) => [...e.inputValues.keys, ...e.expectedOutputValues.keys])
         .reduce((a, b) => [...a, ...b])

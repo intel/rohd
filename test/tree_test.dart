@@ -61,8 +61,8 @@ void main() {
         }),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult =
-          SimCompare.iverilogVector(mod, '${mod.runtimeType}_3', vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors,
+          moduleName: '${mod.runtimeType}_3');
       expect(simResult, equals(true));
     });
   });

@@ -127,8 +127,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
 
-    final simResult =
-        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -145,8 +144,7 @@ void main() {
     }
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult =
-        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -159,8 +157,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult =
-        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -173,8 +170,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult =
-        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -187,8 +183,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult =
-        SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 }

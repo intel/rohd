@@ -118,8 +118,7 @@ void main() {
         Vector({'c': 1}, {'b': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem, pipem.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
       expect(simResult, equals(true));
     });
 
@@ -147,8 +146,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem, pipem.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
 
       expect(simResult, equals(true));
     });

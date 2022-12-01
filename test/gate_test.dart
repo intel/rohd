@@ -194,8 +194,7 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -209,8 +208,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_and': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -224,8 +222,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_or': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -239,8 +236,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_xor': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -253,8 +249,7 @@ void main() {
         Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult =
-          SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
 
@@ -267,8 +262,7 @@ void main() {
         Vector({'control': 0, 'd0': 3, 'd1': 6}, {'y': 3}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult =
-          SimCompare.iverilogVector(mod, mod.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
 
@@ -282,8 +276,7 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -297,8 +290,7 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -314,8 +306,7 @@ void main() {
         Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -327,8 +318,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -340,8 +330,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -353,8 +342,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -368,8 +356,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -383,8 +370,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_or_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -398,8 +384,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_xor_b': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -417,8 +402,7 @@ void main() {
             {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
