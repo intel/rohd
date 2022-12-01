@@ -79,5 +79,7 @@ void main() async {
 
     final vcdContents = await File(temporaryDumpPath(dumpName)).readAsString();
     expect(vcdContents, contains(version));
+
+    deleteTemporaryDump(dumpName);
   });
 }
