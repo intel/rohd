@@ -138,14 +138,19 @@ abstract class LogicValue {
   /// The new value will have `this`'s current value shifted left by
   /// the width of [other].
   LogicValue _concatenate(LogicValue other) {
+    if (other.width == 0) {
+      return this;
+    } else if (width == 0) {
+      return other;
+    }
+
     final newWidth = width + other.width;
+
     if (this is _FilledLogicValue &&
         other is _FilledLogicValue &&
-        ((other.width == 0 || width == 0) || (other[0] == this[0]))) {
+        other[0] == this[0]) {
       // can keep it filled
-      final filledValue =
-          other.width == 0 ? (this as _FilledLogicValue)._value : other._value;
-      return _FilledLogicValue(filledValue, newWidth);
+      return _FilledLogicValue(other._value, newWidth);
     } else if (newWidth > LogicValue._INT_BITS) {
       // BigInt's only
       return _BigLogicValue(_bigIntValue << other.width | other._bigIntValue,
