@@ -112,11 +112,11 @@ a stage's stall is asserted, the output of that stage will not change.</p>
 
   for (var stageIndex = 0; stageIndex &lt; _numStages; stageIndex++) {
     Combinational([
-      ..._registeredLogics
-          .map((logic) =&gt; get(logic, stageIndex) &lt; _i(logic, stageIndex)),
+      for (Logic l in _registeredLogics)
+        get(l, stageIndex) &lt; _i(l, stageIndex),
       ...combMiddles[stageIndex],
-      ..._registeredLogics
-          .map((logic) =&gt; _o(logic, stageIndex) &lt; get(logic, stageIndex)),
+      for (Logic l in _registeredLogics)
+        _o(l, stageIndex) &lt; get(l, stageIndex),
     ], name: &#39;comb_stage$stageIndex&#39;);
   }
 }</code></pre>
