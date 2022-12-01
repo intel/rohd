@@ -14,6 +14,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+import 'wave_dumper_test.dart';
 
 class SimpleModule extends Module {
   SimpleModule(Logic a, Logic b) {
@@ -25,24 +26,6 @@ class SimpleModule extends Module {
       If(a, then: [c < a], orElse: [c < b])
     ]);
   }
-}
-
-const tempDumpDir = 'tmp_test';
-
-/// Gets the path of the VCD file based on a name.
-String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
-
-/// Attaches a [WaveDumper] to [module] to VCD with [name].
-void createTemporaryDump(Module module, String name) {
-  Directory(tempDumpDir).createSync(recursive: true);
-  final tmpDumpFile = temporaryDumpPath(name);
-  WaveDumper(module, outputPath: tmpDumpFile);
-}
-
-/// Deletes the temporary VCD file associated with [name].
-void deleteTemporaryDump(String name) {
-  final tmpDumpFile = temporaryDumpPath(name);
-  File(tmpDumpFile).deleteSync();
 }
 
 void main() async {
