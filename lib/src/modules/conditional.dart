@@ -351,6 +351,7 @@ class Sequential extends _Always {
   void _execute() {
     var anyClkInvalid = false;
     var anyClkPosedge = false;
+
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as
       // it currently does

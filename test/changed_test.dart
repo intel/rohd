@@ -112,4 +112,61 @@ void main() {
 
     expect(qHadPosedge, equals(true));
   });
+
+  test('reconnected signal still hits changed events', () async {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+
+    var detectedAChanged = false;
+    a.changed.listen((event) {
+      detectedAChanged = true;
+    });
+
+    a <= b;
+
+    Simulator.registerAction(100, () {
+      b.put(1);
+    });
+
+    await Simulator.run();
+
+    expect(detectedAChanged, isTrue);
+  });
+
+  test('chain of reconnected signals still changes', () async {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+    final c = Logic(name: 'c');
+
+    var detectedAChanged = false;
+    a.changed.listen((event) {
+      detectedAChanged = true;
+    });
+
+    a <= b;
+    b <= c;
+
+    Simulator.registerAction(100, () {
+      c.put(1);
+    });
+
+    await Simulator.run();
+
+    expect(detectedAChanged, isTrue);
+  });
+
+  test('chain of reconnected signals still glitches', () async {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+    final c = Logic(name: 'c');
+
+    a.put(0);
+
+    a <= b;
+    b <= c;
+
+    c.put(1);
+
+    expect(a.value, equals(LogicValue.one));
+  });
 }
