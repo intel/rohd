@@ -79,7 +79,7 @@ abstract class LogicValue {
   /// [width] must be greater than or equal to 0.
   static LogicValue ofBigInt(BigInt value, int width) => width > _INT_BITS
       ? _BigLogicValue(value, BigInt.zero, width)
-      : _SmallLogicValue(value.toInt(), 0, width);
+      : _SmallLogicValue(value.toIntUnsigned(width), 0, width);
 
   /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
   /// number of bits.
@@ -803,10 +803,7 @@ int _unsignedBinaryParse(String source) {
   if (val != null) {
     return val;
   } else {
-    final hex = BigInt.parse(source, radix: 2).toRadixString(16);
-
-    // With `0x` in front of a hex literal, it will be interpreted as unsigned.
-    return int.parse('0x$hex');
+    return BigInt.parse(source, radix: 2).toIntUnsigned(source.length);
   }
 }
 
