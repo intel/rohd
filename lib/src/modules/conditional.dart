@@ -635,6 +635,7 @@ class Case extends Conditional {
       // if expression has X or Z, then propogate X's!
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
+        drivenSignals.add(receiver);
       }
       return;
     }
