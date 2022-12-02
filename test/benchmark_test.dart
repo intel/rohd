@@ -9,10 +9,16 @@
 ///
 
 import 'package:test/test.dart';
-import '../benchmark/benchmarks.dart';
+
+import '../benchmark/logic_value_of_benchmark.dart';
+import '../benchmark/pipeline_benchmark.dart';
 
 void main() {
   test('pipeline benchmark', () async {
     await PipelineBenchmark().measure();
+  });
+
+  test('logic value of benchmark', () async {
+    await LogicValueOfBenchmark().measure();
   });
 }

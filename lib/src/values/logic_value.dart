@@ -130,8 +130,23 @@ abstract class LogicValue {
   /// print(lv); // This prints `6'b01xzx0`
   /// ```
   ///
-  static LogicValue of(Iterable<LogicValue> it) => it.fold(LogicValue.empty,
-      (previousValue, element) => element._concatenate(previousValue));
+  static LogicValue of(Iterable<LogicValue> it) {
+    var smallBuffer = LogicValue.empty;
+    var fullResult = LogicValue.empty;
+
+    // shift small chunks in together before shifting BigInt's, since
+    // shifting BigInt's is expensive
+    for (final lv in it) {
+      smallBuffer = lv._concatenate(smallBuffer);
+      if (smallBuffer.width > _INT_BITS && smallBuffer is! _FilledLogicValue) {
+        fullResult = smallBuffer._concatenate(fullResult);
+        smallBuffer = LogicValue.empty;
+      }
+    }
+
+    // grab what's left
+    return smallBuffer._concatenate(fullResult);
+  }
 
   /// Appends [other] to the least significant side of `this`.
   ///

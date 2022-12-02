@@ -80,6 +80,10 @@ void main() {
                 .swizzle(),
             equals(LogicValue.ofString('1' * 8)));
       });
+      test('big swizzle', () {
+        expect(List.generate(100, (index) => LogicValue.one).swizzle(),
+            equals(LogicValue.ofString('1' * 100)));
+      });
       test('0-width both swizzle', () {
         expect([LogicValue.ofString(''), LogicValue.ofString('')].swizzle(),
             equals(LogicValue.ofString('')));
