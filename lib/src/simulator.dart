@@ -318,17 +318,11 @@ class Simulator {
 /// A simulator exception that produces object of exception and stack trace.
 class _SimulatorException {
   /// Tracks for [Exception] thrown during [Simulator] `run()`.
-  final Exception _exception;
+  final Exception exception;
 
   /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
-  final StackTrace _stackTrace;
+  final StackTrace stackTrace;
 
-  /// Constructs a simulator exception, using [_exception] and [_stackTrace].
-  _SimulatorException(this._exception, this._stackTrace);
-
-  /// The exception thrown during the simulation process.
-  Exception get exception => _exception;
-
-  /// The stack trace thrown during the simulation process.
-  StackTrace get stackTrace => _stackTrace;
+  /// Constructs a simulator exception, using [exception] and [stackTrace].
+  _SimulatorException(this.exception, this.stackTrace);
 }
