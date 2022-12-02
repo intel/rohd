@@ -20,7 +20,7 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
   /// The [Set] which contains unique values.
   final Set<T> _set = <T>{};
 
-  // The [Set] which contains duplicate values.
+  /// The [Set] which contains duplicate values.
   final Set<T> _duplicates = <T>{};
 
   @override
