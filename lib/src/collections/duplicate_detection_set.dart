@@ -40,7 +40,7 @@ class DuplicateDetectionSet<T> extends SetBase<T> {
   /// The duplicate members in the collection
   ///
   /// Returns an [UnmodifiableSetView] from DuplicateDetectionSet collection
-  Set<T> get getDuplicates => UnmodifiableSetView(_duplicates);
+  Set<T> get duplicates => UnmodifiableSetView(_duplicates);
 
   /// Returns `true` if collection contains duplicates
   bool get hasDuplicates => _duplicates.isNotEmpty;

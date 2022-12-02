@@ -19,7 +19,7 @@ void main() {
       final testDuplicateSet = DuplicateDetectionSet<int>()..addAll([1, 2, 1]);
 
       expect(testDuplicateSet.hasDuplicates, equals(true));
-      expect(testDuplicateSet.getDuplicates, equals({1}));
+      expect(testDuplicateSet.duplicates, equals({1}));
     });
     test(
         'should return duplicates if duplicate value exists through add method',
@@ -29,7 +29,7 @@ void main() {
         ..add(1);
 
       expect(testDuplicateSet.hasDuplicates, equals(true));
-      expect(testDuplicateSet.getDuplicates, equals({1}));
+      expect(testDuplicateSet.duplicates, equals({1}));
     });
   });
 

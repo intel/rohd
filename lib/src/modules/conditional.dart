@@ -394,8 +394,7 @@ class Sequential extends _Always {
         element.execute(allDrivenSignals);
       }
       if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(
-            allDrivenSignals.getDuplicates.toString());
+        throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
       }
     }
 
