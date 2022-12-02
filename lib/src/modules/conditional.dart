@@ -540,7 +540,9 @@ class ConditionalAssign extends Conditional {
   @override
   void execute(Set<Logic> drivenSignals) {
     receiverOutput(receiver).put(driverValue(driver));
-    drivenSignals.add(receiver);
+    if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+      drivenSignals.add(receiver);
+    }
   }
 
   @override
@@ -635,7 +637,9 @@ class Case extends Conditional {
       // if expression has X or Z, then propogate X's!
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
-        drivenSignals.add(receiver);
+        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+          drivenSignals.add(receiver);
+        }
       }
       return;
     }
@@ -852,7 +856,9 @@ class IfBlock extends Conditional {
         // x and z propagation
         for (final receiver in getReceivers()) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-          drivenSignals.add(receiver);
+          if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+            drivenSignals.add(receiver);
+          }
         }
         break;
       }
@@ -977,7 +983,9 @@ class If extends Conditional {
       // x and z propagation
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
-        drivenSignals.add(receiver);
+        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+          drivenSignals.add(receiver);
+        }
       }
     }
   }
