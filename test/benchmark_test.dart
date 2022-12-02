@@ -10,6 +10,7 @@
 
 import 'package:test/test.dart';
 
+import '../benchmark/byte_enable_benchmark.dart';
 import '../benchmark/logic_value_of_benchmark.dart';
 import '../benchmark/pipeline_benchmark.dart';
 
@@ -20,5 +21,9 @@ void main() {
 
   test('logic value of benchmark', () async {
     await LogicValueOfBenchmark().measure();
+  });
+
+  test('byte enable benchmark', () async {
+    await ByteEnableBenchmark().measure();
   });
 }
