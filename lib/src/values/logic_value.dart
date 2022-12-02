@@ -137,10 +137,16 @@ abstract class LogicValue {
     // shift small chunks in together before shifting BigInt's, since
     // shifting BigInt's is expensive
     for (final lv in it) {
-      smallBuffer = lv._concatenate(smallBuffer);
-      if (smallBuffer.width > _INT_BITS && smallBuffer is! _FilledLogicValue) {
-        fullResult = smallBuffer._concatenate(fullResult);
-        smallBuffer = LogicValue.empty;
+      if (lv.width + smallBuffer.width <= _INT_BITS) {
+        smallBuffer = lv._concatenate(smallBuffer);
+      } else {
+        final upperBound = (_INT_BITS - smallBuffer.width) +
+            _INT_BITS * max(lv.width ~/ _INT_BITS - 1, 0) as int;
+        fullResult = lv
+            .getRange(0, upperBound)
+            ._concatenate(smallBuffer)
+            ._concatenate(fullResult);
+        smallBuffer = lv.getRange(upperBound, lv.width);
       }
     }
 
