@@ -474,10 +474,12 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
-  /// Executes the functionality represented by this [Conditional].
+  /// Executes the functionality of this [Conditional] and
+  /// populates [drivenSignals] with all [Logic]s that were driven
+  /// during execution.
   ///
-  /// [drivenSignals] of type Set<Logic> must be passed to the argument
-  /// to validate for redundance signals.
+  /// The [drivenSignals] are used by the caller to determine if signals
+  /// were driven an appropriate number of times.
   @protected
   void execute(Set<Logic> drivenSignals);
 
