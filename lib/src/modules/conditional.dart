@@ -852,6 +852,7 @@ class IfBlock extends Conditional {
         // x and z propagation
         for (final receiver in getReceivers()) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
+          drivenSignals.add(receiver);
         }
         break;
       }
@@ -976,6 +977,7 @@ class If extends Conditional {
       // x and z propagation
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
+        drivenSignals.add(receiver);
       }
     }
   }
