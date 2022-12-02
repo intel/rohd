@@ -100,9 +100,15 @@ class Logic {
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
+  /// 
+  /// Throws an exception 
+  @Deprecated('Use currentValue.isValid instead.')
   bool hasValidValue() => _currentValue.isValid;
 
   /// Returns `true` iff *all* bits of the current value are floating (`z`).
+  /// 
+  /// Throws an exception 
+  @Deprecated('Use value.isFloating instead.')
   bool isFloating() => value.isFloating;
 
   /// The [Logic] signal that is driving `this`, if any.
