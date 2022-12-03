@@ -1,17 +1,17 @@
 /// Copyright (C) 2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// pipeline_benchmark.dart
-/// Benchmarking for pipeline simulation performance
+/// byte_enable_benchmark.dart
+/// Benchmarking for simple byte enable hardware
 ///
-/// 2022 September 28
+/// 2022 December 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
 
-class ByteEnableBenchmark extends AsyncBenchmarkBase {
+class ByteEnableBenchmark extends BenchmarkBase {
   late Logic result;
   late Logic select;
   late Logic original;
@@ -26,7 +26,7 @@ class ByteEnableBenchmark extends AsyncBenchmarkBase {
   ByteEnableBenchmark() : super('ByteEnable');
 
   @override
-  Future<void> setup() async {
+  void setup() {
     select = Logic(name: 'select', width: numBytes);
     original = Logic(name: 'original', width: numBytes * 8);
     original.put(LogicValue.ofString('0x1z10xz' * numBytes));
@@ -41,14 +41,14 @@ class ByteEnableBenchmark extends AsyncBenchmarkBase {
   }
 
   @override
-  Future<void> teardown() async {}
+  void teardown() {}
 
   @override
-  Future<void> run() async {
+  void run() {
     vectors.forEach(select.put);
   }
 }
 
-Future<void> main() async {
-  await ByteEnableBenchmark().report();
+void main() {
+  ByteEnableBenchmark().report();
 }

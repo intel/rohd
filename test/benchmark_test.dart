@@ -19,11 +19,11 @@ void main() {
     await PipelineBenchmark().measure();
   });
 
-  test('logic value of benchmark', () async {
-    await LogicValueOfBenchmark().measure();
+  test('logic value of benchmark', () {
+    LogicValueOfBenchmark().measure();
   });
 
-  test('byte enable benchmark', () async {
-    await ByteEnableBenchmark().measure();
+  test('byte enable benchmark', () {
+    ByteEnableBenchmark().measure();
   });
 }

@@ -13,13 +13,13 @@ import 'dart:math';
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
 
-class LogicValueOfBenchmark extends AsyncBenchmarkBase {
+class LogicValueOfBenchmark extends BenchmarkBase {
   late List<LogicValue> toOf;
 
   LogicValueOfBenchmark() : super('LogicValueOf');
 
   @override
-  Future<void> setup() async {
+  void setup() {
     final rand = Random(1234);
     toOf = List.generate(
         1000,
@@ -33,14 +33,14 @@ class LogicValueOfBenchmark extends AsyncBenchmarkBase {
   }
 
   @override
-  Future<void> teardown() async {}
+  void teardown() {}
 
   @override
-  Future<void> run() async {
+  void run() {
     LogicValue.of(toOf);
   }
 }
 
-Future<void> main() async {
-  await LogicValueOfBenchmark().report();
+void main() async {
+  LogicValueOfBenchmark().report();
 }

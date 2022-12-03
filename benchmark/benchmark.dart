@@ -8,10 +8,12 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'byte_enable_benchmark.dart';
 import 'logic_value_of_benchmark.dart';
 import 'pipeline_benchmark.dart';
 
 void main() async {
   await PipelineBenchmark().report();
-  await LogicValueOfBenchmark().report();
+  LogicValueOfBenchmark().report();
+  ByteEnableBenchmark().report();
 }
