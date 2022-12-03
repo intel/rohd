@@ -129,7 +129,6 @@ abstract class LogicValue {
   /// var lv = LogicValue.of(it);
   /// print(lv); // This prints `6'b01xzx0`
   /// ```
-  ///
   static LogicValue of(Iterable<LogicValue> it) {
     var smallBuffer = LogicValue.empty;
     var fullResult = LogicValue.empty;
@@ -150,6 +149,7 @@ abstract class LogicValue {
             ._concatenate(fullResult);
         smallBuffer = lv.getRange(upperBound, lv.width);
       }
+
       assert(smallBuffer.width <= _INT_BITS,
           'Keep smallBuffer small to meet invariants and efficiency');
     }
