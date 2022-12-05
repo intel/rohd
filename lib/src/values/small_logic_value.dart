@@ -180,4 +180,18 @@ class _SmallLogicValue extends LogicValue {
               _mask,
           _invalid >> shamt,
           width);
+
+  @override
+  BigInt get _bigIntInvalid =>
+      BigInt.from(_invalid) & _BigLogicValue._maskOfWidth(width);
+
+  @override
+  BigInt get _bigIntValue =>
+      BigInt.from(_value) & _BigLogicValue._maskOfWidth(width);
+
+  @override
+  int get _intInvalid => _invalid;
+
+  @override
+  int get _intValue => _value;
 }

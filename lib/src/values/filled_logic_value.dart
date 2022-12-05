@@ -244,4 +244,28 @@ class _FilledLogicValue extends LogicValue {
   LogicValue _shiftArithmeticRight(int shamt) => LogicValue.ofString(
       ((_value == _LogicValueEnum.one ? '1' : '0') * shamt) +
           (this[0]._bitString() * (width - shamt)));
+
+  @override
+  BigInt get _bigIntInvalid =>
+      (_value == _LogicValueEnum.z || _value == _LogicValueEnum.x)
+          ? _BigLogicValue._maskOfWidth(width)
+          : BigInt.zero;
+
+  @override
+  BigInt get _bigIntValue =>
+      (_value == _LogicValueEnum.one || _value == _LogicValueEnum.z)
+          ? _BigLogicValue._maskOfWidth(width)
+          : BigInt.zero;
+
+  @override
+  int get _intInvalid =>
+      (_value == _LogicValueEnum.z || _value == _LogicValueEnum.x)
+          ? _SmallLogicValue._maskOfWidth(width)
+          : 0;
+
+  @override
+  int get _intValue =>
+      (_value == _LogicValueEnum.one || _value == _LogicValueEnum.z)
+          ? _SmallLogicValue._maskOfWidth(width)
+          : 0;
 }
