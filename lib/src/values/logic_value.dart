@@ -66,8 +66,8 @@ abstract class LogicValue {
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofInt(int value, int width) => width > _INT_BITS
-      ? _BigLogicValue(BigInt.from(value), BigInt.zero, width)
-      : _SmallLogicValue(value, 0, width);
+      ? _bigLogicValueOrFilled(BigInt.from(value), BigInt.zero, width)
+      : _smallLogicValueOrFilled(value, 0, width);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width]
   /// number of bits.
@@ -81,8 +81,8 @@ abstract class LogicValue {
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofBigInt(BigInt value, int width) => width > _INT_BITS
-      ? _BigLogicValue(value, BigInt.zero, width)
-      : _SmallLogicValue(value.toIntUnsigned(width), 0, width);
+      ? _bigLogicValueOrFilled(value, BigInt.zero, width)
+      : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
 
   /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
   /// number of bits.
@@ -213,9 +213,23 @@ abstract class LogicValue {
   @Deprecated('Use `of` instead.')
   static LogicValue from(Iterable<LogicValue> it) => of(it);
 
-  /// Returns true if bits in the [BigInt] are either all 0 or all 1
-  static bool _bigIntIsFilled(BigInt x, int width) =>
-      (x | _BigLogicValue._maskOfWidth(width)) == x;
+  /// Returns true if bits in [x] are all 0
+  static bool _bigIntIs0(BigInt x, int width) =>
+      (x & _BigLogicValue._maskOfWidth(width)) == BigInt.zero;
+
+  /// Returns true if bits in [x] are all 1
+  static bool _bigIntIs1s(BigInt x, int width) =>
+      (x & _BigLogicValue._maskOfWidth(width)) ==
+      _BigLogicValue._maskOfWidth(width);
+
+  /// Returns true if bits in [x] are all 0
+  static bool _intIs0(int x, int width) =>
+      x & _SmallLogicValue._maskOfWidth(width) == 0;
+
+  /// Returns true if bits in [x] are all 1
+  static bool _intIs1s(int x, int width) =>
+      x & _SmallLogicValue._maskOfWidth(width) ==
+      _SmallLogicValue._maskOfWidth(width);
 
   /// Returns a [String] representing the `_value` to be used by implementations
   /// relying on `_value` and `_invalid`.
@@ -245,7 +259,7 @@ abstract class LogicValue {
   /// ```
   static LogicValue ofString(String stringRepresentation) {
     if (stringRepresentation.isEmpty) {
-      return const _SmallLogicValue(0, 0, 0);
+      return const _FilledLogicValue(_LogicValueEnum.zero, 0);
     }
 
     final valueString = _valueString(stringRepresentation);
@@ -255,25 +269,69 @@ abstract class LogicValue {
     if (width <= _INT_BITS) {
       final value = _unsignedBinaryParse(valueString);
       final invalid = _unsignedBinaryParse(invalidString);
-      return _SmallLogicValue(value, invalid, width);
+      return _smallLogicValueOrFilled(value, invalid, width);
     } else {
       final value = BigInt.parse(valueString, radix: 2);
       final invalid = BigInt.parse(invalidString, radix: 2);
-      if (invalid.sign == 0) {
-        if (value.sign == 0) {
-          return LogicValue.filled(width, LogicValue.zero);
-        } else if (_bigIntIsFilled(value, width)) {
-          return LogicValue.filled(width, LogicValue.one);
-        }
-      } else if (_bigIntIsFilled(invalid, width)) {
-        if (value.sign == 0) {
-          return LogicValue.filled(width, LogicValue.x);
-        } else if (_bigIntIsFilled(value, width)) {
-          return LogicValue.filled(width, LogicValue.z);
-        }
-      }
-      return _BigLogicValue(value, invalid, width);
+      return _bigLogicValueOrFilled(value, invalid, width);
     }
+  }
+
+  /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
+  /// [value], [invalid], and [width].
+  ///
+  /// Only use if [width] > [_INT_BITS].
+  static LogicValue _bigLogicValueOrFilled(
+      BigInt value, BigInt invalid, int width) {
+    assert(width > _INT_BITS, 'Should only be used for big values');
+
+    return _filledIfPossible(
+          _bigIntIs1s(value, width),
+          _bigIntIs0(value, width),
+          _bigIntIs1s(invalid, width),
+          _bigIntIs0(invalid, width),
+          width,
+        ) ??
+        _BigLogicValue(value, invalid, width);
+  }
+
+  /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
+  /// [value], [invalid], and [width].
+  ///
+  /// Only use if [width] <= [_INT_BITS].
+  static LogicValue _smallLogicValueOrFilled(
+      int value, int invalid, int width) {
+    assert(width <= _INT_BITS, 'Should only be used for small values');
+
+    return _filledIfPossible(
+          _intIs1s(value, width),
+          _intIs0(value, width),
+          _intIs1s(invalid, width),
+          _intIs0(invalid, width),
+          width,
+        ) ??
+        _SmallLogicValue(value, invalid, width);
+  }
+
+  /// Constructs a [_FilledLogicValue] based on whether `value` and `invalid`
+  /// are all 1's or all 0's.  If it's not possible to represent the value
+  /// as filled, it will return `null`.
+  static LogicValue? _filledIfPossible(
+      bool value1s, bool value0, bool invalid1s, bool invalid0, int width) {
+    if (value0) {
+      if (invalid0) {
+        return LogicValue.filled(width, LogicValue.zero);
+      } else if (invalid1s) {
+        return LogicValue.filled(width, LogicValue.x);
+      }
+    } else if (value1s) {
+      if (invalid0) {
+        return LogicValue.filled(width, LogicValue.one);
+      } else if (invalid1s) {
+        return LogicValue.filled(width, LogicValue.z);
+      }
+    }
+    return null;
   }
 
   /// Converts a binary [String] representation of a [LogicValue] into a

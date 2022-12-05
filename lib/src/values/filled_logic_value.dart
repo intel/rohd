@@ -14,10 +14,25 @@ part of values;
 class _FilledLogicValue extends LogicValue {
   final _LogicValueEnum _value;
 
-  const _FilledLogicValue(this._value, int width) : super._(width);
+  const _FilledLogicValue(_LogicValueEnum value, super.width)
+      : _value = width > 0 ? value : _LogicValueEnum.zero,
+        assert(width >= 0, 'Must be non-negative width'),
+        super._();
 
   @override
   bool _equals(Object other) {
+    if (other is! LogicValue) {
+      return false;
+    }
+
+    if (other.width != width) {
+      return false;
+    }
+
+    if (other.width == 0 && width == 0) {
+      return true;
+    }
+
     if (other is _FilledLogicValue) {
       return _value == other._value;
     } else if (other is _SmallLogicValue) {
@@ -98,24 +113,57 @@ class _FilledLogicValue extends LogicValue {
               : _LogicValueEnum.zero,
       width);
 
-  _SmallLogicValue _toSmallLogicValue() => _value == _LogicValueEnum.x
-      ? _SmallLogicValue(0, _SmallLogicValue._maskOfWidth(width), width)
-      : _value == _LogicValueEnum.z
-          ? _SmallLogicValue(_SmallLogicValue._maskOfWidth(width),
-              _SmallLogicValue._maskOfWidth(width), width)
-          : _value == _LogicValueEnum.one
-              ? _SmallLogicValue(_SmallLogicValue._maskOfWidth(width), 0, width)
-              : _SmallLogicValue(0, 0, width);
+  /// Constructs a [_SmallLogicValue] based on [value] and [invalid],
+  /// and bypasses assertions for inefficient representations.
+  _SmallLogicValue _buildSmallLogicValue(bool value, bool invalid) =>
+      _SmallLogicValue(
+        value ? _SmallLogicValue._maskOfWidth(width) : 0,
+        invalid ? _SmallLogicValue._maskOfWidth(width) : 0,
+        width,
+        allowInefficientRepresentation: true,
+      );
 
-  _BigLogicValue _toBigLogicValue() => _value == _LogicValueEnum.x
-      ? _BigLogicValue(BigInt.zero, _BigLogicValue._maskOfWidth(width), width)
-      : _value == _LogicValueEnum.z
-          ? _BigLogicValue(_BigLogicValue._maskOfWidth(width),
-              _BigLogicValue._maskOfWidth(width), width)
-          : _value == _LogicValueEnum.one
-              ? _BigLogicValue(
-                  _BigLogicValue._maskOfWidth(width), BigInt.zero, width)
-              : _BigLogicValue(BigInt.zero, BigInt.zero, width);
+  /// Converts this to a [_SmallLogicValue] representation.
+  ///
+  /// This should only be used for temporary calculations.
+  _SmallLogicValue _toSmallLogicValue() {
+    switch (_value) {
+      case _LogicValueEnum.x:
+        return _buildSmallLogicValue(false, true);
+      case _LogicValueEnum.z:
+        return _buildSmallLogicValue(true, true);
+      case _LogicValueEnum.one:
+        return _buildSmallLogicValue(true, false);
+      case _LogicValueEnum.zero:
+        return _buildSmallLogicValue(false, false);
+    }
+  }
+
+  /// Constructs a [_BigLogicValue] based on [value] and [invalid],
+  /// and bypasses assertions for inefficient representations.
+  _BigLogicValue _buildBigLogicValue(bool value, bool invalid) =>
+      _BigLogicValue(
+        value ? _BigLogicValue._maskOfWidth(width) : BigInt.zero,
+        invalid ? _BigLogicValue._maskOfWidth(width) : BigInt.zero,
+        width,
+        allowInefficientRepresentation: true,
+      );
+
+  /// Converts this to a [_BigLogicValue] representation.
+  ///
+  /// This should only be used for temporary calculations.
+  _BigLogicValue _toBigLogicValue() {
+    switch (_value) {
+      case _LogicValueEnum.x:
+        return _buildBigLogicValue(false, true);
+      case _LogicValueEnum.z:
+        return _buildBigLogicValue(true, true);
+      case _LogicValueEnum.one:
+        return _buildBigLogicValue(true, false);
+      case _LogicValueEnum.zero:
+        return _buildBigLogicValue(false, false);
+    }
+  }
 
   @override
   LogicValue _and2(LogicValue other) {
@@ -141,11 +189,11 @@ class _FilledLogicValue extends LogicValue {
       }
     } else if (other is _SmallLogicValue) {
       // _value is 1
-      return _SmallLogicValue(
+      return LogicValue._smallLogicValueOrFilled(
           other._value & ~other._invalid, other._invalid, width);
     } else if (other is _BigLogicValue) {
       // _value is 1
-      return _BigLogicValue(
+      return LogicValue._bigLogicValueOrFilled(
           other._value & ~other._invalid, other._invalid, width);
     }
     throw Exception('Unhandled scenario.');
@@ -171,11 +219,11 @@ class _FilledLogicValue extends LogicValue {
       return _FilledLogicValue(_LogicValueEnum.x, width);
     } else if (other is _SmallLogicValue) {
       // _value is 0
-      return _SmallLogicValue(
+      return LogicValue._smallLogicValueOrFilled(
           other._value & ~other._invalid, other._invalid, width);
     } else if (other is _BigLogicValue) {
       // _value is 0
-      return _BigLogicValue(
+      return LogicValue._bigLogicValueOrFilled(
           other._value & ~other._invalid, other._invalid, width);
     }
     throw Exception('Unhandled scenario.');
@@ -195,19 +243,23 @@ class _FilledLogicValue extends LogicValue {
       return _FilledLogicValue(_LogicValueEnum.x, width);
     } else if (_value == _LogicValueEnum.zero) {
       if (other is _SmallLogicValue) {
-        return _SmallLogicValue(
+        return LogicValue._smallLogicValueOrFilled(
             other._value & ~other._invalid, other._invalid, width);
       } else if (other is _BigLogicValue) {
-        return _BigLogicValue(
+        return LogicValue._bigLogicValueOrFilled(
             other._value & ~other._invalid, other._invalid, width);
       }
     } else if (_value == _LogicValueEnum.one) {
       if (other is _SmallLogicValue) {
-        return _SmallLogicValue(~other._value & other._mask & ~other._invalid,
-            other._invalid, width);
+        return LogicValue._smallLogicValueOrFilled(
+            ~other._value & other._mask & ~other._invalid,
+            other._invalid,
+            width);
       } else if (other is _BigLogicValue) {
-        return _BigLogicValue(~other._value & other._mask & ~other._invalid,
-            other._invalid, width);
+        return LogicValue._bigLogicValueOrFilled(
+            ~other._value & other._mask & ~other._invalid,
+            other._invalid,
+            width);
       }
     }
     throw Exception('Unhandled scenario.');
@@ -233,17 +285,39 @@ class _FilledLogicValue extends LogicValue {
               : LogicValue.zero;
 
   @override
-  LogicValue _shiftLeft(int shamt) => LogicValue.ofString(
-      (this[0]._bitString() * (width - shamt)) + ('0' * shamt));
+  LogicValue _shiftLeft(int shamt) {
+    if (_value == _LogicValueEnum.zero) {
+      return this;
+    }
+
+    if (shamt >= width) {
+      return _FilledLogicValue(_LogicValueEnum.zero, width);
+    }
+
+    return [
+      getRange(0, width - shamt),
+      _FilledLogicValue(_LogicValueEnum.zero, shamt),
+    ].swizzle();
+  }
 
   @override
-  LogicValue _shiftRight(int shamt) => LogicValue.ofString(
-      ('0' * shamt) + (this[0]._bitString() * (width - shamt)));
+  LogicValue _shiftRight(int shamt) {
+    if (_value == _LogicValueEnum.zero) {
+      return this;
+    }
+
+    if (shamt >= width) {
+      return _FilledLogicValue(_LogicValueEnum.zero, width);
+    }
+
+    return [
+      _FilledLogicValue(_LogicValueEnum.zero, shamt),
+      getRange(shamt, width),
+    ].swizzle();
+  }
 
   @override
-  LogicValue _shiftArithmeticRight(int shamt) => LogicValue.ofString(
-      ((_value == _LogicValueEnum.one ? '1' : '0') * shamt) +
-          (this[0]._bitString() * (width - shamt)));
+  LogicValue _shiftArithmeticRight(int shamt) => this;
 
   @override
   BigInt get _bigIntInvalid =>
