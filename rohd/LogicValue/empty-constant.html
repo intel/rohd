@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the toString method from the LogicValue class, for the Dart programming language.">
-  <title>toString method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the empty constant from the LogicValue class, for the Dart programming language.">
+  <title>empty constant - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">toString method</li>
+    <li class="self-crumb">empty constant</li>
   </ol>
-  <div class="self-name">toString</div>
+  <div class="self-name">empty</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -44,57 +44,27 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">toString</span> method 
+<h1><span class="kind-property">empty</span> constant 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
-    <section class="multi-line-signature">
-      
-<div>
-  <ol class="annotation-list">
-    <li>@<a href="https://api.dart.dev/stable/2.18.5/dart-core/override-constant.html">override</a></li>
-  </ol>
-</div>
+        <section class="multi-line-signature">
+          <a href="../../rohd/LogicValue-class.html">LogicValue</a>
+          const <span class="name ">empty</span>
+          
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.18.5/dart-core/String-class.html">String</a></span>
-<span class="name ">toString</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="toString-param-includeWidth">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.5/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">includeWidth</span> = <span class="default-value">true</span>}</span></li>
-</ol>)
-
-      <div class="features">override</div>
-
-    </section>
-    
+        </section>
+        
 <section class="desc markdown">
-  <p>Converts this <a href="../../rohd/LogicValue-class.html">LogicValue</a> to a binary <a href="https://api.dart.dev/stable/2.18.5/dart-core/String-class.html">String</a>, including a decorator at
-the front in SystemVerilog style.</p>
-<p>The first digits before the <code>b</code> (for binary) or <code>h</code> (for hex) are the
-width of the value.  If <code>includeWidth</code> is set to false, then the width of
-the bus and decorator will not be included in the generated String and
-it will print in binary.</p>
-<pre class="language-dart"><code class="language-dart">var lv = LogicValue.ofString('1x0');
-print(lv); // This prints `3b'1x0`
-</code></pre>
+  <p>A zero-width value.</p>
 </section>
 
-
-    
+        
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-String toString({bool includeWidth = true}) {
-  if (isValid &amp;&amp; includeWidth) {
-    final hexValue = width &gt; _INT_BITS
-        ? toBigInt().toRadixString(16)
-        : toInt().toRadixString(16);
-    return &quot;$width&#39;h$hexValue&quot;;
-  } else {
-    return [
-      if (includeWidth) &quot;$width&#39;b&quot;,
-      ...List&lt;String&gt;.generate(width, (index) =&gt; this[index]._bitString())
-          .reversed
-    ].join();
-  }
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">static const LogicValue empty = _FilledLogicValue(_LogicValueEnum.zero, 0);
+
+</code></pre>
 </section>
 
 
@@ -111,7 +81,7 @@ String toString({bool includeWidth = true}) {
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li class="self-crumb">toString method</li>
+  <li class="self-crumb">empty constant</li>
 </ol>
 
 

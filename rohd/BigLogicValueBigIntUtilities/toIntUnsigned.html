@@ -73,8 +73,13 @@
     throw Exception(&#39;Cannot convert to BigInt when width $width&#39;
         &#39; is greater than ${LogicValue._INT_BITS}&#39;);
   } else if (width == LogicValue._INT_BITS) {
-    &#47;&#47; With `0x` in front of a hex literal, will be interpreted as unsigned.
-    return int.parse(&#39;0x${toRadixString(16)}&#39;);
+    &#47;&#47; When width is 64, `BigInt.toInt()` will clamp values assuming that
+    &#47;&#47; it&#39;s a signed number.  To avoid that, if the width is 64, then do the
+    &#47;&#47; conversion in two 32-bit chunks and bitwise-or them together.
+    const maskWidth = 32;
+    final mask = _BigLogicValue._maskOfWidth(maskWidth);
+    return (this &amp; mask).toInt() |
+        (((this &gt;&gt; maskWidth) &amp; mask).toInt() &lt;&lt; maskWidth);
   } else {
     return toInt();
   }

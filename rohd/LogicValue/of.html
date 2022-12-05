@@ -62,11 +62,14 @@
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.</p>
 <p>The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th entry in
-<code>it</code> corresponds to the <code>i</code>th bit.  That is, the 0th element of <code>it</code> will
-be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<pre class="language-dart"><code class="language-dart">var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
+<code>it</code> corresponds to the <code>i</code>th group of bits.  That is, the 0th element of
+<code>it</code> will be the least significant chunk of bits of the returned
+<a href="../../rohd/LogicValue-class.html">LogicValue</a>.  Bits within each element of <code>it</code> are kept in the same
+order as they were originally.</p>
+<p>For example:</p>
+<pre class="language-dart"><code class="language-dart">var it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
 var lv = LogicValue.of(it);
-print(lv); // This prints `3b'1x0`
+print(lv); // This prints `6'b01xzx0`
 </code></pre>
 </section>
 
@@ -74,8 +77,34 @@ print(lv); // This prints `3b'1x0`
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue of(Iterable&lt;LogicValue&gt; it) =&gt; LogicValue.ofString(
-    it.map((e) =&gt; e.toString(includeWidth: false)).toList().reversed.join());</code></pre>
+  <pre class="language-dart"><code class="language-dart">static LogicValue of(Iterable&lt;LogicValue&gt; it) {
+  var smallBuffer = LogicValue.empty;
+  var fullResult = LogicValue.empty;
+
+  &#47;&#47; shift small chunks in together before shifting BigInt&#39;s, since
+  &#47;&#47; shifting BigInt&#39;s is expensive
+  for (final lv in it) {
+    final lvPlusSmall = lv.width + smallBuffer.width;
+    if (lvPlusSmall &lt;= _INT_BITS) {
+      smallBuffer = lv._concatenate(smallBuffer);
+    } else {
+      &#47;&#47; only put 64-bit chunks onto `fullResult`, rest onto `smallBuffer`
+      final upperBound =
+          _INT_BITS * (lvPlusSmall ~&#47; _INT_BITS) - smallBuffer.width;
+      fullResult = lv
+          .getRange(0, upperBound)
+          ._concatenate(smallBuffer)
+          ._concatenate(fullResult);
+      smallBuffer = lv.getRange(upperBound, lv.width);
+    }
+
+    assert(smallBuffer.width &lt;= _INT_BITS,
+        &#39;Keep smallBuffer small to meet invariants and efficiency&#39;);
+  }
+
+  &#47;&#47; grab what&#39;s left
+  return smallBuffer._concatenate(fullResult);
+}</code></pre>
 </section>
 
 
@@ -169,6 +198,7 @@ print(lv); // This prints `3b'1x0`
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>
+          <li><a href="../../rohd/LogicValue/empty-constant.html">empty</a></li>
           <li><a href="../../rohd/LogicValue/one-constant.html">one</a></li>
           <li><a href="../../rohd/LogicValue/x-constant.html">x</a></li>
           <li><a href="../../rohd/LogicValue/z-constant.html">z</a></li>
