@@ -71,8 +71,8 @@ number of bits.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValue ofBigInt(BigInt value, int width) =&gt; width &gt; _INT_BITS
-    ? _BigLogicValue(value, BigInt.zero, width)
-    : _SmallLogicValue(value.toIntUnsigned(width), 0, width);</code></pre>
+    ? _bigLogicValueOrFilled(value, BigInt.zero, width)
+    : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);</code></pre>
 </section>
 
 

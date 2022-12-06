@@ -79,7 +79,7 @@ print(lv); // This prints `3b'1x0`
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static LogicValue ofString(String stringRepresentation) {
   if (stringRepresentation.isEmpty) {
-    return const _SmallLogicValue(0, 0, 0);
+    return const _FilledLogicValue(_LogicValueEnum.zero, 0);
   }
 
   final valueString = _valueString(stringRepresentation);
@@ -89,24 +89,11 @@ print(lv); // This prints `3b'1x0`
   if (width &lt;= _INT_BITS) {
     final value = _unsignedBinaryParse(valueString);
     final invalid = _unsignedBinaryParse(invalidString);
-    return _SmallLogicValue(value, invalid, width);
+    return _smallLogicValueOrFilled(value, invalid, width);
   } else {
     final value = BigInt.parse(valueString, radix: 2);
     final invalid = BigInt.parse(invalidString, radix: 2);
-    if (invalid.sign == 0) {
-      if (value.sign == 0) {
-        return LogicValue.filled(width, LogicValue.zero);
-      } else if (_bigIntIsFilled(value, width)) {
-        return LogicValue.filled(width, LogicValue.one);
-      }
-    } else if (_bigIntIsFilled(invalid, width)) {
-      if (value.sign == 0) {
-        return LogicValue.filled(width, LogicValue.x);
-      } else if (_bigIntIsFilled(value, width)) {
-        return LogicValue.filled(width, LogicValue.z);
-      }
-    }
-    return _BigLogicValue(value, invalid, width);
+    return _bigLogicValueOrFilled(value, invalid, width);
   }
 }</code></pre>
 </section>
