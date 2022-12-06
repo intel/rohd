@@ -169,4 +169,11 @@ void main() {
 
     expect(a.value, equals(LogicValue.one));
   });
+
+  test('late connection propagates without put', () async {
+    final a = Logic(name: 'a');
+    final b = ~a;
+    a <= Const(0);
+    expect(b.value, equals(LogicValue.one));
+  });
 }
