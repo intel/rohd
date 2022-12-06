@@ -26,7 +26,7 @@ class LogicValueChanged {
 
   /// Represents the event of a [Logic] changing value from [previousValue]
   /// to [newValue].
-  LogicValueChanged(this.newValue, this.previousValue);
+  const LogicValueChanged(this.newValue, this.previousValue);
 
   @override
   String toString() => '$previousValue  -->  $newValue';
@@ -49,20 +49,17 @@ class Const extends Logic {
   }
 }
 
-/// Represents a logical signal of any width which can change values.
-class Logic {
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _signalIdx = 0;
+/// Represents a physical wire which shares a common value with one or
+/// more [Logic]s.
+class _Wire {
+  _Wire({required this.width})
+      : _currentValue = LogicValue.filled(width, LogicValue.z);
 
-  // special quiet flag to prevent <= and < where inappropriate
-  bool _unassignable = false;
+  /// The current active value of this signal.
+  LogicValue get value => _currentValue;
 
-  /// Makes it so that this signal cannot be assigned by any full (`<=`) or
-  /// conditional (`<`) assignment.
-  void makeUnassignable() => _unassignable = true;
-
-  /// The name of this signal.
-  final String name;
+  /// The number of bits in this signal.
+  final int width;
 
   /// The current active value of this signal.
   LogicValue _currentValue;
@@ -71,52 +68,6 @@ class Logic {
   ///
   /// This is useful for detecting when to trigger an edge.
   LogicValue? _preTickValue;
-
-  /// The number of bits in this signal.
-  final int width;
-
-  /// The current active value of this signal.
-  LogicValue get value => _currentValue;
-
-  /// The current active value of this signal if it has width 1, as
-  /// a [LogicValue].
-  ///
-  /// Throws an Exception if width is not 1.
-  @Deprecated('Use `value` instead.'
-      '  Check `width` separately to confirm single-bit.')
-  LogicValue get bit => _currentValue.bit;
-
-  /// The current valid active value of this signal as an [int].
-  ///
-  /// Throws an exception if the signal is not valid or can't be represented
-  /// as an [int].
-  @Deprecated('Use value.toInt() instead.')
-  int get valueInt => value.toInt();
-
-  /// The current valid active value of this signal as a [BigInt].
-  ///
-  /// Throws an exception if the signal is not valid.
-  @Deprecated('Use value.toBigInt() instead.')
-  BigInt get valueBigInt => value.toBigInt();
-
-  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  bool hasValidValue() => _currentValue.isValid;
-
-  /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  bool isFloating() => value.isFloating;
-
-  /// The [Logic] signal that is driving `this`, if any.
-  Logic? get srcConnection => _srcConnection;
-  Logic? _srcConnection;
-
-  /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
-  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
-  final Set<Logic> _dstConnections = {};
-
-  /// Notifies `this` that [dstConnection] is now directly connected to the
-  /// output of `this`.
-  void _registerConnection(Logic dstConnection) =>
-      _dstConnections.add(dstConnection);
 
   /// A stream of [LogicValueChanged] events for every time the signal
   /// transitions at any time during a [Simulator] tick.
@@ -142,10 +93,10 @@ class Logic {
       // them! saves performance!
       _changedBeingWatched = true;
 
-      Simulator.preTick.listen((event) {
+      _preTickSubscription = Simulator.preTick.listen((event) {
         _preTickValue = value;
       });
-      Simulator.postTick.listen((event) {
+      _postTickSubscription = Simulator.postTick.listen((event) {
         if (value != _preTickValue && _preTickValue != null) {
           _changedController.add(LogicValueChanged(value, _preTickValue!));
         }
@@ -154,21 +105,81 @@ class Logic {
     return _changedController.stream;
   }
 
+  /// The subscription to the [Simulator]'s `preTick`.
+  ///
+  /// Only non-null if [_changedBeingWatched] is true.
+  late final StreamSubscription<void> _preTickSubscription;
+
+  /// The subscription to the [Simulator]'s `postTick`.
+  ///
+  /// Only non-null if [_changedBeingWatched] is true.
+  late final StreamSubscription<void> _postTickSubscription;
+
+  /// Cancels all [Simulator] subscriptions and uses [newChanged] as the
+  /// source to replace all [changed] events for this [_Wire].
+  void _migrateChangedTriggers(Stream<LogicValueChanged> newChanged) {
+    if (_changedBeingWatched) {
+      unawaited(_preTickSubscription.cancel());
+      unawaited(_postTickSubscription.cancel());
+      newChanged.listen(_changedController.add);
+      _changedBeingWatched = false;
+    }
+  }
+
+  /// Tells this [_Wire] to adopt all the behavior of [other] so that
+  /// it can replace [other].
+  void _adopt(_Wire other) {
+    _glitchController.emitter.adopt(other._glitchController.emitter);
+    other._migrateChangedTriggers(changed);
+  }
+
+  /// Store the [negedge] stream to avoid creating multiple copies
+  /// of streams.
+  Stream<LogicValueChanged>? _negedge;
+
+  /// Store the [posedge] stream to avoid creating multiple copies
+  /// of streams.
+  Stream<LogicValueChanged>? _posedge;
+
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `1` to `0`.
-  Stream<LogicValueChanged> get negedge => changed.where((args) =>
-      width == 1 &&
-      LogicValue.isNegedge(args.previousValue[0], args.newValue[0],
-          ignoreInvalid: true));
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get negedge {
+    if (width != 1) {
+      throw Exception(
+          'Can only detect negedge when width is 1, but was $width');
+    }
+
+    _negedge ??= changed.where((args) => LogicValue.isNegedge(
+          args.previousValue,
+          args.newValue,
+          ignoreInvalid: true,
+        ));
+
+    return _negedge!;
+  }
 
   /// A [Stream] of [LogicValueChanged] events which triggers at most once
   /// per [Simulator] tick, iff the value of the [Logic] has changed
   /// from `0` to `1`.
-  Stream<LogicValueChanged> get posedge => changed.where((args) =>
-      width == 1 &&
-      LogicValue.isPosedge(args.previousValue[0], args.newValue[0],
-          ignoreInvalid: true));
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get posedge {
+    if (width != 1) {
+      throw Exception(
+          'Can only detect posedge when width is 1, but was $width');
+    }
+
+    _posedge ??= changed.where((args) => LogicValue.isPosedge(
+          args.previousValue,
+          args.newValue,
+          ignoreInvalid: true,
+        ));
+
+    return _posedge!;
+  }
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick.
@@ -176,194 +187,15 @@ class Logic {
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextPosedge => posedge.first;
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextNegedge => negedge.first;
-
-  /// The [Module] that this [Logic] exists within.
-  ///
-  /// This only gets populated after its parent [Module], if it exists,
-  /// has been built.
-  Module? get parentModule => _parentModule;
-  Module? _parentModule;
-
-  /// Sets the value of [parentModule] to [newParentModule].
-  ///
-  /// This should *only* be called by [Module.build()].  It is used to
-  /// optimize search.
-  @protected
-  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
-
-  /// Returns true iff this signal is an input of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isInput => _parentModule?.isInput(this) ?? false;
-
-  /// Returns true iff this signal is an output of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isOutput => _parentModule?.isOutput(this) ?? false;
-
-  /// Returns true iff this signal is an input or output of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isPort => isInput || isOutput;
-
-  /// Constructs a new [Logic] named [name] with [width] bits.
-  ///
-  /// The default value for [width] is 1.  The [name] should be synthesizable
-  /// to the desired output (e.g. SystemVerilog).
-  Logic({String? name, this.width = 1})
-      : name = name == null ? 's${_signalIdx++}' : Sanitizer.sanitizeSV(name),
-        _currentValue = LogicValue.filled(width, LogicValue.z) {
-    if (width < 0) {
-      throw Exception('Logic width must be greater than or equal to 0.');
-    }
-  }
-
-  @override
-  String toString() => 'Logic($width): $name';
-
-  /// Throws an exception if this [Logic] cannot be connected to another signal.
-  void _assertConnectable(Logic other) {
-    if (_srcConnection != null) {
-      throw Exception(
-          'This signal "$this" is already connected to "$srcConnection",'
-          ' so it cannot be connected to "$other".');
-    }
-    if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise should'
-          ' not be assigned.');
-    }
-  }
-
-  /// Connects this [Logic] directly to [other].
-  ///
-  /// Every time [other] transitions (`glitch`es), this signal will transition
-  /// the same way.
-  void gets(Logic other) {
-    _assertConnectable(other);
-
-    _connect(other);
-
-    _srcConnection = other;
-    other._registerConnection(this);
-  }
-
-  /// Handles the actual connection of this [Logic] to [other].
-  void _connect(Logic other) {
-    if (other.width != width) {
-      throw Exception('Bus widths must match.'
-          ' Cannot connect $this to $other which have different widths.');
-    }
-
-    _unassignable = true;
-
-    if (value != other.value) {
-      put(other.value);
-    }
-    other.glitch.listen((args) {
-      put(other.value);
-    });
-  }
-
-  /// Connects this [Logic] directly to another [Logic].
-  ///
-  /// This is shorthand for [gets()].
-  void operator <=(Logic other) => gets(other);
-
-  /// Logical bitwise NOT.
-  Logic operator ~() => NotGate(this).out;
-
-  /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).out;
-
-  /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).out;
-
-  /// Logical bitwise XOR.
-  Logic operator ^(Logic other) => Xor2Gate(this, other).out;
-
-  /// Addition.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  Logic operator +(dynamic other) => Add(this, other).out;
-
-  /// Subtraction.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  Logic operator -(dynamic other) => Subtract(this, other).out;
-
-  /// Multiplication.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  Logic operator *(dynamic other) => Multiply(this, other).out;
-
-  /// Division.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  Logic operator /(dynamic other) => Divide(this, other).out;
-
-  /// Modulo operation.
-  Logic operator %(Logic other) => Modulo(this, other).out;
-
-  /// Arithmetic right-shift.
-  Logic operator >>(Logic other) => ARShift(this, other).out;
-
-  /// Logical left-shift.
-  Logic operator <<(Logic other) => LShift(this, other).out;
-
-  /// Logical right-shift.
-  Logic operator >>>(Logic other) => RShift(this, other).out;
-
-  /// Unary AND.
-  Logic and() => AndUnary(this).out;
-
-  /// Unary OR.
-  Logic or() => OrUnary(this).out;
-
-  /// Unary XOR.
-  Logic xor() => XorUnary(this).out;
-
-  /// Logical equality.
-  Logic eq(dynamic other) => Equals(this, other).out;
-
-  /// Less-than.
-  Logic lt(dynamic other) => LessThan(this, other).out;
-
-  /// Less-than-or-equal-to.
-  Logic lte(dynamic other) => LessThanOrEqual(this, other).out;
-
-  /// Greater-than.
-  Logic operator >(dynamic other) => GreaterThan(this, other).out;
-
-  /// Greater-than-or-equal-to.
-  Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
-
-  /// Conditional assignment operator.
-  ///
-  /// Represents conditionally asigning the value of another signal to this.
-  /// Returns an instance of [ConditionalAssign] to be be passed to a
-  /// [Conditional].
-  ConditionalAssign operator <(dynamic other) {
-    if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise'
-          ' should not be assigned.');
-    }
-
-    if (other is Logic) {
-      return ConditionalAssign(this, other);
-    } else {
-      return ConditionalAssign(this, Const(other, width: width));
-    }
-  }
 
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
@@ -446,6 +278,314 @@ class Logic {
       _isPutting = true;
       _glitchController.add(LogicValueChanged(_currentValue, prevValue));
       _isPutting = false;
+    }
+  }
+}
+
+/// Represents a logical signal of any width which can change values.
+class Logic {
+  /// An internal counter for encouraging unique naming of unnamed signals.
+  static int _signalIdx = 0;
+
+  // A special quiet flag to prevent `<=` and `<` where inappropriate
+  bool _unassignable = false;
+
+  /// Makes it so that this signal cannot be assigned by any full (`<=`) or
+  /// conditional (`<`) assignment.
+  void makeUnassignable() => _unassignable = true;
+
+  /// The name of this signal.
+  final String name;
+
+  /// The [_Wire] which holds the current value and listeners for this [Logic].
+  ///
+  /// May be a shared object between multiple [Logic]s.
+  _Wire _wire;
+
+  /// The number of bits in this signal.
+  int get width => _wire.width;
+
+  /// The current active value of this signal.
+  LogicValue get value => _wire._currentValue;
+
+  /// The current active value of this signal if it has width 1, as
+  /// a [LogicValue].
+  ///
+  /// Throws an Exception if width is not 1.
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
+  LogicValue get bit => value.bit;
+
+  /// The current valid active value of this signal as an [int].
+  ///
+  /// Throws an exception if the signal is not valid or can't be represented
+  /// as an [int].
+  @Deprecated('Use value.toInt() instead.')
+  int get valueInt => value.toInt();
+
+  /// The current valid active value of this signal as a [BigInt].
+  ///
+  /// Throws an exception if the signal is not valid.
+  @Deprecated('Use value.toBigInt() instead.')
+  BigInt get valueBigInt => value.toBigInt();
+
+  /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
+  bool hasValidValue() => value.isValid;
+
+  /// Returns `true` iff *all* bits of the current value are floating (`z`).
+  bool isFloating() => value.isFloating;
+
+  /// The [Logic] signal that is driving `this`, if any.
+  Logic? get srcConnection => _srcConnection;
+  Logic? _srcConnection;
+
+  /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
+  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
+  final Set<Logic> _dstConnections = {};
+
+  /// Notifies `this` that [dstConnection] is now directly connected to the
+  /// output of `this`.
+  void _registerConnection(Logic dstConnection) =>
+      _dstConnections.add(dstConnection);
+
+  /// A stream of [LogicValueChanged] events for every time the signal
+  /// transitions at any time during a [Simulator] tick.
+  ///
+  /// This event can occur more than once per edge, or even if there is no edge.
+  SynchronousEmitter<LogicValueChanged> get glitch => _wire.glitch;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed.
+  Stream<LogicValueChanged> get changed => _wire.changed;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get negedge => _wire.negedge;
+
+  /// A [Stream] of [LogicValueChanged] events which triggers at most once
+  /// per [Simulator] tick, iff the value of the [Logic] has changed
+  /// from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Stream<LogicValueChanged> get posedge => _wire.posedge;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick.
+  Future<LogicValueChanged> get nextChanged => _wire.changed.first;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `0` to `1`.
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Future<LogicValueChanged> get nextPosedge => _wire.posedge.first;
+
+  /// Triggers at most once, the next time that this [Logic] changes
+  /// value at the end of a [Simulator] tick from `1` to `0`.
+  ///
+  /// Throws an exception if [width] is not `1`.
+  Future<LogicValueChanged> get nextNegedge => _wire.negedge.first;
+
+  /// The [Module] that this [Logic] exists within.
+  ///
+  /// This only gets populated after its parent [Module], if it exists,
+  /// has been built.
+  Module? get parentModule => _parentModule;
+  Module? _parentModule;
+
+  /// Sets the value of [parentModule] to [newParentModule].
+  ///
+  /// This should *only* be called by [Module.build()].  It is used to
+  /// optimize search.
+  @protected
+  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+
+  /// Returns true iff this signal is an input of its parent [Module].
+  ///
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
+  bool get isInput => _parentModule?.isInput(this) ?? false;
+
+  /// Returns true iff this signal is an output of its parent [Module].
+  ///
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
+  bool get isOutput => _parentModule?.isOutput(this) ?? false;
+
+  /// Returns true iff this signal is an input or output of its parent [Module].
+  ///
+  /// Note: [parentModule] is not populated until after its parent [Module],
+  /// if it exists, has been built. If no parent [Module] exists, returns false.
+  bool get isPort => isInput || isOutput;
+
+  /// Constructs a new [Logic] named [name] with [width] bits.
+  ///
+  /// The default value for [width] is 1.  The [name] should be synthesizable
+  /// to the desired output (e.g. SystemVerilog).
+  Logic({String? name, int width = 1})
+      : name = name == null ? 's${_signalIdx++}' : Sanitizer.sanitizeSV(name),
+        _wire = _Wire(width: width) {
+    if (width < 0) {
+      throw Exception('Logic width must be greater than or equal to 0.');
+    }
+  }
+
+  @override
+  String toString() => 'Logic($width): $name';
+
+  /// Throws an exception if this [Logic] cannot be connected to another signal.
+  void _assertConnectable(Logic other) {
+    if (_srcConnection != null) {
+      throw Exception(
+          'This signal "$this" is already connected to "$srcConnection",'
+          ' so it cannot be connected to "$other".');
+    }
+    if (_unassignable) {
+      throw Exception('This signal "$this" has been marked as unassignable.  '
+          'It may be a constant expression or otherwise should'
+          ' not be assigned.');
+    }
+  }
+
+  /// Injects a value onto this signal in the current [Simulator] tick.
+  ///
+  /// This function calls [put()] in [Simulator.injectAction()].
+  void inject(dynamic val, {bool fill = false}) =>
+      _wire.inject(val, fill: fill);
+
+  /// Puts a value [val] onto this signal, which may or may not be picked up
+  /// for [changed] in this [Simulator] tick.
+  ///
+  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
+  ///
+  /// This function is used for propogating glitches through connected signals.
+  /// Use this function for custom definitions of [Module] behavior.
+  ///
+  /// If [fill] is set, all bits of the signal gets set to [val], similar
+  /// to `'` in SystemVerilog.
+  void put(dynamic val, {bool fill = false}) => _wire.put(val, fill: fill);
+
+  /// Connects this [Logic] directly to [other].
+  ///
+  /// Every time [other] transitions (`glitch`es), this signal will transition
+  /// the same way.
+  void gets(Logic other) {
+    _assertConnectable(other);
+
+    _connect(other);
+
+    _srcConnection = other;
+    other._registerConnection(this);
+  }
+
+  /// Handles the actual connection of this [Logic] to [other].
+  void _connect(Logic other) {
+    _unassignable = true;
+    _updateWire(other._wire);
+  }
+
+  /// Updates the current active [_Wire] for this [Logic] and also
+  /// notifies all downstream [Logic]s of the new source [_Wire].
+  void _updateWire(_Wire newWire) {
+    newWire._adopt(_wire);
+    _wire = newWire;
+
+    for (final dstConnection in dstConnections) {
+      dstConnection._updateWire(newWire);
+    }
+  }
+
+  /// Connects this [Logic] directly to another [Logic].
+  ///
+  /// This is shorthand for [gets()].
+  void operator <=(Logic other) => gets(other);
+
+  /// Logical bitwise NOT.
+  Logic operator ~() => NotGate(this).out;
+
+  /// Logical bitwise AND.
+  Logic operator &(Logic other) => And2Gate(this, other).out;
+
+  /// Logical bitwise OR.
+  Logic operator |(Logic other) => Or2Gate(this, other).out;
+
+  /// Logical bitwise XOR.
+  Logic operator ^(Logic other) => Xor2Gate(this, other).out;
+
+  /// Addition.
+  ///
+  /// WARNING: Signed math is not fully tested.
+  Logic operator +(dynamic other) => Add(this, other).out;
+
+  /// Subtraction.
+  ///
+  /// WARNING: Signed math is not fully tested.
+  Logic operator -(dynamic other) => Subtract(this, other).out;
+
+  /// Multiplication.
+  ///
+  /// WARNING: Signed math is not fully tested.
+  Logic operator *(dynamic other) => Multiply(this, other).out;
+
+  /// Division.
+  ///
+  /// WARNING: Signed math is not fully tested.
+  Logic operator /(dynamic other) => Divide(this, other).out;
+
+  /// Modulo operation.
+  Logic operator %(dynamic other) => Modulo(this, other).out;
+
+  /// Arithmetic right-shift.
+  Logic operator >>(dynamic other) => ARShift(this, other).out;
+
+  /// Logical left-shift.
+  Logic operator <<(dynamic other) => LShift(this, other).out;
+
+  /// Logical right-shift.
+  Logic operator >>>(dynamic other) => RShift(this, other).out;
+
+  /// Unary AND.
+  Logic and() => AndUnary(this).out;
+
+  /// Unary OR.
+  Logic or() => OrUnary(this).out;
+
+  /// Unary XOR.
+  Logic xor() => XorUnary(this).out;
+
+  /// Logical equality.
+  Logic eq(dynamic other) => Equals(this, other).out;
+
+  /// Less-than.
+  Logic lt(dynamic other) => LessThan(this, other).out;
+
+  /// Less-than-or-equal-to.
+  Logic lte(dynamic other) => LessThanOrEqual(this, other).out;
+
+  /// Greater-than.
+  Logic operator >(dynamic other) => GreaterThan(this, other).out;
+
+  /// Greater-than-or-equal-to.
+  Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
+
+  /// Conditional assignment operator.
+  ///
+  /// Represents conditionally asigning the value of another signal to this.
+  /// Returns an instance of [ConditionalAssign] to be be passed to a
+  /// [Conditional].
+  ConditionalAssign operator <(dynamic other) {
+    if (_unassignable) {
+      throw Exception('This signal "$this" has been marked as unassignable.  '
+          'It may be a constant expression or otherwise'
+          ' should not be assigned.');
+    }
+
+    if (other is Logic) {
+      return ConditionalAssign(this, other);
+    } else {
+      return ConditionalAssign(this, Const(other, width: width));
     }
   }
 
@@ -574,18 +714,19 @@ class Logic {
   /// The [newWidth] must be greater than or equal to the current width or
   /// an exception will be thrown.
   Logic signExtend(int newWidth) {
-    if (newWidth < width) {
-      throw Exception(
-          'New width $newWidth must be greater than or equal to width $width.');
+    if (width == 1) {
+      return ReplicationOp(this, newWidth).replicated;
+    } else if (newWidth > width) {
+      return [
+        ReplicationOp(this[width - 1], newWidth - width).replicated,
+        this,
+      ].swizzle();
+    } else if (newWidth == width) {
+      return this;
     }
-    return [
-      mux(
-        this[width - 1],
-        Const(1, width: newWidth - width, fill: true),
-        Const(0, width: newWidth - width),
-      ),
-      this,
-    ].swizzle();
+
+    throw Exception(
+        'New width $newWidth must be greater than or equal to width $width.');
   }
 
   /// Returns a copy of this [Logic] with the bits starting from [startIndex]

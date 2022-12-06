@@ -10,6 +10,30 @@
 
 part of values;
 
+/// Extends [BigInt] with utility functions that are useful for dealing with
+/// large bit vectors and conversion between types.
+extension BigLogicValueBigIntUtilities on BigInt {
+  /// Returns this [BigInt] as an [int].
+  ///
+  /// Always interprets the number as unsigned, and thus never clamps to fit.
+  int toIntUnsigned(int width) {
+    if (width > LogicValue._INT_BITS) {
+      throw Exception('Cannot convert to BigInt when width $width'
+          ' is greater than ${LogicValue._INT_BITS}');
+    } else if (width == LogicValue._INT_BITS) {
+      // When width is 64, `BigInt.toInt()` will clamp values assuming that
+      // it's a signed number.  To avoid that, if the width is 64, then do the
+      // conversion in two 32-bit chunks and bitwise-or them together.
+      const maskWidth = 32;
+      final mask = _BigLogicValue._maskOfWidth(maskWidth);
+      return (this & mask).toInt() |
+          (((this >> maskWidth) & mask).toInt() << maskWidth);
+    } else {
+      return toInt();
+    }
+  }
+}
+
 /// A [LogicValue] whose number of bits is greater than the size of an [int].
 ///
 /// The implementation is similar to [_SmallLogicValue], except it uses
@@ -64,8 +88,9 @@ class _BigLogicValue extends LogicValue {
           (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
     } else {
       return _SmallLogicValue(
-          ((_value >> start) & _maskOfWidth(newWidth)).toInt(),
-          ((_invalid >> start) & _maskOfWidth(newWidth)).toInt(),
+          ((_value >> start) & _maskOfWidth(newWidth)).toIntUnsigned(newWidth),
+          ((_invalid >> start) & _maskOfWidth(newWidth))
+              .toIntUnsigned(newWidth),
           newWidth);
     }
   }
@@ -178,4 +203,16 @@ class _BigLogicValue extends LogicValue {
               shamt,
           _invalid >> shamt,
           width);
+
+  @override
+  BigInt get _bigIntInvalid => _invalid;
+
+  @override
+  BigInt get _bigIntValue => _value;
+
+  @override
+  int get _intInvalid => _invalid.toIntUnsigned(width);
+
+  @override
+  int get _intValue => _value.toIntUnsigned(width);
 }
