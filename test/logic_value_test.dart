@@ -267,6 +267,13 @@ void main() {
           equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
     });
   });
+
+  test('LogicValue.of example', () {
+    final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
+    final lv = LogicValue.of(it);
+    expect(lv.toString(), equals("6'b01xzx0"));
+  });
+
   group('unary operations (including "to")', () {
     test('toMethods', () {
       expect(
