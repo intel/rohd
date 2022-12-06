@@ -407,6 +407,9 @@ abstract class Module {
     } else {
       if (!dontAddSignal && !isOutput(signal) && subModule == null) {
         _addInternalSignal(signal);
+        for (final dstConnection in signal.dstConnections) {
+          await _traceInputForModuleContents(dstConnection);
+        }
       }
       if (signal.srcConnection != null) {
         await _traceOutputForModuleContents(signal.srcConnection!);

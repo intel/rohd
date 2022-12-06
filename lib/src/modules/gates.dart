@@ -530,7 +530,7 @@ class XorUnary extends _OneInputUnaryGate {
 /// A logical right-shift module.
 class RShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (logically) by [shiftAmount].
-  RShift(Logic in_, Logic shiftAmount, {String name = 'rshift'})
+  RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
 }
@@ -539,7 +539,7 @@ class RShift extends _ShiftGate {
 class ARShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (arithmetically) by
   /// [shiftAmount].
-  ARShift(Logic in_, Logic shiftAmount, {String name = 'arshift'})
+  ARShift(Logic in_, dynamic shiftAmount, {String name = 'arshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
             name: name, signed: true);
@@ -548,7 +548,7 @@ class ARShift extends _ShiftGate {
 /// A logical left-shift module.
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
-  LShift(Logic in_, Logic shiftAmount, {String name = 'lshift'})
+  LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount, name: name);
 }
 
@@ -722,5 +722,60 @@ class IndexGate extends Module with InlineSystemVerilog {
     final target = inputs[_originalName]!;
     final idx = inputs[_indexName]!;
     return '$target[$idx]';
+  }
+}
+
+/// A Replication Operator [Module].
+///
+/// It takes two inputs (bit and width) and outputs a [Logic] representing
+/// the input bit repeated over the input width
+class ReplicationOp extends Module with InlineSystemVerilog {
+  // input component name
+  final String _inputName;
+  // output component name
+  final String _outputName;
+  // Width of the output signal
+  final int _width;
+
+  /// The primary input to this gate.
+  Logic get _input => input(_inputName);
+
+  /// The output of this gate.
+  Logic get replicated => output(_outputName);
+
+  /// Constructs a ReplicationOp
+  ///
+  /// The bit [bit] will be repeated over the [_width] as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
+  ReplicationOp(Logic bit, this._width)
+      : _inputName = 'input_${bit.name}',
+        _outputName = Module.unpreferredName('output_${bit.name}') {
+    addInput(_inputName, bit);
+    addOutput(_outputName, width: _width);
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    _input.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+    replicated.put(_input.value, fill: true);
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
+    }
+
+    final target = inputs[_inputName]!;
+    final width = _width;
+    return '{$width{$target}}';
   }
 }

@@ -298,19 +298,21 @@ class _SynthModuleDefinition {
   @override
   String toString() => "module name: '${module.name}'";
 
-  late final Uniquifier _synthLogicNameUniquifier;
+  /// Used to uniquify any identifiers, including signal names
+  /// and module instances.
+  late final Uniquifier _synthInstantiationNameUniquifier;
+
   String _getUniqueSynthLogicName(String? initialName, bool portName) {
     if (portName && initialName == null) {
       throw Exception('Port name cannot be null.');
     }
-    return _synthLogicNameUniquifier.getUniqueName(
+    return _synthInstantiationNameUniquifier.getUniqueName(
         initialName: initialName, reserved: portName);
   }
 
-  final Uniquifier _synthSubModuleInstantiationNameUniquifier = Uniquifier();
   String _getUniqueSynthSubModuleInstantiationName(
           String? initialName, bool reserved) =>
-      _synthSubModuleInstantiationNameUniquifier.getUniqueName(
+      _synthInstantiationNameUniquifier.getUniqueName(
           initialName: initialName, nullStarter: 'm', reserved: reserved);
 
   _SynthLogic? _getSynthLogic(Logic? logic, bool allowPortName) {
@@ -328,7 +330,7 @@ class _SynthModuleDefinition {
   }
 
   _SynthModuleDefinition(this.module) {
-    _synthLogicNameUniquifier = Uniquifier(
+    _synthInstantiationNameUniquifier = Uniquifier(
         reservedNames: {...module.inputs.keys, ...module.outputs.keys});
 
     // start by traversing output signals

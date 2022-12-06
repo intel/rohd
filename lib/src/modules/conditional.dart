@@ -371,6 +371,7 @@ class Sequential extends _Always {
   void _execute() {
     var anyClkInvalid = false;
     var anyClkPosedge = false;
+
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as
       // it currently does
@@ -810,6 +811,11 @@ class ElseIf {
 
   /// If [condition] is 1, then [then] will be executed.
   ElseIf(this.condition, this.then);
+
+  /// If [condition] is 1, then [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  ElseIf.s(Logic condition, Conditional then) : this(condition, [then]);
 }
 
 /// A conditional block to execute only if `condition` is satisified.
@@ -941,6 +947,14 @@ class If extends Conditional {
 
   /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
   If(this.condition, {this.then = const [], this.orElse = const []});
+
+  /// If [condition] is 1, then [then] is excutes,
+  /// otherwise [orElse] is executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  /// An optional [orElse] condition can be passed.
+  If.s(Logic condition, Conditional then, [Conditional? orElse])
+      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
 
   @override
   List<Logic> getReceivers() {

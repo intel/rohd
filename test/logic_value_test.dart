@@ -838,4 +838,27 @@ void main() {
           equals(LogicValue.x));
     });
   });
+
+  group('64-bit conversions', () {
+    test(
+        '64-bit LogicValues larger than maximum positive value on integer'
+        ' are properly converted when converted from BigInt', () {
+      final extraWide = LogicValue.ofBigInt(
+        BigInt.parse('f' * 16 + 'f0' * 8, radix: 16),
+        128,
+      );
+      final smaller = extraWide.getRange(0, 64);
+      expect(smaller.toInt(), equals(0xf0f0f0f0f0f0f0f0));
+    });
+    test(
+        '64-bit BigInts larger than max pos int value constructing'
+        ' a LogicValue is correct', () {
+      final bigInt64Lv =
+          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), 64);
+      expect(bigInt64Lv.toInt(), equals(0xfafafafafafafafa));
+    });
+    test('64-bit binary negatives are converted properly with bin', () {
+      expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+    });
+  });
 }
