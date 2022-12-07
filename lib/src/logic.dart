@@ -631,6 +631,8 @@ class Logic {
   /// value will be reversed relative to the original signal.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   ///
+  /// When, the signal width is 1, [endIndex] and [startIndex] will be ignored.
+  ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
   /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
