@@ -490,9 +490,14 @@ class Logic {
   /// Updates the current active [_Wire] for this [Logic] and also
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
+    // first, propagate the new value (if it's different) downstream
+    _wire.put(newWire.value);
+
+    // then, replace the wire
     newWire._adopt(_wire);
     _wire = newWire;
 
+    // tell all downstream signals to update to the new wire as well
     for (final dstConnection in dstConnections) {
       dstConnection._updateWire(newWire);
     }
