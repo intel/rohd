@@ -376,6 +376,36 @@ void main() {
   });
 
   test(
+      'should return true on simcompare when '
+      'execute if.s() for single if...else conditional without orElse.',
+      () async {
+    final mod = SingleIfModule(Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1}, {'q': 1}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    expect(simResult, equals(true));
+  });
+
+  test(
+      'should return true on simcompare when '
+      'execute if.s() for single if...else conditional with orElse.', () async {
+    final mod = SingleIfOrElseModule(Logic(), Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1}, {'q': 1}),
+      Vector({'a': 0}, {'x': 1}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    expect(simResult, equals(true));
+  });
+
+  test(
       'should return SignalRedrivenException when there are multiple drivers '
       'for a flop.', () async {
     final mod =
