@@ -129,13 +129,13 @@ class SingleElseIfBlockModule extends Module {
 
 class CombModule extends Module {
   CombModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
-    a = addInput('a', a); // 0
-    b = addInput('b', b); // 0
+    a = addInput('a', a);
+    b = addInput('b', b);
     final y = addOutput('y');
     final z = addOutput('z');
     final x = addOutput('x');
 
-    d = addInput('d', d, width: d.width); // 5
+    d = addInput('d', d, width: d.width);
     final q = addOutput('q', width: d.width);
 
     Combinational([
