@@ -541,6 +541,7 @@ class ConditionalAssign extends Conditional {
   @override
   void execute(Set<Logic> drivenSignals) {
     receiverOutput(receiver).put(driverValue(driver));
+
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
       drivenSignals.add(receiver);
     }

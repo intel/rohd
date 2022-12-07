@@ -129,13 +129,13 @@ class SingleElseIfBlockModule extends Module {
 
 class CombModule extends Module {
   CombModule(Logic a, Logic b, Logic d) : super(name: 'combmodule') {
-    a = addInput('a', a);
-    b = addInput('b', b);
+    a = addInput('a', a); // 0
+    b = addInput('b', b); // 0
     final y = addOutput('y');
     final z = addOutput('z');
     final x = addOutput('x');
 
-    d = addInput('d', d, width: d.width);
+    d = addInput('d', d, width: d.width); // 5
     final q = addOutput('q', width: d.width);
 
     Combinational([
@@ -235,6 +235,22 @@ class SignalRedrivenSequentialModule extends Module {
         q < k,
         q < d,
       ])
+    ]);
+  }
+}
+
+class SignalRedrivenSequentialModuleWithX extends Module {
+  SignalRedrivenSequentialModuleWithX(Logic a, Logic c, Logic d)
+      : super(name: 'redrivenwithvalidinvalidsignal') {
+    a = addInput('a', a);
+    c = addInput('c', c);
+    d = addInput('d', d);
+
+    final b = addOutput('b');
+
+    Sequential(SimpleClockGenerator(10).clk, [
+      If(a, then: [b < c]),
+      If(d, then: [b < c])
     ]);
   }
 }
@@ -393,6 +409,23 @@ void main() {
       fail('Exception not thrown!');
     } on Exception catch (e) {
       expect(e.runtimeType, equals(NonSupportedTypeException));
+    }
+  });
+
+  test(
+      'should return SignalRedrivenException when driven with '
+      'x signals and valid signals.', () async {
+    final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
+    ];
+
+    try {
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      fail('Exception not thrown!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(SignalRedrivenException));
     }
   });
 }
