@@ -448,7 +448,7 @@ void main() {
     final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
     await mod.build();
     final vectors = [
-      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
+      Vector({'a': LogicValue.x, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
       Vector({'a': 1, 'd': 1, 'c': 1}, {'b': 1}),
     ];
 
