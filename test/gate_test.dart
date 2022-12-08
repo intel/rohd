@@ -454,21 +454,9 @@ void main() {
             {'index_output': LogicValue.x}),
         Vector({'original': LogicValue.x, 'index': 0},
             {'index_output': LogicValue.x}),
-        Vector({'original': LogicValue.x, 'index': 1},
-            {'index_output': LogicValue.x}),
-        Vector({'original': LogicValue.x, 'index': 2},
-            {'index_output': LogicValue.x}),
         Vector({'original': LogicValue.one, 'index': 0},
             {'index_output': LogicValue.one}),
-        Vector({'original': LogicValue.one, 'index': 1},
-            {'index_output': LogicValue.one}),
-        Vector({'original': LogicValue.one, 'index': 2},
-            {'index_output': LogicValue.one}),
         Vector({'original': LogicValue.zero, 'index': 0},
-            {'index_output': LogicValue.zero}),
-        Vector({'original': LogicValue.zero, 'index': 1},
-            {'index_output': LogicValue.zero}),
-        Vector({'original': LogicValue.zero, 'index': 2},
             {'index_output': LogicValue.zero})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
@@ -476,6 +464,17 @@ void main() {
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
           signalToWidthMap: {'original': 1, 'index': 8});
       expect(simResult, equals(true));
+    });
+
+    test('Index Logic(1bit) by invalid index [Logic] test', () async {
+      final testLogicOne = Logic()..put(LogicValue.one);
+      final testLogicZero = Logic()..put(LogicValue.zero);
+      final testLogicInvalid = Logic()..put(LogicValue.x);
+      final invalidIndex = Logic(width: 8)..put(1);
+
+      expect(() => testLogicZero[invalidIndex], throwsException);
+      expect(() => testLogicOne[invalidIndex], throwsException);
+      expect(() => testLogicInvalid[invalidIndex], throwsException);
     });
 
     test('Index Logic by an Integer test', () {
@@ -486,16 +485,14 @@ void main() {
 
       expect(testLogic[0].value.toInt(), 0);
       expect(testLogic[2].value.toInt(), 1);
-      expect(() => testLogic[10], throwsException);
-
       expect(testLogicOne[0].value.toInt(), 1);
-      expect(testLogicOne[1].value.toInt(), 1);
-
       expect(testLogicZero[0].value.toInt(), 0);
-      expect(testLogicZero[1].value.toInt(), 0);
-
       expect(testLogicInvalid[0].value, LogicValue.x);
-      expect(testLogicInvalid[1].value, LogicValue.x);
+
+      expect(() => testLogic[10], throwsException);
+      expect(() => testLogicZero[1], throwsException);
+      expect(() => testLogicOne[1], throwsException);
+      expect(() => testLogicInvalid[1], throwsException);
     });
 
     test('Index Logic by does not accept input other than int or Logic', () {
