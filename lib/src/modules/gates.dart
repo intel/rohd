@@ -707,14 +707,10 @@ class IndexGate extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_original.width == 1) {
-      selection.put(_original.value);
-      return;
-    }
-
-    if (_index.hasValidValue()) {
+    if (_index.hasValidValue() && _index.value.toInt() < _original.width) {
       final indexVal = _index.value.toInt();
-      selection.put(_original.value.getRange(indexVal, indexVal + 1));
+      final outputValue = _original.value.getRange(indexVal, indexVal + 1);
+      selection.put(outputValue);
     } else {
       selection.put(LogicValue.x);
     }
