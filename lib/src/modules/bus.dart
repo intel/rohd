@@ -47,8 +47,7 @@ class BusSubset extends Module with InlineSystemVerilog {
           'equal to 0.');
     }
     // If the +ve indices are more than Logic bus width, Index out of bounds
-    if (bus.width > 1 &&
-        (endIndex > bus.width - 1 || startIndex > bus.width - 1)) {
+    if (endIndex > bus.width - 1 || startIndex > bus.width - 1) {
       throw Exception(
           'Index out of bounds, indices $startIndex and $endIndex must be less'
           ' than ${bus.width}');
@@ -101,7 +100,7 @@ class BusSubset extends Module with InlineSystemVerilog {
     }
     final a = inputs[_original]!;
 
-    // When, input lenght is 1, ignore startIndex and endIndex
+    // When, input width is 1, ignore startIndex and endIndex
     if (original.width == 1) {
       return a;
     }
