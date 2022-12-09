@@ -575,30 +575,88 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
-  /// Pre-Increment (++var) or var+=incrVal
-  // ignore: prefer_expression_function_bodies
-  ConditionalAssign preIncr({Logic? incrVal}) {
-    return this < ((incrVal != null) ? this + incrVal : this + Const(1));
-  }
+  /// Shorthand Increment.
+  /// By default for a [Logic] var, if no [incrVal] is provided result is ++var
+  /// else result is var+=[incrVal]
+  ///
+  /// ```dart
+  ///
+  /// Logic a = Logic(width: 8);
+  /// Logic b = Logic(width: 8);
+  /// a = addInput('a', a, width: 8);
+  /// b = addInput('b', b, width: 8);
+  /// final piOut = addOutput('piOut', width: 8);
+  ///
+  /// Combinational([
+  ///   piOut < a,
+  ///   piOut.incr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign incr([Logic? incrVal]) =>
+      this < ((incrVal != null) ? this + incrVal : this + Const(1));
 
-  /// Pre-Decrement (--var)
-  // ignore: prefer_expression_function_bodies
-  ConditionalAssign preDecr({Logic? decrVal}) {
-    return this < ((decrVal != null) ? this - decrVal : this - Const(1));
-  }
+  /// Shorthand Decrement.
+  /// By default for a [Logic] var, if no [decrVal] is provided result is --var
+  /// else result is var-=[decrVal]
+  ///
+  /// ```dart
+  ///
+  /// Logic a = Logic(width: 8);
+  /// Logic b = Logic(width: 8);
+  /// a = addInput('a', a, width: 8);
+  /// b = addInput('b', b, width: 8);
+  /// final pdOut = addOutput('pdOut', width: 8);
+  ///
+  /// Combinational([
+  ///   pdOut < a,
+  ///   pdOut.decr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign decr([Logic? decrVal]) =>
+      this < ((decrVal != null) ? this - decrVal : this - Const(1));
 
-  /// Shorthand for multiplication assign (++var)
-  // ignore: prefer_expression_function_bodies
-  ConditionalAssign mulAssign(Logic mulVal) {
-    return this < this * mulVal;
-  }
+  /// Shorthand for multiplication & re-assign. For [Logic] var this is
+  /// var*=[mulVal]
+  ///
+  /// ```dart
+  ///
+  /// Logic a = Logic(width: 8);
+  /// Logic b = Logic(width: 8);
+  /// a = addInput('a', a, width: 8);
+  /// b = addInput('b', b, width: 8);
+  /// final maOut = addOutput('maOut', width: 8);
+  ///
+  /// Combinational([
+  ///   maOut < a,
+  ///   maOut.mulAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign mulAssign(Logic mulVal) => this < this * mulVal;
 
-  /// Pre-Increment (++var)
-  // ignore: prefer_expression_function_bodies
-  ConditionalAssign divAssign(Logic? divVal) {
-    return this <
-        this / divVal; // [TODO] This needs to be tested on `/` operator
-  }
+  /// Shorthand for division & re-assign. For a [Logic] var this is var/=[divVal]
+  ///
+  /// ```dart
+  ///
+  /// Logic a = Logic(width: 8);
+  /// Logic b = Logic(width: 8);
+  /// a = addInput('a', a, width: 8);
+  /// b = addInput('b', b, width: 8);
+  /// final daOut = addOutput('daOut', width: 8);
+  ///
+  /// Combinational([
+  ///   daOut < a,
+  ///   daOut.divAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign divAssign(Logic divVal) => this < this / divVal;
 
   /// Conditional assignment operator.
   ///
