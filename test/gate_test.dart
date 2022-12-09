@@ -91,6 +91,17 @@ class MuxWrapper extends Module {
   }
 }
 
+class IndexGateTestModule extends Module {
+  IndexGateTestModule(Logic original, Logic index)
+      : super(name: 'indexgatetestmodule') {
+    original = addInput('original', original, width: original.width);
+    index = addInput('index', index, width: index.width);
+    final bitSet = addOutput('index_output');
+
+    bitSet <= original[index];
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -417,6 +428,38 @@ void main() {
       final simResult = SimCompare.iverilogVector(
           gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
       expect(simResult, equals(true));
+    });
+
+    test('Index Logic by Logic test', () async {
+      final gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
+      await gtm.build();
+      final vectors = [
+        Vector({'original': 14, 'index': 0}, {'index_output': 0}),
+        Vector({'original': 14, 'index': 2}, {'index_output': 1}),
+        Vector({'original': 14, 'index': LogicValue.x},
+            {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.x, 'index': LogicValue.x},
+            {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.x, 'index': 0},
+            {'index_output': LogicValue.x})
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {'original': 8, 'index': 8});
+      expect(simResult, equals(true));
+    });
+
+    test('Index Logic by an Integer test', () {
+      final testLogic = Logic(width: 8)..put(14);
+      expect(testLogic[0].value.toInt(), 0);
+      expect(testLogic[2].value.toInt(), 1);
+      expect(() => testLogic[10], throwsException);
+    });
+
+    test('Index Logic by does not accept input other than int or Logic', () {
+      final testLogic = Logic(width: 8)..put(14);
+      expect(() => testLogic[10.05], throwsException);
     });
   });
 }

@@ -18,11 +18,12 @@ class ExtendModule extends Module {
   ExtendModule(Logic a, int newWidth, ExtendType extendType) {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: newWidth);
-
-    b <=
-        (extendType == ExtendType.zero
-            ? a.zeroExtend(newWidth)
-            : a.signExtend(newWidth));
+    // Make it debug-able
+    if (extendType == ExtendType.zero) {
+      b <= a.zeroExtend(newWidth);
+    } else {
+      b <= a.signExtend(newWidth);
+    }
   }
 }
 
@@ -41,13 +42,15 @@ void main() {
     tearDown(Simulator.reset);
     group('extend', () {
       Future<void> extendVectors(
-          List<Vector> vectors, int newWidth, ExtendType extendType) async {
-        final mod = ExtendModule(Logic(width: 8), newWidth, extendType);
+          List<Vector> vectors, int newWidth, ExtendType extendType,
+          {int originalWidth = 8}) async {
+        final mod =
+            ExtendModule(Logic(width: originalWidth), newWidth, extendType);
         await mod.build();
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(
             mod.generateSynth(), mod.runtimeType.toString(), vectors,
-            signalToWidthMap: {'a': 8, 'b': newWidth});
+            signalToWidthMap: {'a': originalWidth, 'b': newWidth});
         expect(simResult, equals(true));
       }
 
@@ -86,6 +89,22 @@ void main() {
         await extendVectors([
           Vector({'a': 0xff}, {'b': 0xfff}),
         ], 12, ExtendType.sign);
+      });
+      test('sign extend for invalid Logic pads LogicValue.x', () async {
+        await extendVectors([
+          Vector({'a': LogicValue.ofString('x0100100')},
+              {'b': LogicValue.ofString('xxxxx0100100')}),
+        ], 12, ExtendType.sign);
+      });
+      test('sign extend single bit(0) pads 0s', () async {
+        await extendVectors([
+          Vector({'a': LogicValue.zero}, {'b': 0x000}),
+        ], 12, ExtendType.sign, originalWidth: 1);
+      });
+      test('sign extend single bit(1) pads 0s', () async {
+        await extendVectors([
+          Vector({'a': LogicValue.one}, {'b': 0xfff}),
+        ], 12, ExtendType.sign, originalWidth: 1);
       });
     });
 
