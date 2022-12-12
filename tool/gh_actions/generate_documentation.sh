@@ -21,3 +21,6 @@ echo "${output}"
 
 # In case of problems, the searched substring will not be found.
 echo "${output}" | grep --silent 'no issues found'
+
+# copy and replace the documentation generated to the website
+yes | cp -rf doc/api/ doc/website/
