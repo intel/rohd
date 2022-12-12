@@ -23,4 +23,4 @@ echo "${output}"
 echo "${output}" | grep --silent 'no issues found'
 
 # copy and replace the documentation generated to the website
-yes | cp -rf doc/api/ doc/website/
+cp -rf doc/api/ doc/website/
