@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="rohd library API docs, for the Dart programming language.">
+  <title>rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../" data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">rohd</a></li>
+    <li class="self-crumb">rohd library</li>
+  </ol>
+  <div class="self-name">rohd</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      <div>
+<h1><span class="kind-library">rohd</span> library 
+    <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
+ 
+</h1></div>
+
+    
+<section class="desc markdown">
+  <p>Copyright (C) 2021-2022 Intel Corporation
+SPDX-License-Identifier: BSD-3-Clause</p>
+</section>
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+
+      <dl>
+        <dt id="Add">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Add-class.html">Add</a></span> 
+
+</dt>
+<dd>
+  A two-input addition module.
+</dd>
+
+        <dt id="And2Gate">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/And2Gate-class.html">And2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input AND gate.
+</dd>
+
+        <dt id="AndUnary">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/AndUnary-class.html">AndUnary</a></span> 
+
+</dt>
+<dd>
+  A unary AND gate.
+</dd>
+
+        <dt id="ARShift">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/ARShift-class.html">ARShift</a></span> 
+
+</dt>
+<dd>
+  An arithmetic right-shift module.
+</dd>
+
+        <dt id="BusSubset">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus/BusSubset-class.html">BusSubset</a></span> 
+
+</dt>
+<dd>
+  A <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> which gives access to a subset range of signals of the input.
+</dd>
+
+        <dt id="Case">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Case-class.html">Case</a></span> 
+
+</dt>
+<dd>
+  A block of <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseItem-class.html">CaseItem</a>s where only the one with a matching <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseItem/value.html">CaseItem.value</a>
+is executed.
+</dd>
+
+        <dt id="CaseItem">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseItem-class.html">CaseItem</a></span> 
+
+</dt>
+<dd>
+  Represents a single case within a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Case-class.html">Case</a> block.
+</dd>
+
+        <dt id="CaseZ">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseZ-class.html">CaseZ</a></span> 
+
+</dt>
+<dd>
+  A special version of <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Case-class.html">Case</a> which can do wildcard matching via <code>z</code> in
+the expression.
+</dd>
+
+        <dt id="Combinational">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Combinational-class.html">Combinational</a></span> 
+
+</dt>
+<dd>
+  Represents a block of combinational logic.
+</dd>
+
+        <dt id="Conditional">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Conditional-class.html">Conditional</a></span> 
+
+</dt>
+<dd>
+  Represents an some logical assignments or actions that will only happen
+under certain conditions.
+</dd>
+
+        <dt id="ConditionalAssign">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ConditionalAssign-class.html">ConditionalAssign</a></span> 
+
+</dt>
+<dd>
+  An assignment that only happens under certain conditions.
+</dd>
+
+        <dt id="Const">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Const-class.html">Const</a></span> 
+
+</dt>
+<dd>
+  Represents a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a> that never changes value.
+</dd>
+
+        <dt id="Divide">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Divide-class.html">Divide</a></span> 
+
+</dt>
+<dd>
+  A two-input divison module.
+</dd>
+
+        <dt id="Else">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Else-class.html">Else</a></span> 
+
+</dt>
+<dd>
+  A conditional block to execute only if <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ElseIf/condition.html">condition</a> is satisified.
+</dd>
+
+        <dt id="ElseIf">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ElseIf-class.html">ElseIf</a></span> 
+
+</dt>
+<dd>
+  A conditional block to execute only if <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ElseIf/condition.html">condition</a> is satisified.
+</dd>
+
+        <dt id="Equals">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Equals-class.html">Equals</a></span> 
+
+</dt>
+<dd>
+  A two-input equality comparison module.
+</dd>
+
+        <dt id="ExternalSystemVerilogModule">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></span> 
+
+</dt>
+<dd>
+  Represents a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> whose definition exists outside of this framework
+in SystemVerilog.
+</dd>
+
+        <dt id="FlipFlop">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/FlipFlop-class.html">FlipFlop</a></span> 
+
+</dt>
+<dd>
+  Represents a single flip-flop with no reset.
+</dd>
+
+        <dt id="GreaterThan">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/GreaterThan-class.html">GreaterThan</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for greater-than.
+</dd>
+
+        <dt id="GreaterThanOrEqual">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for greater-than-or-equal-to.
+</dd>
+
+        <dt id="If">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/If-class.html">If</a></span> 
+
+</dt>
+<dd>
+  Represents a block of code to be conditionally executed, like <code>if</code>/<code>else</code>.
+</dd>
+
+        <dt id="IfBlock">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/IfBlock-class.html">IfBlock</a></span> 
+
+</dt>
+<dd>
+  Represents a chain of blocks of code to be conditionally executed, like
+<code>if</code>/<code>else if</code>/<code>else</code>.
+</dd>
+
+        <dt id="IndexGate">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/IndexGate-class.html">IndexGate</a></span> 
+
+</dt>
+<dd>
+  A two-input bit index gate <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a>.
+</dd>
+
+        <dt id="Interface">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Represents a logical interface to a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a>.
+</dd>
+
+        <dt id="LessThan">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LessThan-class.html">LessThan</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for less-than.
+</dd>
+
+        <dt id="LessThanOrEqual">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LessThanOrEqual-class.html">LessThanOrEqual</a></span> 
+
+</dt>
+<dd>
+  A two-input comparison module for less-than-or-equal-to.
+</dd>
+
+        <dt id="Logic">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a></span> 
+
+</dt>
+<dd>
+  Represents a logical signal of any width which can change values.
+</dd>
+
+        <dt id="LogicValue">
+  <span class="name "><a href="../values/LogicValue-class.html">LogicValue</a></span> 
+
+</dt>
+<dd>
+  An immutable 4-value representation of an arbitrary number of bits.
+</dd>
+
+        <dt id="LogicValueChanged">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/LogicValueChanged-class.html">LogicValueChanged</a></span> 
+
+</dt>
+<dd>
+  Represents the event of a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a> changing value.
+</dd>
+
+        <dt id="LShift">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LShift-class.html">LShift</a></span> 
+
+</dt>
+<dd>
+  A logical left-shift module.
+</dd>
+
+        <dt id="Module">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a></span> 
+
+</dt>
+<dd>
+  Represents a synthesizable hardware entity with clearly defined interface
+boundaries.
+</dd>
+
+        <dt id="Modulo">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Modulo-class.html">Modulo</a></span> 
+
+</dt>
+<dd>
+  A two-input modulo module.
+</dd>
+
+        <dt id="Multiply">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Multiply-class.html">Multiply</a></span> 
+
+</dt>
+<dd>
+  A two-input multiplication module.
+</dd>
+
+        <dt id="Mux">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Mux-class.html">Mux</a></span> 
+
+</dt>
+<dd>
+  A mux (multiplexer) module.
+</dd>
+
+        <dt id="NotGate">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/NotGate-class.html">NotGate</a></span> 
+
+</dt>
+<dd>
+  A gate <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> that performs bit-wise inversion.
+</dd>
+
+        <dt id="Or2Gate">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Or2Gate-class.html">Or2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input OR gate.
+</dd>
+
+        <dt id="OrUnary">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/OrUnary-class.html">OrUnary</a></span> 
+
+</dt>
+<dd>
+  A unary OR gate.
+</dd>
+
+        <dt id="Pipeline">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/Pipeline-class.html">Pipeline</a></span> 
+
+</dt>
+<dd>
+  A simple pipeline, separating arbitrary combinational logic by flop stages.
+</dd>
+
+        <dt id="PipelineStageInfo">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/PipelineStageInfo-class.html">PipelineStageInfo</a></span> 
+
+</dt>
+<dd>
+  Information and accessors associated with a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/Pipeline-class.html">Pipeline</a> stage.
+</dd>
+
+        <dt id="Port">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/Port-class.html">Port</a></span> 
+
+</dt>
+<dd>
+  An extension of <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a> useful for <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/Interface-class.html">Interface</a> definitions.
+</dd>
+
+        <dt id="ReadyValidPipeline">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/ReadyValidPipeline-class.html">ReadyValidPipeline</a></span> 
+
+</dt>
+<dd>
+  A pipeline that implements Ready/Valid protocol at each stage.
+</dd>
+
+        <dt id="ReplicationOp">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/ReplicationOp-class.html">ReplicationOp</a></span> 
+
+</dt>
+<dd>
+  A Replication Operator <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a>.
+</dd>
+
+        <dt id="RShift">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/RShift-class.html">RShift</a></span> 
+
+</dt>
+<dd>
+  A logical right-shift module.
+</dd>
+
+        <dt id="Sequential">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Sequential-class.html">Sequential</a></span> 
+
+</dt>
+<dd>
+  Represents a block of sequential logic.
+</dd>
+
+        <dt id="SimpleClockGenerator">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_clkgen/SimpleClockGenerator-class.html">SimpleClockGenerator</a></span> 
+
+</dt>
+<dd>
+  A very simple clock generator.  Generates a non-synthesizable SystemVerilog
+representation.
+</dd>
+
+        <dt id="Simulator">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/Simulator-class.html">Simulator</a></span> 
+
+</dt>
+<dd>
+  A functional event-based static simulator for logic behavior.
+</dd>
+
+        <dt id="State">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Simple class to initialize each state of the FSM.
+</dd>
+
+        <dt id="StateMachine">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/StateMachine-class.html">StateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Simple class for FSM <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/StateMachine-class.html">StateMachine</a>.
+</dd>
+
+        <dt id="Subtract">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Subtract-class.html">Subtract</a></span> 
+
+</dt>
+<dd>
+  A two-input subtraction module.
+</dd>
+
+        <dt id="Swizzle">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus/Swizzle-class.html">Swizzle</a></span> 
+
+</dt>
+<dd>
+  A <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> that performs concatenation of signals into one bigger <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a>.
+</dd>
+
+        <dt id="SynthBuilder">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synth_builder/SynthBuilder-class.html">SynthBuilder</a></span> 
+
+</dt>
+<dd>
+  A generic class which can convert a module into a generated output using
+a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer/Synthesizer-class.html">Synthesizer</a>.
+</dd>
+
+        <dt id="SynthesisResult">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesis_result/SynthesisResult-class.html">SynthesisResult</a></span> 
+
+</dt>
+<dd>
+  An object representing the output of a Synthesizer
+</dd>
+
+        <dt id="Synthesizer">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer/Synthesizer-class.html">Synthesizer</a></span> 
+
+</dt>
+<dd>
+  An object capable of converting a module into some new output format
+</dd>
+
+        <dt id="SystemVerilogSynthesizer">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></span> 
+
+</dt>
+<dd>
+  A <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer/Synthesizer-class.html">Synthesizer</a> which generates equivalent SystemVerilog as the
+given <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a>.
+</dd>
+
+        <dt id="WaveDumper">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/WaveDumper-class.html">WaveDumper</a></span> 
+
+</dt>
+<dd>
+  A waveform dumper for simulations.
+</dd>
+
+        <dt id="Xor2Gate">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Xor2Gate-class.html">Xor2Gate</a></span> 
+
+</dt>
+<dd>
+  A two-input XOR gate.
+</dd>
+
+        <dt id="XorUnary">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/XorUnary-class.html">XorUnary</a></span> 
+
+</dt>
+<dd>
+  A unary XOR gate.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="mixins">
+      <h2>Mixins</h2>
+
+      <dl>
+        <dt id="CustomSystemVerilog">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
+
+</dt>
+<dd>
+  Allows a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be
+injected in generated output instead of instantiating a separate <code>module</code>.
+</dd>
+
+        <dt id="InlineSystemVerilog">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></span> 
+
+</dt>
+<dd>
+  Allows a <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a> to define a special type of <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a> which
+can be inlined within other SystemVerilog code.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="extensions">
+      <h2>Extensions</h2>
+
+      <dl>
+        <dt id="BigLogicValueBigIntUtilities">
+    <span class="name "><a href="../values/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></span> 
+
+</dt>
+<dd>
+    Extends <a href="https://api.dart.dev/stable/2.18.2/dart-core/BigInt-class.html">BigInt</a> with utility functions that are useful for dealing with
+large bit vectors and conversion between types.
+</dd>
+
+
+        <dt id="LogicSwizzle">
+    <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/LogicSwizzle.html">LogicSwizzle</a></span> 
+
+</dt>
+<dd>
+    Allows lists of <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a>s to be swizzled.
+</dd>
+
+
+        <dt id="LogicValueSwizzle">
+    <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/LogicValueSwizzle.html">LogicValueSwizzle</a></span> 
+
+</dt>
+<dd>
+    Allows lists of <a href="../values/LogicValue-class.html">LogicValue</a>s to be swizzled.
+</dd>
+
+
+      </dl>
+    </section>
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+
+      <dl class="callables">
+        <dt id="bin" class="callable">
+  <span class="name"><a href="../values/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.2/dart-core/int-class.html">int</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Converts a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/2.18.2/dart-core/int-class.html">int</a>.
+  
+
+</dd>
+
+        <dt id="mux" class="callable">
+  <span class="name"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/mux.html">mux</a></span><span class="signature">(<wbr><span class="parameter" id="mux-param-control"><span class="type-annotation">dynamic</span> <span class="parameter-name">control</span>, </span><span class="parameter" id="mux-param-d1"><span class="type-annotation">dynamic</span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="mux-param-d0"><span class="type-annotation">dynamic</span> <span class="parameter-name">d0</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a multiplexer/ternary operation.
+  
+
+</dd>
+
+        <dt id="rswizzle" class="callable">
+  <span class="name deprecated"><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a></span> <span class="parameter-name">signals</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of
+<code>signals</code> is the <em>least</em> significant bit(s).
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `List&lt;Logic&gt;.rswizzle()` instead&#39;)</div>
+
+</dd>
+
+        <dt id="swizzle" class="callable">
+  <span class="name deprecated"><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.2/dart-core/List-class.html">List</a></span> <span class="parameter-name">signals</span></span>)
+    <span class="returntype parameter">&#8594; dynamic</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Performs a concatenation operation on the list of signals, where index 0 of
+<code>signals</code> is the <em>most</em> significant bit(s).
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `List&lt;Logic&gt;.swizzle()` instead&#39;)</div>
+
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+
+      <dl>
+        <dt id="ConditionalType">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ConditionalType.html">ConditionalType</a></span> 
+
+</dt>
+<dd>
+  Controls characteristics about <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Case-class.html">Case</a> blocks.
+</dd>
+
+        <dt id="SimulatorPhase">
+  <span class="name "><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/SimulatorPhase.html">SimulatorPhase</a></span> 
+
+</dt>
+<dd>
+  An enum for the various phases of the <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/Simulator-class.html">Simulator</a>.
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="typedefs">
+      <h2>Typedefs</h2>
+
+      <dl>
+          
+  <dt id="Dumper" class="">
+  <span class="name deprecated"><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/Dumper.html">Dumper</a></span>
+    = <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/WaveDumper-class.html">WaveDumper</a>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated: use <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/WaveDumper-class.html">WaveDumper</a> instead.
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use WaveDumper instead&#39;)</div>
+
+</dd>
+
+
+          
+  <dt id="ExternalModule" class="">
+  <span class="name deprecated"><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalModule.html">ExternalModule</a></span>
+    = <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated - Use <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a> instead.
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use ExternalSystemVerilogModule instead.&#39;)</div>
+
+</dd>
+
+
+          
+  <dt id="FF" class="">
+  <span class="name deprecated"><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/FF.html">FF</a></span>
+    = <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Sequential-class.html">Sequential</a>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated: use <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Sequential-class.html">Sequential</a> instead.
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use Sequential instead&#39;)</div>
+
+</dd>
+
+
+          
+  <dt id="Iff" class="">
+  <span class="name"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Iff.html">Iff</a></span>
+    = <a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ElseIf-class.html">ElseIf</a>
+  </span>
+  
+
+</dt>
+<dd>
+  A conditional block to execute only if <code>condition</code> is satisified.
+  
+
+</dd>
+
+
+          
+  <dt id="LogicValues" class="">
+  <span class="name deprecated"><a class="deprecated" href="../values/LogicValues.html">LogicValues</a></span>
+    = <a href="../values/LogicValue-class.html">LogicValue</a>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated: use <a href="../values/LogicValue-class.html">LogicValue</a> instead.
+  <div class="features">@<a href="https://api.dart.dev/stable/2.18.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `LogicValue` instead.&#39; &#39;  `LogicValues` and `LogicValue` have been merged into one type.&#39;)</div>
+
+</dd>
+
+
+      </dl>
+    </section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="../index.html">rohd</a></li>
+  <li class="self-crumb">rohd library</li>
+</ol>
+
+
+    <h5><span class="package-name">rohd</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus-library.html">bus</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_clkgen/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_clkgen-library.html">clkgen</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional-library.html">conditional</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/file-___home_yquek_home_workspace_rohd-yquek_lib_src_external-library.html">external</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates-library.html">gates</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface-library.html">interface</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic-library.html">logic</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/file-___home_yquek_home_workspace_rohd-yquek_lib_src_module-library.html">module</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_modules/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_modules-library.html">modules</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline-library.html">pipeline</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html">rohd</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator-library.html">simulator</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine-library.html">state_machine</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle-library.html">swizzle</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synth_builder/file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synth_builder-library.html">synth_builder</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesis_result/file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesis_result-library.html">synthesis_result</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer/file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer-library.html">synthesizer</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizers/file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizers-library.html">synthesizers</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog-library.html">systemverilog</a></li>
+      <li><a href="../values/values-library.html">values</a></li>
+      <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper-library.html">wave_dumper</a></li>
+</ol>
+
+  </div>
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>rohd library</h5>
+    <ol>
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#classes">Classes</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Add-class.html">Add</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/And2Gate-class.html">And2Gate</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/AndUnary-class.html">AndUnary</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/ARShift-class.html">ARShift</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus/BusSubset-class.html">BusSubset</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Case-class.html">Case</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseItem-class.html">CaseItem</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/CaseZ-class.html">CaseZ</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Combinational-class.html">Combinational</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Conditional-class.html">Conditional</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ConditionalAssign-class.html">ConditionalAssign</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Const-class.html">Const</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Divide-class.html">Divide</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Else-class.html">Else</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ElseIf-class.html">ElseIf</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Equals-class.html">Equals</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/FlipFlop-class.html">FlipFlop</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/GreaterThan-class.html">GreaterThan</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/If-class.html">If</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/IfBlock-class.html">IfBlock</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/IndexGate-class.html">IndexGate</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/Interface-class.html">Interface</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LessThan-class.html">LessThan</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/Logic-class.html">Logic</a></li>
+  <li><a href="../values/LogicValue-class.html">LogicValue</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_logic/LogicValueChanged-class.html">LogicValueChanged</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/LShift-class.html">LShift</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_module/Module-class.html">Module</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Modulo-class.html">Modulo</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Multiply-class.html">Multiply</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Mux-class.html">Mux</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/NotGate-class.html">NotGate</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Or2Gate-class.html">Or2Gate</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/OrUnary-class.html">OrUnary</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/Pipeline-class.html">Pipeline</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_interface/Port-class.html">Port</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_pipeline/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/ReplicationOp-class.html">ReplicationOp</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/RShift-class.html">RShift</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Sequential-class.html">Sequential</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_clkgen/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/Simulator-class.html">Simulator</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/State-class.html">State</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_state_machine/StateMachine-class.html">StateMachine</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Subtract-class.html">Subtract</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_bus/Swizzle-class.html">Swizzle</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synth_builder/SynthBuilder-class.html">SynthBuilder</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesis_result/SynthesisResult-class.html">SynthesisResult</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_synthesizer/Synthesizer-class.html">Synthesizer</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/WaveDumper-class.html">WaveDumper</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/Xor2Gate-class.html">Xor2Gate</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/XorUnary-class.html">XorUnary</a></li>
+
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#extensions">Extensions</a></li>
+  <li><a href="../values/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/LogicSwizzle.html">LogicSwizzle</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
+
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#mixins">Mixins</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_synthesizers_systemverilog/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
+
+
+
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#functions">Functions</a></li>
+  <li><a href="../values/bin.html">bin</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_gates/mux.html">mux</a></li>
+  <li><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/rswizzle.html">rswizzle</a></li>
+  <li><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_swizzle/swizzle.html">swizzle</a></li>
+
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#enums">Enums</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/ConditionalType.html">ConditionalType</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_simulator/SimulatorPhase.html">SimulatorPhase</a></li>
+
+  <li class="section-title"><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_rohd/file-___home_yquek_home_workspace_rohd-yquek_lib_rohd-library.html#typedefs">Typedefs</a></li>
+  <li><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_wave_dumper/Dumper.html">Dumper</a></li>
+  <li><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_external/ExternalModule.html">ExternalModule</a></li>
+  <li><a class="deprecated" href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/FF.html">FF</a></li>
+  <li><a href="../file-___home_yquek_home_workspace_rohd-yquek_lib_src_modules_conditional/Iff.html">Iff</a></li>
+  <li><a class="deprecated" href="../values/LogicValues.html">LogicValues</a></li>
+
+</ol>
+
+  </div><!--/sidebar-offcanvas-right-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.4.0
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+
+
+</body>
+
+</html>
+
