@@ -17,10 +17,10 @@ set -euo pipefail
 # The documentation will be placed in the "doc/api" folder.
 output=$(dart doc --validate-links 2>&1 | tee)
 
+# copy and replace the documentation generated to the website
+cp -rf doc/api/ doc/website/
+
 echo "${output}"
 
 # In case of problems, the searched substring will not be found.
 echo "${output}" | grep --silent 'no issues found'
-
-# copy and replace the documentation generated to the website
-cp -rf doc/api/ doc/website/
