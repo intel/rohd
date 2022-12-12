@@ -1,0 +1,62 @@
+# main links
+main:
+  - title: "Get Started"
+    url: /get-started/overview/
+  - title: "Docs"
+    url: /docs/sample-example/
+  - title: "API"
+    url: "https://pub.dev/documentation/rohd/latest/"
+
+# get started links
+get-started:
+  - title: "Get Started"
+    children:
+      - title: "Overview"
+        url: /get-started/overview/
+      - title: "Setup"
+        url: /get-started/setup/
+
+# documentation links
+docs:
+  - title: "Documentation"
+    children:
+      - title: "ROHD Example"
+        url: /docs/sample-example/
+      - title: "Logical Signals"
+        url: /docs/logical-signals/
+      - title: "Constant"
+        url: /docs/constant/
+      - title: "Assignment"
+        url: /docs/assignment/
+      - title: "Simple logical, mathematical, and comparison operations"
+        url: /docs/logic-math-compare/
+      - title: "Shift Operations"
+        url: /docs/shift-operations/
+      - title: "Bus ranges and swizzling"
+        url: /docs/bus-range-swizzling/
+      - title: "Modules"
+        url: /docs/modules/
+      - title: "Sequentials"
+        url: /docs/sequentials/
+      - title: "Conditionals"
+        url: /docs/conditionals/
+      - title: "Interfaces"
+        url: /docs/interfaces/
+      - title: "Non-Synthesizable signal deposition"
+        url: /docs/non-synthesizable-signal/
+      - title: "Custom module behaviour"
+        url: /docs/custom-module-behavior-inline-system-verilog/
+      - title: "Pipelines"
+        url: /docs/pipelines/
+      - title: "Finite State Machines"
+        url: /docs/fsm/
+      - title: "ROHD Simulator"
+        url: /docs/simulator/
+      - title: "Instantiation of External Modules"
+        url: /docs/external-modules/
+      - title: "Unit Testing"
+        url: /docs/unit-test/
+  - title: "Contributing"
+    children:
+      - title: "Contributing"
+        url: /docs/contributing/

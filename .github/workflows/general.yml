@@ -2,10 +2,10 @@ name: General
 on:
   push:
     branches:
-      - main
+      - rohd-web-prepare
   pull_request:
     branches:
-      - main
+      - rohd-web-prepare
 
 jobs:
   run-checks:
@@ -65,5 +65,5 @@ jobs:
       - name: Deploy generated documentation
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: doc/api
-          branch: docs
+          folder: doc/website
+          branch: website

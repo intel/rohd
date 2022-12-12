@@ -1,0 +1,95 @@
+# theme
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+
+# Site Settings
+locale: "en-US"
+title: ROHD
+title_separator: "-"
+subtitle: "Framework"
+email: yao.jing.quek@intel.com
+description: "The Rapid Open Hardware Development (ROHD) framework is a framework for describing and verifying hardware in the Dart programming language. ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software."
+url: "https://quekyj.github.io/rohd-test-website/" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "/" # the subpath of your site, e.g. /blog
+repository: "quekyj/rohd-test-website"
+teaser: "/assets/images/500x300.png"
+logo: "/assets/images/88x88.png"
+masthead_title: "ROHD"
+breadcrumbs: true
+words_per_minute: 200
+search: true
+search_full_content      : true # true, false (default)
+search_provider          : # lunr (default), algolia, google
+lunr:
+  search_within_pages    : true # true, false (default)
+
+# Site Footer
+footer:
+  links:
+    - label: "Twitter"
+      icon: "fab fa-fw fa-twitter-square"
+      # url:
+    - label: "Facebook"
+      icon: "fab fa-fw fa-facebook-square"
+      # url:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      # url:
+    - label: "GitLab"
+      icon: "fab fa-fw fa-gitlab"
+      # url:
+    - label: "Bitbucket"
+      icon: "fab fa-fw fa-bitbucket"
+      # url:
+    - label: "Instagram"
+      icon: "fab fa-fw fa-instagram"
+      # url:
+
+plugins:
+  - jekyll-include-cache
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:path/
+  get-started:
+    output: true
+    permalink: /:collection/path/
+
+
+# Defaults
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single
+      author_profile: true
+      read_time: true
+      comments: # true
+      share: true
+      related: true
+  # _docs
+  - scope:
+      path: ""
+      type: docs
+    values:
+      layout: single
+      read_time: false
+      author_profile: false
+      share: false
+      comments: false
+      sidebar:
+        nav: "docs"
+  - scope:
+      path: ""
+      type: get-started
+    values:
+      layout: single
+      read_time: false
+      author_profile: false
+      share: false
+      comments: false
+      sidebar:
+        nav: "get-started"
