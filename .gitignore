@@ -7,7 +7,10 @@ build/
 
 # Directory created by dartdoc
 doc/api/
-doc/website/api
+doc/website/api/
+
+# Remove Jekyll bundle build
+doc/website/_site/
 
 # Other stuff
 tmp*
