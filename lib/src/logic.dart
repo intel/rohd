@@ -583,7 +583,6 @@ class Logic {
   /// ```dart
   ///
   /// // Given a and b Logic input and piOut as output
-  ///
   /// Combinational([
   ///   piOut < a,
   ///   piOut.incr(b),
@@ -619,7 +618,6 @@ class Logic {
   /// ```dart
   ///
   /// // Given a and b Logic input and maOut as output
-  ///
   /// Combinational([
   ///   maOut < a,
   ///   maOut.mulAssign(b),
@@ -636,7 +634,6 @@ class Logic {
   /// ```dart
   ///
   /// // Given a and b Logic input and daOut as output
-  ///
   /// Combinational([
   ///   daOut < a,
   ///   daOut.divAssign(b),
