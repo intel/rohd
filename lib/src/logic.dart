@@ -575,17 +575,14 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
-  /// Shorthand Increment.
+  /// Shorthand for a [Conditional] which increments this by [incrVal]
+  ///
   /// By default for a [Logic] var, if no [incrVal] is provided result is ++var
   /// else result is var+=[incrVal]
   ///
   /// ```dart
   ///
-  /// Logic a = Logic(width: 8);
-  /// Logic b = Logic(width: 8);
-  /// a = addInput('a', a, width: 8);
-  /// b = addInput('b', b, width: 8);
-  /// final piOut = addOutput('piOut', width: 8);
+  /// // Given a and b Logic input and piOut as output
   ///
   /// Combinational([
   ///   piOut < a,
@@ -597,18 +594,14 @@ class Logic {
   ConditionalAssign incr([Logic? incrVal]) =>
       this < ((incrVal != null) ? this + incrVal : this + Const(1));
 
-  /// Shorthand Decrement.
+  /// Shorthand for a [Conditional] which decrements this by [decrVal]
+  ///
   /// By default for a [Logic] var, if no [decrVal] is provided result is --var
   /// else result is var-=[decrVal]
   ///
   /// ```dart
   ///
-  /// Logic a = Logic(width: 8);
-  /// Logic b = Logic(width: 8);
-  /// a = addInput('a', a, width: 8);
-  /// b = addInput('b', b, width: 8);
-  /// final pdOut = addOutput('pdOut', width: 8);
-  ///
+  /// // Given a and b Logic input and pdOut as output
   /// Combinational([
   ///   pdOut < a,
   ///   pdOut.decr(b),
@@ -619,16 +612,13 @@ class Logic {
   ConditionalAssign decr([Logic? decrVal]) =>
       this < ((decrVal != null) ? this - decrVal : this - Const(1));
 
-  /// Shorthand for multiplication & re-assign. For [Logic] var this is
-  /// var*=[mulVal]
+  /// Shorthand for a [Conditional] which increments this by [mulVal]
+  ///
+  /// For a [Logic] var, this is var *= [mulVal]
   ///
   /// ```dart
   ///
-  /// Logic a = Logic(width: 8);
-  /// Logic b = Logic(width: 8);
-  /// a = addInput('a', a, width: 8);
-  /// b = addInput('b', b, width: 8);
-  /// final maOut = addOutput('maOut', width: 8);
+  /// // Given a and b Logic input and maOut as output
   ///
   /// Combinational([
   ///   maOut < a,
@@ -639,15 +629,13 @@ class Logic {
   ///
   ConditionalAssign mulAssign(Logic mulVal) => this < this * mulVal;
 
-  /// Shorthand for division & re-assign. For a [Logic] var this is var/=[divVal]
+  /// Shorthand for a [Conditional] which increments this by [divVal]
+  ///
+  /// For a [Logic] var, this is var /= [divVal]
   ///
   /// ```dart
   ///
-  /// Logic a = Logic(width: 8);
-  /// Logic b = Logic(width: 8);
-  /// a = addInput('a', a, width: 8);
-  /// b = addInput('b', b, width: 8);
-  /// final daOut = addOutput('daOut', width: 8);
+  /// // Given a and b Logic input and daOut as output
   ///
   /// Combinational([
   ///   daOut < a,
