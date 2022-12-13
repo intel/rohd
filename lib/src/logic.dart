@@ -590,7 +590,7 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign incr([Logic? incrVal]) =>
+  ConditionalAssign incr([dynamic incrVal]) =>
       this < ((incrVal != null) ? this + incrVal : this + Const(1));
 
   /// Shorthand for a [Conditional] which decrements this by [decrVal]
@@ -608,7 +608,7 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign decr([Logic? decrVal]) =>
+  ConditionalAssign decr([dynamic decrVal]) =>
       this < ((decrVal != null) ? this - decrVal : this - Const(1));
 
   /// Shorthand for a [Conditional] which increments this by [mulVal]
@@ -625,7 +625,7 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign mulAssign(Logic mulVal) => this < this * mulVal;
+  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
 
   /// Shorthand for a [Conditional] which increments this by [divVal]
   ///
@@ -641,7 +641,7 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign divAssign(Logic divVal) => this < this / divVal;
+  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
 
   /// Conditional assignment operator.
   ///
