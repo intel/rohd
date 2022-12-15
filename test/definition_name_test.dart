@@ -8,7 +8,7 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/name_exceptions.dart';
+import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:test/test.dart';
 
 class DefinitionName {
