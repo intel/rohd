@@ -56,17 +56,20 @@
   </ol>
 </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
-<span class="name ">execute</span>(<wbr>)
+<span class="returntype">void</span>
+<span class="name ">execute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">drivenSignals</span></span></li>
+</ol>)
 
       <div class="features">override</div>
 
     </section>
     
 <section class="desc markdown">
-  <p>Executes the functionality represented by this <a href="../../rohd/Conditional-class.html">Conditional</a>.</p>
-<p>Returns a <a href="https://api.dart.dev/stable/2.18.6/dart-core/List-class.html">List</a> of all <code>Logic</code> signals which were driven during
-execution.</p>
+  <p>Executes the functionality of this <a href="../../rohd/Conditional-class.html">Conditional</a> and
+populates <code>drivenSignals</code> with all <a href="../../rohd/Logic-class.html">Logic</a>s that were driven
+during execution.</p>
+<p>The <code>drivenSignals</code> are used by the caller to determine if signals
+were driven an appropriate number of times.</p>
 </section>
 
 
@@ -74,25 +77,25 @@ execution.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Set&lt;Logic&gt; execute() {
-  final drivenLogics = &lt;Logic&gt;{};
-
+void execute(Set&lt;Logic&gt; drivenSignals) {
   for (final iff in iffs) {
     if (driverValue(iff.condition)[0] == LogicValue.one) {
       for (final conditional in iff.then) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.execute(drivenSignals);
       }
       break;
     } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
       &#47;&#47; x and z propagation
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(iff.condition)[0]);
+        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+          drivenSignals.add(receiver);
+        }
       }
       break;
     }
     &#47;&#47; if it&#39;s 0, then continue searching down the path
   }
-  return drivenLogics;
 }</code></pre>
 </section>
 

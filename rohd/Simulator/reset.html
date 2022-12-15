@@ -74,6 +74,9 @@
 
   _currentTimestamp = 0;
   _simulationEndRequested = false;
+
+  _simExceptions = [];
+
   _maxSimTime = -1;
   if (!_preTickController.isClosed) {
     await _preTickController.close();
@@ -160,6 +163,7 @@
           <li><a href="../../rohd/Simulator/reset.html">reset</a></li>
           <li><a href="../../rohd/Simulator/run.html">run</a></li>
           <li><a href="../../rohd/Simulator/setMaxSimTime.html">setMaxSimTime</a></li>
+          <li><a href="../../rohd/Simulator/throwException.html">throwException</a></li>
           <li><a href="../../rohd/Simulator/tick.html">tick</a></li>
           <li><a href="../../rohd/Simulator/tickExecute.html">tickExecute</a></li>
 

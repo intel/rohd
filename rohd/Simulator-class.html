@@ -390,6 +390,20 @@ actions.
 
 </dd>
 
+        <dt id="throwException" class="callable">
+  <span class="name"><a href="../rohd/Simulator/throwException.html">throwException</a></span><span class="signature">(<wbr><span class="parameter" id="throwException-param-exception"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Exception-class.html">Exception</a></span> <span class="parameter-name">exception</span>, </span><span class="parameter" id="throwException-param-stackTrace"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/StackTrace-class.html">StackTrace</a></span> <span class="parameter-name">stackTrace</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Collects an <code>exception</code> and associated <code>stackTrace</code> triggered
+asynchronously during simulation to be thrown synchronously by <a href="../rohd/Simulator/run.html">run</a>.
+  
+
+</dd>
+
         <dt id="tick" class="callable">
   <span class="name"><a href="../rohd/Simulator/tick.html">tick</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
@@ -571,6 +585,7 @@ actions.
           <li><a href="../rohd/Simulator/reset.html">reset</a></li>
           <li><a href="../rohd/Simulator/run.html">run</a></li>
           <li><a href="../rohd/Simulator/setMaxSimTime.html">setMaxSimTime</a></li>
+          <li><a href="../rohd/Simulator/throwException.html">throwException</a></li>
           <li><a href="../rohd/Simulator/tick.html">tick</a></li>
           <li><a href="../rohd/Simulator/tickExecute.html">tickExecute</a></li>
 

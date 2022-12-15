@@ -192,14 +192,16 @@ associated with <code>driver</code>.
 </dd>
 
         <dt id="execute" class="callable">
-  <span class="name"><a href="../rohd/If/execute.html">execute</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="name"><a href="../rohd/If/execute.html">execute</a></span><span class="signature">(<wbr><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">drivenSignals</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
   </span>
   
 
 </dt>
 <dd>
-  Executes the functionality represented by this <a href="../rohd/Conditional-class.html">Conditional</a>.
+  Executes the functionality of this <a href="../rohd/Conditional-class.html">Conditional</a> and
+populates <code>drivenSignals</code> with all <a href="../rohd/Logic-class.html">Logic</a>s that were driven
+during execution.
   <div class="features">override</div>
 
 </dd>
