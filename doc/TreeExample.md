@@ -39,11 +39,11 @@ You could instantiate this module with some code such as:
 ```dart
 var tree = TreeOfTwoInputModules(
   List<Logic>.generate(16, (index) => Logic(width: 8)),
-  (Logic a, Logic b) => Mux(a > b, a, b).y
+  (Logic a, Logic b) => mux(a > b, a, b)
 );
 ```
 
-This instantiation code generates a list of sixteen 8-bit logic signals.  The operation to be performed (`_op`) is to create a `Mux` which returns `a` if `a` is greater than `b`, otherwise `b`.  Therefore, this instantiation creates a logarithmic-height tree of modules which outputs the largest 8-bit value.  Note that `Mux` also needs no parameters, as it can automatically determine the appropriate size of `y` based on the inputs.
+This instantiation code generates a list of sixteen 8-bit logic signals.  The operation to be performed (`_op`) is to create a `mux` which returns `a` if `a` is greater than `b`, otherwise `b`.  Therefore, this instantiation creates a logarithmic-height tree of modules which outputs the largest 8-bit value.  Note that `mux` also needs no parameters, as it can automatically determine the appropriate size of its outputs based on the inputs.
 
 A SystemVerilog implementation of this requires numerous module definitions and substantially more code.  Below is an output of the ROHD-generated SystemVerilog:
 
