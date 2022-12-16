@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+/***/
+
 /// A controller for a [SynchronousEmitter] that allows for
 /// adding of events of type [T] to be emitted.
 class SynchronousPropagator<T> {
@@ -50,5 +52,15 @@ class SynchronousEmitter<T> {
       action(t);
     }
     _isEmitting = false;
+  }
+
+  /// Tells this emitter to adopt all behavior of [other].
+  ///
+  /// Tells this emitter to perform all the actions of [other] each
+  /// time this would propagate.  Also clears all actions from [other]
+  /// so that it will not execute anything in the future.
+  void adopt(SynchronousEmitter<T> other) {
+    _actions.addAll(other._actions);
+    other._actions.clear();
   }
 }

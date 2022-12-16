@@ -122,11 +122,11 @@ class Pipeline {
 
     for (var stageIndex = 0; stageIndex < _numStages; stageIndex++) {
       Combinational([
-        ..._registeredLogics
-            .map((logic) => get(logic, stageIndex) < _i(logic, stageIndex)),
+        for (Logic l in _registeredLogics)
+          get(l, stageIndex) < _i(l, stageIndex),
         ...combMiddles[stageIndex],
-        ..._registeredLogics
-            .map((logic) => _o(logic, stageIndex) < get(logic, stageIndex)),
+        for (Logic l in _registeredLogics)
+          _o(l, stageIndex) < get(l, stageIndex),
       ], name: 'comb_stage$stageIndex');
     }
   }

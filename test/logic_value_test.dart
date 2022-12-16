@@ -267,6 +267,13 @@ void main() {
           equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
     });
   });
+
+  test('LogicValue.of example', () {
+    final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
+    final lv = LogicValue.of(it);
+    expect(lv.toString(), equals("6'b01xzx0"));
+  });
+
   group('unary operations (including "to")', () {
     test('toMethods', () {
       expect(
@@ -836,6 +843,52 @@ void main() {
           // xor - invalid z
           LogicValue.filled(100, LogicValue.z).and(),
           equals(LogicValue.x));
+    });
+  });
+
+  group('64-bit conversions', () {
+    test(
+        '64-bit LogicValues larger than maximum positive value on integer'
+        ' are properly converted when converted from BigInt', () {
+      final extraWide = LogicValue.ofBigInt(
+        BigInt.parse('f' * 16 + 'f0' * 8, radix: 16),
+        128,
+      );
+      final smaller = extraWide.getRange(0, 64);
+      expect(smaller.toInt(), equals(0xf0f0f0f0f0f0f0f0));
+    });
+    test(
+        '64-bit BigInts larger than max pos int value constructing'
+        ' a LogicValue is correct', () {
+      final bigInt64Lv =
+          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), 64);
+      expect(bigInt64Lv.toInt(), equals(0xfafafafafafafafa));
+    });
+    test('64-bit binary negatives are converted properly with bin', () {
+      expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+    });
+  });
+
+  group('hash and equality', () {
+    test('hash', () {
+      // thank you to @bbracker-int
+      // https://github.com/intel/rohd/issues/206
+
+      const lvEnum = LogicValue.one;
+      final lvBool = LogicValue.ofBool(true);
+      final lvInt = LogicValue.ofInt(1, 1);
+      final lvBigInt = LogicValue.ofBigInt(BigInt.one, 1);
+      final lvFilled = LogicValue.filled(1, lvEnum);
+
+      for (final lv in [lvBool, lvInt, lvBigInt, lvFilled]) {
+        expect(lv.hashCode, equals(lvEnum.hashCode));
+      }
+    });
+    test('zero-width', () {
+      expect(LogicValue.filled(0, LogicValue.one),
+          equals(LogicValue.filled(0, LogicValue.zero)));
+      expect(LogicValue.filled(0, LogicValue.one).hashCode,
+          equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
   });
 }
