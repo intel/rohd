@@ -1,3 +1,22 @@
+## 0.4.1
+- Fixed a bug where `Module`s could have invalid names in generated SystemVerilog (https://github.com/intel/rohd/issues/138).
+- Fixed a bug where `Logic`s could have invalid names in generated SystemVerilog.
+- Added a feature allowing access of an index of a `Logic` via another `Logic` (https://github.com/intel/rohd/issues/153).
+- Fixed a bug where multiple sequential driver issues might not be caught during ROHD simulation (https://github.com/intel/rohd/issues/114).
+- Improved `Exception`s in ROHD with better error messages and more granular exception types to make handling easier.
+- Improved generated SystemVerilog for sign extension and added capability for replication (https://github.com/intel/rohd/issues/157).
+- Fixed a bug where signal names and module instance names could collide in generated SystemVerilog (https://github.com/intel/rohd/issues/205).
+- Fixed a bug where in some cases modules might not be properly detected as sub-modules, leading to erroneous omission in generated outputs.
+- Added capability to perform modulo and shift operations on `Logic` via a constant values (https://github.com/intel/rohd/pull/208).
+- Completed a fix for a bug where shifting a `Logic` by a constant would throw an exception (https://github.com/intel/rohd/issues/170).
+- Modified the mechanism by which signal propagation occurs between `Logic`s so that connected `Logic`s share an underlying value-holding entity (https://github.com/intel/rohd/pull/199).  One significant implication is that modifying a value of a `Logic` (e.g. via `put` or `inject`) will now affect the value of both downstream *and* upstream connected `Logic`s instead of only downstream.  This change also can significantly improve simulation performance in connection-heavy designs.  Additionally, this change helps mitigate an issue where very long combinational chains of logic can hit the stack size limit (https://github.com/intel/rohd/issues/194).
+- Fixed a bug where large unsigned values on `LogicValue`s would convert to incorrect `int` values (https://github.com/intel/rohd/issues/212).
+- Added an extension on `BigInt` to perform unsigned conversion to an `int`.
+- Added a capability to construct some `Conditional` types (e.g. `If`) which have only a single `Conditional` more succinctly (https://github.com/intel/rohd/issues/12).
+- Optimized some operations in `LogicValue` for performance (https://github.com/intel/rohd/pull/215).
+- Added a shortcut to create a 0-width `LogicValue` called `LogicValue.empty` (https://github.com/intel/rohd/issues/202).
+- Fixed a bug where equal `LogicValue`s could have unequal hash codes (https://github.com/intel/rohd/issues/206).  The fix also improved internal representation consistency for `LogicValue`s, which could provide a significant performance improvement when wide values are used often.
+
 ## 0.4.0
 - Fixed a bug where generated SystemVerilog could apply bit slicing to an expression (https://github.com/intel/rohd/issues/163).
 - Fixed a bug where constant collapsing in SystemVerilog could erroneously remove constant assignments (https://github.com/intel/rohd/issues/159).
