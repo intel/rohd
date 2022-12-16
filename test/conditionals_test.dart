@@ -261,7 +261,6 @@ class MultipleConditionalModule extends Module {
     a = addInput('a', a);
     b = addInput('b', b);
     final c = addOutput('c');
-    final d = addOutput('d');
 
     final Conditional condOne = c < 1;
 
