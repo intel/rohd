@@ -1,6 +1,6 @@
 {
     "name": "Dart iverilog Container",
     "build": {
-        "image": "stevenmburns/dart-and-iverilog:latest"
+        "dockerfile": "stevenmburns/dart-and-iverilog:latest"
     }
 }
