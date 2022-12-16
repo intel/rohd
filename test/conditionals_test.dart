@@ -256,7 +256,7 @@ class SignalRedrivenSequentialModuleWithX extends Module {
 }
 
 class MultipleConditionalModule extends Module {
-  MultipleConditionalModule(Logic a, Logic b, Logic d)
+  MultipleConditionalModule(Logic a, Logic b)
       : super(name: 'multiplecondmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
@@ -266,19 +266,11 @@ class MultipleConditionalModule extends Module {
     final Conditional condOne = c < 1;
 
     Combinational([
-      IfBlock([
-        ElseIf(a, [condOne]),
-        ElseIf(b, [condOne]),
-        Else([c < 0, d < 1])
-      ])
+      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
 
     Combinational([
-      IfBlock([
-        ElseIf(a, [condOne]),
-        ElseIf(b, [condOne]),
-        Else([c < 0, d < 1])
-      ])
+      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
   }
 }
@@ -401,20 +393,11 @@ void main() {
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));
     });
-    test('multiple conditional ff', () async {
-      final mod = MultipleConditionalModule(Logic(), Logic(), Logic());
-      await mod.build();
-      final vectors = [
-        Vector({'a': 1, 'b': 0}, {'c': 1}),
-        Vector({'a': 0, 'b': 1}, {'c': 1}),
-      ];
 
-      try {
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        fail('Exception not thrown!');
-      } on Exception catch (e) {
-        expect(e.runtimeType, equals(Exception));
-      }
+    test('should return exception if a conditional is used multiple times.',
+        () async {
+      expect(
+          () => MultipleConditionalModule(Logic(), Logic()), throwsException);
     });
   });
 
