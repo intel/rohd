@@ -617,7 +617,7 @@ class Logic {
   /// Note: When, indexed by a Logic value, out-of-bounds will always return an
   /// invalid (LogicValue.x) value. This behavior is differs in simulation as
   /// compared to the generated SystemVerilog. In the generated SystemVerilog,
-  /// [index] will be ignored, and the logic $x is returned as-is.
+  /// [index] will be ignored, and the logic is returned as-is.
   Logic operator [](dynamic index) {
     if (index is Logic) {
       return IndexGate(this, index).selection;

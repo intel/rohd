@@ -676,7 +676,7 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// Constructs a two-input bit index gate for an abitrary custom functional
   /// implementation.
   ///
-  /// The bit [index] will be indexed as an output.
+  /// The signal will be indexed by [index] as an output.
   /// [Module] is in-lined as SystemVerilog, it will use original[index], where
   /// target is index's int value
   /// When, the [original] has width '1', [index] is ignored in the generated
