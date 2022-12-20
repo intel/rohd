@@ -249,12 +249,6 @@ void main() {
       b.put(0x55);
       expect(out.value.toInt(), equals(0x55aa));
     });
-
-    test('Logic IsIn List', () async {
-      final a = Logic(width: 8);
-      final listOfValue = [Logic(width: 8), Const(0).value, Const(10), 56];
-      a.isIn(listOfValue);
-    });
   });
 
   group('simcompare', () {

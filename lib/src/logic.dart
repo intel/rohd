@@ -593,26 +593,22 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns true if the [Logic] calling this function is in [List] else false.
+  /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
+  /// [List] list. Else `0` (of [width]=1) if not present.
   ///
-  /// The list can be [Logic] or [int] or [bool] or [BigInt] or mix of all
-  /// ([dynamic]) supplied
+  /// The [List] can be [Logic] or [int] or [bool] or [BigInt] or
+  /// [List] of [dynamic] i.e combinition of aforementioned types.
   ///
-  bool isIn(List<dynamic> list) {
-    // [TODO] Will this function return boolean results that are synthesizable?
-
+  Logic isIn(List<dynamic> list) {
     /* 
-      Iterate through list of Logic, LogicVal, int or bool. 
-      Homogeneous (all elements same) or Hetrogeneous (mix of types) array 
+      By default isLogicIn is not present return `0`: 
+      Empty list corner-case state 
     */
-    for (final logicVar in list) {
-      if ((logicVar is Logic && logicVar.value == value) ||
-          (logicVar is LogicValue && logicVar == value) ||
-          ((logicVar is int || logicVar is bool || logicVar is BigInt) &&
-              Const(logicVar).value == value)) {
-        return true;
-      }
+    var isLogicIn = LogicValue.ofInt(0, 1) as Logic;
+    for (final dynamic y in list) {
+      /* Iterating through the list to check if the logic is present */
+      isLogicIn |= eq(y);
     }
-    return false;
+    return isLogicIn;
   }
 }
