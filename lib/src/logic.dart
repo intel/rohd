@@ -576,6 +576,72 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
+  /// Shorthand for a [Conditional] which increments this by [incrVal]
+  ///
+  /// By default for a [Logic] variable, if no [incrVal] is provided
+  /// result is ++variable else result is variable+=[incrVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and piOut as output
+  /// Combinational([
+  ///   piOut < a,
+  ///   piOut.incr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
+
+  /// Shorthand for a [Conditional] which decrements this by [decrVal]
+  ///
+  /// By default for a [Logic] variable, if no [decrVal] is provided
+  /// result is --variable else result is var-=[decrVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and pdOut as output
+  /// Combinational([
+  ///   pdOut < a,
+  ///   pdOut.decr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
+
+  /// Shorthand for a [Conditional] which increments this by [mulVal]
+  ///
+  /// For a [Logic] variable, this is variable *= [mulVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and maOut as output
+  /// Combinational([
+  ///   maOut < a,
+  ///   maOut.mulAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
+
+  /// Shorthand for a [Conditional] which increments this by [divVal]
+  ///
+  /// For a [Logic] variable, this is variable /= [divVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and daOut as output
+  /// Combinational([
+  ///   daOut < a,
+  ///   daOut.divAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
+
   /// Conditional assignment operator.
   ///
   /// Represents conditionally asigning the value of another signal to this.

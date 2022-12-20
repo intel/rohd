@@ -13,6 +13,41 @@ import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+class ShorthandAssignModule extends Module {
+  ShorthandAssignModule(
+      Logic preIncr, Logic preDecr, Logic mulAssign, Logic divAssign, Logic b)
+      : super(name: 'shorthandmodule') {
+    preIncr = addInput('preIncr', preIncr, width: 8);
+    preDecr = addInput('preDecr', preDecr, width: 8);
+    mulAssign = addInput('mulAssign', mulAssign, width: 8);
+    divAssign = addInput('divAssign', divAssign, width: 8);
+    b = addInput('b', b, width: 8);
+
+    final piOut = addOutput('piOut', width: 8);
+    final pdOut = addOutput('pdOut', width: 8);
+    final maOut = addOutput('maOut', width: 8);
+    final daOut = addOutput('daOut', width: 8);
+    final piOutWithB = addOutput('piOutWithB', width: 8);
+    final pdOutWithB = addOutput('pdOutWithB', width: 8);
+
+    Combinational([
+      piOutWithB < preIncr,
+      pdOutWithB < preDecr,
+      piOut < preIncr,
+      pdOut < preDecr,
+      maOut < mulAssign,
+      daOut < divAssign,
+      // Add these tests
+      piOut.incr(),
+      pdOut.decr(),
+      piOutWithB.incr(b),
+      pdOutWithB.decr(b),
+      maOut.mulAssign(b),
+      daOut.divAssign(b),
+    ]);
+  }
+}
+
 class LoopyCombModule extends Module {
   Logic get a => input('a');
   Logic get x => output('x');
@@ -458,5 +493,71 @@ void main() {
     } on Exception catch (e) {
       expect(e.runtimeType, equals(SignalRedrivenException));
     }
+  });
+  test('shorthand operations', () async {
+    final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
+        Logic(width: 8), Logic(width: 8), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({
+        'preIncr': 5,
+        'preDecr': 5,
+        'mulAssign': 5,
+        'divAssign': 5,
+        'b': 5
+      }, {
+        'piOutWithB': 10,
+        'pdOutWithB': 0,
+        'piOut': 6,
+        'pdOut': 4,
+        'maOut': 25,
+        'daOut': 1,
+      }),
+      Vector({
+        'preIncr': 5,
+        'preDecr': 5,
+        'mulAssign': 5,
+        'divAssign': 5,
+        'b': 0
+      }, {
+        'piOutWithB': 5,
+        'pdOutWithB': 5,
+        'piOut': 6,
+        'pdOut': 4,
+        'maOut': 0,
+        'daOut': LogicValue.x,
+      }),
+      Vector({
+        'preIncr': 0,
+        'preDecr': 0,
+        'mulAssign': 0,
+        'divAssign': 0,
+        'b': 5
+      }, {
+        'piOutWithB': 5,
+        'pdOutWithB': 0xfb,
+        'piOut': 1,
+        'pdOut': 0xff,
+        'maOut': 0,
+        'daOut': 0,
+      })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {
+          'preIncr': 8,
+          'preDecr': 8,
+          'mulAssign': 8,
+          'divAssign': 8,
+          'b': 8,
+          'piOutWithB': 8,
+          'pdOutWithB': 8,
+          'piOut': 8,
+          'pdOut': 8,
+          'maOut': 8,
+          'daOut': 8
+        });
+    expect(simResult, equals(true));
   });
 }
