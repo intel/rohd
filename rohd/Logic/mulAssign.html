@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the put method from the Logic class, for the Dart programming language.">
-  <title>put method - Logic class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the mulAssign method from the Logic class, for the Dart programming language.">
+  <title>mulAssign method - Logic class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">put method</li>
+    <li class="self-crumb">mulAssign method</li>
   </ol>
-  <div class="self-name">put</div>
+  <div class="self-name">mulAssign</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -44,16 +44,15 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">put</span> method 
+<h1><span class="kind-method">mulAssign</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype">void</span>
-<span class="name ">put</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span></li>
-<li><span class="parameter" id="put-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span></li>
+<span class="returntype"><a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+<span class="name ">mulAssign</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="mulAssign-param-mulVal"><span class="type-annotation">dynamic</span> <span class="parameter-name">mulVal</span></span></li>
 </ol>)
 
       
@@ -61,20 +60,23 @@
     </section>
     
 <section class="desc markdown">
-  <p>Puts a value <code>val</code> onto this signal, which may or may not be picked up
-for <a href="../../rohd/Logic/changed.html">changed</a> in this <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
-<p>The type of <code>val</code> should be an <code>int</code>, <a href="https://api.dart.dev/stable/2.18.6/dart-core/BigInt-class.html">BigInt</a>, <code>bool</code>, or <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<p>This function is used for propogating glitches through connected signals.
-Use this function for custom definitions of <a href="../../rohd/Module-class.html">Module</a> behavior.</p>
-<p>If <code>fill</code> is set, all bits of the signal gets set to <code>val</code>, similar
-to <code>'</code> in SystemVerilog.</p>
+  <p>Shorthand for a <a href="../../rohd/Conditional-class.html">Conditional</a> which increments this by <code>mulVal</code></p>
+<p>For a <a href="../../rohd/Logic-class.html">Logic</a> variable, this is variable *= <code>mulVal</code></p>
+<pre class="language-dart"><code class="language-dart">
+// Given a and b Logic input and maOut as output
+Combinational([
+  maOut &lt; a,
+  maOut.mulAssign(b),
+]);
+
+</code></pre>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) =&gt; _wire.put(val, fill: fill);</code></pre>
+  <pre class="language-dart"><code class="language-dart">ConditionalAssign mulAssign(dynamic mulVal) =&gt; this &lt; this * mulVal;</code></pre>
 </section>
 
 
@@ -91,7 +93,7 @@ to <code>'</code> in SystemVerilog.</p>
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-  <li class="self-crumb">put method</li>
+  <li class="self-crumb">mulAssign method</li>
 </ol>
 
 
