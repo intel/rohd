@@ -476,7 +476,8 @@ abstract class LogicValue {
   /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
   /// ```
   ///
-  LogicValue getRange(int startIndex, int endIndex) {
+  LogicValue getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     final modifiedStartIndex =
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;

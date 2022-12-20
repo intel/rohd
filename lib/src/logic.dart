@@ -678,7 +678,8 @@ class Logic {
   /// nextVal <= val.getRange(0, 6); // = val.slice(0, -2) & output: 0b001110, where the output.width=6
   /// ```
   ///
-  Logic getRange(int startIndex, int endIndex) {
+  Logic getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
