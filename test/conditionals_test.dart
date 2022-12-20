@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -252,6 +254,42 @@ class SingleIfOrElseModule extends Module {
   }
 }
 
+class SignalRedrivenSequentialModule extends Module {
+  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d)
+      : super(name: 'ffmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    final q = addOutput('q', width: d.width);
+    d = addInput('d', d, width: d.width);
+
+    final k = addOutput('k', width: 8);
+    Sequential(SimpleClockGenerator(10).clk, [
+      If(a, then: [
+        k < k,
+        q < k,
+        q < d,
+      ])
+    ]);
+  }
+}
+
+class SignalRedrivenSequentialModuleWithX extends Module {
+  SignalRedrivenSequentialModuleWithX(Logic a, Logic c, Logic d)
+      : super(name: 'redrivenwithvalidinvalidsignal') {
+    a = addInput('a', a);
+    c = addInput('c', c);
+    d = addInput('d', d);
+
+    final b = addOutput('b');
+
+    Sequential(SimpleClockGenerator(10).clk, [
+      If(a, then: [b < c]),
+      If(d, then: [b < c])
+    ]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -370,39 +408,76 @@ void main() {
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));
     });
+  });
 
-    test(
-        'should return true on simcompare when '
-        'execute if.s() for single if...else conditional without orElse.',
-        () async {
-      final mod = SingleIfModule(Logic());
-      await mod.build();
-      final vectors = [
-        Vector({'a': 1}, {'q': 1}),
-      ];
+  test(
+      'should return true on simcompare when '
+      'execute if.s() for single if...else conditional without orElse.',
+      () async {
+    final mod = SingleIfModule(Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1}, {'q': 1}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    expect(simResult, equals(true));
+  });
+
+  test(
+      'should return true on simcompare when '
+      'execute if.s() for single if...else conditional with orElse.', () async {
+    final mod = SingleIfOrElseModule(Logic(), Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1}, {'q': 1}),
+      Vector({'a': 0}, {'x': 1}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    expect(simResult, equals(true));
+  });
+
+  test(
+      'should return SignalRedrivenException when there are multiple drivers '
+      'for a flop.', () async {
+    final mod =
+        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1}, {}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
+    ];
+
+    try {
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors);
-      expect(simResult, equals(true));
-    });
+      fail('Exception not thrown!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(SignalRedrivenException));
+    }
+  });
 
-    test(
-        'should return true on simcompare when '
-        'execute if.s() for single if...else conditional with orElse.',
-        () async {
-      final mod = SingleIfOrElseModule(Logic(), Logic());
-      await mod.build();
-      final vectors = [
-        Vector({'a': 1}, {'q': 1}),
-        Vector({'a': 0}, {'x': 1}),
-      ];
+  test(
+      'should return NonSupportedTypeException when '
+      'simcompare expected output values has invalid runtime type. ', () async {
+    final mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1}, {}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 'invalid runtime type'}),
+    ];
+
+    try {
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors);
-      expect(simResult, equals(true));
-    });
-
-    test('shorthand operations', () async {
+      fail('Exception not thrown!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(NonSupportedTypeException));
+    }
+  });
+  
+  test('shorthand operations', () async {
       final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
           Logic(width: 8), Logic(width: 8), Logic(width: 8));
       await mod.build();
@@ -468,5 +543,22 @@ void main() {
           });
       expect(simResult, equals(true));
     });
+
+  test(
+      'should return SignalRedrivenException when driven with '
+      'x signals and valid signals.', () async {
+    final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': LogicValue.x, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
+      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': 1}),
+    ];
+
+    try {
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      fail('Exception not thrown!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(SignalRedrivenException));
+    }
   });
 }
