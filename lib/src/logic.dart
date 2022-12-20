@@ -652,7 +652,9 @@ class Logic {
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
 
-    if (width == 1 && endIndex == 0 && modifiedEndIndex == modifiedStartIndex) {
+    if (width == 1 &&
+        modifiedEndIndex == 0 &&
+        modifiedEndIndex == modifiedStartIndex) {
       return this;
     }
 
