@@ -493,71 +493,71 @@ void main() {
     } on Exception catch (e) {
       expect(e.runtimeType, equals(SignalRedrivenException));
     }
-    test('shorthand operations', () async {
-      final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
-          Logic(width: 8), Logic(width: 8), Logic(width: 8));
-      await mod.build();
-      final vectors = [
-        Vector({
-          'preIncr': 5,
-          'preDecr': 5,
-          'mulAssign': 5,
-          'divAssign': 5,
-          'b': 5
-        }, {
-          'piOutWithB': 10,
-          'pdOutWithB': 0,
-          'piOut': 6,
-          'pdOut': 4,
-          'maOut': 25,
-          'daOut': 1,
-        }),
-        Vector({
-          'preIncr': 5,
-          'preDecr': 5,
-          'mulAssign': 5,
-          'divAssign': 5,
-          'b': 0
-        }, {
-          'piOutWithB': 5,
-          'pdOutWithB': 5,
-          'piOut': 6,
-          'pdOut': 4,
-          'maOut': 0,
-          'daOut': LogicValue.x,
-        }),
-        Vector({
-          'preIncr': 0,
-          'preDecr': 0,
-          'mulAssign': 0,
-          'divAssign': 0,
-          'b': 5
-        }, {
-          'piOutWithB': 5,
-          'pdOutWithB': 0xfb,
-          'piOut': 1,
-          'pdOut': 0xff,
-          'maOut': 0,
-          'daOut': 0,
-        })
-      ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {
-            'preIncr': 8,
-            'preDecr': 8,
-            'mulAssign': 8,
-            'divAssign': 8,
-            'b': 8,
-            'piOutWithB': 8,
-            'pdOutWithB': 8,
-            'piOut': 8,
-            'pdOut': 8,
-            'maOut': 8,
-            'daOut': 8
-          });
-      expect(simResult, equals(true));
-    });
+  });
+  test('shorthand operations', () async {
+    final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
+        Logic(width: 8), Logic(width: 8), Logic(width: 8));
+    await mod.build();
+    final vectors = [
+      Vector({
+        'preIncr': 5,
+        'preDecr': 5,
+        'mulAssign': 5,
+        'divAssign': 5,
+        'b': 5
+      }, {
+        'piOutWithB': 10,
+        'pdOutWithB': 0,
+        'piOut': 6,
+        'pdOut': 4,
+        'maOut': 25,
+        'daOut': 1,
+      }),
+      Vector({
+        'preIncr': 5,
+        'preDecr': 5,
+        'mulAssign': 5,
+        'divAssign': 5,
+        'b': 0
+      }, {
+        'piOutWithB': 5,
+        'pdOutWithB': 5,
+        'piOut': 6,
+        'pdOut': 4,
+        'maOut': 0,
+        'daOut': LogicValue.x,
+      }),
+      Vector({
+        'preIncr': 0,
+        'preDecr': 0,
+        'mulAssign': 0,
+        'divAssign': 0,
+        'b': 5
+      }, {
+        'piOutWithB': 5,
+        'pdOutWithB': 0xfb,
+        'piOut': 1,
+        'pdOut': 0xff,
+        'maOut': 0,
+        'daOut': 0,
+      })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(
+        mod.generateSynth(), mod.runtimeType.toString(), vectors,
+        signalToWidthMap: {
+          'preIncr': 8,
+          'preDecr': 8,
+          'mulAssign': 8,
+          'divAssign': 8,
+          'b': 8,
+          'piOutWithB': 8,
+          'pdOutWithB': 8,
+          'piOut': 8,
+          'pdOut': 8,
+          'maOut': 8,
+          'daOut': 8
+        });
+    expect(simResult, equals(true));
   });
 }
