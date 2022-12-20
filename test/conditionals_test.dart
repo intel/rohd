@@ -476,8 +476,24 @@ void main() {
       expect(e.runtimeType, equals(NonSupportedTypeException));
     }
   });
-  
-  test('shorthand operations', () async {
+
+  test(
+      'should return SignalRedrivenException when driven with '
+      'x signals and valid signals.', () async {
+    final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': LogicValue.x, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
+      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': 1}),
+    ];
+
+    try {
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      fail('Exception not thrown!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, equals(SignalRedrivenException));
+    }
+    test('shorthand operations', () async {
       final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
           Logic(width: 8), Logic(width: 8), Logic(width: 8));
       await mod.build();
@@ -543,22 +559,5 @@ void main() {
           });
       expect(simResult, equals(true));
     });
-
-  test(
-      'should return SignalRedrivenException when driven with '
-      'x signals and valid signals.', () async {
-    final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
-    await mod.build();
-    final vectors = [
-      Vector({'a': LogicValue.x, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
-      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': 1}),
-    ];
-
-    try {
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      fail('Exception not thrown!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, equals(SignalRedrivenException));
-    }
   });
 }
