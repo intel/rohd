@@ -836,7 +836,7 @@ class Else extends Iff {
   /// [then] will be executed.
   ///
   /// Use this constructor when you only have a single [then] condition.
-  Else.s(Conditional then) : super(Const(1), [then]);
+  Else.s(Conditional then) : this([then]);
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like
