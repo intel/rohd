@@ -25,14 +25,21 @@ class ShorthandAssignModule extends Module {
     final pdOut = addOutput('pdOut', width: 8);
     final maOut = addOutput('maOut', width: 8);
     final daOut = addOutput('daOut', width: 8);
+    final piOutWithB = addOutput('piOutWithB', width: 8);
+    final pdOutWithB = addOutput('pdOutWithB', width: 8);
 
     Combinational([
+      piOutWithB < preIncr,
+      pdOutWithB < preDecr,
       piOut < preIncr,
       pdOut < preDecr,
       maOut < mulAssign,
       daOut < divAssign,
-      piOut.incr(b),
-      pdOut.decr(b),
+      // Add these tests
+      piOut.incr(),
+      pdOut.decr(),
+      piOutWithB.incr(b),
+      pdOutWithB.decr(b),
       maOut.mulAssign(b),
       daOut.divAssign(b),
     ]);
@@ -407,8 +414,10 @@ void main() {
           'divAssign': 5,
           'b': 5
         }, {
-          'piOut': 10,
-          'pdOut': 0,
+          'piOutWithB': 10,
+          'pdOutWithB': 0,
+          'piOut': 6,
+          'pdOut': 4,
           'maOut': 25,
           'daOut': 1,
         }),
@@ -419,8 +428,10 @@ void main() {
           'divAssign': 5,
           'b': 0
         }, {
-          'piOut': 5,
-          'pdOut': 5,
+          'piOutWithB': 5,
+          'pdOutWithB': 5,
+          'piOut': 6,
+          'pdOut': 4,
           'maOut': 0,
           'daOut': LogicValue.x,
         }),
@@ -431,8 +442,10 @@ void main() {
           'divAssign': 0,
           'b': 5
         }, {
-          'piOut': 5,
-          'pdOut': 0xfb,
+          'piOutWithB': 5,
+          'pdOutWithB': 0xfb,
+          'piOut': 1,
+          'pdOut': 0xff,
           'maOut': 0,
           'daOut': 0,
         })
@@ -446,6 +459,8 @@ void main() {
             'mulAssign': 8,
             'divAssign': 8,
             'b': 8,
+            'piOutWithB': 8,
+            'pdOutWithB': 8,
             'piOut': 8,
             'pdOut': 8,
             'maOut': 8,

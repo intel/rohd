@@ -577,8 +577,8 @@ class Logic {
 
   /// Shorthand for a [Conditional] which increments this by [incrVal]
   ///
-  /// By default for a [Logic] var, if no [incrVal] is provided result is ++var
-  /// else result is var+=[incrVal]
+  /// By default for a [Logic] variable, if no [incrVal] is provided
+  /// result is ++variable else result is variable+=[incrVal]
   ///
   /// ```dart
   ///
@@ -590,13 +590,12 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign incr([dynamic incrVal]) =>
-      this < ((incrVal != null) ? this + incrVal : this + Const(1));
+  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
 
   /// Shorthand for a [Conditional] which decrements this by [decrVal]
   ///
-  /// By default for a [Logic] var, if no [decrVal] is provided result is --var
-  /// else result is var-=[decrVal]
+  /// By default for a [Logic] variable, if no [decrVal] is provided
+  /// result is --variable else result is var-=[decrVal]
   ///
   /// ```dart
   ///
@@ -608,12 +607,11 @@ class Logic {
   ///
   /// ```
   ///
-  ConditionalAssign decr([dynamic decrVal]) =>
-      this < ((decrVal != null) ? this - decrVal : this - Const(1));
+  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
 
   /// Shorthand for a [Conditional] which increments this by [mulVal]
   ///
-  /// For a [Logic] var, this is var *= [mulVal]
+  /// For a [Logic] variable, this is variable *= [mulVal]
   ///
   /// ```dart
   ///
@@ -629,7 +627,7 @@ class Logic {
 
   /// Shorthand for a [Conditional] which increments this by [divVal]
   ///
-  /// For a [Logic] var, this is var /= [divVal]
+  /// For a [Logic] variable, this is variable /= [divVal]
   ///
   /// ```dart
   ///
