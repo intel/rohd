@@ -480,6 +480,10 @@ void main() {
       expect(testLogicZero[0].value.toInt(), 0);
       expect(testLogicInvalid[0].value, LogicValue.x);
 
+      expect(testLogicOne[-1].value.toInt(), 1);
+      expect(testLogicZero[-1].value.toInt(), 0);
+      expect(testLogicInvalid[-1].value, LogicValue.x);
+
       expect(() => testLogic[10], throwsException);
       expect(() => testLogicOne[1], throwsException);
       expect(() => testLogicZero[1], throwsException);
