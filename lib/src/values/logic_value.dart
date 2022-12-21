@@ -474,6 +474,7 @@ abstract class LogicValue {
   /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
   /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
   /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(1); // == LogicValue.ofString('010')
   ///
   /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
   /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
