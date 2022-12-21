@@ -467,10 +467,14 @@ abstract class LogicValue {
   /// and [endIndex] are equal, then a zero-width value is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   ///
+  /// If [endIndex] is not provided, [width] of the [Logic] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart [TODO]
   /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
   /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
   /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  ///
   /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
   /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
   /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
