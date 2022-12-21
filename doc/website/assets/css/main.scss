@@ -7,3 +7,12 @@ search: false
 
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
+
+// This changes the code box
+.highlight {
+  margin: 0;
+  padding: 0.5em;
+  font-family: $monospace;
+  font-size: 0.6rem;
+  line-height: 1.8;
+}

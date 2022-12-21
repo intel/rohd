@@ -19,12 +19,14 @@ import 'package:rohd/rohd.dart';
 // Define a class Counter that extends ROHD's abstract Module class
 class Counter extends Module {
 
-  // For convenience, map interesting outputs to short variable names for consumers of this module
+  // For convenience, map interesting outputs to 
+  // short variable names for consumers of this module
   Logic get val => output('val');
 
   // This counter supports any width, determined at run-time
   final int width;
-  Counter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) : super(name: name) {
+  Counter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) 
+      : super(name: name) {
     // Register inputs and outputs of the module in the constructor.
     // Module logic must consume registered inputs and output to registered outputs.
     en    = addInput('en', en);
@@ -39,9 +41,11 @@ class Counter extends Module {
     // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
     nextVal <= val + 1;
 
-    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    // `Sequential` is like SystemVerilog's always_ff, 
+    // in this case trigger on the positive edge of clk
     Sequential(clk, [
-      // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
+      // `If` is a conditional if statement, 
+      // like `if` in SystemVerilog always blocks
       If(reset, then:[
         // the '<' operator is a conditional assignment
         val < 0
@@ -54,8 +58,6 @@ class Counter extends Module {
 
 ```
 
-<iframe src="https://zapp.run/embed/zkm06xqkn06?theme=dark&lazy=true&split=100" style="width: 100%; height: 20rem; border: 0; overflow: hidden;"></iframe>
-
 You can find an executable version of this counter example in [example/example.dart](https://github.com/intel/rohd/blob/main/example/example.dart).
 
 ## A more complex example
@@ -64,15 +66,17 @@ The below example demonstrates some aspects of the power of ROHD where writing e
 
 The ROHD module TreeOfTwoInputModules is a succinct representation a logarithmic-height tree of arbitrary two-input/one-output modules.
 
-```
+```dart
 class TreeOfTwoInputModules extends Module {
   
   final Logic Function(Logic a, Logic b) _op;
   final List<Logic> _seq = [];
   Logic get out => output('out');
 
-  TreeOfTwoInputModules(List<Logic> seq, this._op) : super(name: 'tree_of_two_input_modules') {
-    if(seq.isEmpty) throw Exception("Don't use TreeOfTwoInputModules with an empty sequence");
+  TreeOfTwoInputModules(List<Logic> seq, this._op) 
+      : super(name: 'tree_of_two_input_modules') {
+    if(seq.isEmpty) 
+        throw Exception("Don't use TreeOfTwoInputModules with an empty sequence");
     
     for(var i = 0; i < seq.length; i++) {
       _seq.add(addInput('seq$i', seq[i], width: seq[i].width));
@@ -82,8 +86,12 @@ class TreeOfTwoInputModules extends Module {
     if(_seq.length == 1) {
       out <= _seq[0];
     } else {
-      var a = TreeOfTwoInputModules(_seq.getRange(0,           _seq.length~/2).toList(), _op).out;
-      var b = TreeOfTwoInputModules(_seq.getRange(_seq.length~/2, _seq.length).toList(), _op).out;
+      var a = TreeOfTwoInputModules(
+        _seq.getRange(0, _seq.length~/2).toList(), _op
+      ).out;
+      var b = TreeOfTwoInputModules(
+        _seq.getRange(_seq.length~/2, _seq.length).toList(), _op
+      ).out;
       out <= _op(a, b);
     }
   }
@@ -133,8 +141,14 @@ logic [7:0] out_1;
 logic [7:0] out_0;
 
 assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules_2  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.seq4(seq4),.seq5(seq5),.seq6(seq6),.seq7(seq7),.out(out_1));
-TreeOfTwoInputModules_2  tree_of_two_input_modules_0(.seq0(seq8),.seq1(seq9),.seq2(seq10),.seq3(seq11),.seq4(seq12),.seq5(seq13),.seq6(seq14),.seq7(seq15),.out(out_0));
+TreeOfTwoInputModules_2  tree_of_two_input_modules(
+  .seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),
+  .seq4(seq4),.seq5(seq5),.seq6(seq6),.seq7(seq7),.out(out_1)
+);
+TreeOfTwoInputModules_2  tree_of_two_input_modules_0(
+  .seq0(seq8),.seq1(seq9),.seq2(seq10),.seq3(seq11),
+  .seq4(seq12),.seq5(seq13),.seq6(seq14),.seq7(seq15),.out(out_0)
+);
 endmodule : TreeOfTwoInputModules_3
 
 ////////////////////
@@ -154,8 +168,12 @@ logic [7:0] out_1;
 logic [7:0] out_0;
 
 assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules_1  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.out(out_1));
-TreeOfTwoInputModules_1  tree_of_two_input_modules_0(.seq0(seq4),.seq1(seq5),.seq2(seq6),.seq3(seq7),.out(out_0));
+TreeOfTwoInputModules_1  tree_of_two_input_modules(
+  .seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.out(out_1)
+);
+TreeOfTwoInputModules_1  tree_of_two_input_modules_0(
+  .seq0(seq4),.seq1(seq5),.seq2(seq6),.seq3(seq7),.out(out_0)
+);
 endmodule : TreeOfTwoInputModules_2
 
 ////////////////////
@@ -171,8 +189,12 @@ logic [7:0] out_1;
 logic [7:0] out_0;
 
 assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules_0  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.out(out_1));
-TreeOfTwoInputModules_0  tree_of_two_input_modules_0(.seq0(seq2),.seq1(seq3),.out(out_0));
+TreeOfTwoInputModules_0  tree_of_two_input_modules(
+  .seq0(seq0),.seq1(seq1),.out(out_1)
+);
+TreeOfTwoInputModules_0  tree_of_two_input_modules_0(
+  .seq0(seq2),.seq1(seq3),.out(out_0)
+);
 endmodule : TreeOfTwoInputModules_1
 
 ////////////////////
