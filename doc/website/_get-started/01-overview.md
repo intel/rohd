@@ -2,7 +2,7 @@
 title: "Overview"
 permalink: /get-started/overview/
 excerpt: "Overview of ROHD framework."
-last_modified_at: 2022-12-05T21:36:18-04:00
+last_modified_at: 2022-12-05
 toc: true
 ---
 

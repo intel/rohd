@@ -2,7 +2,7 @@
 title: "Finite State Machines"
 permalink: /docs/fsm/
 excerpt: "Finite State Machines"
-last_modified_at: 2022-12-06T08:48:05-04:00
+last_modified_at: 2022-12-06
 toc: true
 ---
 

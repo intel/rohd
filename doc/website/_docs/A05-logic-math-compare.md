@@ -2,7 +2,7 @@
 title: "Simple logical, mathematical, and comparison operations"
 permalink: /docs/logic-math-compare/
 excerpt: "Simple logical, mathematical, and comparison operations"
-last_modified_at: 2022-12-06T08:48:05-04:00
+last_modified_at: 2022-12-06
 toc: true
 ---
 
