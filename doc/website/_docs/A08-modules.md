@@ -34,7 +34,8 @@ class MyModule extends Module {
     // constructor
     MyModule(Logic in1, {String name='mymodule'}) : super(name: name) {
         // add inputs in the constructor, passing in the Logic it is connected to
-        // it's a good idea to re-set the input parameters so you don't accidentally use the wrong one
+        // it's a good idea to re-set the input parameters, 
+        // so you don't accidentally use the wrong one
         in1 = addInput('in1', in1);
 
         // add outputs in the constructor as well
@@ -76,8 +77,8 @@ class MyModule extends Module {
         // set the width of 'x' based on the constructor argument
         addOutput('x', width: xWidth);
 
-        // you can dynamically set the output width based on an input width, as well
-        // addOutput returns the value of output('y'), if you want it
+        // you can dynamically set the output width based on an input width, 
+        // as well addOutput returns the value of output('y'), if you want it
         var y_output = addOutput('y', width: b.width);
     }
 
@@ -86,12 +87,14 @@ class MyModule extends Module {
       return input('a');
     }
     
-    // Dart shorthand makes getters less verbose, but the functionality is the same as above
+    // Dart shorthand makes getters less verbose, 
+    // but the functionality is the same as above
     Logic get b => input('b');
     Logic get x => output('x');
     Logic get y => output('y');
 
-    // it is not necessary to have all signals accessible through getters, here we omit 'c'
+    // it is not necessary to have all signals accessible through getters, 
+    // here we omit 'c'
 
 }
 ```

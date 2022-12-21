@@ -18,7 +18,8 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.  You can also use the `setPort` function to directly set individual ports on the `Interface` instead of via tagged set of ports.
 
 ```dart
-// Define a set of legal directions for this interface, and pass as parameter to Interface
+// Define a set of legal directions for this interface, 
+// and pass as parameter to Interface
 enum CounterDirection {IN, OUT}
 class CounterInterface extends Interface<CounterDirection> {
   

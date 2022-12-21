@@ -26,7 +26,9 @@ d <= a[7];
 // here, the MSB is on the left, LSB is on the right
 e <= [d, c, b].swizzle();
 
-// alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
+// alternatively, do a reverse swizzle 
+// (useful for lists where 0-index is actually the 0th element)
+//
 // here, the LSB is on the left, the MSB is on the right
 e <= [b, c, d].rswizzle();
 ```
