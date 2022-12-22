@@ -686,7 +686,10 @@ class Logic {
   /// nextVal <= val[-9]; // Error!: allowed values [-8, 7]
   /// nextVal <= val[8]; // Error!: allowed values [-8, 7]
   /// ```
-  ///
+  /// Note: When, indexed by a Logic value, out-of-bounds will always return an
+  /// invalid (LogicValue.x) value. This behavior is differs in simulation as
+  /// compared to the generated SystemVerilog. In the generated SystemVerilog,
+  /// [index] will be ignored, and the logic is returned as-is.
   Logic operator [](dynamic index) {
     if (index is Logic) {
       return IndexGate(this, index).selection;
@@ -702,6 +705,7 @@ class Logic {
   /// If [endIndex] comes before the [startIndex] on position, the returned
   /// value will be reversed relative to the original signal.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
   ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
@@ -719,6 +723,12 @@ class Logic {
     final modifiedStartIndex =
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+
+    if (width == 1 &&
+        modifiedEndIndex == 0 &&
+        modifiedEndIndex == modifiedStartIndex) {
+      return this;
+    }
 
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
