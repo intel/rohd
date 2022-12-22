@@ -45,9 +45,15 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(gtm, vectors);
     final simResult = SimCompare.iverilogVector(
-        gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-        signalToWidthMap: {'payloadIn1': 8, 'payloadIn2': 8, 'payloadOut': 16},
-        dontDeleteTmpFiles: true);
+      gtm.generateSynth(),
+      gtm.runtimeType.toString(),
+      vectors,
+      signalToWidthMap: {
+        'payloadIn1': 8,
+        'payloadIn2': 8,
+        'payloadOut': 16,
+      },
+    );
     expect(simResult, equals(true));
   });
 }
