@@ -79,6 +79,10 @@ nextVal &lt;= val[-5]; // output: 1, also val[3] == val[-5]
 nextVal &lt;= val[-9]; // Error!: allowed values [-8, 7]
 nextVal &lt;= val[8]; // Error!: allowed values [-8, 7]
 </code></pre>
+<p>Note: When, indexed by a Logic value, out-of-bounds will always return an
+invalid (LogicValue.x) value. This behavior is differs in simulation as
+compared to the generated SystemVerilog. In the generated SystemVerilog,
+<code>index</code> will be ignored, and the logic is returned as-is.</p>
 </section>
 
 

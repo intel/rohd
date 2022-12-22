@@ -85,6 +85,11 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   }
   final a = inputs[_original]!;
 
+  &#47;&#47; When, input width is 1, ignore startIndex and endIndex
+  if (original.width == 1) {
+    return a;
+  }
+
   &#47;&#47; SystemVerilog doesn&#39;t allow reverse-order select to reverse a bus,
   &#47;&#47; so do it manually
   if (startIndex &gt; endIndex) {

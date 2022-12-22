@@ -85,6 +85,11 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   }
 
   final target = inputs[_originalName]!;
+
+  if (_original.width == 1) {
+    return target;
+  }
+
   final idx = inputs[_indexName]!;
   return &#39;$target[$idx]&#39;;
 }</code></pre>

@@ -87,6 +87,12 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
       (startIndex &lt; 0) ? width + startIndex : startIndex;
   final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
 
+  if (width == 1 &amp;&amp;
+      modifiedEndIndex == 0 &amp;&amp;
+      modifiedEndIndex == modifiedStartIndex) {
+    return this;
+  }
+
   &#47;&#47; Create a new bus subset
   return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
 }</code></pre>
