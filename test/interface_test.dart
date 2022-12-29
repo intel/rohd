@@ -32,6 +32,12 @@ class MyModule extends Module {
   }
 }
 
+class UncleanPortInterface extends Interface<MyDirection> {
+  UncleanPortInterface() {
+    setPorts([Port('end')], [MyDirection.dir1]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -42,5 +48,11 @@ void main() {
       expect(m.i1.getPorts({MyDirection.dir1}).length, 1);
       expect(m.i2.getPorts({MyDirection.dir2}).length, 1);
     });
+  });
+
+  test('should return exception when port name is not sanitary.', () async {
+    expect(() async {
+      UncleanPortInterface();
+    }, throwsException);
   });
 }
