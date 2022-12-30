@@ -14,6 +14,8 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/exceptions/module/module_exceptions.dart';
 import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -121,7 +123,8 @@ abstract class Module {
   /// unique name within its scope.
   String get uniqueInstanceName => hasBuilt || reserveName
       ? _uniqueInstanceName
-      : throw Exception('Module must be built to access uniquified name.'
+      : throw ModuleNotBuiltException(
+          'Module must be built to access uniquified name.'
           '  Call build() before accessing this.');
   String _uniqueInstanceName;
 
@@ -188,7 +191,8 @@ abstract class Module {
   /// Only returns valid information after [build].
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
-      throw Exception('Module must be built before accessing hierarchy.'
+      throw ModuleNotBuiltException(
+          'Module must be built before accessing hierarchy.'
           '  Call build() before executing this.');
     }
     Module? pModule = this;
@@ -224,6 +228,9 @@ abstract class Module {
   /// starting up interactions with independent processes (e.g. cosimulation).
   ///
   /// This function should only be called one time per [Module].
+  ///
+  /// The hierarchy is built "bottom-up", so leaf-level [Module]s are built
+  /// before the [Module]s which contain them.
   @mustCallSuper
   Future<void> build() async {
     if (hasBuilt) {
@@ -249,7 +256,136 @@ abstract class Module {
           reserved: module.reserveName);
     }
 
+    // grab combinational paths
+    final initialComboPaths = getCombinationalPaths();
+    _combinationalPaths = UnmodifiableMapView(
+        Map.fromEntries(inputs.values.map((inputPort) => MapEntry(
+              inputPort,
+              initialComboPaths.containsKey(inputPort)
+                  ? UnmodifiableListView(initialComboPaths[inputPort]!)
+                  : const <Logic>[],
+            ))));
+
+    // notify submodules that all their peers are built
+    for (final subModule in subModules) {
+      subModule.postPeerBuild();
+    }
+
     _hasBuilt = true;
+  }
+
+  /// Called when all peer-level [Module]s to this [Module] have completed
+  /// the [build] process.
+  ///
+  /// By default, this function does nothing, but it can be overridden by
+  /// subclasses of [Module] to do processing after all [Module]s at the
+  /// same hierarchy have finished [build].
+  @protected
+  void postPeerBuild() {
+    // by default, do nothing!
+  }
+
+  /// A mapping of purely combinational paths from each input port to all
+  /// downstream output ports.
+  ///
+  /// Each key of the returned [Map] is an [input] of this [Module].  Each
+  /// value of the [Map] is a [List] of [output]s of this [Module] which may
+  /// change combinationally (no sequential logic in-between) as a result
+  /// of the corresponding key [input] changing.
+  ///
+  /// This is the stored result from calling [getCombinationalPaths] at [build]
+  /// time.  The module must be built before calling this.
+  Map<Logic, List<Logic>>? get combinationalPaths {
+    if (!_hasBuilt) {
+      throw ModuleNotBuiltException();
+    }
+    return _combinationalPaths;
+  }
+
+  /// Internal storage of [combinationalPaths].
+  late final Map<Logic, List<Logic>>? _combinationalPaths;
+
+  /// The opposite of [combinationalPaths], where every key of the [Map] is an
+  /// output and the values are lists of inputs which could combinationally
+  /// affect that output.
+  ///
+  /// This module must be built before calling this.
+  Map<Logic, List<Logic>> get reverseCombinationalPaths =>
+      _reverseCombinationalPaths ??= _getReverseCombinationalPaths();
+
+  /// Internal storage of [reverseCombinationalPaths], cached.
+  Map<Logic, List<Logic>>? _reverseCombinationalPaths;
+
+  /// Calculates the opposite of [combinationalPaths].
+  Map<Logic, List<Logic>> _getReverseCombinationalPaths() {
+    if (!_hasBuilt) {
+      throw ModuleNotBuiltException();
+    }
+
+    assert(_reverseCombinationalPaths == null,
+        'Should not recreate if already cached result.');
+
+    final reverseComboPaths = <Logic, List<Logic>>{};
+    for (final inputPort in _combinationalPaths!.keys) {
+      for (final outputPort in _combinationalPaths![inputPort]!) {
+        reverseComboPaths
+            .putIfAbsent(outputPort, () => <Logic>[])
+            .add(inputPort);
+      }
+    }
+
+    return UnmodifiableMapView(
+        Map.fromEntries(outputs.values.map((outputPort) => MapEntry(
+              outputPort,
+              reverseComboPaths.containsKey(outputPort)
+                  ? UnmodifiableListView(reverseComboPaths[outputPort]!)
+                  : const <Logic>[],
+            ))));
+  }
+
+  /// Returns a mapping of purely combinational paths from each input port
+  /// to all downstream output ports.
+  ///
+  /// Each key of the returned [Map] is an [input] of this [Module].  Each
+  /// value of the [Map] is a [List] of [output]s of this [Module] which may
+  /// change combinationally (no sequential logic in-between) as a result
+  /// of the corresponding key [input] changing.
+  ///
+  /// The default behavior of this function is to search through from all
+  /// inputs to all potential outputs.  If a [Module] implements custom behavior
+  /// internally (e.g. a custom gate or a cosimulated module), then it makes
+  /// sense to override this function to give an accurate picture.  If the
+  /// default behavior doesn't work (because no visible connectivity exists
+  /// inside the [Module]), then the return value will end up with all empty
+  /// [List]s in the values of the [Map].
+  ///
+  /// The result of this function is stored at [build] time.  The result is
+  /// primarily used for calculating valid and complete sensitivity lists
+  /// for [Combinational] execution.
+  @protected
+  Map<Logic, List<Logic>> getCombinationalPaths() {
+    final comboPaths = <Logic, List<Logic>>{};
+    for (final inputPort in inputs.values) {
+      final comboOutputs = <Logic>[];
+      final searchList = TraverseableCollection<Logic>()..add(inputPort);
+      for (var i = 0; i < searchList.length; i++) {
+        for (final dstConnection in inputPort.dstConnections) {
+          if (dstConnection.isInput && dstConnection.parentModule != this) {
+            // this is an input port of a sub-module, jump over it
+            searchList.addAll(dstConnection
+                .parentModule!._combinationalPaths![dstConnection]!);
+          } else if (isOutput(dstConnection)) {
+            // this is an output port of this module, store it!
+            comboOutputs.add(dstConnection);
+          } else {
+            // this is a wire within this module, keep tracing
+            searchList.addAll(dstConnection.dstConnections);
+          }
+        }
+      }
+      comboPaths[inputPort] = comboOutputs;
+    }
+    return comboPaths;
   }
 
   /// Adds a [Module] to this as a subModule.
@@ -496,7 +632,7 @@ abstract class Module {
   /// may have other output formats, languages, files, etc.
   String generateSynth() {
     if (!_hasBuilt) {
-      throw Exception('Module has not yet built!  Must call build() first.');
+      throw ModuleNotBuiltException();
     }
 
     final synthHeader = '''
