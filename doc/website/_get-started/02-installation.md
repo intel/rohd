@@ -2,7 +2,7 @@
 title: "Setup & Install"
 permalink: /get-started/setup/
 excerpt: "Instructions for installing the theme for new and existing Jekyll based sites."
-last_modified_at: 2022-12-05
+last_modified_at: 2023-01-03
 toc: true
 ---
 
@@ -11,7 +11,7 @@ Follow the instruction at [https://dart.dev/get-dart](https://dart.dev/get-dart)
 
 Once you have Dart installed, if you don't already have a project, you can create one using `dart create`: [https://dart.dev/tools/dart-tool](https://dart.dev/tools/dart-tool)
 
-Then add ROHD as a dependency to your pubspec.yaml file.  ROHD is [registered](https://pub.dev/packages/rohd) on pub.dev.  The easiest way to add ROHD as a dependency is following the instructions here https://pub.dev/packages/rohd/install.
+Then add ROHD as a dependency to your pubspec.yaml file.  ROHD is [registered](https://pub.dev/packages/rohd) on pub.dev.  The easiest way to add ROHD as a dependency is following the instructions here [https://pub.dev/packages/rohd/install](https://pub.dev/packages/rohd/install).
 
 Now you can import it in your project using:
 
