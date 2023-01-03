@@ -1,5 +1,5 @@
 [![Tests](https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push)](https://github.com/intel/rohd/actions/workflows/general.yml)
-[![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/rohd/rohd-library.html)
+[![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/api/rohd/rohd-library.html)
 [![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
@@ -80,7 +80,7 @@ Now you can import it in your project using:
 import 'package:rohd/rohd.dart';
 ```
 
-There are complete API docs available at https://intel.github.io/rohd/rohd/rohd-library.html.
+There are complete API docs available at https://intel.github.io/rohd/api.
 
 If you need some help, you can join the [Discord server](https://discord.com/invite/jubxF84yGw) or visit our [Discussions](https://github.com/intel/rohd/discussions) page.  These are friendly places where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
 
@@ -150,7 +150,7 @@ See a more advanced example of a logarithmic-depth tree of arbitrary functionali
 You can find an executable version of the tree example in [example/tree.dart](https://github.com/intel/rohd/blob/main/example/tree.dart).
 
 ### Logical signals
-The fundamental signal building block in ROHD is called [`Logic`](https://intel.github.io/rohd/rohd/Logic-class.html).
+The fundamental signal building block in ROHD is called [`Logic`](https://intel.github.io/rohd/api/rohd/Logic-class.html).
 
 ```dart
 // a one bit, unnamed signal
@@ -163,7 +163,7 @@ var bus = Logic(name: 'b', width: 8)
 #### The value of a signal
 You can access the current value of a signal using `value`.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an int with `valueInt` (ROHD will throw an exception otherwise).  If the signal has more bits than a dart `int` (64 bits, usually), you need to use `valueBigInt` to get a `BigInt` (again, ROHD will throw an exception otherwise).
 
-The value of a `Logic` is of type [`LogicValue`](https://intel.github.io/rohd/rohd/LogicValue-class.html), with pre-defined constant bit values `x`, `z`, `one`, and `zero`.  `LogicValue` has a number of built-in logical operations (like &, |, ^, +, -, etc.).
+The value of a `Logic` is of type [`LogicValue`](https://intel.github.io/rohd/api/rohd/LogicValue-class.html), with pre-defined constant bit values `x`, `z`, `one`, and `zero`.  `LogicValue` has a number of built-in logical operations (like &, |, ^, +, -, etc.).
 
 ```dart
 var x = Logic(width:2);
@@ -202,7 +202,7 @@ mySignal.posedge.listen((args) {
 You can also use helper getters `nextChanged`, `nextPosedge`, and `nextNegedge` which return `Future<LogicValueChanged>`.  You can think of these as similar to something like `@(posedge mySignal);` in SystemVerilog testbench code.  Again, these are not something that should be included in synthesizable ROHD hardware.
 
 ### Constants
-Constants can often be inferred by ROHD automatically, but can also be explicitly defined using [`Const`](https://intel.github.io/rohd/rohd/Const-class.html), which extends `Logic`.
+Constants can often be inferred by ROHD automatically, but can also be explicitly defined using [`Const`](https://intel.github.io/rohd/api/rohd/Const-class.html), which extends `Logic`.
 
 ```dart
 // a 16 bit constant with value 5
@@ -288,7 +288,7 @@ e = e.withSet(3, d);
 ```
 
 ### Modules
-[`Module`](https://intel.github.io/rohd/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
+[`Module`](https://intel.github.io/rohd/api/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
 
 1. All logic within a `Module` must consume only inputs (from the `input` or `addInput` methods) to the Module either directly or indirectly.
 2. Any logic outside of a `Module` must consume the signals only via outputs (from the `output` or `addOutput` methods) of the Module.
@@ -378,19 +378,19 @@ class MyModule extends Module {
 ```
 
 ### Sequentials
-ROHD has a basic [`FlipFlop`](https://intel.github.io/rohd/rohd/FlipFlop-class.html) module that can be used as a flip flop.  For more complex sequential logic, use the `Sequential` block described in the Conditionals section.
+ROHD has a basic [`FlipFlop`](https://intel.github.io/rohd/api/rohd/FlipFlop-class.html) module that can be used as a flip flop.  For more complex sequential logic, use the `Sequential` block described in the Conditionals section.
 
 Dart doesn't have a notion of certain signals being "clocks" vs. "not clocks".  You can use any signal as a clock input to sequential logic, and have as many clocks of as many frequencies as you want.
 
 ### Conditionals
-ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/rohd/Conditional-class.html) type statements that always must fall within a type of `_Always` block, similar to SystemVerilog.  There are two types of `_Always` blocks: [`Sequential`](https://intel.github.io/rohd/rohd/Sequential-class.html) and [`Combinational`](https://intel.github.io/rohd/rohd/Combinational-class.html), which map to SystemVerilog's `always_ff` and `always_comb`, respectively.  `Combinational` takes a list of `Conditional` statements.  Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements.  You can create `Conditional` composition chains as deep as you like.
+ROHD supports a variety of [`Conditional`](https://intel.github.io/rohd/api/rohd/Conditional-class.html) type statements that always must fall within a type of `_Always` block, similar to SystemVerilog.  There are two types of `_Always` blocks: [`Sequential`](https://intel.github.io/rohd/api/rohd/Sequential-class.html) and [`Combinational`](https://intel.github.io/rohd/api/rohd/Combinational-class.html), which map to SystemVerilog's `always_ff` and `always_comb`, respectively.  `Combinational` takes a list of `Conditional` statements.  Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements.  You can create `Conditional` composition chains as deep as you like.
 
 Conditional statements are executed imperatively and in order, just like the contents of `always` blocks in SystemVerilog.  `_Always` blocks in ROHD map 1-to-1 with SystemVerilog `always` statements when converted.
 
-Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/rohd/ConditionalAssign-class.html) object instead of `<=`.  The right hand side a `ConditionalAssign` can be anything that can be `put` onto a `Logic`, which includes `int`s.  If you're looking to fill the width of something, use `Const` with the `fill = true`.
+Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a [`ConditionalAssign`](https://intel.github.io/rohd/api/rohd/ConditionalAssign-class.html) object instead of `<=`.  The right hand side a `ConditionalAssign` can be anything that can be `put` onto a `Logic`, which includes `int`s.  If you're looking to fill the width of something, use `Const` with the `fill = true`.
 
 #### `If`
-Below is an example of an [`If`](https://intel.github.io/rohd/rohd/If-class.html) statement in ROHD:
+Below is an example of an [`If`](https://intel.github.io/rohd/api/rohd/If-class.html) statement in ROHD:
 ```dart
 Combinational([
   If(a, then: [
@@ -410,7 +410,7 @@ Combinational([
 ```
 
 #### `IfBlock`
-The [`IfBlock`](https://intel.github.io/rohd/rohd/IfBlock-class.html) makes syntax for long chains of if / else if / else chains nicer.  For example:
+The [`IfBlock`](https://intel.github.io/rohd/api/rohd/IfBlock-class.html) makes syntax for long chains of if / else if / else chains nicer.  For example:
 ```dart
 Sequential(clk, [
   IfBlock([
@@ -433,7 +433,7 @@ Sequential(clk, [
 ```
 
 #### `Case` and `CaseZ`
-ROHD supports [`Case`](https://intel.github.io/rohd/rohd/Case-class.html) and [`CaseZ`](https://intel.github.io/rohd/rohd/CaseZ-class.html) statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:
+ROHD supports [`Case`](https://intel.github.io/rohd/api/rohd/Case-class.html) and [`CaseZ`](https://intel.github.io/rohd/api/rohd/CaseZ-class.html) statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog.  For example:
 ```dart
 Combinational([
   Case([b,a].swizzle(), [
@@ -470,9 +470,9 @@ There is no support for an equivalent of `casex` from SystemVerilog, since it ca
 ### Interfaces
 Interfaces make it easier to define port connections of a module in a reusable way.  An example of the counter re-implemented using interfaces is shown below.
 
-[`Interface`](https://intel.github.io/rohd/rohd/Interface-class.html) takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
+[`Interface`](https://intel.github.io/rohd/api/rohd/Interface-class.html) takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
 
-The [`Port`](https://intel.github.io/rohd/rohd/Port-class.html) class extends `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
+The [`Port`](https://intel.github.io/rohd/api/rohd/Port-class.html) class extends `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor.  Modifying the same `Interface` as was passed would have negative consequences if multiple `Module`s were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
@@ -607,7 +607,7 @@ class NotGate extends Module with InlineSystemVerilog {
 ```
 
 ### Pipelines
-ROHD has a built-in syntax for handling pipelines in a simple & refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that [`Pipeline`](https://intel.github.io/rohd/rohd/Pipeline-class.html) consumes a clock and a list of stages, which are each a `List<Conditional> Function(PipelineStageInfo p)`, where `PipelineStageInfo` has information on the value of a given signal in that stage.  The `List<Conditional>` the same type of procedural code that can be placed in `Combinational`.
+ROHD has a built-in syntax for handling pipelines in a simple & refactorable way.  The below example shows a three-stage pipeline which adds 1 three times.  Note that [`Pipeline`](https://intel.github.io/rohd/api/rohd/Pipeline-class.html) consumes a clock and a list of stages, which are each a `List<Conditional> Function(PipelineStageInfo p)`, where `PipelineStageInfo` has information on the value of a given signal in that stage.  The `List<Conditional>` the same type of procedural code that can be placed in `Combinational`.
 
 ```dart
 Logic a;
@@ -647,7 +647,7 @@ var b = pipeline.get(a);
 ```
 You can also optionally add stalls and reset values for signals in the pipeline.  Any signal not accessed via the `PipelineStageInfo` object is just accessed as normal, so other logic can optionally sit outside of the pipeline object.
 
-ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
+ROHD also includes a version of `Pipeline` that supports a ready/valid protocol called [`ReadyValidPipeline`](https://intel.github.io/rohd/api/rohd/ReadyValidPipeline-class.html).  The syntax looks the same, but has some additional parameters for readys and valids.
 
 ### Finite State Machines
 ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that `StateMachine` consumes the `clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of `states` of the FSM.
@@ -705,7 +705,7 @@ class TrafficTestModule extends Module {
 
 ## ROHD Simulator
 
-The ROHD simulator is a static class accessible as [`Simulator`](https://intel.github.io/rohd/rohd/Simulator-class.html) which implements a simple event-based simulator.  All `Logic`s in Dart have `glitch` events which propogate values to connected `Logic`s downstream.  In this way, ROHD propogates values across the entire graph representation of the hardware (without any `Simulator` involvement required).  The simulator has a concept of (unitless) time, and arbitrary Dart functions can be registered to occur at arbitraty times in the simulator.  Asking the simulator to run causes it to iterate through all registered timestamps and execute the functions in chronological order.  When these functions deposit signals on `Logic`s, it propogates values across the hardware.  The simulator has a number of events surrounding execution of a timestamp tick so that things like `FlipFlop`s can know when clocks and signals are glitch-free.
+The ROHD simulator is a static class accessible as [`Simulator`](https://intel.github.io/rohd/api/rohd/Simulator-class.html) which implements a simple event-based simulator.  All `Logic`s in Dart have `glitch` events which propogate values to connected `Logic`s downstream.  In this way, ROHD propogates values across the entire graph representation of the hardware (without any `Simulator` involvement required).  The simulator has a concept of (unitless) time, and arbitrary Dart functions can be registered to occur at arbitraty times in the simulator.  Asking the simulator to run causes it to iterate through all registered timestamps and execute the functions in chronological order.  When these functions deposit signals on `Logic`s, it propogates values across the hardware.  The simulator has a number of events surrounding execution of a timestamp tick so that things like `FlipFlop`s can know when clocks and signals are glitch-free.
 
 - To register a function at an arbitraty timestamp, use `Simulator.registerAction`
 - To set a maximum simulation time, use `Simulator.setMaxSimTime`
@@ -719,7 +719,7 @@ The ROHD simulator is a static class accessible as [`Simulator`](https://intel.g
 
 ## Instantiation of External Modules
 
-ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `definitionName`.  This is useful for integration related activities.
+ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/api/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `definitionName`.  This is useful for integration related activities.
 
 There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalSystemVerilogModule` planned for release soon.
 
