@@ -831,6 +831,12 @@ class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
   Else(List<Conditional> then) : super(Const(1), then);
+
+  /// If none of the proceding [Iff] or [ElseIf] are executed, then
+  /// [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  Else.s(Conditional then) : this([then]);
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like
