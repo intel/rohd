@@ -290,6 +290,25 @@ class SignalRedrivenSequentialModuleWithX extends Module {
   }
 }
 
+class MultipleConditionalModule extends Module {
+  MultipleConditionalModule(Logic a, Logic b)
+      : super(name: 'multiplecondmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final c = addOutput('c');
+
+    final Conditional condOne = c < 1;
+
+    Combinational([
+      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+    ]);
+
+    Combinational([
+      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+    ]);
+  }
+}
+
 void main() {
   tearDown(Simulator.reset);
 
@@ -407,6 +426,12 @@ void main() {
           mod.generateSynth(), mod.runtimeType.toString(), vectors,
           signalToWidthMap: {'d': 8, 'q': 8});
       expect(simResult, equals(true));
+    });
+
+    test('should return exception if a conditional is used multiple times.',
+        () async {
+      expect(
+          () => MultipleConditionalModule(Logic(), Logic()), throwsException);
     });
   });
 
