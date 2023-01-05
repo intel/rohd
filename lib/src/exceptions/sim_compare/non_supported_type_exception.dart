@@ -9,21 +9,17 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
+import 'package:rohd/src/exceptions/rohd_exception.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 
 /// An exception that thrown when `runtimeType` of expected vector
 /// output from [SimCompare] is invalid or unsupported.
-class NonSupportedTypeException implements Exception {
-  late final String _message;
-
+class NonSupportedTypeException extends RohdException {
   /// Displays [vector] which have invalid or unsupported `runtimeType`
   /// with default error [message].
   ///
   /// Creates a [NonSupportedTypeException] with an optional error [message].
   NonSupportedTypeException(String vector,
       [String message = 'The runtimetype of expected vector is unsupported: '])
-      : _message = message + vector.runtimeType.toString();
-
-  @override
-  String toString() => _message;
+      : super(message + vector.runtimeType.toString());
 }
