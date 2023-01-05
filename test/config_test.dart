@@ -60,10 +60,11 @@ void main() async {
 
     createTemporaryDump(mod, dumpName);
 
+    await Simulator.run();
+
     final vcdContents = await File(temporaryDumpPath(dumpName)).readAsString();
     expect(vcdContents, contains(version));
 
-    await Simulator.run();
     deleteTemporaryDump(dumpName);
   });
 }

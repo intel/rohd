@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// wave_dumper.dart
@@ -18,6 +18,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Outputs to vcd format at [outputPath].  [module] must be built prior to
 /// attaching the [WaveDumper].
+///
+/// The waves will only dump to the file once the simulation has completed.
 class WaveDumper {
   /// The [Module] being dumped.
   final Module module;
@@ -30,6 +32,9 @@ class WaveDumper {
 
   /// A sink to write contents into [_outputFile].
   late final IOSink _outFileSink;
+
+  /// A buffer for contents before writing to the file sink.
+  final StringBuffer _fileBuffer = StringBuffer();
 
   /// A counter for tracking signal names in the VCD file.
   int _signalMarkerIdx = 0;
@@ -82,13 +87,15 @@ class WaveDumper {
     });
   }
 
-  /// Writes [contents] to the output file.
+  /// Buffers [contents] to be written to the output file.
   void _writeToFile(String contents) {
-    _outFileSink.write(contents);
+    _fileBuffer.write(contents);
   }
 
   /// Terminates the waveform dumping, including closing the file.
   Future<void> _terminate() async {
+    _outFileSink.write(_fileBuffer.toString());
+    _fileBuffer.clear();
     await _outFileSink.flush();
     await _outFileSink.close();
   }
