@@ -74,7 +74,8 @@ to <code>'</code> in SystemVerilog.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) =&gt; _wire.put(val, fill: fill);</code></pre>
+  <pre class="language-dart"><code class="language-dart">void put(dynamic val, {bool fill = false}) =&gt;
+    _wire.put(val, signalName: name, fill: fill);</code></pre>
 </section>
 
 
