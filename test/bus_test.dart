@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// bus_test.dart
@@ -7,7 +7,9 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/logic/logic_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -248,6 +250,16 @@ void main() {
       a.put(0xaa);
       b.put(0x55);
       expect(out.value.toInt(), equals(0x55aa));
+    });
+
+    group('put exceptions', () {
+      test('width mismatch', () {
+        expect(
+          () => Logic(name: 'byteSignal', width: 8)
+              .put(LogicValue.ofString('1010')),
+          throwsA(const TypeMatcher<PutException>()),
+        );
+      });
     });
   });
 

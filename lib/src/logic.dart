@@ -12,8 +12,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/logic/logic_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
@@ -201,8 +201,8 @@ class _Wire {
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
   /// This function calls [put()] in [Simulator.injectAction()].
-  void inject(dynamic val, {bool fill = false}) {
-    Simulator.injectAction(() => put(val, fill: fill));
+  void inject(dynamic val, {required String signalName, bool fill = false}) {
+    Simulator.injectAction(() => put(val, signalName: signalName, fill: fill));
   }
 
   /// Keeps track of whether there is an active put, to detect reentrance.
@@ -218,7 +218,7 @@ class _Wire {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
   /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) {
+  void put(dynamic val, {required String signalName, bool fill = false}) {
     LogicValue newValue;
     if (val is int) {
       if (fill) {
@@ -228,7 +228,8 @@ class _Wire {
                 ? LogicValue.zero
                 : val == 1
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+                    : throw PutException(
+                        signalName, 'Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValue.ofInt(val, width);
       }
@@ -240,7 +241,8 @@ class _Wire {
                 ? LogicValue.zero
                 : val == BigInt.one
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+                    : throw PutException(
+                        signalName, 'Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValue.ofBigInt(val, width);
       }
@@ -251,19 +253,21 @@ class _Wire {
           (val == LogicValue.x || val == LogicValue.z || fill)) {
         newValue = LogicValue.filled(width, val);
       } else if (fill) {
-        throw Exception(
+        throw PutException(signalName,
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
         newValue = val;
       }
     } else {
-      throw Exception('Unrecognized value "$val" to deposit on this signal. '
+      throw PutException(
+          signalName,
+          'Unrecognized value "$val" to deposit on this signal. '
           'Unknown type ${val.runtimeType} cannot be deposited.');
     }
 
     if (newValue.width != width) {
-      throw Exception(
-          'Updated value width mismatch.  The width of $val should be $width.');
+      throw PutException(signalName,
+          'Updated value width mismatch. The width of $val should be $width.');
     }
 
     if (_isPutting) {
@@ -454,7 +458,7 @@ class Logic {
   ///
   /// This function calls [put()] in [Simulator.injectAction()].
   void inject(dynamic val, {bool fill = false}) =>
-      _wire.inject(val, fill: fill);
+      _wire.inject(val, signalName: name, fill: fill);
 
   /// Puts a value [val] onto this signal, which may or may not be picked up
   /// for [changed] in this [Simulator] tick.
@@ -466,7 +470,8 @@ class Logic {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
   /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) => _wire.put(val, fill: fill);
+  void put(dynamic val, {bool fill = false}) =>
+      _wire.put(val, signalName: name, fill: fill);
 
   /// Connects this [Logic] directly to [other].
   ///
@@ -491,7 +496,7 @@ class Logic {
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
     // first, propagate the new value (if it's different) downstream
-    _wire.put(newWire.value);
+    _wire.put(newWire.value, signalName: name);
 
     // then, replace the wire
     newWire._adopt(_wire);
