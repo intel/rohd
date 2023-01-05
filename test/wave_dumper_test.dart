@@ -196,4 +196,27 @@ void main() {
 
     deleteTemporaryDump(dumpName);
   });
+
+  test('dump after max sim time works', () async {
+    final a = SimpleClockGenerator(10).clk;
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'maxSimTime';
+
+    createTemporaryDump(mod, dumpName);
+
+    Simulator.setMaxSimTime(100);
+
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+      VcdParser.confirmValue(vcdContents, 'a', 99, LogicValue.one),
+      equals(true),
+    );
+
+    deleteTemporaryDump(dumpName);
+  });
 }
