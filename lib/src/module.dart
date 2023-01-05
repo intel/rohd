@@ -256,33 +256,7 @@ abstract class Module {
           reserved: module.reserveName);
     }
 
-    // grab combinational paths
-    final initialComboPaths = getCombinationalPaths();
-    _combinationalPaths = UnmodifiableMapView(
-        Map.fromEntries(inputs.values.map((inputPort) => MapEntry(
-              inputPort,
-              initialComboPaths.containsKey(inputPort)
-                  ? UnmodifiableListView(initialComboPaths[inputPort]!)
-                  : const <Logic>[],
-            ))));
-
-    // notify submodules that all their peers are built
-    for (final subModule in subModules) {
-      subModule.postPeerBuild();
-    }
-
     _hasBuilt = true;
-  }
-
-  /// Called when all peer-level [Module]s to this [Module] have completed
-  /// the [build] process.
-  ///
-  /// By default, this function does nothing, but it can be overridden by
-  /// subclasses of [Module] to do processing after all [Module]s at the
-  /// same hierarchy have finished [build].
-  @protected
-  void postPeerBuild() {
-    // by default, do nothing!
   }
 
   /// A mapping of purely combinational paths from each input port to all
@@ -295,15 +269,11 @@ abstract class Module {
   ///
   /// This is the stored result from calling [getCombinationalPaths] at [build]
   /// time.  The module must be built before calling this.
-  Map<Logic, List<Logic>>? get combinationalPaths {
-    if (!_hasBuilt) {
-      throw ModuleNotBuiltException();
-    }
-    return _combinationalPaths;
-  }
+  Map<Logic, List<Logic>> get combinationalPaths =>
+      _combinationalPaths ??= _getCombinationalPaths();
 
   /// Internal storage of [combinationalPaths].
-  late final Map<Logic, List<Logic>>? _combinationalPaths;
+  Map<Logic, List<Logic>>? _combinationalPaths;
 
   /// The opposite of [combinationalPaths], where every key of the [Map] is an
   /// output and the values are lists of inputs which could combinationally
@@ -326,8 +296,8 @@ abstract class Module {
         'Should not recreate if already cached result.');
 
     final reverseComboPaths = <Logic, List<Logic>>{};
-    for (final inputPort in _combinationalPaths!.keys) {
-      for (final outputPort in _combinationalPaths![inputPort]!) {
+    for (final inputPort in combinationalPaths.keys) {
+      for (final outputPort in combinationalPaths[inputPort]!) {
         reverseComboPaths
             .putIfAbsent(outputPort, () => <Logic>[])
             .add(inputPort);
@@ -372,8 +342,8 @@ abstract class Module {
         for (final dstConnection in inputPort.dstConnections) {
           if (dstConnection.isInput && dstConnection.parentModule != this) {
             // this is an input port of a sub-module, jump over it
-            searchList.addAll(dstConnection
-                .parentModule!._combinationalPaths![dstConnection]!);
+            searchList.addAll(
+                dstConnection.parentModule!.combinationalPaths[dstConnection]!);
           } else if (isOutput(dstConnection)) {
             // this is an output port of this module, store it!
             comboOutputs.add(dstConnection);
@@ -386,6 +356,19 @@ abstract class Module {
       comboPaths[inputPort] = comboOutputs;
     }
     return comboPaths;
+  }
+
+  /// Returns the value of [getCombinationalPaths] wrapped safely with
+  /// unmodifiable views for caching.
+  Map<Logic, List<Logic>> _getCombinationalPaths() {
+    final initialComboPaths = getCombinationalPaths();
+    return UnmodifiableMapView(
+        Map.fromEntries(inputs.values.map((inputPort) => MapEntry(
+              inputPort,
+              initialComboPaths.containsKey(inputPort)
+                  ? UnmodifiableListView(initialComboPaths[inputPort]!)
+                  : const <Logic>[],
+            ))));
   }
 
   /// Adds a [Module] to this as a subModule.

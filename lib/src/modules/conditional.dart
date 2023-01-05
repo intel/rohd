@@ -117,11 +117,11 @@ class Combinational extends _Always with FullyCombinational {
   }
 
   @override
-  void postPeerBuild() {
+  Future<void> build() async {
+    await super.build();
+
     // any glitch on an input to an output's sensitivity should
     // trigger re-execution
-    // call this in here so that all peer-level modules
-    // are already built
     _listenToSensitivities();
   }
 
@@ -166,7 +166,7 @@ class Combinational extends _Always with FullyCombinational {
 
       // we're at the input to another module, grab all the outputs of it which
       // are combinationally connected and continue searching
-      dstConnections.addAll(src.parentModule!.combinationalPaths![src]!);
+      dstConnections.addAll(src.parentModule!.combinationalPaths[src]!);
     }
 
     if (dstConnections.isEmpty) {
@@ -204,7 +204,7 @@ class Combinational extends _Always with FullyCombinational {
               // default, add all inputs that may affect outputs affected
               // by this input
               for (final dstDependentOutput
-                  in dst.parentModule!.combinationalPaths![dst]!) {
+                  in dst.parentModule!.combinationalPaths[dst]!) {
                 collection.addAll(dst.parentModule!
                     .reverseCombinationalPaths[dstDependentOutput]!);
               }
