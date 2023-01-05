@@ -14,14 +14,14 @@ import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
 
 class _ModuleToDump extends Module {
-  _ModuleToDump(Logic d) {
+  static const _numExtraOutputs = 50;
+
+  _ModuleToDump(Logic d, Logic clk) {
     d = addInput('d', d);
 
     final q = addOutput('q');
 
-    final clk = SimpleClockGenerator(10).clk;
-
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < _numExtraOutputs; i++) {
       addOutput('i$i') <= FlipFlop(clk, ~output('i$i')).q;
     }
 
@@ -31,6 +31,9 @@ class _ModuleToDump extends Module {
 
 class WaveDumpBenchmark extends AsyncBenchmarkBase {
   late _ModuleToDump _mod;
+  late Logic _clk;
+
+  static const _maxSimTime = 1000;
 
   static const _vcdTemporaryPath = 'tmp_test/wave_dump_benchmark.vcd';
 
@@ -38,25 +41,30 @@ class WaveDumpBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> setup() async {
-    Simulator.setMaxSimTime(1000);
-
-    _mod = _ModuleToDump(Logic());
-    await _mod.build();
+    Simulator.setMaxSimTime(_maxSimTime);
   }
 
   @override
   Future<void> teardown() async {
-    File(_vcdTemporaryPath).deleteSync();
-    await Simulator.reset();
+    if (File(_vcdTemporaryPath).existsSync()) {
+      File(_vcdTemporaryPath).deleteSync();
+    }
   }
 
   @override
   Future<void> run() async {
+    _clk = SimpleClockGenerator(10).clk;
+    _mod = _ModuleToDump(Logic(), _clk);
+    await _mod.build();
+
     WaveDumper(_mod, outputPath: _vcdTemporaryPath);
 
     await Simulator.run();
 
+    assert(Simulator.time == _maxSimTime, 'sim should run through end');
+
     await Simulator.reset();
+    Simulator.setMaxSimTime(_maxSimTime);
   }
 }
 

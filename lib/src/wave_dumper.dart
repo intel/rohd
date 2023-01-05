@@ -19,7 +19,8 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Outputs to vcd format at [outputPath].  [module] must be built prior to
 /// attaching the [WaveDumper].
 ///
-/// The waves will only dump to the file once the simulation has completed.
+/// The waves will only dump to the file periodically and then once the
+/// simulation has completed.
 class WaveDumper {
   /// The [Module] being dumped.
   final Module module;
@@ -87,15 +88,28 @@ class WaveDumper {
     });
   }
 
+  /// Number of characters in the buffer after which it will
+  /// write contents to the output file.
+  static const _fileBufferLimit = 100000;
+
   /// Buffers [contents] to be written to the output file.
-  void _writeToFile(String contents) {
+  void _writeToBuffer(String contents) {
     _fileBuffer.write(contents);
+
+    if (_fileBuffer.length > _fileBufferLimit) {
+      _writeToFile();
+    }
+  }
+
+  /// Writes all pending items in the [_fileBuffer] to the file.
+  void _writeToFile() {
+    _outFileSink.write(_fileBuffer.toString());
+    _fileBuffer.clear();
   }
 
   /// Terminates the waveform dumping, including closing the file.
   Future<void> _terminate() async {
-    _outFileSink.write(_fileBuffer.toString());
-    _fileBuffer.clear();
+    _writeToFile();
     await _outFileSink.flush();
     await _outFileSink.close();
   }
@@ -142,7 +156,7 @@ class WaveDumper {
 \$end
 \$timescale $timescale \$end
 ''';
-    _writeToFile(header);
+    _writeToBuffer(header);
   }
 
   /// Writes the scope of the VCD, including signal and hierarchy declarations,
@@ -151,9 +165,9 @@ class WaveDumper {
     var scopeString = _computeScopeString(module);
     scopeString += '\$enddefinitions \$end\n';
     scopeString += '\$dumpvars\n';
-    _writeToFile(scopeString);
+    _writeToBuffer(scopeString);
     _signalToMarkerMap.keys.forEach(_writeSignalValueUpdate);
-    _writeToFile('\$end\n');
+    _writeToBuffer('\$end\n');
   }
 
   /// Generates the top of the scope string (signal and hierarchy definitions).
@@ -191,7 +205,7 @@ class WaveDumper {
   /// Writes the current timestamp to the VCD.
   void _captureTimestamp(int timestamp) {
     final timestampString = '#$timestamp\n';
-    _writeToFile(timestampString);
+    _writeToBuffer(timestampString);
 
     _changedLogicsThisTimestamp
       ..forEach(_writeSignalValueUpdate)
@@ -209,7 +223,7 @@ class WaveDumper {
         : signal.value.toString(includeWidth: false);
     final marker = _signalToMarkerMap[signal];
     final updateString = '$updateValue$marker\n';
-    _writeToFile(updateString);
+    _writeToBuffer(updateString);
   }
 }
 
