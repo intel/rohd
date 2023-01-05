@@ -268,50 +268,13 @@ abstract class Module {
   /// of the corresponding key [input] changing.
   ///
   /// This is the stored result from calling [getCombinationalPaths] at [build]
-  /// time.  The module must be built before calling this.
+  /// time.  The module should be built before calling this (or call it itself)
+  /// or else it may cache an incomplete picture.
   Map<Logic, List<Logic>> get combinationalPaths =>
       _combinationalPaths ??= _getCombinationalPaths();
 
-  /// Internal storage of [combinationalPaths].
+  /// Internal cache storage of [combinationalPaths].
   Map<Logic, List<Logic>>? _combinationalPaths;
-
-  /// The opposite of [combinationalPaths], where every key of the [Map] is an
-  /// output and the values are lists of inputs which could combinationally
-  /// affect that output.
-  ///
-  /// This module must be built before calling this.
-  Map<Logic, List<Logic>> get reverseCombinationalPaths =>
-      _reverseCombinationalPaths ??= _getReverseCombinationalPaths();
-
-  /// Internal storage of [reverseCombinationalPaths], cached.
-  Map<Logic, List<Logic>>? _reverseCombinationalPaths;
-
-  /// Calculates the opposite of [combinationalPaths].
-  Map<Logic, List<Logic>> _getReverseCombinationalPaths() {
-    if (!_hasBuilt) {
-      throw ModuleNotBuiltException();
-    }
-
-    assert(_reverseCombinationalPaths == null,
-        'Should not recreate if already cached result.');
-
-    final reverseComboPaths = <Logic, List<Logic>>{};
-    for (final inputPort in combinationalPaths.keys) {
-      for (final outputPort in combinationalPaths[inputPort]!) {
-        reverseComboPaths
-            .putIfAbsent(outputPort, () => <Logic>[])
-            .add(inputPort);
-      }
-    }
-
-    return UnmodifiableMapView(
-        Map.fromEntries(outputs.values.map((outputPort) => MapEntry(
-              outputPort,
-              reverseComboPaths.containsKey(outputPort)
-                  ? UnmodifiableListView(reverseComboPaths[outputPort]!)
-                  : const <Logic>[],
-            ))));
-  }
 
   /// Returns a mapping of purely combinational paths from each input port
   /// to all downstream output ports.
@@ -329,9 +292,10 @@ abstract class Module {
   /// inside the [Module]), then the return value will end up with all empty
   /// [List]s in the values of the [Map].
   ///
-  /// The result of this function is stored at [build] time.  The result is
-  /// primarily used for calculating valid and complete sensitivity lists
-  /// for [Combinational] execution.
+  /// The result of this function is intended to be stored at [build] time, and
+  /// it should be called at [build] time. The result is primarily used for
+  /// calculating valid and complete sensitivity lists for [Combinational]
+  /// execution.
   @protected
   Map<Logic, List<Logic>> getCombinationalPaths() {
     final comboPaths = <Logic, List<Logic>>{};
@@ -367,6 +331,44 @@ abstract class Module {
               inputPort,
               initialComboPaths.containsKey(inputPort)
                   ? UnmodifiableListView(initialComboPaths[inputPort]!)
+                  : const <Logic>[],
+            ))));
+  }
+
+  /// The opposite of [combinationalPaths], where every key of the [Map] is an
+  /// output and the values are lists of inputs which could combinationally
+  /// affect that output.
+  ///
+  /// This module must be built before calling this.
+  Map<Logic, List<Logic>> get reverseCombinationalPaths =>
+      _reverseCombinationalPaths ??= _getReverseCombinationalPaths();
+
+  /// Internal storage of [reverseCombinationalPaths], cached.
+  Map<Logic, List<Logic>>? _reverseCombinationalPaths;
+
+  /// Calculates the opposite of [combinationalPaths].
+  Map<Logic, List<Logic>> _getReverseCombinationalPaths() {
+    if (!_hasBuilt) {
+      throw ModuleNotBuiltException();
+    }
+
+    assert(_reverseCombinationalPaths == null,
+        'Should not recreate if already cached result.');
+
+    final reverseComboPaths = <Logic, List<Logic>>{};
+    for (final inputPort in combinationalPaths.keys) {
+      for (final outputPort in combinationalPaths[inputPort]!) {
+        reverseComboPaths
+            .putIfAbsent(outputPort, () => <Logic>[])
+            .add(inputPort);
+      }
+    }
+
+    return UnmodifiableMapView(
+        Map.fromEntries(outputs.values.map((outputPort) => MapEntry(
+              outputPort,
+              reverseComboPaths.containsKey(outputPort)
+                  ? UnmodifiableListView(reverseComboPaths[outputPort]!)
                   : const <Logic>[],
             ))));
   }
