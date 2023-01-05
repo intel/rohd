@@ -173,7 +173,7 @@ var x = Logic();
 var bus = Logic(name: 'b', width: 8)
 </code></pre>
 <h4 id="the-value-of-a-signal">The value of a signal</h4>
-<p>You can access the current value of a signal using <code>value</code>.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an int with <code>valueInt</code> (ROHD will throw an exception otherwise).  If the signal has more bits than a dart <code>int</code> (64 bits, usually), you need to use <code>valueBigInt</code> to get a <code>BigInt</code> (again, ROHD will throw an exception otherwise).</p>
+<p>You can access the current value of a signal using <code>value</code>.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an int with <code>value.toInt()</code> (ROHD will throw an exception otherwise).  If the signal has more bits than a dart <code>int</code> (64 bits, usually), you need to use <code>value.toBigInt()</code> to get a <code>BigInt</code> (again, ROHD will throw an exception otherwise).</p>
 <p>The value of a <code>Logic</code> is of type <a href="https://intel.github.io/rohd/rohd/LogicValue-class.html"><code>LogicValue</code></a>, with pre-defined constant bit values <code>x</code>, <code>z</code>, <code>one</code>, and <code>zero</code>.  <code>LogicValue</code> has a number of built-in logical operations (like &amp;, |, ^, +, -, etc.).</p>
 <pre class="language-dart"><code class="language-dart">var x = Logic(width:2);
 
