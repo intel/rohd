@@ -53,7 +53,7 @@
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
 <span class="name ">getRange</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
-<li><span class="parameter" id="getRange-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span></span></li>
+<li><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span></li>
 </ol>)
 
       
@@ -66,6 +66,8 @@
 <p>The <code>startIndex</code> must come before the <code>endIndex</code>. If <code>startIndex</code> and
 <code>endIndex</code> are equal, then a zero-width signal is returned.
 Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)</p>
+<p>If <code>endIndex</code> is not provided, <a href="../../rohd/Logic/width.html">width</a> of the <a href="../../rohd/Logic-class.html">Logic</a> will
+be used as the default values which assign it to the last index.</p>
 <pre class="language-dart"><code class="language-dart">Logic nextVal = addOutput('nextVal', width: width);
 // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
 // Negative getRange
@@ -73,6 +75,9 @@ nextVal &lt;= val.getRange(-3, val.width); // = val.getRange(5,8) &amp; output: 
 
 // Positive getRange
 nextVal &lt;= val.getRange(0, 6); // = val.slice(0, -2) &amp; output: 0b001110, where the output.width=6
+
+// Get range from startIndex
+nextVal &lt;= val.getRange(-3); // the endIndex will be auto assign to val.width
 </code></pre>
 </section>
 
@@ -80,7 +85,8 @@ nextVal &lt;= val.getRange(0, 6); // = val.slice(0, -2) &amp; output: 0b001110, 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic getRange(int startIndex, int endIndex) {
+  <pre class="language-dart"><code class="language-dart">Logic getRange(int startIndex, [int? endIndex]) {
+  endIndex ??= width;
   if (endIndex == startIndex) {
     return Const(0, width: 0);
   }
