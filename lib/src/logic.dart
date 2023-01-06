@@ -749,6 +749,9 @@ class Logic {
   /// [endIndex] are equal, then a zero-width signal is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   ///
+  /// If [endIndex] is not provided, [width] of the [Logic] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
   /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
@@ -757,9 +760,13 @@ class Logic {
   ///
   /// // Positive getRange
   /// nextVal <= val.getRange(0, 6); // = val.slice(0, -2) & output: 0b001110, where the output.width=6
+  ///
+  /// // Get range from startIndex
+  /// nextVal <= val.getRange(-3); // the endIndex will be auto assign to val.width
   /// ```
   ///
-  Logic getRange(int startIndex, int endIndex) {
+  Logic getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
