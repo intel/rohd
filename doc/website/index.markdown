@@ -39,6 +39,8 @@ feature_row3:
     excerpt: 'Validation collateral simpler to develop and debug. The ROHD Verification Framework helps build well-structured testbenches which provides excellent, simple, and fast unit-testing.'
 ---
 
+<!-- Unsplash Image Source: https://unsplash.com/photos/FVgECvTjlBQ, https://unsplash.com/photos/KuCGlBXjH_o -->
+
 {% include feature_row %}
 
 {% include feature_row id="feature_row2" type="left" %}
