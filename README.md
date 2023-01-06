@@ -86,7 +86,7 @@ If you need some help, you can join the [Discord server](https://discord.com/inv
 
 You also may be interested to join the [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
 
-Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.14.0).  If you're using the version of Dart that came with Flutter, it might be older than that.
+Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.18.0).  If you're using the version of Dart that came with Flutter, it might be older than that.
 
 ## Package Managers for Hardware
 In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your *direct* dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an `import` statment.  Compare that to SystemVerilog IP integration!
