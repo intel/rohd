@@ -67,4 +67,12 @@ void main() async {
 
     deleteTemporaryDump(dumpName);
   });
+
+  test('should contains latest ROHD version on website', () async {
+    const version = Config.version;
+
+    final yamlText = File('./doc/website/index.markdown').readAsStringSync();
+
+    expect(yamlText, contains('Latest release v$version'));
+  });
 }
