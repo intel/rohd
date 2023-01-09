@@ -7,10 +7,8 @@
 /// 2021 May 10
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'dart:async';
-
-// import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -50,13 +48,9 @@ void main() {
       final counter = Counter(Logic(), reset);
       await counter.build();
       // WaveDumper(counter);
-      // File('tmp_counter.sv').writeAsStringSync(counter.generateSynth());
 
-      // check that 1 timestep after reset, the value has reset properly
       unawaited(reset.nextPosedge
-          .then((value) => Simulator.registerAction(Simulator.time + 1, () {
-                expect(counter.val.value.toInt(), equals(0));
-              })));
+          .then((value) => expect(counter.val.value.toInt(), equals(0))));
 
       final vectors = [
         Vector({'en': 0, 'reset': 0}, {}),

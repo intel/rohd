@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// bus_test.dart
@@ -7,7 +7,9 @@
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/logic/logic_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -39,9 +41,11 @@ class BusTestModule extends Module {
   Logic get aRange1 => output('a_range1');
   Logic get aRange2 => output('a_range2');
   Logic get aRange3 => output('a_range3');
+  Logic get aRange4 => output('a_range4');
   Logic get aNegativeRange1 => output('a_neg_range1');
   Logic get aNegativeRange2 => output('a_neg_range2');
   Logic get aNegativeRange3 => output('a_neg_range3');
+  Logic get aNegativeRange4 => output('a_neg_range4');
   // --- Getters for operator[]
   Logic get aOperatorIndexing1 => output('a_operator_indexing1');
   Logic get aOperatorIndexing2 => output('a_operator_indexing2');
@@ -91,9 +95,11 @@ class BusTestModule extends Module {
     final aRange1 = addOutput('a_range1', width: 3);
     final aRange2 = addOutput('a_range2', width: 2);
     final aRange3 = addOutput('a_range3');
+    final aRange4 = addOutput('a_range4', width: 3);
     final aNegativeRange1 = addOutput('a_neg_range1', width: 3);
     final aNegativeRange2 = addOutput('a_neg_range2', width: 2);
     final aNegativeRange3 = addOutput('a_neg_range3');
+    final aNegativeRange4 = addOutput('a_neg_range4', width: 3);
     // Operator Indexing with positive index value
     final aOperatorIndexing1 = addOutput('a_operator_indexing1');
     final aOperatorIndexing2 = addOutput('a_operator_indexing2');
@@ -128,9 +134,11 @@ class BusTestModule extends Module {
     aRange1 <= a.getRange(5, 8);
     aRange2 <= a.getRange(6, 8);
     aRange3 <= a.getRange(7, 8);
+    aRange4 <= a.getRange(5);
     aNegativeRange1 <= a.getRange(-3, 8); // NOTE: endIndex value is exclusive
     aNegativeRange2 <= a.getRange(-2, 8);
     aNegativeRange3 <= a.getRange(-1, 8);
+    aNegativeRange4 <= a.getRange(-3);
 
     aOperatorIndexing1 <= a[0];
     aOperatorIndexing2 <= a[a.width - 1];
@@ -249,9 +257,67 @@ void main() {
       b.put(0x55);
       expect(out.value.toInt(), equals(0x55aa));
     });
+
+    group('put exceptions', () {
+      test('width mismatch', () {
+        expect(
+          () => Logic(name: 'byteSignal', width: 8)
+              .put(LogicValue.ofString('1010')),
+          throwsA(const TypeMatcher<PutException>()),
+        );
+      });
+    });
   });
 
   group('simcompare', () {
+<<<<<<< HEAD
+=======
+    final signalToWidthMap = {
+      'a': 8,
+      'b': 8,
+      'a_bar': 8,
+      'a_and_b': 8,
+      'a_b_joined': 16,
+      'a_plus_b': 8,
+
+      // Slicing
+      'a_shrunk1': 3,
+      'a_shrunk2': 2,
+      'a_shrunk3': 1,
+      'a_neg_shrunk1': 3,
+      'a_neg_shrunk2': 2,
+      'a_neg_shrunk3': 1,
+      // Reverse Slicing
+      'a_rsliced1': 5,
+      'a_rsliced2': 2,
+      'a_rsliced3': 1,
+      'a_r_neg_sliced1': 5,
+      'a_r_neg_sliced2': 2,
+      'a_r_neg_sliced3': 1,
+
+      // getRange
+      'a_range1': 3,
+      'a_range2': 2,
+      'a_range3': 1,
+      'a_range4': 3,
+      'a_neg_range1': 3,
+      'a_neg_range2': 2,
+      'a_neg_range3': 1,
+      'a_neg_range4': 3,
+
+      // operator[]
+      'a_operator_indexing1': 1,
+      'a_operator_indexing2': 1,
+      'a_operator_indexing3': 1,
+      'a_operator_neg_indexing1': 1,
+      'a_operator_neg_indexing2': 1,
+      'a_operator_neg_indexing3': 1,
+
+      // Logic bus value Reversed
+      'a_reversed': 8,
+      'expression_bit_select': 4,
+    };
+>>>>>>> main
     test('NotGate bus', () async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
@@ -403,6 +469,10 @@ void main() {
         Vector({'a': 0}, {'a_range3': 0}),
         Vector({'a': 0x80}, {'a_range3': 1}),
         Vector({'a': bin('10000000')}, {'a_range3': bin('1')}),
+        // Test set 4
+        Vector({'a': 0}, {'a_range4': 0}),
+        Vector({'a': 0xaf}, {'a_range4': 5}),
+        Vector({'a': bin('11000101')}, {'a_range4': bin('110')}),
 
         // Negative Indexing
         // Test set 1
@@ -417,6 +487,10 @@ void main() {
         Vector({'a': 0}, {'a_neg_range3': 0}),
         Vector({'a': 0x80}, {'a_neg_range3': 1}),
         Vector({'a': bin('10000000')}, {'a_neg_range3': bin('1')}),
+        // Test set 4
+        Vector({'a': 0}, {'a_neg_range4': 0}),
+        Vector({'a': 0xaf}, {'a_neg_range4': 5}),
+        Vector({'a': bin('11000101')}, {'a_neg_range4': bin('110')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);

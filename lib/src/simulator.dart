@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2022 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// simulator.dart
@@ -10,7 +10,9 @@
 
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:logging/logging.dart';
+
 import 'package:rohd/rohd.dart';
 
 /// An enum for the various phases of the [Simulator].
@@ -54,6 +56,9 @@ class Simulator {
 
   /// Tracks whether an end to the active simulation has been requested.
   static bool _simulationEndRequested = false;
+
+  /// Tracks for [_SimulatorException] that are thrown during the simulation.
+  static List<_SimulatorException> _simExceptions = [];
 
   /// The maximum time the simulation can run.
   ///
@@ -125,6 +130,9 @@ class Simulator {
 
     _currentTimestamp = 0;
     _simulationEndRequested = false;
+
+    _simExceptions = [];
+
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -265,6 +273,14 @@ class Simulator {
     _simulationEndRequested = true;
   }
 
+  /// Collects an [exception] and associated [stackTrace] triggered
+  /// asynchronously during simulation to be thrown synchronously by [run].
+  ///
+  /// Calling this function will end the simulation after this [tick] completes.
+  static void throwException(Exception exception, StackTrace stackTrace) {
+    _simExceptions.add(_SimulatorException(exception, stackTrace));
+  }
+
   /// Starts the simulation, executing all pending actions in time-order until
   /// it finishes or is stopped.
   static Future<void> run() async {
@@ -274,9 +290,15 @@ class Simulator {
     }
 
     while (hasStepsRemaining() &&
+        _simExceptions.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
-      await tick(); // make this async so that await-ing events works
+      await tick();
+    }
+
+    for (final err in _simExceptions) {
+      logger.severe(err.exception.toString(), err.exception, err.stackTrace);
+      throw err.exception;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
@@ -291,4 +313,16 @@ class Simulator {
     _simulationEndedCompleter.complete();
     await simulationEnded;
   }
+}
+
+/// A simulator exception that produces object of exception and stack trace.
+class _SimulatorException {
+  /// Tracks for [Exception] thrown during [Simulator] `run()`.
+  final Exception exception;
+
+  /// Tracks for [StackTrace] thrown during [Simulator] `run()`.
+  final StackTrace stackTrace;
+
+  /// Constructs a simulator exception, using [exception] and [stackTrace].
+  _SimulatorException(this.exception, this.stackTrace);
 }

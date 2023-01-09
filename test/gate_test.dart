@@ -388,7 +388,7 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('Index Logic by Logic test', () async {
+    test('Index Logic(8bit) by Logic test', () async {
       final gtm = IndexGateTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       final vectors = [
@@ -396,10 +396,27 @@ void main() {
         Vector({'original': 14, 'index': 2}, {'index_output': 1}),
         Vector({'original': 14, 'index': LogicValue.x},
             {'index_output': LogicValue.x}),
+        Vector({'original': 14, 'index': 9}, {'index_output': LogicValue.x})
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(
+          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
+          signalToWidthMap: {'original': 8, 'index': 8});
+      expect(simResult, equals(true));
+    });
+
+    test('Index Logic(1bit) by Logic test', () async {
+      final gtm = IndexGateTestModule(Logic(), Logic(width: 8));
+      await gtm.build();
+      final vectors = [
         Vector({'original': LogicValue.x, 'index': LogicValue.x},
             {'index_output': LogicValue.x}),
         Vector({'original': LogicValue.x, 'index': 0},
-            {'index_output': LogicValue.x})
+            {'index_output': LogicValue.x}),
+        Vector({'original': LogicValue.one, 'index': 0},
+            {'index_output': LogicValue.one}),
+        Vector({'original': LogicValue.zero, 'index': 0},
+            {'index_output': LogicValue.zero})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -408,9 +425,50 @@ void main() {
 
     test('Index Logic by an Integer test', () {
       final testLogic = Logic(width: 8)..put(14);
+      final testLogicOne = Logic()..put(LogicValue.one);
+      final testLogicZero = Logic()..put(LogicValue.zero);
+      final testLogicInvalid = Logic()..put(LogicValue.x);
+
       expect(testLogic[0].value.toInt(), 0);
       expect(testLogic[2].value.toInt(), 1);
+
+      expect(testLogicOne[0].value.toInt(), 1);
+      expect(testLogicZero[0].value.toInt(), 0);
+      expect(testLogicInvalid[0].value, LogicValue.x);
+
+      expect(testLogicOne[-1].value.toInt(), 1);
+      expect(testLogicZero[-1].value.toInt(), 0);
+      expect(testLogicInvalid[-1].value, LogicValue.x);
+
       expect(() => testLogic[10], throwsException);
+      expect(() => testLogicOne[1], throwsException);
+      expect(() => testLogicZero[1], throwsException);
+      expect(() => testLogicInvalid[1], throwsException);
+    });
+
+    test('index Logic(1bit) by Logic index out of bounds test', () {
+      final testLogicOne = Logic()..put(LogicValue.one);
+      final testLogicZero = Logic()..put(LogicValue.zero);
+      final invalidIndex = Logic(width: 8)..put(1);
+
+      expect(testLogicOne[invalidIndex].value, equals(LogicValue.x));
+      expect(testLogicZero[invalidIndex].value, equals(LogicValue.x));
+    });
+
+    test('slice 1 bit wide Logic test', () {
+      final testLogic = Logic(width: 8)..put(14);
+      final testLogicOne = Logic()..put(LogicValue.one);
+      final testLogicZero = Logic()..put(LogicValue.zero);
+      final testLogicInvalid = Logic()..put(LogicValue.x);
+
+      expect(testLogicOne.slice(0, 0), equals(testLogicOne));
+      expect(testLogicZero.slice(0, 0), equals(testLogicZero));
+      expect(testLogicInvalid.slice(0, 0), equals(testLogicInvalid));
+
+      expect(() => testLogic.slice(0, 10), throwsException);
+      expect(() => testLogicOne.slice(0, 1), throwsException);
+      expect(() => testLogicZero.slice(0, 1), throwsException);
+      expect(() => testLogicInvalid.slice(0, 1), throwsException);
     });
 
     test('Index Logic by does not accept input other than int or Logic', () {
