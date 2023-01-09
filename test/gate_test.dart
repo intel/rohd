@@ -399,9 +399,7 @@ void main() {
         Vector({'original': 14, 'index': 9}, {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {'original': 8, 'index': 8});
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 

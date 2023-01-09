@@ -169,10 +169,6 @@ abstract class SimCompare {
       for (final e in vectors) ...e.inputValues.keys,
       for (final e in vectors) ...e.expectedOutputValues.keys,
     };
-    final allSignals = <String>{
-      for (final e in vectors) ...e.inputValues.keys,
-      for (final e in vectors) ...e.expectedOutputValues.keys,
-    };
     final localDeclarations =
         allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');

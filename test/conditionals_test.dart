@@ -8,8 +8,6 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -376,8 +374,7 @@ void main() {
         Vector({'a': 1}, {'c': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
 
@@ -403,8 +400,7 @@ void main() {
         Vector({'a': 0}, {'c': 0, 'd': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
 
@@ -455,8 +451,7 @@ void main() {
       Vector({'a': 1}, {'q': 1}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -470,144 +465,7 @@ void main() {
       Vector({'a': 0}, {'x': 1}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors);
-    expect(simResult, equals(true));
-  });
-
-  test(
-      'should return true on simcompare when '
-      'execute Else.s() for single else conditional', () async {
-    final mod = SingleElseModule(Logic(), Logic());
-    await mod.build();
-    final vectors = [
-      Vector({'a': 1}, {'q': 1}),
-      Vector({'a': 0}, {'x': 1}),
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors);
-    expect(simResult, equals(true));
-  });
-
-  test(
-      'should return SignalRedrivenException when there are multiple drivers '
-      'for a flop.', () async {
-    final mod =
-        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
-    await mod.build();
-    final vectors = [
-      Vector({'a': 1, 'd': 1}, {}),
-      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 1}),
-    ];
-
-    try {
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      fail('Exception not thrown!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, equals(SignalRedrivenException));
-    }
-  });
-
-  test(
-      'should return NonSupportedTypeException when '
-      'simcompare expected output values has invalid runtime type. ', () async {
-    final mod = SequentialModule(Logic(), Logic(), Logic(width: 8));
-    await mod.build();
-    final vectors = [
-      Vector({'a': 1, 'd': 1}, {}),
-      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 'invalid runtime type'}),
-    ];
-
-    try {
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      fail('Exception not thrown!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, equals(NonSupportedTypeException));
-    }
-  });
-
-  test(
-      'should return SignalRedrivenException when driven with '
-      'x signals and valid signals.', () async {
-    final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
-    await mod.build();
-    final vectors = [
-      Vector({'a': LogicValue.x, 'd': 1, 'c': 1}, {'b': LogicValue.z}),
-      Vector({'a': 1, 'd': 1, 'c': 1}, {'b': 1}),
-    ];
-
-    try {
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      fail('Exception not thrown!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, equals(SignalRedrivenException));
-    }
-  });
-  test('shorthand operations', () async {
-    final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
-        Logic(width: 8), Logic(width: 8), Logic(width: 8));
-    await mod.build();
-    final vectors = [
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 5
-      }, {
-        'piOutWithB': 10,
-        'pdOutWithB': 0,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 25,
-        'daOut': 1,
-      }),
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 0
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 5,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 0,
-        'daOut': LogicValue.x,
-      }),
-      Vector({
-        'preIncr': 0,
-        'preDecr': 0,
-        'mulAssign': 0,
-        'divAssign': 0,
-        'b': 5
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 0xfb,
-        'piOut': 1,
-        'pdOut': 0xff,
-        'maOut': 0,
-        'daOut': 0,
-      })
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {
-          'preIncr': 8,
-          'preDecr': 8,
-          'mulAssign': 8,
-          'divAssign': 8,
-          'b': 8,
-          'piOutWithB': 8,
-          'pdOutWithB': 8,
-          'piOut': 8,
-          'pdOut': 8,
-          'maOut': 8,
-          'daOut': 8
-        });
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 }

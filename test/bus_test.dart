@@ -270,54 +270,6 @@ void main() {
   });
 
   group('simcompare', () {
-<<<<<<< HEAD
-=======
-    final signalToWidthMap = {
-      'a': 8,
-      'b': 8,
-      'a_bar': 8,
-      'a_and_b': 8,
-      'a_b_joined': 16,
-      'a_plus_b': 8,
-
-      // Slicing
-      'a_shrunk1': 3,
-      'a_shrunk2': 2,
-      'a_shrunk3': 1,
-      'a_neg_shrunk1': 3,
-      'a_neg_shrunk2': 2,
-      'a_neg_shrunk3': 1,
-      // Reverse Slicing
-      'a_rsliced1': 5,
-      'a_rsliced2': 2,
-      'a_rsliced3': 1,
-      'a_r_neg_sliced1': 5,
-      'a_r_neg_sliced2': 2,
-      'a_r_neg_sliced3': 1,
-
-      // getRange
-      'a_range1': 3,
-      'a_range2': 2,
-      'a_range3': 1,
-      'a_range4': 3,
-      'a_neg_range1': 3,
-      'a_neg_range2': 2,
-      'a_neg_range3': 1,
-      'a_neg_range4': 3,
-
-      // operator[]
-      'a_operator_indexing1': 1,
-      'a_operator_indexing2': 1,
-      'a_operator_indexing3': 1,
-      'a_operator_neg_indexing1': 1,
-      'a_operator_neg_indexing2': 1,
-      'a_operator_neg_indexing3': 1,
-
-      // Logic bus value Reversed
-      'a_reversed': 8,
-      'expression_bit_select': 4,
-    };
->>>>>>> main
     test('NotGate bus', () async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();

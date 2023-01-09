@@ -44,16 +44,7 @@ void main() {
       Vector({'payloadIn1': 0xff, 'payloadIn2': 0}, {'payloadOut': 0xaaaa}),
     ];
     await SimCompare.checkFunctionalVector(gtm, vectors);
-    final simResult = SimCompare.iverilogVector(
-      gtm.generateSynth(),
-      gtm.runtimeType.toString(),
-      vectors,
-      signalToWidthMap: {
-        'payloadIn1': 8,
-        'payloadIn2': 8,
-        'payloadOut': 16,
-      },
-    );
+    final simResult = SimCompare.iverilogVector(gtm, vectors);
     expect(simResult, equals(true));
   });
 }
