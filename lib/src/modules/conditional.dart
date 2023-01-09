@@ -104,7 +104,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Note that it is necessary to build this module and any sensitive
 /// dependencies in order for sensitivity detection to work properly
 /// in all cases.
-class Combinational extends _Always {
+class Combinational extends _Always with FullyCombinational {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
   Combinational(super.conditionals, {super.name = 'combinational'}) {
@@ -118,11 +118,11 @@ class Combinational extends _Always {
 
   @override
   Future<void> build() async {
+    await super.build();
+
     // any glitch on an input to an output's sensitivity should
     // trigger re-execution
     _listenToSensitivities();
-
-    await super.build();
   }
 
   /// Sets up additional glitch listening for sensitive modules.
@@ -157,15 +157,16 @@ class Combinational extends _Always {
     alreadyParsed.add(src);
 
     final dstConnections = src.dstConnections.toSet();
+
     if (src.isInput) {
       if (src.parentModule! is Sequential) {
         // sequential logic can't be a sensitivity, so ditch those
         return null;
       }
 
-      // we're at the input to another module, grab all the outputs of it and
-      // continue searching
-      dstConnections.addAll(src.parentModule!.outputs.values);
+      // we're at the input to another module, grab all the outputs of it which
+      // are combinationally connected and continue searching
+      dstConnections.addAll(src.parentModule!.combinationalPaths[src]!);
     }
 
     if (dstConnections.isEmpty) {
@@ -194,7 +195,20 @@ class Combinational extends _Always {
           collection.addAll(subSensitivities);
           if (dst.isInput) {
             // collect all the inputs of this module too as sensitivities
-            collection.addAll(dst.parentModule!.inputs.values);
+            // but only ones which can affect outputs affected by this input!
+
+            if (dst.parentModule! is FullyCombinational) {
+              // for efficiency, if purely combinational just go straight to all
+              collection.addAll(dst.parentModule!.inputs.values);
+            } else {
+              // default, add all inputs that may affect outputs affected
+              // by this input
+              for (final dstDependentOutput
+                  in dst.parentModule!.combinationalPaths[dst]!) {
+                collection.addAll(dst.parentModule!
+                    .reverseCombinationalPaths[dstDependentOutput]!);
+              }
+            }
           }
         }
       }
@@ -831,6 +845,12 @@ class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
   Else(List<Conditional> then) : super(Const(1), then);
+
+  /// If none of the proceding [Iff] or [ElseIf] are executed, then
+  /// [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  Else.s(Conditional then) : this([then]);
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like

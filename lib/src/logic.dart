@@ -12,8 +12,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/logic/logic_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
@@ -201,8 +201,8 @@ class _Wire {
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
   /// This function calls [put()] in [Simulator.injectAction()].
-  void inject(dynamic val, {bool fill = false}) {
-    Simulator.injectAction(() => put(val, fill: fill));
+  void inject(dynamic val, {required String signalName, bool fill = false}) {
+    Simulator.injectAction(() => put(val, signalName: signalName, fill: fill));
   }
 
   /// Keeps track of whether there is an active put, to detect reentrance.
@@ -218,7 +218,7 @@ class _Wire {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
   /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) {
+  void put(dynamic val, {required String signalName, bool fill = false}) {
     LogicValue newValue;
     if (val is int) {
       if (fill) {
@@ -228,7 +228,8 @@ class _Wire {
                 ? LogicValue.zero
                 : val == 1
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+                    : throw PutException(
+                        signalName, 'Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValue.ofInt(val, width);
       }
@@ -240,7 +241,8 @@ class _Wire {
                 ? LogicValue.zero
                 : val == BigInt.one
                     ? LogicValue.one
-                    : throw Exception('Only can fill 0 or 1, but saw $val.'));
+                    : throw PutException(
+                        signalName, 'Only can fill 0 or 1, but saw $val.'));
       } else {
         newValue = LogicValue.ofBigInt(val, width);
       }
@@ -251,19 +253,21 @@ class _Wire {
           (val == LogicValue.x || val == LogicValue.z || fill)) {
         newValue = LogicValue.filled(width, val);
       } else if (fill) {
-        throw Exception(
+        throw PutException(signalName,
             'Failed to fill value with $val.  To fill, it should be 1 bit.');
       } else {
         newValue = val;
       }
     } else {
-      throw Exception('Unrecognized value "$val" to deposit on this signal. '
+      throw PutException(
+          signalName,
+          'Unrecognized value "$val" to deposit on this signal. '
           'Unknown type ${val.runtimeType} cannot be deposited.');
     }
 
     if (newValue.width != width) {
-      throw Exception(
-          'Updated value width mismatch.  The width of $val should be $width.');
+      throw PutException(signalName,
+          'Updated value width mismatch. The width of $val should be $width.');
     }
 
     if (_isPutting) {
@@ -454,7 +458,7 @@ class Logic {
   ///
   /// This function calls [put()] in [Simulator.injectAction()].
   void inject(dynamic val, {bool fill = false}) =>
-      _wire.inject(val, fill: fill);
+      _wire.inject(val, signalName: name, fill: fill);
 
   /// Puts a value [val] onto this signal, which may or may not be picked up
   /// for [changed] in this [Simulator] tick.
@@ -466,7 +470,8 @@ class Logic {
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
   /// to `'` in SystemVerilog.
-  void put(dynamic val, {bool fill = false}) => _wire.put(val, fill: fill);
+  void put(dynamic val, {bool fill = false}) =>
+      _wire.put(val, signalName: name, fill: fill);
 
   /// Connects this [Logic] directly to [other].
   ///
@@ -491,7 +496,7 @@ class Logic {
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
     // first, propagate the new value (if it's different) downstream
-    _wire.put(newWire.value);
+    _wire.put(newWire.value, signalName: name);
 
     // then, replace the wire
     newWire._adopt(_wire);
@@ -576,6 +581,72 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
+  /// Shorthand for a [Conditional] which increments this by [incrVal]
+  ///
+  /// By default for a [Logic] variable, if no [incrVal] is provided
+  /// result is ++variable else result is variable+=[incrVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and piOut as output
+  /// Combinational([
+  ///   piOut < a,
+  ///   piOut.incr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
+
+  /// Shorthand for a [Conditional] which decrements this by [decrVal]
+  ///
+  /// By default for a [Logic] variable, if no [decrVal] is provided
+  /// result is --variable else result is var-=[decrVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and pdOut as output
+  /// Combinational([
+  ///   pdOut < a,
+  ///   pdOut.decr(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
+
+  /// Shorthand for a [Conditional] which increments this by [mulVal]
+  ///
+  /// For a [Logic] variable, this is variable *= [mulVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and maOut as output
+  /// Combinational([
+  ///   maOut < a,
+  ///   maOut.mulAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
+
+  /// Shorthand for a [Conditional] which increments this by [divVal]
+  ///
+  /// For a [Logic] variable, this is variable /= [divVal]
+  ///
+  /// ```dart
+  ///
+  /// // Given a and b Logic input and daOut as output
+  /// Combinational([
+  ///   daOut < a,
+  ///   daOut.divAssign(b),
+  /// ]);
+  ///
+  /// ```
+  ///
+  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
+
   /// Conditional assignment operator.
   ///
   /// Represents conditionally asigning the value of another signal to this.
@@ -620,7 +691,10 @@ class Logic {
   /// nextVal <= val[-9]; // Error!: allowed values [-8, 7]
   /// nextVal <= val[8]; // Error!: allowed values [-8, 7]
   /// ```
-  ///
+  /// Note: When, indexed by a Logic value, out-of-bounds will always return an
+  /// invalid (LogicValue.x) value. This behavior is differs in simulation as
+  /// compared to the generated SystemVerilog. In the generated SystemVerilog,
+  /// [index] will be ignored, and the logic is returned as-is.
   Logic operator [](dynamic index) {
     if (index is Logic) {
       return IndexGate(this, index).selection;
@@ -636,6 +710,7 @@ class Logic {
   /// If [endIndex] comes before the [startIndex] on position, the returned
   /// value will be reversed relative to the original signal.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
+  ///
   ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
@@ -654,6 +729,12 @@ class Logic {
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
 
+    if (width == 1 &&
+        modifiedEndIndex == 0 &&
+        modifiedEndIndex == modifiedStartIndex) {
+      return this;
+    }
+
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
   }
@@ -668,6 +749,9 @@ class Logic {
   /// [endIndex] are equal, then a zero-width signal is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   ///
+  /// If [endIndex] is not provided, [width] of the [Logic] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
   /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
@@ -676,9 +760,13 @@ class Logic {
   ///
   /// // Positive getRange
   /// nextVal <= val.getRange(0, 6); // = val.slice(0, -2) & output: 0b001110, where the output.width=6
+  ///
+  /// // Get range from startIndex
+  /// nextVal <= val.getRange(-3); // the endIndex will be auto assign to val.width
   /// ```
   ///
-  Logic getRange(int startIndex, int endIndex) {
+  Logic getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
