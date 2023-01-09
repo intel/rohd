@@ -10,10 +10,9 @@ Rapid Open Hardware Development (ROHD) Framework
 ================================================
 
 [![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/api)
-
 [![API Docs](https://img.shields.io/website?down_message=offline&up_color=blue&up_message=online&url=https%3A%2F%2Fintel.github.io%2Frohd%2F)](https://intel.github.io/rohd/)
 
-ROHD official site can be found at https://intel.github.io/rohd/ which include the API documentation, tutorials, and docs.
+ROHD official site can be found at https://intel.github.io/rohd which include the API documentation, tutorials, and docs.
 
 ## Describing Hardware in Dart with ROHD
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
@@ -138,6 +137,10 @@ You can find an executable version of this counter example in [example/example.d
 ## Contributing
 
 ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
+
+## License
+
+[SPDX-License-Identifier: BSD-3-Clause](https://github.com/intel/rohd/blob/main/LICENSE)
 
 ----------------
 2021 August 6  
