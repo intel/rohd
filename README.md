@@ -147,5 +147,5 @@ ROHD is under active development.  If you're interested in contributing, have fe
 Author: Max Korbel <<max.korbel@intel.com>>
 
  
-Copyright (C) 2022-2023 Intel Corporation  
+Copyright (C) 2021-2023 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause
