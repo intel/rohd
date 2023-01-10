@@ -67,3 +67,28 @@ jobs:
         with:
           folder: doc/website
           branch: docs
+
+      # - name: Retrieve releases and generate report
+      #   run: |
+      #     releases=$(gh release list -L 40 --exclude-drafts)
+          
+      #     echo "Overview of last 40 releases" >> $GITHUB_STEP_SUMMARY
+              
+      #     while IFS= read -r line; do
+      #         id=$(echo "$line" | cut -d$'\t' -f3)
+      #         release=$(gh release view $id --json body,name,publishedAt,createdAt,url)
+
+      #         echo "" >> $GITHUB_STEP_SUMMARY # this is a blank line
+      #         name=$(echo $release | jq -r '.name')
+      #         published=$(echo $release | jq -r '.publishedAt')
+      #         created=$(echo $release | jq -r '.createdAt')
+      #         body=$(echo $release | jq -r '.body')
+      #         url=$(echo $release | jq -r '.url')
+
+      #         echo "# Release: $name"  >> $GITHUB_STEP_SUMMARY
+      #         echo "Published at $published and created at $created" >> $GITHUB_STEP_SUMMARY    
+      #         echo $body  >> $GITHUB_STEP_SUMMARY
+      #         echo "" >> $GITHUB_STEP_SUMMARY # this is a blank line
+      #         echo "Release URL: $url" >> $GITHUB_STEP_SUMMARY
+
+      #     done <<< "$releases"
