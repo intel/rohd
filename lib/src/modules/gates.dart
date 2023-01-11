@@ -10,8 +10,23 @@
 
 import 'package:rohd/rohd.dart';
 
+/// A [Module] which has only combinational logic within it and defines
+/// custom functionality.
+///
+/// This type of [Module] implies that any input port may combinationally
+/// affect any output.
+mixin FullyCombinational on Module {
+  @override
+  Map<Logic, List<Logic>> getCombinationalPaths() {
+    // combinational gates are all combinational paths
+    final allOutputs = outputs.values.toList();
+    return Map.fromEntries(
+        inputs.values.map((inputPort) => MapEntry(inputPort, allOutputs)));
+  }
+}
+
 /// A gate [Module] that performs bit-wise inversion.
-class NotGate extends Module with InlineSystemVerilog {
+class NotGate extends Module with InlineSystemVerilog, FullyCombinational {
   /// Name for the input of this inverter.
   late final String _inName;
 
@@ -61,7 +76,8 @@ class NotGate extends Module with InlineSystemVerilog {
 /// A generic unary gate [Module].
 ///
 /// It always takes one input, and the output width is always 1.
-class _OneInputUnaryGate extends Module with InlineSystemVerilog {
+class _OneInputUnaryGate extends Module
+    with InlineSystemVerilog, FullyCombinational {
   /// Name for the input port of this module.
   late final String _inName;
 
@@ -125,7 +141,8 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs and has one output.  All ports have the
 /// same width.
-abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
+abstract class _TwoInputBitwiseGate extends Module
+    with InlineSystemVerilog, FullyCombinational {
   /// Name for a first input port of this module.
   late final String _in0Name;
 
@@ -221,7 +238,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 /// A generic two-input comparison gate [Module].
 ///
 /// It always takes two inputs of the same width and has one 1-bit output.
-abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
+abstract class _TwoInputComparisonGate extends Module
+    with InlineSystemVerilog, FullyCombinational {
   /// Name for a first input port of this module.
   late final String _in0Name;
 
@@ -311,7 +329,7 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs and has one output of equal width to the primary
 /// of the input.
-class _ShiftGate extends Module with InlineSystemVerilog {
+class _ShiftGate extends Module with InlineSystemVerilog, FullyCombinational {
   /// Name for the main input port of this module.
   late final String _inName;
 
@@ -530,7 +548,7 @@ class XorUnary extends _OneInputUnaryGate {
 /// A logical right-shift module.
 class RShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (logically) by [shiftAmount].
-  RShift(Logic in_, Logic shiftAmount, {String name = 'rshift'})
+  RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
 }
@@ -539,7 +557,7 @@ class RShift extends _ShiftGate {
 class ARShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (arithmetically) by
   /// [shiftAmount].
-  ARShift(Logic in_, Logic shiftAmount, {String name = 'arshift'})
+  ARShift(Logic in_, dynamic shiftAmount, {String name = 'arshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
             name: name, signed: true);
@@ -548,7 +566,7 @@ class ARShift extends _ShiftGate {
 /// A logical left-shift module.
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
-  LShift(Logic in_, Logic shiftAmount, {String name = 'lshift'})
+  LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount, name: name);
 }
 
@@ -564,7 +582,7 @@ Logic mux(Logic control, Logic d1, Logic d0) => Mux(control, d1, d0).out;
 ///
 /// If [_control] has value `1`, then [out] gets [_d1].
 /// If [_control] has value `0`, then [out] gets [_d0].
-class Mux extends Module with InlineSystemVerilog {
+class Mux extends Module with InlineSystemVerilog, FullyCombinational {
   /// Name for the control signal of this mux.
   late final String _controlName;
 
@@ -659,7 +677,7 @@ class Mux extends Module with InlineSystemVerilog {
 /// A two-input bit index gate [Module].
 ///
 /// It always takes two inputs and has one output of width 1.
-class IndexGate extends Module with InlineSystemVerilog {
+class IndexGate extends Module with InlineSystemVerilog, FullyCombinational {
   late final String _originalName;
   late final String _indexName;
   late final String _selectionName;
@@ -676,9 +694,11 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// Constructs a two-input bit index gate for an abitrary custom functional
   /// implementation.
   ///
-  /// The bit [index] will be indexed as an output.
+  /// The signal will be indexed by [index] as an output.
   /// [Module] is in-lined as SystemVerilog, it will use original[index], where
   /// target is index's int value
+  /// When, the [original] has width '1', [index] is ignored in the generated
+  /// SystemVerilog.
   IndexGate(Logic original, Logic index) : super() {
     _originalName = 'original_${original.name}';
     _indexName = Module.unpreferredName('index_${index.name}');
@@ -705,9 +725,10 @@ class IndexGate extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_index.hasValidValue()) {
+    if (_index.hasValidValue() && _index.value.toInt() < _original.width) {
       final indexVal = _index.value.toInt();
-      selection.put(_original.value.getRange(indexVal, indexVal + 1));
+      final outputValue = _original.value.getRange(indexVal, indexVal + 1);
+      selection.put(outputValue);
     } else {
       selection.put(LogicValue.x);
     }
@@ -720,7 +741,68 @@ class IndexGate extends Module with InlineSystemVerilog {
     }
 
     final target = inputs[_originalName]!;
+
+    if (_original.width == 1) {
+      return target;
+    }
+
     final idx = inputs[_indexName]!;
     return '$target[$idx]';
+  }
+}
+
+/// A Replication Operator [Module].
+///
+/// It takes two inputs (bit and width) and outputs a [Logic] representing
+/// the input bit repeated over the input width
+class ReplicationOp extends Module
+    with InlineSystemVerilog, FullyCombinational {
+  // input component name
+  final String _inputName;
+  // output component name
+  final String _outputName;
+  // Width of the output signal
+  final int _width;
+
+  /// The primary input to this gate.
+  Logic get _input => input(_inputName);
+
+  /// The output of this gate.
+  Logic get replicated => output(_outputName);
+
+  /// Constructs a ReplicationOp
+  ///
+  /// The bit [bit] will be repeated over the [_width] as an output.
+  /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
+  ReplicationOp(Logic bit, this._width)
+      : _inputName = 'input_${bit.name}',
+        _outputName = Module.unpreferredName('output_${bit.name}') {
+    addInput(_inputName, bit);
+    addOutput(_outputName, width: _width);
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    _input.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+    replicated.put(_input.value, fill: true);
+  }
+
+  @override
+  String inlineVerilog(Map<String, String> inputs) {
+    if (inputs.length != 1) {
+      throw Exception('Gate has exactly one input.');
+    }
+
+    final target = inputs[_inputName]!;
+    final width = _width;
+    return '{$width{$target}}';
   }
 }
