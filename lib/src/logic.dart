@@ -335,8 +335,6 @@ class Logic {
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  /// 
-  /// Throws an exception 
   @Deprecated('Use currentValue.isValid instead.')
   bool hasValidValue() => value.isValid;
 
