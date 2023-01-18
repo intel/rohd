@@ -842,4 +842,9 @@ class Logic {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  /// Returns a [ReplicationOp] with width = this.width * [multiplier]
+  /// The input width cannot be negative or 0, an exception will be thrown in
+  /// case this validation fails.
+  Logic multiply(int multiplier) => ReplicationOp(this, multiplier).replicated;
 }
