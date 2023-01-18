@@ -14,7 +14,7 @@ import 'package:rohd/rohd.dart';
 ///
 /// The returned signal is inclusive of both the [startIndex] and [endIndex].
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
-class BusSubset extends Module with InlineSystemVerilog {
+class BusSubset extends Module with InlineSystemVerilog, FullyCombinational {
   /// Name for the input port of this module.
   late final String _original;
 
@@ -35,6 +35,8 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
+  /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
+  /// in the generated SystemVerilog.
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {super.name = 'bussubset'}) {
     // If a converted index value is still -ve then it's an Index out of bounds
@@ -79,6 +81,11 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
+    if (original.width == 1) {
+      subset.put(original.value);
+      return;
+    }
+
     if (endIndex < startIndex) {
       subset.put(original.value.getRange(endIndex, startIndex + 1).reversed);
     } else {
@@ -92,6 +99,11 @@ class BusSubset extends Module with InlineSystemVerilog {
       throw Exception('BusSubset has exactly one input, but saw $inputs.');
     }
     final a = inputs[_original]!;
+
+    // When, input width is 1, ignore startIndex and endIndex
+    if (original.width == 1) {
+      return a;
+    }
 
     // SystemVerilog doesn't allow reverse-order select to reverse a bus,
     // so do it manually
@@ -115,7 +127,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 ///
 /// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
 /// use this [Module].
-class Swizzle extends Module with InlineSystemVerilog {
+class Swizzle extends Module with InlineSystemVerilog, FullyCombinational {
   final String _out = Module.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.

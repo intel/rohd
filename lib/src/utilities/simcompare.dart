@@ -14,6 +14,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
@@ -107,15 +108,12 @@ abstract class SimCompare {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o = module.output(signalName);
+
               final errorReason =
                   'For vector #${vectors.indexOf(vector)} $vector,'
                   ' expected $o to be $value, but it was ${o.value}.';
               if (value is int) {
-                if (!o.value.isValid) {
-                  // invalid value causes exception without helpful message,
-                  // so throw it
-                  throw Exception(errorReason);
-                }
+                expect(o.value.isValid, isTrue, reason: errorReason);
                 expect(o.value.toInt(), equals(value), reason: errorReason);
               } else if (value is LogicValue) {
                 if (o.width > 1 &&
@@ -127,11 +125,16 @@ abstract class SimCompare {
                   expect(o.value, equals(value));
                 }
               } else {
-                throw Exception(
-                    'Value type ${value.runtimeType} is not supported (yet?)');
+                throw NonSupportedTypeException(value.runtimeType.toString());
               }
             }
-          });
+          }).catchError(
+            test: (error) => error is Exception,
+            // ignore: avoid_types_on_closure_parameters
+            (Object err, StackTrace stackTrace) {
+              Simulator.throwException(err as Exception, stackTrace);
+            },
+          );
         }
       });
       timestamp += Vector._period;

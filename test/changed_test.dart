@@ -169,4 +169,58 @@ void main() {
 
     expect(a.value, equals(LogicValue.one));
   });
+
+  test('late connection propagates without put', () async {
+    final a = Logic(name: 'a');
+    final b = ~a;
+    a <= Const(0);
+    expect(b.value, equals(LogicValue.one));
+  });
+
+  test('injection on edge happens on same edge', () async {
+    final clk = SimpleClockGenerator(200).clk;
+
+    // faster clk just to add more events to the Simulator
+    SimpleClockGenerator(17).clk;
+
+    final posedgeChangingSignal = Logic()..put(0);
+    final negedgeChangingSignal = Logic()..put(0);
+
+    void posedgeExpect() {
+      if (Simulator.time > 50) {
+        expect((Simulator.time + 100) % 200, equals(0));
+      }
+    }
+
+    void negedgeExpect() {
+      if (Simulator.time > 50) {
+        expect(Simulator.time % 200, equals(0));
+      }
+    }
+
+    clk.posedge.listen((event) {
+      posedgeExpect();
+      posedgeChangingSignal.inject(~posedgeChangingSignal.value);
+    });
+    clk.negedge.listen((event) {
+      negedgeChangingSignal.inject(~negedgeChangingSignal.value);
+    });
+
+    posedgeChangingSignal.glitch.listen((args) {
+      posedgeExpect();
+    });
+    negedgeChangingSignal.glitch.listen((args) {
+      negedgeExpect();
+    });
+
+    posedgeChangingSignal.changed.listen((args) {
+      posedgeExpect();
+    });
+    negedgeChangingSignal.changed.listen((args) {
+      negedgeExpect();
+    });
+
+    Simulator.setMaxSimTime(5000);
+    await Simulator.run();
+  });
 }

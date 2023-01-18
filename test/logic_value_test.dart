@@ -348,6 +348,14 @@ void main() {
           LogicValue.ofString('0101').getRange(0, 2),
           equals(LogicValue.ofString('01')));
       expect(
+          // getRange - slice from range 1
+          LogicValue.ofString('0101').getRange(1),
+          equals(LogicValue.ofString('010')));
+      expect(
+          // getRange - slice from negative range
+          LogicValue.ofString('0101').getRange(-2),
+          equals(LogicValue.ofString('01')));
+      expect(
           // getRange - negative end index and start < end
           LogicValue.ofString('0101').getRange(1, -2),
           LogicValue.zero);
@@ -866,6 +874,29 @@ void main() {
     });
     test('64-bit binary negatives are converted properly with bin', () {
       expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+    });
+  });
+
+  group('hash and equality', () {
+    test('hash', () {
+      // thank you to @bbracker-int
+      // https://github.com/intel/rohd/issues/206
+
+      const lvEnum = LogicValue.one;
+      final lvBool = LogicValue.ofBool(true);
+      final lvInt = LogicValue.ofInt(1, 1);
+      final lvBigInt = LogicValue.ofBigInt(BigInt.one, 1);
+      final lvFilled = LogicValue.filled(1, lvEnum);
+
+      for (final lv in [lvBool, lvInt, lvBigInt, lvFilled]) {
+        expect(lv.hashCode, equals(lvEnum.hashCode));
+      }
+    });
+    test('zero-width', () {
+      expect(LogicValue.filled(0, LogicValue.one),
+          equals(LogicValue.filled(0, LogicValue.zero)));
+      expect(LogicValue.filled(0, LogicValue.one).hashCode,
+          equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
   });
 }
