@@ -762,7 +762,7 @@ class ReplicationOp extends Module
   // output component name
   final String _outputName;
   // Width of the output signal
-  final int _width;
+  final int _multiplier;
 
   /// The primary input to this gate.
   Logic get _input => input(_inputName);
@@ -772,13 +772,20 @@ class ReplicationOp extends Module
 
   /// Constructs a ReplicationOp
   ///
-  /// The bit [bit] will be repeated over the [_width] as an output.
+  /// The signal [original] will be repeated over the [_multiplier] times as an
+  /// output.
+  /// Input [_multiplier] cannot be negative or zero, an exception will be
+  /// thrown, otherwise.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
-  ReplicationOp(Logic bit, this._width)
-      : _inputName = 'input_${bit.name}',
-        _outputName = Module.unpreferredName('output_${bit.name}') {
-    addInput(_inputName, bit);
-    addOutput(_outputName, width: _width);
+  ReplicationOp(Logic original, this._multiplier)
+      : _inputName = 'input_${original.name}',
+        _outputName = Module.unpreferredName('output_${original.name}') {
+    if (_multiplier < 1) {
+      throw Exception('Multiplier({_multiplier}) is not >= 1');
+    }
+
+    addInput(_inputName, original, width: original.width);
+    addOutput(_outputName, width: original.width * _multiplier);
     _setup();
   }
 
@@ -792,7 +799,7 @@ class ReplicationOp extends Module
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    replicated.put(_input.value, fill: true);
+    replicated.put(List.filled(_multiplier, _input.value).swizzle());
   }
 
   @override
@@ -802,7 +809,7 @@ class ReplicationOp extends Module
     }
 
     final target = inputs[_inputName]!;
-    final width = _width;
+    final width = _multiplier;
     return '{$width{$target}}';
   }
 }
