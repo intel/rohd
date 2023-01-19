@@ -17,7 +17,7 @@ class ReplicationOpModule extends Module {
     a = addInput('a', a, width: a.width);
     final b = addOutput('b', width: newWidth <= 0 ? a.width : newWidth);
 
-    b <= a.multiply(multiplier);
+    b <= a.replicate(multiplier);
   }
 }
 
