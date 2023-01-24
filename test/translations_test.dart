@@ -99,17 +99,6 @@ class FlopArray extends Module {
 void main() {
   tearDown(Simulator.reset);
 
-  final signalToWidthMap = {
-    'wrData0': 16,
-    'wrData1': 16,
-    'wrPtr0': 6,
-    'wrPtr1': 6,
-    'rdPtr0': 6,
-    'rdPtr1': 6,
-    'rdData0': 16,
-    'rdData1': 16,
-  };
-
   group('simcompare', () {
     test('translation', () async {
       const numRdPorts = 2;
@@ -136,9 +125,7 @@ void main() {
         Vector({'wrEn1': 0, 'rdEn0': 0}, {'rdData0': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
   });

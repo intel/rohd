@@ -39,16 +39,11 @@ void main() {
         Vector({'a': 0}, {'y': 0}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
 
     test('flop bus', () async {
-      final signalToWidthMap = {
-        'a': 8,
-        'y': 8,
-      };
       final ftm = FlopTestModule(Logic(width: 8));
       await ftm.build();
       final vectors = [
@@ -59,9 +54,7 @@ void main() {
         Vector({'a': 0x1}, {'y': 0x55}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
   });

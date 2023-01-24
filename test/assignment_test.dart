@@ -37,8 +37,7 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(exampleModule, vectors);
     final simResult = SimCompare.iverilogVector(
-      exampleModule.generateSynth(),
-      exampleModule.runtimeType.toString(),
+      exampleModule,
       vectors,
       allowWarnings: true, // since always_comb has no sensitivities
     );
