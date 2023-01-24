@@ -448,10 +448,12 @@ abstract class LogicValue {
   LogicValue operator [](int index) {
     final modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
-      throw IndexError.withLength(index, width,
-          indexable: this,
-          name: 'LogicValueIndexOutOfRange',
-          message: 'Index out of range: $modifiedIndex(=$index).');
+      // The suggestion in the deprecation for this constructor is not available
+      // before 2.19, so keep it in here for now.  Eventually, switch to the
+      // new one.
+      // ignore: deprecated_member_use
+      throw IndexError(index, this, 'LogicValueIndexOutOfRange',
+          'Index out of range: $modifiedIndex(=$index).', width);
     }
     return _getIndex(modifiedIndex);
   }
