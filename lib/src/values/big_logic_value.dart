@@ -121,7 +121,7 @@ class _BigLogicValue extends LogicValue {
   @override
   BigInt toBigInt() {
     if (_invalid.sign != 0) {
-      throw Exception('Cannot convert invalid LogicValue to BigInt: ${this}');
+      throw Exception('Cannot convert invalid LogicValue to BigInt: $this');
     }
     return _value;
   }

@@ -164,6 +164,7 @@ abstract class LogicValue {
   /// the width of [other].
   LogicValue _concatenate(LogicValue other) {
     if (other.width == 0) {
+      // ignore: avoid_returning_this
       return this;
     } else if (width == 0) {
       return other;
@@ -447,8 +448,10 @@ abstract class LogicValue {
   LogicValue operator [](int index) {
     final modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
-      throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $modifiedIndex(=$index).', width);
+      throw IndexError.withLength(index, width,
+          indexable: this,
+          name: 'LogicValueIndexOutOfRange',
+          message: 'Index out of range: $modifiedIndex(=$index).');
     }
     return _getIndex(modifiedIndex);
   }
@@ -554,6 +557,7 @@ abstract class LogicValue {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
     }
+    // ignore: avoid_returning_this
     return this;
   }
 
@@ -793,6 +797,7 @@ abstract class LogicValue {
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
+      // ignore: avoid_returning_this
       return this;
     }
     int shamtInt;

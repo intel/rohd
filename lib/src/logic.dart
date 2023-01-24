@@ -732,6 +732,7 @@ class Logic {
     if (width == 1 &&
         modifiedEndIndex == 0 &&
         modifiedEndIndex == modifiedStartIndex) {
+      // ignore: avoid_returning_this
       return this;
     }
 
@@ -816,6 +817,7 @@ class Logic {
         this,
       ].swizzle();
     } else if (newWidth == width) {
+      // ignore: avoid_returning_this
       return this;
     }
 
