@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// logic.dart
@@ -845,7 +845,7 @@ class Logic {
 
   /// Returns a replicated signal using [ReplicationOp] with new
   /// width = this.width * [multiplier]
-  /// The input width cannot be negative or 0, an exception will be thrown in
-  /// case this validation fails.
+  /// The input [multiplier] cannot be negative or 0; an exception will be
+  /// thrown, otherwise.
   Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
 }

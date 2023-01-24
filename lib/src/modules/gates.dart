@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// gates.dart
@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 
 /// A [Module] which has only combinational logic within it and defines
 /// custom functionality.
@@ -778,10 +779,11 @@ class ReplicationOp extends Module
   /// thrown, otherwise.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
   ReplicationOp(Logic original, this._multiplier)
-      : _inputName = 'input_${original.name}',
+      : _inputName = Module.unpreferredName('input_${original.name}'),
         _outputName = Module.unpreferredName('output_${original.name}') {
-    if (_multiplier < 1) {
-      throw Exception('Multiplier({_multiplier}) is not >= 1');
+    final newWidth = original.width * _multiplier;
+    if (newWidth < 1) {
+      throw InvalidWidthException(newWidth);
     }
 
     addInput(_inputName, original, width: original.width);
