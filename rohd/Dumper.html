@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the Dumper property from the rohd library, for the Dart programming language.">
+  <meta name="description" content="API docs for the Dumper typedef from the rohd library, for the Dart programming language.">
   <title>Dumper typedef - rohd library - Dart API</title>
 
 
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../static-assets/github.css?v1">
   <link rel="stylesheet" href="../static-assets/styles.css?v1">
@@ -21,12 +21,12 @@
 </head>
 
 
-<body data-base-href="../" data-using-base-href="false">
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
 
 <div id="overlay-under-drawer"></div>
 
 <header id="title">
-  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
@@ -36,10 +36,16 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
+  <div class="toggle" id="theme-button">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span class="material-symbols-outlined">
+        brightness_4
+      </span>
+    </label>
+  </div>
 </header>
-
 <main>
-
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
@@ -53,7 +59,7 @@
   
 <div>
   <ol class="annotation-list">
-    <li>@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use WaveDumper instead&#39;)</li>
+    <li>@<a href="https://api.dart.dev/stable/2.19.0/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use WaveDumper instead&#39;)</li>
   </ol>
 </div>
 <span class="name deprecated">Dumper</span> = <a href="../rohd/WaveDumper-class.html">WaveDumper</a></span>
@@ -92,93 +98,93 @@ typedef Dumper = WaveDumper;</code></pre>
 
     <h5>rohd library</h5>
     <ol>
-  <li class="section-title"><a href="../rohd/rohd-library.html#classes">Classes</a></li>
-  <li><a href="../rohd/Add-class.html">Add</a></li>
-  <li><a href="../rohd/And2Gate-class.html">And2Gate</a></li>
-  <li><a href="../rohd/AndUnary-class.html">AndUnary</a></li>
-  <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
-  <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
-  <li><a href="../rohd/Case-class.html">Case</a></li>
-  <li><a href="../rohd/CaseItem-class.html">CaseItem</a></li>
-  <li><a href="../rohd/CaseZ-class.html">CaseZ</a></li>
-  <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
-  <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
-  <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
-  <li><a href="../rohd/Const-class.html">Const</a></li>
-  <li><a href="../rohd/Divide-class.html">Divide</a></li>
-  <li><a href="../rohd/Else-class.html">Else</a></li>
-  <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
-  <li><a href="../rohd/Equals-class.html">Equals</a></li>
-  <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
-  <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
-  <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
-  <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
-  <li><a href="../rohd/If-class.html">If</a></li>
-  <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
-  <li><a href="../rohd/IndexGate-class.html">IndexGate</a></li>
-  <li><a href="../rohd/Interface-class.html">Interface</a></li>
-  <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
-  <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
-  <li><a href="../rohd/Logic-class.html">Logic</a></li>
-  <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
-  <li><a href="../rohd/LShift-class.html">LShift</a></li>
-  <li><a href="../rohd/Module-class.html">Module</a></li>
-  <li><a href="../rohd/Modulo-class.html">Modulo</a></li>
-  <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
-  <li><a href="../rohd/Mux-class.html">Mux</a></li>
-  <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
-  <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
-  <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
-  <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
-  <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
-  <li><a href="../rohd/Port-class.html">Port</a></li>
-  <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
-  <li><a href="../rohd/ReplicationOp-class.html">ReplicationOp</a></li>
-  <li><a href="../rohd/RShift-class.html">RShift</a></li>
-  <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
-  <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
-  <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
-  <li><a href="../rohd/State-class.html">State</a></li>
-  <li><a href="../rohd/StateMachine-class.html">StateMachine</a></li>
-  <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
-  <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
-  <li><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
-  <li><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
-  <li><a href="../rohd/Synthesizer-class.html">Synthesizer</a></li>
-  <li><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
-  <li><a href="../rohd/WaveDumper-class.html">WaveDumper</a></li>
-  <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
-  <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#classes">Classes</a></li>
+        <li><a href="../rohd/Add-class.html">Add</a></li>
+        <li><a href="../rohd/And2Gate-class.html">And2Gate</a></li>
+        <li><a href="../rohd/AndUnary-class.html">AndUnary</a></li>
+        <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
+        <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
+        <li><a href="../rohd/Case-class.html">Case</a></li>
+        <li><a href="../rohd/CaseItem-class.html">CaseItem</a></li>
+        <li><a href="../rohd/CaseZ-class.html">CaseZ</a></li>
+        <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
+        <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
+        <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+        <li><a href="../rohd/Const-class.html">Const</a></li>
+        <li><a href="../rohd/Divide-class.html">Divide</a></li>
+        <li><a href="../rohd/Else-class.html">Else</a></li>
+        <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
+        <li><a href="../rohd/Equals-class.html">Equals</a></li>
+        <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
+        <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
+        <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
+        <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
+        <li><a href="../rohd/If-class.html">If</a></li>
+        <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
+        <li><a href="../rohd/IndexGate-class.html">IndexGate</a></li>
+        <li><a href="../rohd/Interface-class.html">Interface</a></li>
+        <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
+        <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
+        <li><a href="../rohd/Logic-class.html">Logic</a></li>
+        <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
+        <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
+        <li><a href="../rohd/LShift-class.html">LShift</a></li>
+        <li><a href="../rohd/Module-class.html">Module</a></li>
+        <li><a href="../rohd/Modulo-class.html">Modulo</a></li>
+        <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
+        <li><a href="../rohd/Mux-class.html">Mux</a></li>
+        <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
+        <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
+        <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
+        <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
+        <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
+        <li><a href="../rohd/Port-class.html">Port</a></li>
+        <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
+        <li><a href="../rohd/ReplicationOp-class.html">ReplicationOp</a></li>
+        <li><a href="../rohd/RShift-class.html">RShift</a></li>
+        <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
+        <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
+        <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
+        <li><a href="../rohd/State-class.html">State</a></li>
+        <li><a href="../rohd/StateMachine-class.html">StateMachine</a></li>
+        <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
+        <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
+        <li><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
+        <li><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
+        <li><a href="../rohd/Synthesizer-class.html">Synthesizer</a></li>
+        <li><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
+        <li><a href="../rohd/WaveDumper-class.html">WaveDumper</a></li>
+        <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
+        <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
-  <li><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></li>
-  <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
-  <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
+        <li><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></li>
+        <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
+        <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
-  <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
-  <li><a href="../rohd/FullyCombinational-mixin.html">FullyCombinational</a></li>
-  <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
+        <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
+        <li><a href="../rohd/FullyCombinational-mixin.html">FullyCombinational</a></li>
+        <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
 
 
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
-  <li><a href="../rohd/bin.html">bin</a></li>
-  <li><a href="../rohd/mux.html">mux</a></li>
-  <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
-  <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
+        <li><a href="../rohd/bin.html">bin</a></li>
+        <li><a href="../rohd/mux.html">mux</a></li>
+        <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
+        <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
-  <li><a href="../rohd/ConditionalType.html">ConditionalType</a></li>
-  <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
+        <li><a href="../rohd/ConditionalType.html">ConditionalType</a></li>
+        <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
-  <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
-  <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
-  <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
-  <li><a href="../rohd/Iff.html">Iff</a></li>
-  <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
+        <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
+        <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
+        <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
+        <li><a href="../rohd/Iff.html">Iff</a></li>
+        <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
 
 </ol>
 

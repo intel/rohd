@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../static-assets/github.css?v1">
   <link rel="stylesheet" href="../static-assets/styles.css?v1">
@@ -21,12 +21,12 @@
 </head>
 
 
-<body data-base-href="../" data-using-base-href="false">
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
 
 <div id="overlay-under-drawer"></div>
 
 <header id="title">
-  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
@@ -36,10 +36,16 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
+  <div class="toggle" id="theme-button">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span class="material-symbols-outlined">
+        brightness_4
+      </span>
+    </label>
+  </div>
 </header>
-
 <main>
-
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
@@ -72,6 +78,8 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
         <li>@<a href="https://pub.dev/documentation/meta/1.8.0/meta/immutable-constant.html">immutable</a></li>
     </ul>
   </dd>
+
+
       </dl>
     </section>
 
@@ -88,51 +96,51 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
 </dt>
 <dd>
   The current active value of this, if it has width 1, as a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Check `width` separately to see if single-bit.&#39;), read-only</div>
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
         <dt id="hashCode" class="property">
   <span class="name"><a href="../rohd/LogicValue/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
   The hash code for this object.
-  <div class="features">read-only, override</div>
+  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="isFloating" class="property">
   <span class="name"><a href="../rohd/LogicValue/isFloating.html">isFloating</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   True iff all bits are <code>z</code>.
-  <div class="features">read-only</div>
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
         <dt id="isValid" class="property">
   <span class="name"><a href="../rohd/LogicValue/isValid.html">isValid</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   True iff all bits are <code>0</code> or <code>1</code>, not a single <code>x</code> or <code>z</code>.
-  <div class="features">read-only</div>
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
         <dt id="length" class="property">
   <span class="name"><a class="deprecated" href="../rohd/LogicValue/length.html">length</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
   The number of bits in this <code>LogicValue</code>.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `width` instead.&#39;), read-only</div>
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
@@ -144,29 +152,29 @@ of <code>0</code>, <code>1</code>, <code>x</code> (contention), or <code>z</code
 <dd>
   Returns a new <a href="../rohd/LogicValue-class.html">LogicValue</a> with the order of all bits in the reverse order
 of this <a href="../rohd/LogicValue-class.html">LogicValue</a>
-  <div class="features">read-only</div>
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/Type-class.html">Type</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/Type-class.html">Type</a></span> 
 
 </dt>
 <dd class="inherited">
   A representation of the runtime type of the object.
-  <div class="features">read-only, inherited</div>
+  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
 
 </dd>
 
         <dt id="width" class="property">
   <span class="name"><a href="../rohd/LogicValue/width.html">width</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
   The number of bits in this <code>LogicValue</code>.
-  <div class="features">final</div>
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 
@@ -206,7 +214,7 @@ of this <a href="../rohd/LogicValue-class.html">LogicValue</a>
 </dd>
 
         <dt id="extend" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/extend.html">extend</a></span><span class="signature">(<wbr><span class="parameter" id="extend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span>, </span><span class="parameter" id="extend-param-fill"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">fill</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/extend.html">extend</a></span><span class="signature">(<wbr><span class="parameter" id="extend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span>, </span><span class="parameter" id="extend-param-fill"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">fill</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -221,7 +229,7 @@ to <code>fill</code>.
 </dd>
 
         <dt id="getRange" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
+  <span class="name"><a href="../rohd/LogicValue/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -235,7 +243,7 @@ of <code>endIndex</code>.
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -243,7 +251,7 @@ of <code>endIndex</code>.
 </dt>
 <dd class="inherited">
   Invoked when a non-existent method or property is accessed.
-  <div class="features">inherited</div>
+  <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
 
@@ -261,7 +269,7 @@ of <code>endIndex</code>.
 </dd>
 
         <dt id="signExtend" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -277,7 +285,7 @@ value and extends with that.
 </dd>
 
         <dt id="slice" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -292,20 +300,20 @@ both inclusive.
 
         <dt id="toBigInt" class="callable">
   <span class="name"><a href="../rohd/LogicValue/toBigInt.html">toBigInt</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/BigInt-class.html">BigInt</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/BigInt-class.html">BigInt</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts valid a <a href="../rohd/LogicValue-class.html">LogicValue</a> to an <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a>.
+  Converts valid a <a href="../rohd/LogicValue-class.html">LogicValue</a> to an <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a>.
   
 
 </dd>
 
         <dt id="toBool" class="callable">
   <span class="name"><a href="../rohd/LogicValue/toBool.html">toBool</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -318,47 +326,47 @@ both inclusive.
 
         <dt id="toInt" class="callable">
   <span class="name"><a href="../rohd/LogicValue/toInt.html">toInt</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts valid a <a href="../rohd/LogicValue-class.html">LogicValue</a> to an <a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a>.
+  Converts valid a <a href="../rohd/LogicValue-class.html">LogicValue</a> to an <a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a>.
   
 
 </dd>
 
         <dt id="toList" class="callable">
   <span class="name"><a href="../rohd/LogicValue/toList.html">toList</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.18.6/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element
+  Returns a this <code>LogicValue</code> as a <a href="https://api.dart.dev/stable/2.19.0/dart-core/List-class.html">List&lt;LogicValue&gt;</a> where every element
 is 1 bit.
   
 
 </dd>
 
         <dt id="toString" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/toString.html">toString</a></span><span class="signature">(<wbr><span class="parameter" id="toString-param-includeWidth">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">includeWidth</span> = <span class="default-value">true</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="../rohd/LogicValue/toString.html">toString</a></span><span class="signature">(<wbr><span class="parameter" id="toString-param-includeWidth">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">includeWidth</span> = <span class="default-value">true</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts this <a href="../rohd/LogicValue-class.html">LogicValue</a> to a binary <a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a>, including a decorator at
+  Converts this <a href="../rohd/LogicValue-class.html">LogicValue</a> to a binary <a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a>, including a decorator at
 the front in SystemVerilog style.
-  <div class="features">override</div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="withSet" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">update</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">update</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -386,7 +394,7 @@ instead of their original value.
 </dd>
 
         <dt id="zeroExtend" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -525,15 +533,15 @@ zeros as the most significant bits.
 </dd>
 
         <dt id="operator ==" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="../rohd/LogicValue/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
 </dt>
 <dd>
   Returns true iff the width and all bits of <code>this</code> are equal to <code>other</code>.
-  <div class="features">override</div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -590,7 +598,7 @@ zeros as the most significant bits.
 </dd>
 
         <dt id="operator []" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/operator_get.html">operator []</a></span><span class="signature">(<wbr><span class="parameter" id="[]-param-index"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/operator_get.html">operator []</a></span><span class="signature">(<wbr><span class="parameter" id="[]-param-index"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">index</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -649,7 +657,7 @@ zeros as the most significant bits.
     <h2>Static Methods</h2>
     <dl class="callables">
         <dt id="filled" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/filled.html">filled</a></span><span class="signature">(<wbr><span class="parameter" id="filled-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, </span><span class="parameter" id="filled-param-fill"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">fill</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/filled.html">filled</a></span><span class="signature">(<wbr><span class="parameter" id="filled-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, </span><span class="parameter" id="filled-param-fill"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">fill</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -663,7 +671,7 @@ bit has the same value of <code>fill</code>.
 </dd>
 
         <dt id="from" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/from.html">from</a></span><span class="signature">(<wbr><span class="parameter" id="from-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -671,12 +679,12 @@ bit has the same value of <code>fill</code>.
 </dt>
 <dd>
   Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `of` instead.&#39;)</div>
+  
 
 </dd>
 
         <dt id="fromBigInt" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBigInt.html">fromBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromBigInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromBigInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBigInt.html">fromBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromBigInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromBigInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -685,12 +693,12 @@ bit has the same value of <code>fill</code>.
 <dd>
   Converts <code>BigInt</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
 number of bits.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofBigInt` instead.&#39;)</div>
+  
 
 </dd>
 
         <dt id="fromBool" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBool.html">fromBool</a></span><span class="signature">(<wbr><span class="parameter" id="fromBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromBool.html">fromBool</a></span><span class="signature">(<wbr><span class="parameter" id="fromBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -699,12 +707,12 @@ number of bits.
 <dd>
   Converts <code>bool</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
 one or zero.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofBool` instead.&#39;)</div>
+  
 
 </dd>
 
         <dt id="fromInt" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromInt.html">fromInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromInt.html">fromInt</a></span><span class="signature">(<wbr><span class="parameter" id="fromInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="fromInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -713,27 +721,27 @@ one or zero.
 <dd>
   Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code>
 number of bits.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofInt` instead.&#39;)</div>
+  
 
 </dd>
 
         <dt id="fromString" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromString.html">fromString</a></span><span class="signature">(<wbr><span class="parameter" id="fromString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/LogicValue/fromString.html">fromString</a></span><span class="signature">(<wbr><span class="parameter" id="fromString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
+  Converts a binary <a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
 <a href="../rohd/LogicValue-class.html">LogicValue</a>.
-  <div class="features">@<a href="https://api.dart.dev/stable/2.18.6/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `ofString` instead.&#39;)</div>
+  
 
 </dd>
 
         <dt id="isNegedge" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/isNegedge.html">isNegedge</a></span><span class="signature">(<wbr><span class="parameter" id="isNegedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isNegedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isNegedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="../rohd/LogicValue/isNegedge.html">isNegedge</a></span><span class="signature">(<wbr><span class="parameter" id="isNegedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isNegedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isNegedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -745,8 +753,8 @@ number of bits.
 </dd>
 
         <dt id="isPosedge" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/isPosedge.html">isPosedge</a></span><span class="signature">(<wbr><span class="parameter" id="isPosedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isPosedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="../rohd/LogicValue/isPosedge.html">isPosedge</a></span><span class="signature">(<wbr><span class="parameter" id="isPosedge-param-previousValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">previousValue</span>, </span><span class="parameter" id="isPosedge-param-newValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">newValue</span>, </span><span class="parameter" id="isPosedge-param-ignoreInvalid">{<span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">ignoreInvalid</span> = <span class="default-value">false</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -758,7 +766,7 @@ number of bits.
 </dd>
 
         <dt id="of" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -771,7 +779,7 @@ number of bits.
 </dd>
 
         <dt id="ofBigInt" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofBigInt.html">ofBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofBigInt.html">ofBigInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofBigInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/BigInt-class.html">BigInt</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofBigInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -785,7 +793,7 @@ number of bits.
 </dd>
 
         <dt id="ofBool" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofBool.html">ofBool</a></span><span class="signature">(<wbr><span class="parameter" id="ofBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofBool.html">ofBool</a></span><span class="signature">(<wbr><span class="parameter" id="ofBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -799,7 +807,7 @@ one or zero.
 </dd>
 
         <dt id="ofInt" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofInt.html">ofInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofInt.html">ofInt</a></span><span class="signature">(<wbr><span class="parameter" id="ofInt-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="ofInt-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
@@ -813,14 +821,14 @@ of bits.
 </dd>
 
         <dt id="ofString" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/ofString.html">ofString</a></span><span class="signature">(<wbr><span class="parameter" id="ofString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/ofString.html">ofString</a></span><span class="signature">(<wbr><span class="parameter" id="ofString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/2.18.6/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
+  Converts a binary <a href="https://api.dart.dev/stable/2.19.0/dart-core/String-class.html">String</a> representation of a <a href="../rohd/LogicValue-class.html">LogicValue</a> into a
 <a href="../rohd/LogicValue-class.html">LogicValue</a>.
   
 
@@ -844,9 +852,9 @@ of bits.
   A zero-width value.
   
 
-  <div>
-    <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.zero, 0)</code></span>
-  </div>
+    <div>
+      <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.zero, 0)</code></span>
+    </div>
 </dd>
 
         <dt id="one" class="constant">
@@ -859,9 +867,9 @@ of bits.
   Logical value of <code>1</code>.
   
 
-  <div>
-    <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.one, 1)</code></span>
-  </div>
+    <div>
+      <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.one, 1)</code></span>
+    </div>
 </dd>
 
         <dt id="x" class="constant">
@@ -874,9 +882,9 @@ of bits.
   Logical value of <code>x</code>.
   
 
-  <div>
-    <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.x, 1)</code></span>
-  </div>
+    <div>
+      <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.x, 1)</code></span>
+    </div>
 </dd>
 
         <dt id="z" class="constant">
@@ -889,9 +897,9 @@ of bits.
   Logical value of <code>z</code>.
   
 
-  <div>
-    <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.z, 1)</code></span>
-  </div>
+    <div>
+      <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.z, 1)</code></span>
+    </div>
 </dd>
 
         <dt id="zero" class="constant">
@@ -904,9 +912,9 @@ of bits.
   Logical value of <code>0</code>.
   
 
-  <div>
-    <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.zero, 1)</code></span>
-  </div>
+    <div>
+      <span class="signature"><code>_FilledLogicValue(_LogicValueEnum.zero, 1)</code></span>
+    </div>
 </dd>
 
     </dl>
@@ -930,93 +938,93 @@ of bits.
 
     <h5>rohd library</h5>
     <ol>
-  <li class="section-title"><a href="../rohd/rohd-library.html#classes">Classes</a></li>
-  <li><a href="../rohd/Add-class.html">Add</a></li>
-  <li><a href="../rohd/And2Gate-class.html">And2Gate</a></li>
-  <li><a href="../rohd/AndUnary-class.html">AndUnary</a></li>
-  <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
-  <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
-  <li><a href="../rohd/Case-class.html">Case</a></li>
-  <li><a href="../rohd/CaseItem-class.html">CaseItem</a></li>
-  <li><a href="../rohd/CaseZ-class.html">CaseZ</a></li>
-  <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
-  <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
-  <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
-  <li><a href="../rohd/Const-class.html">Const</a></li>
-  <li><a href="../rohd/Divide-class.html">Divide</a></li>
-  <li><a href="../rohd/Else-class.html">Else</a></li>
-  <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
-  <li><a href="../rohd/Equals-class.html">Equals</a></li>
-  <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
-  <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
-  <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
-  <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
-  <li><a href="../rohd/If-class.html">If</a></li>
-  <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
-  <li><a href="../rohd/IndexGate-class.html">IndexGate</a></li>
-  <li><a href="../rohd/Interface-class.html">Interface</a></li>
-  <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
-  <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
-  <li><a href="../rohd/Logic-class.html">Logic</a></li>
-  <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
-  <li><a href="../rohd/LShift-class.html">LShift</a></li>
-  <li><a href="../rohd/Module-class.html">Module</a></li>
-  <li><a href="../rohd/Modulo-class.html">Modulo</a></li>
-  <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
-  <li><a href="../rohd/Mux-class.html">Mux</a></li>
-  <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
-  <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
-  <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
-  <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
-  <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
-  <li><a href="../rohd/Port-class.html">Port</a></li>
-  <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
-  <li><a href="../rohd/ReplicationOp-class.html">ReplicationOp</a></li>
-  <li><a href="../rohd/RShift-class.html">RShift</a></li>
-  <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
-  <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
-  <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
-  <li><a href="../rohd/State-class.html">State</a></li>
-  <li><a href="../rohd/StateMachine-class.html">StateMachine</a></li>
-  <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
-  <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
-  <li><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
-  <li><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
-  <li><a href="../rohd/Synthesizer-class.html">Synthesizer</a></li>
-  <li><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
-  <li><a href="../rohd/WaveDumper-class.html">WaveDumper</a></li>
-  <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
-  <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#classes">Classes</a></li>
+        <li><a href="../rohd/Add-class.html">Add</a></li>
+        <li><a href="../rohd/And2Gate-class.html">And2Gate</a></li>
+        <li><a href="../rohd/AndUnary-class.html">AndUnary</a></li>
+        <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
+        <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
+        <li><a href="../rohd/Case-class.html">Case</a></li>
+        <li><a href="../rohd/CaseItem-class.html">CaseItem</a></li>
+        <li><a href="../rohd/CaseZ-class.html">CaseZ</a></li>
+        <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
+        <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
+        <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+        <li><a href="../rohd/Const-class.html">Const</a></li>
+        <li><a href="../rohd/Divide-class.html">Divide</a></li>
+        <li><a href="../rohd/Else-class.html">Else</a></li>
+        <li><a href="../rohd/ElseIf-class.html">ElseIf</a></li>
+        <li><a href="../rohd/Equals-class.html">Equals</a></li>
+        <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
+        <li><a href="../rohd/FlipFlop-class.html">FlipFlop</a></li>
+        <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
+        <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
+        <li><a href="../rohd/If-class.html">If</a></li>
+        <li><a href="../rohd/IfBlock-class.html">IfBlock</a></li>
+        <li><a href="../rohd/IndexGate-class.html">IndexGate</a></li>
+        <li><a href="../rohd/Interface-class.html">Interface</a></li>
+        <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
+        <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
+        <li><a href="../rohd/Logic-class.html">Logic</a></li>
+        <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
+        <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
+        <li><a href="../rohd/LShift-class.html">LShift</a></li>
+        <li><a href="../rohd/Module-class.html">Module</a></li>
+        <li><a href="../rohd/Modulo-class.html">Modulo</a></li>
+        <li><a href="../rohd/Multiply-class.html">Multiply</a></li>
+        <li><a href="../rohd/Mux-class.html">Mux</a></li>
+        <li><a href="../rohd/NotGate-class.html">NotGate</a></li>
+        <li><a href="../rohd/Or2Gate-class.html">Or2Gate</a></li>
+        <li><a href="../rohd/OrUnary-class.html">OrUnary</a></li>
+        <li><a href="../rohd/Pipeline-class.html">Pipeline</a></li>
+        <li><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></li>
+        <li><a href="../rohd/Port-class.html">Port</a></li>
+        <li><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></li>
+        <li><a href="../rohd/ReplicationOp-class.html">ReplicationOp</a></li>
+        <li><a href="../rohd/RShift-class.html">RShift</a></li>
+        <li><a href="../rohd/Sequential-class.html">Sequential</a></li>
+        <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
+        <li><a href="../rohd/Simulator-class.html">Simulator</a></li>
+        <li><a href="../rohd/State-class.html">State</a></li>
+        <li><a href="../rohd/StateMachine-class.html">StateMachine</a></li>
+        <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
+        <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
+        <li><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
+        <li><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
+        <li><a href="../rohd/Synthesizer-class.html">Synthesizer</a></li>
+        <li><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></li>
+        <li><a href="../rohd/WaveDumper-class.html">WaveDumper</a></li>
+        <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
+        <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
-  <li><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></li>
-  <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
-  <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#extensions">Extensions</a></li>
+        <li><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></li>
+        <li><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></li>
+        <li><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
-  <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
-  <li><a href="../rohd/FullyCombinational-mixin.html">FullyCombinational</a></li>
-  <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#mixins">Mixins</a></li>
+        <li><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
+        <li><a href="../rohd/FullyCombinational-mixin.html">FullyCombinational</a></li>
+        <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
 
 
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
-  <li><a href="../rohd/bin.html">bin</a></li>
-  <li><a href="../rohd/mux.html">mux</a></li>
-  <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
-  <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#functions">Functions</a></li>
+        <li><a href="../rohd/bin.html">bin</a></li>
+        <li><a href="../rohd/mux.html">mux</a></li>
+        <li><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></li>
+        <li><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
-  <li><a href="../rohd/ConditionalType.html">ConditionalType</a></li>
-  <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#enums">Enums</a></li>
+        <li><a href="../rohd/ConditionalType.html">ConditionalType</a></li>
+        <li><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></li>
 
-  <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
-  <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
-  <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
-  <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
-  <li><a href="../rohd/Iff.html">Iff</a></li>
-  <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
+      <li class="section-title"><a href="../rohd/rohd-library.html#typedefs">Typedefs</a></li>
+        <li><a class="deprecated" href="../rohd/Dumper.html">Dumper</a></li>
+        <li><a class="deprecated" href="../rohd/ExternalModule.html">ExternalModule</a></li>
+        <li><a class="deprecated" href="../rohd/FF.html">FF</a></li>
+        <li><a href="../rohd/Iff.html">Iff</a></li>
+        <li><a class="deprecated" href="../rohd/LogicValues.html">LogicValues</a></li>
 
 </ol>
 
@@ -1027,55 +1035,55 @@ of bits.
 
 
 
-    <li class="section-title">
-      <a href="../rohd/LogicValue-class.html#instance-properties">Properties</a>
-    </li>
-    <li><a class="deprecated" href="../rohd/LogicValue/bit.html">bit</a></li>
-    <li><a href="../rohd/LogicValue/hashCode.html">hashCode</a></li>
-    <li><a href="../rohd/LogicValue/isFloating.html">isFloating</a></li>
-    <li><a href="../rohd/LogicValue/isValid.html">isValid</a></li>
-    <li><a class="deprecated" href="../rohd/LogicValue/length.html">length</a></li>
-    <li><a href="../rohd/LogicValue/reversed.html">reversed</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Object/runtimeType.html">runtimeType</a></li>
-    <li><a href="../rohd/LogicValue/width.html">width</a></li>
+        <li class="section-title">
+          <a href="../rohd/LogicValue-class.html#instance-properties">Properties</a>
+        </li>
+          <li><a class="deprecated" href="../rohd/LogicValue/bit.html">bit</a></li>
+          <li><a href="../rohd/LogicValue/hashCode.html">hashCode</a></li>
+          <li><a href="../rohd/LogicValue/isFloating.html">isFloating</a></li>
+          <li><a href="../rohd/LogicValue/isValid.html">isValid</a></li>
+          <li><a class="deprecated" href="../rohd/LogicValue/length.html">length</a></li>
+          <li><a href="../rohd/LogicValue/reversed.html">reversed</a></li>
+          <li class="inherited"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Object/runtimeType.html">runtimeType</a></li>
+          <li><a href="../rohd/LogicValue/width.html">width</a></li>
 
-    <li class="section-title"><a href="../rohd/LogicValue-class.html#instance-methods">Methods</a></li>
-    <li><a href="../rohd/LogicValue/and.html">and</a></li>
-    <li><a href="../rohd/LogicValue/eq.html">eq</a></li>
-    <li><a href="../rohd/LogicValue/extend.html">extend</a></li>
-    <li><a href="../rohd/LogicValue/getRange.html">getRange</a></li>
-    <li class="inherited"><a href="https://api.dart.dev/stable/2.18.6/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
-    <li><a href="../rohd/LogicValue/or.html">or</a></li>
-    <li><a href="../rohd/LogicValue/signExtend.html">signExtend</a></li>
-    <li><a href="../rohd/LogicValue/slice.html">slice</a></li>
-    <li><a href="../rohd/LogicValue/toBigInt.html">toBigInt</a></li>
-    <li><a href="../rohd/LogicValue/toBool.html">toBool</a></li>
-    <li><a href="../rohd/LogicValue/toInt.html">toInt</a></li>
-    <li><a href="../rohd/LogicValue/toList.html">toList</a></li>
-    <li><a href="../rohd/LogicValue/toString.html">toString</a></li>
-    <li><a href="../rohd/LogicValue/withSet.html">withSet</a></li>
-    <li><a href="../rohd/LogicValue/xor.html">xor</a></li>
-    <li><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></li>
+        <li class="section-title"><a href="../rohd/LogicValue-class.html#instance-methods">Methods</a></li>
+          <li><a href="../rohd/LogicValue/and.html">and</a></li>
+          <li><a href="../rohd/LogicValue/eq.html">eq</a></li>
+          <li><a href="../rohd/LogicValue/extend.html">extend</a></li>
+          <li><a href="../rohd/LogicValue/getRange.html">getRange</a></li>
+          <li class="inherited"><a href="https://api.dart.dev/stable/2.19.0/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
+          <li><a href="../rohd/LogicValue/or.html">or</a></li>
+          <li><a href="../rohd/LogicValue/signExtend.html">signExtend</a></li>
+          <li><a href="../rohd/LogicValue/slice.html">slice</a></li>
+          <li><a href="../rohd/LogicValue/toBigInt.html">toBigInt</a></li>
+          <li><a href="../rohd/LogicValue/toBool.html">toBool</a></li>
+          <li><a href="../rohd/LogicValue/toInt.html">toInt</a></li>
+          <li><a href="../rohd/LogicValue/toList.html">toList</a></li>
+          <li><a href="../rohd/LogicValue/toString.html">toString</a></li>
+          <li><a href="../rohd/LogicValue/withSet.html">withSet</a></li>
+          <li><a href="../rohd/LogicValue/xor.html">xor</a></li>
+          <li><a href="../rohd/LogicValue/zeroExtend.html">zeroExtend</a></li>
 
-    <li class="section-title"><a href="../rohd/LogicValue-class.html#operators">Operators</a></li>
-    <li><a href="../rohd/LogicValue/operator_modulo.html">operator %</a></li>
-    <li><a href="../rohd/LogicValue/operator_bitwise_and.html">operator &</a></li>
-    <li><a href="../rohd/LogicValue/operator_multiply.html">operator *</a></li>
-    <li><a href="../rohd/LogicValue/operator_plus.html">operator +</a></li>
-    <li><a href="../rohd/LogicValue/operator_minus.html">operator -</a></li>
-    <li><a href="../rohd/LogicValue/operator_divide.html">operator /</a></li>
-    <li><a href="../rohd/LogicValue/operator_less.html">operator <</a></li>
-    <li><a href="../rohd/LogicValue/operator_shift_left.html">operator <<</a></li>
-    <li><a href="../rohd/LogicValue/operator_less_equal.html">operator <=</a></li>
-    <li><a href="../rohd/LogicValue/operator_equals.html">operator ==</a></li>
-    <li><a href="../rohd/LogicValue/operator_greater.html">operator ></a></li>
-    <li><a href="../rohd/LogicValue/operator_greater_equal.html">operator >=</a></li>
-    <li><a href="../rohd/LogicValue/operator_shift_right.html">operator >></a></li>
-    <li><a href="../rohd/LogicValue/operator_triple_shift.html">operator >>></a></li>
-    <li><a href="../rohd/LogicValue/operator_get.html">operator []</a></li>
-    <li><a href="../rohd/LogicValue/operator_bitwise_exclusive_or.html">operator ^</a></li>
-    <li><a href="../rohd/LogicValue/operator_bitwise_or.html">operator |</a></li>
-    <li><a href="../rohd/LogicValue/operator_bitwise_negate.html">operator ~</a></li>
+        <li class="section-title"><a href="../rohd/LogicValue-class.html#operators">Operators</a></li>
+          <li><a href="../rohd/LogicValue/operator_modulo.html">operator %</a></li>
+          <li><a href="../rohd/LogicValue/operator_bitwise_and.html">operator &</a></li>
+          <li><a href="../rohd/LogicValue/operator_multiply.html">operator *</a></li>
+          <li><a href="../rohd/LogicValue/operator_plus.html">operator +</a></li>
+          <li><a href="../rohd/LogicValue/operator_minus.html">operator -</a></li>
+          <li><a href="../rohd/LogicValue/operator_divide.html">operator /</a></li>
+          <li><a href="../rohd/LogicValue/operator_less.html">operator <</a></li>
+          <li><a href="../rohd/LogicValue/operator_shift_left.html">operator <<</a></li>
+          <li><a href="../rohd/LogicValue/operator_less_equal.html">operator <=</a></li>
+          <li><a href="../rohd/LogicValue/operator_equals.html">operator ==</a></li>
+          <li><a href="../rohd/LogicValue/operator_greater.html">operator ></a></li>
+          <li><a href="../rohd/LogicValue/operator_greater_equal.html">operator >=</a></li>
+          <li><a href="../rohd/LogicValue/operator_shift_right.html">operator >></a></li>
+          <li><a href="../rohd/LogicValue/operator_triple_shift.html">operator >>></a></li>
+          <li><a href="../rohd/LogicValue/operator_get.html">operator []</a></li>
+          <li><a href="../rohd/LogicValue/operator_bitwise_exclusive_or.html">operator ^</a></li>
+          <li><a href="../rohd/LogicValue/operator_bitwise_or.html">operator |</a></li>
+          <li><a href="../rohd/LogicValue/operator_bitwise_negate.html">operator ~</a></li>
 
 
 
