@@ -87,10 +87,12 @@ LogicValue.ofString('0101')[10]; // Error - out of range
   <pre class="language-dart"><code class="language-dart">LogicValue operator [](int index) {
   final modifiedIndex = (index &lt; 0) ? width + index : index;
   if (modifiedIndex &gt;= width || modifiedIndex &lt; 0) {
-    throw IndexError.withLength(index, width,
-        indexable: this,
-        name: &#39;LogicValueIndexOutOfRange&#39;,
-        message: &#39;Index out of range: $modifiedIndex(=$index).&#39;);
+    &#47;&#47; The suggestion in the deprecation for this constructor is not available
+    &#47;&#47; before 2.19, so keep it in here for now.  Eventually, switch to the
+    &#47;&#47; new one.
+    &#47;&#47; ignore: deprecated_member_use
+    throw IndexError(index, this, &#39;LogicValueIndexOutOfRange&#39;,
+        &#39;Index out of range: $modifiedIndex(=$index).&#39;, width);
   }
   return _getIndex(modifiedIndex);
 }</code></pre>
