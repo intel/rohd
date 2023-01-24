@@ -1,7 +1,7 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// extend_test.dart
+/// replication_test.dart
 /// Unit tests for extend and withSet operations
 ///
 /// 2023 Jan 18
@@ -13,9 +13,10 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class ReplicationOpModule extends Module {
-  ReplicationOpModule(Logic a, int multiplier, int newWidth) {
+  ReplicationOpModule(Logic a, int multiplier) {
+    final newWidth = a.width * multiplier;
     a = addInput('a', a, width: a.width);
-    final b = addOutput('b', width: newWidth <= 0 ? a.width : newWidth);
+    final b = addOutput('b', width: newWidth);
 
     b <= a.replicate(multiplier);
   }
@@ -24,12 +25,12 @@ class ReplicationOpModule extends Module {
 void main() {
   group('Logic', () {
     tearDown(Simulator.reset);
-    group('extend', () {
+    group('replicate', () {
       Future<void> replicateVectors(List<Vector> vectors, int multiplier,
           {int originalWidth = 8}) async {
         final newWidth = originalWidth * multiplier;
-        final mod = ReplicationOpModule(
-            Logic(width: originalWidth), multiplier, newWidth);
+        final mod =
+            ReplicationOpModule(Logic(width: originalWidth), multiplier);
         await mod.build();
         await SimCompare.checkFunctionalVector(mod, vectors);
         final simResult = SimCompare.iverilogVector(
