@@ -16,7 +16,7 @@ class ReplicationOpModule extends Module {
   ReplicationOpModule(Logic a, int multiplier) {
     final newWidth = a.width * multiplier;
     a = addInput('a', a, width: a.width);
-    final b = addOutput('b', width: newWidth);
+    final b = addOutput('b', width: newWidth < 1 ? a.width : newWidth);
 
     b <= a.replicate(multiplier);
   }
@@ -28,19 +28,20 @@ void main() {
     group('replicate', () {
       Future<void> replicateVectors(List<Vector> vectors, int multiplier,
           {int originalWidth = 8}) async {
-        final newWidth = originalWidth * multiplier;
         final mod =
             ReplicationOpModule(Logic(width: originalWidth), multiplier);
         await mod.build();
         await SimCompare.checkFunctionalVector(mod, vectors);
-        final simResult = SimCompare.iverilogVector(
-            mod.generateSynth(), mod.runtimeType.toString(), vectors,
-            signalToWidthMap: {'a': originalWidth, 'b': newWidth});
+        final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
       }
 
       test('multiply by a multiplier <1 throws exception', () async {
-        expect(() => replicateVectors([], 0), throwsException);
+        expect(
+            () => replicateVectors([
+                  Vector({'a': 0}, {'b': 0})
+                ], 0, originalWidth: 4),
+            throwsException);
         expect(() => replicateVectors([], -1), throwsException);
       });
 

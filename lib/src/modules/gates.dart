@@ -783,7 +783,7 @@ class ReplicationOp extends Module
         _outputName = Module.unpreferredName('output_${original.name}') {
     final newWidth = original.width * _multiplier;
     if (newWidth < 1) {
-      throw InvalidWidthException(newWidth);
+      throw InvalidMultiplierException(newWidth);
     }
 
     addInput(_inputName, original, width: original.width);
@@ -801,7 +801,7 @@ class ReplicationOp extends Module
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    replicated.put(List.filled(_multiplier, _input.value).swizzle());
+    replicated.put(_input.value.replicate(_multiplier));
   }
 
   @override
