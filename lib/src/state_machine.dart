@@ -99,6 +99,23 @@ class StateMachine<StateIdentifier> {
       )
     ]);
   }
+
+  String generateDiagram({String? title}) {
+    final figure = MermaidStateDiagram()..addStartState(resetState.toString());
+
+    if (title != null) {
+      figure.addTitle(title);
+    }
+
+    for (final state in _states) {
+      for (final entry in state.events.entries) {
+        figure.addTransitions(state.identifier.toString(),
+            entry.value.toString(), entry.key.name);
+      }
+    }
+
+    return figure.diagram;
+  }
 }
 
 /// Simple class to initialize each state of the FSM.
@@ -116,4 +133,35 @@ class State<StateIdentifier> {
   /// Represents a state named [identifier] with a definition of [events]
   /// and [actions] associated with that state.
   State(this.identifier, {required this.events, required this.actions});
+}
+
+class MermaidStateDiagram {
+  /// The diagram to be return as String
+  late String diagram;
+
+  /// Represent a [MermaidStateDiagram] that initialized the diagram of
+  /// mermaid as `stateDiagram`.
+  MermaidStateDiagram() {
+    diagram = 'stateDiagram\n';
+  }
+
+  void addState(String state) => diagram = '$diagram\n$state\n';
+
+  void addTransitions(String currState, String nextState, String event) =>
+      diagram = '$diagram$currState --> $nextState: $event\n';
+
+  void addStartState(String startState) =>
+      diagram = '$diagram\n[*] --> $startState\n';
+
+  void addEndState(String endState) =>
+      diagram = '$diagram\n$endState --> [*]\n';
+
+  void addTitle(String title) {
+    if (!diagram.contains('title')) {
+      // Add title
+      diagram = '---\ntitle: $title \n---\n$diagram\n';
+    } else {
+      // TODO: update title
+    }
+  }
 }
