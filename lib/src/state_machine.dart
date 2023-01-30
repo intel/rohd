@@ -104,9 +104,9 @@ class StateMachine<StateIdentifier> {
 
   /// Generate a FSM state diagram [MermaidStateDiagram].
   ///
-  /// Output to mermaid diagram at [outputPath].
-  Future<String> generateDiagram(
-      {String outputPath = 'stateDiagram.md'}) async {
+  /// Output to mermaid diagram at [outputPath]. Use await to wait for the
+  /// asynchronous write of the object to file.
+  Future<void> generateDiagram({String outputPath = 'stateDiagram.md'}) async {
     final figure = MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
@@ -117,7 +117,6 @@ class StateMachine<StateIdentifier> {
       }
     }
     await figure.writeToFile();
-    return figure.diagram;
   }
 }
 
