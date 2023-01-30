@@ -70,7 +70,13 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Port(String name, [int width = 1]) : super(name: name, width: width);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Port(String name, [int width = 1]) : super(name: name, width: width) {
+  if (!Sanitizer.isSanitary(name)) {
+    throw Exception(
+        &#39;Invalid name &quot;$name&quot;, must be legal SystemVerilog and not collide&#39;
+        &#39; with any keywords.&#39;);
+  }
+}</code></pre>
 </section>
 
 
