@@ -33,9 +33,7 @@ class TestModule extends Module {
         b < ~c,
       ]),
     ];
-    final simpleFSM =
-        StateMachine<MyStates>(clk, reset, MyStates.state1, states);
-    print(simpleFSM.generateDiagram());
+    StateMachine<MyStates>(clk, reset, MyStates.state1, states);
   }
 }
 
@@ -101,9 +99,7 @@ class TrafficTestModule extends Module {
         eastLight < LightColor.yellow(),
       ]),
     ];
-    final trafficFSM =
-        StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
-    print(trafficFSM.generateDiagram());
+    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
   }
 }
 
