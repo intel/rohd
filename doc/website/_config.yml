@@ -5,14 +5,14 @@ remote_theme: "mmistakes/minimal-mistakes@4.24.0"
 locale: "en-US"
 title: ROHD
 title_separator: "-"
-subtitle: "Framework"
+# subtitle: "Framework"
 email: "yao.jing.quek@intel.com"
 description: "The Rapid Open Hardware Development (ROHD) framework is a framework for describing and verifying hardware in the Dart programming language. ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software."
 url: "https://intel.github.io/rohd/" # the base hostname & protocol for your site, e.g. http://example.com
 baseurl: "/" # the subpath of your site, e.g. /blog
 repository: "intel/rohd"
-logo: "/assets/images/88x88.png"
-masthead_title: "ROHD"
+logo: "/assets/images/88x88.svg"
+# masthead_title: "ROHD"
 breadcrumbs: true
 minimal_mistakes_skin: "air"
 search: true
