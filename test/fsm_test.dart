@@ -132,16 +132,7 @@ void main() {
 
       expect(simResult, equals(true));
 
-      // check if diagram exists
-      final file = File(simpleFSMPath);
-      final existDiagram = file.existsSync();
-      expect(existDiagram, isTrue);
-
-      // check if the file generated is mermaid file
-      final fileContents = file.readAsStringSync();
-      expect(fileContents, contains('mermaid'));
-
-      File(simpleFSMPath).deleteSync();
+      verifyMermaidStateDiagram(simpleFSMPath);
     });
 
     test('traffic light fsm', () async {
@@ -171,12 +162,20 @@ void main() {
       final simResult = SimCompare.iverilogVector(pipem, vectors);
 
       expect(simResult, equals(true));
-
-      // check if the diagram exist
-      final existDiagram = File(trafficFSMPath).existsSync();
-      expect(existDiagram, isTrue);
-
-      File(trafficFSMPath).deleteSync();
+      verifyMermaidStateDiagram(trafficFSMPath);
     });
   });
+}
+
+void verifyMermaidStateDiagram(String filePath) {
+  // check if the diagram exist
+  final file = File(filePath);
+  final existDiagram = file.existsSync();
+  expect(existDiagram, isTrue);
+
+  // check if the file generated is mermaid file
+  final fileContents = file.readAsStringSync();
+  expect(fileContents, contains('mermaid'));
+
+  File(filePath).deleteSync();
 }
