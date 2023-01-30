@@ -91,9 +91,9 @@ timestamp, and passes through all events and phases on the way.</p>
 
   _currentTimestamp = nextTimeStamp;
 
-  await tickExecute(() {
+  await tickExecute(() async {
     for (final func in _pendingTimestamps[nextTimeStamp]!) {
-      func();
+      await func();
     }
   });
   _pendingTimestamps.remove(_currentTimestamp);

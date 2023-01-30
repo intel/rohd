@@ -59,7 +59,7 @@
 
 <span class="returntype">void</span>
 <span class="name ">registerAction</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="registerAction-param-timestamp"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">timestamp</span>, </span></li>
-<li><span class="parameter" id="registerAction-param-action"><span class="type-annotation">void</span> <span class="parameter-name">action</span>(<ol class="parameter-list"></ol>
+<li><span class="parameter" id="registerAction-param-action"><span class="type-annotation">dynamic</span> <span class="parameter-name">action</span>(<ol class="parameter-list"></ol>
 )</span></li>
 </ol>)
 
@@ -69,13 +69,14 @@
     
 <section class="desc markdown">
   <p>Registers an abritrary <code>action</code> to be executed at <code>timestamp</code> time.</p>
+<p>The <code>action</code>, if it returns a <a href="https://api.dart.dev/stable/2.19.0/dart-async/Future-class.html">Future</a>, will be <code>await</code>ed.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void registerAction(int timestamp, void Function() action) {
+  <pre class="language-dart"><code class="language-dart">static void registerAction(int timestamp, dynamic Function() action) {
   if (timestamp &lt;= _currentTimestamp) {
     throw Exception(&#39;Cannot add timestamp &quot;$timestamp&quot; in the past.&#39;
         &#39;  Current time is ${Simulator.time}&#39;);

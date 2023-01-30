@@ -58,7 +58,7 @@
       
 
 <span class="returntype"><a href="https://api.dart.dev/stable/2.19.0/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
-<span class="name ">tickExecute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="tickExecute-param-toExecute"><span class="type-annotation">void</span> <span class="parameter-name">toExecute</span>(<ol class="parameter-list"></ol>
+<span class="name ">tickExecute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="tickExecute-param-toExecute"><span class="type-annotation">dynamic</span> <span class="parameter-name">toExecute</span>(<ol class="parameter-list"></ol>
 )</span></li>
 </ol>)
 
@@ -74,7 +74,7 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tickExecute(void Function() toExecute) async {
+  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tickExecute(dynamic Function() toExecute) async {
   _phase = SimulatorPhase.beforeTick;
 
   &#47;&#47; useful for flop sampling
@@ -84,7 +84,7 @@
 
   &#47;&#47; useful for things that need to trigger every tick without other input
   _startTickController.add(null);
-  toExecute();
+  await toExecute();
 
   _phase = SimulatorPhase.clkStable;
 
