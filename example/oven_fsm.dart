@@ -20,6 +20,10 @@ class LEDLight extends Const {
 }
 
 class OvenModule extends Module {
+  late Logic clk;
+  late Logic reset;
+  late List<State<OvenStates>> states;
+
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
     // input to FSM
     button = addInput('button', button, width: button.width);
@@ -28,15 +32,15 @@ class OvenModule extends Module {
     final led = addOutput('led', width: button.width);
 
     // add clock & reset
-    final clk = SimpleClockGenerator(10).clk;
-    reset = addInput('reset', reset);
+    clk = SimpleClockGenerator(10).clk;
+    this.reset = addInput('reset', reset);
 
     // add time elapsed Counter
-    var counterReset = Logic(name: 'counter_reset');
-    var en = Logic(name: 'counter_en');
+    final counterReset = Logic(name: 'counter_reset');
+    final en = Logic(name: 'counter_en');
     final counter = Counter(en, counterReset, clk, name: 'counter_module');
 
-    final states = [
+    states = [
       // Standby State
       State<OvenStates>(OvenStates.standby, events: {
         button.eq(Button.start()): OvenStates.cooking,
@@ -74,9 +78,13 @@ class OvenModule extends Module {
         en < 0,
       ])
     ];
+  }
 
-    StateMachine<OvenStates>(clk, reset, OvenStates.standby, states)
-        .generateDiagram();
+  Future<void> initializeFSM() async {
+    final ovenFSM =
+        StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
+
+    await ovenFSM.generateDiagram();
   }
 }
 
@@ -86,6 +94,8 @@ void main() async {
 
   // Create a counter Module
   final oven = OvenModule(button, reset);
+
+  await oven.initializeFSM();
 
   // build
   await oven.build();
@@ -112,6 +122,7 @@ void main() async {
   WaveDumper(oven, outputPath: 'example/oven.vcd');
 
   Simulator.registerAction(120, () {
+    // ignore: avoid_print
     print('Simulation End');
   });
 

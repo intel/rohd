@@ -105,7 +105,8 @@ class StateMachine<StateIdentifier> {
   /// Generate a FSM state diagram [MermaidStateDiagram].
   ///
   /// Output to mermaid diagram at [outputPath].
-  String generateDiagram({String outputPath = 'stateDiagram.md'}) {
+  Future<String> generateDiagram(
+      {String outputPath = 'stateDiagram.md'}) async {
     final figure = MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
@@ -115,7 +116,7 @@ class StateMachine<StateIdentifier> {
             entry.value.toString(), entry.key.name);
       }
     }
-    figure.writeToFile();
+    await figure.writeToFile();
     return figure.diagram;
   }
 }
@@ -177,12 +178,12 @@ class MermaidStateDiagram {
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
-  void writeToFile() {
+  Future<void> writeToFile() async {
     diagram = '''
 ```mermaid
 $diagram
 ```
 ''';
-    _outputFile.writeAsString(diagram);
+    await _outputFile.writeAsString(diagram);
   }
 }
