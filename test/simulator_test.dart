@@ -51,7 +51,9 @@ void main() {
 
   test('simulator reset waits for simulation to complete', () async {
     Simulator.registerAction(100, Simulator.endSimulation);
-    Simulator.registerAction(100, Simulator.reset);
+    Simulator.registerAction(100, () {
+      unawaited(Simulator.reset());
+    });
     Simulator.registerAction(100, () => true);
     await Simulator.run();
   });
@@ -75,5 +77,29 @@ void main() {
     });
     await Simulator.run();
     expect(endOfSimActionExecuted, isTrue);
+  });
+
+  test('simulator waits for async registered actions to complete', () async {
+    var registeredActionExecuted = false;
+    Simulator.registerAction(100, () => true);
+    Simulator.registerAction(50, () async {
+      await Future<void>.delayed(const Duration(microseconds: 10));
+      registeredActionExecuted = true;
+    });
+    await Simulator.run();
+    expect(registeredActionExecuted, isTrue);
+  });
+
+  test('simulator waits for async injected actions to complete', () async {
+    var injectedActionExecuted = false;
+    Simulator.registerAction(100, () => true);
+    Simulator.registerAction(50, () async {
+      Simulator.injectAction(() async {
+        await Future<void>.delayed(const Duration(microseconds: 10));
+        injectedActionExecuted = true;
+      });
+    });
+    await Simulator.run();
+    expect(injectedActionExecuted, isTrue);
   });
 }
