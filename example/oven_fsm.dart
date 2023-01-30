@@ -78,13 +78,9 @@ class OvenModule extends Module {
         en < 0,
       ])
     ];
-  }
 
-  Future<void> initializeFSM() async {
-    final ovenFSM =
-        StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
-
-    await ovenFSM.generateDiagram(outputPath: 'oven_fsm.md');
+    StateMachine<OvenStates>(clk, reset, OvenStates.standby, states)
+        .generateDiagram(outputPath: 'oven_fsm.md');
   }
 }
 
@@ -94,8 +90,6 @@ void main() async {
 
   // Create a counter Module
   final oven = OvenModule(button, reset);
-
-  await oven.initializeFSM();
 
   // build
   await oven.build();

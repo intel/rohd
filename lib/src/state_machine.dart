@@ -106,7 +106,7 @@ class StateMachine<StateIdentifier> {
   ///
   /// Output to mermaid diagram at [outputPath]. Use await to wait for the
   /// asynchronous write of the object to file.
-  Future<void> generateDiagram({String outputPath = 'stateDiagram.md'}) async {
+  void generateDiagram({String outputPath = 'stateDiagram.md'}) {
     final figure = MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
@@ -116,7 +116,7 @@ class StateMachine<StateIdentifier> {
             entry.value.toString(), entry.key.name);
       }
     }
-    await figure.writeToFile();
+    figure.writeToFile();
   }
 }
 
@@ -177,12 +177,12 @@ class MermaidStateDiagram {
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
-  Future<void> writeToFile() async {
+  void writeToFile() {
     diagram = '''
 ```mermaid
 $diagram
 ```
 ''';
-    await _outputFile.writeAsString(diagram);
+    _outputFile.writeAsStringSync(diagram);
   }
 }
