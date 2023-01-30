@@ -7,7 +7,9 @@
 /// 2022 April 22
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
+
 import 'dart:collection';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';
@@ -114,6 +116,8 @@ class StateMachine<StateIdentifier> {
       }
     }
 
+    figure.writeToFile();
+
     return figure.diagram;
   }
 }
@@ -139,9 +143,18 @@ class MermaidStateDiagram {
   /// The diagram to be return as String
   late String diagram;
 
-  /// Represent a [MermaidStateDiagram] that initialized the diagram of
+  /// The output filepath of the generated state diagram.
+  final String outputPath;
+
+  /// The file to write dumped output waveform to.
+  final File _outputFile;
+
+  /// Generate a [MermaidStateDiagram] that initialized the diagram of
   /// mermaid as `stateDiagram`.
-  MermaidStateDiagram() {
+  ///
+  /// Passed output path to save in custom directory.
+  MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
+      : _outputFile = File(outputPath) {
     diagram = 'stateDiagram\n';
   }
 
@@ -163,5 +176,14 @@ class MermaidStateDiagram {
     } else {
       // TODO: update title
     }
+  }
+
+  void writeToFile() {
+    diagram = '''
+```mermaid
+$diagram
+```
+''';
+    _outputFile.writeAsString(diagram);
   }
 }
