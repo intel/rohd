@@ -170,6 +170,8 @@ class Simulator {
   }
 
   /// Registers an abritrary [action] to be executed at [timestamp] time.
+  ///
+  /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {
     if (timestamp <= _currentTimestamp) {
       throw Exception('Cannot add timestamp "$timestamp" in the past.'
