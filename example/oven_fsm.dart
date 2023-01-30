@@ -75,10 +75,8 @@ class OvenModule extends Module {
       ])
     ];
 
-    final res =
-        StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
-
-    print(res.generateDiagram(title: 'Oven FSM'));
+    StateMachine<OvenStates>(clk, reset, OvenStates.standby, states)
+        .generateDiagram();
   }
 }
 

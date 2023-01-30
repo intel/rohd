@@ -102,12 +102,9 @@ class StateMachine<StateIdentifier> {
     ]);
   }
 
-  String generateDiagram({String? title}) {
+  /// Generate a FSM state diagram [MermaidStateDiagram].
+  String generateDiagram() {
     final figure = MermaidStateDiagram()..addStartState(resetState.toString());
-
-    if (title != null) {
-      figure.addTitle(title);
-    }
 
     for (final state in _states) {
       for (final entry in state.events.entries) {
@@ -115,9 +112,7 @@ class StateMachine<StateIdentifier> {
             entry.value.toString(), entry.key.name);
       }
     }
-
     figure.writeToFile();
-
     return figure.diagram;
   }
 }
@@ -139,6 +134,9 @@ class State<StateIdentifier> {
   State(this.identifier, {required this.events, required this.actions});
 }
 
+/// A state diagram generator for FSM.
+///
+/// Outputs to vcd format at [outputPath].
 class MermaidStateDiagram {
   /// The diagram to be return as String
   late String diagram;
@@ -158,26 +156,24 @@ class MermaidStateDiagram {
     diagram = 'stateDiagram\n';
   }
 
+  /// Register a new state to the mermaid diagram object.
   void addState(String state) => diagram = '$diagram\n$state\n';
 
+  /// Register a new transition [event] that point the
+  /// current state [currState] to next state [nextState].
   void addTransitions(String currState, String nextState, String event) =>
       diagram = '$diagram$currState --> $nextState: $event\n';
 
+  /// Register a start state [startState].
   void addStartState(String startState) =>
       diagram = '$diagram\n[*] --> $startState\n';
 
+  /// Register a end state [endState].
   void addEndState(String endState) =>
       diagram = '$diagram\n$endState --> [*]\n';
 
-  void addTitle(String title) {
-    if (!diagram.contains('title')) {
-      // Add title
-      diagram = '---\ntitle: $title \n---\n$diagram\n';
-    } else {
-      // TODO: update title
-    }
-  }
-
+  /// Write the object content to [_outputFile] by enclose it with
+  /// mermaid identifier.
   void writeToFile() {
     diagram = '''
 ```mermaid

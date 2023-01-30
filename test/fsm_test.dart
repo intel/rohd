@@ -35,7 +35,7 @@ class TestModule extends Module {
     ];
     final simpleFSM =
         StateMachine<MyStates>(clk, reset, MyStates.state1, states);
-    print(simpleFSM.generateDiagram(title: 'simple FSM Module'));
+    print(simpleFSM.generateDiagram());
   }
 }
 
@@ -103,7 +103,7 @@ class TrafficTestModule extends Module {
     ];
     final trafficFSM =
         StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
-    print(trafficFSM.generateDiagram(title: 'trafficFSM'));
+    print(trafficFSM.generateDiagram());
   }
 }
 
