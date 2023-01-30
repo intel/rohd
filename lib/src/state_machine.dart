@@ -103,7 +103,7 @@ class StateMachine<StateIdentifier> {
   }
 
   /// Generate a FSM state diagram [MermaidStateDiagram].
-  String generateDiagram({required String outputPath}) {
+  String generateDiagram({String outputPath = 'stateDiagram.md'}) {
     final figure = MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
