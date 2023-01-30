@@ -104,8 +104,7 @@ class StateMachine<StateIdentifier> {
 
   /// Generate a FSM state diagram [MermaidStateDiagram].
   ///
-  /// Output to mermaid diagram at [outputPath]. Use await to wait for the
-  /// asynchronous write of the object to file.
+  /// Output to mermaid diagram at [outputPath].
   void generateDiagram({String outputPath = 'stateDiagram.md'}) {
     final figure = MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
