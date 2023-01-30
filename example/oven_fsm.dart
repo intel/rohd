@@ -84,7 +84,7 @@ class OvenModule extends Module {
     final ovenFSM =
         StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
 
-    await ovenFSM.generateDiagram();
+    await ovenFSM.generateDiagram(outputPath: 'oven_fsm.md');
   }
 }
 
