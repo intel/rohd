@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
+![ROHD Logo](doc/website/assets/images/rohd_logo.svg)
 
 Rapid Open Hardware Development (ROHD) Framework
 ================================================
