@@ -369,13 +369,22 @@ class Sequential extends _Always {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
-          }).catchError(
-            test: (error) => error is Exception,
-            // ignore: avoid_types_on_closure_parameters
-            (Object err, StackTrace stackTrace) {
-              Simulator.throwException(err as Exception, stackTrace);
-            },
-          ));
+          }).catchError(test: (error) => error is Exception,
+              // ignore: avoid_types_on_closure_parameters
+              (Object err, StackTrace stackTrace) {
+            Simulator.throwException(err as Exception, stackTrace);
+          }).catchError(test: (error) => error is StateError,
+              // ignore: avoid_types_on_closure_parameters
+              (Object err, StackTrace stackTrace) {
+            // This could be a result of the `Simulator` being reset, causing
+            // the stream to `close` before `first` occurs.
+            if (!Simulator.simulationHasEnded) {
+              // If the `Simulator` is still running, rethrow immediately.
+
+              // ignore: only_throw_errors
+              throw err;
+            }
+          }));
         }
         _pendingExecute = true;
       });
