@@ -335,12 +335,10 @@ class Logic {
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
-  @Deprecated('Use currentValue.isValid instead.')
+  @Deprecated('Use value.isValid instead.')
   bool hasValidValue() => value.isValid;
 
   /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  ///
-  /// Throws an exception
   @Deprecated('Use value.isFloating instead.')
   bool isFloating() => value.isFloating;
 
