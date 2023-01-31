@@ -20,10 +20,6 @@ class LEDLight extends Const {
 }
 
 class OvenModule extends Module {
-  late Logic clk;
-  late Logic reset;
-  late List<State<OvenStates>> states;
-
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
     // input to FSM
     button = addInput('button', button, width: button.width);
@@ -32,15 +28,15 @@ class OvenModule extends Module {
     final led = addOutput('led', width: button.width);
 
     // add clock & reset
-    clk = SimpleClockGenerator(10).clk;
-    this.reset = addInput('reset', reset);
+    final clk = SimpleClockGenerator(10).clk;
+    reset = addInput('reset', reset);
 
     // add time elapsed Counter
     final counterReset = Logic(name: 'counter_reset');
     final en = Logic(name: 'counter_en');
     final counter = Counter(en, counterReset, clk, name: 'counter_module');
 
-    states = [
+    final states = [
       // Standby State
       State<OvenStates>(OvenStates.standby, events: {
         button.eq(Button.start()): OvenStates.cooking,
