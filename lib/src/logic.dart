@@ -339,8 +339,8 @@ class Logic {
   bool hasValidValue() => value.isValid;
 
   /// Returns `true` iff *all* bits of the current value are floating (`z`).
-  /// 
-  /// Throws an exception 
+  ///
+  /// Throws an exception
   @Deprecated('Use value.isFloating instead.')
   bool isFloating() => value.isFloating;
 
