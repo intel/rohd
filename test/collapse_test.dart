@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// collapse_test.dart
@@ -37,8 +37,9 @@ class CollapseTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
-
+  tearDown(() async {
+    await Simulator.reset();
+  });
   test('collapse functional', () async {
     final mod = CollapseTestModule(Logic(), Logic());
     await mod.build();

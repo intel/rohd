@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// swizzle_test.dart
@@ -21,8 +21,9 @@ class SwizzlyModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
-
+  tearDown(() async {
+    await Simulator.reset();
+  });
   group('LogicValue', () {
     test('simple swizzle', () {
       expect(

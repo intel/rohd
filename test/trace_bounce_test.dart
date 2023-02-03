@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// trace_bounce_test.dart
@@ -38,6 +38,10 @@ class SubModule extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('out depends on out', () async {
     final mod = TopModule(Logic());
     await mod.build();

@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// comparison_test.dart
@@ -48,8 +48,9 @@ class ComparisonTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
-
+  tearDown(() async {
+    await Simulator.reset();
+  });
   group('simcompare', () {
     test('compares', () async {
       final gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));

@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// tree_test.dart
@@ -43,8 +43,9 @@ class TreeOfTwoInputModules extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
-
+  tearDown(() async {
+    await Simulator.reset();
+  });
   group('simcompare', () {
     test('tree', () async {
       final mod = TreeOfTwoInputModules(

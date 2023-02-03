@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// comb_mod_test.dart
@@ -58,7 +58,9 @@ class DuplicateExample extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('module reuse should apply twice', () async {
     final mod = ReuseExample(Logic(width: 8));

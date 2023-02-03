@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// counter_wintf_test.dart
@@ -60,8 +60,9 @@ class Counter extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
-
+  tearDown(() async {
+    await Simulator.reset();
+  });
   group('simcompare', () {
     test('counter', () async {
       final mod = Counter(CounterInterface(8));
