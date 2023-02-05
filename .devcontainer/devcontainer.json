@@ -2,13 +2,7 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 
 {
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04"
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
 
-  // "postCreateCommand": "tool/devcontainer/setup.sh"
-
-  // Configure tool-specific properties.
-  // "customizations": {},
-
-  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "root"
+  "postCreateCommand": "tool/gh_codespaces/run_setup.sh"
 }
