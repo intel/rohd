@@ -4,5 +4,15 @@
 {
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
 
-  "postCreateCommand": "tool/gh_codespaces/run_setup.sh"
+  "postCreateCommand": "tool/gh_codespaces/run_setup.sh",
+
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "README.md",
+        "CONTRIBUTING.md",
+        "CODE_OF_CONDUCT.md"
+      ]
+    }
+  }
 }
