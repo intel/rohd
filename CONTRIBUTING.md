@@ -7,7 +7,7 @@ Anyone interested in participating in ROHD is more than welcome to help!
 
 ## Code of Conduct
 
-ROHD adopts the Contributor Covenant v1.4 for the code of conduct.  It can be accessed [here](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md).
+ROHD adopts the Contributor Covenant v2.1 for the code of conduct.  It can be accessed [here](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md).
 
 ## Getting Help
 ### Chat on Discord
@@ -51,7 +51,8 @@ Once requirements are installed, you can clone and run the test suite.
 ```
 git clone https://github.com/intel/rohd.git
 cd rohd
-dart run test
+dart pub get
+dart test
 ```
 ## How to Contribute
 ### Reporting Bugs
