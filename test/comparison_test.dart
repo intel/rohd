@@ -51,6 +51,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('compares', () async {
       final gtm = ComparisonTestModule(Logic(width: 8), Logic(width: 8));

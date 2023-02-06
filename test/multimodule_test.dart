@@ -52,6 +52,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('multimodules', () async {
       final ftm = TopModule(Logic(width: 4), Logic());

@@ -100,6 +100,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('translation', () async {
       const numRdPorts = 2;

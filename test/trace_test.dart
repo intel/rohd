@@ -60,6 +60,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('flying output', () async {
     final mod = FlyingOutputModule(Logic());
     expect(() async {

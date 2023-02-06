@@ -85,6 +85,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('signal and module naming conflicts', () {
     Future<void> runTest(RenameableModule mod) async {
       await mod.build();

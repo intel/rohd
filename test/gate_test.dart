@@ -106,6 +106,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('functional', () {
     test('NotGate single bit', () async {
       final a = Logic();

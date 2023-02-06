@@ -44,6 +44,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('attach dumper after put', () async {
     final a = Logic(name: 'a');
     final mod = SimpleModule(a);

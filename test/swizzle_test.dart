@@ -24,6 +24,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('LogicValue', () {
     test('simple swizzle', () {
       expect(

@@ -42,6 +42,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('uniquified interfaces', () {
     test('get uniquified ports', () async {
       final m = MyModule(MyModuleInterface(), MyModuleInterface());

@@ -28,6 +28,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('flop bit', () async {
       final ftm = FlopTestModule(Logic());

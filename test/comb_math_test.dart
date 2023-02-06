@@ -107,6 +107,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
     final codepoint = Logic(width: 21);

@@ -18,6 +18,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('counter example', () async {
     await counter.main(noPrint: true);
   });

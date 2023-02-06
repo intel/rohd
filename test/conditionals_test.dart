@@ -330,6 +330,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('functional', () {
     test('conditional loopy comb', () async {
       final mod = LoopyCombModule(Logic());

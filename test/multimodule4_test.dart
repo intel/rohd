@@ -41,6 +41,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('multimodules4', () async {
     final ftm = TopModule(Logic());
     await ftm.build();

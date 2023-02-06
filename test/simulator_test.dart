@@ -17,6 +17,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('simulator supports registration of actions at time stamps', () async {
     var actionTaken = false;
     Simulator.registerAction(100, () => actionTaken = true);

@@ -40,6 +40,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('collapse functional', () async {
     final mod = CollapseTestModule(Logic(), Logic());
     await mod.build();

@@ -69,6 +69,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     Future<void> runMathVectors(List<Vector> vectors) async {
       final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));

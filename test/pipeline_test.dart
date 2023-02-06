@@ -54,6 +54,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('simple pipeline', () async {
       final pipem = SimplePipelineModule(Logic(width: 8));

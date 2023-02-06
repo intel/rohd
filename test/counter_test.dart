@@ -43,6 +43,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('counter', () async {
       final reset = Logic();

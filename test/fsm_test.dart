@@ -107,6 +107,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('simple fsm', () async {
       final pipem = TestModule(Logic(), Logic(), Logic());

@@ -46,6 +46,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('tree', () async {
       final mod = TreeOfTwoInputModules(

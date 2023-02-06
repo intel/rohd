@@ -63,6 +63,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   group('simcompare', () {
     test('counter', () async {
       final mod = Counter(CounterInterface(8));

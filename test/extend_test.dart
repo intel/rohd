@@ -39,7 +39,10 @@ class WithSetModule extends Module {
 
 void main() {
   group('Logic', () {
-    tearDown(Simulator.reset);
+    tearDown(() async {
+      await Simulator.reset();
+    });
+
     group('extend', () {
       Future<void> extendVectors(
           List<Vector> vectors, int newWidth, ExtendType extendType,

@@ -17,6 +17,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+
   test('single changed multiple injections', () async {
     final a = Logic()..put(0);
 
