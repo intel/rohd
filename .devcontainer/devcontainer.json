@@ -9,6 +9,7 @@
   "customizations": {
     "codespaces": {
       "openFiles": [
+        "example/example.dart",
         "README.md",
         "CONTRIBUTING.md",
         "CODE_OF_CONDUCT.md"
