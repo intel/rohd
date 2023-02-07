@@ -846,4 +846,21 @@ class Logic {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
+  /// [list]. Else `0` (of [width]=1) if not present.
+  ///
+  /// The [list] can be [Logic] or [int] or [bool] or [BigInt] or
+  /// [list] of [dynamic] i.e combinition of aforementioned types.
+  ///
+  Logic isIn(List<dynamic> list) {
+    // By default isLogicIn is not present return `0`:
+    // Empty list corner-case state
+    Logic isLogicIn = Const(0, width: 1);
+    for (final dynamic y in list) {
+      // Iterating through the list to check if the logic is present
+      isLogicIn |= eq(y);
+    }
+    return isLogicIn;
+  }
 }
