@@ -11,7 +11,7 @@
 import 'package:rohd/rohd.dart';
 
 /// State of VCD parsing
-enum _VCDParseState { findSig, findDumpVars, findValue }
+enum _VcdParseState { findSig, findDumpVars, findValue }
 
 /// A parser for VCD files for testing purposes.
 abstract class VcdParser {
@@ -29,12 +29,12 @@ abstract class VcdParser {
     var currentTime = 0;
     LogicValue? currentValue;
 
-    var state = _VCDParseState.findSig;
+    var state = _VcdParseState.findSig;
 
     final sigNameRegexp = RegExp(
         r'\s*\$var\s(wire|reg)\s(\d+)\s(\S*)\s(\S*)\s+(\[\d+\:\d+\])?\s*\$end');
     for (final line in lines) {
-      if (state == _VCDParseState.findSig) {
+      if (state == _VcdParseState.findSig) {
         if (sigNameRegexp.hasMatch(line)) {
           final match = sigNameRegexp.firstMatch(line)!;
           final w = int.parse(match.group(2)!);
@@ -44,14 +44,14 @@ abstract class VcdParser {
           if (lName == signalName) {
             sigName = sName;
             width = w;
-            state = _VCDParseState.findDumpVars;
+            state = _VcdParseState.findDumpVars;
           }
         }
-      } else if (state == _VCDParseState.findDumpVars) {
+      } else if (state == _VcdParseState.findDumpVars) {
         if (line.contains(r'$dumpvars')) {
-          state = _VCDParseState.findValue;
+          state = _VcdParseState.findValue;
         }
-      } else if (state == _VCDParseState.findValue) {
+      } else if (state == _VcdParseState.findValue) {
         if (line.startsWith('#')) {
           currentTime = int.parse(line.substring(1));
           if (currentTime > timestamp) {
