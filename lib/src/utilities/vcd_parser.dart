@@ -1,3 +1,13 @@
+/// Copyright (C) 2023 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// vcd_parser.dart
+/// Utility for parsing VCD files for tests
+///
+/// 2023 January 5
+/// Author: Max Korbel <max.korbel@intel.com>
+///
+
 import 'package:rohd/rohd.dart';
 
 /// State of VCD parsing
@@ -21,14 +31,15 @@ abstract class VcdParser {
 
     var state = _VCDParseState.findSig;
 
-    final sigNameRegexp = RegExp(r'\s*\$var\swire\s(\d+)\s(\S*)\s(\S*)\s\$end');
+    final sigNameRegexp = RegExp(
+        r'\s*\$var\s(wire|reg)\s(\d+)\s(\S*)\s(\S*)\s+(\[\d+\:\d+\])?\s*\$end');
     for (final line in lines) {
       if (state == _VCDParseState.findSig) {
         if (sigNameRegexp.hasMatch(line)) {
           final match = sigNameRegexp.firstMatch(line)!;
-          final w = int.parse(match.group(1)!);
-          final sName = match.group(2)!;
-          final lName = match.group(3)!;
+          final w = int.parse(match.group(2)!);
+          final sName = match.group(3)!;
+          final lName = match.group(4)!;
 
           if (lName == signalName) {
             sigName = sName;
@@ -54,6 +65,8 @@ abstract class VcdParser {
             // ex: bzzzzzzzz s2
             currentValue = LogicValue.ofString(line.split(' ')[0].substring(1));
           }
+
+          currentValue = currentValue.zeroExtend(width!);
         }
       }
     }
