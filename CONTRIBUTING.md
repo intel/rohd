@@ -40,11 +40,19 @@ https://dart.dev/get-dart
 To run the complete ROHD test suite for development, you need to install [Icarus Verilog](http://iverilog.icarus.com/).  It is used to compare SystemVerilog functionality with the ROHD simulator functionality.  Installation instructions are available here: https://iverilog.fandom.com/wiki/Installation_Guide
 
 ### Setup Recommendations
+
+#### On your own system
 [Visual Studio Code (vscode)](https://code.visualstudio.com/) is a great IDE for development.  You can find installation instructions for vscode here: https://code.visualstudio.com/Download
 
 If you're developing on a remote host, vscode has a Remote SSH extension that can help: https://code.visualstudio.com/blogs/2019/07/25/remote-ssh
 
 If you're on Microsoft Windows, you may want to consider developing with Ubuntu WSL for a Linux environment: https://docs.microsoft.com/en-us/windows/wsl/install-win10
+
+#### In a GitHub Codespace
+[GitHub Codespaces](https://github.com/features/codespaces) are a great feature provided by GitHub allowing you to get into a development environment based on a pre-configured container very quickly!  You can use them for a limited number of hours per month for free.  ROHD has set up GitHub Codespaces so that you can immediately start running examples and developing.
+
+The below button will allow you to create a GitHub Codespace with ROHD already cloned and ready to roll:
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
 
 ### Cloning and Running the Tests
 Once requirements are installed, you can clone and run the test suite.
