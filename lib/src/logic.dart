@@ -848,10 +848,10 @@ class Logic {
   }
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
-  /// [List] list. Else `0` (of [width]=1) if not present.
+  /// [list]. Else `0` (of [width]=1) if not present.
   ///
-  /// The [List] can be [Logic] or [int] or [bool] or [BigInt] or
-  /// [List] of [dynamic] i.e combinition of aforementioned types.
+  /// The [list] can be [Logic] or [int] or [bool] or [BigInt] or
+  /// [list] of [dynamic] i.e combinition of aforementioned types.
   ///
   Logic isIn(List<dynamic> list) {
     // By default isLogicIn is not present return `0`:
