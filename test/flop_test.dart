@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// flop_test.dart
@@ -25,7 +25,9 @@ class FlopTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('flop bit', () async {

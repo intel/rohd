@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// wave_dumper_test.dart
@@ -41,7 +41,9 @@ void deleteTemporaryDump(String name) {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('attach dumper after put', () async {
     final a = Logic(name: 'a');

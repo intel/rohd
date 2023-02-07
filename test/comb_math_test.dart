@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// comb_math_test.dart
@@ -104,7 +104,9 @@ class ReducedExample extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {

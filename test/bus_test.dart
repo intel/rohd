@@ -155,7 +155,9 @@ class BusTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('functional', () {
     test('NotGate bus', () async {

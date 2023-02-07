@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// simulator_test.dart
@@ -14,7 +14,9 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('simulator supports registration of actions at time stamps', () async {
     var actionTaken = false;
