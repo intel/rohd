@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the parentModule property from the Logic class, for the Dart programming language.">
-  <title>parentModule property - Logic class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the isIn method from the Logic class, for the Dart programming language.">
+  <title>isIn method - Logic class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">parentModule property</li>
+    <li class="self-crumb">isIn method</li>
   </ol>
-  <div class="self-name">parentModule</div>
+  <div class="self-name">isIn</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -50,69 +50,44 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-property">parentModule</span> property 
+<h1><span class="kind-method">isIn</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
+    <section class="multi-line-signature">
+      
 
-        
-<section id="getter">
+<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
+<span class="name ">isIn</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isIn-param-list"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.1/dart-core/List-class.html">List</a></span> <span class="parameter-name">list</span></span></li>
+</ol>)
 
-<section class="multi-line-signature">
-  
-  <span class="returntype"><a href="../../rohd/Module-class.html">Module</a>?</span>
-  <span class="name ">parentModule</span>
-  
+      
 
-</section>
-
-
+    </section>
+    
 <section class="desc markdown">
-  <p>The <a href="../../rohd/Module-class.html">Module</a> that this <a href="../../rohd/Logic-class.html">Logic</a> exists within.</p>
-<p>This only gets populated after its parent <a href="../../rohd/Module-class.html">Module</a>, if it exists,
-has been built.</p>
+  <p>Returns <code>1</code> (of <a href="../../rohd/Logic/width.html">width</a>=1) if the <a href="../../rohd/Logic-class.html">Logic</a> calling this function is in
+<code>list</code>. Else <code>0</code> (of <a href="../../rohd/Logic/width.html">width</a>=1) if not present.</p>
+<p>The <code>list</code> can be <a href="../../rohd/Logic-class.html">Logic</a> or <a href="https://api.dart.dev/stable/2.19.1/dart-core/int-class.html">int</a> or <a href="https://api.dart.dev/stable/2.19.1/dart-core/bool-class.html">bool</a> or <a href="https://api.dart.dev/stable/2.19.1/dart-core/BigInt-class.html">BigInt</a> or
+<code>list</code> of <code>dynamic</code> i.e combinition of aforementioned types.</p>
 </section>
 
 
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Module? get parentModule =&gt; _parentModule;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic isIn(List&lt;dynamic&gt; list) {
+  &#47;&#47; By default isLogicIn is not present return `0`:
+  &#47;&#47; Empty list corner-case state
+  Logic isLogicIn = Const(0, width: 1);
+  for (final dynamic y in list) {
+    &#47;&#47; Iterating through the list to check if the logic is present
+    isLogicIn |= eq(y);
+  }
+  return isLogicIn;
+}</code></pre>
 </section>
 
-</section>
-
-
-        
-<section id="setter">
-
-<section class="multi-line-signature">
-  
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.9.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
-  <span class="returntype">void</span>
-  <span class="name ">parentModule=</span><span class="signature">(<wbr><span class="parameter" id="parentModule=-param-newParentModule"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParentModule</span></span>)</span>
-  
-
-</section>
-
-
-<section class="desc markdown">
-  <p>Sets the value of <a href="../../rohd/Logic/parentModule.html">parentModule</a> to <code>newParentModule</code>.</p>
-<p>This should <em>only</em> be called by <a href="../../rohd/Module/build.html">Module.build()</a>.  It is used to
-optimize search.</p>
-</section>
-
-
-<section class="summary source-code" id="source">
-  <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-set parentModule(Module? newParentModule) =&gt; _parentModule = newParentModule;</code></pre>
-</section>
-
-</section>
 
   </div> <!-- /.main-content -->
 
@@ -127,7 +102,7 @@ set parentModule(Module? newParentModule) =&gt; _parentModule = newParentModule;
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-  <li class="self-crumb">parentModule property</li>
+  <li class="self-crumb">isIn method</li>
 </ol>
 
 
