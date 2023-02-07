@@ -27,7 +27,7 @@ void main() {
   });
 
   test('Test signals for sanitized names', () async {
-    expect(Sanitizer.isSanitary(Const(LogicValue.ofString('1x0101')).name),
+    expect(Sanitizer.isSanitary(Const(LogicValue.ofString('1x0101z')).name),
         isTrue);
   });
 
