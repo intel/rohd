@@ -4,7 +4,7 @@
 /// isin_test.dart
 /// Unit tests for Logic.IsIn() operations
 ///
-/// 2023 Feb 7
+/// 2023 February 7
 /// Author: Rahul Gautham Putcha <rahul.gautham.putcha@intel.com>
 ///
 
