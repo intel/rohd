@@ -1,12 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
+/// Copyright (C) 2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// isin_test.dart
-/// Unit tests for bus-related operations
+/// Unit tests for Logic.IsIn() operations
 ///
 /// 2023 Feb 7
 /// Author: Rahul Gautham Putcha <rahul.gautham.putcha@intel.com>
 ///
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
