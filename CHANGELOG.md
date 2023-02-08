@@ -1,3 +1,17 @@
+## 0.4.2
+- Added a GitHub Codespace to the repository as a quick way to experiment with ROHD without any environment setup.
+- Added `Conditional` operations similar to `++x` (`incr`), `--x` (`decr`), `x *= ` (`mulAssign`), and `x /=` (`divAssign`) to `Logic` (https://github.com/intel/rohd/issues/141).
+- Fixed a bug where generated SystemVerilog could perform index accesses on single-bit signals (https://github.com/intel/rohd/issues/204).
+- Expanded capability to construct single-`Conditional` more succinctly via `Else.s` (https://github.com/intel/rohd/issues/225).
+- Fixed a bug where sensitivities for `Combinational`s were excessively pessimistic (https://github.com/intel/rohd/issues/233).
+- Improved exceptions raised by `Logic.put` to include context on which signal was affected to help with debug (https://github.com/intel/rohd/pull/243).
+- Optimized `WaveDumper` to only periodically write data to the VCD file to improve performance (https://github.com/intel/rohd/pull/242).
+- Made `endIndex` in `getRange` an optional positional argument with a default value of `width`, enabling a more convenient method for collecting all bits from some index until the end (https://github.com/intel/rohd/issues/228).
+- Added an exception in cases where names of interface ports are invalid/unsanitary (https://github.com/intel/rohd/issues/234).
+- Upgraded the `Simulator` so that it would `await` asynchronous registered actions (https://github.com/intel/rohd/pull/252).
+- Deprecated `Logic.hasValidValue` and `Logic.isFloating` in favor of similar operations on `Logic.value` (https://github.com/intel/rohd/issues/198).
+- Added `Logic.isIn`, which generates logic computing whether the signal is equal to any values in a (optionally mixed) list of constants or other signals (https://github.com/intel/rohd/issues/7).
+
 ## 0.4.1
 - Fixed a bug where `Module`s could have invalid names in generated SystemVerilog (https://github.com/intel/rohd/issues/138).
 - Fixed a bug where `Logic`s could have invalid names in generated SystemVerilog.
