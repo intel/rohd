@@ -49,7 +49,8 @@
   <div id="dartdoc-main-content" class="main-content">
       
 <section class="desc markdown">
-  <p><a href="https://github.com/intel/rohd/actions/workflows/general.yml"><img src="https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push" alt="Tests"></a>
+  <p><a href="https://github.com/codespaces/new?hide_repo_select=true&amp;ref=main&amp;repo=409325108"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces"></a></p>
+<p><a href="https://github.com/intel/rohd/actions/workflows/general.yml"><img src="https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push" alt="Tests"></a>
 <a href="https://intel.github.io/rohd/rohd/rohd-library.html"><img src="https://img.shields.io/badge/API%20Docs-generated-success" alt="API Docs"></a>
 <a href="https://discord.gg/jubxF84yGw"><img src="https://img.shields.io/discord/1001179329411166267?label=Chat" alt="Chat"></a>
 <a href="https://github.com/intel/rohd/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-BSD--3-blue" alt="License"></a>
@@ -74,7 +75,7 @@
 <li>Enables <strong>higher quality</strong> development</li>
 <li>Replaces hacky perl/python scripting for automation with powerful <strong>native control of design generation</strong></li>
 <li>Fewer bugs and lines of code means <strong>shorter development schedule</strong></li>
-<li>Support for <strong>cosimulation with verilog modules</strong> and <strong>instantiation of verilog modules</strong> in generated SystemVerilog code</li>
+<li>Support for <strong>cosimulation with verilog modules</strong> (via <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a>) and <strong>instantiation of verilog modules</strong> in generated SystemVerilog code</li>
 <li>Use <strong>modern IDEs</strong> like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more</li>
 <li>Simulate with <strong>various abstraction levels of models</strong> from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.</li>
 </ul>
@@ -93,12 +94,13 @@
 </blockquote>
 <p>If you're thinking "SystemVerilog is just fine, I don't need something new", it is worth reading either or both of the StackOverflow answer and the Paul Graham essay.</p>
 <h3 id="more-information-on-dart">More Information on Dart</h3>
-<p>Try out Dart instantly from your browser here: <a href="https://dartpad.dev/?null_safety=true">https://dartpad.dev/?null_safety=true</a></p>
+<p>Try out Dart instantly from your browser here (it supports ROHD too!): <a href="https://dartpad.dev/?null_safety=true">https://dartpad.dev/?null_safety=true</a></p>
 <p>See some Dart language samples here: <a href="https://dart.dev/samples">https://dart.dev/samples</a></p>
 <p>For more information on Dart and tutorials, see <a href="https://dart.dev/">https://dart.dev/</a> and <a href="https://dart.dev/overview">https://dart.dev/overview</a></p>
 <h2 id="development-recommendations">Development Recommendations</h2>
 <ul>
 <li>The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> is a UVM-like framework for building testbenches for hardware modelled in ROHD.</li>
+<li>The <a href="https://github.com/intel/rohd-cosim">ROHD Cosimulation</a> package allows you to cosimulate the ROHD simulator with a variety of SystemVerilog simulators.</li>
 <li>Visual Studio Code (vscode) is a great, free IDE with excellent support for Dart.  It works well on all platforms, including native Windows or Windows Subsystem for Linux (WSL) which allows you to run a native Linux kernel (e.g. Ubuntu) within Windows.  You can also use vscode to develop on a remote machine with the Remote SSH extension.
 <ul>
 <li>vscode: <a href="https://code.visualstudio.com/">https://code.visualstudio.com/</a></li>
@@ -658,7 +660,7 @@ var b = pipeline.get(a);
 </ul>
 <h2 id="instantiation-of-external-modules">Instantiation of External Modules</h2>
 <p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html"><code>ExternalSystemVerilogModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalSystemVerilogModule</code>, it will instantiate instances of the specified <code>definitionName</code>.  This is useful for integration related activities.</p>
-<p>There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an <code>ExternalSystemVerilogModule</code> planned for release soon.</p>
+<p>The <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a> package enables SystemVerilog cosimulation with ROHD by adding cosimulation capabilities to an <code>ExternalSystemVerilogModule</code>.</p>
 <h2 id="unit-testing">Unit Testing</h2>
 <p>Dart has a great unit testing package available on pub.dev: <a href="https://pub.dev/packages/test">https://pub.dev/packages/test</a></p>
 <p>The ROHD package has a great set of examples of how to write unit tests for ROHD <code>Module</code>s in the test/ directory.</p>
@@ -704,7 +706,7 @@ var b = pipeline.get(a);
 <li>MyHDL uses "generators" and decorators to help model concurrent behavior of hardware, which is arguably less user-friendly and intuitive than async/await and event based simulation in ROHD.</li>
 <li>While Python is a great programming langauge for the right purposes, some language features of Dart make it better for representing hardware.  Above is already mentioned Dart's isolates and async/await, which don't exist in the same way in Python.  Dart is statically typed with null safety while Python is dynamically typed, which can make static analysis (including intellisense, type safety, etc.) more challenging in Python.  Python can also be challenging to scale to large programs without careful architecting.</li>
 <li>Python is inherently slower to execute than Dart.</li>
-<li>MyHDL has support for cosimulation via VPI calls to SystemVerilog simulators.  The MyHDL C/VPI implementation is gratefully reused within a separate package in the ROHD ecosystem for cosimulation.</li>
+<li>MyHDL has support for cosimulation via VPI calls to SystemVerilog simulators.</li>
 </ul>
 <p>Read more about MyHDL here: <a href="http://www.myhdl.org/">http://www.myhdl.org/</a></p>
 <h3 id="high-level-synthesis-hls">High-Level Synthesis (HLS)</h3>
@@ -730,6 +732,7 @@ var b = pipeline.get(a);
 <p>Read more about PyMTL here: <a href="https://github.com/pymtl/pymtl3">https://github.com/pymtl/pymtl3</a> or <a href="https://pymtl3.readthedocs.io/en/latest/">https://pymtl3.readthedocs.io/en/latest/</a></p>
 <h3 id="cocotb">cocotb</h3>
 <p>cocotb is a Python-based testbench framework for testing SystemVerilog and VHDL designs.  It makes no attempt to represent hardware or create a simulator, but rather connects to other hardware simulators via things like VPI calls.</p>
+<p>The cosimulation capabilities of cocotb are gratefully leveraged within the <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a> package for cosimulation with SystemVerilog simulators.</p>
 <p>Read more about cocotb here: <a href="https://github.com/cocotb/cocotb">https://github.com/cocotb/cocotb</a> or <a href="https://docs.cocotb.org/en/stable/">https://docs.cocotb.org/en/stable/</a></p>
 <hr>
 <p>2021 August 6<br>
