@@ -12,13 +12,14 @@ Rapid Open Hardware Development (ROHD) Framework
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
+ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
+
 The official website for ROHD can be found at https://intel.github.io/rohd, where you can access API documentation, tutorials, and other relevant information. Additionally, you can launch the repository on GitHub Codespace by clicking the button provided below.
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
 
 
 ## Describing Hardware in Dart with ROHD
-ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
 
 Features of ROHD include:
 - Full power of the modern **Dart language** for hardware design and verification
