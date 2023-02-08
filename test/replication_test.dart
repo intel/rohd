@@ -68,6 +68,25 @@ void main() {
           Vector({'a': 0x5}, {'b': 0x555}),
         ], 3, originalWidth: 4);
       });
+
+      test('LogicValue.replicate tests', () async {
+        expect(LogicValue.one.replicate(2).toString(includeWidth: false),
+            equals('11'));
+        expect(LogicValue.zero.replicate(2).toString(includeWidth: false),
+            equals('00'));
+        expect(LogicValue.x.replicate(2).toString(includeWidth: false),
+            equals('xx'));
+        expect(LogicValue.z.replicate(2).toString(includeWidth: false),
+            equals('zz'));
+        expect(
+            LogicValue.ofString('1011')
+                .replicate(2)
+                .toString(includeWidth: false),
+            equals('10111011'));
+        expect(() => LogicValue.ofString('1011').replicate(0), throwsException);
+        expect(
+            () => LogicValue.ofString('1011').replicate(-2), throwsException);
+      });
     });
   });
 }
