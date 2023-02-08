@@ -1,10 +1,3 @@
-[![Pub Version](https://img.shields.io/pub/v/rohd)](https://pub.dev/packages/rohd/versions)
-[![Popularity](https://img.shields.io/pub/popularity/rohd)](https://pub.dev/packages/rohd/score)
-[![Tests](https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push)](https://github.com/intel/rohd/actions/workflows/general.yml)
-[![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
-[![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
-
 ![ROHD Logo](doc/website/assets/images/rohd_logo.svg)
 
 Rapid Open Hardware Development (ROHD) Framework
@@ -12,8 +5,17 @@ Rapid Open Hardware Development (ROHD) Framework
 
 [![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/api)
 [![API Docs](https://img.shields.io/website?down_message=offline&up_color=blue&up_message=online&url=https%3A%2F%2Fintel.github.io%2Frohd%2F)](https://intel.github.io/rohd/)
+[![Pub Version](https://img.shields.io/pub/v/rohd)](https://pub.dev/packages/rohd/versions)
+[![Popularity](https://img.shields.io/pub/popularity/rohd)](https://pub.dev/packages/rohd/score)
+[![Tests](https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push)](https://github.com/intel/rohd/actions/workflows/general.yml)
+[![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
+[![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
-ROHD official site can be found at https://intel.github.io/rohd which include the API documentation, tutorials, and docs.
+The official website for ROHD can be found at https://intel.github.io/rohd, where you can access API documentation, tutorials, and other relevant information. Additionally, you can launch the repository on GitHub Codespace by clicking the button provided below.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
+
 
 ## Describing Hardware in Dart with ROHD
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
