@@ -13,3 +13,6 @@ tmp*
 *vcd
 pubspec.lock
 .vscode
+
+# Exceptions
+!test/example_icarus_waves.vcd

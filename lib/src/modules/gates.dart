@@ -726,7 +726,7 @@ class IndexGate extends Module with InlineSystemVerilog, FullyCombinational {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_index.hasValidValue() && _index.value.toInt() < _original.width) {
+    if (_index.value.isValid && _index.value.toInt() < _original.width) {
       final indexVal = _index.value.toInt();
       final outputValue = _original.value.getRange(indexVal, indexVal + 1);
       selection.put(outputValue);

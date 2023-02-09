@@ -66,7 +66,9 @@ class MathTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     Future<void> runMathVectors(List<Vector> vectors) async {

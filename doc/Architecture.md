@@ -5,8 +5,8 @@ This document describes the organization and architecture of the ROHD framework.
 
 ## Major Concepts
 
-### Logic
-The `Logic` is the fundamental "wire" that connects signals throughout a hardware design.  It behaves very similarly to a `logic` in SystemVerilog.  It has a fixed creation-time-defined width.  At any point in time, it has one value of type `LogicValue`.  A `Logic` can be connected to up to one source, and any number of destinations.  All connections must be the same width.
+### Logic and LogicValue
+The `Logic` is the fundamental "wire" that connects signals throughout a hardware design.  It behaves very similarly to a `logic` in SystemVerilog.  It has a fixed width determined at the time of construction.  At any point in time, it has one value of type `LogicValue`.  A `Logic` can be connected to up to one source, and any number of destinations.  All connections must be the same width.
 
 Any time the source of a `Logic` changes, it propogates the change outwards to its destinations.  There are various events that can be subscribed to related to signal value transitions on `Logic`.
 
@@ -26,6 +26,12 @@ A separate type of object responsible for taking a `Module` and converting it to
 
 ## Organization
 All the code for the ROHD framework library is in lib/src/, with lib/rohd.dart exporting the main stuff for usage.
+
+### collections
+Software collections that are useful for high-performance internal implementation details in ROHD.
+
+### exceptions
+Exceptions that the ROHD framework may throw.
 
 ### modules
 Contains a collection of `Module` implementations that can be used as primitive building blocks for ROHD designs.
