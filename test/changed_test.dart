@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// changed_test.dart
@@ -14,7 +14,9 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('single changed multiple injections', () async {
     final a = Logic()..put(0);

@@ -13,3 +13,6 @@ doc/api/
 tmp_test/
 *.vcd
 .vscode/
+
+# Exceptions
+!test/example_icarus_waves.vcd
