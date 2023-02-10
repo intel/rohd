@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # check_documentation.sh
@@ -18,12 +18,13 @@ set -euo pipefail
 #   https://github.com/dart-lang/dartdoc/issues/2907
 #   https://github.com/dart-lang/dartdoc/issues/1959
 
-output=$(dart doc --validate-links --dry-run 2>&1 | tee)
+output=$(dart doc --validate-links 2>&1 | tee)
 
-# In case of problems, the variable will contain a non-empty string.
-if [ -z "${output}" ]; then
+# In case of problems, the searched substring will not be found.
+if echo "${output}" | grep --silent 'no issues found'; then
   echo 'Documentation check passed!'
 else
   echo "${output}"
+  echo 'Documentation failed since some issues were found'
   exit 1
 fi
