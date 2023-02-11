@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// wave_dumper.dart
-/// Waveform dumper for a given module hierarchy, dumps to .vcd file
+/// Waveform dumper for a given module hierarchy, dumps to .vcd file.
 ///
 /// 2021 May 7
 /// Author: Max Korbel <max.korbel@intel.com>
@@ -142,7 +142,7 @@ class WaveDumper {
 
   /// Writes the top header for the VCD file.
   void _writeHeader() {
-    final dateString = DateTime.now().toIso8601String();
+    final dateString = DateTime.now().toUtc().toIso8601String();
     const timescale = '1ps';
     final header = '''
 \$date
