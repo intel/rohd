@@ -8,7 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-// ignore_for_file: avoid_print
+// Import the standard library for I/O.
+import 'dart:io';
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
@@ -77,7 +78,7 @@ Future<void> main({bool noPrint = false}) async {
   // to other tools.
   final systemVerilogCode = counter.generateSynth();
   if (!noPrint) {
-    print(systemVerilogCode);
+    stdout.writeln(systemVerilogCode);
   }
 
   // Now let's try simulating!
@@ -100,7 +101,7 @@ Future<void> main({bool noPrint = false}) async {
   // Print a message when we're done with the simulation!
   Simulator.registerAction(100, () {
     if (!noPrint) {
-      print('Simulation completed!');
+      stdout.writeln('Simulation completed!');
     }
   });
 
@@ -112,7 +113,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // We can take a look at the waves now.
   if (!noPrint) {
-    print('To view waves, check out waves.vcd with a waveform viewer'
+    stdout.writeln('To view waves, check out waves.vcd with a waveform viewer'
         ' (e.g. `gtkwave waves.vcd`).');
   }
 }
