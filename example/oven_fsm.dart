@@ -20,6 +20,7 @@ class LEDLight extends Const {
 }
 
 class OvenModule extends Module {
+  late StateMachine<OvenStates> oven;
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
     // input to FSM
     button = addInput('button', button, width: button.width);
@@ -80,9 +81,10 @@ class OvenModule extends Module {
       ])
     ];
 
-    StateMachine<OvenStates>(clk, reset, OvenStates.standby, states)
-        .generateDiagram(outputPath: 'oven_fsm.md');
+    oven = StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
   }
+
+  StateMachine<OvenStates> get ovenStateMachine => oven;
 }
 
 void main() async {
@@ -91,6 +93,7 @@ void main() async {
 
   // Create a counter Module
   final oven = OvenModule(button, reset);
+  oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
 
   // build
   await oven.build();
