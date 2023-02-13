@@ -39,7 +39,8 @@ class OvenModule extends Module {
     final states = [
       // Standby State
       State<OvenStates>(OvenStates.standby, events: {
-        button.eq(Button.start()): OvenStates.cooking,
+        Logic(name: 'button_start')..gets(button.eq(Button.start())):
+            OvenStates.cooking,
       }, actions: [
         led < LEDLight.blue().value,
         counterReset < 1,
@@ -48,7 +49,8 @@ class OvenModule extends Module {
 
       // Cooking State (Need to count here)
       State<OvenStates>(OvenStates.cooking, events: {
-        button.eq(Button.pause()): OvenStates.paused,
+        Logic(name: 'button_pause')..gets(button.eq(Button.pause())):
+            OvenStates.paused,
         counter.val.eq(4): OvenStates.completed
       }, actions: [
         led < LEDLight.yellow().value,
@@ -58,7 +60,8 @@ class OvenModule extends Module {
 
       // Pause State
       State<OvenStates>(OvenStates.paused, events: {
-        button.eq(Button.resume()): OvenStates.cooking
+        Logic(name: 'button_resume')..gets(button.eq(Button.resume())):
+            OvenStates.cooking
       }, actions: [
         led < LEDLight.red().value,
         counterReset < 0,
@@ -67,7 +70,8 @@ class OvenModule extends Module {
 
       // Completed State
       State<OvenStates>(OvenStates.completed, events: {
-        button.eq(Button.start()): OvenStates.cooking
+        Logic(name: 'button_start')..gets(button.eq(Button.start())):
+            OvenStates.cooking
       }, actions: [
         led < LEDLight.green().value,
         counterReset < 1,
