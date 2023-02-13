@@ -61,8 +61,8 @@ class OvenModule extends Module {
     // An internal clock generator
     final clk = SimpleClockGenerator(10).clk;
 
-    // Register inputs and outputs, `counterReset` and `en` for internal signals to be used in
-    // Counter module.
+    // Register inputs and outputs, `counterReset` and `en` for internal signals
+    // to be used in Counter module.
     final counterReset = Logic(name: 'counter_reset');
     final en = Logic(name: 'counter_en');
 
@@ -165,7 +165,9 @@ class OvenModule extends Module {
 }
 
 void main() async {
-  // Signals `button` and `reset` that mimic user's behaviour of button pressed and reset.
+  // Signals `button` and `reset` that mimic user's behaviour of button pressed
+  // and reset.
+  //
   // Width of button is 2 because button is represent by 2-bits signal.
   final button = Logic(name: 'button', width: 2);
   final reset = Logic(name: 'reset');
@@ -209,7 +211,6 @@ void main() async {
 
   // Print a message when we're done with the simulation!
   Simulator.registerAction(120, () {
-    // ignore: avoid_print
     print('Simulation End');
   });
 
