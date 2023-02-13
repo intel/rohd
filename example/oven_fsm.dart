@@ -8,8 +8,6 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
-// ignore_for_file: avoid_print
-
 // Import the ROHD package
 import 'package:rohd/rohd.dart';
 
@@ -211,6 +209,7 @@ void main() async {
 
   // Print a message when we're done with the simulation!
   Simulator.registerAction(120, () {
+    // ignore: avoid_print
     print('Simulation End');
   });
 
