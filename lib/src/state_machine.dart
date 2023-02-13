@@ -102,11 +102,11 @@ class StateMachine<StateIdentifier> {
     ]);
   }
 
-  /// Generate a FSM state diagram [MermaidStateDiagram].
+  /// Generate a FSM state diagram [_MermaidStateDiagram].
   ///
   /// Output to mermaid diagram at [outputPath].
   void generateDiagram({String outputPath = 'stateDiagram.md'}) {
-    final figure = MermaidStateDiagram(outputPath: outputPath)
+    final figure = _MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
     for (final state in _states) {
@@ -139,7 +139,7 @@ class State<StateIdentifier> {
 /// A state diagram generator for FSM.
 ///
 /// Outputs to vcd format at [outputPath].
-class MermaidStateDiagram {
+class _MermaidStateDiagram {
   /// The diagram to be return as String
   late String diagram;
 
@@ -149,11 +149,11 @@ class MermaidStateDiagram {
   /// The file to write dumped output waveform to.
   final File _outputFile;
 
-  /// Generate a [MermaidStateDiagram] that initialized the diagram of
+  /// Generate a [_MermaidStateDiagram] that initialized the diagram of
   /// mermaid as `stateDiagram`.
   ///
   /// Passed output path to save in custom directory.
-  MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
+  _MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
       : _outputFile = File(outputPath) {
     diagram = 'stateDiagram\n';
   }
