@@ -1,79 +1,253 @@
 # ROHD Setup & Installation
 
-There are two ways of development in ROHD. First, You can run ROHD on GitHub codespace or local machine. 
+There are two options for developing with ROHD, either through running it on a GitHub Codespace or on your local machine.
 
 
 ## Setup on Github Codespaces (Recommended)
 
-1. To access the Codespaces feature on the https://github.com/intel/rohd repository, simply click on the "Codespaces" button. Keep in mind that Codespaces are available for free to everyone, however, there is a monthly usage limit. For more information, please visit the official GitHub Codespaces Overview page at https://docs.github.com/en/codespaces/overview.
+### Step 1: Click on the CodeSpace Button
+
+To access the Codespaces feature on the https://github.com/intel/rohd repository, simply click on the "Codespaces" button. 
+
+Please note that Codespaces are free for all users with a personal GitHub account that have either a Free or Pro plan. However, there is a monthly usage limit. To learn more about this feature, visit the official GitHub Codespaces Overview page at https://docs.github.com/en/codespaces/overview.
 
 > All personal GitHub.com accounts have a monthly quota of free use of GitHub Codespaces included in the Free or Pro plan. You can get started using GitHub Codespaces on your personal account without changing any settings or providing payment details. You can create and use a codespace for any repository you can clone. You can also use a template to create codespaces that are not initially associated with a repository. If you create a codespace from an organization-owned repository, use of the codespace will either be charged to the organization (if the organization is configured for this), or to your personal account. Codespaces created from templates are always charged to your personal account. You can continue using GitHub Codespaces beyond your monthly included storage and compute usage by providing payment details and setting a spending limit. For more information, see "About billing for GitHub Codespaces.
 
 ![step 1](assets/CodespaceSetup/step1.PNG)
 
-2. You will be redirected to a page where GitHub will launch the container for you. Please be patient as GitHub sets up your server.
+### Step 2: Build Container
+
+You will be redirected to a page where GitHub will initiate the launch of your container. Please allow some time for GitHub to establish your server.
 
 ![step 2](assets/CodespaceSetup/step2.PNG)
 
-3. When your space is ready, you will see a visual studio code running on your browser.
+### Step 3: VSCode in Browser
+
+When your space is ready, you will see a visual studio code running on your browser.
 
 ![step 3](assets/CodespaceSetup/step3.PNG)
 
-4. Run `dart pub get` on the terminal of the visual studio code to pull your setup.
+### Step 4: Dart pub get
+
+Run `dart pub get` on the terminal of the visual studio code to pull your setup.
 
 ![step 4](assets/CodespaceSetup/step4.PNG)
 
-5. Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
+### Step 5: Run the example code 
+
+Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
 ![step 5](assets/CodespaceSetup/step5.PNG)
 
 
 If you can see SystemVerilog code pop up on the terminal. Well, you have successfully set up your development environment on the cloud.
 
-6. To delete the codespace, go back to https://github.com/intel/rohd and click on codespace just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespace.
+### Step 6: Delete the CodeSpace
+
+To delete the codespace, go back to https://github.com/intel/rohd and click on codespace just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespace.
 
 ![step 6](assets/CodespaceSetup/step6.PNG)
 
 
-## Local Development Setup
+## Local Development Setup 
 
-Pre-requiresite:
+ROHD can be install in both of the **Windows**, or **Linux** machine.
+
+**Pre-requiresite:**
 
 - Install latest `dart` SDK from official dart website: 
-
-https://dart.dev/get-dart
+    - https://dart.dev/get-dart
 
 - Install Visual Studio Code
+    - https://code.visualstudio.com/Download
 
-https://code.visualstudio.com/Download
+## Option 1: Install from Dart packages
 
-1. Clone the repository to the local directory. On your terminal, run 
+Open up a terminal and create a new dart project. Note that do not create the project with the name `rohd` as we will depend on the package later.
 
-```cmd
-$ git clone https://github.com/intel/rohd.git
+```shell
+dart create -t console rohd-project
 ```
 
-2. Open up your repository in VSCode using the command
+Then `cd` to the created `rohd` directory. 
 
-```cmd
-$ code rohd
+```shell
+cd rohd-project
 ```
 
-You will see vscode automatically open up your ROHD folder. 
+Install ROHD using `dart pub add rohd` command.
+
+```shell
+dart pub add rohd
+```
+
+![package install](assets/localSetup/dart_package_install_depend.PNG)
+
+Then, open up vscode
+
+```shell
+code .
+```
+
+Delete all the content in `bin/rohd_project.dart` and replace with:
+
+```dart
+/// Copyright (C) 2021 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// example.dart
+/// A very basic example of a counter module.
+///
+/// 2021 September 17
+/// Author: Max Korbel <max.korbel@intel.com>
+///
+// ignore_for_file: avoid_print
+
+// Import the ROHD package
+import 'package:rohd/rohd.dart';
+
+// Define a class Counter that extends ROHD's abstract Module class
+class Counter extends Module {
+  // For convenience, map interesting outputs to short variable names for
+  // consumers of this module
+  Logic get val => output('val');
+
+  // This counter supports any width, determined at run-time
+  final int width;
+  Counter(Logic en, Logic reset, Logic clk,
+      {this.width = 8, super.name = 'counter'}) {
+    // Register inputs and outputs of the module in the constructor.
+    // Module logic must consume registered inputs and output to registered
+    // outputs.
+    en = addInput('en', en);
+    reset = addInput('reset', reset);
+    clk = addInput('clk', clk);
+
+    final val = addOutput('val', width: width);
+
+    // A local signal named 'nextVal'
+    final nextVal = Logic(name: 'nextVal', width: width);
+
+    // Assignment statement of nextVal to be val+1
+    // (<= is the assignment operator)
+    nextVal <= val + 1;
+
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on
+    // the positive edge of clk
+    Sequential(clk, [
+      // `If` is a conditional if statement, like `if` in SystemVerilog
+      // always blocks
+      If(reset, then: [
+        // the '<' operator is a conditional assignment
+        val < 0
+      ], orElse: [
+        If(en, then: [val < nextVal])
+      ])
+    ]);
+  }
+}
+
+// Let's simulate with this counter a little, generate a waveform, and take a
+// look at generated SystemVerilog.
+Future<void> main({bool noPrint = false}) async {
+  // Define some local signals.
+  final en = Logic(name: 'en');
+  final reset = Logic(name: 'reset');
+
+  // Generate a simple clock.  This will run along by itself as
+  // the Simulator goes.
+  final clk = SimpleClockGenerator(10).clk;
+
+  // Build a counter.
+  final counter = Counter(en, reset, clk);
+
+  // Before we can simulate or generate code with the counter, we need
+  // to build it.
+  await counter.build();
+
+  // Let's see what this module looks like as SystemVerilog, so we can pass it
+  // to other tools.
+  final systemVerilogCode = counter.generateSynth();
+  if (!noPrint) {
+    print(systemVerilogCode);
+  }
+
+  // Now let's try simulating!
+
+  // Let's start off with a disabled counter and asserting reset.
+  en.inject(0);
+  reset.inject(1);
+
+  // Attach a waveform dumper so we can see what happens.
+  if (!noPrint) {
+    WaveDumper(counter);
+  }
+
+  // Drop reset at time 25.
+  Simulator.registerAction(25, () => reset.put(0));
+
+  // Raise enable at time 45.
+  Simulator.registerAction(45, () => en.put(1));
+
+  // Print a message when we're done with the simulation!
+  Simulator.registerAction(100, () {
+    if (!noPrint) {
+      print('Simulation completed!');
+    }
+  });
+
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(100);
+
+  // Kick off the simulation.
+  await Simulator.run();
+
+  // We can take a look at the waves now.
+  if (!noPrint) {
+    print('To view waves, check out waves.vcd with a waveform viewer'
+        ' (e.g. `gtkwave waves.vcd`).');
+  }
+}
+```
+
+Finally, run the main function and observe if you can see the system verilog code generated by running the command:
+
+```shell
+dart run
+```
+
+Well done! Your setup has been completed successfully. The successful generation of system verilog code confirms that your configuration is in good order.
+
+
+## Option 2: Install from Source
+Clone ROHD repository to the local directory. (Install From Source). On your terminal, run 
+
+```shell
+git clone https://github.com/intel/rohd.git
+```
+
+Next, open up your repository in VSCode using the command:
+
+```shell
+code rohd
+```
+
+You will see VSCode automatically open up your ROHD folder. 
 
 ![step 2](assets/localSetup/step2.PNG)
 
-3. Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd package downloaded using the command below.
+Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd package downloaded using the command below.
 
 ```cmd
-$ dart pub get
+dart pub get
 ```
+Then, run Rohd example.
 
-4. Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
+Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
-![step 4](assets/localSetup/step4.PNG)
+![step 3](assets/localSetup/step4.PNG)
 
-If you can see SystemVerilog code pop up on the terminal. Congratulation, you now are ready to go with ROHD development.
+If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
 
 ----------------
 2023 February 13
