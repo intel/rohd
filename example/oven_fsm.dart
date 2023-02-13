@@ -51,7 +51,8 @@ class OvenModule extends Module {
       State<OvenStates>(OvenStates.cooking, events: {
         Logic(name: 'button_pause')..gets(button.eq(Button.pause())):
             OvenStates.paused,
-        counter.val.eq(4): OvenStates.completed
+        Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
+            OvenStates.completed
       }, actions: [
         led < LEDLight.yellow().value,
         en < 1,
