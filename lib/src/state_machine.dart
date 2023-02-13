@@ -103,6 +103,8 @@ class StateMachine<StateIdentifier> {
   }
 
   /// Generate a FSM state diagram [_MermaidStateDiagram].
+  /// Check on https://mermaid.js.org/intro/ to view the diagram generated.
+  /// If you are using vscode, you can download the mermaid extension.
   ///
   /// Output to mermaid diagram at [outputPath].
   void generateDiagram({String outputPath = 'stateDiagram.md'}) {

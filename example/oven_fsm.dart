@@ -176,8 +176,11 @@ void main() async {
   // Build an Oven Module and passed the `button` and `reset`.
   final oven = OvenModule(button, reset);
 
-  // Generate a FSM diagram and save as the name `oven_fsm.md`. Note that
-  // the extension of the files is recommend as .md or .mmd.
+  // Generate a Mermaid FSM diagram and save as the name `oven_fsm.md`.
+  // Note that the extension of the files is recommend as .md or .mmd.
+  //
+  // Check on https://mermaid.js.org/intro/ to view the diagram generated.
+  // If you are using vscode, you can download the mermaid extension.
   oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
 
   // Before we can simulate or generate code with the counter, we need
