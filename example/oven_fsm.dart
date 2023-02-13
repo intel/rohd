@@ -8,6 +8,8 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 
+// ignore_for_file: avoid_print
+
 // Import the ROHD package
 import 'package:rohd/rohd.dart';
 
@@ -75,15 +77,15 @@ class OvenModule extends Module {
     // like what is the actions need to be shown separate current state with
     // other state. Represented as List of conditionals to be executed.
     final states = [
-      // [identifier]: standby state, represent by `OvenStates.standby`.
+      // identifier: standby state, represent by `OvenStates.standby`.
       State<OvenStates>(OvenStates.standby,
-          // [events]: When the button `start` is pressed during standby state,
+          // events: When the button `start` is pressed during standby state,
           // OvenState will changed to `OvenStates.cooking` state.
           events: {
             Logic(name: 'button_start')..gets(button.eq(Button.start())):
                 OvenStates.cooking,
           }, actions: [
-        // [actions]: During the standby state, `led` is change to blue; timer's
+        // actions: During the standby state, `led` is change to blue; timer's
         // `counterReset` is set to 1 (Reset the timer);
         // timer's `en` is set to 0 (Disable value update).
         led < LEDLight.blue().value,
@@ -91,9 +93,9 @@ class OvenModule extends Module {
         en < 0,
       ]),
 
-      // [identifier]: cooking state, represent by `OvenStates.cooking`.
+      // identifier: cooking state, represent by `OvenStates.cooking`.
       State<OvenStates>(OvenStates.cooking,
-          // [events]:
+          // events:
           // When the button `paused` is pressed during cooking state,
           // OvenState will changed to `OvenStates.paused` state.
           //
@@ -105,7 +107,7 @@ class OvenModule extends Module {
             Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
                 OvenStates.completed
           },
-          // [actions]:
+          // actions:
           // During the cooking state, `led` is change to yellow; timer's
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 1 (Enable value update).
@@ -115,16 +117,16 @@ class OvenModule extends Module {
             en < 1,
           ]),
 
-      // [identifier]: paused state, represent by `OvenStates.paused`.
+      // identifier: paused state, represent by `OvenStates.paused`.
       State<OvenStates>(OvenStates.paused,
-          // [events]:
+          // events:
           // When the button `resume` is pressed during paused state,
           // OvenState will changed to `OvenStates.cooking` state.
           events: {
             Logic(name: 'button_resume')..gets(button.eq(Button.resume())):
                 OvenStates.cooking
           },
-          // [actions]:
+          // actions:
           // During the paused state, `led` is change to red; timer's
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 0 (Disable value update).
@@ -134,16 +136,16 @@ class OvenModule extends Module {
             en < 0,
           ]),
 
-      // [identifier]: completed state, represent by `OvenStates.completed`.
+      // identifier: completed state, represent by `OvenStates.completed`.
       State<OvenStates>(OvenStates.completed,
-          // [events]:
+          // events:
           // When the button `start` is pressed during completed state,
           // OvenState will changed to `OvenStates.cooking` state.
           events: {
             Logic(name: 'button_start')..gets(button.eq(Button.start())):
                 OvenStates.cooking
           },
-          // [actions]:
+          // actions:
           // During the start state, `led` is change to green; timer's
           // `counterReset` is set to 1 (Reset value);
           // timer's `en` is set to 0 (Disable value update).
@@ -209,7 +211,6 @@ void main() async {
 
   // Print a message when we're done with the simulation!
   Simulator.registerAction(120, () {
-    // ignore: avoid_print
     print('Simulation End');
   });
 
