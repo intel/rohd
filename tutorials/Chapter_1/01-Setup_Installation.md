@@ -61,7 +61,7 @@ ROHD can be install in both of the **Windows**, or **Linux** machine.
 - Install Visual Studio Code
     - https://code.visualstudio.com/Download
 
-## Option 1: Install from Dart packages
+### Option 1: Install from Dart packages
 
 Open up a terminal and create a new dart project. Note that do not create the project with the name `rohd` as we will depend on the package later.
 
@@ -219,10 +219,12 @@ dart run
 Well done! Your setup has been completed successfully. The successful generation of system verilog code confirms that your configuration is in good order.
 
 
-## Option 2: Install from Source
+### Option 2: Install from Source
+
 Clone ROHD repository to the local directory. (Install From Source). On your terminal, run 
 
 ```shell
+cd C:\
 git clone https://github.com/intel/rohd.git
 ```
 
@@ -246,6 +248,48 @@ Then, run Rohd example.
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
 ![step 3](assets/localSetup/step4.PNG)
+
+If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
+
+
+## Docker Container Setup
+
+There are another options which is to setup on lcoal docker environment. Firstly, you must install docker in your PC.
+
+Pre-requisites:
+
+- Install docker 
+    - https://docs.docker.com/get-docker
+
+Then, you need to clone rohd repository to your local PC. 
+
+```shell
+cd C:\
+git clone https://github.com/intel/rohd.git
+cd rohd
+```
+
+After clone, bring up the VSCode by run this command on your terminal:
+
+```shell
+code .
+```
+
+At this phase, assume that you already install docker on your pc. You can install docker vscode extension.
+
+![vscode extension](assets/docker/vscode_extension.PNG)
+
+Once the extension installed. You might have to refresh your repository by restart vscode and you will see a pop up on the bottom corner right. Click on the little notification icon and clone in volume.
+
+![vscode extension](assets/docker/clone_in_volume.png)
+
+When the setting finished, you can bring up the terminal by navigate to top navigation panel **view -> terminal**.
+
+In the terminal, run:
+
+```shell
+dart example/example.dart
+```
 
 If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
 
