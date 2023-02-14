@@ -8,7 +8,7 @@ ROHD is a bold project with the goal of becoming the industry-standard choice fo
 
 2. Dart offers asynchronous capabilities without the need for multithreading, making it easy to model and interact with hardware.
 
-3. Dart was designed for front-end frameworks and has the capability to convert to JavaScript, making it fast and efficient. It features both a just-in-time compiler in a virtual machine and an ahead-of-time compiler that can convert to native binaries on various platforms, providing multi-platform support.
+3. Dart was designed for front-end frameworks. It features both a just-in-time compiler in a virtual machine and an ahead-of-time compiler that can convert to native binaries on various platforms, providing multi-platform support.
 
 4. Dart is a type-safe language that comes with type inference, linting, and other helpful plugins for IDEs such as Visual Studio Code to aid in the development process.
 
