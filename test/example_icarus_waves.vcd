@@ -1,0 +1,101 @@
+$date
+	Tue Feb  7 10:45:30 2023
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module cosim_wrapper $end
+$scope module external_module $end
+$var wire 1 ! clk $end
+$var wire 8 " push_data [7:0] $end
+$var wire 1 # push_valid $end
+$var reg 8 $ sampled [7:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+bx $
+z#
+bz "
+0!
+$end
+#5000
+1!
+#5002
+b0 "
+1#
+#10000
+0!
+#15000
+b0 $
+1!
+#15002
+b1 "
+0#
+#20000
+0!
+#25000
+1!
+#25002
+b10 "
+1#
+#30000
+0!
+#35000
+b10 $
+1!
+#35002
+b11 "
+0#
+#40000
+0!
+#45000
+1!
+#45002
+b100 "
+1#
+#50000
+0!
+#55000
+b100 $
+1!
+#55002
+b101 "
+0#
+#60000
+0!
+#65000
+1!
+#65002
+b110 "
+1#
+#70000
+0!
+#75000
+b110 $
+1!
+#75002
+b111 "
+0#
+#80000
+0!
+#85000
+1!
+#85002
+b1000 "
+1#
+#90000
+0!
+#95000
+b1000 $
+1!
+#95002
+b1001 "
+0#
+#100000
+0!
+#100002

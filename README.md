@@ -35,7 +35,7 @@ Features of ROHD include:
 - **Less verbose** than alternatives (fewer lines of code)
 - Enables **higher quality** development
 - Fewer bugs and lines of code means **shorter development schedule**
-- Support for **cosimulation with verilog modules** and **instantiation of verilog modules** in generated SystemVerilog code
+- Support for **cosimulation with verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of verilog modules** in generated SystemVerilog code
 - Use **modern IDEs** like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more
 - Simulate with **various abstraction levels of models** from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.
 
@@ -55,6 +55,7 @@ If you're thinking "SystemVerilog is just fine, I don't need something new", it 
 
 ## Development Recommendations
 - The [ROHD Verification Framework](https://github.com/intel/rohd-vf) is a UVM-like framework for building testbenches for hardware modelled in ROHD.
+- The [ROHD Cosimulation](https://github.com/intel/rohd-cosim) package allows you to cosimulate the ROHD simulator with a variety of SystemVerilog simulators.
 - Visual Studio Code (vscode) is a great, free IDE with excellent support for Dart.  It works well on all platforms, including native Windows or Windows Subsystem for Linux (WSL) which allows you to run a native Linux kernel (e.g. Ubuntu) within Windows.  You can also use vscode to develop on a remote machine with the Remote SSH extension.
     - vscode: https://code.visualstudio.com/
     - WSL: https://docs.microsoft.com/en-us/windows/wsl/install-win10

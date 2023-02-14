@@ -1,6 +1,7 @@
 # Files and directories created by pub
 .dart_tool/
 .packages
+pubspec.lock
 
 # Conventional directory for build outputs
 build/
@@ -13,7 +14,9 @@ doc/website/api/
 doc/website/_site/
 
 # Other stuff
-tmp*
-*vcd
-pubspec.lock
-.vscode
+tmp_test/
+*.vcd
+.vscode/
+
+# Exceptions
+!test/example_icarus_waves.vcd

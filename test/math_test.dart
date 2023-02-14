@@ -66,37 +66,16 @@ class MathTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
-    final signalToWidthMap = {
-      'a': 8,
-      'b': 8,
-      'a_plus_b': 8,
-      'a_minus_b': 8,
-      'a_times_b': 8,
-      'a_dividedby_b': 8,
-      'a_modulo_b': 8,
-      'a_plus_const': 8,
-      'a_minus_const': 8,
-      'a_times_const': 8,
-      'a_dividedby_const': 8,
-      'a_modulo_const': 8,
-      'a_sl_b': 8,
-      'a_srl_b': 8,
-      'a_sra_b': 8,
-      'a_sl_const': 8,
-      'a_srl_const': 8,
-      'a_sra_const': 8,
-    };
-
     Future<void> runMathVectors(List<Vector> vectors) async {
       final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     }
 

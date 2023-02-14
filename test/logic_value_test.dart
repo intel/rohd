@@ -348,6 +348,14 @@ void main() {
           LogicValue.ofString('0101').getRange(0, 2),
           equals(LogicValue.ofString('01')));
       expect(
+          // getRange - slice from range 1
+          LogicValue.ofString('0101').getRange(1),
+          equals(LogicValue.ofString('010')));
+      expect(
+          // getRange - slice from negative range
+          LogicValue.ofString('0101').getRange(-2),
+          equals(LogicValue.ofString('01')));
+      expect(
           // getRange - negative end index and start < end
           LogicValue.ofString('0101').getRange(1, -2),
           LogicValue.zero);

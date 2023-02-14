@@ -164,6 +164,7 @@ abstract class LogicValue {
   /// the width of [other].
   LogicValue _concatenate(LogicValue other) {
     if (other.width == 0) {
+      // ignore: avoid_returning_this
       return this;
     } else if (width == 0) {
       return other;
@@ -447,6 +448,10 @@ abstract class LogicValue {
   LogicValue operator [](int index) {
     final modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
+      // The suggestion in the deprecation for this constructor is not available
+      // before 2.19, so keep it in here for now.  Eventually, switch to the
+      // new one.
+      // ignore: deprecated_member_use
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
           'Index out of range: $modifiedIndex(=$index).', width);
     }
@@ -467,16 +472,22 @@ abstract class LogicValue {
   /// and [endIndex] are equal, then a zero-width value is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   ///
+  /// If [endIndex] is not provided, [width] of the [LogicValue] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart [TODO]
   /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
   /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
   /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(1);      // == LogicValue.ofString('010')
+  ///
   /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
   /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
   /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
   /// ```
   ///
-  LogicValue getRange(int startIndex, int endIndex) {
+  LogicValue getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     final modifiedStartIndex =
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
@@ -548,6 +559,7 @@ abstract class LogicValue {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
     }
+    // ignore: avoid_returning_this
     return this;
   }
 
@@ -787,6 +799,7 @@ abstract class LogicValue {
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
+      // ignore: avoid_returning_this
       return this;
     }
     int shamtInt;

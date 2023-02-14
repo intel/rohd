@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// definition_name_test.dart
@@ -82,7 +82,9 @@ enum NameType {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('signal and module naming conflicts', () {
     Future<void> runTest(RenameableModule mod) async {
@@ -94,11 +96,8 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(),
-        mod.definitionName,
-        vectors,
-      );
+      final simResult = SimCompare.iverilogVector(mod, vectors,
+          moduleName: mod.definitionName);
       expect(simResult, equals(true));
     }
 

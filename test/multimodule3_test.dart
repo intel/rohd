@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// multimodule3_test.dart
@@ -44,7 +44,9 @@ class TopModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('multimodules3', () async {
@@ -54,8 +56,7 @@ void main() {
         Vector({}, {'x': 1}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
   });

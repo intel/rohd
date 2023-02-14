@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// flop_test.dart
@@ -25,7 +25,9 @@ class FlopTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('flop bit', () async {
@@ -39,16 +41,11 @@ void main() {
         Vector({'a': 0}, {'y': 0}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
 
     test('flop bus', () async {
-      final signalToWidthMap = {
-        'a': 8,
-        'y': 8,
-      };
       final ftm = FlopTestModule(Logic(width: 8));
       await ftm.build();
       final vectors = [
@@ -59,9 +56,7 @@ void main() {
         Vector({'a': 0x1}, {'y': 0x55}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          ftm.generateSynth(), ftm.runtimeType.toString(), vectors,
-          signalToWidthMap: signalToWidthMap);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
       expect(simResult, equals(true));
     });
   });

@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// comb_math_test.dart
@@ -104,7 +104,9 @@ class ReducedExample extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
@@ -127,9 +129,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
 
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -146,9 +146,7 @@ void main() {
     }
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'codepoint': 21, 'bytes': 32});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -161,9 +159,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -176,9 +172,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -191,9 +185,7 @@ void main() {
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 }

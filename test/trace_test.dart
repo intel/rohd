@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// trace_test.dart
@@ -57,7 +57,9 @@ class DoubledGappedInputModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('flying output', () async {
     final mod = FlyingOutputModule(Logic());

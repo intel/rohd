@@ -335,9 +335,11 @@ class Logic {
   BigInt get valueBigInt => value.toBigInt();
 
   /// Returns `true` iff the value of this signal is valid (no `x` or `z`).
+  @Deprecated('Use value.isValid instead.')
   bool hasValidValue() => value.isValid;
 
   /// Returns `true` iff *all* bits of the current value are floating (`z`).
+  @Deprecated('Use value.isFloating instead.')
   bool isFloating() => value.isFloating;
 
   /// The [Logic] signal that is driving `this`, if any.
@@ -732,6 +734,7 @@ class Logic {
     if (width == 1 &&
         modifiedEndIndex == 0 &&
         modifiedEndIndex == modifiedStartIndex) {
+      // ignore: avoid_returning_this
       return this;
     }
 
@@ -749,6 +752,9 @@ class Logic {
   /// [endIndex] are equal, then a zero-width signal is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from where the array ends)
   ///
+  /// If [endIndex] is not provided, [width] of the [Logic] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart
   /// Logic nextVal = addOutput('nextVal', width: width);
   /// // Example: val = 0xce, val.width = 8, bin(0xce) = "0b11001110"
@@ -757,9 +763,13 @@ class Logic {
   ///
   /// // Positive getRange
   /// nextVal <= val.getRange(0, 6); // = val.slice(0, -2) & output: 0b001110, where the output.width=6
+  ///
+  /// // Get range from startIndex
+  /// nextVal <= val.getRange(-3); // the endIndex will be auto assign to val.width
   /// ```
   ///
-  Logic getRange(int startIndex, int endIndex) {
+  Logic getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     if (endIndex == startIndex) {
       return Const(0, width: 0);
     }
@@ -809,6 +819,7 @@ class Logic {
         this,
       ].swizzle();
     } else if (newWidth == width) {
+      // ignore: avoid_returning_this
       return this;
     }
 
@@ -834,5 +845,22 @@ class Logic {
       update,
       getRange(0, startIndex),
     ].swizzle();
+  }
+
+  /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
+  /// [list]. Else `0` (of [width]=1) if not present.
+  ///
+  /// The [list] can be [Logic] or [int] or [bool] or [BigInt] or
+  /// [list] of [dynamic] i.e combinition of aforementioned types.
+  ///
+  Logic isIn(List<dynamic> list) {
+    // By default isLogicIn is not present return `0`:
+    // Empty list corner-case state
+    Logic isLogicIn = Const(0, width: 1);
+    for (final dynamic y in list) {
+      // Iterating through the list to check if the logic is present
+      isLogicIn |= eq(y);
+    }
+    return isLogicIn;
   }
 }

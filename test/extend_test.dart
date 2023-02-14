@@ -39,7 +39,10 @@ class WithSetModule extends Module {
 
 void main() {
   group('Logic', () {
-    tearDown(Simulator.reset);
+    tearDown(() async {
+      await Simulator.reset();
+    });
+
     group('extend', () {
       Future<void> extendVectors(
           List<Vector> vectors, int newWidth, ExtendType extendType,
@@ -48,9 +51,7 @@ void main() {
             ExtendModule(Logic(width: originalWidth), newWidth, extendType);
         await mod.build();
         await SimCompare.checkFunctionalVector(mod, vectors);
-        final simResult = SimCompare.iverilogVector(
-            mod.generateSynth(), mod.runtimeType.toString(), vectors,
-            signalToWidthMap: {'a': originalWidth, 'b': newWidth});
+        final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
       }
 
@@ -115,9 +116,7 @@ void main() {
             Logic(width: 8), startIndex, Logic(width: updateWidth));
         await mod.build();
         await SimCompare.checkFunctionalVector(mod, vectors);
-        final simResult = SimCompare.iverilogVector(
-            mod.generateSynth(), mod.runtimeType.toString(), vectors,
-            signalToWidthMap: {'a': 8, 'b': updateWidth, 'c': 8});
+        final simResult = SimCompare.iverilogVector(mod, vectors);
         expect(simResult, equals(true));
       }
 

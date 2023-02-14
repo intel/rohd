@@ -147,24 +147,24 @@ abstract class SimCompare {
 
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
-    String generatedVerilog,
-    String topModule,
+    Module module,
     List<Vector> vectors, {
+    String? moduleName,
     bool dontDeleteTmpFiles = false,
     bool dumpWaves = false,
-    Map<String, int> signalToWidthMap = const {},
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
   }) {
     String signalDeclaration(String signalName) {
-      if (signalToWidthMap.containsKey(signalName)) {
-        final width = signalToWidthMap[signalName]!;
-        return '[${width - 1}:0] $signalName';
+      final signal = module.signals.firstWhere((e) => e.name == signalName);
+      if (signal.width != 1) {
+        return '[${signal.width - 1}:0] $signalName';
       } else {
         return signalName;
       }
     }
 
+    final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
       for (final e in vectors) ...e.inputValues.keys,
       for (final e in vectors) ...e.expectedOutputValues.keys,
@@ -174,6 +174,7 @@ abstract class SimCompare {
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
+    final generatedVerilog = module.generateSynth();
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =

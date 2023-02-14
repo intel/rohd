@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// collapse_test.dart
@@ -37,7 +37,9 @@ class CollapseTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('collapse functional', () async {
     final mod = CollapseTestModule(Logic(), Logic());
@@ -47,8 +49,7 @@ void main() {
       Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 0, 'e': 0, 'f': 0}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 

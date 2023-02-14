@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// counter_test.dart
@@ -40,7 +40,9 @@ class Counter extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('counter', () async {
@@ -66,9 +68,7 @@ void main() {
         Vector({'en': 0, 'reset': 0}, {'val': 5}),
       ];
       await SimCompare.checkFunctionalVector(counter, vectors);
-      final simResult = SimCompare.iverilogVector(
-          counter.generateSynth(), counter.runtimeType.toString(), vectors,
-          signalToWidthMap: {'val': 8});
+      final simResult = SimCompare.iverilogVector(counter, vectors);
       expect(simResult, equals(true));
     });
   });

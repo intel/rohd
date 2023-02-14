@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// fsm_test.dart
@@ -104,7 +104,9 @@ class TrafficTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('simple fsm', () async {
@@ -118,8 +120,7 @@ void main() {
         Vector({'c': 1}, {'b': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
       expect(simResult, equals(true));
     });
 
@@ -147,9 +148,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: {'traffic': 2, 'northLight': 2, 'eastLight': 2});
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
 
       expect(simResult, equals(true));
     });

@@ -398,9 +398,9 @@ class _SynthModuleDefinition {
           }
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
-      } else if (driver == null && receiver.hasValidValue()) {
+      } else if (driver == null && receiver.value.isValid) {
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
-      } else if (driver == null && !receiver.isFloating()) {
+      } else if (driver == null && !receiver.value.isFloating) {
         // this is a signal that is *partially* invalid (e.g. 0b1z1x0)
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }

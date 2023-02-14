@@ -598,7 +598,7 @@ abstract class Module {
 
   @override
   String toString() => '"$name" ($runtimeType)  :'
-      '  ${_inputs.keys.toString()} => ${_outputs.keys.toString()}';
+      '  ${_inputs.keys} => ${_outputs.keys}';
 
   /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
   /// this [Module].

@@ -1,5 +1,5 @@
 /// SPDX-License-Identifier: BSD-3-Clause
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 ///
 /// shuffle_test.dart
 /// Tests related to shuffled bits
@@ -37,6 +37,10 @@ class Shuffler extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('shuffle test', () async {
     final gtm = Shuffler(Logic(width: 8), Logic(width: 8));
     await gtm.build();
@@ -44,16 +48,7 @@ void main() {
       Vector({'payloadIn1': 0xff, 'payloadIn2': 0}, {'payloadOut': 0xaaaa}),
     ];
     await SimCompare.checkFunctionalVector(gtm, vectors);
-    final simResult = SimCompare.iverilogVector(
-      gtm.generateSynth(),
-      gtm.runtimeType.toString(),
-      vectors,
-      signalToWidthMap: {
-        'payloadIn1': 8,
-        'payloadIn2': 8,
-        'payloadOut': 16,
-      },
-    );
+    final simResult = SimCompare.iverilogVector(gtm, vectors);
     expect(simResult, equals(true));
   });
 }

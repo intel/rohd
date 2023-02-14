@@ -11,11 +11,18 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// An extension of [Logic] useful for [Interface] definitions.
 class Port extends Logic {
   /// Constructs a [Logic] intended to be used for ports in an [Interface].
-  Port(String name, [int width = 1]) : super(name: name, width: width);
+  Port(String name, [int width = 1]) : super(name: name, width: width) {
+    if (!Sanitizer.isSanitary(name)) {
+      throw Exception(
+          'Invalid name "$name", must be legal SystemVerilog and not collide'
+          ' with any keywords.');
+    }
+  }
 }
 
 /// Represents a logical interface to a [Module].

@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// gate_test.dart
@@ -103,7 +103,9 @@ class IndexGateTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('functional', () {
     test('NotGate single bit', () async {
@@ -194,8 +196,7 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -209,11 +210,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_and': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {
-            'a': 4,
-          });
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -227,11 +224,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_or': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {
-            'a': 4,
-          });
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -245,11 +238,7 @@ void main() {
         Vector({'a': bin('0001')}, {'a_xor': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {
-            'a': 4,
-          });
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -262,8 +251,7 @@ void main() {
         Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
 
@@ -276,22 +264,9 @@ void main() {
         Vector({'control': 0, 'd0': 3, 'd1': 6}, {'y': 3}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(
-          mod.generateSynth(), mod.runtimeType.toString(), vectors,
-          signalToWidthMap: {'d0': 8, 'd1': 8, 'y': 8});
+      final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
-
-    final shiftVectorWidthMap = {
-      'a': 3,
-      'b': 8,
-      'a_rshift_b': 3,
-      'a_lshift_b': 3,
-      'a_arshift_b': 3,
-      'a_rshift_const': 3,
-      'a_lshift_const': 3,
-      'a_arshift_const': 3,
-    };
 
     test('lshift logic', () async {
       final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
@@ -303,9 +278,7 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -319,9 +292,7 @@ void main() {
         Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -337,9 +308,7 @@ void main() {
         Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -351,9 +320,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -365,9 +332,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -379,9 +344,7 @@ void main() {
         Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: shiftVectorWidthMap);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -395,8 +358,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -410,8 +372,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_or_b': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -425,8 +386,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_xor_b': 0}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -441,9 +401,7 @@ void main() {
         Vector({'original': 14, 'index': 9}, {'index_output': LogicValue.x})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {'original': 8, 'index': 8});
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
@@ -461,9 +419,7 @@ void main() {
             {'index_output': LogicValue.zero})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(
-          gtm.generateSynth(), gtm.runtimeType.toString(), vectors,
-          signalToWidthMap: {'original': 1, 'index': 8, 'index_output': 1});
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
