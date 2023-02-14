@@ -51,7 +51,7 @@ To delete the codespace, go back to https://github.com/intel/rohd and click on c
 
 ## Local Development Setup 
 
-ROHD can be install in both of the **Windows**, or **Linux** machine.
+ROHD can be install in **Windows**, **Mac**, or **Linux** machine.
 
 **Pre-requiresite:**
 
