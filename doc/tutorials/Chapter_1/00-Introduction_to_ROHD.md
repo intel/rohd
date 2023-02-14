@@ -31,6 +31,7 @@ Many people are curious as to why it is necessary to overhaul legacy systems tha
 6. **Lack of Open-Source Hardware Community**: The open-source hardware community is lacking. There are a few open-source generators or cores available, but their quality can be inconsistent. Finding open-source verification components is also a challenge, and there are no open-source or free tool stacks that can run UVM testbenches. This leaves many hardware engineers unfamiliar with open-source development.
 
 7. **Need for Collaboration in the Hardware Industry**: The software industry has long recognized the benefits of collaborating on open-source projects, even with competitors. Hardware engineers, on the other hand, often spend too much time on struggling with poor tools and infrastructure. Instead of focusing on their competitive advantages, they are bogged down by these issues. Investing in open-source projects can help alleviate these challenges and improve the overall efficiency of hardware development.
+
 ## Benefits of Dart for Hardware Development
 
 1. **Scalability**: The Dart programming language provides better scalability compared to SystemVerilog. It makes it easier to maintain and scale hardware designs as they become larger and more complex.
