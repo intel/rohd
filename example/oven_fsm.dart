@@ -10,10 +10,10 @@
 
 // ignore_for_file: avoid_print
 
-// Import the ROHD package
+// Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
-// Import the counter module implement in example.dart
+// Import the counter module implement in example.dart.
 import './example.dart';
 
 // Enumerated type named `OvenStates` with four possible states:
@@ -58,7 +58,7 @@ class OvenModule extends Module {
     reset = addInput('reset', reset);
     final led = addOutput('led', width: button.width);
 
-    // An internal clock generator
+    // An internal clock generator.
     final clk = SimpleClockGenerator(10).clk;
 
     // Register inputs and outputs, `counterReset` and `en` for internal signals
