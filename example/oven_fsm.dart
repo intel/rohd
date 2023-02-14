@@ -41,7 +41,7 @@ class LEDLight extends Const {
   LEDLight.green() : this._(bin('11'));
 }
 
-// Define a class OvenModule that extends ROHD's abstract Module class
+// Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
   // A public variable with type StateMachine<OvenState> `oven`.
   // We want to return this variable to the main module for flexibility.
