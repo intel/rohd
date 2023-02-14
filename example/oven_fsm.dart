@@ -16,9 +16,9 @@ import 'package:rohd/rohd.dart';
 // Import the counter module implement in example.dart.
 import './example.dart';
 
-// Enumerated type named `OvenStates` with four possible states:
+// Enumerated type named `OvenState` with four possible states:
 // `standby`, `cooking`,`paused`, and `completed`.
-enum OvenStates { standby, cooking, paused, completed }
+enum OvenState { standby, cooking, paused, completed }
 
 // One-hot encoded `Button` that extends from Const() value.
 // Represent start, pause, and resume as constant value `00`, `01`,
@@ -43,11 +43,11 @@ class LEDLight extends Const {
 
 // Define a class OvenModule that extends ROHD's abstract Module class
 class OvenModule extends Module {
-  // A public variable with type StateMachine<OvenStates> `oven`.
+  // A public variable with type StateMachine<OvenState> `oven`.
   // We want to return this variable to the main module for flexibility.
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
-  late StateMachine<OvenStates> oven;
+  late StateMachine<OvenState> oven;
 
   // This oven module receives a `button` and a `reset` input from runtime.
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
@@ -70,20 +70,20 @@ class OvenModule extends Module {
     // Receive `en`, `counterReset` and `clk` as input.
     final counter = Counter(en, counterReset, clk, name: 'counter_module');
 
-    // A list of `OvenStates` that describe the FSM. Note that
-    // `OvenStates` consists of identifier, events and actions. We
+    // A list of `OvenState` that describe the FSM. Note that
+    // `OvenState` consists of identifier, events and actions. We
     // can think of `identifier` as the state name, `events` is a map of event
     // that trigger next state. `actions` is the behaviour of current state,
     // like what is the actions need to be shown separate current state with
     // other state. Represented as List of conditionals to be executed.
     final states = [
-      // identifier: standby state, represent by `OvenStates.standby`.
-      State<OvenStates>(OvenStates.standby,
+      // identifier: standby state, represent by `OvenState.standby`.
+      State<OvenState>(OvenState.standby,
           // events: When the button `start` is pressed during standby state,
-          // OvenState will changed to `OvenStates.cooking` state.
+          // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_start')..gets(button.eq(Button.start())):
-                OvenStates.cooking,
+                OvenState.cooking,
           },
           // actions: During the standby state, `led` is change to blue; timer's
           // `counterReset` is set to 1 (Reset the timer);
@@ -94,19 +94,19 @@ class OvenModule extends Module {
             en < 0,
           ]),
 
-      // identifier: cooking state, represent by `OvenStates.cooking`.
-      State<OvenStates>(OvenStates.cooking,
+      // identifier: cooking state, represent by `OvenState.cooking`.
+      State<OvenState>(OvenState.cooking,
           // events:
           // When the button `paused` is pressed during cooking state,
-          // OvenState will changed to `OvenStates.paused` state.
+          // OvenState will changed to `OvenState.paused` state.
           //
           // When the button `counter` time is elapsed during cooking state,
-          // OvenState will changed to `OvenStates.completed` state.
+          // OvenState will changed to `OvenState.completed` state.
           events: {
             Logic(name: 'button_pause')..gets(button.eq(Button.pause())):
-                OvenStates.paused,
+                OvenState.paused,
             Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
-                OvenStates.completed
+                OvenState.completed
           },
           // actions:
           // During the cooking state, `led` is change to yellow; timer's
@@ -118,14 +118,14 @@ class OvenModule extends Module {
             en < 1,
           ]),
 
-      // identifier: paused state, represent by `OvenStates.paused`.
-      State<OvenStates>(OvenStates.paused,
+      // identifier: paused state, represent by `OvenState.paused`.
+      State<OvenState>(OvenState.paused,
           // events:
           // When the button `resume` is pressed during paused state,
-          // OvenState will changed to `OvenStates.cooking` state.
+          // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_resume')..gets(button.eq(Button.resume())):
-                OvenStates.cooking
+                OvenState.cooking
           },
           // actions:
           // During the paused state, `led` is change to red; timer's
@@ -137,14 +137,14 @@ class OvenModule extends Module {
             en < 0,
           ]),
 
-      // identifier: completed state, represent by `OvenStates.completed`.
-      State<OvenStates>(OvenStates.completed,
+      // identifier: completed state, represent by `OvenState.completed`.
+      State<OvenState>(OvenState.completed,
           // events:
           // When the button `start` is pressed during completed state,
-          // OvenState will changed to `OvenStates.cooking` state.
+          // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_start')..gets(button.eq(Button.start())):
-                OvenStates.cooking
+                OvenState.cooking
           },
           // actions:
           // During the start state, `led` is change to green; timer's
@@ -158,11 +158,11 @@ class OvenModule extends Module {
     ];
 
     // Assign the oven StateMachine object to public variable declared.
-    oven = StateMachine<OvenStates>(clk, reset, OvenStates.standby, states);
+    oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
   }
 
   // An ovenStateMachine that represent in getter.
-  StateMachine<OvenStates> get ovenStateMachine => oven;
+  StateMachine<OvenState> get ovenStateMachine => oven;
 }
 
 void main() async {
