@@ -157,7 +157,7 @@ class _MermaidStateDiagram {
   /// Passed output path to save in custom directory.
   _MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
       : _outputFile = File(outputPath) {
-    diagram = StringBuffer('stateDiagram\n');
+    diagram = StringBuffer('stateDiagram-v2\n');
   }
 
   /// Register a new state to the mermaid diagram object.
@@ -166,15 +166,11 @@ class _MermaidStateDiagram {
   /// Register a new transition [event] that point the
   /// current state [currState] to next state [nextState].
   void addTransitions(String currState, String nextState, String event) =>
-      diagram.write('$currState --> $nextState: $event\n');
+      diagram.write('\n$currState --> $nextState: $event');
 
   /// Register a start state [startState].
   void addStartState(String startState) =>
-      diagram.write('\n[*] --> $startState\n');
-
-  /// Register a end state [endState].
-  void addEndState(String endState) =>
-      diagram.write('$diagram\n$endState --> [*]\n');
+      diagram.write('\n[*] --> $startState');
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
