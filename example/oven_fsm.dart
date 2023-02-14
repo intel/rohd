@@ -61,8 +61,8 @@ class OvenModule extends Module {
     // An internal clock generator.
     final clk = SimpleClockGenerator(10).clk;
 
-    // Register inputs and outputs, `counterReset` and `en` for internal signals
-    // to be used in Counter module.
+    // Register local signals, `counterReset` and `en`
+    // for Counter module.
     final counterReset = Logic(name: 'counter_reset');
     final en = Logic(name: 'counter_en');
 
