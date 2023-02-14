@@ -44,7 +44,7 @@ class LEDLight extends Const {
 // Define a class OvenModule that extends ROHD's abstract Module class
 class OvenModule extends Module {
   // A public variable with type StateMachine<OvenStates> `oven`.
-  // We want to return this variable to the main module for flexbility.
+  // We want to return this variable to the main module for flexibility.
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
   late StateMachine<OvenStates> oven;
