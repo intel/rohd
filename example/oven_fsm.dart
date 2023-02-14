@@ -167,7 +167,7 @@ class OvenModule extends Module {
   StateMachine<OvenState> get ovenStateMachine => oven;
 }
 
-void main() async {
+Future<void> main() async {
   // Signals `button` and `reset` that mimic user's behaviour of button pressed
   // and reset.
   //
