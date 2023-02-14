@@ -31,19 +31,19 @@ Many people are curious as to why it is necessary to overhaul legacy systems tha
 6. **Lack of Open-Source Hardware Community**: The open-source hardware community is lacking. There are a few open-source generators or cores available, but their quality can be inconsistent. Finding open-source verification components is also a challenge, and there are no open-source or free tool stacks that can run UVM testbenches. This leaves many hardware engineers unfamiliar with open-source development.
 
 7. **Need for Collaboration in the Hardware Industry**: The software industry has long recognized the benefits of collaborating on open-source projects, even with competitors. Hardware engineers, on the other hand, often spend too much time on struggling with poor tools and infrastructure. Instead of focusing on their competitive advantages, they are bogged down by these issues. Investing in open-source projects can help alleviate these challenges and improve the overall efficiency of hardware development.
-## Feature of ROHD
+## Benefits of Dart for Hardware Development
 
-1. **Scalability**: The Dart programming language provides better scalability compared to system Verilog. It makes it easier to maintain and scale hardware designs as they become larger and more complex.
+1. **Scalability**: The Dart programming language provides better scalability compared to SystemVerilog. It makes it easier to maintain and scale hardware designs as they become larger and more complex.
 
-2. **Improved Productivity**: The Dart language is easier to use, learn and has better readability compared to system Verilog. This makes hardware development faster, easier and more efficient.
+2. **Improved Productivity**: The Dart language is easier to use and learn and has better readability compared to SystemVerilog. This makes hardware development faster, easier, and more efficient.
 
 3. **Enhanced Verification**: The use of Dart as a programming language for hardware design allows for better and more efficient verification of hardware designs. This helps to reduce design and verification time and improve the overall quality of the hardware.
 
-4. **Multi-platform Support**: Dart was designed from the ground up to be multi-platform, meaning it can be used to develop hardware for a variety of platforms, including both software and hardware (Chipyard, Firesim, Rocketchip, and NVDLA).
+4. **Multi-platform Support**: Dart was designed from the ground up to be multi-platform, meaning it can be used to develop hardware for a variety of platforms, including both software and hardware.
 
-5. **Better Debugging**: Dart has better debugging tools compared to system Verilog, making it easier to identify and fix issues in hardware designs.
+5. **Better Debugging**: Dart has better debugging and profiling tools compared to SystemVerilog, making it easier to identify and fix issues in hardware designs.
 
-6. **Increased Reusability**: Dart allows for the creation of reusable and modular hardware designs, making it easier to reuse components across multiple projects and speeding up the development process.
+6. **Increased Reusability**: Dart with ROHD allows for the creation of reusable and modular hardware designs, making it easier to reuse components across multiple projects and speeding up the development process.
 
 7. **Open-source Community**: The Dart language has a strong open-source community, providing a wealth of resources and support to hardware developers. This helps to drive innovation and development in the field.
 
