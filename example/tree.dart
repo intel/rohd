@@ -8,7 +8,14 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-import 'dart:io';
+// For greater clarity in the example, one of the rules of code analysis
+// will be suppressed. Sometimes it can be useful, but you should always
+// evaluate the consequences of deviations from the set of static analysis
+// rules used in the project. Additional information is available at
+// https://dart.dev/guides/language/analysis-options
+//
+// ignore_for_file: avoid_print
+
 import 'package:rohd/rohd.dart';
 
 /// The below example demonstrates some aspects of the power of ROHD where
@@ -85,6 +92,6 @@ Future<void> main({bool noPrint = false}) async {
   await tree.build();
   final generatedSystemVerilog = tree.generateSynth();
   if (!noPrint) {
-    stdout.writeln(generatedSystemVerilog);
+    print(generatedSystemVerilog);
   }
 }

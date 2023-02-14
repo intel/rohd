@@ -8,8 +8,13 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-// Import the standard library for I/O.
-import 'dart:io';
+// For greater clarity in the example, one of the rules of code analysis
+// will be suppressed. Sometimes it can be useful, but you should always
+// evaluate the consequences of deviations from the set of static analysis
+// rules used in the project. Additional information is available at
+// https://dart.dev/guides/language/analysis-options
+//
+// ignore_for_file: avoid_print
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
@@ -78,7 +83,7 @@ Future<void> main({bool noPrint = false}) async {
   // to other tools.
   final systemVerilogCode = counter.generateSynth();
   if (!noPrint) {
-    stdout.writeln(systemVerilogCode);
+    print(systemVerilogCode);
   }
 
   // Now let's try simulating!
@@ -101,7 +106,7 @@ Future<void> main({bool noPrint = false}) async {
   // Print a message when we're done with the simulation!
   Simulator.registerAction(100, () {
     if (!noPrint) {
-      stdout.writeln('Simulation completed!');
+      print('Simulation completed!');
     }
   });
 
@@ -113,7 +118,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // We can take a look at the waves now.
   if (!noPrint) {
-    stdout.writeln('To view waves, check out waves.vcd with a waveform viewer'
+    print('To view waves, check out waves.vcd with a waveform viewer'
         ' (e.g. `gtkwave waves.vcd`).');
   }
 }

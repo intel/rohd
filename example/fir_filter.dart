@@ -8,6 +8,14 @@
 /// Author: wswongat
 ///
 
+// For greater clarity in the example, one of the rules of code analysis
+// will be suppressed. Sometimes it can be useful, but you should always
+// evaluate the consequences of deviations from the set of static analysis
+// rules used in the project. Additional information is available at
+// https://dart.dev/guides/language/analysis-options
+//
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 
@@ -96,7 +104,7 @@ Future<void> main({bool noPrint = false}) async {
   final systemVerilogCode = firFilter.generateSynth();
   if (!noPrint) {
     // Print SystemVerilog code to console.
-    stdout.writeln(systemVerilogCode);
+    print(systemVerilogCode);
     // Save SystemVerilog code to file.
     File('rtl.sv').writeAsStringSync(systemVerilogCode);
   }
@@ -127,7 +135,7 @@ Future<void> main({bool noPrint = false}) async {
   // Print a message when we're done with the simulation!
   Simulator.registerAction(100, () {
     if (!noPrint) {
-      stdout.writeln('Simulation completed!');
+      print('Simulation completed!');
     }
   });
 
@@ -139,7 +147,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // We can take a look at the waves now.
   if (!noPrint) {
-    stdout.writeln('To view waves, check out waves.vcd with a'
+    print('To view waves, check out waves.vcd with a'
         ' waveform viewer (e.g. `gtkwave waves.vcd`).');
   }
 }
