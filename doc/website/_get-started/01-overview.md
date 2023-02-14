@@ -27,7 +27,7 @@ Features of ROHD include:
 - Enables **higher quality** development
 - Replaces hacky perl/python scripting for automation with powerful **native control of design generation**
 - Fewer bugs and lines of code means **shorter development schedule**
-- Support for **cosimulation with verilog modules** and **instantiation of verilog modules** in generated SystemVerilog code
+- Support for **cosimulation with verilog modules** (via [ROHD Cosim](https://github.com/intel/rohd-cosim)) and **instantiation of verilog modules** in generated SystemVerilog code
 - Use **modern IDEs** like Visual Studio Code, with excellent static analysis, fast autocomplete, built-in debugger, linting, git integration, extensions, and much more
 - Simulate with **various abstraction levels of models** from architectural, to functional, to cycle-accurate, to RTL levels in the same language and environment.
 
@@ -57,7 +57,7 @@ If you're thinking "SystemVerilog is just fine, I don't need something new", it 
 
 ### More Information on Dart
 
-Try out Dart instantly from your browser here: [https://dartpad.dev/?null_safety=true](https://dartpad.dev/?null_safety=true)
+Try out Dart instantly from your browser here (it supports ROHD too!): https://dartpad.dev/?null_safety=true
 
 See some Dart language samples here: [https://dart.dev/samples](https://dart.dev/samples)
 

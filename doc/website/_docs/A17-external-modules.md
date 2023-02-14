@@ -8,4 +8,4 @@ toc: true
 
 ROHD can instantiate external SystemVerilog modules.  The [`ExternalSystemVerilogModule`](https://intel.github.io/rohd/api/rohd/ExternalSystemVerilogModule-class.html) constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an `ExternalSystemVerilogModule`, it will instantiate instances of the specified `definitionName`.  This is useful for integration related activities.
 
-There is an upcoming package for SystemVerilog cosimulation with ROHD which adds cosimulation capabilities to an `ExternalSystemVerilogModule` planned for release soon.
+The [ROHD Cosim](https://github.com/intel/rohd-cosim) package enables SystemVerilog cosimulation with ROHD by adding cosimulation capabilities to an `ExternalSystemVerilogModule`.

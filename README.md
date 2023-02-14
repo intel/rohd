@@ -78,7 +78,7 @@ add a line like this to your package's pubspec.yaml (and run `dart pub get`)
 
 ```yaml
 dependencies:
-  rohd: ^0.4.2
+  rohd: ^0.4.
 ```
 
 ### Importing
