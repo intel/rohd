@@ -151,13 +151,16 @@ class _MermaidStateDiagram {
   /// The file to write dumped output waveform to.
   final File _outputFile;
 
+  // An empty spaces indentation for state.
+  final indentation = ' ' * 4;
+
   /// Generate a [_MermaidStateDiagram] that initialized the diagram of
   /// mermaid as `stateDiagram`.
   ///
   /// Passed output path to save in custom directory.
   _MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
       : _outputFile = File(outputPath) {
-    diagram = StringBuffer('stateDiagram-v2\n');
+    diagram = StringBuffer('stateDiagram-v2');
   }
 
   /// Register a new state to the mermaid diagram object.
@@ -166,11 +169,11 @@ class _MermaidStateDiagram {
   /// Register a new transition [event] that point the
   /// current state [currState] to next state [nextState].
   void addTransitions(String currState, String nextState, String event) =>
-      diagram.write('\n$currState --> $nextState: $event');
+      diagram.write('\n$indentation$currState --> $nextState: $event');
 
   /// Register a start state [startState].
   void addStartState(String startState) =>
-      diagram.write('\n[*] --> $startState');
+      diagram.write('\n$indentation[*] --> $startState');
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
