@@ -200,19 +200,19 @@ Future<void> main() async {
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));
 
-  // Press button `00` => start at time 25.
+  // Press button start => `00` at time 25.
   Simulator.registerAction(25, () {
-    button.put(bin('00'));
+    button.put(Button.start().value);
   });
 
-  // Press button `01` => pause at time 50.
+  // Press button pause => `01` at time 50.
   Simulator.registerAction(50, () {
-    button.put(bin('01'));
+    button.put(Button.pause().value);
   });
 
-  // Press button `10` => resume at time 70.
+  // Press button resume => `10` at time 70.
   Simulator.registerAction(70, () {
-    button.put(bin('10'));
+    button.put(Button.resume().value);
   });
 
   // Print a message when we're done with the simulation!
