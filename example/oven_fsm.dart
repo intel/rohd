@@ -195,7 +195,7 @@ Future<void> main() async {
   reset.inject(1);
 
   // Attach a waveform dumper so we can see what happens.
-  WaveDumper(oven, outputPath: 'example/oven.vcd');
+  WaveDumper(oven, outputPath: 'oven.vcd');
 
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));
