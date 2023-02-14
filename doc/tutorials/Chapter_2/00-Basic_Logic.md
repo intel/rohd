@@ -22,68 +22,71 @@ After completing this section, you should be familiar with the basic concepts of
 
 Like any programming language, ROHD has its own data types, which include `Logic` and `LogicValue`. `Logic` is fundamental to creating signals.
 
-Note that in Dart, variable names are typically written in camelcase, such as aSignal and thisIsVariable.
+Note that in Dart, variable names are typically written in camelcase, such as `aSignal` and `thisIsVariable`. Visit this page to learn more [https://dart.dev/guides/language/effective-dart/style](https://dart.dev/guides/language/effective-dart/style)
 
 ```dart
-// 1-bit unnamed signal
+// 1-bit unnamed signal.
 Logic unamedSignal = Logic();
 
-// 8-bit bus named 'b'
+// 8-bit bus named 'b'.
 Logic bus = Logic(name: 'b', width: 8);
 
-// You can use toString() method to check for your signals details
+// You can use toString() method to check for your signals details.
 print(unamedSignal.toString());
 ```
 
-In the example above, we can see that creation of `Logic` signals involved instantiate the `Logic` object that can received name and width.
+In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received name and width.
 
 ### Exercise
 
-1. Create a 3 bit bus signals with name `threeBitBus`.
-2. Print the output and explain what do you see. Does it have enough information to proof that you are creating the right signal?
+1. Create a 3-bit bus signal named `threeBitBus`.
+2. Print the output of the signal. Explain what you see. Is there enough information in the output to verify that you have created the correct signal?
 
-Now, we learnt how to create a `Logic` signal. Next, we are going to see how to access the value of the signal created.
+Now that we've learned how to create a Logic signal, let's explore how to access its value.
 
-Well, the approaches is pretty direct which is just through calling `value` property of the `Logic`. You can convert the value to `int` through `toInt()` function provide but note that its only applicable for valid signals (no X and Z). Another things to note here, If the signals has **more bits than dart `int` bits(64 bits, usually)**, you have to use `toBigInt()` instead.
+To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any x or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
 
-The value of `Logic` is of type `LogicValue`, with pre-defined constant bit values `x`, `z`, `one`, and `zero`.
+The value of a Logic signal is of type `LogicValue`, which has pre-defined constant bit values such as `x`, `z`, `one`, and `zero`.
 
-Let see an example of getting the bus value from previous bus created.
+Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier.
 
 ```dart
-// put is one of the ways to send simulate signal to the Logic created.
-// We will come back to this in later section.
+// Answer to the previous example.
+Logic bus = Logic(name: 'threeBitBus', width: 3);
+
+// .put() is one way to simulate a signal on a Logic signal that has been created. We will come back to this in later section.
 bus.put(1);
 
-// Obtain the value of bus
+// Obtain the value of bus.
 LogicValue busVal = bus.value; 
 
 // Obtain the value of bus in Int
 int busValInt = bus.value.toInt(); 
 
 // If you set your bus width larger than 64 bits. 
-// You have to use toBigInt()
+// You have to use toBigInt().
 Logic bigBus = Logic(name: 'b', width: 65);
 
 bigBus.put(BigInt.parse("9223372036854775808"));
 LogicValue bigBusValBigInt = bigBus.value.toBigInt();
 
-// output: 8'h1
+// output: 8'h1.
 print(busVal);
 
-// output: 1
+// output: 1.
 print(busValInt);
 
-// output: 9223372036854775808
+// output: 9223372036854775808.
 print(bigBusValBigInt);
 ```
 
 ## Logic Gate Part 1
 
-As of now, you already learn what is `Logic` and `LogicValue` all about. Let now start to dive in our Logic gate first tutorials. Say, we want to build a
-2-input Logic **AND gate**.
+By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our first tutorial on Logic gates. Suppose we want to build a 2-input Logic `AND` gate.
 
-In our two-input logic AND gate, we will need to first declare 2-input signals and 1 output signal which we will need to create a `total of 3 Logic signals`.
+![And Gate](./assets/And_gate.png)
+
+To create our two-input Logic `AND` gate, we need to declare two input signals and one output signal, which means we will need to create a total of three Logic signals.
 
 ```dart
 import 'package:rohd/rohd.dart';
@@ -96,27 +99,27 @@ void main() {
 }
 ```
 
-Yup, that all! We created all the port required. Next, Let us check on the operators in ROHD.
+That's all! We have created all the ports required. Next, let's take a look at the operators in ROHD.
 
 ## Assignment, Logical, Mathematical, Comparison Operations
 
 ### Assignments
 
-To assign one signal to the value of another signal, use the `<=` operator. This is a hardware synthesizable assignment connecting two wires together.
+To assign the value of one signal to another signal, use the `<=` operator. This is a hardware synthesizable assignment that connects two wires together.
 
-Let us see an example of how to assign a Logic signal `a` to signal `b`.
+Let's take a look at an example of how to assign a Logic signal `a` to signal `b`.
 
 ```dart
 Logic a = Logic(name: 'signal_a');
 Logic b = Logic(name: 'signal_b');
 
-// In this case, b is connected to a which make them yields the same value.
+// In this case, b is connected to a which means they will have the same value.
 a <= b;
 ```
 
 ### Logical, Mathematical, Comparison Operations
 
-In ROHD, we have our operators similar to those in SystemVerilog which aims to make user easier to learn and pick up.
+In ROHD, we have operators that are similar to those in SystemVerilog. This makes it easier for users to learn and pick up the language.
 
 ```dart
 a_bar     <=  ~a;      // not
@@ -139,7 +142,7 @@ a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of oper
 answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```
 
-Well, so you learnt all about our operators! Let continue our journey on `AND gate` creation. To create `AND` logic gate, we can use the `&` operator from above!
+Great, now that you've learned all about our operators, let's continue our journey and create an `AND` gate. We can use the `&` operator that we learned earlier to create an `AND` logic gate.
 
 ### Logic Gate: Part 2
 
@@ -147,34 +150,34 @@ Well, so you learnt all about our operators! Let continue our journey on `AND ga
 import 'package:rohd/rohd.dart';
 
 void main() {
-  // Create input and output signals
+  // Create input and output signals.
   final a = Logic(name: 'input_a');
   final b = Logic(name: 'input_b');
   final c = Logic(name: 'output_c');
 
-  // Create an AND logic gate
-  // This assign c to the result of a AND b
+  // Create an AND logic gate.
+  // This assign c to the result of a AND b.
   c <= a & b;
 }
 ```
 
-Congratulation! You created your logic gate! Let head to the next section to test our gate.
+Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
 
 ## Non-synthesizable signal deposition (put)
 
-Still remember the `put()` function used on the previous section? This is used to send simulated signal to the input `Logic`.
+Do you still remember the `put()` function that was used in the previous section? It is used to send a simulated signal to the input `Logic`.
 
-For testbench code or other non-synthesizable code, you can use `put` or `inject` on any Logic to **deposit a value** on the signal. The two functions have similar behavior, but inject is shorthand for calling `put` inside of `Simulator.injectAction`, which allows the deposited change to propogate within the same Simulator tick. Generally, you will want to use `inject` for **testbench interaction with a design**.
+For testbench code or other non-synthesizable code, you can use `put` or `inject` on any `Logic` to deposit a value on the signal. The two functions have similar behavior, but `inject` is a shorthand for calling `put` inside `Simulator.injectAction`, which allows the deposited change to propagate within the same `Simulator` tick. Generally, you will want to use `inject` for testbench interaction with a design.
 
-Well, let see an example of how we deposit a signals for testing. Both `put` and `inject` is used.
+Now let's see an example of how to deposit signals for testing, using both `put` and `inject`.
 
 ```dart
 b = Logic(width:4);
 
-// you can put an int directly on a signal
+// you can put an integer directly into a signal.
 a.put(4);
 
-// Use only with Simulator tick
+// Use only with Simulator tick.
 a.inject(4);
 ```
 
@@ -213,16 +216,16 @@ void main() {
 
 Congratulations!!! You have successfully build your first gate! 
 
-Exercise:
+## Exercise:
 
 1. Build OR, NOR, XOR gate using ROHD.
 
 ## Constants
 
-In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using Const, which extends Logic.
+In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using `Const`, which extends `Logic`.
 
 ```dart
-// a 16 bit constant with value 5
+// a 16 bit constant with value 5.
 var x = Const(5, width:16);
 ```
 
@@ -240,43 +243,13 @@ print(a.value.toInt());
 
 ## Bus Ranges and Swizzling
 
-In the previous module, we learn about `width` in the `Logic`. Now, we are going to see some operations like slicing and swzzling can be done.
+In the previous module, we learned about the `width` property of `Logic`. Now, we can perform operations like slicing and swizzling on `Logic` values.
 
-Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals. Slicing, swizzling, etc. are also accessible on LogicValues.
-
-```dart
-var a = Logic(width:8),
-    b = Logic(width:3),
-    c = Const(7, width:5),
-    d = Logic(),
-    e = Logic(width: 9);
-
-
-// assign b to the bottom 3 bits of a
-b <= a.slice(2,0);
-
-// assign d to the top bit of a
-d <= a[7];
-
-// construct e by swizzling bits from b, c, and d
-// here, the MSB is on the left, LSB is on the right
-e <= [d, c, b].swizzle();
-
-// alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
-// here, the LSB is on the left, the MSB is on the right
-e <= [b, c, d].rswizzle();
-```
-
-ROHD does not support assignment to a subset of a bus. That is, you cannot do something like e[3] <= d. Instead, you can use the withSet function to get a copy with that subset of the bus assigned to something else. This applies for both Logic and LogicValue. For example:
+We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
 
 ```dart
-// reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
-e = e.withSet(3, d);
-```
+// ignore_for_file: avoid_print
 
-## End of Section Code
-
-```dart
 import 'package:rohd/rohd.dart';
 
 void main() {
@@ -295,12 +268,27 @@ void main() {
   // print(c.value.toInt());
 
   // Let build a truth table
-  for (int i = 0; i <= 1; i++) {
-    for (int j = 0; j <= 1; j++) {
+  for (var i = 0; i <= 1; i++) {
+    for (var j = 0; j <= 1; j++) {
       a.put(i);
       b.put(j);
-      print("a: $i, b: $j c: ${c.value.toInt()}");
+      print('a: $i, b: $j c: ${c.value.toInt()}');
     }
   }
 }
 ```
+
+ROHD does not support assignment to a subset of a bus. That is, you cannot do something like `e[3] <= d`. Instead, you can use the withSet function to get a copy with that subset of the bus assigned to something else. This applies for both Logic and LogicValue. For example:
+
+```dart
+// reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
+e = e.withSet(3, d);
+```
+
+----------------
+2023 February 14
+Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
+
+ 
+Copyright (C) 2021-2023 Intel Corporation  
+SPDX-License-Identifier: BSD-3-Clause
