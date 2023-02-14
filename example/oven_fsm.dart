@@ -79,13 +79,15 @@ class OvenModule extends Module {
     final states = [
       // identifier: standby state, represent by `OvenState.standby`.
       State<OvenState>(OvenState.standby,
-          // events: When the button `start` is pressed during standby state,
+          // events:
+          // When the button `start` is pressed during standby state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_start')..gets(button.eq(Button.start())):
                 OvenState.cooking,
           },
-          // actions: During the standby state, `led` is change to blue; timer's
+          // actions:
+          // During the standby state, `led` is change to blue; timer's
           // `counterReset` is set to 1 (Reset the timer);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
