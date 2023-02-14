@@ -4,7 +4,7 @@
 - [Introduction to ROHD](./Chapter_1/00-Introduction_to_ROHD.md)
   * [What is ROHD?](./Chapter_1/00-Introduction_to_ROHD.md) 
   * [Challenges in Hardware Industry](./Chapter_1/00-Introduction_to_ROHD.md#challenges-in-hardware-industry)
-  * [Feature of ROHD](./Chapter_1/00-Introduction_to_ROHD.md#feature-of-rohd)
+  * [Benefits of Dart for hardware development](./Chapter_1/00-Introduction_to_ROHD.md#benefits-of-dart-for-hardware-development)
 
 - [Setup & Installation](./Chapter_1/01-Setup_Installation.md)
   * [Setup on Github Codespaces](./Chapter_1/01-Setup_Installation.md#setup-on-github-codespaces-recommended)
