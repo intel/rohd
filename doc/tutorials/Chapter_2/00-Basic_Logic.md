@@ -243,14 +243,6 @@ var x = Const(5, width:16);
 
 1. Create a constant of value 10 and assign to a Logic input.
 
-Answer:
-
-```dart
-Logic a = Logic(width: 5);
-a <= Const(10, width: 5);
-print(a.value.toInt());
-```
-
 ## Bus Ranges and Swizzling
 
 In the previous module, we learned about the `width` property of `Logic`. Now, we can perform operations like slicing and swizzling on `Logic` values.
