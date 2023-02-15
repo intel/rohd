@@ -11,10 +11,8 @@
     * [Non-synthesizable signal deposition (put)](./00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
   * [Logic Gate: Part 3](./00-Basic_Logic.md#logic-gate-part-3)
     * [Exercise 2](./00-Basic_Logic.md#exercise-2)
-
 - [Constants](./00-Basic_Logic.md#constants)
   * [Exercise 3](./00-Basic_Logic.md#exercise-3)
-
 - [Bus Ranges and Swizzling](./00-Basic_Logic.md#bus-ranges-and-swizzling)
 
 ## Learning Outcome
