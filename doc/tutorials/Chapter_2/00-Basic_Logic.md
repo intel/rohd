@@ -14,11 +14,9 @@
 - [Constants](./00-Basic_Logic.md#constants)
 - [Bus Ranges and Swizzling](./00-Basic_Logic.md#bus-ranges-and-swizzling)
 
-Now that you have set up your development environment, let's get our hands dirty and start writing some Dart code with ROHD in this chapter. 
-
-In this section, you will learn how to construct your first basic logic gate.
-
 ## Learning Outcome
+
+Now that you have set up your development environment, let's get our hands dirty and start writing some ROHD code in this chapter.
 
 In this chapter:
 
@@ -45,7 +43,7 @@ Logic bus = Logic(name: 'b', width: 8);
 print(unamedSignal.toString());
 ```
 
-In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received name and width.
+In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument.
 
 ### Exercise 1
 
@@ -61,7 +59,6 @@ The value of a Logic signal is of type `LogicValue`, which has pre-defined const
 Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier.
 
 ```dart
-// Answer to the previous example.
 Logic bus = Logic(name: 'threeBitBus', width: 3);
 
 // .put() is one way to simulate a signal on a Logic signal that has been created. We will come back to this in later section.
@@ -92,7 +89,7 @@ print(bigBusValBigInt);
 
 ## Logic Gate: Part 1
 
-By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our first tutorial on Logic gates. Suppose we want to build a 2-input Logic `AND` gate.
+By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our first tutorial on Logic gate. Suppose we want to build a 2-input Logic `AND` gate.
 
 ![And Gate](./assets/And_gate.png)
 
