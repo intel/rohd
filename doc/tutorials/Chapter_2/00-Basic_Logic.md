@@ -154,7 +154,7 @@ answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 
 Great, now that you've learned all about our operators, let's continue our journey and create an `AND` gate. We can use the `&` operator that we learned earlier to create an `AND` logic gate.
 
-### Logic Gate: Part 2
+## Logic Gate: Part 2
 
 ```dart
 import 'package:rohd/rohd.dart';
@@ -191,7 +191,7 @@ a.put(4);
 a.inject(4);
 ```
 
-### Logic Gate: Part 3
+## Logic Gate: Part 3
 
 Now, we can test our logic gate with the simulator.
 
@@ -230,7 +230,7 @@ Congratulations!!! You have successfully build your first gate!
 
 1. Build OR or NOR or XOR gate using ROHD.
 
-## Constants
+# Constants
 
 In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using `Const`, which extends `Logic`.
 
@@ -243,25 +243,13 @@ var x = Const(5, width:16);
 
 1. Create a constant of value 10 and assign to a Logic input.
 
-## Bus Ranges and Swizzling
+# Bus Ranges and Swizzling
 
 In the previous module, we learned about the `width` property of `Logic`. Now, we can perform operations like slicing and swizzling on `Logic` values.
 
 We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
 
 ```dart
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus_range_swizzling.dart
-/// Demonstrated the use of bus range and swizzling.
-///
-/// 2023 February 14
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
-
-// ignore_for_file: avoid_print
-
 import 'package:rohd/rohd.dart';
 
 void main() {
