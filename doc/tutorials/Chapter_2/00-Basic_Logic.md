@@ -45,7 +45,7 @@ print(unamedSignal.toString());
 
 In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument.
 
-### Exercise 1
+### Exercise 1:
 
 1. Create a 3-bit bus signal named `threeBitBus`.
 2. Print the output of the signal. Explain what you see. Is there enough information in the output to verify that you have created the correct signal?
@@ -236,7 +236,7 @@ In ROHD, constants can often be inferred by ROHD automatically, but can also be 
 var x = Const(5, width:16);
 ```
 
-### Exercise 3
+### Exercise 3:
 
 1. Create a constant of value 10 and assign to a Logic input.
 
@@ -247,33 +247,53 @@ In the previous module, we learned about the `width` property of `Logic`. Now, w
 We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
 
 ```dart
+/// Copyright (C) 2023 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// bus_range_swizzling.dart
+/// Demonstrated the use of bus range and swizzling.
+///
+/// 2023 February 14
+/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+///
+
 // ignore_for_file: avoid_print
 
 import 'package:rohd/rohd.dart';
 
 void main() {
-  // Create input and output signals
-  final a = Logic(name: 'input_a');
-  final b = Logic(name: 'input_b');
-  final c = Logic(name: 'output_c');
+  final a = Logic(width: 4);
+  final b = Logic(width: 8);
+  final c = Const(7, width: 5);
+  final d = Logic();
 
-  // Create an AND logic gate
-  // This assign c to the result of a AND b
-  c <= a & b;
+  // assign b to the bottom 3 bits of a
+  // input = [1, 1, 1, 0], output = 110
+  a.put(bin('1110'));
+  print('a.slice(2, 0): ${a.slice(2, 0).value.toString(includeWidth: false)}');
 
-  // let try with simple a = 1, b = 1
-  // a.put(1);
-  // b.put(1);
-  // print(c.value.toInt());
+  b.put(bin('11000100'));
+  print('a[7]: ${b[7].value.toString(includeWidth: false)}');
+  print('a[0]: ${b[0].value.toString(includeWidth: false)}');
 
-  // Let build a truth table
-  for (var i = 0; i <= 1; i++) {
-    for (var j = 0; j <= 1; j++) {
-      a.put(i);
-      b.put(j);
-      print('a: $i, b: $j c: ${c.value.toInt()}');
-    }
-  }
+  // assign d to the top bit of a
+  // construct e by swizzling bits from b, c, and d
+  // here, the MSB is on the left, LSB is on the right
+  d <= b[7];
+
+  // value:
+  // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) , e = [1 00111 1110] = [d, c, a]
+  final e = Logic(width: d.width + c.width + a.width);
+  e <= [d, c, a].swizzle();
+
+  print('e: ${e.value.toString(includeWidth: false)}');
+
+  // alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
+  // here, the LSB is on the left, the MSB is on the right
+  // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) , e = [1110 00111 1] - [a, c, d]
+  final f = Logic(width: d.width + c.width + a.width);
+  f <= [d, c, a].rswizzle();
+  print('f: ${f.value.toString(includeWidth: false)}');
 }
 ```
 
