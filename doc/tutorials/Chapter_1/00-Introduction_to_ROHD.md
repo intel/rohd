@@ -1,8 +1,15 @@
+## Content
+
+* [Rapid Open Hardware Development (ROHD)?](./00-Introduction_to_ROHD.md#rapid-open-hardware-development-rohd)
+* [Example of ROHD with Dart](./00-Introduction_to_ROHD.md#example-of-rohd-with-dart)
+* [Challenges in Hardware Industry](./Chapter_1/00-Introduction_to_ROHD.md#challenges-in-hardware-industry)
+* [Benefits of Dart for hardware development](./Chapter_1/00-Introduction_to_ROHD.md#benefits-of-Dart-for-hardware-development)
+
 # Rapid Open Hardware Development (ROHD)
 
 The Rapid Open Hardware Development Framework (ROHD) is a generator framework for describing and verifying hardware using the Dart programming language. It allows for the construction and traversal of a connectivity graph between module objects using unrestricted software.
 
-ROHD is a bold project with the goal of becoming the industry-standard choice for front-end hardware development, replacing System Verilog. It aims to address hardware problems in a similar way to Chisel, using Dart as its programming language of choice instead of Scala for several reasons.
+ROHD is a bold project with the goal of becoming the industry-standard choice for front-end hardware development, replacing SystemVerilog. It aims to address hardware problems in a similar way to Chisel, using Dart as its programming language of choice instead of Scala for several reasons.
 
 1. Dart's popularity as a front-end framework, demonstrated by the success of Flutter, a framework for building IOS and Android apps, presents an opportunity for ROHD to leverage its success in the front-end generator RTL framework.
 
@@ -13,6 +20,58 @@ ROHD is a bold project with the goal of becoming the industry-standard choice fo
 4. Dart is a type-safe language that comes with type inference, linting, and other helpful plugins for IDEs such as Visual Studio Code to aid in the development process.
 
 5. Dart is easy to learn, especially for those with experience in languages such as Java, C#, or JavaScript. 
+
+
+## Example of ROHD with Dart
+
+The below subsections offer some examples of implementations and syntax in ROHD. ROHD provides easy to read syntax and also high-level abstraction such as FSM, interface and pipeline.
+
+No worries, we will cover all of this in the later chapter.
+
+### A full example of a counter module
+
+As of now, to get a quick feel for what ROHD looks like, below is an example of what a simple counter module looks like in ROHD.
+
+```Dart
+// Import the ROHD package
+import 'package:rohd/rohd.Dart';
+
+// Define a class Counter that extends ROHD's abstract Module class
+class Counter extends Module {
+
+  // For convenience, map interesting outputs to short variable names for consumers of this module
+  Logic get val => output('val');
+
+  // This counter supports any width, determined at run-time
+  final int width;
+  Counter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) : super(name: name) {
+    // Register inputs and outputs of the module in the constructor.
+    // Module logic must consume registered inputs and output to registered outputs.
+    en    = addInput('en', en);
+    reset = addInput('reset', reset);
+    clk   = addInput('clk', clk);
+
+    var val = addOutput('val', width: width);
+
+    // A local signal named 'nextVal'
+    var nextVal = Logic(name: 'nextVal', width: width);
+    
+    // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
+    nextVal <= val + 1;
+
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    Sequential(clk, [
+      // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
+      If(reset, then:[
+        // the '<' operator is a conditional assignment
+        val < 0
+      ], orElse: [If(en, then: [
+        val < nextVal
+      ])])
+    ]);
+  }
+}
+```
 
 ## Challenges in Hardware Industry
 
@@ -47,6 +106,7 @@ Many people are curious as to why it is necessary to overhaul legacy systems tha
 6. **Increased Reusability**: Dart with ROHD allows for the creation of reusable and modular hardware designs, making it easier to reuse components across multiple projects and speeding up the development process.
 
 7. **Open-source Community**: The Dart language has a strong open-source community, providing a wealth of resources and support to hardware developers. This helps to drive innovation and development in the field.
+
 
 ----------------
 2023 February 13
