@@ -153,7 +153,7 @@ class _MermaidStateDiagram {
   final File _outputFile;
 
   // An empty spaces indentation for state.
-  final indentation = ' ' * 4;
+  final _indentation = ' ' * 4;
 
   /// Generate a [_MermaidStateDiagram] that initialized the diagram of
   /// mermaid as `stateDiagram`.
@@ -167,11 +167,11 @@ class _MermaidStateDiagram {
   /// Register a new transition [event] that point the
   /// current state [currentState] to next state [nextState].
   void addTransitions(String currentState, String nextState, String event) =>
-      _diagram.write('\n$indentation$currentState --> $nextState: $event');
+      _diagram.write('\n$_indentation$currentState --> $nextState: $event');
 
   /// Register a start state [startState].
   void addStartState(String startState) =>
-      _diagram.write('\n$indentation[*] --> $startState');
+      _diagram.write('\n$_indentation[*] --> $startState');
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
