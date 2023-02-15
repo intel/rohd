@@ -1,22 +1,32 @@
-# Basic Logic
+## Content
 
-## Introduction
+- [Basic logic](./00-Basic_Logic.md#basic-logic)
+  * [Logic, Logic Value, Width](./00-Basic_Logic.md#logic-logic-value-width)
+    * [Exercise 1](./00-Basic_Logic.md#exercise-1)
+  * [Logic Gate: Part 1](./00-Basic_Logic.md#logic-gate-part-1)
+    * [Assignment, Logical, Mathematical, Comparison Operations](./00-Basic_Logic.md#assignment-logical-mathematical-comparison-operations)
+      * [Assignment](./00-Basic_Logic.md#assignment)
+      * [Logical, Mathematical, Comparison Operations](./00-Basic_Logic.md#logical-mathematical-comparison-operations)
+  * [Logic Gate: Part 2](./00-Basic_Logic.md#logic-gate-part-2)
+    * [Non-synthesizable signal deposition (put)](./00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
+  * [Logic Gate: Part 3](./00-Basic_Logic.md#logic-gate-part-3)
+
+- [Constants](./00-Basic_Logic.md#constants)
+- [Bus Ranges and Swizzling](./00-Basic_Logic.md#bus-ranges-and-swizzling)
 
 Now that you have set up your development environment, let's get our hands dirty and start writing some Dart code with ROHD in this chapter. 
 
 In this section, you will learn how to construct your first basic logic gate.
 
-### Learning Outcome
+## Learning Outcome
 
-After completing this section, you should be familiar with the basic concepts of gate creation and common ROHD operators, including:
+In this chapter:
 
-* Logic
-* Logic Value
-* Logic Width
-* Operators
-* Constants
-* Ranges
-* Swizzling
+- You will learn about the fundamentals of ROHD variables, including how to define a logic, logic value, and initialize width for logic. You will learn by creating a simple 2-inputs and 1-output AND logic gate. In the process of creating the logic gate, you will understand how to use assignment, logical, mathematical, and comparison operations. You will also learn how to use non-synthesizable signal deposition (put) to send signals to the simulator to test your created logic gate.
+
+- You will learn how to define constants, bus ranges, and swizzling to slice or access a range of bits from a bus.
+
+# Basic Logic
 
 ## Logic, Logic Value, Width
 
@@ -37,7 +47,7 @@ print(unamedSignal.toString());
 
 In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received name and width.
 
-### Exercise
+### Exercise 1
 
 1. Create a 3-bit bus signal named `threeBitBus`.
 2. Print the output of the signal. Explain what you see. Is there enough information in the output to verify that you have created the correct signal?
@@ -80,7 +90,7 @@ print(busValInt);
 print(bigBusValBigInt);
 ```
 
-## Logic Gate Part 1
+## Logic Gate: Part 1
 
 By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our first tutorial on Logic gates. Suppose we want to build a 2-input Logic `AND` gate.
 
@@ -103,7 +113,7 @@ That's all! We have created all the ports required. Next, let's take a look at t
 
 ## Assignment, Logical, Mathematical, Comparison Operations
 
-### Assignments
+### Assignment
 
 To assign the value of one signal to another signal, use the `<=` operator. This is a hardware synthesizable assignment that connects two wires together.
 
@@ -163,7 +173,7 @@ void main() {
 
 Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
 
-## Non-synthesizable signal deposition (put)
+### Non-synthesizable signal deposition (put)
 
 Do you still remember the `put()` function that was used in the previous section? It is used to send a simulated signal to the input `Logic`.
 
@@ -216,7 +226,7 @@ void main() {
 
 Congratulations!!! You have successfully build your first gate! 
 
-## Exercise:
+## Exercise 2:
 
 1. Build OR, NOR, XOR gate using ROHD.
 
