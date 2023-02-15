@@ -14,6 +14,8 @@ ROHD is a bold project with the goal of becoming the industry-standard choice fo
 
 5. Dart is easy to learn, especially for those with experience in languages such as Java, C#, or JavaScript. 
 
+## How ROHD leverage dart to generate hardware? 
+
 ## Challenges in Hardware Industry
 
 Many people are curious as to why it is necessary to overhaul legacy systems that have proven effective for so long. Below, are some of the reasons why ROHD can be viewed as a powerful potential standard replacement.
@@ -47,6 +49,7 @@ Many people are curious as to why it is necessary to overhaul legacy systems tha
 6. **Increased Reusability**: Dart with ROHD allows for the creation of reusable and modular hardware designs, making it easier to reuse components across multiple projects and speeding up the development process.
 
 7. **Open-source Community**: The Dart language has a strong open-source community, providing a wealth of resources and support to hardware developers. This helps to drive innovation and development in the field.
+
 
 ----------------
 2023 February 13

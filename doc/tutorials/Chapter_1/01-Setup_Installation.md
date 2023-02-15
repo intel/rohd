@@ -42,7 +42,7 @@ Open up `example` folder on the left navigation panel and click on `example.dart
 
 If you can see SystemVerilog code pop up on the terminal. Well, you have successfully set up your development environment on the cloud.
 
-### Step 6: Delete the CodeSpace
+### Step 6: Delete the CodeSpace (Optional)
 
 To delete the codespace, go back to https://github.com/intel/rohd and click on codespace just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespace.
 
@@ -292,6 +292,7 @@ dart example/example.dart
 ```
 
 If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
+
 
 ----------------
 2023 February 13
