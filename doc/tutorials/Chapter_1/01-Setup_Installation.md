@@ -1,7 +1,12 @@
+## Content
+
+  * [Setup on Github Codespaces](./01-Setup_Installation.md#setup-on-github-codespaces-recommended)
+  * [Local Development Setup](./01-Setup_Installation.md#local-development-setup)
+  * [Docker Container Setup](./01-Setup_Installation.md#docker-container-setup)
+
 # ROHD Setup & Installation
 
-There are two options for developing with ROHD, either through running it on a GitHub Codespaces or on your local machine.
-
+There are three ways to develop with ROHD. The first option is to run it on GitHub Codespaces, while the other two options are to set it up on your local machine or run it through a Docker container on your local machine. These options provide different levels of flexibility and customization to suit your development needs.
 
 ## Setup on Github Codespaces (Recommended)
 
