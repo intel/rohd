@@ -13,3 +13,4 @@ tmp*
 *vcd
 pubspec.lock
 .vscode
+*_fsm.md
