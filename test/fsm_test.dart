@@ -179,5 +179,5 @@ void verifyMermaidStateDiagram(String filePath) {
   final fileContents = file.readAsStringSync();
   expect(fileContents, contains('mermaid\nstateDiagram-v2\n    '));
 
-  // File(filePath).deleteSync();
+  File(filePath).deleteSync();
 }
