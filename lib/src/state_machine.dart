@@ -164,9 +164,6 @@ class _MermaidStateDiagram {
     diagram = StringBuffer('stateDiagram-v2');
   }
 
-  /// Register a new state to the mermaid diagram object.
-  void addState(String state) => diagram.write('\n$state\n');
-
   /// Register a new transition [event] that point the
   /// current state [currentState] to next state [nextState].
   void addTransitions(String currentState, String nextState, String event) =>
