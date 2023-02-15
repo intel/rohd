@@ -144,7 +144,7 @@ class State<StateIdentifier> {
 /// Outputs to vcd format at [outputPath].
 class _MermaidStateDiagram {
   /// The diagram to be return as String.
-  late StringBuffer diagram;
+  late StringBuffer _diagram;
 
   /// The output filepath of the generated state diagram.
   final String outputPath;
@@ -159,26 +159,26 @@ class _MermaidStateDiagram {
   /// mermaid as `stateDiagram`.
   ///
   /// Passed output path to save in custom directory.
-  _MermaidStateDiagram({this.outputPath = 'stateDiagram.md'})
+  _MermaidStateDiagram({this.outputPath = 'diagram_fsm.md'})
       : _outputFile = File(outputPath) {
-    diagram = StringBuffer('stateDiagram-v2');
+    _diagram = StringBuffer('stateDiagram-v2');
   }
 
   /// Register a new transition [event] that point the
   /// current state [currentState] to next state [nextState].
   void addTransitions(String currentState, String nextState, String event) =>
-      diagram.write('\n$indentation$currentState --> $nextState: $event');
+      _diagram.write('\n$indentation$currentState --> $nextState: $event');
 
   /// Register a start state [startState].
   void addStartState(String startState) =>
-      diagram.write('\n$indentation[*] --> $startState');
+      _diagram.write('\n$indentation[*] --> $startState');
 
   /// Write the object content to [_outputFile] by enclose it with
   /// mermaid identifier.
   void writeToFile() {
     final outputDiagram = StringBuffer('''
 ```mermaid
-$diagram
+$_diagram
 ```
 ''');
     _outputFile.writeAsStringSync(outputDiagram.toString());
