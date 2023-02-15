@@ -1,9 +1,9 @@
 ## Content
 
 * [Rapid Open Hardware Development (ROHD)?](./00-Introduction_to_ROHD.md#rapid-open-hardware-development-rohd)
-* [Example of ROHD with Dart](./00-Introduction_to_ROHD.md#example-of-rohd-with-dart)
 * [Challenges in Hardware Industry](./00-Introduction_to_ROHD.md#challenges-in-hardware-industry)
 * [Benefits of Dart for hardware development](./00-Introduction_to_ROHD.md#benefits-of-Dart-for-hardware-development)
+* [Example of ROHD with Dart](./00-Introduction_to_ROHD.md#example-of-rohd-with-dart)
 
 # Rapid Open Hardware Development (ROHD)
 
