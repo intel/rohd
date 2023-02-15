@@ -9,18 +9,7 @@
 
 The Rapid Open Hardware Development Framework (ROHD) is a generator framework for describing and verifying hardware using the Dart programming language. It allows for the construction and traversal of a connectivity graph between module objects using unrestricted software.
 
-ROHD is a bold project with the goal of becoming the industry-standard choice for front-end hardware development, replacing SystemVerilog. It aims to address hardware problems in a similar way to Chisel, using Dart as its programming language of choice instead of Scala for several reasons.
-
-1. Dart's popularity as a front-end framework, demonstrated by the success of Flutter, a framework for building IOS and Android apps, presents an opportunity for ROHD to leverage its success in the front-end generator RTL framework.
-
-2. Dart offers asynchronous capabilities without the need for multithreading, making it easy to model and interact with hardware.
-
-3. Dart was designed for front-end frameworks. It features both a just-in-time compiler in a virtual machine and an ahead-of-time compiler that can convert to native binaries on various platforms, providing multi-platform support.
-
-4. Dart is a type-safe language that comes with type inference, linting, and other helpful plugins for IDEs such as Visual Studio Code to aid in the development process.
-
-5. Dart is easy to learn, especially for those with experience in languages such as Java, C#, or JavaScript. 
-
+ROHD is a bold project with the goal of becoming the industry-standard choice for front-end hardware development, replacing SystemVerilog. It aims to address hardware problems in a similar way to Chisel, using Dart as its programming language of choice instead of Scala.
 
 ## Example of ROHD with Dart
 
