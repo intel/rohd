@@ -14,6 +14,58 @@ ROHD is a bold project with the goal of becoming the industry-standard choice fo
 
 5. Dart is easy to learn, especially for those with experience in languages such as Java, C#, or JavaScript. 
 
+
+## Example of ROHD with dart
+
+The below subsections offer some examples of implementations and syntax in ROHD. ROHD provides easy to read syntax and also high-level abstraction such as FSM, interface and pipeline.
+
+No worries, we will cover all of this in the later chapter.
+
+### A full example of a counter module
+
+As of now, to get a quick feel for what ROHD looks like, below is an example of what a simple counter module looks like in ROHD.
+
+```dart
+// Import the ROHD package
+import 'package:rohd/rohd.dart';
+
+// Define a class Counter that extends ROHD's abstract Module class
+class Counter extends Module {
+
+  // For convenience, map interesting outputs to short variable names for consumers of this module
+  Logic get val => output('val');
+
+  // This counter supports any width, determined at run-time
+  final int width;
+  Counter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) : super(name: name) {
+    // Register inputs and outputs of the module in the constructor.
+    // Module logic must consume registered inputs and output to registered outputs.
+    en    = addInput('en', en);
+    reset = addInput('reset', reset);
+    clk   = addInput('clk', clk);
+
+    var val = addOutput('val', width: width);
+
+    // A local signal named 'nextVal'
+    var nextVal = Logic(name: 'nextVal', width: width);
+    
+    // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
+    nextVal <= val + 1;
+
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on the positive edge of clk
+    Sequential(clk, [
+      // `If` is a conditional if statement, like `if` in SystemVerilog always blocks
+      If(reset, then:[
+        // the '<' operator is a conditional assignment
+        val < 0
+      ], orElse: [If(en, then: [
+        val < nextVal
+      ])])
+    ]);
+  }
+}
+```
+
 ## Challenges in Hardware Industry
 
 Many people are curious as to why it is necessary to overhaul legacy systems that have proven effective for so long. Below, are some of the reasons why ROHD can be viewed as a powerful potential standard replacement.
