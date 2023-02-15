@@ -23,7 +23,8 @@ class StateMachine<StateIdentifier> {
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
 
-  /// A map to store the state identifier as the key and the object as the value
+  /// A map to store the state identifier as the key
+  /// and the object as the value.
   final Map<StateIdentifier, State<StateIdentifier>> _stateLookup = {};
 
   /// A map to store the state object as the key and the index of the state in
@@ -107,7 +108,7 @@ class StateMachine<StateIdentifier> {
   /// If you are using vscode, you can download the mermaid extension.
   ///
   /// Output to mermaid diagram at [outputPath].
-  void generateDiagram({String outputPath = 'stateDiagram.md'}) {
+  void generateDiagram({String outputPath = 'diagram_fsm.md'}) {
     final figure = _MermaidStateDiagram(outputPath: outputPath)
       ..addStartState(resetState.toString());
 
@@ -142,7 +143,7 @@ class State<StateIdentifier> {
 ///
 /// Outputs to vcd format at [outputPath].
 class _MermaidStateDiagram {
-  /// The diagram to be return as String
+  /// The diagram to be return as String.
   late StringBuffer diagram;
 
   /// The output filepath of the generated state diagram.
