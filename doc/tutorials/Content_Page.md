@@ -3,6 +3,7 @@
 ## Chapter 1: Getting Started
 - [Introduction to ROHD](./Chapter_1/00-Introduction_to_ROHD.md)
   * [What is ROHD?](./Chapter_1/00-Introduction_to_ROHD.md) 
+  * [Example of ROHD with Dart](./00-Introduction_to_ROHD.md#example-of-rohd-with-dart)
   * [Challenges in Hardware Industry](./Chapter_1/00-Introduction_to_ROHD.md#challenges-in-hardware-industry)
   * [Benefits of Dart for hardware development](./Chapter_1/00-Introduction_to_ROHD.md#benefits-of-dart-for-hardware-development)
 

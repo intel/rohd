@@ -1,3 +1,10 @@
+## Content
+
+* [Rapid Open Hardware Development (ROHD)?](./00-Introduction_to_ROHD.md#rapid-open-hardware-development-rohd)
+* [Example of ROHD with Dart](./00-Introduction_to_ROHD.md#example-of-rohd-with-dart)
+* [Challenges in Hardware Industry](./Chapter_1/00-Introduction_to_ROHD.md#challenges-in-hardware-industry)
+* [Benefits of Dart for hardware development](./Chapter_1/00-Introduction_to_ROHD.md#benefits-of-Dart-for-hardware-development)
+
 # Rapid Open Hardware Development (ROHD)
 
 The Rapid Open Hardware Development Framework (ROHD) is a generator framework for describing and verifying hardware using the Dart programming language. It allows for the construction and traversal of a connectivity graph between module objects using unrestricted software.
@@ -15,7 +22,7 @@ ROHD is a bold project with the goal of becoming the industry-standard choice fo
 5. Dart is easy to learn, especially for those with experience in languages such as Java, C#, or JavaScript. 
 
 
-## Example of ROHD with dart
+## Example of ROHD with Dart
 
 The below subsections offer some examples of implementations and syntax in ROHD. ROHD provides easy to read syntax and also high-level abstraction such as FSM, interface and pipeline.
 
@@ -25,9 +32,9 @@ No worries, we will cover all of this in the later chapter.
 
 As of now, to get a quick feel for what ROHD looks like, below is an example of what a simple counter module looks like in ROHD.
 
-```dart
+```Dart
 // Import the ROHD package
-import 'package:rohd/rohd.dart';
+import 'package:rohd/rohd.Dart';
 
 // Define a class Counter that extends ROHD's abstract Module class
 class Counter extends Module {
