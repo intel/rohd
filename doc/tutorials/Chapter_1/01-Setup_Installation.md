@@ -18,31 +18,31 @@ Please note that Codespaces are free for all users with a personal GitHub accoun
 
 > All personal GitHub.com accounts have a monthly quota of free use of GitHub Codespaces included in the Free or Pro plan. You can get started using GitHub Codespaces on your personal account without changing any settings or providing payment details. You can create and use a codespaces for any repository you can clone. You can also use a template to create codespaces that are not initially associated with a repository. If you create a codespaces from an organization-owned repository, use of the codespaces will either be charged to the organization (if the organization is configured for this), or to your personal account. Codespaces created from templates are always charged to your personal account. You can continue using GitHub Codespaces beyond your monthly included storage and compute usage by providing payment details and setting a spending limit. For more information, see "About billing for GitHub Codespaces.
 
-![step 1](assets/CodespaceSetup/step1.PNG)
+![step 1](assets/codespaces_setup/step_1.png)
 
 ### Step 2: Build Container
 
 You will be redirected to a page where GitHub will initiate the launch of your container. Please allow some time for GitHub to establish your server.
 
-![step 2](assets/CodespaceSetup/step2.PNG)
+![step 2](assets/codespaces_setup/step_2.png)
 
 ### Step 3: VSCode in Browser
 
 When your space is ready, you will see a visual studio code running on your browser.
 
-![step 3](assets/CodespaceSetup/step3.PNG)
+![step 3](assets/codespaces_setup/step_3.png)
 
 ### Step 4: Dart pub get
 
 Run `dart pub get` on the terminal of the visual studio code to pull your setup.
 
-![step 4](assets/CodespaceSetup/step4.PNG)
+![step 4](assets/codespaces_setup/step_4.png)
 
 ### Step 5: Run the example code 
 
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
-![step 5](assets/CodespaceSetup/step5.PNG)
+![step 5](assets/codespaces_setup/step_5.png)
 
 
 If you can see SystemVerilog code pop up on the terminal. Well, you have successfully set up your development environment on the cloud.
@@ -51,7 +51,7 @@ If you can see SystemVerilog code pop up on the terminal. Well, you have success
 
 To delete the codespaces, go back to https://github.com/intel/rohd and click on codespaces just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespaces.
 
-![step 6](assets/CodespaceSetup/step6.PNG)
+![step 6](assets/codespaces_setup/step_6.png)
 
 
 ## Local Development Setup 
@@ -86,7 +86,7 @@ Install ROHD using `dart pub add rohd` command.
 dart pub add rohd
 ```
 
-![package install](assets/localSetup/dart_package_install_depend.PNG)
+![package install](assets/local_setup/dart_package_install_depend.png)
 
 Then, open up vscode
 
@@ -97,15 +97,6 @@ code .
 Delete all the content in `bin/rohd_project.dart` and replace with:
 
 ```dart
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// example.dart
-/// A very basic example of a counter module.
-///
-/// 2021 September 17
-/// Author: Max Korbel <max.korbel@intel.com>
-///
 // ignore_for_file: avoid_print
 
 // Import the ROHD package
@@ -241,7 +232,7 @@ code rohd
 
 You will see VSCode automatically open up your ROHD folder. 
 
-![step 2](assets/localSetup/step2.PNG)
+![step 2](assets/local_setup/step_2.png)
 
 Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd package downloaded using the command below.
 
@@ -252,7 +243,7 @@ Then, run Rohd example.
 
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
-![step 3](assets/localSetup/step4.PNG)
+![step 3](assets/local_setup/step_3.png)
 
 If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
 
@@ -282,7 +273,7 @@ code .
 
 At this phase, assume that you already install docker on your pc. You can install docker vscode extension.
 
-![vscode extension](assets/docker/vscode_extension.PNG)
+![vscode extension](assets/docker/vscode_extension.png)
 
 Once the extension installed. You might have to refresh your repository by restart vscode and you will see a pop up on the bottom corner right. Click on the little notification icon and clone in volume.
 
