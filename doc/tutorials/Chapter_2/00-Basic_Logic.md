@@ -226,7 +226,7 @@ void main() {
 
 Congratulations!!! You have successfully build your first gate! 
 
-## Exercise 2:
+### Exercise 2:
 
 1. Build OR or NOR or XOR gate using ROHD.
 
