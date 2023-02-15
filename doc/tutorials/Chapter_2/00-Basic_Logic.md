@@ -239,7 +239,7 @@ In ROHD, constants can often be inferred by ROHD automatically, but can also be 
 var x = Const(5, width:16);
 ```
 
-### Exercise
+### Exercise 3
 
 1. Create a constant of value 10 and assign to a Logic input.
 
