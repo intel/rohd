@@ -168,9 +168,9 @@ class _MermaidStateDiagram {
   void addState(String state) => diagram.write('\n$state\n');
 
   /// Register a new transition [event] that point the
-  /// current state [currState] to next state [nextState].
-  void addTransitions(String currState, String nextState, String event) =>
-      diagram.write('\n$indentation$currState --> $nextState: $event');
+  /// current state [currentState] to next state [nextState].
+  void addTransitions(String currentState, String nextState, String event) =>
+      diagram.write('\n$indentation$currentState --> $nextState: $event');
 
   /// Register a start state [startState].
   void addStartState(String startState) =>
