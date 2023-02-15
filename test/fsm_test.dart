@@ -37,7 +37,7 @@ class TestModule extends Module {
     ];
 
     StateMachine<MyStates>(clk, reset, MyStates.state1, states)
-        .generateDiagram(outputPath: 'simple_fsm.md');
+        .generateDiagram(outputPath: 'tmp_test/simple_fsm.md');
   }
 }
 
@@ -105,15 +105,15 @@ class TrafficTestModule extends Module {
     ];
 
     StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states)
-        .generateDiagram(outputPath: 'traffic_light.md');
+        .generateDiagram(outputPath: 'tmp_test/traffic_light_fsm.md');
   }
 }
 
 void main() {
   tearDown(Simulator.reset);
 
-  const simpleFSMPath = 'simple_fsm.md';
-  const trafficFSMPath = 'traffic_light.md';
+  const simpleFSMPath = 'tmp_test/simple_fsm.md';
+  const trafficFSMPath = 'tmp_test/traffic_light_fsm.md';
 
   group('simcompare', () {
     test('simple fsm', () async {
