@@ -228,7 +228,7 @@ Congratulations!!! You have successfully build your first gate!
 
 ## Exercise 2:
 
-1. Build OR, NOR, XOR gate using ROHD.
+1. Build OR or NOR or XOR gate using ROHD.
 
 ## Constants
 
