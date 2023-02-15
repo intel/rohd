@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// fsm_test.dart
@@ -110,7 +110,9 @@ class TrafficTestModule extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   const simpleFSMPath = 'tmp_test/simple_fsm.md';
   const trafficFSMPath = 'tmp_test/traffic_light_fsm.md';

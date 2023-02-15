@@ -73,8 +73,8 @@ class Simulator {
       _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
 
   /// Sorted storage for pending functions to execute at appropriate times.
-  static final SplayTreeMap<int, List<void Function()>> _pendingTimestamps =
-      SplayTreeMap<int, List<void Function()>>();
+  static final SplayTreeMap<int, List<dynamic Function()>> _pendingTimestamps =
+      SplayTreeMap<int, List<dynamic Function()>>();
 
   /// Functions to be executed as soon as possible by the [Simulator].
   ///
@@ -170,7 +170,9 @@ class Simulator {
   }
 
   /// Registers an abritrary [action] to be executed at [timestamp] time.
-  static void registerAction(int timestamp, void Function() action) {
+  ///
+  /// The [action], if it returns a [Future], will be `await`ed.
+  static void registerAction(int timestamp, dynamic Function() action) {
     if (timestamp <= _currentTimestamp) {
       throw Exception('Cannot add timestamp "$timestamp" in the past.'
           '  Current time is ${Simulator.time}');
@@ -225,9 +227,9 @@ class Simulator {
 
     _currentTimestamp = nextTimeStamp;
 
-    await tickExecute(() {
+    await tickExecute(() async {
       for (final func in _pendingTimestamps[nextTimeStamp]!) {
-        func();
+        await func();
       }
     });
     _pendingTimestamps.remove(_currentTimestamp);
@@ -242,7 +244,7 @@ class Simulator {
   }
 
   /// Performs the actual execution of a collection of actions for a [tick()].
-  static Future<void> tickExecute(void Function() toExecute) async {
+  static Future<void> tickExecute(dynamic Function() toExecute) async {
     _phase = SimulatorPhase.beforeTick;
 
     // useful for flop sampling
@@ -252,7 +254,7 @@ class Simulator {
 
     // useful for things that need to trigger every tick without other input
     _startTickController.add(null);
-    toExecute();
+    await toExecute();
 
     _phase = SimulatorPhase.clkStable;
 
