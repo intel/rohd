@@ -60,11 +60,12 @@ ROHD can be install in **Windows**, **Mac**, or **Linux** machine.
 
 **Pre-requiresite:**
 
+- Install Chocolatey (Dart SDK might require installation of chocolatey)
+  - https://chocolatey.org/install#individual
 - Install latest `dart` SDK from official dart website: 
-    - https://dart.dev/get-dart
-
+  - https://dart.dev/get-dart
 - Install Visual Studio Code
-    - https://code.visualstudio.com/Download
+  - https://code.visualstudio.com/Download
 
 ### Option 1: Install from Dart packages
 
