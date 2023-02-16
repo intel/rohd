@@ -8,12 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
-// For greater clarity in the example, one of the rules of code analysis
-// will be suppressed. Sometimes it can be useful, but you should always
-// evaluate the consequences of deviations from the set of static analysis
-// rules used in the project. Additional information is available at
-// https://dart.dev/guides/language/analysis-options
-//
+// Though we usually avoid them, for this example,
+// allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
 // Import the ROHD package.
