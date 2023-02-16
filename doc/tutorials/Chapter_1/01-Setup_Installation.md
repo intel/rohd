@@ -86,7 +86,7 @@ Install ROHD using `dart pub add rohd` command.
 dart pub add rohd
 ```
 
-![package install](assets/local_setup/dart_package_install_depend.png)
+![package install](assets/local_setup/dart_package_install.png)
 
 Then, open up vscode
 
@@ -232,7 +232,7 @@ code rohd
 
 You will see VSCode automatically open up your ROHD folder. 
 
-![step 2](assets/local_setup/step_2.png)
+![step 1](assets/local_setup/step_1.png)
 
 Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd package downloaded using the command below.
 
@@ -243,7 +243,7 @@ Then, run Rohd example.
 
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
-![step 3](assets/local_setup/step_3.png)
+![step 2](assets/local_setup/step_2.png)
 
 If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
 
@@ -273,11 +273,11 @@ code .
 
 At this phase, assume that you already install docker on your pc. You can install docker vscode extension.
 
-![vscode extension](assets/docker/vscode_extension.png)
+![vscode extension](assets/docker_setup/vscode_extension.png)
 
 Once the extension installed. You might have to refresh your repository by restart vscode and you will see a pop up on the bottom corner right. Click on the little notification icon and clone in volume.
 
-![vscode extension](assets/docker/clone_in_volume.png)
+![vscode extension](assets/docker_setup/clone_in_volume.png)
 
 When the setting finished, you can bring up the terminal by navigate to top navigation panel **view -> terminal**.
 
