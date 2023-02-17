@@ -56,15 +56,18 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">ReplicationOp</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-bit"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">bit</span>, </span></li>
-<li><span class="parameter" id="-param-_width"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">_width</span></span></li>
+      <span class="name ">ReplicationOp</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-original"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">original</span>, </span></li>
+<li><span class="parameter" id="-param-_multiplier"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">_multiplier</span></span></li>
 </ol>)
     </section>
 
     
 <section class="desc markdown">
   <p>Constructs a ReplicationOp</p>
-<p>The bit <code>bit</code> will be repeated over the <code>_width</code> as an output.
+<p>The signal <code>original</code> will be repeated over the <code>_multiplier</code> times as an
+output.
+Input <code>_multiplier</code> cannot be negative or zero, an exception will be
+thrown, otherwise.
 <a href="../../rohd/Module-class.html">Module</a> is in-lined as SystemVerilog, it will use {width{bit}}</p>
 </section>
 
@@ -72,11 +75,16 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ReplicationOp(Logic bit, this._width)
-    : _inputName = &#39;input_${bit.name}&#39;,
-      _outputName = Module.unpreferredName(&#39;output_${bit.name}&#39;) {
-  addInput(_inputName, bit);
-  addOutput(_outputName, width: _width);
+  <pre class="language-dart"><code class="language-dart">ReplicationOp(Logic original, this._multiplier)
+    : _inputName = Module.unpreferredName(&#39;input_${original.name}&#39;),
+      _outputName = Module.unpreferredName(&#39;output_${original.name}&#39;) {
+  final newWidth = original.width * _multiplier;
+  if (newWidth &lt; 1) {
+    throw InvalidMultiplierException(newWidth);
+  }
+
+  addInput(_inputName, original, width: original.width);
+  addOutput(_outputName, width: original.width * _multiplier);
   _setup();
 }</code></pre>
 </section>
