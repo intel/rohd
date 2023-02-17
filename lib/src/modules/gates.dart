@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// gates.dart
@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 
 /// A [Module] which has only combinational logic within it and defines
 /// custom functionality.
@@ -762,7 +763,7 @@ class ReplicationOp extends Module
   // output component name
   final String _outputName;
   // Width of the output signal
-  final int _width;
+  final int _multiplier;
 
   /// The primary input to this gate.
   Logic get _input => input(_inputName);
@@ -772,13 +773,21 @@ class ReplicationOp extends Module
 
   /// Constructs a ReplicationOp
   ///
-  /// The bit [bit] will be repeated over the [_width] as an output.
+  /// The signal [original] will be repeated over the [_multiplier] times as an
+  /// output.
+  /// Input [_multiplier] cannot be negative or zero, an exception will be
+  /// thrown, otherwise.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
-  ReplicationOp(Logic bit, this._width)
-      : _inputName = 'input_${bit.name}',
-        _outputName = Module.unpreferredName('output_${bit.name}') {
-    addInput(_inputName, bit);
-    addOutput(_outputName, width: _width);
+  ReplicationOp(Logic original, this._multiplier)
+      : _inputName = Module.unpreferredName('input_${original.name}'),
+        _outputName = Module.unpreferredName('output_${original.name}') {
+    final newWidth = original.width * _multiplier;
+    if (newWidth < 1) {
+      throw InvalidMultiplierException(newWidth);
+    }
+
+    addInput(_inputName, original, width: original.width);
+    addOutput(_outputName, width: original.width * _multiplier);
     _setup();
   }
 
@@ -792,7 +801,7 @@ class ReplicationOp extends Module
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    replicated.put(_input.value, fill: true);
+    replicated.put(_input.value.replicate(_multiplier));
   }
 
   @override
@@ -802,7 +811,7 @@ class ReplicationOp extends Module
     }
 
     final target = inputs[_inputName]!;
-    final width = _width;
+    final width = _multiplier;
     return '{$width{$target}}';
   }
 }
