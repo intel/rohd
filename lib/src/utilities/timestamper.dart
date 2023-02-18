@@ -7,9 +7,9 @@
 // 2023 February 18
 // Author: Chykon
 
-/// Utility for creating timestamps in `YYYY-MM-DD hh:mm:ss.SSS [+/-]hh:mm` format.
+/// Utility for creating timestamps.
 abstract class Timestamper {
-  /// Creates a timestamp.
+  /// Creates a timestamp in `YYYY-MM-DD hh:mm:ss.sss [+/-]hh:mm` format.
   static String stamp() {
     final now = DateTime.now();
 
