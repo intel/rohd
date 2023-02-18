@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
@@ -142,7 +143,7 @@ class WaveDumper {
 
   /// Writes the top header for the VCD file.
   void _writeHeader() {
-    final dateString = DateTime.now().toUtc().toIso8601String();
+    final dateString = Timestamper.stamp();
     const timescale = '1ps';
     final header = '''
 \$date
