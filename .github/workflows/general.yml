@@ -19,6 +19,8 @@ jobs:
 
       - name: Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v9
+        with:
+          globs: '**/*.md'
 
       - name: Check Markdown links
         uses: gaurav-nelson/github-action-markdown-link-check@1.0.14
