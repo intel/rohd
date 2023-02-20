@@ -15,7 +15,7 @@ import '../helper.dart';
 
 // TODO(user): (Optional) Change [YourModuleName] to your own module name.
 class YourModuleName extends Module {
-  // TODO(user): (Optional) super(name: 'ModuleName') can be change to your ModuleName.
+  // TODO(user): (Optional) 'ModuleName' can change to your own module name.
   YourModuleName() : super(name: 'ModuleName') {
     // TODO(user): (Required) Paste your Logic initialization here.
 
