@@ -109,16 +109,34 @@ To create our two-input Logic `AND` gate, we need to declare two input signals a
 
 ```dart
 import 'package:rohd/rohd.dart';
+import 'helper.dart';
 
-void main() {
-  // Create input and output signals
-  final a = Logic(name: 'input_a');
-  final b = Logic(name: 'input_b');
-  final c = Logic(name: 'output_c');
+class LogicGate extends Module {
+  late final Logic a;
+  late final Logic b;
+  late final Logic c;
+
+  LogicGate() : super(name: 'LogicGate') {
+    // Create input and output signals
+    final a = Logic(name: 'input_a');
+    final b = Logic(name: 'input_b');
+    final c = Logic(name: 'output_c');
+
+    // Add ports
+    final signal1 = addInput('input_a', a, width: a.width);
+    final signal2 = addInput('input_b', b, width: b.width);
+    final signal3 = addOutput('output_c', width: c.width);
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog
+  final basicLogic = LogicGate();
+  await displaySystemVerilog(basicLogic);
 }
 ```
 
-That's all! We have created all the ports required. Next, let's take a look at the operators in ROHD.
+That's all! We have created all the ports required. You can check the executable code at [c_logic_gate_part_1.dart](./c_logic_gate_part_1.dart). Next, let's take a look at the operators in ROHD.
 
 ## Assignment, Logical, Mathematical, Comparison Operations
 
