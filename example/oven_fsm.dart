@@ -49,11 +49,11 @@ enum LEDLight {
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
-  // A public variable with type StateMachine<OvenState> `oven`.
-  // We want to return this variable to the main module for flexibility.
+  // A private variable with type StateMachine<OvenState> `oven`.
+  //
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
-  late StateMachine<OvenState> oven;
+  late StateMachine<OvenState> _oven;
 
   // This oven module receives a `button` and a `reset` input from runtime.
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
@@ -174,11 +174,11 @@ class OvenModule extends Module {
     ];
 
     // Assign the oven StateMachine object to public variable declared.
-    oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
+    _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
   }
 
   // An ovenStateMachine that represent in getter.
-  StateMachine<OvenState> get ovenStateMachine => oven;
+  StateMachine<OvenState> get ovenStateMachine => _oven;
 }
 
 Future<void> main() async {
