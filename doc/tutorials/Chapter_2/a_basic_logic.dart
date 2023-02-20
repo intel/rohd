@@ -23,10 +23,10 @@ class BasicLogic extends Module {
 
 void main() async {
   // 1-bit unnamed signal.
-  Logic unamedSignal = Logic();
+  final unamedSignal = Logic();
 
   // 8-bit bus named 'b'.
-  Logic bus = Logic(name: 'b', width: 8);
+  final bus = Logic(name: 'b', width: 8);
 
   // You can use toString() method to check for your signals details.
   print(unamedSignal.toString());

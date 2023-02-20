@@ -33,15 +33,19 @@ void main() {
   d <= b[7];
 
   // value:
-  // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) , e = [1 00111 1110] = [d, c, a]
+  // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
+  // e = [1 00111 1110] = [d, c, a]
   final e = Logic(width: d.width + c.width + a.width);
   e <= [d, c, a].swizzle();
 
   print('e: ${e.value.toString(includeWidth: false)}');
 
-  // alternatively, do a reverse swizzle (useful for lists where 0-index is actually the 0th element)
-  // here, the LSB is on the left, the MSB is on the right
-  // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) , e = [1110 00111 1] - [a, c, d]
+  // alternatively, do a reverse swizzle
+  // (useful for lists where 0-index is actually the 0th element)
+  //
+  // Here, the LSB is on the left, the MSB is on the right
+  // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
+  // e = [1110 00111 1] - [a, c, d]
   final f = Logic(width: d.width + c.width + a.width);
   f <= [d, c, a].rswizzle();
   print('f: ${f.value.toString(includeWidth: false)}');
