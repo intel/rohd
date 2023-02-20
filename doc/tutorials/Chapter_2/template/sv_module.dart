@@ -13,17 +13,19 @@
 import 'package:rohd/rohd.dart';
 import '../helper.dart';
 
+// TODO(user): (Optional) Change [YourModuleName] to your own module name.
 class YourModuleName extends Module {
-  // Adjust the number of the signals in the constructor parameters
-  YourModuleName(Logic signal1, Logic signal2) : super(name: 'ModuleName') {
-    signal1 = addInput('signal_1', signal1, width: signal1.width);
-    signal2 = addInput('signal_2', signal2, width: signal2.width);
+  // TODO(user): (Optional) super(name: 'ModuleName') can be change to your ModuleName.
+  YourModuleName() : super(name: 'ModuleName') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+
+    // TODO(user): (Required) Declare your input and output port.
   }
 }
 
 void main() async {
   // Instantiate Module and display system verilog.
-  // TODO: Add error handling for network requests
-  final basicLogic = YourModuleName(Logic(), Logic());
+  // TODO(user): (Optional) Update [YourModuleName] .
+  final basicLogic = YourModuleName();
   await displaySystemVerilog(basicLogic);
 }
