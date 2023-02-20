@@ -176,6 +176,8 @@ void main() async {
 }
 ```
 
+You can check the executable at [d_assignment_operator.dart](./d_assignment_operator.dart). 
+
 ### Logical, Mathematical, Comparison Operations
 
 In ROHD, we have operators that are similar to those in SystemVerilog. This makes it easier for users to learn and pick up the language.
@@ -207,37 +209,49 @@ Great, now that you've learned all about our operators, let's continue our journ
 
 ```dart
 import 'package:rohd/rohd.dart';
+import 'helper.dart';
 
-void main() {
-  // Create input and output signals.
-  final a = Logic(name: 'input_a');
-  final b = Logic(name: 'input_b');
-  final c = Logic(name: 'output_c');
+class LogicGate extends Module {
+  late final Logic a;
+  late final Logic b;
+  late final Logic c;
 
-  // Create an AND logic gate.
-  // This assign c to the result of a AND b.
-  c <= a & b;
+  LogicGate() : super(name: 'LogicGate') {
+    // Create input and output signals
+    final a = Logic(name: 'input_a');
+    final b = Logic(name: 'input_b');
+    final c = Logic(name: 'output_c');
+
+    // Add ports
+    final signal1 = addInput('input_a', a, width: a.width);
+    final signal2 = addInput('input_b', b, width: b.width);
+    final signal3 = addOutput('output_c', width: c.width);
+
+    signal3 <= signal1 & signal3;
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog
+  final basicLogic = LogicGate();
+  await displaySystemVerilog(basicLogic);
 }
 ```
-
-Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
+You can check the executable at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
 
 ### Non-synthesizable signal deposition (put)
 
 Do you still remember the `put()` function that was used in the previous section? It is used to send a simulated signal to the input `Logic`.
 
-For testbench code or other non-synthesizable code, you can use `put` or `inject` on any `Logic` to deposit a value on the signal. The two functions have similar behavior, but `inject` is a shorthand for calling `put` inside `Simulator.injectAction`, which allows the deposited change to propagate within the same `Simulator` tick. Generally, you will want to use `inject` for testbench interaction with a design.
+For testbench code or other non-synthesizable code, you can use `put` on any `Logic` to deposit a value on the signal.
 
-Now let's see an example of how to deposit signals for testing, using both `put` and `inject`.
+Now let's see an example of how to deposit signals for testing using `put`.
 
 ```dart
 b = Logic(width:4);
 
 // you can put an integer directly into a signal.
 a.put(4);
-
-// Use only with Simulator tick.
-a.inject(4);
 ```
 
 ## Logic Gate: Part 3
@@ -256,11 +270,6 @@ void main() {
   // Create an AND logic gate
   // This assign c to the result of a AND b
   c <= a & b;
-
-  // let try with simple a = 1, b = 1
-  // a.put(1);
-  // b.put(1);
-  // print(c.value.toInt());
 
   // Let build a truth table
   for (int i = 0; i <= 1; i++) {
