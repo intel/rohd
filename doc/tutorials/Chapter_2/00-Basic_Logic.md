@@ -329,8 +329,8 @@ class ConstantLogic extends Module {
 
 void main() async {
   // Instantiate Module and display system verilog
-  final basicLogic = ConstantLogic();
-  await displaySystemVerilog(basicLogic);
+  final constantLogic = ConstantLogic();
+  await displaySystemVerilog(constantLogic);
 }
 ```
 
