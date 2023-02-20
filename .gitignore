@@ -12,7 +12,8 @@ doc/api/
 # Other stuff
 tmp_test/
 *.vcd
-.vscode/
+.vscode/*
 
 # Exceptions
+!.vscode/extensions.json
 !test/example_icarus_waves.vcd
