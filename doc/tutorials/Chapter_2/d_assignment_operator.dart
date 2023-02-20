@@ -20,7 +20,8 @@ class AssignmentOperator extends Module {
     a = Logic(name: 'signal_a');
     b = Logic(name: 'signal_b');
 
-    // In this case, b is connected to a which means they will have the same value.
+    // In this case, b is connected to a which means they will have the
+    // same value.
     final signal1 = addInput('a', a, width: a.width);
     final signal2 = addOutput('b', width: b.width);
 
