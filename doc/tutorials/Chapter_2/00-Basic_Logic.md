@@ -32,7 +32,7 @@ In this chapter:
 
 Like any programming language, ROHD has its own data types, which include `Logic` and `LogicValue`. `Logic` is fundamental to creating signals.
 
-Note that in Dart, variable names are typically written in camelcase, such as `aSignal` and `thisIsVariable`. Visit this page to learn more [https://dart.dev/guides/language/effective-dart/style](https://dart.dev/guides/language/effective-dart/style)
+Note that in Dart, variable names are typically written in camelcase, such as `aSignal` and `thisIsVariable`. Visit this page to learn more [https://dart.dev/guides/language/effective-dart/style](https://dart.dev/guides/language/effective-dart/style). 
 
 ```dart
 // 1-bit unnamed signal. 
@@ -44,6 +44,8 @@ Logic bus = Logic(name: 'b', width: 8);
 // You can use toString() method to check for your signals details.
 print(unamedSignal.toString());
 ```
+
+You can find the code above at [a_logic.dart](./a_logic.dart).
 
 In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument.
 
