@@ -20,25 +20,31 @@ import './example.dart';
 // `standby`, `cooking`,`paused`, and `completed`.
 enum OvenState { standby, cooking, paused, completed }
 
-// One-hot encoded `Button` that extends from Const() value.
-// Represent start, pause, and resume as constant value `00`, `01`,
-// and `10` respectively.
-class Button extends Const {
-  Button._(int super.value) : super(width: 2);
-  Button.start() : this._(bin('00'));
-  Button.pause() : this._(bin('01'));
-  Button.resume() : this._(bin('10'));
+// One-hot encoded `Button` using dart enhanced enums.
+// Represent start, pause, and resume as integer value 0, 1,
+// and 2 respectively.
+enum Button {
+  start(value: 0),
+  pause(value: 1),
+  resume(value: 2);
+
+  const Button({required this.value});
+
+  final int value;
 }
 
-// One-hot encoded `LEDLight` that extends from Const() value.
-// Represent yellow, blue, red and green LED as constant value `00`, `01`,
-// `10`, and `11` respectively.
-class LEDLight extends Const {
-  LEDLight._(int super.value) : super(width: 2);
-  LEDLight.yellow() : this._(bin('00'));
-  LEDLight.blue() : this._(bin('01'));
-  LEDLight.red() : this._(bin('10'));
-  LEDLight.green() : this._(bin('11'));
+// One-hot encoded `LEDLight` using dart enhanced enums.
+// Represent yellow, blue, red, and green  as integer value 0, 1,
+// 2, and 3 respectively.
+enum LEDLight {
+  yellow(value: 0),
+  blue(value: 1),
+  red(value: 2),
+  green(value: 3);
+
+  const LEDLight({required this.value});
+
+  final int value;
 }
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
@@ -83,7 +89,9 @@ class OvenModule extends Module {
           // When the button `start` is pressed during standby state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_start')..gets(button.eq(Button.start())):
+            Logic(name: 'button_start')
+                  ..gets(button
+                      .eq(Const(Button.start.value, width: button.width))):
                 OvenState.cooking,
           },
           // actions:
@@ -91,7 +99,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 1 (Reset the timer);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.blue().value,
+            led < LEDLight.blue.value,
             counterReset < 1,
             en < 0,
           ]),
@@ -105,7 +113,9 @@ class OvenModule extends Module {
           // When the button `counter` time is elapsed during cooking state,
           // OvenState will changed to `OvenState.completed` state.
           events: {
-            Logic(name: 'button_pause')..gets(button.eq(Button.pause())):
+            Logic(name: 'button_pause')
+                  ..gets(button
+                      .eq(Const(Button.pause.value, width: button.width))):
                 OvenState.paused,
             Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
                 OvenState.completed
@@ -115,7 +125,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 1 (Enable value update).
           actions: [
-            led < LEDLight.yellow().value,
+            led < LEDLight.yellow.value,
             counterReset < 0,
             en < 1,
           ]),
@@ -126,7 +136,9 @@ class OvenModule extends Module {
           // When the button `resume` is pressed during paused state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_resume')..gets(button.eq(Button.resume())):
+            Logic(name: 'button_resume')
+                  ..gets(button
+                      .eq(Const(Button.resume.value, width: button.width))):
                 OvenState.cooking
           },
           // actions:
@@ -134,7 +146,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.red().value,
+            led < LEDLight.red.value,
             counterReset < 0,
             en < 0,
           ]),
@@ -145,7 +157,9 @@ class OvenModule extends Module {
           // When the button `start` is pressed during completed state,
           // OvenState will changed to `OvenState.cooking` state.
           events: {
-            Logic(name: 'button_start')..gets(button.eq(Button.start())):
+            Logic(name: 'button_start')
+                  ..gets(button
+                      .eq(Const(Button.start.value, width: button.width))):
                 OvenState.cooking
           },
           // actions:
@@ -153,7 +167,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 1 (Reset value);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.green().value,
+            led < LEDLight.green.value,
             counterReset < 1,
             en < 0,
           ])
@@ -202,17 +216,17 @@ Future<void> main() async {
 
   // Press button start => `00` at time 25.
   Simulator.registerAction(25, () {
-    button.put(Button.start().value);
+    button.put(Button.start.value);
   });
 
   // Press button pause => `01` at time 50.
   Simulator.registerAction(50, () {
-    button.put(Button.pause().value);
+    button.put(Button.pause.value);
   });
 
   // Press button resume => `10` at time 70.
   Simulator.registerAction(70, () {
-    button.put(Button.resume().value);
+    button.put(Button.resume.value);
   });
 
   // Print a message when we're done with the simulation!
