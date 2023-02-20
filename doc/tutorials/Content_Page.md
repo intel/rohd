@@ -12,15 +12,21 @@
   * [Docker Container Setup](./Chapter_1/01-Setup_Installation.md#docker-container-setup)
 
 ## Chapter 2: Basic Gates
-- Basic logic
-  * Generate a two-input AND gate
-  * First gate (simple & inside a main function)
-  * Non-synthesizable signal deposition (put)
-  * Explaining Logic and LogicValue
-  * Adding widths to Logics
-  * More operations (math, shift, unary, etc.)
-  * Constants
-  * Ranges and swizzling
+- [Basic logic](./Chapter_2/00-Basic_Logic.md#basic-logic)
+  * [Logic](./Chapter_2/00-Basic_Logic.md#logic)
+    * [Exercise 1](./Chapter_2/00-Basic_Logic.md#exercise-1)
+  * [Logic Value & Width](./Chapter_2/00-Basic_Logic.md#logic-value--width)
+  * [Logic Gate: Part 1](./Chapter_2/00-Basic_Logic.md#logic-gate-part-1)
+    * [Assignment, Logical, Mathematical, Comparison Operations](./Chapter_2/00-Basic_Logic.md#assignment-logical-mathematical-comparison-operations)
+      * [Assignment](./Chapter_2/00-Basic_Logic.md#assignment)
+      * [Logical, Mathematical, Comparison Operations](./Chapter_2/00-Basic_Logic.md#logical-mathematical-comparison-operations)
+  * [Logic Gate: Part 2](./Chapter_2/00-Basic_Logic.md#logic-gate-part-2)
+    * [Non-synthesizable signal deposition (put)](./Chapter_2/00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
+  * [Logic Gate: Part 3](./Chapter_2/00-Basic_Logic.md#logic-gate-part-3)
+    * [Exercise 2](./Chapter_2/00-Basic_Logic.md#exercise-2)
+- [Constants](./Chapter_2/00-Basic_Logic.md#constants)
+  * [Exercise 3](./Chapter_2/00-Basic_Logic.md#exercise-3)
+- [Bus Ranges and Swizzling](./Chapter_2/00-Basic_Logic.md#bus-ranges-and-swizzling)
 
 ## Chapter 3: Unit Testing
   * Full-Adder Tutorial with TDD
