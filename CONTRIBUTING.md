@@ -108,7 +108,7 @@ You may find that reading the [Architecture](doc/Architecture.md) document will 
 Not every new contribution has to go directly into the ROHD framework!  If you have an idea for a reusable piece of hardware, tooling, verification collateral, or anything else that helps the ROHD ecosystem but is somewhat standalone, you can make your own package that depends on ROHD.  Building an ecosystem of reusable components is important to the success of ROHD.  Reach out if you want some help or guidance deciding if or how you should create a new package.
 
 ## Style
-ROHD follows the official Dart recommended style guides and lints, and depends on the [lints](https://pub.dev/packages/lints) package.  This package will help ensure that your code is written consistently with the rest of ROHD.
+ROHD follows the official Dart recommended style guides and lints.  The analyzer will help ensure that your code is written consistently with the rest of ROHD.
 
 Here are some links to help guide you on style as recommended by Dart:
 * Effective Dart: https://dart.dev/guides/language/effective-dart
