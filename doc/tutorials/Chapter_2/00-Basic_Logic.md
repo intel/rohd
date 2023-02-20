@@ -142,16 +142,38 @@ That's all! We have created all the ports required. You can check the executable
 
 ### Assignment
 
-To assign the value of one signal to another signal, use the `<=` operator. This is a hardware synthesizable assignment that connects two wires together.
+To assign the value of one signal to another signal, use the `<=` operator. This is a hardware synthesizable assignment that connects two wires together. 
 
 Let's take a look at an example of how to assign a Logic signal `a` to signal `b`.
 
 ```dart
-Logic a = Logic(name: 'signal_a');
-Logic b = Logic(name: 'signal_b');
+import 'package:rohd/rohd.dart';
+import 'helper.dart';
 
-// In this case, b is connected to a which means they will have the same value.
-a <= b;
+class AssignmentOperator extends Module {
+  late final Logic a;
+  late final Logic b;
+  AssignmentOperator() : super(name: 'Assignment') {
+    a = Logic(name: 'signal_a');
+    b = Logic(name: 'signal_b');
+
+    // In this case, b is connected to a which means they will have the same value.
+    final signal1 = addInput('a', a, width: a.width);
+    final signal2 = addOutput('b', width: b.width);
+
+    signal2 <= signal1;
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog
+  final assignOperator = AssignmentOperator();
+  await displaySystemVerilog(assignOperator);
+
+  assignOperator.a.put(1);
+
+  print('The value of a is ${assignOperator.a.value.toInt()}.');
+}
 ```
 
 ### Logical, Mathematical, Comparison Operations
