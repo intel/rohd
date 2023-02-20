@@ -17,47 +17,33 @@ class Exercise2 extends Module {
     // Note that we don't need final here as we are using global variable.
     // Dart is smart enough to assume the following a, b, c variable without
     // this.a, but I will be using this to make the code more clear.
-    this.a = Logic(name: 'input_a');
-    this.b = Logic(name: 'input_b');
-    this.c = Logic(name: 'output_c');
-
-    const answer = 'xor'; // 'or', 'nor', 'xor'
-    switch (answer) {
-      case 'or':
-        c <= a | b;
-        break;
-      case 'nor':
-        c <= ~(a | b);
-        break;
-      case 'xor':
-        c <= a ^ b;
-        break;
-    }
+    a = Logic(name: 'input_a');
+    b = Logic(name: 'input_b');
+    c = Logic(name: 'output_c');
 
     // TODO(user): (Required) Declare your input and output port.
+    final signal1 = addInput('input_a', a, width: a.width);
+    final signal2 = addInput('input_b', b, width: b.width);
     final signal3 = addOutput('output_c');
 
     // Note: If you're familiar with SV, you may want to read this section,
     // but if it's new to you, feel free to skip ahead.
     // We'll cover the topic more extensively in Chapters 5, 6, and 7,
     // where you'll have the opportunity to gain a deeper understanding.
-    Logic operation;
+    const answer = 'xor'; // 'or', 'nor', 'xor'
     switch (answer) {
       case 'or':
-        operation = a | b;
+        c <= signal1 | signal2;
         break;
       case 'nor':
-        operation = ~(a | b);
+        c <= ~(signal1 | signal2);
         break;
       case 'xor':
-        operation = a ^ b;
-        break;
-      default:
-        operation = a & b;
+        c <= signal1 ^ signal2;
         break;
     }
 
-    Combinational([signal3 < operation]);
+    signal3 <= c;
   }
 }
 
@@ -71,7 +57,7 @@ Future<void> main() async {
   // system verilog code.
   const generateTruthTable = true;
   if (generateTruthTable) {
-    print('Generate Logic Gate: ');
+    print('\nGenerate Logic Gate: ');
     for (var i = 0; i <= 1; i++) {
       for (var j = 0; j <= 1; j++) {
         basicLogic.a.put(i);

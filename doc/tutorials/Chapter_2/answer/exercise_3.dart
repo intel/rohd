@@ -18,9 +18,7 @@ class YourModuleName extends Module {
 
     print('Value of b is: ${b.value.toInt()}');
 
-    Combinational([
-      signal2 < b,
-    ]);
+    signal2 <= b;
   }
 }
 
