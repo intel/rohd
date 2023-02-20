@@ -1,8 +1,9 @@
 ## Content
 
 - [Basic logic](./00-Basic_Logic.md#basic-logic)
-  * [Logic, Logic Value, Width](./00-Basic_Logic.md#logic-logic-value-width)
+  * [Logic](./00-Basic_Logic.md#logic)
     * [Exercise 1](./00-Basic_Logic.md#exercise-1)
+  * [Logic Value & Width](./00-Basic_Logic.md#logic-value--width)
   * [Logic Gate: Part 1](./00-Basic_Logic.md#logic-gate-part-1)
     * [Assignment, Logical, Mathematical, Comparison Operations](./00-Basic_Logic.md#assignment-logical-mathematical-comparison-operations)
       * [Assignment](./00-Basic_Logic.md#assignment)
@@ -27,7 +28,7 @@ In this chapter:
 
 # Basic Logic
 
-## Logic, Logic Value, Width
+## Logic
 
 Like any programming language, ROHD has its own data types, which include `Logic` and `LogicValue`. `Logic` is fundamental to creating signals.
 
@@ -51,6 +52,7 @@ In the example above, we can see that creation of `Logic` signals involved insta
 1. Create a 3-bit bus signal named `threeBitBus`.
 2. Print the output of the signal. Explain what you see. Is there enough information in the output to verify that you have created the correct signal?
 
+## Logic Value & Width
 Now that we've learned how to create a Logic signal, let's explore how to access its value.
 
 To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any x or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
