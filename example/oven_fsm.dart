@@ -181,7 +181,7 @@ class OvenModule extends Module {
   StateMachine<OvenState> get ovenStateMachine => _oven;
 }
 
-Future<void> main() async {
+Future<void> main({bool noPrint = false}) async {
   // Signals `button` and `reset` that mimic user's behaviour of button pressed
   // and reset.
   //
@@ -209,7 +209,9 @@ Future<void> main() async {
   reset.inject(1);
 
   // Attach a waveform dumper so we can see what happens.
-  WaveDumper(oven, outputPath: 'oven.vcd');
+  if (!noPrint) {
+    WaveDumper(oven, outputPath: 'oven.vcd');
+  }
 
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));
@@ -231,7 +233,9 @@ Future<void> main() async {
 
   // Print a message when we're done with the simulation!
   Simulator.registerAction(120, () {
-    print('Simulation End');
+    if (!noPrint) {
+      print('Simulation completed!');
+    }
   });
 
   // Set a maximum time for the simulation so it doesn't keep running forever.
@@ -239,4 +243,10 @@ Future<void> main() async {
 
   // Kick off the simulation.
   await Simulator.run();
+
+  // We can take a look at the waves now
+  if (!noPrint) {
+    print('To view waves, check out waves.vcd with a'
+        ' waveform viewer (e.g. `gtkwave waves.vcd`).');
+  }
 }
