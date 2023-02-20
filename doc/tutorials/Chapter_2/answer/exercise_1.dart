@@ -4,9 +4,9 @@ import 'package:rohd/rohd.dart';
 import '../helper.dart';
 
 // TODO(user): (Optional) Change [YourModuleName] to your own module name.
-class YourModuleName extends Module {
+class Exercise1 extends Module {
   // TODO(user): (Optional) 'ModuleName' can change to your own module name.
-  YourModuleName() : super(name: 'ModuleName') {
+  Exercise1() : super(name: 'Exercise1') {
     // TODO(user): (Required) Paste your Logic initialization here.
     // 1. Create a 3-bit bus signal named `threeBitBus`.
     final threeBitBus = Logic(name: 'threeBitBus');
@@ -25,9 +25,9 @@ class YourModuleName extends Module {
   }
 }
 
-void main() async {
+Future<void> main() async {
   // Instantiate Module and display system verilog.
   // TODO(user): (Optional) Update [YourModuleName] .
-  final basicLogic = YourModuleName();
+  final basicLogic = Exercise1();
   await displaySystemVerilog(basicLogic);
 }

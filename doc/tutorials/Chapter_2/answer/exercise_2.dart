@@ -1,16 +1,25 @@
 import 'package:rohd/rohd.dart';
 import '../helper.dart';
-// ignore_for_file: avoid_print
+
+// ignore_for_file: avoid_print, unnecessary_this
 
 // TODO(user): (Optional) Change [YourModuleName] to your own module name.
-class YourModuleName extends Module {
+class Exercise2 extends Module {
+  late final Logic a;
+  late final Logic b;
+  late final Logic c;
+
   // TODO(user): (Optional) 'ModuleName' can change to your own module name.
-  YourModuleName() : super(name: 'ModuleName') {
+  Exercise2() : super(name: 'Exercise2') {
     // TODO(user): (Required) Paste your Logic initialization here.
+
     // Create input and output signals
-    final a = Logic(name: 'input_a');
-    final b = Logic(name: 'input_b');
-    final c = Logic(name: 'output_c');
+    // Note that we don't need final here as we are using global variable.
+    // Dart is smart enough to assume the following a, b, c variable without
+    // this.a, but I will be using this to make the code more clear.
+    this.a = Logic(name: 'input_a');
+    this.b = Logic(name: 'input_b');
+    this.c = Logic(name: 'output_c');
 
     const answer = 'xor'; // 'or', 'nor', 'xor'
     switch (answer) {
@@ -25,18 +34,7 @@ class YourModuleName extends Module {
         break;
     }
 
-    print('Generate Logic Gate: ');
-    for (var i = 0; i <= 1; i++) {
-      for (var j = 0; j <= 1; j++) {
-        a.put(i);
-        b.put(j);
-        print('a: $i, b: $j c: ${c.value.toInt()}');
-      }
-    }
-
     // TODO(user): (Required) Declare your input and output port.
-    final signal1 = addInput('input_a', a);
-    final signal2 = addInput('input_b', b);
     final signal3 = addOutput('output_c');
 
     // Note: If you're familiar with SV, you may want to read this section,
@@ -46,16 +44,16 @@ class YourModuleName extends Module {
     Logic operation;
     switch (answer) {
       case 'or':
-        operation = signal1 | signal2;
+        operation = a | b;
         break;
       case 'nor':
-        operation = ~(signal1 | signal2);
+        operation = ~(a | b);
         break;
       case 'xor':
-        operation = signal1 ^ signal2;
+        operation = a ^ b;
         break;
       default:
-        operation = signal1 & signal2;
+        operation = a & b;
         break;
     }
 
@@ -63,9 +61,23 @@ class YourModuleName extends Module {
   }
 }
 
-void main() async {
+Future<void> main() async {
   // Instantiate Module and display system verilog.
-  // TODO(user): (Optional) Update [YourModuleName] .
-  final basicLogic = YourModuleName();
+  // TODO(user): (Optional) Update [YourModuleName].
+  final basicLogic = Exercise2();
   await displaySystemVerilog(basicLogic);
+
+  // Note: Make sure `generateTruthTable` is false when want to generate
+  // system verilog code.
+  const generateTruthTable = true;
+  if (generateTruthTable) {
+    print('Generate Logic Gate: ');
+    for (var i = 0; i <= 1; i++) {
+      for (var j = 0; j <= 1; j++) {
+        basicLogic.a.put(i);
+        basicLogic.b.put(j);
+        print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+      }
+    }
+  }
 }
