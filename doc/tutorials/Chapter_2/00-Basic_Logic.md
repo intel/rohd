@@ -34,7 +34,7 @@ Like any programming language, ROHD has its own data types, which include `Logic
 Note that in Dart, variable names are typically written in camelcase, such as `aSignal` and `thisIsVariable`. Visit this page to learn more [https://dart.dev/guides/language/effective-dart/style](https://dart.dev/guides/language/effective-dart/style)
 
 ```dart
-// 1-bit unnamed signal.
+// 1-bit unnamed signal. 
 Logic unamedSignal = Logic();
 
 // 8-bit bus named 'b'.
