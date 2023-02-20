@@ -45,7 +45,7 @@ Logic bus = Logic(name: 'b', width: 8);
 print(unamedSignal.toString());
 ```
 
-You can find the code above at [a_logic.dart](./a_logic.dart).
+You can find the executable code at [a_logic.dart](./a_logic.dart).
 
 In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument.
 
@@ -97,7 +97,7 @@ final bigBusValBigInt = basicLogic.bigBus.value.toBigInt();
 print('c) The big integer of bus is $bigBusValBigInt.');
 ```
 
-You can find the executable code above at [b_logic_width.dart](./b_logic_width.dart)
+You can find the executable code at [b_logic_width.dart](./b_logic_width.dart)
 
 ## Logic Gate: Part 1
 
@@ -136,7 +136,7 @@ void main() async {
 }
 ```
 
-That's all! We have created all the ports required. You can check the executable code at [c_logic_gate_part_1.dart](./c_logic_gate_part_1.dart). Next, let's take a look at the operators in ROHD.
+That's all! We have created all the ports required. You can find the executable code at [c_logic_gate_part_1.dart](./c_logic_gate_part_1.dart). Next, let's take a look at the operators in ROHD.
 
 ## Assignment, Logical, Mathematical, Comparison Operations
 
@@ -176,7 +176,7 @@ void main() async {
 }
 ```
 
-You can check the executable at [d_assignment_operator.dart](./d_assignment_operator.dart). 
+You can find the executable code at [d_assignment_operator.dart](./d_assignment_operator.dart). 
 
 ### Logical, Mathematical, Comparison Operations
 
@@ -237,7 +237,7 @@ void main() async {
   await displaySystemVerilog(basicLogic);
 }
 ```
-You can check the executable at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
+You can find the executable code at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
 
 ### Non-synthesizable signal deposition (put)
 
@@ -260,20 +260,47 @@ Now, we can test our logic gate with the simulator.
 
 ```dart
 import 'package:rohd/rohd.dart';
+import 'helper.dart';
 
-void main() {
-  // Create input and output signals
-  final a = Logic(name: 'input_a');
-  final b = Logic(name: 'input_b');
-  final c = Logic(name: 'output_c');
+class LogicGate extends Module {
+  late final Logic a;
+  late final Logic b;
+  late final Logic c;
 
-  // Create an AND logic gate
-  // This assign c to the result of a AND b
-  c <= a & b;
+  LogicGate() : super(name: 'LogicGate') {
+    // Create input and output signals
+    a = Logic(name: 'input_a');
+    b = Logic(name: 'input_b');
+    c = Logic(name: 'output_c');
 
-  
+    // Add ports
+    final signal1 = addInput('input_a', a, width: a.width);
+    final signal2 = addInput('input_b', b, width: b.width);
+    final signal3 = addOutput('output_c', width: c.width);
+
+    c <= signal1 & signal2;
+    signal3 <= c;
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog
+  final basicLogic = LogicGate();
+  await displaySystemVerilog(basicLogic);
+
+  // Let build a truth table
+  print('\nBuild Truth Table: ');
+  for (var i = 0; i <= 1; i++) {
+    for (var j = 0; j <= 1; j++) {
+      basicLogic.a.put(i);
+      basicLogic.b.put(j);
+      print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+    }
+  }
 }
 ```
+
+You can find the executable code at [Basic Logic](./f_logic_gate_part_3.dart).
 
 Congratulations!!! You have successfully build your first gate! 
 
@@ -286,8 +313,25 @@ Congratulations!!! You have successfully build your first gate!
 In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using `Const`, which extends `Logic`.
 
 ```dart
-// a 16 bit constant with value 5.
-var x = Const(5, width:16);
+import 'package:rohd/rohd.dart';
+import 'helper.dart';
+
+class ConstantLogic extends Module {
+  ConstantLogic() : super(name: 'ConstantLogic') {
+    // Declare Constant
+    final x = Const(5, width: 16);
+    print('The value of constant x is: ${x.value.toInt()}');
+
+    // Add ports
+    final signal1 = addInput('const_x', x, width: x.width);
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog
+  final basicLogic = ConstantLogic();
+  await displaySystemVerilog(basicLogic);
+}
 ```
 
 ### Exercise 3:
