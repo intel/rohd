@@ -1,8 +1,8 @@
 /// Copyright (C) 2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// basic_logic.dart
-/// Creation of logic, logic value and width in rohd.
+/// a_logic.dart
+/// Creation of logic in rohd.
 ///
 /// 2023 February 20
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>

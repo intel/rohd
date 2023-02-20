@@ -61,36 +61,43 @@ To access the value of a Logic signal, you can simply call its `value` property.
 
 The value of a Logic signal is of type `LogicValue`, which has pre-defined constant bit values such as `x`, `z`, `one`, and `zero`.
 
+Let's us first initialize the `Logic()` by adding the code below into the `constructor` of `YourModuleName`.
+
+```dart
+bus = Logic(name: 'threeBitBus', width: 3);
+bigBus = Logic(name: 'bigBus', width: 65);
+```
+
 Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier.
 
 ```dart
-Logic bus = Logic(name: 'threeBitBus', width: 3);
-
-// .put() is one way to simulate a signal on a Logic signal that has been created. We will come back to this in later section.
-bus.put(1);
+// .put() is one way to simulate a signal on a Logic signal that has been
+// created.
+// We will come back to this in later section.
+basicLogic.bus.put(1);
 
 // Obtain the value of bus.
-LogicValue busVal = bus.value; 
+final busVal = basicLogic.bus.value;
+
+// output: 3'h1.
+print('a) The hexadecimal string value of bus is $busVal.');
 
 // Obtain the value of bus in Int
-int busValInt = bus.value.toInt(); 
-
-// If you set your bus width larger than 64 bits. 
-// You have to use toBigInt().
-Logic bigBus = Logic(name: 'b', width: 65);
-
-bigBus.put(BigInt.parse("9223372036854775808"));
-LogicValue bigBusValBigInt = bigBus.value.toBigInt();
-
-// output: 8'h1.
-print(busVal);
+final busValInt = basicLogic.bus.value.toInt();
 
 // output: 1.
-print(busValInt);
+print('b) The integer value of bus is $busValInt.');
+
+// If you set your bus width larger than 64 bits.
+// You have to use toBigInt().
+basicLogic.bigBus.put(BigInt.parse('9223372036854775808'));
+final bigBusValBigInt = basicLogic.bigBus.value.toBigInt();
 
 // output: 9223372036854775808.
-print(bigBusValBigInt);
+print('c) The big integer of bus is $bigBusValBigInt.');
 ```
+
+You can find the executable code above at [b_logic_width.dart](./b_logic_width.dart)
 
 ## Logic Gate: Part 1
 
