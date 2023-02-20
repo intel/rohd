@@ -20,16 +20,17 @@ class LogicGate extends Module {
 
   LogicGate() : super(name: 'LogicGate') {
     // Create input and output signals
-    final a = Logic(name: 'input_a');
-    final b = Logic(name: 'input_b');
-    final c = Logic(name: 'output_c');
+    a = Logic(name: 'input_a');
+    b = Logic(name: 'input_b');
+    c = Logic(name: 'output_c');
 
     // Add ports
     final signal1 = addInput('input_a', a, width: a.width);
     final signal2 = addInput('input_b', b, width: b.width);
     final signal3 = addOutput('output_c', width: c.width);
 
-    signal3 <= signal1 & signal3;
+    c <= signal1 & signal2;
+    signal3 <= c;
   }
 }
 

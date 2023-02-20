@@ -118,9 +118,9 @@ class LogicGate extends Module {
 
   LogicGate() : super(name: 'LogicGate') {
     // Create input and output signals
-    final a = Logic(name: 'input_a');
-    final b = Logic(name: 'input_b');
-    final c = Logic(name: 'output_c');
+    a = Logic(name: 'input_a');
+    b = Logic(name: 'input_b');
+    c = Logic(name: 'output_c');
 
     // Add ports
     final signal1 = addInput('input_a', a, width: a.width);
@@ -218,9 +218,9 @@ class LogicGate extends Module {
 
   LogicGate() : super(name: 'LogicGate') {
     // Create input and output signals
-    final a = Logic(name: 'input_a');
-    final b = Logic(name: 'input_b');
-    final c = Logic(name: 'output_c');
+    a = Logic(name: 'input_a');
+    b = Logic(name: 'input_b');
+    c = Logic(name: 'output_c');
 
     // Add ports
     final signal1 = addInput('input_a', a, width: a.width);
@@ -271,14 +271,7 @@ void main() {
   // This assign c to the result of a AND b
   c <= a & b;
 
-  // Let build a truth table
-  for (int i = 0; i <= 1; i++) {
-    for (int j = 0; j <= 1; j++) {
-      a.put(i);
-      b.put(j);
-      print("a: $i, b: $j c: ${c.value.toInt()}");
-    }
-  }
+  
 }
 ```
 

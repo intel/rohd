@@ -1,8 +1,8 @@
 /// Copyright (C) 2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
-/// c_logic_gate_part_1.dart
-/// Initialize of logic gate Logic.
+/// f_logic_gate_part_3.dart
+/// Test and simulate the logic gate created using put().
 ///
 /// 2023 February 20
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
@@ -28,6 +28,9 @@ class LogicGate extends Module {
     final signal1 = addInput('input_a', a, width: a.width);
     final signal2 = addInput('input_b', b, width: b.width);
     final signal3 = addOutput('output_c', width: c.width);
+
+    c <= signal1 & signal2;
+    signal3 <= c;
   }
 }
 
@@ -35,4 +38,14 @@ void main() async {
   // Instantiate Module and display system verilog
   final basicLogic = LogicGate();
   await displaySystemVerilog(basicLogic);
+
+  // Let build a truth table
+  print('\nBuild Truth Table: ');
+  for (var i = 0; i <= 1; i++) {
+    for (var j = 0; j <= 1; j++) {
+      basicLogic.a.put(i);
+      basicLogic.b.put(j);
+      print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+    }
+  }
 }
