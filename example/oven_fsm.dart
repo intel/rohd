@@ -49,7 +49,7 @@ enum LEDLight {
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
-  // A private variable with type StateMachine<OvenState> `oven`.
+  // A private variable with type StateMachine<OvenState> `_oven`.
   //
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
@@ -173,7 +173,7 @@ class OvenModule extends Module {
           ])
     ];
 
-    // Assign the oven StateMachine object to public variable declared.
+    // Assign the _oven StateMachine object to public variable declared.
     _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
   }
 
