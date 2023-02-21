@@ -12,11 +12,11 @@
       * [Logical, Mathematical, Comparison Operations](./00-Basic_Logic.md#logical-mathematical-comparison-operations)
   * [Logic Gate: Part 2](./00-Basic_Logic.md#logic-gate-part-2)
     * [Non-synthesizable signal deposition (put)](./00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
-    * [Exercise 2]()
-  * [Logic Gate: Part 3](./00-Basic_Logic.md#logic-gate-part-3)
     * [Exercise 2](./00-Basic_Logic.md#exercise-2)
+  * [Logic Gate: Part 3](./00-Basic_Logic.md#logic-gate-part-3)
+    * [Exercise 3](./00-Basic_Logic.md#exercise-3)
 - [Constants](./00-Basic_Logic.md#constants)
-  * [Exercise 3](./00-Basic_Logic.md#exercise-3)
+  * [Exercise 4](./00-Basic_Logic.md#exercise-4)
 - [Bus Ranges and Swizzling](./00-Basic_Logic.md#bus-ranges-and-swizzling)
 
 ## Learning Outcome

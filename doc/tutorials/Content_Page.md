@@ -13,6 +13,8 @@
 
 ## Chapter 2: Basic Gates
 - [Basic logic](./Chapter_2/00-Basic_Logic.md#basic-logic)
+  * [Chapter Template](./Chapter_2/00-Basic_Logic.md#chapter-template)
+    * [How to use chapter template](./Chapter_2/00-Basic_Logic.
   * [Logic](./Chapter_2/00-Basic_Logic.md#logic)
     * [Exercise 1](./Chapter_2/00-Basic_Logic.md#exercise-1)
   * [Logic Value & Width](./Chapter_2/00-Basic_Logic.md#logic-value--width)
@@ -22,10 +24,11 @@
       * [Logical, Mathematical, Comparison Operations](./Chapter_2/00-Basic_Logic.md#logical-mathematical-comparison-operations)
   * [Logic Gate: Part 2](./Chapter_2/00-Basic_Logic.md#logic-gate-part-2)
     * [Non-synthesizable signal deposition (put)](./Chapter_2/00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
-  * [Logic Gate: Part 3](./Chapter_2/00-Basic_Logic.md#logic-gate-part-3)
     * [Exercise 2](./Chapter_2/00-Basic_Logic.md#exercise-2)
+  * [Logic Gate: Part 3](./Chapter_2/00-Basic_Logic.md#logic-gate-part-3)
+    * [Exercise 3](./Chapter_2/00-Basic_Logic.md#exercise-3)
 - [Constants](./Chapter_2/00-Basic_Logic.md#constants)
-  * [Exercise 3](./Chapter_2/00-Basic_Logic.md#exercise-3)
+  * [Exercise 4](./Chapter_2/00-Basic_Logic.md#exercise-4)
 - [Bus Ranges and Swizzling](./Chapter_2/00-Basic_Logic.md#bus-ranges-and-swizzling)
 
 ## Chapter 3: Unit Testing
