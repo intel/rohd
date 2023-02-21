@@ -1,6 +1,8 @@
 ## Content
 
 - [Basic logic](./00-Basic_Logic.md#basic-logic)
+  * [Chapter Template](./00-Basic_Logic.md#chapter-template)
+    * [How to use chapter template](./00-Basic_Logic.md#how-to-use-chapter-template)
   * [Logic](./00-Basic_Logic.md#logic)
     * [Exercise 1](./00-Basic_Logic.md#exercise-1)
   * [Logic Value & Width](./00-Basic_Logic.md#logic-value--width)
@@ -28,26 +30,91 @@ In this chapter:
 
 # Basic Logic
 
+## Chapter Template
+
+In this chapter, we will provide a template to run the example code. The template can be found at [template/sv_module.dart](./template/sv_module.dart). 
+
+We are providing this template as some of the user want to compare with the generated system verilog code. The template code are as follow. 
+
+```dart
+import 'package:rohd/rohd.dart';
+import '../helper.dart';
+
+// TODO(user): (Optional) Change [YourModuleName] to your own module name.
+class YourModuleName extends Module {
+  // TODO(user): (Optional) Public attributes can register here.
+
+  // TODO(user): (Optional) 'ModuleName' can change to your own module name.
+  YourModuleName() : super(name: 'ModuleName') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+
+    // TODO(user): (Required) Declare your input and output port.
+
+    // TODO(user): (Optional) Logic Operations.
+  }
+}
+
+void main() async {
+  // Instantiate Module and display system verilog.
+  // TODO(user): (Optional) Update [YourModuleName].
+  final basicLogic = YourModuleName();
+  await displaySystemVerilog(basicLogic);
+
+  // TODO(user): (Optional) Simulate your Module.
+}
+```
+
+### How to use chapter template
+
+In the template, notice that there are several `TODO` that require changes to be make. The **optional** TODO can be ignore while **required** TODO must be changed. 
+
+The **required** TODO are inside the constructor of the Module as below.
+
+```dart
+YourModuleName() : super(name: 'ModuleName') {
+  // TODO(user): (Required) Paste your Logic initialization here.
+
+  // TODO(user): (Required) Declare your input and output port.
+}
+```
+
+When you see a code snippet in the tutorial, you want to paste the code below ``// TODO(user): (Required) Paste your Logic initialization here.``. After that, the input and output need to be declared after ``// TODO(user): (Required) Declare your input and output port.``.
+
+In every code snippet, we will provide you both the code that need to be paste.
+
+However, in some section, we will required you to paste some code in optional fields such as ``// TODO(user): (Optional) Simulate your Module.`` or ``// TODO(user): (Optional) Public attributes can register here.``.
+
 ## Logic
 
 Like any programming language, ROHD has its own data types, which include `Logic` and `LogicValue`. `Logic` is fundamental to creating signals.
 
 Note that in Dart, variable names are typically written in camelcase, such as `aSignal` and `thisIsVariable`. Visit this page to learn more [https://dart.dev/guides/language/effective-dart/style](https://dart.dev/guides/language/effective-dart/style). 
 
+Below, let us look at how to create a `Logic` signal. In the example below, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument. 
+
 ```dart
+// TODO(user): (Required) Paste your Logic initialization here.
+// ------------------------------------------------------------
+
 // 1-bit unnamed signal. 
 Logic unamedSignal = Logic();
 
 // 8-bit bus named 'b'.
 Logic bus = Logic(name: 'b', width: 8);
 
-// You can use toString() method to check for your signals details.
-print(unamedSignal.toString());
+// You can use .toString() method to check for your signals details.
+// Dart will assume you are using.toString() as default if not specify.
+print(unamedSignal);
+
+
+// TODO(user): (Required) Declare your input and output port.
+// ----------------------------------------------------------
+
+final signal1 = addInput('', unamedSignal);
+final signal2 = addInput('b', bus, width: bus.width);
 ```
 
 You can find the executable code at [a_logic.dart](./a_logic.dart).
-
-In the example above, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument.
 
 ### Exercise 1:
 
@@ -57,20 +124,32 @@ In the example above, we can see that creation of `Logic` signals involved insta
 ## Logic Value & Width
 Now that we've learned how to create a Logic signal, let's explore how to access its value.
 
-To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any x or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
-
 The value of a Logic signal is of type `LogicValue`, which has pre-defined constant bit values such as `x`, `z`, `one`, and `zero`.
 
-Let's us first initialize the `Logic()` by adding the code below into the `constructor` of `YourModuleName`.
+To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any `x` or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
 
 ```dart
+// TODO(user): (Required) Paste your Logic initialization here.
+// ------------------------------------------------------------
+
 bus = Logic(name: 'threeBitBus', width: 3);
 bigBus = Logic(name: 'bigBus', width: 65);
+
+// TODO(user): (Required) Declare your input and output port.
+// ----------------------------------------------------------
+// Add ports
+final signal1 = addInput('threeBitBus', bus, width: bus.width);
+final signal2 = addInput('bigBus', bus, width: bus.width);
 ```
 
-Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier.
+Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier. 
+
+To create the simulation of your module, copy and paste the code snippet below to ``// TODO(user): (Optional) Simulate your Module.`` in the chapter template.
 
 ```dart
+// TODO(user): (Optional) Simulate your Module.
+// --------------------------------------------
+
 // .put() is one way to simulate a signal on a Logic signal that has been
 // created.
 // We will come back to this in later section.
@@ -108,31 +187,27 @@ By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our
 To create our two-input Logic `AND` gate, we need to declare two input signals and one output signal, which means we will need to create a total of three Logic signals.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
-
 class LogicGate extends Module {
+  // TODO(user): (Optional) Public attributes can register here.
+  // -----------------------------------------------------------
   late final Logic a;
   late final Logic b;
   late final Logic c;
 
   LogicGate() : super(name: 'LogicGate') {
-    // Create input and output signals
+    // TODO(user): (Required) Paste your Logic initialization here.
+    // ----------------------------------------------------------
     a = Logic(name: 'input_a');
     b = Logic(name: 'input_b');
     c = Logic(name: 'output_c');
 
+    // TODO(user): (Required) Declare your input and output port.
+    // ----------------------------------------------------------
     // Add ports
     final signal1 = addInput('input_a', a, width: a.width);
     final signal2 = addInput('input_b', b, width: b.width);
     final signal3 = addOutput('output_c', width: c.width);
   }
-}
-
-void main() async {
-  // Instantiate Module and display system verilog
-  final basicLogic = LogicGate();
-  await displaySystemVerilog(basicLogic);
 }
 ```
 
@@ -147,20 +222,25 @@ To assign the value of one signal to another signal, use the `<=` operator. This
 Let's take a look at an example of how to assign a Logic signal `a` to signal `b`.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
-
 class AssignmentOperator extends Module {
+  // TODO(user): (Optional) Public attributes can register here.
+  // -----------------------------------------------------------
   late final Logic a;
   late final Logic b;
+
   AssignmentOperator() : super(name: 'Assignment') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+    // ----------------------------------------------------------
     a = Logic(name: 'signal_a');
     b = Logic(name: 'signal_b');
 
+    // TODO(user): (Required) Declare your input and output port.
+    // ----------------------------------------------------------
     // In this case, b is connected to a which means they will have the same value.
     final signal1 = addInput('a', a, width: a.width);
     final signal2 = addOutput('b', width: b.width);
 
+    // TODO(user): (Optional) Logic Operations.
     signal2 <= signal1;
   }
 }
