@@ -1,6 +1,7 @@
 {
   "config": {
     "default": true,
+    "MD013": false,
     "MD041": false
   },
 
