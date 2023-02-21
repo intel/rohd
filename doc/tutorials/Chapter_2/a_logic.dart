@@ -21,8 +21,9 @@ class BasicLogic extends Module {
     // 8-bit bus named 'b'.
     final bus = Logic(name: 'b', width: 8);
 
-    // You can use toString() method to check for your signals details.
-    print(unamedSignal.toString());
+    // You can use .toString() method to check for your signals details.
+    // Dart will assume you are using.toString() as default if not specify.
+    print(unamedSignal);
 
     // Add ports
     final signal1 = addInput('', unamedSignal);
