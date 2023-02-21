@@ -1,0 +1,10 @@
+{
+  "config": {
+    "default": true,
+    "MD041": false
+  },
+
+  "ignores": [
+    "doc/api/"
+  ]
+}
