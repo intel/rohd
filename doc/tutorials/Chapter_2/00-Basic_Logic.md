@@ -241,18 +241,22 @@ class AssignmentOperator extends Module {
     final signal2 = addOutput('b', width: b.width);
 
     // TODO(user): (Optional) Logic Operations.
+    // ----------------------------------------
     signal2 <= signal1;
   }
 }
 
 void main() async {
-  // Instantiate Module and display system verilog
-  final assignOperator = AssignmentOperator();
-  await displaySystemVerilog(assignOperator);
+  // ...
 
+  // TODO(user): (Optional) Simulate your Module.
+  // --------------------------------------------
   assignOperator.a.put(1);
 
-  print('The value of a is ${assignOperator.a.value.toInt()}.');
+  // we can access the signal by naviagate through the iterable.
+  final portB =
+      assignOperator.signals.firstWhere((element) => element.name == 'b');
+  print('The value of b is ${portB.value}.');
 }
 ```
 
@@ -261,6 +265,10 @@ You can find the executable code at [d_assignment_operator.dart](./d_assignment_
 ### Logical, Mathematical, Comparison Operations
 
 In ROHD, we have operators that are similar to those in SystemVerilog. This makes it easier for users to learn and pick up the language.
+
+Below are the operations provided in ROHD. 
+
+You **do not need to copy and paste for this section**. Just look and remember few of the important operators.
 
 ```dart
 a_bar     <=  ~a;      // not
@@ -283,38 +291,42 @@ a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of oper
 answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```
 
-Great, now that you've learned all about our operators, let's continue our journey and create an `AND` gate. We can use the `&` operator that we learned earlier to create an `AND` logic gate.
+Great, now that you've learned all about our operators, let's continue our journey and create an `AND` gate. 
 
 ## Logic Gate: Part 2
 
-```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
+We can use the `&` operator that we learned earlier to create an `AND` logic gate.
 
+```dart
 class LogicGate extends Module {
+  
+  // TODO(user): (Optional) Public attributes can register here.
+  // -----------------------------------------------------------
   late final Logic a;
   late final Logic b;
   late final Logic c;
 
   LogicGate() : super(name: 'LogicGate') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+    // ------------------------------------------------------------
     // Create input and output signals
     a = Logic(name: 'input_a');
     b = Logic(name: 'input_b');
     c = Logic(name: 'output_c');
 
+    // TODO(user): (Required) Declare your input and output port.
+    // ----------------------------------------------------------
     // Add ports
     final signal1 = addInput('input_a', a, width: a.width);
     final signal2 = addInput('input_b', b, width: b.width);
     final signal3 = addOutput('output_c', width: c.width);
 
+    // TODO(user): (Optional) Logic Operations.
+    // ----------------------------------------
+
+    // Note that the & symbols is the AND operator
     signal3 <= signal1 & signal3;
   }
-}
-
-void main() async {
-  // Instantiate Module and display system verilog
-  final basicLogic = LogicGate();
-  await displaySystemVerilog(basicLogic);
 }
 ```
 You can find the executable code at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.

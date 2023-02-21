@@ -36,5 +36,8 @@ void main() async {
 
   assignOperator.a.put(1);
 
-  print('The value of a is ${assignOperator.a.value.toInt()}.');
+  // we can access the signal by naviagate through the iterable.
+  final portB =
+      assignOperator.signals.firstWhere((element) => element.name == 'b');
+  print('The value of b is ${portB.value}.');
 }
