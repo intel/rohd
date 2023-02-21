@@ -12,6 +12,7 @@
       * [Logical, Mathematical, Comparison Operations](./00-Basic_Logic.md#logical-mathematical-comparison-operations)
   * [Logic Gate: Part 2](./00-Basic_Logic.md#logic-gate-part-2)
     * [Non-synthesizable signal deposition (put)](./00-Basic_Logic.md#non-synthesizable-signal-deposition-put)
+    * [Exercise 2]()
   * [Logic Gate: Part 3](./00-Basic_Logic.md#logic-gate-part-3)
     * [Exercise 2](./00-Basic_Logic.md#exercise-2)
 - [Constants](./00-Basic_Logic.md#constants)
@@ -325,10 +326,16 @@ class LogicGate extends Module {
     // ----------------------------------------
 
     // Note that the & symbols is the AND operator
-    signal3 <= signal1 & signal3;
+    c <= signal1 & signal2;
+    signal3 <= c;
   }
 }
 ```
+
+### Exercise 2:
+
+1. Can you optimize the code? Can you remove the redundance from the code? 
+
 You can find the executable code at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
 
 ### Non-synthesizable signal deposition (put)
@@ -337,7 +344,9 @@ Do you still remember the `put()` function that was used in the previous section
 
 For testbench code or other non-synthesizable code, you can use `put` on any `Logic` to deposit a value on the signal.
 
-Now let's see an example of how to deposit signals for testing using `put`.
+Now let's see an example of how to deposit signals for testing using `put`. At this point, you should be familiar with how you can deposit signals.
+
+Note: This section of code **does not need to run**. 
 
 ```dart
 b = Logic(width:4);
@@ -351,42 +360,27 @@ a.put(4);
 Now, we can test our logic gate with the simulator.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
-
-class LogicGate extends Module {
-  late final Logic a;
-  late final Logic b;
-  late final Logic c;
-
-  LogicGate() : super(name: 'LogicGate') {
-    // Create input and output signals
-    a = Logic(name: 'input_a');
-    b = Logic(name: 'input_b');
-    c = Logic(name: 'output_c');
-
-    // Add ports
-    final signal1 = addInput('input_a', a, width: a.width);
-    final signal2 = addInput('input_b', b, width: b.width);
-    final signal3 = addOutput('output_c', width: c.width);
-
-    c <= signal1 & signal2;
-    signal3 <= c;
-  }
-}
+// ...
 
 void main() async {
-  // Instantiate Module and display system verilog
-  final basicLogic = LogicGate();
-  await displaySystemVerilog(basicLogic);
+  // ...
+
+  // TODO(user): (Optional) Simulate your Module.
+  // --------------------------------------------
 
   // Let build a truth table
+  int portC;
   print('\nBuild Truth Table: ');
   for (var i = 0; i <= 1; i++) {
     for (var j = 0; j <= 1; j++) {
       basicLogic.a.put(i);
       basicLogic.b.put(j);
-      print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+      // print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+      portC = basicLogic.signals
+          .firstWhere((element) => element.name == 'output_c')
+          .value
+          .toInt();
+      print('a: $i, b: $j c: $portC');
     }
   }
 }
@@ -396,7 +390,7 @@ You can find the executable code at [Basic Logic](./f_logic_gate_part_3.dart).
 
 Congratulations!!! You have successfully build your first gate! 
 
-### Exercise 2:
+### Exercise 3:
 
 1. Build OR or NOR or XOR gate using ROHD.
 
@@ -405,28 +399,23 @@ Congratulations!!! You have successfully build your first gate!
 In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using `Const`, which extends `Logic`.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
-
 class ConstantLogic extends Module {
   ConstantLogic() : super(name: 'ConstantLogic') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+    // ------------------------------------------------------------
     // Declare Constant
     final x = Const(5, width: 16);
     print('The value of constant x is: ${x.value.toInt()}');
 
+    // TODO(user): (Required) Declare your input and output port.
+    // ----------------------------------------------------------
     // Add ports
     final signal1 = addInput('const_x', x, width: x.width);
   }
 }
-
-void main() async {
-  // Instantiate Module and display system verilog
-  final constantLogic = ConstantLogic();
-  await displaySystemVerilog(constantLogic);
-}
 ```
 
-### Exercise 3:
+### Exercise 4:
 
 1. Create a constant of value 10 and assign to a Logic input.
 
@@ -437,10 +426,11 @@ In the previous module, we learned about the `width` property of `Logic`. Now, w
 We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'helper.dart';
-
+// TODO(user): (Optional) Change [YourModuleName] to your own module name.
+// -----------------------------------------------------------------------
 class RangeSwizzling extends Module {
+  // TODO(user): (Optional) Public attributes can register here.
+  // ------------------------------------------------------------
   late final Logic a;
   late final Logic b;
   late final Logic c;
@@ -448,24 +438,47 @@ class RangeSwizzling extends Module {
   late final Logic e;
   late final Logic f;
 
+  // TODO(user): (Optional) 'ModuleName' can change to your own module name.
+  // -----------------------------------------------------------------------
   RangeSwizzling() : super(name: 'RangeSwizzling') {
+    // TODO(user): (Required) Paste your Logic initialization here.
+    // ------------------------------------------------------------
     // Declare Constant
-    a = Logic(width: 4);
-    b = Logic(width: 8);
+    a = Logic(name: 'signal_a', width: 4);
+    b = Logic(name: 'signal_b', width: 8);
     c = Const(7, width: 5);
-    d = Logic();
-    e = Logic(width: d.width + c.width + a.width);
-    f = Logic(width: d.width + c.width + a.width);
+    d = Logic(name: 'signal_d');
+    e = Logic(name: 'signal_e', width: d.width + c.width + a.width);
+    f = Logic(name: 'signal_f', width: d.width + c.width + a.width);
+
+    // TODO(user): (Required) Declare your input and output port.
+    // ----------------------------------------------------------
+    // Add ports
+    final signal1 = addInput('a', a, width: a.width);
+    final signal2 = addInput('b', b, width: b.width);
+    final signal3 = addInput('c', c, width: c.width);
+    final signal4 = addInput('d', d, width: d.width);
+    final signal5 = addInput('e', e, width: e.width);
+    final signal6 = addInput('f', f, width: f.width);
+
+    // TODO(user): (Optional) Logic Operations.
+    // ----------------------------------------
+    // Add ports
+    final signal1 = addOutput('output_d', width: d.width);
+    final signal2 = addOutput('output_e', width: e.width);
+    final signal3 = addOutput('output_f', width: f.width);
 
     // assign d to the top bit of a
     // construct e by swizzling bits from b, c, and d
     // here, the MSB is on the left, LSB is on the right
     d <= b[7];
+    signal1 <= d;
 
     // value:
     // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
     // e = [1 00111 1110] = [d, c, a]
     e <= [d, c, a].swizzle();
+    signal2 <= e;
 
     // alternatively, do a reverse swizzle
     // (useful for lists where 0-index is actually the 0th element)
@@ -474,22 +487,20 @@ class RangeSwizzling extends Module {
     // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
     // e = [1110 00111 1] - [a, c, d]
     f <= [d, c, a].rswizzle();
-
-    // Add ports
-    final signal1 = addInput('a', a, width: a.width);
-    final signal2 = addInput('b', b, width: b.width);
-    final signal3 = addInput('c', c, width: c.width);
-    final signal4 = addInput('d', d, width: d.width);
-    final signal5 = addInput('e', e, width: e.width);
-    final signal6 = addInput('f', f, width: f.width);
+    signal3 <= f;
   }
 }
 
 void main() async {
   // Instantiate Module and display system verilog
+
+  // TODO(user): (Optional) Update [YourModuleName].
+  // ----------------------------------------------
   final rangeSwizzling = RangeSwizzling();
   await displaySystemVerilog(rangeSwizzling);
 
+  // TODO(user): (Optional) Simulate your Module.
+  // --------------------------------------------
   print('\n');
 
   // assign b to the bottom 3 bits of a
@@ -508,6 +519,7 @@ void main() async {
 
 ROHD does not support assignment to a subset of a bus. That is, you cannot do something like `e[3] <= d`. Instead, you can use the withSet function to get a copy with that subset of the bus assigned to something else. This applies for both Logic and LogicValue. For example:
 
+**You do not need to run this code.**
 ```dart
 // reassign the variable `e` to a new `Logic` where bit 3 is set to `d`
 e = e.withSet(3, d);

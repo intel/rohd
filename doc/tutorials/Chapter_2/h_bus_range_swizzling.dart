@@ -23,22 +23,29 @@ class RangeSwizzling extends Module {
 
   RangeSwizzling() : super(name: 'RangeSwizzling') {
     // Declare Constant
-    a = Logic(width: 4);
-    b = Logic(width: 8);
+    a = Logic(name: 'signal_a', width: 4);
+    b = Logic(name: 'signal_b', width: 8);
     c = Const(7, width: 5);
-    d = Logic();
-    e = Logic(width: d.width + c.width + a.width);
-    f = Logic(width: d.width + c.width + a.width);
+    d = Logic(name: 'signal_d');
+    e = Logic(name: 'signal_e', width: d.width + c.width + a.width);
+    f = Logic(name: 'signal_f', width: d.width + c.width + a.width);
+
+    // Add ports
+    final signal1 = addOutput('output_d', width: d.width);
+    final signal2 = addOutput('output_e', width: e.width);
+    final signal3 = addOutput('output_f', width: f.width);
 
     // assign d to the top bit of a
     // construct e by swizzling bits from b, c, and d
     // here, the MSB is on the left, LSB is on the right
     d <= b[7];
+    signal1 <= d;
 
     // value:
     // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
     // e = [1 00111 1110] = [d, c, a]
     e <= [d, c, a].swizzle();
+    signal2 <= e;
 
     // alternatively, do a reverse swizzle
     // (useful for lists where 0-index is actually the 0th element)
@@ -47,14 +54,7 @@ class RangeSwizzling extends Module {
     // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
     // e = [1110 00111 1] - [a, c, d]
     f <= [d, c, a].rswizzle();
-
-    // Add ports
-    final signal1 = addInput('a', a, width: a.width);
-    final signal2 = addInput('b', b, width: b.width);
-    final signal3 = addInput('c', c, width: c.width);
-    final signal4 = addInput('d', d, width: d.width);
-    final signal5 = addInput('e', e, width: e.width);
-    final signal6 = addInput('f', f, width: f.width);
+    signal3 <= f;
   }
 }
 

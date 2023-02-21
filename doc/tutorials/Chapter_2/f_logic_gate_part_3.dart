@@ -40,12 +40,18 @@ void main() async {
   await displaySystemVerilog(basicLogic);
 
   // Let build a truth table
+  int portC;
   print('\nBuild Truth Table: ');
   for (var i = 0; i <= 1; i++) {
     for (var j = 0; j <= 1; j++) {
       basicLogic.a.put(i);
       basicLogic.b.put(j);
-      print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+      // print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
+      portC = basicLogic.signals
+          .firstWhere((element) => element.name == 'output_c')
+          .value
+          .toInt();
+      print('a: $i, b: $j c: $portC');
     }
   }
 }
