@@ -13,29 +13,17 @@
 import 'package:rohd/rohd.dart';
 import 'helper.dart';
 
-class LogicGate extends Module {
-  late final Logic a;
-  late final Logic b;
-  late final Logic c;
-
-  LogicGate() : super(name: 'LogicGate') {
-    // Create input and output signals
-    a = Logic(name: 'input_a');
-    b = Logic(name: 'input_b');
-    c = Logic(name: 'output_c');
-
-    // Add ports
-    final signal1 = addInput('input_a', a, width: a.width);
-    final signal2 = addInput('input_b', b, width: b.width);
-    final signal3 = addOutput('output_c', width: c.width);
-
-    c <= signal1 & signal2;
-    signal3 <= c;
-  }
+void andGate(Logic a, Logic b, Logic c) {
+  c <= a & b;
 }
 
 void main() async {
+  // Create a logic for input and output
+  final a = Logic(name: 'a');
+  final b = Logic(name: 'b');
+  final c = Logic(name: 'c');
+
   // Instantiate Module and display system verilog
-  final basicLogic = LogicGate();
+  final basicLogic = Part2LogicGate(a, b, c, andGate);
   await displaySystemVerilog(basicLogic);
 }

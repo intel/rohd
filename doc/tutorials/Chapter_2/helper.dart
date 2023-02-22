@@ -33,3 +33,15 @@ class AssignmentOperator extends Module {
     assignment(a, b);
   }
 }
+
+class Part2LogicGate extends Module {
+  Part2LogicGate(
+      Logic a, Logic b, Logic c, void Function(Logic a, Logic b, Logic c) gate)
+      : super(name: 'part_2_logic_gate') {
+    a = addInput(a.name, a, width: a.width);
+    b = addInput(b.name, b, width: b.width);
+    c = addOutput(c.name, width: c.width);
+
+    gate(a, b, c);
+  }
+}

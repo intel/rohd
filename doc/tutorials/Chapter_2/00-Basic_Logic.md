@@ -61,7 +61,7 @@ Now that we've learned how to create a Logic signal, let's explore how to access
 
 The value of a Logic signal is of type `LogicValue`, which has pre-defined constant bit values such as `x`, `z`, `one`, and `zero`.
 
-To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any `x` or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
+To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any `x` or `z` bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
 
 ```dart
 bus = Logic(name: 'threeBitBus', width: 3);
@@ -185,36 +185,20 @@ Great, now that you've learned all about our operators, let's continue our journ
 We can use the `&` operator that we learned earlier to create an `AND` logic gate.
 
 ```dart
-class LogicGate extends Module {
-  
-  // TODO(user): (Optional) Public attributes can register here.
-  // -----------------------------------------------------------
-  late final Logic a;
-  late final Logic b;
-  late final Logic c;
+// We add our and gate here.
+void andGate(Logic a, Logic b, Logic c) {
+  c <= a & b;
+}
 
-  LogicGate() : super(name: 'LogicGate') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-    // ------------------------------------------------------------
-    // Create input and output signals
-    a = Logic(name: 'input_a');
-    b = Logic(name: 'input_b');
-    c = Logic(name: 'output_c');
+void main() async {
+  // Create a logic for input and output.
+  final a = Logic(name: 'a');
+  final b = Logic(name: 'b');
+  final c = Logic(name: 'c');
 
-    // TODO(user): (Required) Declare your input and output port.
-    // ----------------------------------------------------------
-    // Add ports
-    final signal1 = addInput('input_a', a, width: a.width);
-    final signal2 = addInput('input_b', b, width: b.width);
-    final signal3 = addOutput('output_c', width: c.width);
-
-    // TODO(user): (Optional) Logic Operations.
-    // ----------------------------------------
-
-    // Note that the & symbols is the AND operator
-    c <= signal1 & signal2;
-    signal3 <= c;
-  }
+  // Instantiate Module and display system verilog.
+  final basicLogic = Part2LogicGate(a, b, c, andGate);
+  await displaySystemVerilog(basicLogic);
 }
 ```
 
