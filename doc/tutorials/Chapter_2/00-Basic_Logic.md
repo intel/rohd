@@ -261,6 +261,8 @@ void main() async {
 }
 ```
 
+You can find the executable code at [constant](./g_constant.dart).
+
 ### Exercise 3:
 
 1. Create a constant of value 10 and assign to a Logic.
@@ -324,6 +326,8 @@ void main() async {
   print('f: ${rangeSwizzling.f.value.toString(includeWidth: false)}');
 }
 ```
+
+You can find the executable code at [bus range and slicing](./h_bus_range_swizzling.dart).
 
 ROHD does not support assignment to a subset of a bus. That is, you cannot do something like `e[3] <= d`. Instead, you can use the withSet function to get a copy with that subset of the bus assigned to something else. This applies for both Logic and LogicValue. For example:
 
