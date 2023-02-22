@@ -1,4 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// logic.dart
@@ -846,6 +846,12 @@ class Logic {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  /// Returns a replicated signal using [ReplicationOp] with new
+  /// width = this.width * [multiplier]
+  /// The input [multiplier] cannot be negative or 0; an exception will be
+  /// thrown, otherwise.
+  Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
   /// [list]. Else `0` (of [width]=1) if not present.
