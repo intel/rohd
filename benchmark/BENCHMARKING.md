@@ -5,7 +5,7 @@ This folder contains some benchmarking related code for estimating relative perf
 
 To run all benchmarks, execute the below command:
 
-```
+```shell
 dart run benchmark/benchmark.dart
 ```
 

@@ -6,8 +6,7 @@
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
-Rapid Open Hardware Development (ROHD) Framework
-================================================
+# Rapid Open Hardware Development (ROHD) Framework
 
 ## Describing Hardware in Dart with ROHD
 
@@ -52,9 +51,9 @@ Dart has an excellent package manager called "pub" (<https://pub.dev>).  It is p
 
 ### The Challenge of Justifying Trying a New Language
 
-<a href="https://stackoverflow.com/questions/53007782/what-benefits-does-chisel-offer-over-classic-hardware-description-languages">This StackOverflow answer</a> about why it's worth trying Chisel (an alternative to ROHD) contains valuable insight into why it is difficult in general to justify a new language to someone who hasn't used it before:
+[This StackOverflow answer](https://stackoverflow.com/questions/53007782/what-benefits-does-chisel-offer-over-classic-hardware-description-languages) about why it's worth trying Chisel (an alternative to ROHD) contains valuable insight into why it is difficult in general to justify a new language to someone who hasn't used it before:
 
-> Language *power* is notoriously difficult to objectively evaluate. Paul Graham describes this as the "Blub Paradox" in his <a href="http://www.paulgraham.com/avg.html">"Beating the Averages" essay</a>. Graham's thesis is that an engineer proficient in a less powerful language cannot evaluate the utility of a more powerful language.
+> Language *power* is notoriously difficult to objectively evaluate. Paul Graham describes this as the "Blub Paradox" in his ["Beating the Averages" essay](http://www.paulgraham.com/avg.html). Graham's thesis is that an engineer proficient in a less powerful language cannot evaluate the utility of a more powerful language.
 
 If you're thinking "SystemVerilog is just fine, I don't need something new", it is worth reading either or both of the StackOverflow answer and the Paul Graham essay.
 
@@ -798,7 +797,7 @@ You can read more about SystemVerilog here: <https://en.wikipedia.org/wiki/Syste
 
 ### Chisel
 
-Chisel is a domain specific language (DSL) built on top of <a href="https://www.scala-lang.org/">Scala</a>, which is built on top of the Java virtual machine (JVM).  The goals of Chisel are somewhat aligned with the goals of ROHD.  Chisel can also convert to SystemVerilog.
+Chisel is a domain specific language (DSL) built on top of [Scala](https://www.scala-lang.org/), which is built on top of the Java virtual machine (JVM).  The goals of Chisel are somewhat aligned with the goals of ROHD.  Chisel can also convert to SystemVerilog.
 
 - The syntax of Scala (and thus Chisel) is probably less familiar-feeling to most hardware engineers, and it can be more verbose than ROHD with Dart.
 - Scala and the JVM are arguably less user friendly to debug than Dart code.

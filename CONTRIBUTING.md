@@ -67,7 +67,7 @@ The below button will allow you to create a GitHub Codespace with ROHD already c
 
 Once requirements are installed, you can clone and run the test suite.
 
-```
+```shell
 git clone https://github.com/intel/rohd.git
 cd rohd
 dart pub get
