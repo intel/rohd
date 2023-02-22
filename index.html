@@ -86,7 +86,7 @@
 <p>Dart is a modern, relatively new language developed by Google.  It is designed with client-side application development in mind (e.g. apps and websites), but also has great performance for general tasks.  It adopts some of the most loved syntax and features from languages like C++, Java, C#, JavaScript/TypeScript, and Kotlin.  Dart is extremely user-friendly, fun to use, and <strong>easy to learn</strong>.  The excellent, fast static analysis with a modern IDE with autocomplete makes it easy to learn as you work.  Dart has a lot of great modern language features, including null safety.</p>
 <p>Because it is designed with asynchronous requests in mind (i.e. sending a request to a server and not freezing the application while it waits for a response), Dart has async/await and <code>Future</code>s built in, with concurrent programming using <em>isolates</em>.  These constructs enable code to execute in parallel without multithreading.  These chacteristics make modelling hardware very easy.</p>
 <p>Dart can compile to native machine code, but also includes its own high-performance VM and a JIT compiler.  During development, you can use a feature called "hot reload" to change code while the program is actively executing.</p>
-<p>Dart has an excellent package manager called "pub" (<a href="https://pub.dev">https://pub.dev</a>).  It is possible to host a private Dart Pub server for packages that shouldn't be shared broadly (e.g. Top-Secret IP).</p>
+<p>Dart has an excellent package manager called "pub" (<a href="https://pub.dev">pub.dev</a>).  It is possible to host a private Dart Pub server for packages that shouldn't be shared broadly (e.g. Top-Secret IP).</p>
 <h3 id="the-challenge-of-justifying-trying-a-new-language">The Challenge of Justifying Trying a New Language</h3>
 <p><a href="https://stackoverflow.com/questions/53007782/what-benefits-does-chisel-offer-over-classic-hardware-description-languages">This StackOverflow answer</a> about why it's worth trying Chisel (an alternative to ROHD) contains valuable insight into why it is difficult in general to justify a new language to someone who hasn't used it before:</p>
 <blockquote>
@@ -94,36 +94,36 @@
 </blockquote>
 <p>If you're thinking "SystemVerilog is just fine, I don't need something new", it is worth reading either or both of the StackOverflow answer and the Paul Graham essay.</p>
 <h3 id="more-information-on-dart">More Information on Dart</h3>
-<p>Try out Dart instantly from your browser here (it supports ROHD too!): <a href="https://dartpad.dev/?null_safety=true">https://dartpad.dev/?null_safety=true</a></p>
-<p>See some Dart language samples here: <a href="https://dart.dev/samples">https://dart.dev/samples</a></p>
-<p>For more information on Dart and tutorials, see <a href="https://dart.dev/">https://dart.dev/</a> and <a href="https://dart.dev/overview">https://dart.dev/overview</a></p>
+<p>Try out Dart instantly from your browser here (it supports ROHD too!): <a href="https://dartpad.dev/?null_safety=true">dartpad.dev/?null_safety=true</a></p>
+<p>See some Dart language samples here: <a href="https://dart.dev/samples">dart.dev/samples</a></p>
+<p>For more information on Dart and tutorials, see <a href="https://dart.dev/">dart.dev/</a> and <a href="https://dart.dev/overview">dart.dev/overview</a></p>
 <h2 id="development-recommendations">Development Recommendations</h2>
 <ul>
 <li>The <a href="https://github.com/intel/rohd-vf">ROHD Verification Framework</a> is a UVM-like framework for building testbenches for hardware modelled in ROHD.</li>
 <li>The <a href="https://github.com/intel/rohd-cosim">ROHD Cosimulation</a> package allows you to cosimulate the ROHD simulator with a variety of SystemVerilog simulators.</li>
 <li>Visual Studio Code (vscode) is a great, free IDE with excellent support for Dart.  It works well on all platforms, including native Windows or Windows Subsystem for Linux (WSL) which allows you to run a native Linux kernel (e.g. Ubuntu) within Windows.  You can also use vscode to develop on a remote machine with the Remote SSH extension.
 <ul>
-<li>vscode: <a href="https://code.visualstudio.com/">https://code.visualstudio.com/</a></li>
-<li>WSL: <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">https://docs.microsoft.com/en-us/windows/wsl/install-win10</a></li>
-<li>Remote SSH: <a href="https://code.visualstudio.com/blogs/2019/07/25/remote-ssh">https://code.visualstudio.com/blogs/2019/07/25/remote-ssh</a></li>
-<li>Dart extension for vscode: <a href="https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code">https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code</a></li>
+<li>vscode: <a href="https://code.visualstudio.com/">code.visualstudio.com/</a></li>
+<li>WSL: <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">docs.microsoft.com/en-us/windows/wsl/install-win10</a></li>
+<li>Remote SSH: <a href="https://code.visualstudio.com/blogs/2019/07/25/remote-ssh">code.visualstudio.com/blogs/2019/07/25/remote-ssh</a></li>
+<li>Dart extension for vscode: <a href="https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code">marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code</a></li>
 </ul>
 </li>
 </ul>
 <h2 id="getting-started">Getting started</h2>
-<p>Once you have Dart installed, if you don't already have a project, you can create one using <code>dart create</code>: <a href="https://dart.dev/tools/dart-tool">https://dart.dev/tools/dart-tool</a></p>
-<p>Then add ROHD as a dependency to your pubspec.yaml file.  ROHD is <a href="https://pub.dev/packages/rohd">registered</a> on pub.dev.  The easiest way to add ROHD as a dependency is following the instructions here <a href="https://pub.dev/packages/rohd/install">https://pub.dev/packages/rohd/install</a>.</p>
+<p>Once you have Dart installed, if you don't already have a project, you can create one using <code>dart create</code>: <a href="https://dart.dev/tools/dart-tool">dart.dev/tools/dart-tool</a></p>
+<p>Then add ROHD as a dependency to your pubspec.yaml file.  ROHD is <a href="https://pub.dev/packages/rohd">registered</a> on pub.dev.  The easiest way to add ROHD as a dependency is following the instructions here <a href="https://pub.dev/packages/rohd/install">pub.dev/packages/rohd/install</a>.</p>
 <p>Now you can import it in your project using:</p>
 <pre class="language-dart"><code class="language-dart">import 'package:rohd/rohd.dart';
 </code></pre>
-<p>There are complete API docs available at <a href="https://intel.github.io/rohd/rohd/rohd-library.html">https://intel.github.io/rohd/rohd/rohd-library.html</a>.</p>
+<p>There are complete API docs available at <a href="https://intel.github.io/rohd/rohd/rohd-library.html">intel.github.io/rohd/rohd/rohd-library.html</a>.</p>
 <p>If you need some help, you can join the <a href="https://discord.com/invite/jubxF84yGw">Discord server</a> or visit our <a href="https://github.com/intel/rohd/discussions">Discussions</a> page.  These are friendly places where you can ask questions, share ideas, or just discuss openly!  You could also head to <a href="https://stackoverflow.com/">StackOverflow.com</a> (use the tag <code>rohd</code>) to ask questions or look for answers.</p>
 <p>You also may be interested to join the <a href="https://github.com/intel/rohd/wiki/ROHD-Forum">ROHD Forum</a> periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!</p>
 <p>Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.14.0).  If you're using the version of Dart that came with Flutter, it might be older than that.</p>
 <h2 id="package-managers-for-hardware">Package Managers for Hardware</h2>
 <p>In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your <em>direct</em> dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an <code>import</code> statment.  Compare that to SystemVerilog IP integration!</p>
-<p>Read more about package managers here: <a href="https://en.wikipedia.org/wiki/Package_manager">https://en.wikipedia.org/wiki/Package_manager</a><br>
-Take a look at Dart's package manager, pub.dev, here: <a href="https://pub.dev">https://pub.dev</a></p>
+<p>Read more about package managers here: <a href="https://en.wikipedia.org/wiki/Package_manager">en.wikipedia.org/wiki/Package_manager</a>
+Take a look at Dart's package manager, pub.dev, here: <a href="https://pub.dev">pub.dev</a></p>
 <h2 id="rohd-syntax-and-examples">ROHD Syntax and Examples</h2>
 <p>The below subsections offer some examples of implementations and syntax in ROHD.</p>
 <h3 id="a-full-example-of-a-counter-module">A full example of a counter module</h3>
@@ -150,7 +150,7 @@ class Counter extends Module {
 
     // A local signal named 'nextVal'
     var nextVal = Logic(name: 'nextVal', width: width);
-    
+
     // Assignment statement of nextVal to be val+1 (&lt;= is the assignment operator)
     nextVal &lt;= val + 1;
 
@@ -297,7 +297,7 @@ e = e.withSet(3, d);
 <p><code>Module</code>s have the below basic structure:</p>
 <pre class="language-dart"><code class="language-dart">// class must extend Module to be a Module
 class MyModule extends Module {
-    
+
     // constructor
     MyModule(Logic in1, {String name='mymodule'}) : super(name: name) {
         // add inputs in the constructor, passing in the Logic it is connected to
@@ -322,7 +322,7 @@ class MyModule extends Module {
 <pre class="language-dart"><code class="language-dart">class MyModule extends Module {
 
     MyModule(Logic a, Logic b, Logic c, {int xWidth=5}) {
-        
+
         // 'a' should always be width 4, throw an exception if its wrong
         if(a.width != 4) throw Exception('Width of a must be 4!');
         addInput('a', a, width: 4);
@@ -346,7 +346,7 @@ class MyModule extends Module {
     Logic get a {
       return input('a');
     }
-    
+
     // Dart shorthand makes getters less verbose, but the functionality is the same as above
     Logic get b =&gt; input('b');
     Logic get x =&gt; output('x');
@@ -432,7 +432,7 @@ class MyModule extends Module {
 ]);
 </code></pre>
 <p>Note that ROHD supports the 'z' syntax, not the '?' syntax (these are equivalent in SystemVerilog).</p>
-<p>There is no support for an equivalent of <code>casex</code> from SystemVerilog, since it can easily cause unsynthesizeable code to be generated (see: <a href="https://www.verilogpro.com/verilog-case-casez-casex/">https://www.verilogpro.com/verilog-case-casez-casex/</a>).</p>
+<p>There is no support for an equivalent of <code>casex</code> from SystemVerilog, since it can easily cause unsynthesizeable code to be generated (see: <a href="https://www.verilogpro.com/verilog-case-casez-casex/">www.verilogpro.com/verilog-case-casez-casex/</a>).</p>
 <h3 id="interfaces">Interfaces</h3>
 <p>Interfaces make it easier to define port connections of a module in a reusable way.  An example of the counter re-implemented using interfaces is shown below.</p>
 <p><a href="https://intel.github.io/rohd/rohd/Interface-class.html"><code>Interface</code></a> takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.</p>
@@ -442,7 +442,7 @@ class MyModule extends Module {
 <pre class="language-dart"><code class="language-dart">// Define a set of legal directions for this interface, and pass as parameter to Interface
 enum CounterDirection {IN, OUT}
 class CounterInterface extends Interface&lt;CounterDirection&gt; {
-  
+
   // include the getters in the interface so any user can access them
   Logic get en =&gt; port('en');
   Logic get reset =&gt; port('reset');
@@ -464,23 +464,23 @@ class CounterInterface extends Interface&lt;CounterDirection&gt; {
 }
 
 class Counter extends Module {
-  
+
   late final CounterInterface intf;
   Counter(CounterInterface intf) {
     // define a new interface, and connect it to the interface passed in
     this.intf = CounterInterface(intf.width)
-      ..connectIO(this, intf, 
+      ..connectIO(this, intf,
         // map inputs and outputs to appropriate directions
-        inputTags: {CounterDirection.IN}, 
+        inputTags: {CounterDirection.IN},
         outputTags: {CounterDirection.OUT}
       );
-    
+
     _buildLogic();
   }
 
   void _buildLogic() {
     var nextVal = Logic(name: 'nextVal', width: intf.width);
-    
+
     // access signals directly from the interface
     nextVal &lt;= intf.val + 1;
 
@@ -662,7 +662,7 @@ var b = pipeline.get(a);
 <p>ROHD can instantiate external SystemVerilog modules.  The <a href="https://intel.github.io/rohd/rohd/ExternalSystemVerilogModule-class.html"><code>ExternalSystemVerilogModule</code></a> constructor requires the top level SystemVerilog module name.  When ROHD generates SystemVerilog for a model containing an <code>ExternalSystemVerilogModule</code>, it will instantiate instances of the specified <code>definitionName</code>.  This is useful for integration related activities.</p>
 <p>The <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a> package enables SystemVerilog cosimulation with ROHD by adding cosimulation capabilities to an <code>ExternalSystemVerilogModule</code>.</p>
 <h2 id="unit-testing">Unit Testing</h2>
-<p>Dart has a great unit testing package available on pub.dev: <a href="https://pub.dev/packages/test">https://pub.dev/packages/test</a></p>
+<p>Dart has a great unit testing package available on pub.dev: <a href="https://pub.dev/packages/test">pub.dev/packages/test</a></p>
 <p>The ROHD package has a great set of examples of how to write unit tests for ROHD <code>Module</code>s in the test/ directory.</p>
 <p>Note that when unit testing with ROHD, it is important to reset the <code>Simulator</code> with <code>Simulator.reset()</code>.</p>
 <h2 id="contributing">Contributing</h2>
@@ -690,7 +690,7 @@ var b = pipeline.get(a);
 </li>
 </ul>
 <p>ROHD aims to enable all the best parts of SystemVerilog, while completely eliminating each of the above issues.  Build is automatic and part of Dart, packages and files can just be imported as needed, no vendor tools are required, hardware can be constructed using all available software constructs, and Dart is a fully-featured modern software language with modern features.</p>
-<p>You can read more about SystemVerilog here: <a href="https://en.wikipedia.org/wiki/SystemVerilog">https://en.wikipedia.org/wiki/SystemVerilog</a></p>
+<p>You can read more about SystemVerilog here: <a href="https://en.wikipedia.org/wiki/SystemVerilog">en.wikipedia.org/wiki/SystemVerilog</a></p>
 <h3 id="chisel">Chisel</h3>
 <p>Chisel is a domain specific language (DSL) built on top of <a href="https://www.scala-lang.org/">Scala</a>, which is built on top of the Java virtual machine (JVM).  The goals of Chisel are somewhat aligned with the goals of ROHD.  Chisel can also convert to SystemVerilog.</p>
 <ul>
@@ -699,7 +699,7 @@ var b = pipeline.get(a);
 <li>Chisel is focused mostly on the hardware <em>designer</em> rather than the <em>validator</em>.  Many of the design choices for the language are centered around making it easier to parameterize and synthesize logic.  ROHD was created with validators in mind.</li>
 <li>Chisel generates logic that's closer to a netlist than what a similar implementation in SystemVerilog would look like.  This can make it difficult to debug or validate generated code.  ROHD generates structurally similar SystemVerilog that looks close to how you might write it.</li>
 </ul>
-<p>Read more about Chisel here: <a href="https://www.chisel-lang.org/">https://www.chisel-lang.org/</a></p>
+<p>Read more about Chisel here: <a href="https://www.chisel-lang.org/">www.chisel-lang.org/</a></p>
 <h3 id="myhdl-python">MyHDL (Python)</h3>
 <p>There have been a number of attempts to create a HDL on top of Python, but it appears the MyHDL is one of the most mature options.  MyHDL has many similar goals to ROHD, but chose to develop in Python instead of Dart.  MyHDL can also convert to SystemVerilog.</p>
 <ul>
@@ -708,14 +708,14 @@ var b = pipeline.get(a);
 <li>Python is inherently slower to execute than Dart.</li>
 <li>MyHDL has support for cosimulation via VPI calls to SystemVerilog simulators.</li>
 </ul>
-<p>Read more about MyHDL here: <a href="http://www.myhdl.org/">http://www.myhdl.org/</a></p>
+<p>Read more about MyHDL here: <a href="http://www.myhdl.org/">www.myhdl.org/</a></p>
 <h3 id="high-level-synthesis-hls">High-Level Synthesis (HLS)</h3>
 <p>High-Level Synthesis (HLS) uses a subset of C++ and SystemC to describe algorithms and functionality, which EDA vendor tools can compile into SystemVerilog.  The real strength of HLS is that it enables design exploration to optimize a higher-level functional intent for area, power, and/or performance through proper staging and knowledge of the characteristics of the targeted process.</p>
 <ul>
 <li>HLS is a step above/away from RTL-level modelling, which is a strength in some situations but might not be the right level in others.</li>
 <li>HLS uses C++/SystemC, which is arguably a less "friendly" language to use than Dart.</li>
 </ul>
-<p>Read more about one example of an HLS tool (Cadence's Stratus tool) here: <a href="https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html">https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html</a></p>
+<p>Read more about one example of an HLS tool (Cadence's Stratus tool) here: <a href="https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html">www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html</a></p>
 <p>There are a number of other attempts to make HLS better, including <a href="https://github.com/google/xls">XLS</a> and <a href="https://capra.cs.cornell.edu/dahlia/">Dahlia</a> &amp; <a href="https://capra.cs.cornell.edu/calyx/">Calyx</a>.  There are discussions on ways to reasonably incorporate some of the strengths of HLS approaches into ROHD.</p>
 <h3 id="transaction-level-verilog-tl-verilog">Transaction Level Verilog (TL-Verilog)</h3>
 <p>Transaction Level Verilog (TL-Verilog) is like an extension on top of SystemVerilog that makes pipelining simpler and more concise.</p>
@@ -723,21 +723,21 @@ var b = pipeline.get(a);
 <li>TL-Verilog makes RTL design easier, but doesn't really add much in terms of verification</li>
 <li>Abstraction of pipelining is something that could be achievable with ROHD, but is not (yet) implemented in base ROHD.</li>
 </ul>
-<p>Read more about TL-Verilog here: <a href="https://www.redwoodeda.com/tl-verilog">https://www.redwoodeda.com/tl-verilog</a></p>
+<p>Read more about TL-Verilog here: <a href="https://www.redwoodeda.com/tl-verilog">www.redwoodeda.com/tl-verilog</a></p>
 <h3 id="pymtl">PyMTL</h3>
 <p>PyMTL is another attempt at creating an HDL in Python.  It is developed at Cornell University and the third version (PyMTL 3) is currently in Beta.  PyMTL aims to resolve a lot of the same things as ROHD, but with Python.  It supports conversion to SystemVerilog and simulation.</p>
 <ul>
 <li>The Python language trade-offs described in the above section on MyHDL apply to PyMTL as well.</li>
 </ul>
-<p>Read more about PyMTL here: <a href="https://github.com/pymtl/pymtl3">https://github.com/pymtl/pymtl3</a> or <a href="https://pymtl3.readthedocs.io/en/latest/">https://pymtl3.readthedocs.io/en/latest/</a></p>
+<p>Read more about PyMTL here: <a href="https://github.com/pymtl/pymtl3">github.com/pymtl/pymtl3</a> or <a href="https://pymtl3.readthedocs.io/en/latest/">pymtl3.readthedocs.io/en/latest/</a></p>
 <h3 id="cocotb">cocotb</h3>
 <p>cocotb is a Python-based testbench framework for testing SystemVerilog and VHDL designs.  It makes no attempt to represent hardware or create a simulator, but rather connects to other hardware simulators via things like VPI calls.</p>
 <p>The cosimulation capabilities of cocotb are gratefully leveraged within the <a href="https://github.com/intel/rohd-cosim">ROHD Cosim</a> package for cosimulation with SystemVerilog simulators.</p>
-<p>Read more about cocotb here: <a href="https://github.com/cocotb/cocotb">https://github.com/cocotb/cocotb</a> or <a href="https://docs.cocotb.org/en/stable/">https://docs.cocotb.org/en/stable/</a></p>
+<p>Read more about cocotb here: <a href="https://github.com/cocotb/cocotb">github.com/cocotb/cocotb</a> or <a href="https://docs.cocotb.org/en/stable/">docs.cocotb.org/en/stable/</a></p>
 <hr>
-<p>2021 August 6<br>
+<p>2021 August 6
 Author: Max Korbel &lt;<a href="mailto:max.korbel@intel.com">max.korbel@intel.com</a>&gt;</p>
-<p>Copyright (C) 2021-2022 Intel Corporation<br>
+<p>Copyright (C) 2021-2022 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause</p>
 </section>
 
