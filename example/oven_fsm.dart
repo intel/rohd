@@ -55,6 +55,9 @@ class OvenModule extends Module {
   // and will be assign in the later section.
   late StateMachine<OvenState> _oven;
 
+  // We can expose an LED light output as a getter to retrive it value.
+  Logic get led => output('led');
+
   // This oven module receives a `button` and a `reset` input from runtime.
   OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
     // Register inputs and outputs of the module in the constructor.
@@ -212,6 +215,15 @@ Future<void> main({bool noPrint = false}) async {
   if (!noPrint) {
     WaveDumper(oven, outputPath: 'oven.vcd');
   }
+
+  // We can listen to the streams on LED light changes based on time.
+  oven.led.changed.listen((event) {
+    // Get the led light enum name from LogicValue.
+    final ledVal = LEDLight.values[event.newValue.toInt()].name;
+
+    // Print the Simulator time when the LED light changes.
+    print('@t=${Simulator.time}, LED changed to: $ledVal');
+  });
 
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));
