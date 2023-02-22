@@ -274,92 +274,52 @@ In the previous module, we learned about the `width` property of `Logic`. Now, w
 We can access multi-bit buses using single bits, ranges, or by combining multiple signals. Additionally, we can use operations like slicing and swizzling on `Logic` values.
 
 ```dart
-// TODO(user): (Optional) Change [YourModuleName] to your own module name.
-// -----------------------------------------------------------------------
-class RangeSwizzling extends Module {
-  // TODO(user): (Optional) Public attributes can register here.
-  // ------------------------------------------------------------
-  late final Logic a;
-  late final Logic b;
-  late final Logic c;
-  late final Logic d;
-  late final Logic e;
-  late final Logic f;
+void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f) {
+  // assign d to the top bit of a
+  // construct e by swizzling bits from b, c, and d
+  // here, the MSB is on the left, LSB is on the right
+  d <= b[7];
 
-  // TODO(user): (Optional) 'ModuleName' can change to your own module name.
-  // -----------------------------------------------------------------------
-  RangeSwizzling() : super(name: 'RangeSwizzling') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-    // ------------------------------------------------------------
-    // Declare Constant
-    a = Logic(name: 'signal_a', width: 4);
-    b = Logic(name: 'signal_b', width: 8);
-    c = Const(7, width: 5);
-    d = Logic(name: 'signal_d');
-    e = Logic(name: 'signal_e', width: d.width + c.width + a.width);
-    f = Logic(name: 'signal_f', width: d.width + c.width + a.width);
+  // value:
+  // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
+  // e = [1 00111 1110] = [d, c, a]
+  e <= [d, c, a].swizzle();
 
-    // TODO(user): (Required) Declare your input and output port.
-    // ----------------------------------------------------------
-    // Add ports
-    final signal1 = addInput('a', a, width: a.width);
-    final signal2 = addInput('b', b, width: b.width);
-    final signal3 = addInput('c', c, width: c.width);
-    final signal4 = addInput('d', d, width: d.width);
-    final signal5 = addInput('e', e, width: e.width);
-    final signal6 = addInput('f', f, width: f.width);
-
-    // TODO(user): (Optional) Logic Operations.
-    // ----------------------------------------
-    // Add ports
-    final signal1 = addOutput('output_d', width: d.width);
-    final signal2 = addOutput('output_e', width: e.width);
-    final signal3 = addOutput('output_f', width: f.width);
-
-    // assign d to the top bit of a
-    // construct e by swizzling bits from b, c, and d
-    // here, the MSB is on the left, LSB is on the right
-    d <= b[7];
-    signal1 <= d;
-
-    // value:
-    // swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB) ,
-    // e = [1 00111 1110] = [d, c, a]
-    e <= [d, c, a].swizzle();
-    signal2 <= e;
-
-    // alternatively, do a reverse swizzle
-    // (useful for lists where 0-index is actually the 0th element)
-    //
-    // Here, the LSB is on the left, the MSB is on the right
-    // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
-    // e = [1110 00111 1] - [a, c, d]
-    f <= [d, c, a].rswizzle();
-    signal3 <= f;
-  }
+  // alternatively, do a reverse swizzle
+  // (useful for lists where 0-index is actually the 0th element)
+  //
+  // Here, the LSB is on the left, the MSB is on the right
+  // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
+  // e = [1110 00111 1] - [a, c, d]
+  f <= [d, c, a].rswizzle();
 }
 
 void main() async {
-  // Instantiate Module and display system verilog
+  // Declare Logic
+  final a = Logic(name: 'a', width: 4);
+  final b = Logic(name: 'b', width: 8);
+  final c = Const(7, width: 5);
+  final d = Logic(name: 'd');
+  final e = Logic(name: 'e', width: d.width + c.width + a.width);
+  final f = Logic(name: 'f', width: d.width + c.width + a.width);
 
-  // TODO(user): (Optional) Update [YourModuleName].
-  // ----------------------------------------------
-  final rangeSwizzling = RangeSwizzling();
+  // Instantiate Module and display system verilog
+  final rangeSwizzling = RangeSwizzling(a, b, c, d, e, f, slicing);
   await displaySystemVerilog(rangeSwizzling);
 
-  // TODO(user): (Optional) Simulate your Module.
-  // --------------------------------------------
   print('\n');
 
   // assign b to the bottom 3 bits of a
   // input = [1, 1, 1, 0], output = 110
-  rangeSwizzling.a.put(bin('1110'));
+  a.put(bin('1110'));
   print('a.slice(2, 0):'
-      ' ${rangeSwizzling.a.slice(2, 0).value.toString(includeWidth: false)}');
+      ' ${a.slice(2, 0).value.toString(includeWidth: false)}');
 
-  rangeSwizzling.b.put(bin('11000100'));
-  print('a[7]: ${rangeSwizzling.b[7].value.toString(includeWidth: false)}');
-  print('a[0]: ${rangeSwizzling.b[0].value.toString(includeWidth: false)}');
+  b.put(bin('11000100'));
+  print('a[7]: ${b[7].value.toString(includeWidth: false)}');
+  print('a[0]: ${b[0].value.toString(includeWidth: false)}');
+
+  print('d: ${rangeSwizzling.d.value.toString(includeWidth: false)}');
   print('e: ${rangeSwizzling.e.value.toString(includeWidth: false)}');
   print('f: ${rangeSwizzling.f.value.toString(includeWidth: false)}');
 }
@@ -374,7 +334,7 @@ e = e.withSet(3, d);
 ```
 
 ----------------
-2023 February 14
+2023 February 22
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
  

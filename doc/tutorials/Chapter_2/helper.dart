@@ -53,3 +53,21 @@ class ConstantValue extends Module {
     a = addInput('a', a, width: a.width);
   }
 }
+
+class RangeSwizzling extends Module {
+  Logic get d => output('d');
+  Logic get e => output('e');
+  Logic get f => output('f');
+  RangeSwizzling(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f,
+      void Function(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f) slice)
+      : super(name: 'range_swizzling') {
+    a = addInput(a.name, a, width: a.width);
+    b = addInput(b.name, b, width: b.width);
+    c = addInput(c.name, c, width: c.width);
+    d = addOutput(d.name, width: d.width);
+    e = addOutput(e.name, width: e.width);
+    f = addOutput(f.name, width: f.width);
+
+    slice(a, b, c, d, e, f);
+  }
+}
