@@ -13,8 +13,6 @@
 
 ## Chapter 2: Basic Gates
 - [Basic logic](./Chapter_2/00-Basic_Logic.md#basic-logic)
-  * [Chapter Template](./Chapter_2/00-Basic_Logic.md#chapter-template)
-    * [How to use chapter template](./Chapter_2/00-Basic_Logic.
   * [Logic](./Chapter_2/00-Basic_Logic.md#logic)
     * [Exercise 1](./Chapter_2/00-Basic_Logic.md#exercise-1)
   * [Logic Value & Width](./Chapter_2/00-Basic_Logic.md#logic-value--width)

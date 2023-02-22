@@ -1,8 +1,6 @@
 ## Content
 
 - [Basic logic](./00-Basic_Logic.md#basic-logic)
-  * [Chapter Template](./00-Basic_Logic.md#chapter-template)
-    * [How to use chapter template](./00-Basic_Logic.md#how-to-use-chapter-template)
   * [Logic](./00-Basic_Logic.md#logic)
     * [Exercise 1](./00-Basic_Logic.md#exercise-1)
   * [Logic Value & Width](./00-Basic_Logic.md#logic-value--width)
@@ -31,60 +29,6 @@ In this chapter:
 
 # Basic Logic
 
-## Chapter Template
-
-In this chapter, we will provide a template to run the example code. The template can be found at [template/sv_module.dart](./template/sv_module.dart). 
-
-We are providing this template as some of the user want to compare with the generated system verilog code. The template code are as follow. 
-
-```dart
-import 'package:rohd/rohd.dart';
-import '../helper.dart';
-
-// TODO(user): (Optional) Change [YourModuleName] to your own module name.
-class YourModuleName extends Module {
-  // TODO(user): (Optional) Public attributes can register here.
-
-  // TODO(user): (Optional) 'ModuleName' can change to your own module name.
-  YourModuleName() : super(name: 'ModuleName') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-
-    // TODO(user): (Required) Declare your input and output port.
-
-    // TODO(user): (Optional) Logic Operations.
-  }
-}
-
-void main() async {
-  // Instantiate Module and display system verilog.
-  // TODO(user): (Optional) Update [YourModuleName].
-  final basicLogic = YourModuleName();
-  await displaySystemVerilog(basicLogic);
-
-  // TODO(user): (Optional) Simulate your Module.
-}
-```
-
-### How to use chapter template
-
-In the template, notice that there are several `TODO` that require changes to be make. The **optional** TODO can be ignore while **required** TODO must be changed. 
-
-The **required** TODO are inside the constructor of the Module as below.
-
-```dart
-YourModuleName() : super(name: 'ModuleName') {
-  // TODO(user): (Required) Paste your Logic initialization here.
-
-  // TODO(user): (Required) Declare your input and output port.
-}
-```
-
-When you see a code snippet in the tutorial, you want to paste the code below ``// TODO(user): (Required) Paste your Logic initialization here.``. After that, the input and output need to be declared after ``// TODO(user): (Required) Declare your input and output port.``.
-
-In every code snippet, we will provide you both the code that need to be paste.
-
-However, in some section, we will required you to paste some code in optional fields such as ``// TODO(user): (Optional) Simulate your Module.`` or ``// TODO(user): (Optional) Public attributes can register here.``.
-
 ## Logic
 
 Like any programming language, ROHD has its own data types, which include `Logic` and `LogicValue`. `Logic` is fundamental to creating signals.
@@ -94,9 +38,6 @@ Note that in Dart, variable names are typically written in camelcase, such as `a
 Below, let us look at how to create a `Logic` signal. In the example below, we can see that creation of `Logic` signals involved instantiate a `Logic` that can received `name` and `width` as an argument. 
 
 ```dart
-// TODO(user): (Required) Paste your Logic initialization here.
-// ------------------------------------------------------------
-
 // 1-bit unnamed signal. 
 Logic unamedSignal = Logic();
 
@@ -106,13 +47,6 @@ Logic bus = Logic(name: 'b', width: 8);
 // You can use .toString() method to check for your signals details.
 // Dart will assume you are using.toString() as default if not specify.
 print(unamedSignal);
-
-
-// TODO(user): (Required) Declare your input and output port.
-// ----------------------------------------------------------
-
-final signal1 = addInput('', unamedSignal);
-final signal2 = addInput('b', bus, width: bus.width);
 ```
 
 You can find the executable code at [a_logic.dart](./a_logic.dart).
