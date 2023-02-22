@@ -176,7 +176,7 @@ class OvenModule extends Module {
           ])
     ];
 
-    // Assign the _oven StateMachine object to public variable declared.
+    // Assign the _oven StateMachine object to private variable declared.
     _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
   }
 
