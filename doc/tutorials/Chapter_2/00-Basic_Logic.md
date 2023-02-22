@@ -252,25 +252,20 @@ Congratulations!!! You have successfully build your first gate!
 In ROHD, constants can often be inferred by ROHD automatically, but can also be explicitly defined using `Const`, which extends `Logic`.
 
 ```dart
-class ConstantLogic extends Module {
-  ConstantLogic() : super(name: 'ConstantLogic') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-    // ------------------------------------------------------------
-    // Declare Constant
-    final x = Const(5, width: 16);
-    print('The value of constant x is: ${x.value.toInt()}');
+void main() async {
+  final a = Const(5, width: 16);
+  // Instantiate Module and display system verilog
+  final constantLogic = ConstantValue(a);
+  await displaySystemVerilog(constantLogic);
 
-    // TODO(user): (Required) Declare your input and output port.
-    // ----------------------------------------------------------
-    // Add ports
-    final signal1 = addInput('const_x', x, width: x.width);
-  }
+  print('\nValue of a is: ');
+  print(constantLogic.a.value.toInt()); // output: 5
 }
 ```
 
 ### Exercise 4:
 
-1. Create a constant of value 10 and assign to a Logic input.
+1. Create a constant of value 10 and assign to a Logic.
 
 # Bus Ranges and Swizzling
 

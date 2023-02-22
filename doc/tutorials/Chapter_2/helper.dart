@@ -46,3 +46,10 @@ class LogicGate extends Module {
     gate(a, b, c);
   }
 }
+
+class ConstantValue extends Module {
+  Logic get a => input('a');
+  ConstantValue(Logic a) : super(name: 'const_val') {
+    a = addInput('a', a, width: a.width);
+  }
+}

@@ -13,19 +13,12 @@
 import 'package:rohd/rohd.dart';
 import 'helper.dart';
 
-class ConstantLogic extends Module {
-  ConstantLogic() : super(name: 'ConstantLogic') {
-    // Declare Constant
-    final x = Const(5, width: 16);
-    print('The value of constant x is: ${x.value.toInt()}');
-
-    // Add ports
-    final signal1 = addInput('const_x', x, width: x.width);
-  }
-}
-
 void main() async {
+  final a = Const(5, width: 16);
   // Instantiate Module and display system verilog
-  final constantLogic = ConstantLogic();
+  final constantLogic = ConstantValue(a);
   await displaySystemVerilog(constantLogic);
+
+  print('\nValue of a is: ');
+  print(constantLogic.a.value.toInt());
 }
