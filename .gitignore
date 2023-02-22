@@ -12,7 +12,6 @@ doc/api/
 # Other stuff
 tmp_test/
 *.vcd
-.vscode/
 *_fsm.md
 .vscode/*
 

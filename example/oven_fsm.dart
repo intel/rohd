@@ -55,7 +55,7 @@ class OvenModule extends Module {
   // and will be assign in the later section.
   late StateMachine<OvenState> _oven;
 
-  // We can expose an LED light output as a getter to retrive it value.
+  // We can expose an LED light output as a getter to retrieve it value.
   Logic get led => output('led');
 
   // This oven module receives a `button` and a `reset` input from runtime.
