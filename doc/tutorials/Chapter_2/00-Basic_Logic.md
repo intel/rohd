@@ -107,31 +107,16 @@ By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our
 
 ![And Gate](./assets/And_gate.png)
 
-To create our two-input Logic `AND` gate, we need to declare two input signals and one output signal, which means we will need to create a total of three Logic signals.
+To create our two-input Logic `AND` gate, we need to declare two input signals and one output signal, which means we will need to create a total of three `Logic` signals.
 
 ```dart
-class LogicGate extends Module {
-  // TODO(user): (Optional) Public attributes can register here.
-  // -----------------------------------------------------------
-  late final Logic a;
-  late final Logic b;
-  late final Logic c;
+// Create a logic for input and output
+final a = Logic(name: 'a');
+final b = Logic(name: 'b');
+final c = Logic(name: 'c');
 
-  LogicGate() : super(name: 'LogicGate') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-    // ----------------------------------------------------------
-    a = Logic(name: 'input_a');
-    b = Logic(name: 'input_b');
-    c = Logic(name: 'output_c');
-
-    // TODO(user): (Required) Declare your input and output port.
-    // ----------------------------------------------------------
-    // Add ports
-    final signal1 = addInput('input_a', a, width: a.width);
-    final signal2 = addInput('input_b', b, width: b.width);
-    final signal3 = addOutput('output_c', width: c.width);
-  }
-}
+// Instantiate Module and display system verilog
+final basicLogic = Part1LogicGate(a, b, c);
 ```
 
 That's all! We have created all the ports required. You can find the executable code at [c_logic_gate_part_1.dart](./c_logic_gate_part_1.dart). Next, let's take a look at the operators in ROHD.

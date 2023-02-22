@@ -9,7 +9,15 @@ Future<void> displaySystemVerilog(Module mod) async {
 
 class LogicInitialization extends Module {
   LogicInitialization(Logic a, Logic b) : super(name: 'logic_init') {
-    final signal1 = addInput(a.name, a, width: a.width);
-    final signal2 = addInput(b.name, b, width: b.width);
+    a = addInput(a.name, a, width: a.width);
+    b = addInput(b.name, b, width: b.width);
+  }
+}
+
+class Part1LogicGate extends Module {
+  Part1LogicGate(Logic a, Logic b, Logic c) : super(name: 'part_1_logic_gate') {
+    a = addInput(a.name, a, width: a.width);
+    b = addInput(b.name, b, width: b.width);
+    c = addOutput('c', width: c.width);
   }
 }
