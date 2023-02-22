@@ -127,44 +127,23 @@ That's all! We have created all the ports required. You can find the executable 
 
 To assign the value of one signal to another signal, use the `<=` operator. This is a hardware synthesizable assignment that connects two wires together. 
 
-Let's take a look at an example of how to assign a Logic signal `a` to signal `b`.
+Let's take a look at an example of how to assign a Logic signal `a` to output signal `b`.
 
 ```dart
-class AssignmentOperator extends Module {
-  // TODO(user): (Optional) Public attributes can register here.
-  // -----------------------------------------------------------
-  late final Logic a;
-  late final Logic b;
-
-  AssignmentOperator() : super(name: 'Assignment') {
-    // TODO(user): (Required) Paste your Logic initialization here.
-    // ----------------------------------------------------------
-    a = Logic(name: 'signal_a');
-    b = Logic(name: 'signal_b');
-
-    // TODO(user): (Required) Declare your input and output port.
-    // ----------------------------------------------------------
-    // In this case, b is connected to a which means they will have the same value.
-    final signal1 = addInput('a', a, width: a.width);
-    final signal2 = addOutput('b', width: b.width);
-
-    // TODO(user): (Optional) Logic Operations.
-    // ----------------------------------------
-    signal2 <= signal1;
-  }
+void assignmentOperator(Logic a, Logic b) {
+  b <= a;
 }
 
 void main() async {
-  // ...
+  final a = Logic(name: 'a');
+  final b = Logic(name: 'b');
 
-  // TODO(user): (Optional) Simulate your Module.
-  // --------------------------------------------
-  assignOperator.a.put(1);
+  // Instantiate Module and display system verilog
+  final assignOperator = AssignmentOperator(a, b, assignmentOperator);
+  await displaySystemVerilog(assignOperator);
 
-  // we can access the signal by naviagate through the iterable.
-  final portB =
-      assignOperator.signals.firstWhere((element) => element.name == 'b');
-  print('The value of b is ${portB.value}.');
+  a.put(1);
+  print('The value of b is ${assignOperator.b.value}.');
 }
 ```
 
@@ -174,11 +153,11 @@ You can find the executable code at [d_assignment_operator.dart](./d_assignment_
 
 In ROHD, we have operators that are similar to those in SystemVerilog. This makes it easier for users to learn and pick up the language.
 
-Below are the operations provided in ROHD. 
-
-You **do not need to copy and paste for this section**. Just look and remember few of the important operators.
+Below are the operations provided in ROHD.
 
 ```dart
+
+
 a_bar     <=  ~a;      // not
 a_and_b   <=  a & b;   // and
 a_or_b    <=  a | b;   // or

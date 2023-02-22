@@ -13,31 +13,18 @@
 import 'package:rohd/rohd.dart';
 import 'helper.dart';
 
-class AssignmentOperator extends Module {
-  late final Logic a;
-  late final Logic b;
-  AssignmentOperator() : super(name: 'Assignment') {
-    a = Logic(name: 'signal_a');
-    b = Logic(name: 'signal_b');
-
-    // In this case, b is connected to a which means they will have the
-    // same value.
-    final signal1 = addInput('a', a, width: a.width);
-    final signal2 = addOutput('b', width: b.width);
-
-    signal2 <= signal1;
-  }
+void assignmentOperator(Logic a, Logic b) {
+  b <= a;
 }
 
 void main() async {
+  final a = Logic(name: 'a');
+  final b = Logic(name: 'b');
+
   // Instantiate Module and display system verilog
-  final assignOperator = AssignmentOperator();
+  final assignOperator = AssignmentOperator(a, b, assignmentOperator);
   await displaySystemVerilog(assignOperator);
 
-  assignOperator.a.put(1);
-
-  // we can access the signal by naviagate through the iterable.
-  final portB =
-      assignOperator.signals.firstWhere((element) => element.name == 'b');
-  print('The value of b is ${portB.value}.');
+  a.put(1);
+  print('The value of b is ${assignOperator.b.value}.');
 }
