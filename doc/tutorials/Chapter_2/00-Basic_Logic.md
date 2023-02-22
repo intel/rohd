@@ -56,6 +56,8 @@ You can find the executable code at [a_logic.dart](./a_logic.dart).
 1. Create a 3-bit bus signal named `threeBitBus`.
 2. Print the output of the signal. Explain what you see. Is there enough information in the output to verify that you have created the correct signal?
 
+Answer to this exercise can be found at [answers/exercise_1.dart](./answers/exercise_1.dart)
+
 ## Logic Value & Width
 Now that we've learned how to create a Logic signal, let's explore how to access its value.
 
@@ -200,12 +202,6 @@ void main() async {
 }
 ```
 
-### Exercise 2:
-
-1. Can you optimize the code? Can you remove the redundance from the code? 
-
-You can find the executable code at [e_logic_gate_part_2.dart](./e_logic_gate_part_2.dart). Congratulations! You have created your logic gate. Let's move on to the next section to test our gate.
-
 ### Non-synthesizable signal deposition (put)
 
 Do you still remember the `put()` function that was used in the previous section? It is used to send a simulated signal to the input `Logic`.
@@ -243,9 +239,11 @@ You can find the executable code at [Basic Logic](./f_logic_gate_part_3.dart).
 
 Congratulations!!! You have successfully build your first gate! 
 
-### Exercise 3:
+### Exercise 2:
 
 1. Build OR or NOR or XOR gate using ROHD.
+
+Answer to this exercise can be found at [answers/exercise_2.dart](./answers/exercise_2.dart)
 
 # Constants
 
@@ -263,9 +261,11 @@ void main() async {
 }
 ```
 
-### Exercise 4:
+### Exercise 3:
 
 1. Create a constant of value 10 and assign to a Logic.
+
+Answer to this exercise can be found at [answers/exercise_3.dart](./answers/exercise_3.dart)
 
 # Bus Ranges and Swizzling
 
