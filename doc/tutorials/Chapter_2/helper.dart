@@ -34,8 +34,9 @@ class AssignmentOperator extends Module {
   }
 }
 
-class Part2LogicGate extends Module {
-  Part2LogicGate(
+class LogicGate extends Module {
+  Logic get c => output('c');
+  LogicGate(
       Logic a, Logic b, Logic c, void Function(Logic a, Logic b, Logic c) gate)
       : super(name: 'part_2_logic_gate') {
     a = addInput(a.name, a, width: a.width);

@@ -24,6 +24,6 @@ void main() async {
   final c = Logic(name: 'c');
 
   // Instantiate Module and display system verilog
-  final basicLogic = Part2LogicGate(a, b, c, andGate);
+  final basicLogic = LogicGate(a, b, c, andGate);
   await displaySystemVerilog(basicLogic);
 }

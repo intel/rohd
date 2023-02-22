@@ -156,8 +156,6 @@ In ROHD, we have operators that are similar to those in SystemVerilog. This make
 Below are the operations provided in ROHD.
 
 ```dart
-
-
 a_bar     <=  ~a;      // not
 a_and_b   <=  a & b;   // and
 a_or_b    <=  a | b;   // or
@@ -216,7 +214,7 @@ For testbench code or other non-synthesizable code, you can use `put` on any `Lo
 
 Now let's see an example of how to deposit signals for testing using `put`. At this point, you should be familiar with how you can deposit signals.
 
-Note: This section of code **does not need to run**. 
+Example:
 
 ```dart
 b = Logic(width:4);
@@ -230,28 +228,13 @@ a.put(4);
 Now, we can test our logic gate with the simulator.
 
 ```dart
-// ...
-
-void main() async {
-  // ...
-
-  // TODO(user): (Optional) Simulate your Module.
-  // --------------------------------------------
-
-  // Let build a truth table
-  int portC;
-  print('\nBuild Truth Table: ');
-  for (var i = 0; i <= 1; i++) {
-    for (var j = 0; j <= 1; j++) {
-      basicLogic.a.put(i);
-      basicLogic.b.put(j);
-      // print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
-      portC = basicLogic.signals
-          .firstWhere((element) => element.name == 'output_c')
-          .value
-          .toInt();
-      print('a: $i, b: $j c: $portC');
-    }
+// Let build a truth table
+print('\nBuild Truth Table: ');
+for (var i = 0; i <= 1; i++) {
+  for (var j = 0; j <= 1; j++) {
+    a.put(i);
+    b.put(j);
+    print('a: $i, b: $j c: ${basicLogic.c.value.toInt()}');
   }
 }
 ```
