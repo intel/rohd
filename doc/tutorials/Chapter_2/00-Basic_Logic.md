@@ -64,48 +64,36 @@ The value of a Logic signal is of type `LogicValue`, which has pre-defined const
 To access the value of a Logic signal, you can simply call its `value` property. You can convert the value to an integer using the `toInt()` method, but note that this is only valid for signals that don't have any `x` or z bits. If the signal has more bits than can fit in a 64-bit integer, you'll need to use the `toBigInt()` method instead.
 
 ```dart
-// TODO(user): (Required) Paste your Logic initialization here.
-// ------------------------------------------------------------
-
 bus = Logic(name: 'threeBitBus', width: 3);
 bigBus = Logic(name: 'bigBus', width: 65);
-
-// TODO(user): (Required) Declare your input and output port.
-// ----------------------------------------------------------
-// Add ports
-final signal1 = addInput('threeBitBus', bus, width: bus.width);
-final signal2 = addInput('bigBus', bus, width: bus.width);
 ```
 
 Let's take a look at an example of getting the value of the threeBitBus signal that we created earlier. 
 
-To create the simulation of your module, copy and paste the code snippet below to ``// TODO(user): (Optional) Simulate your Module.`` in the chapter template.
-
 ```dart
-// TODO(user): (Optional) Simulate your Module.
-// --------------------------------------------
-
 // .put() is one way to simulate a signal on a Logic signal that has been
 // created.
 // We will come back to this in later section.
-basicLogic.bus.put(1);
+bus.put(1);
 
 // Obtain the value of bus.
-final busVal = basicLogic.bus.value;
+final busVal = bus.value;
+
+print('\nNote:');
 
 // output: 3'h1.
 print('a) The hexadecimal string value of bus is $busVal.');
 
 // Obtain the value of bus in Int
-final busValInt = basicLogic.bus.value.toInt();
+final busValInt = bus.value.toInt();
 
 // output: 1.
 print('b) The integer value of bus is $busValInt.');
 
 // If you set your bus width larger than 64 bits.
 // You have to use toBigInt().
-basicLogic.bigBus.put(BigInt.parse('9223372036854775808'));
-final bigBusValBigInt = basicLogic.bigBus.value.toBigInt();
+bigBus.put(BigInt.parse('9223372036854775808'));
+final bigBusValBigInt = bigBus.value.toBigInt();
 
 // output: 9223372036854775808.
 print('c) The big integer of bus is $bigBusValBigInt.');
