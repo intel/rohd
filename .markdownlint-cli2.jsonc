@@ -5,6 +5,10 @@
     "MD041": false
   },
 
+  "globs": [
+    "**/*.md"
+  ],
+
   "ignores": [
     "doc/api/"
   ]
