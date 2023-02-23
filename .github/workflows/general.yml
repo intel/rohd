@@ -28,6 +28,9 @@ jobs:
           use-quiet-mode: yes
           config-file: .github/configs/mlc_config.json
 
+      - name: Check Dart lints
+        run: tool/gh_actions/check_dart_lints.sh
+
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
