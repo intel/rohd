@@ -24,6 +24,7 @@ curl --fail ${reference_file_address} --output ${reference_file}
 if cmp ${current_file} ${reference_file}; then
   echo ''
   echo 'The current file is the latest. No update required.'
+  echo ''
 else
   declare -r exit_code=${?}
   echo ''
@@ -31,5 +32,6 @@ else
   echo "The latest file can be obtained here: ${reference_file}"
   echo "It can also be obtained from: ${reference_file_address}"
   echo "Replace the contents of the old file located here: ${current_file}"
+  echo ''
   exit ${exit_code}
 fi
