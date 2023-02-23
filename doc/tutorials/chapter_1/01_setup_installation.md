@@ -12,9 +12,9 @@ There are three ways to develop with ROHD. The first option is to run it on GitH
 
 ### Step 1: Click on the CodeSpaces Button
 
-To access the Codespaces feature on the https://github.com/intel/rohd repository, simply click on the "Codespaces" button. 
+To access the Codespaces feature on the <https://github.com/intel/rohd> repository, simply click on the "Codespaces" button.
 
-Please note that Codespaces are free for all users with a personal GitHub account that have either a Free or Pro plan. However, there is a monthly usage limit. To learn more about this feature, visit the official GitHub Codespaces Overview page at https://docs.github.com/en/codespaces/overview.
+Please note that Codespaces are free for all users with a personal GitHub account that have either a Free or Pro plan. However, there is a monthly usage limit. To learn more about this feature, visit the official GitHub Codespaces Overview page at <https://docs.github.com/en/codespaces/overview>.
 
 > All personal GitHub.com accounts have a monthly quota of free use of GitHub Codespaces included in the Free or Pro plan. You can get started using GitHub Codespaces on your personal account without changing any settings or providing payment details. You can create and use a codespaces for any repository you can clone. You can also use a template to create codespaces that are not initially associated with a repository. If you create a codespaces from an organization-owned repository, use of the codespaces will either be charged to the organization (if the organization is configured for this), or to your personal account. Codespaces created from templates are always charged to your personal account. You can continue using GitHub Codespaces beyond your monthly included storage and compute usage by providing payment details and setting a spending limit. For more information, see "About billing for GitHub Codespaces.
 
@@ -38,34 +38,32 @@ Run `dart pub get` on the terminal of the visual studio code to pull your setup.
 
 ![step 4](assets/codespaces_setup/step_4.png)
 
-### Step 5: Run the example code 
+### Step 5: Run the example code
 
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
 ![step 5](assets/codespaces_setup/step_5.png)
 
-
 If you can see SystemVerilog code pop up on the terminal. Well, you have successfully set up your development environment on the cloud.
 
 ### Step 6: Delete the CodeSpaces (Optional)
 
-To delete the codespaces, go back to https://github.com/intel/rohd and click on codespaces just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespaces.
+To delete the codespaces, go back to <https://github.com/intel/rohd> and click on codespaces just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespaces.
 
 ![step 6](assets/codespaces_setup/step_6.png)
 
-
-## Local Development Setup 
+## Local Development Setup
 
 ROHD can be install in **Windows**, **Mac**, or **Linux** machine.
 
 **Pre-requiresite:**
 
-- Install Chocolatey (Dart SDK might require installation of chocolatey)
-  - https://chocolatey.org/install#individual
-- Install latest `dart` SDK from official dart website: 
-  - https://dart.dev/get-dart
-- Install Visual Studio Code
-  - https://code.visualstudio.com/Download
+* Install Chocolatey (Dart SDK might require installation of chocolatey)
+  * <https://chocolatey.org/install#individual>
+* Install latest `dart` SDK from official dart website:
+  * <https://dart.dev/get-dart>
+* Install Visual Studio Code
+  * <https://code.visualstudio.com/Download>
 
 ### Option 1: Install from Dart packages
 
@@ -75,7 +73,7 @@ Open up a terminal and create a new dart project. Note that do not create the pr
 dart create -t console rohd-project
 ```
 
-Then `cd` to the created `rohd` directory. 
+Then `cd` to the created `rohd` directory.
 
 ```shell
 cd rohd-project
@@ -215,10 +213,9 @@ dart run
 
 Well done! Your setup has been completed successfully. The successful generation of SystemVerilog code confirms that your configuration is in good order.
 
-
 ### Option 2: Install from Source
 
-Clone ROHD repository to the local directory. (Install From Source). On your terminal, run 
+Clone ROHD repository to the local directory. (Install From Source). On your terminal, run
 
 ```shell
 cd C:\
@@ -231,7 +228,7 @@ Next, open up your repository in VSCode using the command:
 code rohd
 ```
 
-You will see VSCode automatically open up your ROHD folder. 
+You will see VSCode automatically open up your ROHD folder.
 
 ![step 1](assets/local_setup/step_1.png)
 
@@ -240,14 +237,14 @@ Open up terminal in your VSCode by go to view -> terminal. Then, get the rohd pa
 ```cmd
 dart pub get
 ```
+
 Then, run Rohd example.
 
 Open up `example` folder on the left navigation panel and click on `example.dart` to bring forward the first example of ROHD. After that, navigate to the main function at below of line 58 and click on the `Run` at `Run | Debug`.
 
 ![step 2](assets/local_setup/step_2.png)
 
-If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
-
+If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development!
 
 ## Docker Container Setup
 
@@ -255,10 +252,10 @@ There are another options which is to setup on lcoal docker environment. Firstly
 
 Pre-requisites:
 
-- Install docker 
-    - https://docs.docker.com/get-docker
+* Install docker
+  * <https://docs.docker.com/get-docker>
 
-Then, you need to clone rohd repository to your local PC. 
+Then, you need to clone rohd repository to your local PC.
 
 ```shell
 cd C:\
@@ -288,13 +285,11 @@ In the terminal, run:
 dart example/example.dart
 ```
 
-If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development! 
-
+If you can see SystemVerilog code pop up on the terminal. Congratulation, you are ready with ROHD development!
 
 ----------------
 2023 February 13
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
- 
-Copyright (C) 2021-2023 Intel Corporation  
+Copyright (C) 2021-2023 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause
