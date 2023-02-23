@@ -6,10 +6,10 @@
   * [Challenges in Hardware Industry](./chapter_1/00_introduction_to_rohd.md#challenges-in-hardware-industry)
   * [Benefits of Dart for hardware development](./chapter_1/00_introduction_to_rohd.md#benefits-of-dart-for-hardware-development)
   * [Example of ROHD with Dart](./chapter_1/00_introduction_to_rohd.md#example-of-rohd-with-dart)
-- [Setup & Installation](./chapter_1/01-Setup_Installation.md)
-  * [Setup on Github Codespaces](./chapter_1/01-Setup_Installation.md#setup-on-github-codespaces-recommended)
-  * [Local Development Setup](./chapter_1/01-Setup_Installation.md#local-development-setup)
-  * [Docker Container Setup](./chapter_1/01-Setup_Installation.md#docker-container-setup)
+- [Setup & Installation](./chapter_1/01_setup_installation.md)
+  * [Setup on Github Codespaces](./chapter_1/01_setup_installation.md#setup-on-github-codespaces-recommended)
+  * [Local Development Setup](./chapter_1/01_setup_installation.md#local-development-setup)
+  * [Docker Container Setup](./chapter_1/01_setup_installation.md#docker-container-setup)
 
 ## Chapter 2: Basic Gates
 - [Basic logic](./chapter_2/00_basic_logic.md#basic-logic)
