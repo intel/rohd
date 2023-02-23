@@ -107,7 +107,7 @@ You can find the executable code at [b_logic_width.dart](./b_logic_width.dart)
 
 By now, you have learned about `Logic` and `LogicValue`. Let's now dive into our first tutorial on Logic gate. Suppose we want to build a 2-input Logic `AND` gate.
 
-![And Gate](./assets/And_gate.png)
+![And Gate](./assets/and_gate.png)
 
 To create our two-input Logic `AND` gate, we need to declare two input signals and one output signal, which means we will need to create a total of three `Logic` signals.
 
