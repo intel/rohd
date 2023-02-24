@@ -13,6 +13,7 @@ doc/api/
 tmp_test/
 *.sv
 *.vcd
+*_fsm.md
 .vscode/*
 
 # Exceptions
