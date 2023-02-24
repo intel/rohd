@@ -30,6 +30,10 @@ trap trap_error ERR
 
 printf '\n%s\n' "${form_bold}${color_yellow}Running local checks...${text_reset}"
 
+# Check Dart lints
+print_step 'Check Dart lints'
+tool/gh_actions/check_dart_lints.sh
+
 # Install project dependencies
 print_step 'Install project dependencies'
 tool/gh_actions/install_dependencies.sh
