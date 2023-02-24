@@ -1,8 +1,8 @@
 ## Content
 
-* [Setup on Github Codespaces](./01-Setup_Installation.md#setup-on-github-codespaces-recommended)
-* [Local Development Setup](./01-Setup_Installation.md#local-development-setup)
-* [Docker Container Setup](./01-Setup_Installation.md#docker-container-setup)
+* [Setup on Github Codespaces](./01_setup_installation.md#setup-on-github-codespaces-recommended)
+* [Local Development Setup](./01_setup_installation.md#local-development-setup)
+* [Docker Container Setup](./01_setup_installation.md#docker-container-setup)
 
 # ROHD Setup & Installation
 
