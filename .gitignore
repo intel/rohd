@@ -11,6 +11,7 @@ doc/api/
 
 # Other stuff
 tmp_test/
+*.sv
 *.vcd
 .vscode/*
 
