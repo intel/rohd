@@ -17,6 +17,7 @@ linter:
     avoid_annotating_with_dynamic: false
     avoid_classes_with_only_static_members: false
     avoid_js_rounded_ints: false # see https://github.com/intel/rohd/pull/213
+    dangling_library_doc_comments: false # TEMPORARY: https://github.com/intel/rohd/issues/264
     prefer_double_quotes: false
     prefer_final_parameters: false
     prefer_relative_imports: false
