@@ -39,3 +39,18 @@ The truth table of full-adder are shown below:
 
 ## Create Full-Adder with TDD
 
+Before we start our development, we need to import dart and rohd packages. Then, we want to create a main function.
+
+```dart
+import 'package:rohd/rohd.dart';
+import 'package:test/test.dart';
+
+void main() {
+    // your rohd implmentation here!
+}
+```
+
+### Step 1: Create a failing test (Red Hat)
+
+In TDD, we start by creating a failing test known as red hat. Let create a test case that test for SUM.
+
