@@ -12,6 +12,7 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
+import 'dart:io';
 
 class TopModule extends Module {
   TopModule(Logic a, bool causeDefConflict, bool causeInstConflict)
@@ -36,6 +37,16 @@ class SpeciallyNamedModule extends Module {
           reserveDefinitionName: reserveDefName,
         ) {
     addInput('a', a, width: a.width);
+  }
+}
+
+class EmptyNameModule extends Module {
+  EmptyNameModule(
+    Logic a, {
+    super.name = '',
+    super.definitionName = '',
+  }) {
+    addInput('', a, width: a.width);
   }
 }
 
@@ -173,6 +184,16 @@ void main() {
       final mod = TopModule(Logic(), true, false);
       await mod.build();
       expect(mod.generateSynth, throwsException);
+    });
+    test('should throws exception when definition name is empty string',
+        () async {
+      final mod = EmptyNameModule(Logic());
+      await mod.build();
+
+      // final out = File('output.sv').openWrite();
+      // out.write(sv);
+
+      expect(mod.generateSynth(), throwsException);
     });
   });
 
