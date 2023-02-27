@@ -50,7 +50,62 @@ void main() {
 }
 ```
 
-### Step 1: Create a failing test (Red Hat)
+### Fail and passing test
 
-In TDD, we start by creating a failing test known as red hat. Let create a test case that test for SUM.
+In TDD, we start by creating a failing test. Let create a test case that test for xor function.
 
+To create a test in dart:
+
+```dart
+test('should return xor results correctly in a xor b', () async {
+    for (var i = 0; i <= 1; i++) {
+      for (var j = 0; j <= 1; j++) {
+        expect(xorAB, i == j ? 0 : 1);
+      }
+    }
+});
+```
+
+By this time, when you execute you will somehow get some errors. Let now fix that errors.
+
+Start by define the logic initialization and the xor operators.
+
+```dart
+final a = Logic(name: 'a');
+final b = Logic(name: 'b');
+
+final xorAB = a ^ b;
+
+test('should return xor results correctly in a xor b', () async {
+    for (var i = 0; i <= 1; i++) {
+      for (var j = 0; j <= 1; j++) {
+        a.put(i);
+        b.put(j);
+
+        expect(xorAB.value.toInt(), i == j ? 0 : 1);
+      }
+    }
+});
+```
+
+Now, you know how to create a test in dart and ROHD. It's time to dive in deeper to create `SUM` function.
+
+The function of `SUM` is represented in `XOR(XOR(A, B), C-IN)` where we can make it into:
+
+```dart
+final a = Logic(name: 'a');
+final b = Logic(name: 'b');
+
+final xorAB = a ^ b;
+
+test('should return xor results correctly in a xor b', () async {
+    for (var i = 0; i <= 1; i++) {
+        for (var j = 0; j <= 1; j++) {
+            a.put(i);
+            b.put(j);
+
+            expect(xorAB.value.toInt(), i == j ? 0 : 1);
+        }
+    }
+});
+```
