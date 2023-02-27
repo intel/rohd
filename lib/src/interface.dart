@@ -191,4 +191,10 @@ class PairInterface extends Interface<PairDirection> {
             : {PairDirection.consumer},
         uniquify: uniquify);
   }
+
+  @protected
+  void addSubInterface<T>(
+    Interface<T> subInterface,
+    Set<T> Function(PairDirection dir) pairDirectionToTags,
+  ) {}
 }
