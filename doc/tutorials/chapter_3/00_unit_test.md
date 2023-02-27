@@ -98,8 +98,8 @@ The function of `SUM` is represented in `XOR(XOR(A, B), C-IN)` where we can make
 final a = Logic(name: 'a');
 final b = Logic(name: 'b');
 
-  final xorAB = a ^ b;
-  final sum = xorAB ^ cIn;
+final xorAB = a ^ b;
+final sum = xorAB ^ cIn;
 
 test('should return true if results sum similar to truth table.', () async {
     for (var i = 0; i <= 1; i++) {
@@ -122,9 +122,7 @@ Now, we created the c-out function. Let continue to work on the c-out function. 
 
 ```dart
 // C-Out
-final and1 = xorAB & cIn;
-final and2 = a & b;
-final cOut = and1 | and2;
+final cOut = (xorAB & cIn) | (a & b);
 
 test('should return true if result c-out is similar to truth table.', () async {
     for (var i = 0; i <= 1; i++) {

@@ -2,19 +2,25 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'helper.dart';
 
-void main() {
+void faOps(Logic a, Logic b, Logic cIn, Logic xorAB, Logic sum, Logic cOut) {
+  // SUM
+  xorAB <= a ^ b;
+  sum <= xorAB ^ cIn;
+
+  // C-Out
+  cOut <= xorAB & cIn | a & b;
+}
+
+void main() async {
   final a = Logic(name: 'a');
   final b = Logic(name: 'b');
   final cIn = Logic(name: 'c_in');
 
-  // SUM
-  final xorAB = a ^ b;
-  final sum = xorAB ^ cIn;
+  final xorAB = Logic(name: 'xor_ab');
+  final sum = Logic(name: 'sum');
+  final cOut = Logic(name: 'cOut');
 
-  // C-Out
-  final and1 = xorAB & cIn;
-  final and2 = a & b;
-  final cOut = and1 | and2;
+  faOps(a, b, cIn, xorAB, sum, cOut);
 
   test('should return xor results correctly in a xor b.', () async {
     for (var i = 0; i <= 1; i++) {
@@ -55,4 +61,9 @@ void main() {
       }
     }
   });
+
+  final mod = FullAdderModule(a, b, cIn, faOps);
+  await mod.build();
+
+  print(mod.generateSynth());
 }
