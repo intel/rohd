@@ -88,6 +88,8 @@ test('should return xor results correctly in a xor b', () async {
 });
 ```
 
+## Create the function of SUM
+
 Now, you know how to create a test in dart and ROHD. It's time to dive in deeper to create `SUM` function.
 
 The function of `SUM` is represented in `XOR(XOR(A, B), C-IN)` where we can make it into:
@@ -96,15 +98,44 @@ The function of `SUM` is represented in `XOR(XOR(A, B), C-IN)` where we can make
 final a = Logic(name: 'a');
 final b = Logic(name: 'b');
 
-final xorAB = a ^ b;
+  final xorAB = a ^ b;
+  final sum = xorAB ^ cIn;
 
-test('should return xor results correctly in a xor b', () async {
+test('should return true if results sum similar to truth table.', () async {
+    for (var i = 0; i <= 1; i++) {
+      for (var j = 0; j <= 1; j++) {
+        for (var k = 0; k <= 1; k++) {
+          a.put(i);
+          b.put(j);
+          cIn.put(k);
+
+          expect(sum.value.toInt(), faTruthTable(i, j, k).sum);
+        }
+      }
+    }
+});
+```
+
+## Create the function of C-Out
+
+Now, we created the c-out function. Let continue to work on the c-out function. The function of `C-Out` is represented in `OR(AND(C-IN, XOR(A, B)), AND(B, A))` where we can make it into:
+
+```dart
+// C-Out
+final and1 = xorAB & cIn;
+final and2 = a & b;
+final cOut = and1 | and2;
+
+test('should return true if result c-out is similar to truth table.', () async {
     for (var i = 0; i <= 1; i++) {
         for (var j = 0; j <= 1; j++) {
-            a.put(i);
-            b.put(j);
+            for (var k = 0; k <= 1; k++) {
+                a.put(i);
+                b.put(j);
+                cIn.put(k);
 
-            expect(xorAB.value.toInt(), i == j ? 0 : 1);
+                expect(cOut.value.toInt(), faTruthTable(i, j, k).cOut);
+            }
         }
     }
 });
