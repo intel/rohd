@@ -8,7 +8,7 @@
 
 In this chapter:
 
-- You will learn how to create a full-adder with Test Driven Development (TDD).
+- You learn how to create a unit test in dart, one of the most useful test packages to check for your functionality. You will be using test driven development (TDD) to construct a full-adder.
 
 ## Introduction to Test Driven Development
 
@@ -39,7 +39,7 @@ The truth table of full-adder are shown below:
 
 ## Create Full-Adder with TDD
 
-Before we start our development, we need to import dart and rohd packages. Then, we want to create a main function.
+Before we start our development, we need to import test and rohd packages. Then, we want to create a main function.
 
 ```dart
 import 'package:rohd/rohd.dart';
@@ -50,9 +50,13 @@ void main() {
 }
 ```
 
-### Fail and passing test
+### Failing and passing test
 
-In TDD, we start by creating a failing test. Let create a test case that test for xor function.
+In TDD, we start by creating a **failing test**. Let create a test case that test for xor function.
+
+In dart test, a test function require a string description and a function body (Minimal to make the test work).
+
+The `expect` function will takes on a `actual` and a `matcher` which also mean value that are return from your function (actual) and value that you expect to return (matcher).
 
 To create a test in dart:
 
@@ -66,9 +70,9 @@ test('should return xor results correctly in a xor b', () async {
 });
 ```
 
-By this time, when you execute you will somehow get some errors. Let now fix that errors.
+By now, you will encounters some errors when you run that code. Keep calm, everything is under control. Let us now fix that errors.
 
-Start by define the logic initialization and the xor operators.
+Let start by define the logic initialization and the `xor` operators.
 
 ```dart
 final a = Logic(name: 'a');
@@ -82,6 +86,8 @@ test('should return xor results correctly in a xor b', () async {
         a.put(i);
         b.put(j);
 
+        // Note: We now change make sure instead of getting the Logic,
+        // We want to get the LogicValue of Int instead.
         expect(xorAB.value.toInt(), i == j ? 0 : 1);
       }
     }
@@ -98,6 +104,7 @@ The function of `SUM` is represented in `XOR(XOR(A, B), C-IN)` where we can make
 final a = Logic(name: 'a');
 final b = Logic(name: 'b');
 
+// XOR(XOR(A, B), C-IN)
 final xorAB = a ^ b;
 final sum = xorAB ^ cIn;
 
@@ -121,7 +128,7 @@ test('should return true if results sum similar to truth table.', () async {
 Now, we created the c-out function. Let continue to work on the c-out function. The function of `C-Out` is represented in `OR(AND(C-IN, XOR(A, B)), AND(B, A))` where we can make it into:
 
 ```dart
-// C-Out
+// OR(AND(C-IN, XOR(A, B)), AND(B, A))
 final cOut = (xorAB & cIn) | (a & b);
 
 test('should return true if result c-out is similar to truth table.', () async {
@@ -138,3 +145,5 @@ test('should return true if result c-out is similar to truth table.', () async {
     }
 });
 ```
+
+Yeah, thats it. Congratulations! We have now successfully created a Full-Adder.
