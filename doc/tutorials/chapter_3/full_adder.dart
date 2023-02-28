@@ -30,7 +30,7 @@ void main() async {
         a.put(i);
         b.put(j);
 
-        expect(xorAB.value.toInt(), i == j ? 0 : 1);
+        expect(xorAB.value.toBool(), i != j);
       }
     }
   });
