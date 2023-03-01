@@ -11,8 +11,11 @@ doc/api/
 
 # Other stuff
 tmp_test/
+*.sv
 *.vcd
-.vscode/
+*_fsm.md
+.vscode/*
 
 # Exceptions
+!.vscode/extensions.json
 !test/example_icarus_waves.vcd

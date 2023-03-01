@@ -943,6 +943,16 @@ abstract class LogicValue {
       return false;
     }
   }
+
+  /// Returns new [LogicValue] replicated [multiplier] times. An exception will
+  /// be thrown in case the multiplier is <1
+  LogicValue replicate(int multiplier) {
+    if (multiplier < 1) {
+      throw InvalidMultiplierException(multiplier);
+    }
+
+    return LogicValue.of(List.filled(multiplier, this));
+  }
 }
 
 /// Enum for direction of shift
