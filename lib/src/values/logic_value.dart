@@ -927,6 +927,22 @@ abstract class LogicValue {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  ///compare two LogicValues values for some bits, but not all bits.
+  bool equalsWithDontCare(LogicValue other) {
+    if (width == other.width) {
+      for (var i = 0; i < width; i++) {
+        if (!this[i].isValid || !other[i].isValid) {
+          continue;
+        } else if (this[i] != other[i]) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
 
 /// Enum for direction of shift
