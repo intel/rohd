@@ -143,7 +143,7 @@ class Interface<TagType> {
 
 // TODO(mkorbel1): addSubInterface type of function
 
-enum PairDirection { producer, consumer, sharedInputs }
+enum PairDirection { fromProducer, fromConsumer, sharedInputs }
 
 class PairInterface extends Interface<PairDirection> {
   /// TODO(): fix doc
@@ -152,10 +152,10 @@ class PairInterface extends Interface<PairDirection> {
       List<Port>? producerPorts,
       List<Port>? sharedInputPorts}) {
     if (consumerPorts != null) {
-      setPorts(consumerPorts, [PairDirection.consumer]);
+      setPorts(consumerPorts, [PairDirection.fromConsumer]);
     }
     if (producerPorts != null) {
-      setPorts(producerPorts, [PairDirection.producer]);
+      setPorts(producerPorts, [PairDirection.fromProducer]);
     }
     if (sharedInputPorts != null) {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
@@ -173,9 +173,9 @@ class PairInterface extends Interface<PairDirection> {
   PairInterface.match(Interface<PairDirection> otherInterface)
       : this(
             consumerPorts:
-                _getMatchPorts(otherInterface, PairDirection.consumer),
+                _getMatchPorts(otherInterface, PairDirection.fromConsumer),
             producerPorts:
-                _getMatchPorts(otherInterface, PairDirection.producer),
+                _getMatchPorts(otherInterface, PairDirection.fromProducer),
             sharedInputPorts:
                 _getMatchPorts(otherInterface, PairDirection.sharedInputs));
 
@@ -183,12 +183,12 @@ class PairInterface extends Interface<PairDirection> {
       Module module, Interface<PairDirection> srcInterface, PairDirection role,
       {String Function(String original)? uniquify}) {
     super.connectIO(module, srcInterface,
-        inputTags: role == PairDirection.producer
-            ? {PairDirection.consumer}
-            : {PairDirection.producer},
-        outputTags: role == PairDirection.producer
-            ? {PairDirection.producer}
-            : {PairDirection.consumer},
+        inputTags: role == PairDirection.fromProducer
+            ? {PairDirection.fromConsumer}
+            : {PairDirection.fromProducer},
+        outputTags: role == PairDirection.fromProducer
+            ? {PairDirection.fromProducer}
+            : {PairDirection.fromConsumer},
         uniquify: uniquify);
   }
 
