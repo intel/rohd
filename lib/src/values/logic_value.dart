@@ -928,7 +928,13 @@ abstract class LogicValue {
     ].swizzle();
   }
 
-  ///compare two LogicValues values for some bits, but not all bits.
+  ///The goal here is to compare two LogicValues that are the same width 
+  ///for some bits, but not all bits (x & z). 
+  /// 
+  ///Iterate thorugh the loop, if the bit it's not a valid value(0,1), we 
+  ///treat it as a don't care and return true, then continue to the next bit. 
+  ///
+  ///If the bit is a valid value but are not equal to each other, return false 
   bool equalsWithDontCare(LogicValue other) {
     if (width == other.width) {
       for (var i = 0; i < width; i++) {
