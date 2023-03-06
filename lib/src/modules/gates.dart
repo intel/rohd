@@ -409,19 +409,15 @@ class _ShiftGate extends Module with InlineSystemVerilog, FullyCombinational {
     final in_ = inputs[_inName]!;
     final shiftAmount = inputs[_shiftAmountName]!;
 
-    String signWrap(String original) {
-      if (signed) {
-        return '\$signed($original)';
-      } else {
-        return original;
-      }
-    }
+    String signWrap(String original) =>
+        signed ? '\$signed($original)' : original;
 
     final aStr = signWrap(in_);
 
-    // it is necessary to sign wrap the whole expression due to the way
-    // SystemVerilog handles signed and unsigned expressions near eachother
-    return signWrap('$aStr $_opStr $shiftAmount');
+    final shiftStr = '$aStr $_opStr $shiftAmount';
+
+    // In case of signed, wrap in {} to make it self-determined.
+    return signed ? '{$shiftStr}' : shiftStr;
   }
 }
 
