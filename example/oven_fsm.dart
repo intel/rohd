@@ -216,8 +216,8 @@ Future<void> main({bool noPrint = false}) async {
     WaveDumper(oven, outputPath: 'oven.vcd');
   }
 
-  // We can listen to the streams on LED light changes based on time.
   if (!noPrint) {
+    // We can listen to the streams on LED light changes based on time.
     oven.led.changed.listen((event) {
       // Get the led light enum name from LogicValue.
       final ledVal = LEDLight.values[event.newValue.toInt()].name;
