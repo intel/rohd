@@ -928,13 +928,26 @@ abstract class LogicValue {
     ].swizzle();
   }
 
-  ///The goal here is to compare two LogicValues that are the same width 
-  ///for some bits, but not all bits (x & z). 
-  /// 
-  ///Iterate thorugh the loop, if the bit it's not a valid value(0,1), we 
-  ///treat it as a don't care and return true, then continue to the next bit. 
+  /// Checks if `this` is equal to [other], except ignoring bits of
+  /// which are not valid.
   ///
-  ///If the bit is a valid value but are not equal to each other, return false 
+  /// Returns `true` if each bit of `this` which [isValid] is equal
+  /// to each bit of [other] which [isValid].
+  ///
+  /// For example:
+  /// ```dart
+  /// // Returns false
+  /// LogicValue.ofString('1010xz').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns true
+  /// LogicValue.ofString('10x111').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns false
+  /// LogicValue.ofString('10x1z1').equalsWithDontCare(
+  ///   LogicValue.ofString('10101x'));
+  /// ```
   bool equalsWithDontCare(LogicValue other) {
     if (width == other.width) {
       for (var i = 0; i < width; i++) {
