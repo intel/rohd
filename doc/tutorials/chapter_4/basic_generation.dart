@@ -1,6 +1,5 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
-import '../chapter_3/full_adder.dart';
 
 void main() {
   final a = Logic(name: 'a', width: 8);
@@ -8,7 +7,7 @@ void main() {
 
   final sum = nBitAdder(a, b);
 
-  test('should return 10 when both input is 5', () {
+  test('should return 10 when both inputs are 5', () {
     a.put(5);
     b.put(5);
 
