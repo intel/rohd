@@ -430,27 +430,27 @@ void main() {
   group('comparison operations', () {
     test('equalsWithDontCare', () {
       expect(
-          // == not equal 
+          // == not equal
           LogicValue.ofString('1010xz')
               .equalsWithDontCare(LogicValue.ofString('10111x')),
           equals(false));
       expect(
-          // == equal 
+          // == equal
           LogicValue.ofString('1010xz')
               .equalsWithDontCare(LogicValue.ofString('101z1x')),
           equals(true));
       expect(
-          // == not equal 
+          // == not equal
           LogicValue.ofString('10x1z1')
               .equalsWithDontCare(LogicValue.ofString('10101x')),
           equals(false));
       expect(
-          // 
+          //
           LogicValue.ofString('10x1z1')
               .equalsWithDontCare(LogicValue.ofString('10101x')),
           equals(false));
       expect(
-      LogicValue.ofString('10x1z1')
+          LogicValue.ofString('10x1z1')
               .equalsWithDontCare(LogicValue.ofString('101x11')),
           equals(true));
     });
