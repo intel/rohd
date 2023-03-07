@@ -428,6 +428,32 @@ void main() {
     });
   });
   group('comparison operations', () {
+    test('equalsWithDontCare', () {
+      expect(
+          // == not equal
+          LogicValue.ofString('1010xz')
+              .equalsWithDontCare(LogicValue.ofString('10111x')),
+          equals(false));
+      expect(
+          // == equal
+          LogicValue.ofString('1010xz')
+              .equalsWithDontCare(LogicValue.ofString('101z1x')),
+          equals(true));
+      expect(
+          // == not equal
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('10101x')),
+          equals(false));
+      expect(
+          //
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('10101x')),
+          equals(false));
+      expect(
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('101x11')),
+          equals(true));
+    });
     test('equality', () {
       expect(
           // == equal
@@ -740,7 +766,6 @@ void main() {
           equals(LogicValue.ofBigInt(BigInt.from(3), 512)));
     });
   });
-
   group('FilledLogicValue', () {
     test('overrides', () {
       expect(
