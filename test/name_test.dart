@@ -40,16 +40,6 @@ class SpeciallyNamedModule extends Module {
   }
 }
 
-class EmptyNameModule extends Module {
-  EmptyNameModule(
-    Logic a, {
-    super.name = '',
-    super.definitionName = '',
-  }) {
-    addInput('', a, width: a.width);
-  }
-}
-
 class RenameableModule extends Module {
   final String inputPortName;
   final String outputPortName;
@@ -184,16 +174,6 @@ void main() {
       final mod = TopModule(Logic(), true, false);
       await mod.build();
       expect(mod.generateSynth, throwsException);
-    });
-    test('should throws exception when definition name is empty string',
-        () async {
-      final mod = EmptyNameModule(Logic());
-      await mod.build();
-
-      // final out = File('output.sv').openWrite();
-      // out.write(sv);
-
-      expect(mod.generateSynth(), throwsException);
     });
   });
 

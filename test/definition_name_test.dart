@@ -64,6 +64,14 @@ void main() {
         ValidDefNameModule(Logic(), defName);
       }, throwsA((dynamic e) => e is NullReservedNameException));
     });
+    test(
+        'WHEN definition name is empty string, THEN expect to throw exception.',
+        () async {
+      final defName = DefinitionName(name: '', isReserved: true);
+      expect(() async {
+        ValidDefNameModule(Logic(), defName);
+      }, throwsA((dynamic e) => e is NullReservedNameException));
+    });
   });
 
   group('GIVEN that Reserved Definition Name is FALSE,', () {
