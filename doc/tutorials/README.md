@@ -33,9 +33,9 @@
 
 ## Chapter 3: Unit Testing
 
-- Full-Adder Tutorial with TDD
-- Simple unit test of existing logic
-- Link to test package from Dart
+- [Introduction to Test Driven Development](./chapter_3/00_unit_test.md#introduction-to-test-driven-development)
+- [What is a Full-Adder?](./chapter_3/00_unit_test.md#what-is-a-full-adder)
+- [Create a Full-Adder with TDD](./chapter_3/00_unit_test.md#create-full-adder-with-tdd)
 
 ## Chapter 4: Basic Generation
 
