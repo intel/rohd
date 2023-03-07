@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the ofBool method from the LogicValue class, for the Dart programming language.">
-  <title>ofBool method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the equalsWithDontCare method from the LogicValue class, for the Dart programming language.">
+  <title>equalsWithDontCare method - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">ofBool static method</li>
+    <li class="self-crumb">equalsWithDontCare method</li>
   </ol>
-  <div class="self-name">ofBool</div>
+  <div class="self-name">equalsWithDontCare</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -50,15 +50,15 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">ofBool</span> static method 
+<h1><span class="kind-method">equalsWithDontCare</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">ofBool</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="ofBool-param-value"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">value</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/2.19.3/dart-core/bool-class.html">bool</a></span>
+<span class="name ">equalsWithDontCare</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="equalsWithDontCare-param-other"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">other</span></span></li>
 </ol>)
 
       
@@ -66,16 +66,43 @@
     </section>
     
 <section class="desc markdown">
-  <p>Converts <code>bool</code> <code>value</code> to a valid <a href="../../rohd/LogicValue-class.html">LogicValue</a> with 1 bits either
-one or zero.</p>
+  <p>Checks if <code>this</code> is equal to <code>other</code>, except ignoring bits of
+which are not valid.</p>
+<p>Returns <code>true</code> if each bit of <code>this</code> which <a href="../../rohd/LogicValue/isValid.html">isValid</a> is equal
+to each bit of <code>other</code> which <a href="../../rohd/LogicValue/isValid.html">isValid</a>.</p>
+<p>For example:</p>
+<pre class="language-dart"><code class="language-dart">// Returns false
+LogicValue.ofString('1010xz').equalsWithDontCare(
+  LogicValue.ofString('10111x'));
+
+// Returns true
+LogicValue.ofString('10x111').equalsWithDontCare(
+  LogicValue.ofString('10111x'));
+
+// Returns false
+LogicValue.ofString('10x1z1').equalsWithDontCare(
+  LogicValue.ofString('10101x'));
+</code></pre>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">&#47;&#47; ignore: avoid_positional_boolean_parameters
-static LogicValue ofBool(bool value) =&gt; value ? one : zero;</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool equalsWithDontCare(LogicValue other) {
+  if (width == other.width) {
+    for (var i = 0; i &lt; width; i++) {
+      if (!this[i].isValid || !other[i].isValid) {
+        continue;
+      } else if (this[i] != other[i]) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
+}</code></pre>
 </section>
 
 
@@ -92,7 +119,7 @@ static LogicValue ofBool(bool value) =&gt; value ? one : zero;</code></pre>
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li class="self-crumb">ofBool static method</li>
+  <li class="self-crumb">equalsWithDontCare method</li>
 </ol>
 
 
