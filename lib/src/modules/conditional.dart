@@ -20,7 +20,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  final List<Conditional> conditionals;
+  late final List<Conditional> conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
@@ -267,14 +267,18 @@ class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
+  /// This sets the Sequential conditions to reset
+  Logic? reset;
+  Map<Logic, Logic> resetVal = {};
+
   /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : this.multi([clk], conditionals, name: name);
+      {String name = 'sequential', Logic? reset})
+      : this.multi([clk], conditionals, name: name, reset: reset);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
   Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {String name = 'sequential'})
+      {String name = 'sequential', this.reset})
       : super(conditionals, name: name) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
@@ -394,6 +398,26 @@ class Sequential extends _Always {
   void _execute() {
     var anyClkInvalid = false;
     var anyClkPosedge = false;
+
+    // This will reset the conditionals on setting the `reset` flag
+    if (reset != null) {
+      conditionals = [
+        If(
+          reset!,
+          then: [..._assignedReceiverToOutputMap.values.map((e) => e < 0)],
+
+          // then : [
+          //  ..._assignedReceiverToOutputMap.values.map(
+          //    (e) => e < resetVal[e]
+          //  )
+          // ]
+
+          orElse: conditionals,
+        ),
+      ];
+    } else {
+      conditionals = conditionals;
+    }
 
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as
