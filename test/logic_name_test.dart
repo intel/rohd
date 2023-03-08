@@ -42,4 +42,11 @@ void main() {
     final bus = Logic();
     expect(bus.name, equals('s0'));
   });
+
+  test(
+      'GIVEN logic name is empty string THEN expected to see autogeneration '
+      'of name', () async {
+    final bus = Logic(name: '');
+    expect(bus.name, isNot(equals('')));
+  });
 }
