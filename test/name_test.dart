@@ -12,7 +12,6 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
-import 'dart:io';
 
 class TopModule extends Module {
   TopModule(Logic a, bool causeDefConflict, bool causeInstConflict)
