@@ -33,7 +33,7 @@ abstract class Sanitizer {
       newName = 's$newName';
     }
 
-    // can't be empty string
+    // name can't be empty string
     if (newName == '') {
       return 'empty_';
     }
