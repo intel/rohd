@@ -70,7 +70,7 @@ void main() {
       final defName = DefinitionName(name: '', isReserved: true);
       expect(() async {
         ValidDefNameModule(Logic(), defName);
-      }, throwsA((dynamic e) => e is NullReservedNameException));
+      }, throwsA((dynamic e) => e is InvalidReservedNameException));
     });
   });
 

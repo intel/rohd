@@ -33,8 +33,10 @@ abstract class Sanitizer {
       newName = 's$newName';
     }
 
-    // can't be
-    if (newName == '') {}
+    // can't be empty string
+    if (newName == '') {
+      return 'empty_';
+    }
 
     // add `_` to the end if the name is a SystemVerilog keyword
     while (_reservedSVKeywords.contains(newName)) {

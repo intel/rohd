@@ -13,8 +13,8 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
 class LogicTestModule extends Module {
-  LogicTestModule(Logic a) {
-    addInput(a.name, a, width: a.width);
+  LogicTestModule(String logicName) {
+    addInput(logicName, Logic());
   }
 }
 
@@ -48,5 +48,14 @@ void main() {
       'of name', () async {
     final bus = Logic(name: '');
     expect(bus.name, isNot(equals('')));
+  });
+
+  group('port name:', () {
+    test('GIVEN port name is empty string THEN expected to see exception',
+        () async {
+      expect(() async {
+        LogicTestModule('');
+      }, throwsA((dynamic e) => e is Exception));
+    });
   });
 }
