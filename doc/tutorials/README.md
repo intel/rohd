@@ -42,6 +42,7 @@
 - [What is n-bit adder?](./chapter_4/00_basic_generation.md#what-is-n-bit-adder)
 - [Create a unit-test](./chapter_4/00_basic_generation.md#create-a-unit-test)
 - [Create Dart function and class](./chapter_4/00_basic_generation.md#create-dart-function-and-class)
+- [Exercise](./chapter_4/00_basic_generation.md#exercise)
 
 ## Chapter 5: Basics of modules
 
