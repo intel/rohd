@@ -7,29 +7,39 @@ void main() {
 
   final sum = nBitAdder(a, b);
 
-  test('should return 10 when both inputs are 5', () {
-    a.put(5);
-    b.put(5);
+  test('should return 255 when both inputs are added', () {
+    a.put(127);
+    b.put(128);
 
-    expect(sum.value.toInt(), equals(10));
+    expect(sum.value.toInt(), equals(255));
   });
 }
 
 Logic nBitAdder(Logic a, Logic b) {
   assert(a.width == b.width, 'a and b should have same width.');
 
-  Logic carry = Const(0);
+  final carry = Const(0);
   final sum = <Logic>[];
 
-  for (var i = 0; i < a.width; i++) {
-    final res = fullAdder(a[i], b[i], carry);
-    carry = res.cOut;
-    sum.add(res.sum);
-  }
+  recursiveFullAdder(a, b, carry, sum, 0);
 
   sum.add(carry);
 
   return sum.rswizzle();
+}
+
+void recursiveFullAdder(Logic a, Logic b, Logic carry, List<Logic> sum, int i) {
+  // Base Case
+  if (i == a.width) {
+    // if the width equals to index 0
+    return;
+  } else {
+    // Recursive Case
+    final res = fullAdder(a[i], b[i], carry);
+    // ignore: parameter_assignments
+    recursiveFullAdder(a, b, res.cOut, sum, i + 1);
+    sum.add(res.sum);
+  }
 }
 
 class FullAdderResult {
