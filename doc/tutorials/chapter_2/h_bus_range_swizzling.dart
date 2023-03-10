@@ -55,8 +55,8 @@ void main() async {
       ' ${a.slice(2, 0).value.toString(includeWidth: false)}');
 
   b.put(bin('11000100'));
-  print('a[7]: ${b[7].value.toString(includeWidth: false)}');
-  print('a[0]: ${b[0].value.toString(includeWidth: false)}');
+  print('b[7]: ${b[7].value.toString(includeWidth: false)}');
+  print('b[0]: ${b[0].value.toString(includeWidth: false)}');
 
   print('d: ${rangeSwizzling.d.value.toString(includeWidth: false)}');
   print('e: ${rangeSwizzling.e.value.toString(includeWidth: false)}');
