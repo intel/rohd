@@ -13,7 +13,7 @@
 import 'package:rohd/rohd.dart';
 import 'helper.dart';
 
-void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f) {
+void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g) {
   // assign d to the top bit of a
   // construct e by swizzling bits from b, c, and d
   // here, the MSB is on the left, LSB is on the right
@@ -31,6 +31,9 @@ void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f) {
   // right swizzle: d = [1] (MSB), c = [00111], a = [1110] (LSB),
   // e = [1110 00111 1] - [a, c, d]
   f <= [d, c, a].rswizzle();
+
+  // Get a copy of f
+  g <= f.withSet(2, Const(3, width: 3));
 }
 
 void main() async {
@@ -41,9 +44,10 @@ void main() async {
   final d = Logic(name: 'd');
   final e = Logic(name: 'e', width: d.width + c.width + a.width);
   final f = Logic(name: 'f', width: d.width + c.width + a.width);
+  final g = Logic(name: 'g', width: d.width + c.width + a.width);
 
   // Instantiate Module and display system verilog
-  final rangeSwizzling = RangeSwizzling(a, b, c, d, e, f, slicing);
+  final rangeSwizzling = RangeSwizzling(a, b, c, d, e, f, g, slicing);
   await displaySystemVerilog(rangeSwizzling);
 
   print('\n');
@@ -61,4 +65,5 @@ void main() async {
   print('d: ${rangeSwizzling.d.value.toString(includeWidth: false)}');
   print('e: ${rangeSwizzling.e.value.toString(includeWidth: false)}');
   print('f: ${rangeSwizzling.f.value.toString(includeWidth: false)}');
+  print('g: ${rangeSwizzling.g.value.toString(includeWidth: false)}');
 }
