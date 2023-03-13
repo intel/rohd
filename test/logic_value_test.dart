@@ -267,6 +267,13 @@ void main() {
           equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
     });
   });
+
+  test('LogicValue.of example', () {
+    final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
+    final lv = LogicValue.of(it);
+    expect(lv.toString(), equals("6'b01xzx0"));
+  });
+
   group('unary operations (including "to")', () {
     test('toMethods', () {
       expect(
@@ -341,6 +348,14 @@ void main() {
           LogicValue.ofString('0101').getRange(0, 2),
           equals(LogicValue.ofString('01')));
       expect(
+          // getRange - slice from range 1
+          LogicValue.ofString('0101').getRange(1),
+          equals(LogicValue.ofString('010')));
+      expect(
+          // getRange - slice from negative range
+          LogicValue.ofString('0101').getRange(-2),
+          equals(LogicValue.ofString('01')));
+      expect(
           // getRange - negative end index and start < end
           LogicValue.ofString('0101').getRange(1, -2),
           LogicValue.zero);
@@ -413,6 +428,32 @@ void main() {
     });
   });
   group('comparison operations', () {
+    test('equalsWithDontCare', () {
+      expect(
+          // == not equal
+          LogicValue.ofString('1010xz')
+              .equalsWithDontCare(LogicValue.ofString('10111x')),
+          equals(false));
+      expect(
+          // == equal
+          LogicValue.ofString('1010xz')
+              .equalsWithDontCare(LogicValue.ofString('101z1x')),
+          equals(true));
+      expect(
+          // == not equal
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('10101x')),
+          equals(false));
+      expect(
+          //
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('10101x')),
+          equals(false));
+      expect(
+          LogicValue.ofString('10x1z1')
+              .equalsWithDontCare(LogicValue.ofString('101x11')),
+          equals(true));
+    });
     test('equality', () {
       expect(
           // == equal
@@ -725,7 +766,6 @@ void main() {
           equals(LogicValue.ofBigInt(BigInt.from(3), 512)));
     });
   });
-
   group('FilledLogicValue', () {
     test('overrides', () {
       expect(
@@ -836,6 +876,52 @@ void main() {
           // xor - invalid z
           LogicValue.filled(100, LogicValue.z).and(),
           equals(LogicValue.x));
+    });
+  });
+
+  group('64-bit conversions', () {
+    test(
+        '64-bit LogicValues larger than maximum positive value on integer'
+        ' are properly converted when converted from BigInt', () {
+      final extraWide = LogicValue.ofBigInt(
+        BigInt.parse('f' * 16 + 'f0' * 8, radix: 16),
+        128,
+      );
+      final smaller = extraWide.getRange(0, 64);
+      expect(smaller.toInt(), equals(0xf0f0f0f0f0f0f0f0));
+    });
+    test(
+        '64-bit BigInts larger than max pos int value constructing'
+        ' a LogicValue is correct', () {
+      final bigInt64Lv =
+          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), 64);
+      expect(bigInt64Lv.toInt(), equals(0xfafafafafafafafa));
+    });
+    test('64-bit binary negatives are converted properly with bin', () {
+      expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+    });
+  });
+
+  group('hash and equality', () {
+    test('hash', () {
+      // thank you to @bbracker-int
+      // https://github.com/intel/rohd/issues/206
+
+      const lvEnum = LogicValue.one;
+      final lvBool = LogicValue.ofBool(true);
+      final lvInt = LogicValue.ofInt(1, 1);
+      final lvBigInt = LogicValue.ofBigInt(BigInt.one, 1);
+      final lvFilled = LogicValue.filled(1, lvEnum);
+
+      for (final lv in [lvBool, lvInt, lvBigInt, lvFilled]) {
+        expect(lv.hashCode, equals(lvEnum.hashCode));
+      }
+    });
+    test('zero-width', () {
+      expect(LogicValue.filled(0, LogicValue.one),
+          equals(LogicValue.filled(0, LogicValue.zero)));
+      expect(LogicValue.filled(0, LogicValue.one).hashCode,
+          equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
   });
 }

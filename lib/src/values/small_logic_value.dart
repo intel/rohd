@@ -41,9 +41,23 @@ class _SmallLogicValue extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  const _SmallLogicValue(int value, int invalid, super.width)
+  /// Constructs a new [_SmallLogicValue], intended to hold values
+  /// between 1 and [_INT_BITS] bits, inclusive.
+  ///
+  /// Set [allowInefficientRepresentation] to `true` to bypass
+  /// inefficient representation assertions.
+  const _SmallLogicValue(int value, int invalid, super.width,
+      {bool allowInefficientRepresentation = false})
       : assert(width <= LogicValue._INT_BITS,
             '_SmallLogicValue should have low number of bits'),
+        assert(width != 0, '_SmallLogicValue should have at least one bit'),
+        assert(
+            allowInefficientRepresentation ||
+                !(((value & (1 << width) - 1) == (1 << width) - 1 ||
+                        (value & (1 << width) - 1) == 0) &&
+                    ((invalid & (1 << width) - 1) == (1 << width) - 1 ||
+                        (invalid & (1 << width) - 1) == 0)),
+            'Should not be expressable as filled'),
         _value = ((1 << width) - 1) & value,
         _invalid = ((1 << width) - 1) & invalid,
         super._();
@@ -72,8 +86,11 @@ class _SmallLogicValue extends LogicValue {
   @override
   LogicValue _getRange(int start, int end) {
     final newWidth = end - start;
-    return _SmallLogicValue((_value >> start) & _maskOfWidth(newWidth),
-        (_invalid >> start) & _maskOfWidth(newWidth), newWidth);
+    return LogicValue._smallLogicValueOrFilled(
+      (_value >> start) & _maskOfWidth(newWidth),
+      (_invalid >> start) & _maskOfWidth(newWidth),
+      newWidth,
+    );
   }
 
   @override
@@ -97,8 +114,8 @@ class _SmallLogicValue extends LogicValue {
   }
 
   @override
-  LogicValue operator ~() =>
-      _SmallLogicValue(~_value & ~_invalid & _mask, _invalid, width);
+  LogicValue operator ~() => LogicValue._smallLogicValueOrFilled(
+      ~_value & ~_invalid & _mask, _invalid, width);
 
   @override
   LogicValue _and2(LogicValue other) {
@@ -108,7 +125,7 @@ class _SmallLogicValue extends LogicValue {
     final eitherInvalid = _invalid | other._invalid;
     final eitherZero =
         (~_value & ~_invalid) | (~other._value & ~other._invalid);
-    return _SmallLogicValue(
+    return LogicValue._smallLogicValueOrFilled(
         ~eitherInvalid & ~eitherZero, eitherInvalid & ~eitherZero, width);
   }
 
@@ -119,7 +136,8 @@ class _SmallLogicValue extends LogicValue {
     }
     final eitherInvalid = _invalid | other._invalid;
     final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
-    return _SmallLogicValue(eitherOne, eitherInvalid & ~eitherOne, width);
+    return LogicValue._smallLogicValueOrFilled(
+        eitherOne, eitherInvalid & ~eitherOne, width);
   }
 
   @override
@@ -128,7 +146,7 @@ class _SmallLogicValue extends LogicValue {
       throw Exception('Cannot handle type ${other.runtimeType} here.');
     }
     final eitherInvalid = _invalid | other._invalid;
-    return _SmallLogicValue(
+    return LogicValue._smallLogicValueOrFilled(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
   }
 
@@ -163,21 +181,36 @@ class _SmallLogicValue extends LogicValue {
   @override
   LogicValue _shiftLeft(int shamt) => !isValid
       ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : _SmallLogicValue(
+      : LogicValue._smallLogicValueOrFilled(
           (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
   LogicValue _shiftRight(int shamt) => !isValid
       ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : _SmallLogicValue(_value >> shamt, _invalid >> shamt, width);
+      : LogicValue._smallLogicValueOrFilled(
+          _value >> shamt, _invalid >> shamt, width);
 
   @override
   LogicValue _shiftArithmeticRight(int shamt) => !isValid
       ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : _SmallLogicValue(
+      : LogicValue._smallLogicValueOrFilled(
           ((_value | (this[width - 1] == LogicValue.one ? ~_mask : 0)) >>
                   shamt) &
               _mask,
           _invalid >> shamt,
           width);
+
+  @override
+  BigInt get _bigIntInvalid =>
+      BigInt.from(_invalid) & _BigLogicValue._maskOfWidth(width);
+
+  @override
+  BigInt get _bigIntValue =>
+      BigInt.from(_value) & _BigLogicValue._maskOfWidth(width);
+
+  @override
+  int get _intInvalid => _invalid;
+
+  @override
+  int get _intValue => _value;
 }

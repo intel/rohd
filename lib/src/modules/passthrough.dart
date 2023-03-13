@@ -21,13 +21,13 @@ class Passthrough extends Module {
   /// Constructs a simple pass-through module that performs no operations
   /// between [a] and [out].
   Passthrough(Logic a, [String name = 'passthrough']) : super(name: name) {
-    addInput('in', a);
-    addOutput('out');
+    addInput('in', a, width: a.width);
+    addOutput('out', width: a.width);
     _setup();
   }
 
   void _setup() {
-    final inner = Logic(name: 'inner');
+    final inner = Logic(name: 'inner', width: in_.width);
     inner <= in_;
     out <= inner;
   }

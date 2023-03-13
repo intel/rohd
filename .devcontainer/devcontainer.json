@@ -1,0 +1,25 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+
+  "updateContentCommand": "tool/gh_codespaces/run_setup.sh",
+
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "example/example.dart",
+        "README.md",
+        "CONTRIBUTING.md",
+        "CODE_OF_CONDUCT.md"
+      ]
+    },
+    "vscode": {
+      "extensions": [
+        "Dart-Code.dart-code",
+        "DavidAnson.vscode-markdownlint"
+      ]
+    }
+  }
+}

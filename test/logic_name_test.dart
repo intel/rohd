@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
 class LogicTestModule extends Module {
@@ -23,6 +24,11 @@ void main() {
       'THEN expected to see proper name being generated', () async {
     final bus = Logic(name: 'validName');
     expect(bus.name, equals('validName'));
+  });
+
+  test('Test signals for sanitized names', () async {
+    expect(Sanitizer.isSanitary(Const(LogicValue.ofString('1x0101z')).name),
+        isTrue);
   });
 
   test('GIVEN logic name is invalid THEN expected to see sanitized name',

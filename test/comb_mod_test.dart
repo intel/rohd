@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// comb_mod_test.dart
@@ -58,7 +58,9 @@ class DuplicateExample extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   test('module reuse should apply twice', () async {
     final mod = ReuseExample(Logic(width: 8));
@@ -68,9 +70,7 @@ void main() {
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 
@@ -82,9 +82,7 @@ void main() {
       Vector({'a': 3}, {'b': 5})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'a': 8, 'b': 8});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 }

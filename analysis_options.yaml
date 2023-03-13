@@ -1,4 +1,3 @@
-
 # Lints set up with some guidance from here:
 # https://rydmike.com/blog_flutter_linting.html
 
@@ -34,7 +33,7 @@ linter:
     - avoid_function_literals_in_foreach_calls
     - avoid_implementing_value_types
     - avoid_init_to_null
-    - avoid_js_rounded_ints
+    # - avoid_js_rounded_ints
     - avoid_multiple_declarations_per_line
     - avoid_null_checks_in_equality_operators
     - avoid_positional_boolean_parameters

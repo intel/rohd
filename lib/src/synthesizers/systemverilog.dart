@@ -9,7 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/traverseable_collection.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
@@ -298,19 +298,21 @@ class _SynthModuleDefinition {
   @override
   String toString() => "module name: '${module.name}'";
 
-  late final Uniquifier _synthLogicNameUniquifier;
+  /// Used to uniquify any identifiers, including signal names
+  /// and module instances.
+  late final Uniquifier _synthInstantiationNameUniquifier;
+
   String _getUniqueSynthLogicName(String? initialName, bool portName) {
     if (portName && initialName == null) {
       throw Exception('Port name cannot be null.');
     }
-    return _synthLogicNameUniquifier.getUniqueName(
+    return _synthInstantiationNameUniquifier.getUniqueName(
         initialName: initialName, reserved: portName);
   }
 
-  final Uniquifier _synthSubModuleInstantiationNameUniquifier = Uniquifier();
   String _getUniqueSynthSubModuleInstantiationName(
           String? initialName, bool reserved) =>
-      _synthSubModuleInstantiationNameUniquifier.getUniqueName(
+      _synthInstantiationNameUniquifier.getUniqueName(
           initialName: initialName, nullStarter: 'm', reserved: reserved);
 
   _SynthLogic? _getSynthLogic(Logic? logic, bool allowPortName) {
@@ -328,7 +330,7 @@ class _SynthModuleDefinition {
   }
 
   _SynthModuleDefinition(this.module) {
-    _synthLogicNameUniquifier = Uniquifier(
+    _synthInstantiationNameUniquifier = Uniquifier(
         reservedNames: {...module.inputs.keys, ...module.outputs.keys});
 
     // start by traversing output signals
@@ -396,9 +398,9 @@ class _SynthModuleDefinition {
           }
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
-      } else if (driver == null && receiver.hasValidValue()) {
+      } else if (driver == null && receiver.value.isValid) {
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
-      } else if (driver == null && !receiver.isFloating()) {
+      } else if (driver == null && !receiver.value.isFloating) {
         // this is a signal that is *partially* invalid (e.g. 0b1z1x0)
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }

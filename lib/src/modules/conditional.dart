@@ -12,6 +12,8 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/collections/duplicate_detection_set.dart';
+import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -102,7 +104,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Note that it is necessary to build this module and any sensitive
 /// dependencies in order for sensitivity detection to work properly
 /// in all cases.
-class Combinational extends _Always {
+class Combinational extends _Always with FullyCombinational {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
   Combinational(super.conditionals, {super.name = 'combinational'}) {
@@ -116,11 +118,11 @@ class Combinational extends _Always {
 
   @override
   Future<void> build() async {
+    await super.build();
+
     // any glitch on an input to an output's sensitivity should
     // trigger re-execution
     _listenToSensitivities();
-
-    await super.build();
   }
 
   /// Sets up additional glitch listening for sensitive modules.
@@ -155,15 +157,16 @@ class Combinational extends _Always {
     alreadyParsed.add(src);
 
     final dstConnections = src.dstConnections.toSet();
+
     if (src.isInput) {
       if (src.parentModule! is Sequential) {
         // sequential logic can't be a sensitivity, so ditch those
         return null;
       }
 
-      // we're at the input to another module, grab all the outputs of it and
-      // continue searching
-      dstConnections.addAll(src.parentModule!.outputs.values);
+      // we're at the input to another module, grab all the outputs of it which
+      // are combinationally connected and continue searching
+      dstConnections.addAll(src.parentModule!.combinationalPaths[src]!);
     }
 
     if (dstConnections.isEmpty) {
@@ -192,7 +195,20 @@ class Combinational extends _Always {
           collection.addAll(subSensitivities);
           if (dst.isInput) {
             // collect all the inputs of this module too as sensitivities
-            collection.addAll(dst.parentModule!.inputs.values);
+            // but only ones which can affect outputs affected by this input!
+
+            if (dst.parentModule! is FullyCombinational) {
+              // for efficiency, if purely combinational just go straight to all
+              collection.addAll(dst.parentModule!.inputs.values);
+            } else {
+              // default, add all inputs that may affect outputs affected
+              // by this input
+              for (final dstDependentOutput
+                  in dst.parentModule!.combinationalPaths[dst]!) {
+                collection.addAll(dst.parentModule!
+                    .reverseCombinationalPaths[dstDependentOutput]!);
+              }
+            }
           }
         }
       }
@@ -218,7 +234,7 @@ class Combinational extends _Always {
 
     final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      drivenLogics.addAll(element.execute());
+      element.execute(drivenLogics);
     }
 
     // combinational must always drive all outputs or else you get X!
@@ -316,14 +332,26 @@ class Sequential extends _Always {
           // driving it, so hold onto it for later
           _driverInputsPendingPostUpdate.add(driverInput);
           if (!_pendingPostUpdate) {
-            unawaited(Simulator.postTick.first.then((value) {
-              // once the tick has completed, we can update the override maps
-              for (final driverInput in _driverInputsPendingPostUpdate) {
-                _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
-              }
-              _driverInputsPendingPostUpdate.clear();
-              _pendingPostUpdate = false;
-            }));
+            unawaited(
+              Simulator.postTick.first.then(
+                (value) {
+                  // once the tick has completed,
+                  // we can update the override maps
+                  for (final driverInput in _driverInputsPendingPostUpdate) {
+                    _inputToPreTickInputValuesMap[driverInput] =
+                        driverInput.value;
+                  }
+                  _driverInputsPendingPostUpdate.clear();
+                  _pendingPostUpdate = false;
+                },
+              ).catchError(
+                test: (error) => error is Exception,
+                // ignore: avoid_types_on_closure_parameters
+                (Object err, StackTrace stackTrace) {
+                  Simulator.throwException(err as Exception, stackTrace);
+                },
+              ),
+            );
           }
           _pendingPostUpdate = true;
         }
@@ -341,6 +369,21 @@ class Sequential extends _Always {
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
+          }).catchError(test: (error) => error is Exception,
+              // ignore: avoid_types_on_closure_parameters
+              (Object err, StackTrace stackTrace) {
+            Simulator.throwException(err as Exception, stackTrace);
+          }).catchError(test: (error) => error is StateError,
+              // ignore: avoid_types_on_closure_parameters
+              (Object err, StackTrace stackTrace) {
+            // This could be a result of the `Simulator` being reset, causing
+            // the stream to `close` before `first` occurs.
+            if (!Simulator.simulationHasEnded) {
+              // If the `Simulator` is still running, rethrow immediately.
+
+              // ignore: only_throw_errors
+              throw err;
+            }
           }));
         }
         _pendingExecute = true;
@@ -351,6 +394,7 @@ class Sequential extends _Always {
   void _execute() {
     var anyClkInvalid = false;
     var anyClkPosedge = false;
+
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as
       // it currently does
@@ -369,21 +413,12 @@ class Sequential extends _Always {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      final allDrivenSignals = <Logic>[];
+      final allDrivenSignals = DuplicateDetectionSet<Logic>();
       for (final element in conditionals) {
-        allDrivenSignals.addAll(element.execute());
+        element.execute(allDrivenSignals);
       }
-      if (allDrivenSignals.length != allDrivenSignals.toSet().length) {
-        final alreadySet = <Logic>{};
-        final redrivenSignals = <Logic>{};
-        for (final signal in allDrivenSignals) {
-          if (alreadySet.contains(signal)) {
-            redrivenSignals.add(signal);
-          }
-          alreadySet.add(signal);
-        }
-        throw Exception('Sequential drove the same signal(s) multiple times:'
-            ' $redrivenSignals.');
+      if (allDrivenSignals.hasDuplicates) {
+        throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
       }
     }
 
@@ -463,12 +498,14 @@ abstract class Conditional {
   Logic receiverOutput(Logic receiver) =>
       _assignedReceiverToOutputMap[receiver]!;
 
-  /// Executes the functionality represented by this [Conditional].
+  /// Executes the functionality of this [Conditional] and
+  /// populates [drivenSignals] with all [Logic]s that were driven
+  /// during execution.
   ///
-  /// Returns a [List] of all [Logic] signals which were driven during
-  /// execution.
+  /// The [drivenSignals] are used by the caller to determine if signals
+  /// were driven an appropriate number of times.
   @protected
-  Set<Logic> execute();
+  void execute(Set<Logic> drivenSignals);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -525,9 +562,12 @@ class ConditionalAssign extends Conditional {
   List<Conditional> getConditionals() => [];
 
   @override
-  Set<Logic> execute() {
+  void execute(Set<Logic> drivenSignals) {
     receiverOutput(receiver).put(driverValue(driver));
-    return {receiver};
+
+    if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+      drivenSignals.add(receiver);
+    }
   }
 
   @override
@@ -617,15 +657,16 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  Set<Logic> execute() {
-    final drivenLogics = <Logic>{};
-
+  void execute(Set<Logic> drivenSignals) {
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(LogicValue.x);
+        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+          drivenSignals.add(receiver);
+        }
       }
-      return {};
+      return;
     }
 
     CaseItem? foundMatch;
@@ -634,7 +675,7 @@ class Case extends Conditional {
       // match on the first matchinig item
       if (isMatch(item.value.value)) {
         for (final conditional in item.then) {
-          drivenLogics.addAll(conditional.execute());
+          conditional.execute(drivenSignals);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           throw Exception('Unique case statement had multiple matching cases.'
@@ -653,7 +694,7 @@ class Case extends Conditional {
     // no items matched
     if (foundMatch == null && defaultItem != null) {
       for (final conditional in defaultItem!) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.execute(drivenSignals);
       }
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
@@ -661,8 +702,6 @@ class Case extends Conditional {
       throw Exception('$conditionalType case statement had no matching case,'
           ' and type was $conditionalType.');
     }
-
-    return drivenLogics;
   }
 
   @override
@@ -796,6 +835,11 @@ class ElseIf {
 
   /// If [condition] is 1, then [then] will be executed.
   ElseIf(this.condition, this.then);
+
+  /// If [condition] is 1, then [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  ElseIf.s(Logic condition, Conditional then) : this(condition, [then]);
 }
 
 /// A conditional block to execute only if `condition` is satisified.
@@ -810,6 +854,12 @@ class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
   Else(List<Conditional> then) : super(Const(1), then);
+
+  /// If none of the proceding [Iff] or [ElseIf] are executed, then
+  /// [then] will be executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  Else.s(Conditional then) : this([then]);
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like
@@ -831,25 +881,25 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  Set<Logic> execute() {
-    final drivenLogics = <Logic>{};
-
+  void execute(Set<Logic> drivenSignals) {
     for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
         for (final conditional in iff.then) {
-          drivenLogics.addAll(conditional.execute());
+          conditional.execute(drivenSignals);
         }
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
         // x and z propagation
         for (final receiver in getReceivers()) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
+          if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+            drivenSignals.add(receiver);
+          }
         }
         break;
       }
       // if it's 0, then continue searching down the path
     }
-    return drivenLogics;
   }
 
   @override
@@ -928,6 +978,14 @@ class If extends Conditional {
   /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
   If(this.condition, {this.then = const [], this.orElse = const []});
 
+  /// If [condition] is 1, then [then] is excutes,
+  /// otherwise [orElse] is executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  /// An optional [orElse] condition can be passed.
+  If.s(Logic condition, Conditional then, [Conditional? orElse])
+      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
+
   @override
   List<Logic> getReceivers() {
     final allReceivers = <Logic>[];
@@ -956,23 +1014,24 @@ class If extends Conditional {
   List<Conditional> getConditionals() => [...then, ...orElse];
 
   @override
-  Set<Logic> execute() {
-    final drivenLogics = <Logic>{};
+  void execute(Set<Logic> drivenSignals) {
     if (driverValue(condition)[0] == LogicValue.one) {
       for (final conditional in then) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.execute(drivenSignals);
       }
     } else if (driverValue(condition)[0] == LogicValue.zero) {
       for (final conditional in orElse) {
-        drivenLogics.addAll(conditional.execute());
+        conditional.execute(drivenSignals);
       }
     } else {
       // x and z propagation
       for (final receiver in getReceivers()) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
+        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+          drivenSignals.add(receiver);
+        }
       }
     }
-    return drivenLogics;
   }
 
   @override

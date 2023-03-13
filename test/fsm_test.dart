@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// fsm_test.dart
@@ -7,6 +7,8 @@
 /// 2022 April 22
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
+
+import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -33,7 +35,9 @@ class TestModule extends Module {
         b < ~c,
       ]),
     ];
-    StateMachine<MyStates>(clk, reset, MyStates.state1, states);
+
+    StateMachine<MyStates>(clk, reset, MyStates.state1, states)
+        .generateDiagram(outputPath: 'tmp_test/simple_fsm.md');
   }
 }
 
@@ -99,16 +103,24 @@ class TrafficTestModule extends Module {
         eastLight < LightColor.yellow(),
       ]),
     ];
-    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
+
+    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states)
+        .generateDiagram(outputPath: 'tmp_test/traffic_light_fsm.md');
   }
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
+  const simpleFSMPath = 'tmp_test/simple_fsm.md';
+  const trafficFSMPath = 'tmp_test/traffic_light_fsm.md';
 
   group('simcompare', () {
     test('simple fsm', () async {
       final pipem = TestModule(Logic(), Logic(), Logic());
+
       await pipem.build();
 
       final vectors = [
@@ -118,9 +130,11 @@ void main() {
         Vector({'c': 1}, {'b': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem.generateSynth(), pipem.runtimeType.toString(), vectors);
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
+
       expect(simResult, equals(true));
+
+      verifyMermaidStateDiagram(simpleFSMPath);
     });
 
     test('traffic light fsm', () async {
@@ -147,11 +161,23 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(
-          pipem.generateSynth(), pipem.runtimeType.toString(), vectors,
-          signalToWidthMap: {'traffic': 2, 'northLight': 2, 'eastLight': 2});
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
 
       expect(simResult, equals(true));
+      verifyMermaidStateDiagram(trafficFSMPath);
     });
   });
+}
+
+void verifyMermaidStateDiagram(String filePath) {
+  // check if the diagram exist
+  final file = File(filePath);
+  final existDiagram = file.existsSync();
+  expect(existDiagram, isTrue);
+
+  // check if the file generated is mermaid file
+  final fileContents = file.readAsStringSync();
+  expect(fileContents, contains('mermaid\nstateDiagram-v2\n    '));
+
+  File(filePath).deleteSync();
 }

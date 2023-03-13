@@ -1,4 +1,4 @@
-/// Copyright (C) 2022 Intel Corporation
+/// Copyright (C) 2022-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// trace_bounce_test.dart
@@ -38,6 +38,10 @@ class SubModule extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('out depends on out', () async {
     final mod = TopModule(Logic());
     await mod.build();
@@ -47,9 +51,7 @@ void main() {
       Vector({'a_top': 1}, {'bundle_top': 6}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(
-        mod.generateSynth(), mod.runtimeType.toString(), vectors,
-        signalToWidthMap: {'bundle_top': 3});
+    final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
   });
 }

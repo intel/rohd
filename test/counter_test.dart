@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// counter_test.dart
@@ -7,10 +7,8 @@
 /// 2021 May 10
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'dart:async';
-
-// import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -42,7 +40,9 @@ class Counter extends Module {
 }
 
 void main() {
-  tearDown(Simulator.reset);
+  tearDown(() async {
+    await Simulator.reset();
+  });
 
   group('simcompare', () {
     test('counter', () async {
@@ -50,13 +50,9 @@ void main() {
       final counter = Counter(Logic(), reset);
       await counter.build();
       // WaveDumper(counter);
-      // File('tmp_counter.sv').writeAsStringSync(counter.generateSynth());
 
-      // check that 1 timestep after reset, the value has reset properly
       unawaited(reset.nextPosedge
-          .then((value) => Simulator.registerAction(Simulator.time + 1, () {
-                expect(counter.val.value.toInt(), equals(0));
-              })));
+          .then((value) => expect(counter.val.value.toInt(), equals(0))));
 
       final vectors = [
         Vector({'en': 0, 'reset': 0}, {}),
@@ -72,9 +68,7 @@ void main() {
         Vector({'en': 0, 'reset': 0}, {'val': 5}),
       ];
       await SimCompare.checkFunctionalVector(counter, vectors);
-      final simResult = SimCompare.iverilogVector(
-          counter.generateSynth(), counter.runtimeType.toString(), vectors,
-          signalToWidthMap: {'val': 8});
+      final simResult = SimCompare.iverilogVector(counter, vectors);
       expect(simResult, equals(true));
     });
   });

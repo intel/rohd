@@ -25,17 +25,20 @@ abstract class LogicValue {
   // ignore: constant_identifier_names
   static const int _INT_BITS = 64;
 
-  /// Logical value of `0`
+  /// Logical value of `0`.
   static const LogicValue zero = _FilledLogicValue(_LogicValueEnum.zero, 1);
 
-  /// Logical value of `1`
+  /// Logical value of `1`.
   static const LogicValue one = _FilledLogicValue(_LogicValueEnum.one, 1);
 
-  /// Logical value of `x`
+  /// Logical value of `x`.
   static const LogicValue x = _FilledLogicValue(_LogicValueEnum.x, 1);
 
-  /// Logical value of `z`
+  /// Logical value of `z`.
   static const LogicValue z = _FilledLogicValue(_LogicValueEnum.z, 1);
+
+  /// A zero-width value.
+  static const LogicValue empty = _FilledLogicValue(_LogicValueEnum.zero, 0);
 
   /// The number of bits in this `LogicValue`.
   final int width;
@@ -63,8 +66,8 @@ abstract class LogicValue {
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofInt(int value, int width) => width > _INT_BITS
-      ? _BigLogicValue(BigInt.from(value), BigInt.zero, width)
-      : _SmallLogicValue(value, 0, width);
+      ? _bigLogicValueOrFilled(BigInt.from(value), BigInt.zero, width)
+      : _smallLogicValueOrFilled(value, 0, width);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width]
   /// number of bits.
@@ -78,8 +81,8 @@ abstract class LogicValue {
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofBigInt(BigInt value, int width) => width > _INT_BITS
-      ? _BigLogicValue(value, BigInt.zero, width)
-      : _SmallLogicValue(value.toInt(), 0, width);
+      ? _bigLogicValueOrFilled(value, BigInt.zero, width)
+      : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
 
   /// Converts `BigInt` [value] to a valid [LogicValue] with [width]
   /// number of bits.
@@ -115,16 +118,87 @@ abstract class LogicValue {
   /// Constructs a [LogicValue] from [it].
   ///
   /// The order of the created [LogicValue] will be such that the `i`th entry in
-  /// [it] corresponds to the `i`th bit.  That is, the 0th element of [it] will
-  /// be the 0th bit of the returned [LogicValue].
+  /// [it] corresponds to the `i`th group of bits.  That is, the 0th element of
+  /// [it] will be the least significant chunk of bits of the returned
+  /// [LogicValue].  Bits within each element of [it] are kept in the same
+  /// order as they were originally.
   ///
+  /// For example:
   /// ```dart
-  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
+  /// var it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
   /// var lv = LogicValue.of(it);
-  /// print(lv); // This prints `3b'1x0`
+  /// print(lv); // This prints `6'b01xzx0`
   /// ```
-  static LogicValue of(Iterable<LogicValue> it) => LogicValue.ofString(
-      it.map((e) => e.toString(includeWidth: false)).toList().reversed.join());
+  static LogicValue of(Iterable<LogicValue> it) {
+    var smallBuffer = LogicValue.empty;
+    var fullResult = LogicValue.empty;
+
+    // shift small chunks in together before shifting BigInt's, since
+    // shifting BigInt's is expensive
+    for (final lv in it) {
+      final lvPlusSmall = lv.width + smallBuffer.width;
+      if (lvPlusSmall <= _INT_BITS) {
+        smallBuffer = lv._concatenate(smallBuffer);
+      } else {
+        // only put 64-bit chunks onto `fullResult`, rest onto `smallBuffer`
+        final upperBound =
+            _INT_BITS * (lvPlusSmall ~/ _INT_BITS) - smallBuffer.width;
+        fullResult = lv
+            .getRange(0, upperBound)
+            ._concatenate(smallBuffer)
+            ._concatenate(fullResult);
+        smallBuffer = lv.getRange(upperBound, lv.width);
+      }
+
+      assert(smallBuffer.width <= _INT_BITS,
+          'Keep smallBuffer small to meet invariants and efficiency');
+    }
+
+    // grab what's left
+    return smallBuffer._concatenate(fullResult);
+  }
+
+  /// Appends [other] to the least significant side of `this`.
+  ///
+  /// The new value will have `this`'s current value shifted left by
+  /// the width of [other].
+  LogicValue _concatenate(LogicValue other) {
+    if (other.width == 0) {
+      // ignore: avoid_returning_this
+      return this;
+    } else if (width == 0) {
+      return other;
+    }
+
+    final newWidth = width + other.width;
+
+    if (this is _FilledLogicValue &&
+        other is _FilledLogicValue &&
+        other[0] == this[0]) {
+      // can keep it filled
+      return _FilledLogicValue(other._value, newWidth);
+    } else if (newWidth > LogicValue._INT_BITS) {
+      // BigInt's only
+      return _BigLogicValue(_bigIntValue << other.width | other._bigIntValue,
+          _bigIntInvalid << other.width | other._bigIntInvalid, newWidth);
+    } else {
+      // int's ok
+      return _SmallLogicValue(_intValue << other.width | other._intValue,
+          _intInvalid << other.width | other._intInvalid, newWidth);
+    }
+  }
+
+  /// Returns `_value` in the form of a [BigInt].
+  BigInt get _bigIntValue;
+
+  /// Returns `_invalid` in the form of a [BigInt].
+  BigInt get _bigIntInvalid;
+
+  /// Returns `_value` in the form of an [int].
+  int get _intValue;
+
+  /// Returns `_invalid` in the form of an [int].
+  int get _intInvalid;
 
   /// Constructs a [LogicValue] from [it].
   ///
@@ -140,9 +214,23 @@ abstract class LogicValue {
   @Deprecated('Use `of` instead.')
   static LogicValue from(Iterable<LogicValue> it) => of(it);
 
-  /// Returns true if bits in the [BigInt] are either all 0 or all 1
-  static bool _bigIntIsFilled(BigInt x, int width) =>
-      (x | _BigLogicValue._maskOfWidth(width)) == x;
+  /// Returns true if bits in [x] are all 0
+  static bool _bigIntIs0(BigInt x, int width) =>
+      (x & _BigLogicValue._maskOfWidth(width)) == BigInt.zero;
+
+  /// Returns true if bits in [x] are all 1
+  static bool _bigIntIs1s(BigInt x, int width) =>
+      (x & _BigLogicValue._maskOfWidth(width)) ==
+      _BigLogicValue._maskOfWidth(width);
+
+  /// Returns true if bits in [x] are all 0
+  static bool _intIs0(int x, int width) =>
+      x & _SmallLogicValue._maskOfWidth(width) == 0;
+
+  /// Returns true if bits in [x] are all 1
+  static bool _intIs1s(int x, int width) =>
+      x & _SmallLogicValue._maskOfWidth(width) ==
+      _SmallLogicValue._maskOfWidth(width);
 
   /// Returns a [String] representing the `_value` to be used by implementations
   /// relying on `_value` and `_invalid`.
@@ -172,7 +260,7 @@ abstract class LogicValue {
   /// ```
   static LogicValue ofString(String stringRepresentation) {
     if (stringRepresentation.isEmpty) {
-      return const _SmallLogicValue(0, 0, 0);
+      return const _FilledLogicValue(_LogicValueEnum.zero, 0);
     }
 
     final valueString = _valueString(stringRepresentation);
@@ -182,25 +270,69 @@ abstract class LogicValue {
     if (width <= _INT_BITS) {
       final value = _unsignedBinaryParse(valueString);
       final invalid = _unsignedBinaryParse(invalidString);
-      return _SmallLogicValue(value, invalid, width);
+      return _smallLogicValueOrFilled(value, invalid, width);
     } else {
       final value = BigInt.parse(valueString, radix: 2);
       final invalid = BigInt.parse(invalidString, radix: 2);
-      if (invalid.sign == 0) {
-        if (value.sign == 0) {
-          return LogicValue.filled(width, LogicValue.zero);
-        } else if (_bigIntIsFilled(value, width)) {
-          return LogicValue.filled(width, LogicValue.one);
-        }
-      } else if (_bigIntIsFilled(invalid, width)) {
-        if (value.sign == 0) {
-          return LogicValue.filled(width, LogicValue.x);
-        } else if (_bigIntIsFilled(value, width)) {
-          return LogicValue.filled(width, LogicValue.z);
-        }
-      }
-      return _BigLogicValue(value, invalid, width);
+      return _bigLogicValueOrFilled(value, invalid, width);
     }
+  }
+
+  /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
+  /// [value], [invalid], and [width].
+  ///
+  /// Only use if [width] > [_INT_BITS].
+  static LogicValue _bigLogicValueOrFilled(
+      BigInt value, BigInt invalid, int width) {
+    assert(width > _INT_BITS, 'Should only be used for big values');
+
+    return _filledIfPossible(
+          _bigIntIs1s(value, width),
+          _bigIntIs0(value, width),
+          _bigIntIs1s(invalid, width),
+          _bigIntIs0(invalid, width),
+          width,
+        ) ??
+        _BigLogicValue(value, invalid, width);
+  }
+
+  /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
+  /// [value], [invalid], and [width].
+  ///
+  /// Only use if [width] <= [_INT_BITS].
+  static LogicValue _smallLogicValueOrFilled(
+      int value, int invalid, int width) {
+    assert(width <= _INT_BITS, 'Should only be used for small values');
+
+    return _filledIfPossible(
+          _intIs1s(value, width),
+          _intIs0(value, width),
+          _intIs1s(invalid, width),
+          _intIs0(invalid, width),
+          width,
+        ) ??
+        _SmallLogicValue(value, invalid, width);
+  }
+
+  /// Constructs a [_FilledLogicValue] based on whether `value` and `invalid`
+  /// are all 1's or all 0's.  If it's not possible to represent the value
+  /// as filled, it will return `null`.
+  static LogicValue? _filledIfPossible(
+      bool value1s, bool value0, bool invalid1s, bool invalid0, int width) {
+    if (value0) {
+      if (invalid0) {
+        return LogicValue.filled(width, LogicValue.zero);
+      } else if (invalid1s) {
+        return LogicValue.filled(width, LogicValue.x);
+      }
+    } else if (value1s) {
+      if (invalid0) {
+        return LogicValue.filled(width, LogicValue.one);
+      } else if (invalid1s) {
+        return LogicValue.filled(width, LogicValue.z);
+      }
+    }
+    return null;
   }
 
   /// Converts a binary [String] representation of a [LogicValue] into a
@@ -316,6 +448,10 @@ abstract class LogicValue {
   LogicValue operator [](int index) {
     final modifiedIndex = (index < 0) ? width + index : index;
     if (modifiedIndex >= width || modifiedIndex < 0) {
+      // The suggestion in the deprecation for this constructor is not available
+      // before 2.19, so keep it in here for now.  Eventually, switch to the
+      // new one.
+      // ignore: deprecated_member_use
       throw IndexError(index, this, 'LogicValueIndexOutOfRange',
           'Index out of range: $modifiedIndex(=$index).', width);
     }
@@ -336,16 +472,22 @@ abstract class LogicValue {
   /// and [endIndex] are equal, then a zero-width value is returned.
   /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
   ///
+  /// If [endIndex] is not provided, [width] of the [LogicValue] will
+  /// be used as the default values which assign it to the last index.
+  ///
   /// ```dart [TODO]
   /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
   /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
   /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(1);      // == LogicValue.ofString('010')
+  ///
   /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
   /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
   /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
   /// ```
   ///
-  LogicValue getRange(int startIndex, int endIndex) {
+  LogicValue getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
     final modifiedStartIndex =
         (startIndex < 0) ? width + startIndex : startIndex;
     final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
@@ -417,6 +559,7 @@ abstract class LogicValue {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
     }
+    // ignore: avoid_returning_this
     return this;
   }
 
@@ -656,6 +799,7 @@ abstract class LogicValue {
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
+      // ignore: avoid_returning_this
       return this;
     }
     int shamtInt;
@@ -783,6 +927,51 @@ abstract class LogicValue {
       getRange(0, startIndex),
     ].swizzle();
   }
+
+  /// Checks if `this` is equal to [other], except ignoring bits of
+  /// which are not valid.
+  ///
+  /// Returns `true` if each bit of `this` which [isValid] is equal
+  /// to each bit of [other] which [isValid].
+  ///
+  /// For example:
+  /// ```dart
+  /// // Returns false
+  /// LogicValue.ofString('1010xz').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns true
+  /// LogicValue.ofString('10x111').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns false
+  /// LogicValue.ofString('10x1z1').equalsWithDontCare(
+  ///   LogicValue.ofString('10101x'));
+  /// ```
+  bool equalsWithDontCare(LogicValue other) {
+    if (width == other.width) {
+      for (var i = 0; i < width; i++) {
+        if (!this[i].isValid || !other[i].isValid) {
+          continue;
+        } else if (this[i] != other[i]) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /// Returns new [LogicValue] replicated [multiplier] times. An exception will
+  /// be thrown in case the multiplier is <1
+  LogicValue replicate(int multiplier) {
+    if (multiplier < 1) {
+      throw InvalidMultiplierException(multiplier);
+    }
+
+    return LogicValue.of(List.filled(multiplier, this));
+  }
 }
 
 /// Enum for direction of shift
@@ -803,10 +992,7 @@ int _unsignedBinaryParse(String source) {
   if (val != null) {
     return val;
   } else {
-    final hex = BigInt.parse(source, radix: 2).toRadixString(16);
-
-    // With `0x` in front of a hex literal, it will be interpreted as unsigned.
-    return int.parse('0x$hex');
+    return BigInt.parse(source, radix: 2).toIntUnsigned(source.length);
   }
 }
 

@@ -12,7 +12,7 @@ class TreeOfTwoInputModules extends Module {
 
   TreeOfTwoInputModules(List<Logic> seq, this._op) : super(name: 'tree_of_two_input_modules') {
     if(seq.isEmpty) throw Exception("Don't use TreeOfTwoInputModules with an empty sequence");
-    
+
     for(var i = 0; i < seq.length; i++) {
       _seq.add(addInput('seq$i', seq[i], width: seq[i].width));
     }
@@ -28,10 +28,12 @@ class TreeOfTwoInputModules extends Module {
   }
 }
 ```
+
 Some interesting things to note:
+
 - The constructor for `TreeOfTwoInputModules` accepts two arguments:
-    - `seq` is a Dart `List` of arbitrary length of input elements.  The module dynamically assigns the input and output widths of the module to match the width of the input elements.  Additionally, the total number of inputs to the module is dynamically determined at run time.
-    - `_op` is a Dart `Function` (in Dart, `Function`s are first-class and can be stored in variables).  It expects a function which takes two `Logic` inputs and provides one `Logic` output.
+  - `seq` is a Dart `List` of arbitrary length of input elements.  The module dynamically assigns the input and output widths of the module to match the width of the input elements.  Additionally, the total number of inputs to the module is dynamically determined at run time.
+  - `_op` is a Dart `Function` (in Dart, `Function`s are first-class and can be stored in variables).  It expects a function which takes two `Logic` inputs and provides one `Logic` output.
 - This module recursively instantiates itself, but with different numbers of inputs each time.  The same module implementation can have a variable number of inputs and different logic without any explicit parameterization.
 
 You could instantiate this module with some code such as:
@@ -39,11 +41,11 @@ You could instantiate this module with some code such as:
 ```dart
 var tree = TreeOfTwoInputModules(
   List<Logic>.generate(16, (index) => Logic(width: 8)),
-  (Logic a, Logic b) => Mux(a > b, a, b).y
+  (Logic a, Logic b) => mux(a > b, a, b)
 );
 ```
 
-This instantiation code generates a list of sixteen 8-bit logic signals.  The operation to be performed (`_op`) is to create a `Mux` which returns `a` if `a` is greater than `b`, otherwise `b`.  Therefore, this instantiation creates a logarithmic-height tree of modules which outputs the largest 8-bit value.  Note that `Mux` also needs no parameters, as it can automatically determine the appropriate size of `y` based on the inputs.
+This instantiation code generates a list of sixteen 8-bit logic signals.  The operation to be performed (`_op`) is to create a `mux` which returns `a` if `a` is greater than `b`, otherwise `b`.  Therefore, this instantiation creates a logarithmic-height tree of modules which outputs the largest 8-bit value.  Note that `mux` also needs no parameters, as it can automatically determine the appropriate size of its outputs based on the inputs.
 
 A SystemVerilog implementation of this requires numerous module definitions and substantially more code.  Below is an output of the ROHD-generated SystemVerilog:
 
