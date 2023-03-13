@@ -928,6 +928,41 @@ abstract class LogicValue {
     ].swizzle();
   }
 
+  /// Checks if `this` is equal to [other], except ignoring bits of
+  /// which are not valid.
+  ///
+  /// Returns `true` if each bit of `this` which [isValid] is equal
+  /// to each bit of [other] which [isValid].
+  ///
+  /// For example:
+  /// ```dart
+  /// // Returns false
+  /// LogicValue.ofString('1010xz').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns true
+  /// LogicValue.ofString('10x111').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns false
+  /// LogicValue.ofString('10x1z1').equalsWithDontCare(
+  ///   LogicValue.ofString('10101x'));
+  /// ```
+  bool equalsWithDontCare(LogicValue other) {
+    if (width == other.width) {
+      for (var i = 0; i < width; i++) {
+        if (!this[i].isValid || !other[i].isValid) {
+          continue;
+        } else if (this[i] != other[i]) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   /// Returns new [LogicValue] replicated [multiplier] times. An exception will
   /// be thrown in case the multiplier is <1
   LogicValue replicate(int multiplier) {
