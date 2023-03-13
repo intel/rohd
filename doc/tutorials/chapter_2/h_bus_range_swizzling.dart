@@ -33,7 +33,7 @@ void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g) {
   f <= [d, c, a].rswizzle();
 
   // Get a copy of f
-  g <= f.withSet(2, Const(3, width: 3));
+  g <= f.withSet(2, Const(0));
 }
 
 void main() async {
