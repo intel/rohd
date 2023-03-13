@@ -71,17 +71,23 @@
 of <code>endIndex</code>.</p>
 <p><code>startIndex</code> must come before the <code>endIndex</code> on position. If <code>startIndex</code>
 and <code>endIndex</code> are equal, then a zero-width value is returned.
-Negative/Positive index values are allowed. (The negative indexing starts from the end=<a href="../../rohd/LogicValue/width.html">width</a>-1)</p>
+Both negative and positive index values are allowed. Negative indexing
+starts from the end=<a href="../../rohd/LogicValue/width.html">width</a>-1.</p>
 <p>If <code>endIndex</code> is not provided, <a href="../../rohd/LogicValue/width.html">width</a> of the <a href="../../rohd/LogicValue-class.html">LogicValue</a> will
 be used as the default values which assign it to the last index.</p>
-<pre class="language-dart"><code class="language-dart">LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
-LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
-LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
-LogicValue.ofString('0101').getRange(1);      // == LogicValue.ofString('010')
+<pre class="language-dart"><code class="language-dart">LogicValue.ofString('0101').getRange(0, 2);  // LogicValue.ofString('01')
+LogicValue.ofString('0101').getRange(1, -2); // LogicValue.zero
+LogicValue.ofString('0101').getRange(-3, 4); // LogicValue.ofString('010')
+LogicValue.ofString('0101').getRange(1);     // LogicValue.ofString('010')
 
-LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start &gt; end - error! start must be less than end
-LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start &gt; end
-LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end &gt; length-1
+// Error - negative end index and start &gt; end! start must be less than end
+LogicValue.ofString('0101').getRange(-1, -2);
+
+// Error - bad inputs start &gt; end
+LogicValue.ofString('0101').getRange(2, 1);
+
+// Error - bad inputs end &gt; length-1
+LogicValue.ofString('0101').getRange(0, 7);
 </code></pre>
 </section>
 
