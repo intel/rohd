@@ -16,6 +16,10 @@ import 'package:test/test.dart';
 
 enum MyStates { state1, state2, state3, state4 }
 
+const _tmpDir = 'tmp_test';
+const _simpleFSMPath = '$_tmpDir/simple_fsm.md';
+const _trafficFSMPath = '$_tmpDir/traffic_light_fsm.md';
+
 class TestModule extends Module {
   TestModule(Logic a, Logic c, Logic reset) {
     a = addInput('a', a);
@@ -37,7 +41,7 @@ class TestModule extends Module {
     ];
 
     StateMachine<MyStates>(clk, reset, MyStates.state1, states)
-        .generateDiagram(outputPath: 'tmp_test/simple_fsm.md');
+        .generateDiagram(outputPath: _simpleFSMPath);
   }
 }
 
@@ -105,7 +109,7 @@ class TrafficTestModule extends Module {
     ];
 
     StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states)
-        .generateDiagram(outputPath: 'tmp_test/traffic_light_fsm.md');
+        .generateDiagram(outputPath: _trafficFSMPath);
   }
 }
 
@@ -114,8 +118,7 @@ void main() {
     await Simulator.reset();
   });
 
-  const simpleFSMPath = 'tmp_test/simple_fsm.md';
-  const trafficFSMPath = 'tmp_test/traffic_light_fsm.md';
+  setUpAll(() => Directory(_tmpDir).createSync(recursive: true));
 
   group('simcompare', () {
     test('simple fsm', () async {
@@ -134,7 +137,7 @@ void main() {
 
       expect(simResult, equals(true));
 
-      verifyMermaidStateDiagram(simpleFSMPath);
+      verifyMermaidStateDiagram(_simpleFSMPath);
     });
 
     test('traffic light fsm', () async {
@@ -164,7 +167,7 @@ void main() {
       final simResult = SimCompare.iverilogVector(pipem, vectors);
 
       expect(simResult, equals(true));
-      verifyMermaidStateDiagram(trafficFSMPath);
+      verifyMermaidStateDiagram(_trafficFSMPath);
     });
   });
 }
