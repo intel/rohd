@@ -145,17 +145,19 @@ class Interface<TagType> {
 
 enum PairDirection { fromProducer, fromConsumer, sharedInputs }
 
+enum PairRole { producer, consumer }
+
 class PairInterface extends Interface<PairDirection> {
   /// TODO(): fix doc
   PairInterface(
-      {List<Port>? consumerPorts,
-      List<Port>? producerPorts,
+      {List<Port>? portsFromConsumer,
+      List<Port>? portsFromProducer,
       List<Port>? sharedInputPorts}) {
-    if (consumerPorts != null) {
-      setPorts(consumerPorts, [PairDirection.fromConsumer]);
+    if (portsFromConsumer != null) {
+      setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
     }
-    if (producerPorts != null) {
-      setPorts(producerPorts, [PairDirection.fromProducer]);
+    if (portsFromProducer != null) {
+      setPorts(portsFromProducer, [PairDirection.fromProducer]);
     }
     if (sharedInputPorts != null) {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
@@ -172,29 +174,58 @@ class PairInterface extends Interface<PairDirection> {
 
   PairInterface.match(Interface<PairDirection> otherInterface)
       : this(
-            consumerPorts:
+            portsFromConsumer:
                 _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-            producerPorts:
+            portsFromProducer:
                 _getMatchPorts(otherInterface, PairDirection.fromProducer),
             sharedInputPorts:
                 _getMatchPorts(otherInterface, PairDirection.sharedInputs));
 
   void simpleConnect(
-      Module module, Interface<PairDirection> srcInterface, PairDirection role,
+      Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    super.connectIO(module, srcInterface,
-        inputTags: role == PairDirection.fromProducer
+    connectIO(module, srcInterface,
+        inputTags: {
+          PairDirection.sharedInputs,
+          if (role == PairRole.producer)
+            PairDirection.fromConsumer
+          else
+            PairDirection.fromProducer
+        },
+        outputTags: role == PairRole.consumer
             ? {PairDirection.fromConsumer}
             : {PairDirection.fromProducer},
-        outputTags: role == PairDirection.fromProducer
-            ? {PairDirection.fromProducer}
-            : {PairDirection.fromConsumer},
         uniquify: uniquify);
+
+    // for(final subInterface in _subInterfaces) {
+    //   subInterface.interface.connectIO(module, srcInterface)
+    // }
   }
+
+  final Map<String, _SubInterface> _subInterfaces = {};
 
   @protected
   void addSubInterface<T>(
+    String name,
     Interface<T> subInterface,
-    Set<T> Function(PairDirection dir) pairDirectionToTags,
-  ) {}
+    _SimpleConnectFunction<T> connectSubInterface,
+  ) {
+    _subInterfaces[name] =
+        (_SubInterface<T>(name, subInterface, connectSubInterface));
+  }
+
+  @protected
+  void addSubPairInterface(String name, PairInterface subInterface) =>
+      addSubInterface(name, subInterface, simpleConnect);
 }
+
+class _SubInterface<T> {
+  final String name;
+  final Interface<T> interface;
+  final _SimpleConnectFunction<T> connect;
+  _SubInterface(this.name, this.interface, this.connect);
+}
+
+typedef _SimpleConnectFunction<T> = void Function(
+    Module module, Interface<T> srcInterface, PairRole dir,
+    {String Function(String original)? uniquify});
