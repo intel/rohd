@@ -432,7 +432,7 @@ class Logic {
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
   Logic({String? name, int width = 1})
-      : name = (name == null || name == '')
+      : name = (name == null || name.isEmpty)
             ? 's${_signalIdx++}'
             : Sanitizer.sanitizeSV(name),
         _wire = _Wire(width: width) {
