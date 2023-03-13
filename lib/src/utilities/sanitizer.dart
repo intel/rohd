@@ -34,7 +34,7 @@ abstract class Sanitizer {
     }
 
     // name can't be empty string
-    if (newName == '') {
+    if (newName.isEmpty) {
       return 'empty_';
     }
 

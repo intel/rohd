@@ -142,7 +142,7 @@ abstract class Module {
     } else if (reserveDefinitionName &&
         !Sanitizer.isSanitary(definitionName!)) {
       throw InvalidReservedNameException();
-    } else if (definitionName!.isEmpty) {
+    } else if (reserveDefinitionName && definitionName!.isEmpty) {
       throw NullReservedNameException();
     } else {
       return definitionName;
