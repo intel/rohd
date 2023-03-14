@@ -139,11 +139,11 @@ abstract class Module {
       String? definitionName, bool reserveDefinitionName) {
     if (reserveDefinitionName && definitionName == null) {
       throw NullReservedNameException();
+    } else if (reserveDefinitionName && definitionName!.isEmpty) {
+      throw EmptyReservedNameException();
     } else if (reserveDefinitionName &&
         !Sanitizer.isSanitary(definitionName!)) {
       throw InvalidReservedNameException();
-    } else if (reserveDefinitionName && definitionName!.isEmpty) {
-      throw NullReservedNameException();
     } else {
       return definitionName;
     }
@@ -183,7 +183,8 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName = name,
+      : _uniqueInstanceName =
+            _nameValidation(name, reserveName) ?? 'unnamed_module',
         _definitionName =
             _nameValidation(definitionName, reserveDefinitionName);
 

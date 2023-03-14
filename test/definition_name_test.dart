@@ -22,10 +22,9 @@ class DefinitionName {
 }
 
 class ValidDefNameModule extends Module {
-  ValidDefNameModule(Logic a, DefinitionName defName)
+  ValidDefNameModule(Logic a, DefinitionName defName,
+      {super.name = 'specialNameInstance', super.reserveName = false})
       : super(
-          name: 'specialNameInstance',
-          reserveName: false,
           definitionName: defName.name,
           reserveDefinitionName: defName.isReserved,
         ) {
@@ -70,7 +69,7 @@ void main() {
       final defName = DefinitionName(name: '', isReserved: true);
       expect(() async {
         ValidDefNameModule(Logic(), defName);
-      }, throwsA((dynamic e) => e is InvalidReservedNameException));
+      }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });
   });
 
@@ -103,5 +102,14 @@ void main() {
         expect(mod.definitionName, equals('byte_'));
       });
     });
+  });
+
+  test('should return Exception when super.name is empty string', () async {
+    final defName =
+        DefinitionName(name: DefinitionName.getValidName(), isReserved: true);
+
+    expect(() async {
+      ValidDefNameModule(Logic(), defName, name: '', reserveName: true);
+    }, throwsA((dynamic e) => e is EmptyReservedNameException));
   });
 }
