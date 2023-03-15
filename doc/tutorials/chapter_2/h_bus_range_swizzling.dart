@@ -32,7 +32,7 @@ void slicing(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g) {
   // e = [1110 00111 1] - [a, c, d]
   f <= [d, c, a].rswizzle();
 
-  // Get a copy of f
+  // Get a copy of f with one bit set to 0
   g <= f.withSet(2, Const(0));
 }
 
