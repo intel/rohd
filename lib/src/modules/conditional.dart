@@ -20,7 +20,9 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  late final List<Conditional> conditionals;
+  late List<Conditional> conditionals;
+  late Logic? reset;
+  Map<Logic, Logic> resetVal = {};
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
@@ -30,9 +32,33 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {super.name = 'always'}) {
+  _Always(this.conditionals,
+      {super.name = 'always', Logic? reset, Map<Logic, Logic>? resetVal}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
+
+    final allReceivers =
+        conditionals.map((e) => e.getReceivers()).expand((e) => e).toList();
+
+    // This will reset the conditionals on setting the `reset` flag
+    if (reset != null) {
+      conditionals = [
+        If(
+          reset,
+          then: [
+            ...allReceivers.map((rec) =>
+                rec < (((resetVal?[rec]) != null) ? (resetVal?[rec]) : 0))
+            // If resetVal for a receiver is defined,
+            // then use it for assigning receiver
+            // else assign zero as resetVal
+          ],
+          orElse: conditionals,
+        ),
+      ];
+    } else {
+      conditionals = conditionals;
+    }
+
     for (final conditional in conditionals) {
       for (final driver in conditional.getDrivers()) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
@@ -398,26 +424,6 @@ class Sequential extends _Always {
   void _execute() {
     var anyClkInvalid = false;
     var anyClkPosedge = false;
-
-    // This will reset the conditionals on setting the `reset` flag
-    if (reset != null) {
-      conditionals = [
-        If(
-          reset!,
-          then: [..._assignedReceiverToOutputMap.values.map((e) => e < 0)],
-
-          // then : [
-          //  ..._assignedReceiverToOutputMap.values.map(
-          //    (e) => e < resetVal[e]
-          //  )
-          // ]
-
-          orElse: conditionals,
-        ),
-      ];
-    } else {
-      conditionals = conditionals;
-    }
 
     for (var i = 0; i < _clks.length; i++) {
       // if the pre-tick value is null, then it should have the same value as
