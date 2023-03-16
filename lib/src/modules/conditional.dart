@@ -33,7 +33,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
   final Uniquifier _portUniquifier = Uniquifier();
 
   _Always(this.conditionals,
-      {super.name = 'always', Logic? reset, Map<Logic, Logic>? resetVal}) {
+      {Logic? reset, Map<Logic, Logic>? resetVal, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
 
