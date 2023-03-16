@@ -293,8 +293,16 @@ class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
+  @override
+
   /// This sets the Sequential conditions to reset
+  // ignore: overridden_fields
   Logic? reset;
+
+  @override
+
+  /// This sets a particular Sequential conditions receiver to resetVal
+  // ignore: overridden_fields
   Map<Logic, Logic> resetVal = {};
 
   /// Constructs a [Sequential] single-triggered by [clk].
