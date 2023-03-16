@@ -25,11 +25,6 @@ Logic nBitSubtractor(Logic a, Logic b) {
 
     borrow = res.borrow;
     diff.add(res.diff);
-
-    // print('i: $i, a: ${a[i].value.toInt()}, '
-    //     'b: ${b[i].value.toInt()}, borrow: ${borrow.value.toInt()}, '
-    //     'diff: ${res.diff.value.toInt()}, '
-    //     'borrow: ${res.borrow.value.toInt()}');
   }
   diff.add(borrow);
 
