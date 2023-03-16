@@ -299,13 +299,13 @@ class Sequential extends _Always {
 
   /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
-      {String name = 'sequential', Logic? reset})
+      {Logic? reset, String name = 'sequential'})
       : this.multi([clk], conditionals, name: name, reset: reset);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
   Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {String name = 'sequential', this.reset})
-      : super(conditionals, name: name) {
+      {this.reset, String name = 'sequential'})
+      : super(conditionals, name: name, reset: reset) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
