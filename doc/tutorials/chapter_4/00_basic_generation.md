@@ -128,3 +128,9 @@ You can find the executable code at [basic_generation.dart](./basic_generation.d
 ## Exercise
 
 1. Can you change the for loop in the implementation to recursive function instead?
+
+    - Answer to this exercise can be found at [answers/exercise_1.dart](./answers/exercise_1.dart). The answer that show system verilog code can be found at [answers/exercise_1_sv.dart](./answers/exercise_1_sv.dart).
+
+2. Now, create a ripple borrow subtractor using for basic generation like full-adder example.Reference: [https://www.electronicshub.org/binary-adder-and-subtractor/](https://www.electronicshub.org/binary-adder-and-subtractor/).
+
+    - Answer to this exercise can be found at [answers/exercise_2.dart](./answers/exercise_2.dart). The answer that show system verilog code can be found at [answers/exercise_2_sv.dart](./answers/exercise_2_sv.dart).
