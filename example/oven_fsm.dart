@@ -216,14 +216,16 @@ Future<void> main({bool noPrint = false}) async {
     WaveDumper(oven, outputPath: 'oven.vcd');
   }
 
-  // We can listen to the streams on LED light changes based on time.
-  oven.led.changed.listen((event) {
-    // Get the led light enum name from LogicValue.
-    final ledVal = LEDLight.values[event.newValue.toInt()].name;
+  if (!noPrint) {
+    // We can listen to the streams on LED light changes based on time.
+    oven.led.changed.listen((event) {
+      // Get the led light enum name from LogicValue.
+      final ledVal = LEDLight.values[event.newValue.toInt()].name;
 
-    // Print the Simulator time when the LED light changes.
-    print('@t=${Simulator.time}, LED changed to: $ledVal');
-  });
+      // Print the Simulator time when the LED light changes.
+      print('@t=${Simulator.time}, LED changed to: $ledVal');
+    });
+  }
 
   // Drop reset at time 25.
   Simulator.registerAction(25, () => reset.put(0));

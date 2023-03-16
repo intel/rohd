@@ -3,6 +3,7 @@
 - [Introduction to Test Driven Development](./00_unit_test.md#introduction-to-test-driven-development)
 - [What is a Full-Adder?](./00_unit_test.md#what-is-a-full-adder)
 - [Create a Full-Adder with TDD](./00_unit_test.md#create-full-adder-with-tdd)
+- [Exercise](./00_unit_test.md#exercise)
 
 ## Learning Outcome
 
@@ -147,3 +148,9 @@ test('should return true if result c-out is similar to truth table.', () async {
 ```
 
 Yeah, thats it. Congratulations! We have now successfully created a Full-Adder. You can find the executable code at [full_adder.dart](./full_adder.dart).
+
+## Exercise
+
+1. Based on what you learn, build a [Full Subtractor](https://www.geeksforgeeks.org/full-subtractor-in-digital-logic).
+
+Answer to this exercise can be found at [answers/exercise.dart](./answers/exercise.dart). For those who wish to see the answer implementation with system verilog, you can check at [answers/exercise_sv.dart](./answers/exercise_sv.dart).
