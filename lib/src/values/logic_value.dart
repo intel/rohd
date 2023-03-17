@@ -699,7 +699,11 @@ abstract class LogicValue {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    if (this is _BigLogicValue ||
+        other is BigInt ||
+        other is _BigLogicValue ||
+        (this is _FilledLogicValue) && this.width >= 64 ||
+        (other is _FilledLogicValue) && other.width >= 64) {
       final a = toBigInt();
       final b = other is BigInt
           ? other
@@ -775,7 +779,11 @@ abstract class LogicValue {
 
     dynamic a;
     dynamic b;
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    if (this is _BigLogicValue ||
+        other is BigInt ||
+        other is _BigLogicValue ||
+        (this is _FilledLogicValue) && this.width >= 64 ||
+        (other is _FilledLogicValue) && other.width >= 64) {
       a = toBigInt();
       b = other is BigInt
           ? other
