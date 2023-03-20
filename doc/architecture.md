@@ -9,7 +9,7 @@ This document describes the organization and architecture of the ROHD framework.
 
 The `Logic` is the fundamental "wire" that connects signals throughout a hardware design.  It behaves very similarly to a `logic` in SystemVerilog.  It has a fixed width determined at the time of construction.  At any point in time, it has one value of type `LogicValue`.  A `Logic` can be connected to up to one source, and any number of destinations.  All connections must be the same width.
 
-Any time the source of a `Logic` changes, it propogates the change outwards to its destinations.  There are various events that can be subscribed to related to signal value transitions on `Logic`.
+Any time the source of a `Logic` changes, it propagates the change outwards to its destinations.  There are various events that can be subscribed to related to signal value transitions on `Logic`.
 
 A `LogicValue` represents a multi-bit (including 0-bit and 1-bit) 4-value (`1`, `0`, `x`, `z`) static value.  It is immutable.
 
@@ -21,7 +21,7 @@ Every `Module` defines its own functionality.  This could be through composition
 
 ### Simulator
 
-The `Simulator` acts as a staticly accessible driver of the overal simulation.  Anything can register arbitrary `Function`s to be executed at any timestamp that has not already occurred.  The `Simulator` does not need to understand much about the functionality of a design; rather, the `Module`s and `Logic`s are responsible for propogating changes throughout.
+The `Simulator` acts as a statically accessible driver of the overall simulation.  Anything can register arbitrary `Function`s to be executed at any timestamp that has not already occurred.  The `Simulator` does not need to understand much about the functionality of a design; rather, the `Module`s and `Logic`s are responsible for propagating changes throughout.
 
 ### Synthesizer
 
