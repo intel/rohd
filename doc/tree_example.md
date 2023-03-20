@@ -54,6 +54,65 @@ This instantiation code generates a list of sixteen 8-bit logic signals. The ope
 A SystemVerilog implementation of this requires numerous module definitions and substantially more code. Below is an output of the ROHD-generated SystemVerilog:
 
 ```verilog
+module TreeOfTwoInputModules(
+input logic [7:0] seq0,
+output logic [7:0] out
+);
+assign out = seq0;
+endmodule : TreeOfTwoInputModules
+
+////////////////////
+
+module TreeOfTwoInputModules_0(
+input logic [7:0] seq0,
+input logic [7:0] seq1,
+output logic [7:0] out
+);
+logic [7:0] out_1;
+logic [7:0] out_0;
+assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
+TreeOfTwoInputModules  tree_of_two_input_modules(.seq0(seq0),.out(out_1));
+TreeOfTwoInputModules  tree_of_two_input_modules_0(.seq0(seq1),.out(out_0));
+endmodule : TreeOfTwoInputModules_0
+
+////////////////////
+
+module TreeOfTwoInputModules_1(
+input logic [7:0] seq0,
+input logic [7:0] seq1,
+input logic [7:0] seq2,
+input logic [7:0] seq3,
+output logic [7:0] out
+);
+logic [7:0] out_1;
+logic [7:0] out_0;
+assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
+TreeOfTwoInputModules_0  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.out(out_1));
+TreeOfTwoInputModules_0  tree_of_two_input_modules_0(.seq0(seq2),.seq1(seq3),.out(out_0));
+endmodule : TreeOfTwoInputModules_1
+
+////////////////////
+
+module TreeOfTwoInputModules_2(
+input logic [7:0] seq0,
+input logic [7:0] seq1,
+input logic [7:0] seq2,
+input logic [7:0] seq3,
+input logic [7:0] seq4,
+input logic [7:0] seq5,
+input logic [7:0] seq6,
+input logic [7:0] seq7,
+output logic [7:0] out
+);
+logic [7:0] out_1;
+logic [7:0] out_0;
+assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
+TreeOfTwoInputModules_1  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.out(out_1));
+TreeOfTwoInputModules_1  tree_of_two_input_modules_0(.seq0(seq4),.seq1(seq5),.seq2(seq6),.seq3(seq7),.out(out_0));
+endmodule : TreeOfTwoInputModules_2
+
+////////////////////
+
 module TreeOfTwoInputModules_3(
 input logic [7:0] seq0,
 input logic [7:0] seq1,
@@ -75,73 +134,8 @@ output logic [7:0] out
 );
 logic [7:0] out_1;
 logic [7:0] out_0;
-
 assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
 TreeOfTwoInputModules_2  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.seq4(seq4),.seq5(seq5),.seq6(seq6),.seq7(seq7),.out(out_1));
 TreeOfTwoInputModules_2  tree_of_two_input_modules_0(.seq0(seq8),.seq1(seq9),.seq2(seq10),.seq3(seq11),.seq4(seq12),.seq5(seq13),.seq6(seq14),.seq7(seq15),.out(out_0));
 endmodule : TreeOfTwoInputModules_3
-
-////////////////////
-
-module TreeOfTwoInputModules_2(
-input logic [7:0] seq0,
-input logic [7:0] seq1,
-input logic [7:0] seq2,
-input logic [7:0] seq3,
-input logic [7:0] seq4,
-input logic [7:0] seq5,
-input logic [7:0] seq6,
-input logic [7:0] seq7,
-output logic [7:0] out
-);
-logic [7:0] out_1;
-logic [7:0] out_0;
-
-assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules_1  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.seq2(seq2),.seq3(seq3),.out(out_1));
-TreeOfTwoInputModules_1  tree_of_two_input_modules_0(.seq0(seq4),.seq1(seq5),.seq2(seq6),.seq3(seq7),.out(out_0));
-endmodule : TreeOfTwoInputModules_2
-
-////////////////////
-
-module TreeOfTwoInputModules_1(
-input logic [7:0] seq0,
-input logic [7:0] seq1,
-input logic [7:0] seq2,
-input logic [7:0] seq3,
-output logic [7:0] out
-);
-logic [7:0] out_1;
-logic [7:0] out_0;
-
-assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules_0  tree_of_two_input_modules(.seq0(seq0),.seq1(seq1),.out(out_1));
-TreeOfTwoInputModules_0  tree_of_two_input_modules_0(.seq0(seq2),.seq1(seq3),.out(out_0));
-endmodule : TreeOfTwoInputModules_1
-
-////////////////////
-
-module TreeOfTwoInputModules_0(
-input logic [7:0] seq0,
-input logic [7:0] seq1,
-output logic [7:0] out
-);
-logic [7:0] out_1;
-logic [7:0] out_0;
-
-assign out = (out_1 > out_0) ? out_1 : out_0;  // mux
-TreeOfTwoInputModules  tree_of_two_input_modules(.seq0(seq0),.out(out_1));
-TreeOfTwoInputModules  tree_of_two_input_modules_0(.seq0(seq1),.out(out_0));
-endmodule : TreeOfTwoInputModules_0
-
-////////////////////
-
-module TreeOfTwoInputModules(
-input logic [7:0] seq0,
-output logic [7:0] out
-);
-
-assign out = seq0;
-
-endmodule : TreeOfTwoInputModules
 ```
