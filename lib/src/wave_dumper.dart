@@ -58,7 +58,7 @@ class WaveDumper {
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
-      : _outputFile = File(outputPath) {
+      : _outputFile = File(outputPath)..createSync(recursive: true) {
     if (!module.hasBuilt) {
       throw Exception(
           'Module must be built before passed to dumper.  Call build() first.');
