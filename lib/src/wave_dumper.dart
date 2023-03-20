@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// wave_dumper.dart
-/// Waveform dumper for a given module hierarchy, dumps to .vcd file.
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// wave_dumper.dart
+// Waveform dumper for a given module hierarchy, dumps to ".vcd" file.
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:io';
 import 'package:rohd/rohd.dart';
