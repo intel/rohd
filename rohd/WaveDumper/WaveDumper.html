@@ -72,7 +72,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">WaveDumper(this.module, {this.outputPath = &#39;waves.vcd&#39;})
-    : _outputFile = File(outputPath) {
+    : _outputFile = File(outputPath)..createSync(recursive: true) {
   if (!module.hasBuilt) {
     throw Exception(
         &#39;Module must be built before passed to dumper.  Call build() first.&#39;);
