@@ -82,28 +82,28 @@ Please report any bugs you find as a GitHub issue. Please try to provide as much
 Some helpful information you can include:
 
 * Output of `dart --version`
-* Your dependencies from pubspec.yaml
+* Your dependencies from `pubspec.yaml`
 * The version of ROHD you're using
 * Command you ran and output
 * Reproduction code and steps
 
 ### Suggesting Enhancements
 
-If you have an idea for a feature or enhancement that would make ROHD better, feel free to submit a GitHub issue!  Discussion on the ticket about pros & cons, strategy, etc. is encouraged.
+If you have an idea for a feature or enhancement that would make ROHD better, feel free to submit a GitHub issue! Discussion on the ticket about pros & cons, strategy, etc. is encouraged.
 
 ### Discussing Issues
 
-If you have an opinion or helpful information on any open issue, feel free to comment!  Even if you don't have the time to implement a change, providing valuable input is great too!
+If you have an opinion or helpful information on any open issue, feel free to comment! Even if you don't have the time to implement a change, providing valuable input is great too!
 
 ### Fix or implement an Issue
 
-Take a look around the issues on the repo and see if there's any you'd like to take ownership of.  For your first contributions, look for issues tagged with `good first issue`, which are intended to be easier to get started with.  Feel free to ask for help or guidance!
+Take a look around the issues on the repo and see if there's any you'd like to take ownership of. For your first contributions, look for issues tagged with `good first issue`, which are intended to be easier to get started with. Feel free to ask for help or guidance!
 
 ### Pull Requests
 
-If you have a change that you have implemented and would like to contribute, you can open a pull request.  Please try to make sure you have implemented tests covering the changes, if applicable.  Smaller, simpler pull requests are easier to review.
+If you have a change that you have implemented and would like to contribute, you can open a pull request. Please try to make sure you have implemented tests covering the changes, if applicable. Smaller, simpler pull requests are easier to review.
 
-Be sure to run the test suite (`dart test`) before asking for your code to be merged.  You may also locally generate API documentation (`dartdoc`) to make sure it looks right and doesn't have any errors.  You should use the dart formatter on all code (`dart format .`), and may prefer to have it automatically format on every file save.  If you're using Visual Studio Code, you could add this to `settings.json`:
+Be sure to run the test suite (`dart test`) before asking for your code to be merged. You may also locally generate API documentation (`dart doc`) to make sure it looks right and doesn't have any errors. You should use the dart formatter on all code (`dart format .`), and may prefer to have it automatically format on every file save. If you're using Visual Studio Code, you could add this to `settings.json`:
 
 ```json
 "[dart]": {
@@ -112,21 +112,21 @@ Be sure to run the test suite (`dart test`) before asking for your code to be me
 }
 ```
 
-**Tests must pass, documentation must generate, and the formatter must be run on every pull request or the automated GitHub Action flow will fail.**
+**Tests must pass, documentation must generate, and the formatter must be run on every pull request or the automated GitHub Actions flow will fail.**
 
 Maintainers of the project and other community members will provide feedback and help iterate as necessary until the contribution is ready to be merged.
 
 Please include the SPDX tag near the top of any new files you create:
 
 ```dart
-/// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: BSD-3-Clause
 ```
 
 You may find that reading the [Architecture](doc/architecture.md) document will be helpful to becoming familiar with the design of the ROHD framework.
 
 ### Creating a New Package
 
-Not every new contribution has to go directly into the ROHD framework!  If you have an idea for a reusable piece of hardware, tooling, verification collateral, or anything else that helps the ROHD ecosystem but is somewhat standalone, you can make your own package that depends on ROHD.  Building an ecosystem of reusable components is important to the success of ROHD.  Reach out if you want some help or guidance deciding if or how you should create a new package.
+Not every new contribution has to go directly into the ROHD framework! If you have an idea for a reusable piece of hardware, tooling, verification collateral, or anything else that helps the ROHD ecosystem but is somewhat standalone, you can make your own package that depends on ROHD. Building an ecosystem of reusable components is important to the success of ROHD. Reach out if you want some help or guidance deciding if or how you should create a new package.
 
 ## Style
 
