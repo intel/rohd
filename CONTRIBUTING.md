@@ -16,17 +16,17 @@ ROHD adopts the [Contributor Covenant](https://www.contributor-covenant.org/) v2
 
 Join the Discord server here: <https://discord.com/invite/jubxF84yGw>
 
-### GitHub Issues
-
-If something doesn't seem right, you're stuck, there's a critical feature/enhancement missing, you find a bug, etc. then filing an issue on the GitHub repository is a great option. Please try to provide as much detail as possible. Complete, stand-alone reproduction instructions are extremely helpful for bugs!
-
-You can file an issue here: <https://github.com/intel/rohd/issues/new/choose>
-
 ### GitHub Discussions
 
 GitHub Discussions is a place where you can find announcements, ask questions, share ideas, show new things you're working on, or just discuss in general with the community! If you have a question or need some help, this is a great place to go.
 
 You can access the discussions area here: <https://github.com/intel/rohd/discussions>
+
+### GitHub Issues
+
+If something doesn't seem right, you're stuck, there's a critical feature/enhancement missing, you find a bug, etc. then filing an issue on the GitHub repository is a great option. Please try to provide as much detail as possible. Complete, stand-alone reproduction instructions are extremely helpful for bugs!
+
+You can file an issue here: <https://github.com/intel/rohd/issues/new/choose>
 
 ### Stack Overflow
 
