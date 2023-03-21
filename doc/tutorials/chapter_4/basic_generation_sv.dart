@@ -80,8 +80,12 @@ void main() async {
 
   test('should return 10 when both inputs are 5.', () async {
     a.put(5);
-    b.put(5);
+    b.put(4);
 
-    expect(nbitAdder.sumRes.toInt(), equals(10));
+    final actual = nbitAdder.sumRes.toInt();
+
+    expect(actual, equals(10),
+        reason: 'The value of a: $a, and b: $b will '
+            'give value of $actual');
   });
 }
