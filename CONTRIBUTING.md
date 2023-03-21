@@ -20,7 +20,7 @@ Join the Discord server here: <https://discord.com/invite/jubxF84yGw>
 
 If something doesn't seem right, you're stuck, there's a critical feature/enhancement missing, you find a bug, etc. then filing an issue on the GitHub repository is a great option. Please try to provide as much detail as possible. Complete, stand-alone reproduction instructions are extremely helpful for bugs!
 
-You can file an issue here: <https://github.com/intel/rohd/issues/new>
+You can file an issue here: <https://github.com/intel/rohd/issues/new/choose>
 
 ### GitHub Discussions
 
