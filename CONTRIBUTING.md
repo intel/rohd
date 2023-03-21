@@ -130,7 +130,7 @@ Not every new contribution has to go directly into the ROHD framework! If you ha
 
 ## Style
 
-ROHD follows the official Dart recommended style guides and lints.  The analyzer will help ensure that your code is written consistently with the rest of ROHD.
+ROHD follows the official Dart recommended style guides and lints. The analyzer will help ensure that your code is written consistently with the rest of ROHD.
 
 Here are some links to help guide you on style as recommended by Dart:
 
