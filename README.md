@@ -156,7 +156,7 @@ You can find an executable version of this counter example in [example/example.d
 
 ### A more complex example
 
-See a more advanced example of a logarithmic-depth tree of arbitrary functionality at [doc/TreeExample.md](https://github.com/intel/rohd/blob/main/doc/TreeExample.md).
+See a more advanced example of a logarithmic-depth tree of arbitrary functionality at [doc/tree_example.md](doc/tree_example.md).
 
 You can find an executable version of the tree example in [example/tree.dart](https://github.com/intel/rohd/blob/main/example/tree.dart).
 
