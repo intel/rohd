@@ -116,4 +116,103 @@ endmodule : SimpleModule
 
 - Answer to this exercise can be found at [answers/full_adder.dart](./answers/full_adder.dart).
 
-/// TODO: Add Composing modules withonb other modules
+## Composing modules withon other modules
+
+Now, you full-adder is constructed as a module. Let us try to build a N-Bit Adder module now. It's goign to feel like what we had done in the basic generation. To recap, N-Bit Adder is compose of several Adders together. If you forget what is N-Bit adder, you can refer back to tutorial [chapter 4](../chapter_4/00_basic_generation.md).
+
+As you notice in my `FullAdder` and `NBitAdder` class. The `FullAdder` Module class is compose in `FullAdder` class which make the for loop in `NBitAdder` to generate `FullAdder` programmatically.
+
+```dart
+import 'package:rohd/rohd.dart';
+import 'package:test/test.dart';
+
+class FullAdderResult {
+  final sum = Logic(name: 'sum');
+  final cOut = Logic(name: 'c_out');
+}
+
+class FullAdder extends Module {
+  final fullAdderresult = FullAdderResult();
+
+  // Constructor
+  FullAdder({
+    required Logic a,
+    required Logic b,
+    required Logic carryIn,
+    super.name = 'full_adder',
+  }) {
+    // Declare Input Node
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    carryIn = addInput('carry_in', carryIn, width: carryIn.width);
+
+    // Declare Output Node
+    final carryOut = addOutput('carry_out');
+    final sum = addOutput('sum');
+
+    final and1 = carryIn & (a ^ b);
+    final and2 = b & a;
+
+    // Use Combinational block
+    Combinational([
+      sum < (a ^ b) ^ carryIn,
+      carryOut < and1 | and2,
+    ]);
+
+    fullAdderresult.sum <= output('sum');
+    fullAdderresult.cOut <= output('carry_out');
+  }
+
+  FullAdderResult get fullAdderRes => fullAdderresult;
+}
+
+class NBitAdder extends Module {
+  // Add Input and output port
+  final sum = <Logic>[];
+  Logic carry = Const(0);
+  Logic a;
+  Logic b;
+
+  NBitAdder(this.a, this.b) {
+    // Declare Input Node
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    carry = addInput('carry_in', carry, width: carry.width);
+
+    final n = a.width;
+    FullAdder? res;
+
+    assert(a.width == b.width, 'a and b should have same width.');
+
+    for (var i = 0; i < n; i++) {
+      res = FullAdder(a: a[i], b: b[i], carryIn: carry);
+
+      carry = res.fullAdderRes.cOut;
+      sum.add(res.fullAdderRes.sum);
+    }
+
+    sum.add(carry);
+  }
+
+  LogicValue get sumRes => sum.rswizzle().value;
+}
+
+void main() async {
+  final a = Logic(name: 'a', width: 8);
+  final b = Logic(name: 'b', width: 8);
+  final nbitAdder = NBitAdder(a, b);
+
+  await nbitAdder.build();
+
+  // print(nbitAdder.generateSynth());
+
+  test('should return 20 when A and B perform add.', () async {
+    a.put(15);
+    b.put(5);
+
+    expect(nbitAdder.sumRes.toInt(), equals(20));
+  });
+}
+```
+
+Alright, that all for ROHD module. In next session we will be walk through Combinational Logic! Stay tuned!
