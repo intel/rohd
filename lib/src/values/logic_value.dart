@@ -470,20 +470,26 @@ abstract class LogicValue {
   ///
   /// [startIndex] must come before the [endIndex] on position. If [startIndex]
   /// and [endIndex] are equal, then a zero-width value is returned.
-  /// Negative/Positive index values are allowed. (The negative indexing starts from the end=[width]-1)
+  /// Both negative and positive index values are allowed. Negative indexing
+  /// starts from the end=[width]-1.
   ///
   /// If [endIndex] is not provided, [width] of the [LogicValue] will
   /// be used as the default values which assign it to the last index.
   ///
-  /// ```dart [TODO]
-  /// LogicValue.ofString('0101').getRange(0, 2);   // == LogicValue.ofString('01')
-  /// LogicValue.ofString('0101').getRange(1, -2);  // == LogicValue.zero
-  /// LogicValue.ofString('0101').getRange(-3, 4);  // == LogicValue.ofString('010')
-  /// LogicValue.ofString('0101').getRange(1);      // == LogicValue.ofString('010')
+  /// ```dart
+  /// LogicValue.ofString('0101').getRange(0, 2);  // LogicValue.ofString('01')
+  /// LogicValue.ofString('0101').getRange(1, -2); // LogicValue.zero
+  /// LogicValue.ofString('0101').getRange(-3, 4); // LogicValue.ofString('010')
+  /// LogicValue.ofString('0101').getRange(1);     // LogicValue.ofString('010')
   ///
-  /// LogicValue.ofString('0101').getRange(-1, -2); // Error - negative end index and start > end - error! start must be less than end
-  /// LogicValue.ofString('0101').getRange(2, 1);   // Error - bad inputs start > end
-  /// LogicValue.ofString('0101').getRange(0, 7);   // Error - bad inputs end > length-1
+  /// // Error - negative end index and start > end! start must be less than end
+  /// LogicValue.ofString('0101').getRange(-1, -2);
+  ///
+  /// // Error - bad inputs start > end
+  /// LogicValue.ofString('0101').getRange(2, 1);
+  ///
+  /// // Error - bad inputs end > length-1
+  /// LogicValue.ofString('0101').getRange(0, 7);
   /// ```
   ///
   LogicValue getRange(int startIndex, [int? endIndex]) {
@@ -521,12 +527,12 @@ abstract class LogicValue {
   /// If [endIndex] is less than [startIndex], the returned value will be
   /// reversed relative to the original value.
   ///
-  /// ```dart [TODO]
-  /// LogicValue.ofString('xz01').slice(2, 1);    // == LogicValue.ofString('z0')
-  /// LogicValue.ofString('xz01').slice(-2, -3);  // == LogicValue.ofString('z0')
-  /// LogicValue.ofString('xz01').slice(1, 3);    // == LogicValue.ofString('0zx')
-  /// LogicValue.ofString('xz01').slice(-3, -1);  // == LogicValue.ofString('0zx')
-  /// LogicValue.ofString('xz01').slice(-2, -2);  // == LogicValue.ofString('z')
+  /// ```dart
+  /// LogicValue.ofString('xz01').slice(2, 1);    // LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(-2, -3);  // LogicValue.ofString('z0')
+  /// LogicValue.ofString('xz01').slice(1, 3);    // LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-3, -1);  // LogicValue.ofString('0zx')
+  /// LogicValue.ofString('xz01').slice(-2, -2);  // LogicValue.ofString('z')
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
     final modifiedStartIndex =
@@ -926,6 +932,41 @@ abstract class LogicValue {
       update,
       getRange(0, startIndex),
     ].swizzle();
+  }
+
+  /// Checks if `this` is equal to [other], except ignoring bits of
+  /// which are not valid.
+  ///
+  /// Returns `true` if each bit of `this` which [isValid] is equal
+  /// to each bit of [other] which [isValid].
+  ///
+  /// For example:
+  /// ```dart
+  /// // Returns false
+  /// LogicValue.ofString('1010xz').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns true
+  /// LogicValue.ofString('10x111').equalsWithDontCare(
+  ///   LogicValue.ofString('10111x'));
+  ///
+  /// // Returns false
+  /// LogicValue.ofString('10x1z1').equalsWithDontCare(
+  ///   LogicValue.ofString('10101x'));
+  /// ```
+  bool equalsWithDontCare(LogicValue other) {
+    if (width == other.width) {
+      for (var i = 0; i < width; i++) {
+        if (!this[i].isValid || !other[i].isValid) {
+          continue;
+        } else if (this[i] != other[i]) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /// Returns new [LogicValue] replicated [multiplier] times. An exception will

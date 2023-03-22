@@ -1,4 +1,4 @@
-/// Copyright (C) 2021 Intel Corporation
+/// Copyright (C) 2021-2023 Intel Corporation
 /// SPDX-License-Identifier: BSD-3-Clause
 ///
 /// tree.dart
@@ -8,13 +8,15 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+// Though we usually avoid them, for this example,
+// allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
 import 'package:rohd/rohd.dart';
 
 /// The below example demonstrates some aspects of the power of ROHD where
 /// writing equivalent design code in SystemVerilog can be challenging or
-/// impossible.  The example is a port from an example used by Chisel.
+/// impossible. The example is a port from an example used by Chisel.
 ///
 /// The ROHD module `TreeOfTwoInputModules` is a succinct representation a
 /// logarithmic-height tree of arbitrary two-input/one-output modules.
@@ -30,7 +32,7 @@ import 'package:rohd/rohd.dart';
 ///       can be stored in variables). It expects a function which takes two
 ///       `Logic` inputs and provides one `Logic` output.
 /// - This module recursively instantiates itself, but with different numbers of
-///   inputs each time.  The same module implementation can have a variable
+///   inputs each time. The same module implementation can have a variable
 ///   number of inputs and different logic without any explicit
 ///   parameterization.
 
@@ -71,11 +73,12 @@ Future<void> main({bool noPrint = false}) async {
       (a, b) => mux(a > b, a, b));
 
   /// This instantiation code generates a list of sixteen 8-bit logic signals.
-  /// The operation to be performed (`_op`) is to create a `Mux` which returns
-  ///  `a` if `a` is greater than `b`, otherwise `b`.  Therefore, this
+  /// The operation to be performed (`_op`) is to create a `Mux` (in this case,
+  /// the `mux` helper function is used to create) which returns
+  /// `a` if `a` is greater than `b`, otherwise `b`. Therefore, this
   /// instantiation creates a logarithmic-height tree of modules which outputs
-  /// the largest 8-bit value.  Note that `Mux` also needs no parameters, as it
-  /// can automatically determine the appropriate size of `y` based on the
+  /// the largest 8-bit value. Note that `Mux` also needs no parameters, as it
+  /// can automatically determine the appropriate size of `out` based on the
   /// inputs.
   ///
   /// A SystemVerilog implementation of this requires numerous module

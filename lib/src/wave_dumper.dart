@@ -1,17 +1,17 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// wave_dumper.dart
-/// Waveform dumper for a given module hierarchy, dumps to .vcd file
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// wave_dumper.dart
+// Waveform dumper for a given module hierarchy, dumps to ".vcd" file.
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
@@ -58,7 +58,7 @@ class WaveDumper {
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
-      : _outputFile = File(outputPath) {
+      : _outputFile = File(outputPath)..createSync(recursive: true) {
     if (!module.hasBuilt) {
       throw Exception(
           'Module must be built before passed to dumper.  Call build() first.');
@@ -142,7 +142,7 @@ class WaveDumper {
 
   /// Writes the top header for the VCD file.
   void _writeHeader() {
-    final dateString = DateTime.now().toIso8601String();
+    final dateString = Timestamper.stamp();
     const timescale = '1ps';
     final header = '''
 \$date

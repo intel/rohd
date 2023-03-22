@@ -7,7 +7,9 @@
 /// 2022 April 22
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
+
 import 'dart:collection';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';
@@ -21,7 +23,8 @@ class StateMachine<StateIdentifier> {
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
 
-  /// A map to store the state identifier as the key and the object as the value
+  /// A map to store the state identifier as the key
+  /// and the object as the value.
   final Map<StateIdentifier, State<StateIdentifier>> _stateLookup = {};
 
   /// A map to store the state object as the key and the index of the state in
@@ -99,6 +102,24 @@ class StateMachine<StateIdentifier> {
       )
     ]);
   }
+
+  /// Generate a FSM state diagram [_MermaidStateDiagram].
+  /// Check on https://mermaid.js.org/intro/ to view the diagram generated.
+  /// If you are using vscode, you can download the mermaid extension.
+  ///
+  /// Output to mermaid diagram at [outputPath].
+  void generateDiagram({String outputPath = 'diagram_fsm.md'}) {
+    final figure = _MermaidStateDiagram(outputPath: outputPath)
+      ..addStartState(resetState.toString());
+
+    for (final state in _states) {
+      for (final entry in state.events.entries) {
+        figure.addTransitions(state.identifier.toString(),
+            entry.value.toString(), entry.key.name);
+      }
+    }
+    figure.writeToFile();
+  }
 }
 
 /// Simple class to initialize each state of the FSM.
@@ -116,4 +137,50 @@ class State<StateIdentifier> {
   /// Represents a state named [identifier] with a definition of [events]
   /// and [actions] associated with that state.
   State(this.identifier, {required this.events, required this.actions});
+}
+
+/// A state diagram generator for FSM.
+///
+/// Outputs to vcd format at [outputPath].
+class _MermaidStateDiagram {
+  /// The diagram to be return as String.
+  late StringBuffer _diagram;
+
+  /// The output filepath of the generated state diagram.
+  final String outputPath;
+
+  /// The file to write dumped output waveform to.
+  final File _outputFile;
+
+  // An empty spaces indentation for state.
+  final _indentation = ' ' * 4;
+
+  /// Generate a [_MermaidStateDiagram] that initialized the diagram of
+  /// mermaid as `stateDiagram`.
+  ///
+  /// Passed output path to save in custom directory.
+  _MermaidStateDiagram({this.outputPath = 'diagram_fsm.md'})
+      : _outputFile = File(outputPath) {
+    _diagram = StringBuffer('stateDiagram-v2');
+  }
+
+  /// Register a new transition [event] that point the
+  /// current state [currentState] to next state [nextState].
+  void addTransitions(String currentState, String nextState, String event) =>
+      _diagram.write('\n$_indentation$currentState --> $nextState: $event');
+
+  /// Register a start state [startState].
+  void addStartState(String startState) =>
+      _diagram.write('\n$_indentation[*] --> $startState');
+
+  /// Write the object content to [_outputFile] by enclose it with
+  /// mermaid identifier.
+  void writeToFile() {
+    final outputDiagram = StringBuffer('''
+```mermaid
+$_diagram
+```
+''');
+    _outputFile.writeAsStringSync(outputDiagram.toString());
+  }
 }

@@ -11,7 +11,9 @@ doc/api/
 
 # Other stuff
 tmp_test/
+*.sv
 *.vcd
+*_fsm.md
 .vscode/*
 
 # Exceptions
