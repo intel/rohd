@@ -105,14 +105,7 @@ Take a look around the issues on the repo and see if there's any you'd like to t
 
 If you have a change that you have implemented and would like to contribute, you can open a pull request. Please try to make sure you have implemented tests covering the changes, if applicable. Smaller, simpler pull requests are easier to review.
 
-Be sure to run the test suite (`dart test`) before asking for your code to be merged. You may also locally generate API documentation (`dart doc`) to make sure it looks right and doesn't have any errors. You should use the dart formatter on all code (`dart format .`), and may prefer to have it automatically format on every file save. If you're using Visual Studio Code, you could add this to `settings.json`:
-
-```json
-"[dart]": {
-    "editor.defaultFormatter": "Dart-Code.dart-code",
-    "editor.formatOnSave": true,
-}
-```
+Be sure to run the test suite (`dart test`) before asking for your code to be merged. You may also locally generate API documentation (`dart doc`) to make sure it looks right and doesn't have any errors. You should use the dart formatter on all code (`dart format .`), and may prefer to have it automatically format on every file save. If you are using VSCode with the Dart extension, then consider using the recommended settings: <https://dartcode.org/docs/recommended-settings/>
 
 **Tests must pass, documentation must generate, and the formatter must be run on every pull request or the automated GitHub Actions flow will fail.**
 
