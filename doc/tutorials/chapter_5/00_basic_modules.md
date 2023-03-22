@@ -11,13 +11,13 @@
 
 In this chapter:
 
-- You learn what is ROHD module and how to create a ROHD module. We will be creating a Full Adder ROHD module.
+- You will learn what the ROHD module is and the criteria and rules for creating a module. We will then implement a Full-Adder and an N-Bit Full Adder, building upon the exercises completed previously, using the ROHD Module.
 
 ## What is ROHD Module?
 
-If you have prior experience with System Verilog, they are kind of the same `Module` that we are referring. Some would ask why do we need a Module? We had seen in the previous tutorials that we can survive or use ROHD without creating module right? Well, this is because you haven't go deep into simulator or system verilog code generation. 
+If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD. You may wonder why we need a Module, as we have seen in previous tutorials that we can use ROHD without creating one. However, this is because we haven't delved into the details of simulation or System Verilog code generation.
 
-But in a typical ROHD framework, you will need Module to unlock capability of generateSynth() or Simulation(). Therefore, it is good to learn about ROHD module to further increase the flexibility of the hardware design. We will be using a lot of .build() function in the later Sequential circuit.
+In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()` and `Simulation()` functions. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
 
 In ROHD, `Module` has inputs and outputs that connects them. However, there are severals rules that **MUST** be followed.
 
@@ -31,7 +31,7 @@ The `Module` base class has an optional String argument 'name' which is an insta
 
 ## First Module (One input, One output, Simple Logic)
 
-Let say an example of how to create a simple ROHD module. The example below shows the simple module created with **one** `input` and `output`. Notice that `addInput()` and `addOutput()` is used as mentioned previously to register for input and output ports. Another things to note this the Logic of the Module output <= input is included inside the constructor so that build() instruction will pick up the Logic during the execution process.
+Let's take an example of how to create a simple ROHD module. The example below shows a simple module created with one `input` and one `output`. Notice that `addInput()` and `addOutput()` are used, as mentioned previously, to register input and output ports. Another thing to note is that the logic of the module (i.e., output <= input) is included inside the constructor so that the `.build()` instruction will pick up the logic during the execution process.
 
 ```dart
 import 'package:rohd/rohd.dart';
