@@ -117,6 +117,19 @@ Please include the SPDX tag near the top of any new files you create:
 // SPDX-License-Identifier: BSD-3-Clause
 ```
 
+Here is an example of a recommended file header template:
+
+```dart
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// example.dart
+// A very basic example of a counter module.
+//
+// 2021 September 17
+// Author: Max Korbel <max.korbel@intel.com>
+```
+
 You may find that reading the [Architecture](doc/architecture.md) document will be helpful to becoming familiar with the design of the ROHD framework.
 
 ### Creating a New Package
