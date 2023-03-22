@@ -77,7 +77,7 @@ dart test
 
 ## How to Contribute
 
-### Reporting a Vulnerability
+### Reporting Vulnerabilities
 
 Please report any vulnerabilities according to the information provided in the [SECURITY.md](SECURITY.md) file.
 
