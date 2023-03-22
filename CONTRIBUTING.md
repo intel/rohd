@@ -50,6 +50,8 @@ To run the complete ROHD test suite for development, you need to install [Icarus
 
 [Visual Studio Code (VSCode)](https://code.visualstudio.com/) is a great IDE for development. You can find installation instructions for VSCode here: <https://code.visualstudio.com/Download>
 
+The Dart extension extends VSCode with support for the Dart programming language and provides tools for effectively editing, refactoring and running. Check out the detailed information: <https://dartcode.org/>
+
 If you're developing on a remote host, VSCode has a Remote SSH extension that can help: <https://code.visualstudio.com/docs/remote/ssh>
 
 If you're on Microsoft Windows, you may want to consider developing with Ubuntu WSL for a Linux environment: <https://learn.microsoft.com/windows/wsl/install>
