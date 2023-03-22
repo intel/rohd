@@ -77,6 +77,10 @@ dart test
 
 ## How to Contribute
 
+### Reporting a Vulnerability
+
+Please report any vulnerabilities according to the information provided in the [SECURITY.md](SECURITY.md) file.
+
 ### Reporting Bugs
 
 Please report any bugs you find as a GitHub issue. Please try to provide as much detail as possible. Complete, stand-alone reproduction instructions are extremely helpful for bugs!
