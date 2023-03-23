@@ -16,7 +16,7 @@ In this chapter:
 
 If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD. You may wonder why we need a Module, as we have seen in previous tutorials that we can use ROHD without creating one. However, this is because we haven't delved into the details of simulation or System Verilog code generation.
 
-In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()` and `Simulation()` functions. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
+In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()`, `Simulation()` functions and etc. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
 
 In ROHD, `Module` has inputs and outputs that connects them. However, there are severals rules that **MUST** be followed.
 
@@ -49,6 +49,11 @@ In ROHD, `Module` has inputs and outputs that connects them. However, there are 
     ```
 
 3. Logic must be defined *before* the call to `super.build()`, which always must be called **at the end of the `build()` method** if it is overidden.
+
+```dart
+// Example of getter in ROHD
+Logic get x => output('x');
+```
 
 The `Module` base class has an optional String argument 'name' which is an instance name.
 
@@ -91,8 +96,6 @@ void main() async {
 
 Do note that the `build()` method returns a `Future<void>`, not just `void`. This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator. If you expect your build to consume wallclock time, make sure the Simulator is aware it needs to wait before proceeding.
 
-That all about the basic of the module!
-
 ## Converting ROHD Module to System Verilog RTL
 
 Next, we can see how extending your `Logic` to `Module` enables the generation of system Verilog code. Building on the previous example, we've made some slight modifications by adding `simModule.build()` and `simModule.generateSynth()`.
@@ -131,20 +134,17 @@ endmodule : SimpleModule
 
 ## Exercise 1
 
-1. Do you still remember how to create a full adder? Now, try to create ROHD Module full adder like above example. If you forgot how to create a full-adder, you can revise back at [chapter 3](../chapter_3/00_unit_test.md).
+1. Do you still remember how to create a full adder & full substractor? Now, try to create ROHD Module full adder and full subtractor like above example. If you forgot how to create a full-adder, you can revise back at [chapter 3](../chapter_3/00_unit_test.md).
 
-- Answer to this exercise can be found at [answers/full_adder.dart](./answers/full_adder.dart).
+- Answer to this exercise can be found at [answers/full_adder.dart](./answers/full_adder.dart) and [answers/full_subtractor.dart](./answers/full_subtractor.dart)
 
-## Composing modules withon other modules
+## Composing modules withon other modules (N-Bit Adder)
 
 Now, your full-adder has been constructed as a module. Let's try to build an N-bit Adder module now. It's going to be similar to what we did in the basic generation. To recap, an N-bit Adder is composed of several Adders together. If you forget what is N-Bit adder, you can refer back to tutorial [chapter 4](../chapter_4/00_basic_generation.md).
 
-As you can see in my `FullAdder` and `NBitAdder` classes, the `FullAdder` module class is composed within the `FullAdder` class, which allows the for loop in `NBitAdder` to generate `FullAdder` programmatically.
+As you can see in my `FullAdder` and `NBitAdder` classes, the `FullAdder` module class is composed within the `FullAdder` class, which allows the for loop in `NBitAdder` to generate `FullAdder` programmatically. The difference here is instead of iterate the generation of the function, we iterate the generation of the ROHD module instead.
 
 ```dart
-import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
-
 class FullAdderResult {
   final sum = Logic(name: 'sum');
   final cOut = Logic(name: 'c_out');
@@ -215,27 +215,12 @@ class NBitAdder extends Module {
 
   LogicValue get sumRes => sum.rswizzle().value;
 }
-
-void main() async {
-  final a = Logic(name: 'a', width: 8);
-  final b = Logic(name: 'b', width: 8);
-  final nbitAdder = NBitAdder(a, b);
-
-  await nbitAdder.build();
-
-  // print(nbitAdder.generateSynth());
-
-  test('should return 20 when A and B perform add.', () async {
-    a.put(15);
-    b.put(5);
-
-    expect(nbitAdder.sumRes.toInt(), equals(20));
-  });
-}
 ```
 
-Alright, that all for ROHD module. In next session we will be walk through Combinational Logic & Sequential Logic!
+Alright, that all for the basic of the ROHD module. You can find the executable version of code at [n_bit_adder.dart](n_bit_adder.dart).
+
+In the next session, we will be walk through the Combinational Logic & Sequential Logic!
 
 ## Exercise 2
 
-1. Build a N-bit Subtractor in ROHD Module.
+1. Now, let try to build a N-bit Subtractor using ROHD Module.
