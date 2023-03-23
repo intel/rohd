@@ -2,9 +2,10 @@
 
 - What is ROHD Module?
 - First module (one input, one output, simple logic)
-- Converting to SystemVerilog
-- Exercise 1: Full Adder Module
-- Composing modules within other modules
+- Converting ROHD Module to System Verilog RTL
+- Exercise 1
+- Composing modules withon other modules (N-Bit Adder)
+- Exercise 2
 
 ## Learning Outcome
 
