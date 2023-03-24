@@ -225,3 +225,5 @@ In the next session, we will be walk through the Combinational Logic & Sequentia
 ## Exercise 2
 
 1. Now, let try to build a N-bit Subtractor using ROHD Module.
+
+- Answer to this exercise can be found at [answers/n_bit_subtractor.dart](./answers/n_bit_subtractor.dart).
