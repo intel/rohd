@@ -1,17 +1,50 @@
-# Combinational Logic
+# Content
 
-In the previous section, we had learn how to implement a ROHD module. In this section, we will learn how combinational logic is being used in ROHD. In this tutorial, let see how we can use `if...else` to conditionally assign signals to hardware. Let us zoom in to the Combinational Block of the full adder we implemented from the last module. 
+- What is Combinational Logic?
+- What is Conditionals?
+- Example of Combinational
+- Conditional Assignments
+- If...Else/Case...CaseZ
+
+## Learning Outcome
+
+In this chapter:
+
+- You will learn how to create a combinational logic that are equivalent to System Verilog always_comb. We will review back what is conditionals and how to use combinational condition function `If..Else` and `Case...CaseZ`.
+
+## What is Combinational Logic?
+
+There are two types of digital circuit, which are combinational logic and sequential logic. In this chapter, we will look into combinational logic circuit. A combinational circuit's outputs depends only on the current values of the inputs; in other words, it combines the current input values to compute the output. For example, a logic gate is a combinational circuit.
+
+A circuit is combinational if it consists of interconnected circuit elements such that:
+
+- Every circuit element is itself combinational.
+- Every node of the circuits is either designated as an input to the circuit or connects to exactlyone output terminal of a circuit element.
+- The circuit contains no cyclic paths: every path through the circuit visits each circuit node at most once.
+
+In ROHD, `Conditional` type statement must always written within a type of `_Always` block, similar to System Verilog. There are two type of `_Always` blocks: `Sequential` and `Combinational`, which map to System Verilog's `always_ff` and `always_comb`, respectively.
+
+`Combinational` takes a list of `Conditional` statements. Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements. You can create `Conditional` composition chains as deep as you like.
+
+Conditional statements are executed imperatively and in order, just like the contents of `always` blocks in SystemVerilog. `_Always` blocks in ROHD map 1-to-1 with SystemVerilog `always` statements when converted.
+
+Assignments within an `_Always` should be executed conditionally, so use the `<` operator which creates a `ConditionalAssign` object instead of `<=`. The right hand side a `ConditionalAssign` can be anything that can be `put` onto a `Logic`, which includes `int`s. If you're looking to fill the width of something, use `Const` with the `fill = true`.
+
+Example below shows the example of `Combinational` with `Logic` and `ConditionalAssign`.
 
 ```dart
 final and1 = carryIn & (a ^ b);
 final and2 = b & a;
+
 Combinational([
     sum < (a ^ b) ^ carryIn,
     carryOut < and1 | and2,
 ]);
 ```
 
-Well, that the part of the full adder logic that we implmented from last tutorials. Today, we are going to implemented the same full adder logic using just `if...else` statement in ROHD. Let start by looking into ROHD conditionals. From the [API documentation](https://intel.github.io/rohd/docs/logic-math-compare/), conditionals in ROHD are defined in:
+## What is Conditionals?
+
+Well, that the part of the full adder logic that we implement from last tutorials. Today, we are going to implemented the same full adder logic using just `if...else` statement in ROHD. Let start by looking into ROHD conditionals. From the [API documentation](https://intel.github.io/rohd/docs/logic-math-compare/), conditionals in ROHD are defined in:
 
 ```dart
 _bar     <=  ~a;      // not

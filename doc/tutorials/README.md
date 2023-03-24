@@ -56,7 +56,7 @@
 
 ## Chapter 6: Combinational Logic
 
-- Combinational Logic: Simple Assignments, Full Adder but with Combinational Blocks, Add stuff together when something is equal
+- Combinational Logic
 - Explanation of Conditionals
 - Example of Combinational
 - Conditional assignments
