@@ -143,7 +143,7 @@ endmodule : SimpleModule
 
 Now, your full-adder has been constructed as a module. Let's try to build an N-bit Adder module now. It's going to be similar to what we did in the basic generation. To recap, an N-bit Adder is composed of several Adders together. If you forget what is N-Bit adder, you can refer back to tutorial [chapter 4](../chapter_4/00_basic_generation.md).
 
-As you can see in my `FullAdder` and `NBitAdder` classes, the `FullAdder` module class is composed within the `FullAdder` class, which allows the for loop in `NBitAdder` to generate `FullAdder` programmatically. The difference here is instead of iterate the generation of the function, we iterate the generation of the ROHD module instead.
+As you can see in my `FullAdder` and `NBitAdder` classes, the `FullAdder` module class is composed within the `NBitAdder` class, which allows the for loop in `NBitAdder` to generate `FullAdder` programmatically. The difference here is instead of iterate the generation of the function, we iterate the generation of the ROHD module instead.
 
 ```dart
 class FullAdderResult {
