@@ -171,6 +171,12 @@ class PairInterface extends Interface<PairDirection> {
     }
   }
 
+  // why not? is this good?
+  PairInterface clone() => PairInterface(
+      portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
+      portsFromProducer: _getMatchPorts(this, PairDirection.fromProducer),
+      sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs));
+
   static List<Port> _getMatchPorts(
           Interface<PairDirection> otherInterface, PairDirection tag) =>
       otherInterface
