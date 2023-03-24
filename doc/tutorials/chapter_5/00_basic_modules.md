@@ -1,17 +1,17 @@
 # Content
 
-- What is ROHD Module?
-- First module (one input, one output, simple logic)
-- Converting ROHD Module to System Verilog RTL
-- Exercise 1
-- Composing modules withon other modules (N-Bit Adder)
-- Exercise 2
+- [What is ROHD Module?](#what-is-rohd-module)
+- [First module (one input, one output, simple logic)](#first-module-one-input-one-output-simple-logic)
+- [Converting ROHD Module to System Verilog RTL](#converting-rohd-module-to-system-verilog-rtl)
+- [Exercise 1](#exercise-1)
+- [Composing modules within other modules (N-Bit Adder)](#composing-modules-withon-other-modules-n-bit-adder)
+- [Exercise 2](#exercise-2)
 
 ## Learning Outcome
 
 In this chapter:
 
-- You will learn what the ROHD module is and the criteria and rules for creating a module. We will then implement a Full-Adder and an N-Bit Full Adder, building upon the exercises completed previously, using the ROHD Module.
+- You will learn what the ROHD module is and the criteria and rules for creating a module. We will then implement a Full-Adder and an N-Bit Adder, building upon the exercises completed previously, using the ROHD Module.
 
 ## What is ROHD Module?
 
@@ -135,7 +135,7 @@ endmodule : SimpleModule
 
 ## Exercise 1
 
-1. Do you still remember how to create a full adder & full substractor? Now, try to create ROHD Module full adder and full subtractor like above example. If you forgot how to create a full-adder, you can revise back at [chapter 3](../chapter_3/00_unit_test.md).
+1. Do you still remember how to create a full adder & full substractor? Now, try to create ROHD Module full adder and full subtractor like above example. You can revise back at [chapter 3](../chapter_3/00_unit_test.md).
 
 - Answer to this exercise can be found at [answers/full_adder.dart](./answers/full_adder.dart) and [answers/full_subtractor.dart](./answers/full_subtractor.dart)
 
