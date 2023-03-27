@@ -22,7 +22,14 @@ A circuit is combinational if it consists of interconnected circuit elements suc
 - Every node of the circuits is either designated as an input to the circuit or connects to exactlyone output terminal of a circuit element.
 - The circuit contains no cyclic paths: every path through the circuit visits each circuit node at most once.
 
+## What is Conditionals?
+
 In ROHD, `Conditional` type statement must always written within a type of `_Always` block, similar to System Verilog. There are two type of `_Always` blocks: `Sequential` and `Combinational`, which map to System Verilog's `always_ff` and `always_comb`, respectively.
+
+```dart
+// Example of always_comb
+Combinational([]);
+```
 
 `Combinational` takes a list of `Conditional` statements. Different kinds of `Conditional` statement, such as `If`, may be composed of more `Conditional` statements. You can create `Conditional` composition chains as deep as you like.
 
@@ -42,32 +49,7 @@ Combinational([
 ]);
 ```
 
-## What is Conditionals?
-
-Well, that the part of the full adder logic that we implement from last tutorials. Today, we are going to implemented the same full adder logic using just `if...else` statement in ROHD. Let start by looking into ROHD conditionals. From the [API documentation](https://intel.github.io/rohd/docs/logic-math-compare/), conditionals in ROHD are defined in:
-
-```dart
-_bar     <=  ~a;      // not
-a_and_b   <=  a & b;   // and
-a_or_b    <=  a | b;   // or
-a_xor_b   <=  a ^ b;   // xor
-and_a     <=  a.and(); // unary and
-or_a      <=  a.or();  // unary or
-xor_a     <=  a.xor(); // unary xor
-a_plus_b  <=  a + b;   // addition
-a_sub_b   <=  a - b;   // subtraction
-a_times_b <=  a * b;   // multiplication
-a_div_b   <=  a / b;   // division
-a_mod_b   <=  a % b;   // modulo
-a_eq_b    <=  a.eq(b)  // equality              NOTE: == is for Object equality of Logic's
-a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assignment
-a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
-a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of operations, > needs parentheses in this case
-a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of operations, >= needs parentheses in this case
-answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
-```
-
-The most important part that we notice here is the assignment operator in Combinational Block is different from Logic operator. So, a few operators that being use commonly are 
+The most important part that we notice here is the assignment operator in Combinational Block is different from Logic operator. So, a few operators that being use commonly are:
 
 - `.eq()` function map to `==` 
 - `.lt()` function map to `<`
