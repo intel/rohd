@@ -2,9 +2,10 @@
 
 - [What is Combinational Logic?](#what-is-combinational-logic)
 - [What is Conditionals?](#what-is-conditionals)
-- [Example of Combinational]()
-- Conditional Assignments
-- If...Else/Case...CaseZ
+- [If, ElseIf, Else](#if-elseif-else)
+  - [Start by declaring a conditional Block](#start-by-declaring-a-conditional-block)
+  - [Add the condition inside the conditional block](#add-the-condition-inside-the-conditional-block)
+- [Case, CaseZ](#case-casez)
 
 ## Learning Outcome
 
@@ -60,17 +61,20 @@ The most important part that you have to notice here is the assignment operator 
 - `(>)` function map to `>`
 - `(>=)` function map to `>=`
 
+## If, ElseIf, Else
+
 Alright, now we know how the operator in ROHD. we can dive into the `IF...ELSE` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate this pieces of hardware. While in ROHD, `IF...ELSE` is conditionally assignment which assign signal to a port, which we can think something like `IF` Logic signal `A` is present, `THEN` assign output port `B` to `A`.
 
 In today tutorial, we will review how to assign value to PORT using ROHD `IF...ELSE` conditionals. Let start by understanding ROHD `IF...ELSE` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IFBlock` which is more readable and clean.
 
+// TODO: try to explain based on the IF ELSE documentation structure, clearer.
 ### Start by declaring a conditional Block
 
 `IfBlock([])`: Represents a chain of blocks of code to be conditionally executed, like `if/else...if/else`. From the statement, we know that we have to wrap our `If...Else` using this function.
 
 ```dart
 IfBlock([
-
+  // your if else start here
 ]);
 ```
 
@@ -139,9 +143,9 @@ IfBlock([
 
 Alright, the syntax is quite easy. You can always come back to this page whenever you are confuse. Let see how we can implement our FullAdder using `If` and `Else` conditionals.
 
-## Full-Adder
-
 Let look into the Truth Table of the full-adder.
+
+// TODO: Give step by step explanation on how to add the adder.
 
 |A|B|Cin|SUM (S)|CARRY (Cout)|
 |---|---|---|---|--- |
@@ -199,4 +203,113 @@ Well, maybe you already have the idea. Yes, we are going to implment this truth 
 
 Tadaa! This is the implementation of the `If...Else` statement. If you run your test, its should still work the same. That the reason we have unit test.
 
-So, how about `switch...case`? Well, its pretty much the same. Let see the syntax in Case and CaseZ.
+So, how about `switch...case`? Well, its pretty much the same. Let see the syntax in `Case` and `CaseZ`.
+
+## Case, CaseZ
+
+ROHD supports Case and CaseZ statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog. For example:
+
+### Start by declaring a Case
+
+`Case([])`: In `Case`, whenever an item in [items] matches [expression], it will be executed. If none of [items] match, then [defaultItem] is executed.
+
+```dart
+Case(
+  Logic expression,
+  List<CaseItem> items, {
+  List<Conditional>? defaultItem,
+})
+```
+
+### Add Expressions
+
+`Logic expression`: The expression of `Case` are in the form of logic, so if you have more than one `signal`, you might want to use `swizzle()` to combine as one.
+
+```dart
+Case(
+  // swizzle signal a and b as expression
+  [b, a].swizzle(),
+)
+```
+
+### Add Case Items
+
+`CaseItem(Logic value, List<Conditional> then)`: `CaseItem` accepts `Logic` value as condition, if the condition matched; then the `then` condition will be executed. The `then` condition is added as a list to be driven during the Simulation.
+
+```dart
+List<CaseItem>
+```
+
+Remember that, the `CaseItem` should be in the List of the `List<CaseItem>` reside in `Case`.
+
+```dart
+Case(
+  // swizzle signal a and b as expression
+  [b, a].swizzle(),
+  [
+    // Case Items here
+    CaseItem(Const(LogicValue.ofString('01')), [
+      c < 1,
+      d < 0
+    ]),
+  ], {
+  List<Conditional>? defaultItem,
+})
+```
+
+### Add default Items
+
+`List<Conditional>? defaultItem` : `defaultItem` conditions will be executed if none of the expression matched.
+
+```dart
+Case(
+  // swizzle signal a and b as expression
+  [b, a].swizzle(),
+  [
+    // Case Items here
+    CaseItem(Const(LogicValue.ofString('01')), [
+      c < 1,
+      d < 0
+    ]),
+  ], {
+  List<Conditional>? defaultItem,
+})
+```
+
+### Encapsulate Case into a Combinational
+
+```dart
+Combinational([
+  Case([b,a].swizzle(), [
+      CaseItem(Const(LogicValue.ofString('01')), [
+        c < 1,
+        d < 0
+      ]),
+      CaseItem(Const(LogicValue.ofString('10')), [
+        c < 1,
+        d < 0,
+      ]),
+    ], defaultItem: [
+      c < 0,
+      d < 1,
+    ],
+    conditionalType: ConditionalType.Unique
+  ),
+  CaseZ([b,a].swizzle(),[
+      CaseItem(Const(LogicValue.ofString('z1')), [
+        e < 1,
+      ])
+    ], defaultItem: [
+      e < 0,
+    ],
+    conditionalType: ConditionalType.Priority
+  )
+]);
+```
+
+Yes, that it for `Case`, `CaseZ` in ROHD.
+
+// TODO: Make the question more clear.
+Exercise:
+
+1. Code Case and CaseZ in ROHD for full adder.
