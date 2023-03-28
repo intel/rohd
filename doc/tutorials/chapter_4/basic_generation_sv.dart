@@ -80,7 +80,7 @@ void main() async {
 
   test('should return 10 when both inputs are 5.', () async {
     a.put(5);
-    b.put(4);
+    b.put(5);
 
     final actual = nbitAdder.sumRes.toInt();
 
