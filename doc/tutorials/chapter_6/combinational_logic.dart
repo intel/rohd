@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+import '../chapter_3/helper.dart';
+import 'case.dart';
 import 'if_block.dart';
 
 class FullAdderResult {
@@ -11,8 +13,6 @@ class FullAdderResult {
 }
 
 class FullAdder extends Module {
-  final fullAdderresult = FullAdderResult();
-
   // Constructor
   FullAdder({
     required Logic a,
@@ -29,16 +29,21 @@ class FullAdder extends Module {
     final carryOut = addOutput('carry_out');
     final sum = addOutput('sum');
 
-    // Use Combinational block with If Else
-    // Combinational([truthTableIf(a, b, carryIn, sum, carryOut)]);
-
-    Combinational([truthTableIf(a, b, carryIn, sum, carryOut)]);
-
-    fullAdderresult.sum <= output('sum');
-    fullAdderresult.cOut <= output('carry_out');
+    const selection = 'case';
+    if (selection == 'if') {
+      Combinational([truthTableIf(a, b, carryIn, sum, carryOut)]);
+    } else {
+      Combinational([truthTableCase(a, b, carryIn, sum, carryOut)]);
+    }
   }
 
-  FullAdderResult get fullAdderRes => fullAdderresult;
+  FullAdderResult get fullAdderRes {
+    final fullAdderresult = FullAdderResult();
+    fullAdderresult.sum <= output('sum');
+    fullAdderresult.cOut <= output('carry_out');
+
+    return fullAdderresult;
+  }
 }
 
 class NBitAdder extends Module {
@@ -73,15 +78,37 @@ class NBitAdder extends Module {
 }
 
 void main() async {
-  final a = Logic(name: 'a', width: 8);
-  final b = Logic(name: 'b', width: 8);
-  final nbitAdder = NBitAdder(a, b);
-
-  await nbitAdder.build();
-
   // print(nbitAdder.generateSynth());
+  test('should return true if result sum similar to truth table.', () async {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+    final cIn = Logic(name: 'carry_in');
+    final fullAdder = FullAdder(a: a, b: b, carryIn: cIn);
+    await fullAdder.build();
 
-  test('should return correct results when A and B perform add.', () async {
+    for (var i = 0; i <= 1; i++) {
+      for (var j = 0; j <= 1; j++) {
+        for (var k = 0; k <= 1; k++) {
+          a.put(i);
+          b.put(j);
+          cIn.put(k);
+
+          expect(fullAdder.fullAdderRes.sum.value.toInt(),
+              faTruthTable(i, j, k).sum,
+              reason: 'a: $i, b: $j, c: $k');
+        }
+      }
+    }
+  });
+
+  test('should return correct results when nbitadder A and B perform add.',
+      () async {
+    final a = Logic(name: 'a', width: 8);
+    final b = Logic(name: 'b', width: 8);
+
+    final nbitAdder = NBitAdder(a, b);
+    await nbitAdder.build();
+
     final randA = Random().nextInt(10);
     final randB = Random().nextInt(10);
     final addResult = randA + randB;

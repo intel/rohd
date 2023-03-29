@@ -67,14 +67,13 @@ Alright, now we know how the operator in ROHD. we can dive into the `IF...ELSE` 
 
 In today tutorial, we will review how to assign value to PORT using ROHD `IF...ELSE` conditionals. Let start by understanding ROHD `IF...ELSE` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IFBlock` which is more readable and clean.
 
-// TODO: try to explain based on the IF ELSE documentation structure, clearer.
 ### Start by declaring a conditional Block
 
-`IfBlock([])`: Represents a chain of blocks of code to be conditionally executed, like `if/else...if/else`. From the statement, we know that we have to wrap our `If...Else` using this function.
+`IfBlock([])`: Represents a chain of blocks of code to be conditionally executed, like `if/else...if/else`.
 
 ```dart
 IfBlock([
-  // your if else start here
+  // your if else inside here
 ]);
 ```
 
@@ -98,7 +97,7 @@ IfBlock([
 ]); // IfBlock
 ```
 
-`ElseIf(condition, then: [])`: `ElseIf` Statement, if the condition in `Iff` is not matched, its will skip and look for next condition in `ElseIf` condition.
+`ElseIf(condition, then: [])`: `ElseIf` Statement, if the condition in `Iff` is not matched, its will skip and look for next condition in `ElseIf` condition, then execute the `then`.
 
 ```dart
 // template
@@ -143,12 +142,10 @@ IfBlock([
 
 Alright, the syntax is quite easy. You can always come back to this page whenever you are confuse. Let see how we can implement our FullAdder using `If` and `Else` conditionals.
 
-Let look into the Truth Table of the full-adder.
-
-// TODO: Give step by step explanation on how to add the adder.
+Now, let create a truth table for the full-adder we created in last chapter. The table below shows the truth table for the full-adder.
 
 |A|B|Cin|SUM (S)|CARRY (Cout)|
-|---|---|---|---|--- |
+|---|---|---|---|---|
 |0|0|0|0|0|
 |0|0|1|1|0|
 |0|1|0|1|0|
@@ -158,7 +155,7 @@ Let look into the Truth Table of the full-adder.
 |1|1|0|0|1|
 |1|1|1|1|1|
 
-Well, maybe you already have the idea. Yes, we are going to implment this truth table using `If...Else` statement. The code below show how we convert our Logic from previous tutorial.
+Well, maybe you already have the idea. Yes, we are going to implement this truth table using `If...Else` statement. The code below show how we convert our Logic from previous tutorial.
 
 ```dart
     // Use Combinational block
@@ -201,7 +198,74 @@ Well, maybe you already have the idea. Yes, we are going to implment this truth 
     ]);
 ```
 
-Tadaa! This is the implementation of the `If...Else` statement. If you run your test, its should still work the same. That the reason we have unit test.
+So, to add our `if...else` to the as combinational logic. We have to wrap with `Combinational` and add it into the FullAdder module like below.
+
+```dart
+class FullAdder extends Module {
+  final fullAdderresult = FullAdderResult();
+
+  // Constructor
+  FullAdder({
+    required Logic a,
+    required Logic b,
+    required Logic carryIn,
+    super.name = 'full_adder',
+  }) {
+    // Declare Input Node
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    carryIn = addInput('carry_in', carryIn, width: carryIn.width);
+
+    // Declare Output Node
+    final carryOut = addOutput('carry_out');
+    final sum = addOutput('sum');
+
+    // Use Combinational block
+    Combinational([
+      IfBlock([
+        Iff(a.eq(0) & b.eq(0) & carryIn.eq(0), [
+          sum < 0,
+          carryOut < 0,
+        ]),
+        ElseIf(a.eq(0) & b.eq(0) & carryIn.eq(1), [
+          sum < 1,
+          carryOut < 0,
+        ]),
+        ElseIf(a.eq(0) & b.eq(1) & carryIn.eq(0), [
+          sum < 1,
+          carryOut < 0,
+        ]),
+        ElseIf(a.eq(0) & b.eq(1) & carryIn.eq(1), [
+          sum < 0,
+          carryOut < 1,
+        ]),
+        ElseIf(a.eq(1) & b.eq(0) & carryIn.eq(0), [
+          sum < 1,
+          carryOut < 0,
+        ]),
+        ElseIf(a.eq(1) & b.eq(0) & carryIn.eq(1), [
+          sum < 0,
+          carryOut < 1,
+        ]),
+        ElseIf(a.eq(1) & b.eq(1) & carryIn.eq(0), [
+          sum < 0,
+          carryOut < 1,
+        ]),
+        // a = 1, b = 1, cin = 1
+        Else([
+          sum < 1,
+          carryOut < 1,
+        ])
+      ]),
+    ]);
+
+    fullAdderresult.sum <= output('sum');
+    fullAdderresult.cOut <= output('carry_out');
+  }
+}
+```
+
+Tadaa! This is the implementation of the `If...Else` statement.  You can find the executable version of code at [combinational_logic.dart](combinational_logic.dart). If you run your test, its should still work the same.
 
 So, how about `switch...case`? Well, its pretty much the same. Let see the syntax in `Case` and `CaseZ`.
 
@@ -309,7 +373,7 @@ Combinational([
 
 Yes, that it for `Case`, `CaseZ` in ROHD.
 
-// TODO: Make the question more clear.
-Exercise:
+Exercises:
 
-1. Code Case and CaseZ in ROHD for full adder.
+1. Now, try to code `Case` and `CaseZ` in ROHD for full adder.
+2. Add combinational logic to `FullSubtractor` you created in previous exercise (You can use either IFBlock / Case) to create.
