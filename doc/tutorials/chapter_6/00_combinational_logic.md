@@ -69,9 +69,9 @@ The most important part that you have to notice here is the assignment operator 
 
 ## If, ElseIf, Else
 
-Alright, now we know how the operator in ROHD. we can dive into the `IF...ELSE` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate this pieces of hardware. While in ROHD, `IF...ELSE` is conditionally assignment which assign signal to a port, which we can think something like `IF` Logic signal `A` is present, `THEN` assign output port `B` to `A`.
+Alright, now we know how the operator in ROHD. we can dive into the `If...Else` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate that pieces of hardware. While in ROHD, `If...Else` is conditionally assignment which assign signal to a port, which we can think something like `If` Logic signal `A` is present, `Then` assign output port `B` to `A`.
 
-In today tutorial, we will review how to assign value to PORT using ROHD `IF...ELSE` conditionals. Let start by understanding ROHD `IF...ELSE` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IFBlock` which is more readable and clean.
+In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IfBlock` which is more readable and clean.
 
 ### Start by declaring a conditional Block
 
@@ -372,7 +372,7 @@ Yes, that it for `Case` in ROHD.
 
 ## Exercises
 
-1. In the file [case.dart](case.dart), a `Case` Conditionals is created for this but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
+1. In the file [case.dart](case.dart), a `Case` Conditionals is created for full adder truth table but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
 
     - Answer to this exercise can be found at [answers/exercise_1_case_answer.dart](./answers/exercise_1_case_answer.dart).
 
