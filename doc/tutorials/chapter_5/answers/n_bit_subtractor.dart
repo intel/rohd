@@ -2,8 +2,8 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'full_subtractor.dart';
 
-class NBitFullAdder extends Module {
-  NBitFullAdder(Logic a, Logic b) {
+class NBitFullSubtractor extends Module {
+  NBitFullSubtractor(Logic a, Logic b) {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
@@ -31,7 +31,7 @@ Future<void> main() async {
   final a = Logic(name: 'a', width: 8);
   final b = Logic(name: 'b', width: 8);
 
-  final mod = NBitFullAdder(a, b);
+  final mod = NBitFullSubtractor(a, b);
   await mod.build();
 
   print(mod.generateSynth());
