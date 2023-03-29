@@ -375,5 +375,10 @@ Yes, that it for `Case`, `CaseZ` in ROHD.
 
 Exercises:
 
-1. Now, try to code `Case` and `CaseZ` in ROHD for full adder.
-2. Add combinational logic to `FullSubtractor` you created in previous exercise (You can use either IFBlock / Case) to create.
+1. In the file [case.dart](case.dart), a `Case` Conditionals is created for this but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
+
+    - Answer to this exercise can be found at [answers/n_bit_subtractor.dart](./answers/n_bit_subtractor.dart).
+
+2. Add combinational logic to `FullSubtractor` you created in previous exercise (You can use either IFBlock / Case Conditionals) to create.
+
+  - - Answer to this exercise can be found at [answers/n_bit_subtractor.dart](./answers/n_bit_subtractor.dart).

@@ -82,8 +82,8 @@ class NBitAdder extends Module {
 void main() async {
   group('full adder', () {
     test(
-        'should return true if result sum similar to truth table when using '
-        'If as conditionals.', () async {
+        'should return true if result sum and cout similar to truth table when'
+        ' using If as conditionals.', () async {
       final a = Logic(name: 'a');
       final b = Logic(name: 'b');
       final cIn = Logic(name: 'carry_in');
@@ -98,15 +98,25 @@ void main() async {
             b.put(j);
             cIn.put(k);
 
-            expect(fullAdder.fullAdderRes.sum.value.toInt(),
-                faTruthTable(i, j, k).sum,
-                reason: 'a: $i, b: $j, c: $k');
+            final actualSum = fullAdder.fullAdderRes.sum.value.toInt();
+            final expectedSum = faTruthTable(i, j, k).sum;
+
+            final actualCout = fullAdder.fullAdderRes.cOut.value.toInt();
+            final expectedCout = faTruthTable(i, j, k).cOut;
+
+            expect(actualSum, expectedSum,
+                reason: 'a: $i, b: $j, c: $k, ActualSum: $actualSum, '
+                    'ExpectedSum: $expectedSum');
+            expect(actualCout, expectedCout,
+                reason: 'a: $i, b: $j, c: $k, ActualCout: $actualCout, '
+                    'ExpectedCout: $expectedCout');
           }
         }
       }
     });
+
     test(
-        'should return true if result sum similar to truth table when using '
+        'should return true if result sum and cout similar to truth table when using '
         'Case as conditionals.', () async {
       final a = Logic(name: 'a');
       final b = Logic(name: 'b');
@@ -123,9 +133,18 @@ void main() async {
             b.put(j);
             cIn.put(k);
 
-            expect(fullAdder.fullAdderRes.sum.value.toInt(),
-                faTruthTable(i, j, k).sum,
-                reason: 'a: $i, b: $j, c: $k');
+            final actualSum = fullAdder.fullAdderRes.sum.value.toInt();
+            final expectedSum = faTruthTable(i, j, k).sum;
+
+            final actualCout = fullAdder.fullAdderRes.cOut.value.toInt();
+            final expectedCout = faTruthTable(i, j, k).cOut;
+
+            expect(actualSum, expectedSum,
+                reason: 'a: $i, b: $j, c: $k, ActualSum: $actualSum, '
+                    'ExpectedSum: $expectedSum');
+            expect(actualCout, expectedCout,
+                reason: 'a: $i, b: $j, c: $k, ActualCout: $actualCout, '
+                    'ExpectedCout: $expectedCout');
           }
         }
       }
