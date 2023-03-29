@@ -73,6 +73,8 @@ Alright, now we know how the operator in ROHD. we can dive into the `If...Else` 
 
 In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IfBlock` which is more readable and clean.
 
+*Note: `If...Else` and `Case` in ROHD is written in capital letter.*
+
 ### Start by declaring a conditional Block
 
 `IfBlock([])`: Represents a chain of blocks of code to be conditionally executed, like `if/else...if/else`.
@@ -281,7 +283,7 @@ ROHD supports Case statements, including priority and unique flavors, which are 
 
 ### Start by declaring a Case
 
-`Case([])`: In `Case`, whenever an item in [items] matches [expression], it will be executed. If none of [items] match, then [defaultItem] is executed.
+`Case([])`: In a Case statement, each item in the `items` list is checked against the `expression`. If a matching item is found, its associated code block is executed. If none of the items match, the code block associated with the [defaultItem] is executed instead. This allows you to handle different scenarios in your program based on the value of the [expression].
 
 ```dart
 Case(
@@ -293,7 +295,7 @@ Case(
 
 ### Add Expressions
 
-`Logic expression`: The expression of `Case` are in the form of logic, so if you have more than one `signal`, you might want to use `swizzle()` to combine as one.
+`Logic expression`: `Case` expressions are made up of logical values. If you have multiple signals that you want to combine into one expression, you can use the `swizzle()` function. This function allows you to create a new expression by selecting individual elements from existing expressions and combining them in a specified order. By using `swizzle()`, you can create complex expressions that represent the behavior of your circuit.
 
 ```dart
 Case(
@@ -304,7 +306,7 @@ Case(
 
 ### Add Case Items
 
-`CaseItem(Logic value, List<Conditional> then)`: `CaseItem` accepts `Logic` value as condition, if the condition matched; then the `then` condition will be executed. The `then` condition is added as a list to be driven during the Simulation.
+`CaseItem(Logic value, List<Conditional> then)`: The `CaseItem` function takes a `Logic` value as a condition. If the condition is met, the `then` condition will be executed. The `then` condition is a list of actions to be carried out during the simulation.
 
 ```dart
 List<CaseItem>
