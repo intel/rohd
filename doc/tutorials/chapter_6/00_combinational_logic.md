@@ -6,6 +6,12 @@
   - [Start by declaring a conditional Block](#start-by-declaring-a-conditional-block)
   - [Add the condition inside the conditional block](#add-the-condition-inside-the-conditional-block)
 - [Case](#case)
+  - [Start by declaring a case](#start-by-declaring-a-case)
+  - [Add Expressions](#add-expressions)
+  - [Add Case Items](#add-case-items)
+  - [Add Default Items](#add-default-items)
+  - [Encapsulate case into a Combinational](#encapsulate-case-into-a-combinational)
+- [Exercises](#exercises)
 
 ## Learning Outcome
 
@@ -364,7 +370,7 @@ Combinational([
 
 Yes, that it for `Case` in ROHD.
 
-Exercises:
+## Exercises
 
 1. In the file [case.dart](case.dart), a `Case` Conditionals is created for this but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
 

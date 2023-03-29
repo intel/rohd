@@ -56,11 +56,18 @@
 
 ## Chapter 6: Combinational Logic
 
-- Combinational Logic
-- Explanation of Conditionals
-- Example of Combinational
-- Conditional assignments
-- If/Else, Case/CaseZ, etc.
+- [What is Combinational Logic?](./chapter_6/00_combinational_logic.md#what-is-combinational-logic)
+- [What is Conditionals?](./chapter_6/00_combinational_logic.md#what-is-conditionals)
+- [If, ElseIf, Else](./chapter_6/00_combinational_logic.md#if-elseif-else)
+  - [Start by declaring a conditional Block](./chapter_6/00_combinational_logic.md#start-by-declaring-a-conditional-block)
+  - [Add the condition inside the conditional block](./chapter_6/00_combinational_logic.md#add-the-condition-inside-the-conditional-block)
+- [Case](./chapter_6/00_combinational_logic.md#case)
+  - [Start by declaring a case](./chapter_6/00_combinational_logic.md#start-by-declaring-a-case)
+  - [Add Expressions](./chapter_6/00_combinational_logic.md#add-expressions)
+  - [Add Case Items](./chapter_6/00_combinational_logic.md#add-case-items)
+  - [Add Default Items](./chapter_6/00_combinational_logic.md#add-default-items)
+  - [Encapsulate case into a Combinational](./chapter_6/00_combinational_logic.md#encapsulate-case-into-a-combinational)
+- [Exercises](./chapter_6/00_combinational_logic.md#exercises)
 
 ## Chapter 7: Sequential Logic
 
