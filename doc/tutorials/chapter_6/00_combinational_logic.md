@@ -5,13 +5,13 @@
 - [If, ElseIf, Else](#if-elseif-else)
   - [Start by declaring a conditional Block](#start-by-declaring-a-conditional-block)
   - [Add the condition inside the conditional block](#add-the-condition-inside-the-conditional-block)
-- [Case, CaseZ](#case-casez)
+- [Case](#case)
 
 ## Learning Outcome
 
 In this chapter:
 
-- You will learn how to create a combinational logic that are equivalent to System Verilog `always_comb`. We will review on what is conditionals and how to use combinational condition function such as `If..Else` and `Case...CaseZ`.
+- You will learn how to create a combinational logic that are equivalent to System Verilog `always_comb`. We will review on what is conditionals and how to use combinational condition function such as `If..Else` and `Case`.
 
 ## What is Combinational Logic?
 
@@ -267,11 +267,11 @@ class FullAdder extends Module {
 
 Tadaa! This is the implementation of the `If...Else` statement.  You can find the executable version of code at [combinational_logic.dart](combinational_logic.dart). If you run your test, its should still work the same.
 
-So, how about `switch...case`? Well, its pretty much the same. Let see the syntax in `Case` and `CaseZ`.
+So, how about `switch...case`? Well, its pretty much the same. Let see the syntax in `Case`.
 
-## Case, CaseZ
+## Case
 
-ROHD supports Case and CaseZ statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog. For example:
+ROHD supports Case statements, including priority and unique flavors, which are implemented in the same way as SystemVerilog. For example:
 
 ### Start by declaring a Case
 
@@ -358,27 +358,18 @@ Combinational([
       d < 1,
     ],
     conditionalType: ConditionalType.Unique
-  ),
-  CaseZ([b,a].swizzle(),[
-      CaseItem(Const(LogicValue.ofString('z1')), [
-        e < 1,
-      ])
-    ], defaultItem: [
-      e < 0,
-    ],
-    conditionalType: ConditionalType.Priority
   )
 ]);
 ```
 
-Yes, that it for `Case`, `CaseZ` in ROHD.
+Yes, that it for `Case` in ROHD.
 
 Exercises:
 
 1. In the file [case.dart](case.dart), a `Case` Conditionals is created for this but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
 
-    - Answer to this exercise can be found at [answers/n_bit_subtractor.dart](./answers/n_bit_subtractor.dart).
+    - Answer to this exercise can be found at [answers/exercise_1_case_answer.dart](./answers/exercise_1_case_answer.dart).
 
-2. Add combinational logic to `FullSubtractor` you created in previous exercise (You can use either IFBlock / Case Conditionals) to create.
+2. Add combinational logic to `FullSubtractor` you created in previous exercise (Use Case Conditionals).
 
-  - - Answer to this exercise can be found at [answers/n_bit_subtractor.dart](./answers/n_bit_subtractor.dart).
+    - Answer to this exercise can be found at [answers/exercise_2_n_bit_subtractor.dart](./answers/exercise_2_n_bit_subtractor.dart).

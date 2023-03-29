@@ -91,14 +91,6 @@ class NBitFullSubtractor extends Module {
 }
 
 Future<void> main() async {
-  final a = Logic(name: 'a', width: 8);
-  final b = Logic(name: 'b', width: 8);
-
-  final mod = NBitFullSubtractor(a, b);
-  await mod.build();
-
-  // print(mod.generateSynth());
-
   group('Full Subtractor', () {
     test('should return True when cas conditionals matched truth table',
         () async {
@@ -140,12 +132,15 @@ Future<void> main() async {
   test(
       'should return True when value of nbitsubtractor subtract a b '
       'is matched.', () async {
-    final randA = Random().nextInt(10) + 10;
-    final randB = Random().nextInt(10);
-    final minusResult = randA - randB;
+    final a = Logic(name: 'a', width: 8);
+    final b = Logic(name: 'b', width: 8);
 
     final mod = NBitFullSubtractor(a, b);
     await mod.build();
+
+    final randA = Random().nextInt(10) + 10;
+    final randB = Random().nextInt(10);
+    final minusResult = randA - randB;
 
     a.put(randA);
     b.put(randB);
