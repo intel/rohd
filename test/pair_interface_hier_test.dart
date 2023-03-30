@@ -17,7 +17,7 @@ class SubInterface extends PairInterface {
           portsFromConsumer: [Port('rsp')],
           portsFromProducer: [Port('req')],
         );
-  SubInterface.match(SubInterface super.otherInterface) : super.match();
+  SubInterface.match(SubInterface super.otherInterface) : super.clone();
 }
 
 class TopLevelInterface extends PairInterface {
@@ -49,12 +49,12 @@ class TopLevelInterface extends PairInterface {
 
     srcInterface as TopLevelInterface;
 
-    final role = outputTags!.contains(PairDirection.fromProducer)
-        ? PairRole.producer
+    final role = outputTags!.contains(PairDirection.fromProvider)
+        ? PairRole.provider
         : PairRole.consumer;
 
     for (var i = 0; i < numSubInterfaces; i++) {
-      subInterfaces[i].simpleConnect(
+      subInterfaces[i].simpleConnectIO(
           module, srcInterface.subInterfaces[i], role,
           uniquify: (original) => '${original}_$i');
     }
@@ -65,7 +65,7 @@ class HierProducer extends Module {
   late final TopLevelInterface _intf;
   HierProducer(TopLevelInterface intf) {
     _intf = TopLevelInterface.match(intf)
-      ..simpleConnect(this, intf, PairRole.producer);
+      ..simpleConnectIO(this, intf, PairRole.provider);
   }
 }
 
@@ -73,7 +73,7 @@ class HierConsumer extends Module {
   late final TopLevelInterface _intf;
   HierConsumer(TopLevelInterface intf) {
     _intf = TopLevelInterface.match(intf)
-      ..simpleConnect(this, intf, PairRole.consumer);
+      ..simpleConnectIO(this, intf, PairRole.consumer);
   }
 }
 

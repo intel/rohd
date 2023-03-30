@@ -19,22 +19,43 @@ class SimpleInterface extends PairInterface {
           portsFromProducer: [Port('req')],
           sharedInputPorts: [Port('clk')],
         );
-  SimpleInterface.match(SimpleInterface super.otherInterface) : super.match();
+  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
 }
 
-class SimpleProducer extends Module {
+class SimpleProvider extends Module {
   late final SimpleInterface _intf;
-  SimpleProducer(SimpleInterface intf) {
-    _intf = SimpleInterface.match(intf)
-      ..simpleConnect(this, intf, PairRole.producer);
+  SimpleProvider(SimpleInterface intf) {
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.provider);
+
+    SimpleSubProvider(_intf);
+
+    // final copyIntf = SimpleInterface.clone(_intf)
+    //   ..connectTo(
+    //       _intf, PairRole.provider, SharedInputConnectionMode.otherDrivesThis);
+
+    // final copyIntf = SimpleInterface.clone(_intf);
+    // _intf.driveOther(copyIntf, PairDirection.fromConsumer);
+    // _intf.driveOther(copyIntf, PairDirection.sharedInputs);
+    // copyIntf.driveOther(_intf, PairDirection.fromProvider);
+
+    // SimpleSubProvider(copyIntf);
+  }
+}
+
+class SimpleSubProvider extends Module {
+  late final SimpleInterface _intf;
+  SimpleSubProvider(SimpleInterface intf) {
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   late final SimpleInterface _intf;
   SimpleConsumer(SimpleInterface intf) {
-    _intf = SimpleInterface.match(intf)
-      ..simpleConnect(this, intf, PairRole.consumer);
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.consumer);
   }
 }
 
@@ -44,7 +65,7 @@ class SimpleTop extends Module {
     final intf = SimpleInterface();
     intf.clk <= clk;
     SimpleConsumer(intf);
-    SimpleProducer(intf);
+    SimpleProvider(intf);
   }
 }
 

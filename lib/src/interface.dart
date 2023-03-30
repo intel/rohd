@@ -150,9 +150,9 @@ class Interface<TagType> {
 
 // TODO(mkorbel1): addSubInterface type of function
 
-enum PairDirection { fromProducer, fromConsumer, sharedInputs }
+enum PairDirection { fromProvider, fromConsumer, sharedInputs }
 
-enum PairRole { producer, consumer }
+enum PairRole { provider, consumer }
 
 class PairInterface extends Interface<PairDirection> {
   /// TODO(): fix doc
@@ -164,7 +164,7 @@ class PairInterface extends Interface<PairDirection> {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
     }
     if (portsFromProducer != null) {
-      setPorts(portsFromProducer, [PairDirection.fromProducer]);
+      setPorts(portsFromProducer, [PairDirection.fromProvider]);
     }
     if (sharedInputPorts != null) {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
@@ -172,10 +172,10 @@ class PairInterface extends Interface<PairDirection> {
   }
 
   // why not? is this good?
-  PairInterface clone() => PairInterface(
-      portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
-      portsFromProducer: _getMatchPorts(this, PairDirection.fromProducer),
-      sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs));
+  // PairInterface clone() => PairInterface(
+  //     portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
+  //     portsFromProducer: _getMatchPorts(this, PairDirection.fromProvider),
+  //     sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs));
 
   static List<Port> _getMatchPorts(
           Interface<PairDirection> otherInterface, PairDirection tag) =>
@@ -185,29 +185,76 @@ class PairInterface extends Interface<PairDirection> {
           .map((e) => Port(e.key, e.value.width))
           .toList();
 
-  PairInterface.match(Interface<PairDirection> otherInterface)
+  PairInterface.clone(Interface<PairDirection> otherInterface)
       : this(
             portsFromConsumer:
                 _getMatchPorts(otherInterface, PairDirection.fromConsumer),
             portsFromProducer:
-                _getMatchPorts(otherInterface, PairDirection.fromProducer),
+                _getMatchPorts(otherInterface, PairDirection.fromProvider),
             sharedInputPorts:
                 _getMatchPorts(otherInterface, PairDirection.sharedInputs));
 
-  void simpleConnect(
+  //TODO: we want to add connection to another interface in the same direction, like forwarding
+
+  /// Connects `this` as a source of `fromProvider` signals to drive `fromProvider` signals of [other]
+  /// Connects `this` as a receiver of `fromConsumer` signals driven by the `fromConsumer` signals of [other]
+  void connectTo(PairInterface other, PairRole thisRole,
+      SharedInputConnectionMode sharedInputConnectionMode) {
+    // options:
+    //  - should other drive this for sharedInputs?
+    //  - should this drive other for sharedInputs?
+
+    // connect other.fromProvider signals to drive fromProvider signals of this
+    getPorts({
+      thisRole == PairRole.provider
+          ? PairDirection.fromConsumer
+          : PairDirection.fromProvider
+    }).forEach((portName, thisPort) {
+      thisPort <= other.port(portName);
+    });
+
+    getPorts({
+      thisRole == PairRole.provider
+          ? PairDirection.fromProvider
+          : PairDirection.fromConsumer
+    }).forEach((portName, thisPort) {
+      other.port(portName) <= thisPort;
+    });
+
+    if (sharedInputConnectionMode ==
+        SharedInputConnectionMode.otherDrivesThis) {
+      getPorts({PairDirection.sharedInputs}).forEach((portName, thisPort) {
+        thisPort <= other.port(portName);
+      });
+    } else if (sharedInputConnectionMode ==
+        SharedInputConnectionMode.thisDrivesOther) {
+      getPorts({PairDirection.sharedInputs}).forEach((portName, thisPort) {
+        other.port(portName) <= thisPort;
+      });
+    }
+  }
+
+  /// Makes `this` drive interface signals tagged as [direction] on [other].
+  void driveOther(PairInterface other, PairDirection direction) {
+    getPorts({direction}).forEach((portName, thisPort) {
+      other.port(portName) <= thisPort;
+    });
+  }
+
+  void simpleConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
     connectIO(module, srcInterface,
         inputTags: {
           PairDirection.sharedInputs,
-          if (role == PairRole.producer)
+          if (role == PairRole.provider)
             PairDirection.fromConsumer
           else
-            PairDirection.fromProducer
+            PairDirection.fromProvider
         },
         outputTags: role == PairRole.consumer
             ? {PairDirection.fromConsumer}
-            : {PairDirection.fromProducer},
+            : {PairDirection.fromProvider},
         uniquify: uniquify);
 
     // for(final subInterface in _subInterfaces) {
@@ -229,8 +276,10 @@ class PairInterface extends Interface<PairDirection> {
 
   @protected
   void addSubPairInterface(String name, PairInterface subInterface) =>
-      addSubInterface(name, subInterface, simpleConnect);
+      addSubInterface(name, subInterface, simpleConnectIO);
 }
+
+enum SharedInputConnectionMode { dontConnect, thisDrivesOther, otherDrivesThis }
 
 class _SubInterface<T> {
   final String name;
