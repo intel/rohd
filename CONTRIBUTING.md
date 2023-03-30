@@ -123,7 +123,7 @@ Please include the SPDX tag near the top of any new files you create:
 /// SPDX-License-Identifier: BSD-3-Clause
 ```
 
-You may find that reading the [Architecture](doc/Architecture.md) document will be helpful to becoming familiar with the design of the ROHD framework.
+You may find that reading the [Architecture](doc/architecture.md) document will be helpful to becoming familiar with the design of the ROHD framework.
 
 ### Creating a New Package
 
