@@ -1,20 +1,19 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// byte_enable_benchmark.dart
-/// Benchmarking for simple byte enable hardware
-///
-/// 2022 December 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// byte_enable_benchmark.dart
+// Benchmarking for simple byte enable hardware
+//
+// 2022 December 2
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
 
 class ByteEnableBenchmark extends BenchmarkBase {
-  late Logic result;
-  late Logic select;
-  late Logic original;
+  late final Logic result;
+  late final Logic select;
+  late final Logic original;
 
   static const int numBytes = 128;
 
@@ -39,9 +38,6 @@ class ByteEnableBenchmark extends BenchmarkBase {
               Const(0, width: 8),
             )).swizzle();
   }
-
-  @override
-  void teardown() {}
 
   @override
   void run() {
