@@ -46,15 +46,12 @@ In ROHD, `Module` has inputs and outputs that connects them. However, there are 
         // Your Logic must use the Logic from addInput/inputs
         b <= a;
       }
+      // getter (Create a getter function to expose your output)
+      Logic get b => output('b');
     }
     ```
 
 3. Logic must be defined *before* the call to `super.build()`, which always must be called **at the end of the `build()` method** if it is overidden.
-
-```dart
-// Example of getter in ROHD
-Logic get x => output('x');
-```
 
 The `Module` base class has an optional String argument 'name' which is an instance name.
 
