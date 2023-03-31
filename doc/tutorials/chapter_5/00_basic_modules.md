@@ -136,7 +136,7 @@ endmodule : SimpleModule
 
 - Answer to this exercise can be found at [answers/full_adder.dart](./answers/full_adder.dart) and [answers/full_subtractor.dart](./answers/full_subtractor.dart)
 
-## Composing modules withon other modules (N-Bit Adder)
+## Composing modules within other modules (N-Bit Adder)
 
 Now, your full-adder has been constructed as a module. Let's try to build an N-bit Adder module now. It's going to be similar to what we did in the basic generation. To recap, an N-bit Adder is composed of several Adders together. If you forget what is N-Bit adder, you can refer back to tutorial [chapter 4](../chapter_4/00_basic_generation.md).
 
