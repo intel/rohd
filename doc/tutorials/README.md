@@ -36,6 +36,7 @@
 - [Introduction to Test Driven Development](./chapter_3/00_unit_test.md#introduction-to-test-driven-development)
 - [What is a Full-Adder?](./chapter_3/00_unit_test.md#what-is-a-full-adder)
 - [Create a Full-Adder with TDD](./chapter_3/00_unit_test.md#create-full-adder-with-tdd)
+- [Exercise](./chapter_3/00_unit_test.md#exercise)
 
 ## Chapter 4: Basic Generation
 

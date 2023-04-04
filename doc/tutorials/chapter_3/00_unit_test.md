@@ -3,6 +3,7 @@
 - [Introduction to Test Driven Development](./00_unit_test.md#introduction-to-test-driven-development)
 - [What is a Full-Adder?](./00_unit_test.md#what-is-a-full-adder)
 - [Create a Full-Adder with TDD](./00_unit_test.md#create-full-adder-with-tdd)
+- [Exercise](./00_unit_test.md#exercise)
 
 ## Learning Outcome
 
@@ -18,7 +19,7 @@ TDD is a software development approach in which test cases are created to specif
 
 ## What is a Full-Adder?
 
-A Full Adder is an adder that takes three inputs and produces two outputs: the first two inputs are A and B, while the third input is a carry-in (C-IN). The output carry is designated as C-OUT, while the normal output is designated as S (SUM). A Full Adder logic is designed to handle up to eight inputs to create a byte-wide adder and can cascade the carry bit from one adder to another. We use a Full Adder when a carry-in bit is available because a 1-bit half-adder cannot take a carry-in bit, and another 1-bit adder must be used instead. A 1-bit Full Adder adds three operands and generates a 2-bit result.
+A Full Adder is an adder that takes three inputs and produces two outputs: the first two inputs are A and B, while the third input is a carry-in (C-IN). The output carry is designated as C-OUT, while the normal output is designated as S (SUM). We use a Full Adder when a carry-in bit is available because a 1-bit half-adder cannot take a carry-in bit, and another 1-bit adder must be used instead. A 1-bit Full Adder adds three operands and generates a 2-bit result.
 
 Below is the circuit diagram of full-adder. From the diagram, we can see that the output `SUM` is the result of `XOR(XOR(A, B), C-IN)`, while `C-Out` is the result of `OR(AND(C-IN, XOR(A, B)), AND(B, A))`.
 
@@ -147,3 +148,9 @@ test('should return true if result c-out is similar to truth table.', () async {
 ```
 
 Yeah, thats it. Congratulations! We have now successfully created a Full-Adder. You can find the executable code at [full_adder.dart](./full_adder.dart).
+
+## Exercise
+
+1. Based on what you learn, build a [Full Subtractor](https://www.geeksforgeeks.org/full-subtractor-in-digital-logic).
+
+Answer to this exercise can be found at [answers/exercise.dart](./answers/exercise.dart). For those who wish to see the answer implementation with system verilog, you can check at [answers/exercise_sv.dart](./answers/exercise_sv.dart).
