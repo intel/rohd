@@ -304,7 +304,6 @@ class Sequential extends _Always {
   Logic? reset;
 
   /// This sets a particular Sequential conditions receiver to resetValues
-  // ignore: overridden_fields
   Map<Logic, dynamic>? resetValues = {};
 
   /// Constructs a [Sequential] single-triggered by [clk].
