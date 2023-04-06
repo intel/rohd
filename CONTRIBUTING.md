@@ -56,7 +56,7 @@ If you're developing on a remote host, VSCode has a Remote SSH extension that ca
 
 If you're on Microsoft Windows, you may want to consider developing with Ubuntu WSL for a Linux environment: <https://learn.microsoft.com/windows/wsl/install>
 
-#### In a GitHub Codespaces
+#### In GitHub Codespaces
 
 [GitHub Codespaces](https://github.com/features/codespaces) are a great feature provided by GitHub allowing you to get into a development environment based on a pre-configured container very quickly! You can use them for a limited number of hours per month for free. ROHD has set up GitHub Codespaces so that you can immediately start running examples and developing.
 
