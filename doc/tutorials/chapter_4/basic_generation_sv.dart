@@ -1,6 +1,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: avoid_print
+
 class FullAdderResult {
   final sum = Logic(name: 'sum');
   final cOut = Logic(name: 'c_out');

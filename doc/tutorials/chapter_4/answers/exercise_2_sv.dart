@@ -1,6 +1,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: avoid_print, prefer_asserts_in_initializer_lists
+
 void main() async {
   final a = Logic(name: 'a', width: 8);
   final b = Logic(name: 'b', width: 8);
