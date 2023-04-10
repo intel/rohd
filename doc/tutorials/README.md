@@ -40,11 +40,10 @@
 
 ## Chapter 4: Basic Generation
 
-- Basic generation: Put adder in a loop (N-Bits Adder)
-- Conditional generation and flow control
-- Using functions to construct hardware
-- Using classes to construct hardware
-- Make a function on one bit full-adder and make a for loop that loop through this adder to make N-bit full adder.
+- [What is n-bit adder?](./chapter_4/00_basic_generation.md#what-is-n-bit-adder)
+- [Create a unit-test](./chapter_4/00_basic_generation.md#create-a-unit-test)
+- [Create Dart function and class](./chapter_4/00_basic_generation.md#create-dart-function-and-class)
+- [Exercise](./chapter_4/00_basic_generation.md#exercise)
 
 ## Chapter 5: Basics of modules
 
