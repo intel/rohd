@@ -133,19 +133,17 @@ abstract class Module {
   /// Return string type definition name if validation passed
   /// else throw exception.
   ///
-  /// This validation method ensure that [definitionName] is valid if
-  /// [reserveDefinitionName] set to `true`.
-  static String? _nameValidation(
-      String? definitionName, bool reserveDefinitionName) {
-    if (reserveDefinitionName && definitionName == null) {
+  /// This validation method ensure that [name] is valid if
+  /// [reserveName] set to `true`.
+  static String? _nameValidation(String? name, bool reserveName) {
+    if (reserveName && name == null) {
       throw NullReservedNameException();
-    } else if (reserveDefinitionName && definitionName!.isEmpty) {
+    } else if (reserveName && name!.isEmpty) {
       throw EmptyReservedNameException();
-    } else if (reserveDefinitionName &&
-        !Sanitizer.isSanitary(definitionName!)) {
+    } else if (reserveName && !Sanitizer.isSanitary(name!)) {
       throw InvalidReservedNameException();
     } else {
-      return definitionName;
+      return name;
     }
   }
 
