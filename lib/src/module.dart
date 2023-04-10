@@ -556,9 +556,7 @@ abstract class Module {
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
     if (!Sanitizer.isSanitary(name)) {
-      throw Exception(
-          'Invalid name "$name", must be legal SystemVerilog and not collide'
-          ' with any keywords.');
+      throw InvalidPortNameException(name);
     }
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');

@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
@@ -55,7 +56,7 @@ void main() {
         () async {
       expect(() async {
         LogicTestModule('');
-      }, throwsA((dynamic e) => e is Exception));
+      }, throwsA((dynamic e) => e is InvalidPortNameException));
     });
   });
 }
