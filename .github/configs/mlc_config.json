@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "^https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html$"
+    },
+    {
+      "pattern": "^https://github.com/intel/rohd/blob/main/doc/tree_example.md$"
     }
   ]
 }

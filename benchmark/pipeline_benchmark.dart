@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// pipeline_benchmark.dart
-/// Benchmarking for pipeline simulation performance
-///
-/// 2022 September 28
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// pipeline_benchmark.dart
+// Benchmarking for pipeline simulation performance
+//
+// 2022 September 28
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
@@ -14,7 +13,7 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import '../test/pipeline_test.dart';
 
 class PipelineBenchmark extends AsyncBenchmarkBase {
-  late RVPipelineModule _rvPipelineModule;
+  late final RVPipelineModule _rvPipelineModule;
 
   PipelineBenchmark() : super('Pipeline');
 
