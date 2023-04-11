@@ -118,7 +118,7 @@ class ShiftRegister extends Module {
 }
 ```
 
-Now, its time for us to test for the simulation. Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin`.
+Now, its time for us to test for the simulation. Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin`. The unit test
 
 ```dart
 void main() async {
