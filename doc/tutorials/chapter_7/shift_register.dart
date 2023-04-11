@@ -35,21 +35,84 @@ void main() async {
   test('check for value shift', () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic(name: 'reset');
-    final sin = Logic(name: 'sin', width: 1);
+    final sin = Logic(name: 'sin');
 
     final shiftReg = ShiftRegister(clk, reset, sin);
     await shiftReg.build();
-    print(shiftReg.generateSynth());
 
     reset.inject(1);
     sin.inject(0);
 
+    void printFlop([String message = '']) {
+      print('@t=${Simulator.time}:\t'
+          ' input=${sin.value}, output '
+          '=${shiftReg.sout.value.toString(includeWidth: false)}\t$message');
+    }
+
     // set a max time in case something goes longer
     Simulator.setMaxSimTime(100);
+    unawaited(Simulator.run());
+
+    WaveDumper(shiftReg,
+        outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
+
+    printFlop('Before');
+
+    await clk.nextPosedge;
+    reset.put(0);
+    sin.put(1);
 
     // kick-off the simulator, but we don't want to wait
-    unawaited(Simulator.run());
     await clk.nextPosedge;
-    print(shiftReg.sout.value.toString(includeWidth: false));
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00000001'));
+
+    await clk.nextPosedge;
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00000011'));
+
+    await clk.nextPosedge;
+    sin.put(0);
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00000111'));
+
+    await clk.nextPosedge;
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00001110'));
+
+    await clk.nextPosedge;
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00011100'));
+
+    await clk.nextPosedge;
+    sin.put(1);
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('00111000'));
+
+    await clk.nextPosedge;
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('01110001'));
+
+    await clk.nextPosedge;
+    printFlop();
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('11100011'));
+
+    await clk.nextPosedge;
+    printFlop('Final');
+    expect(
+        shiftReg.sout.value.toString(includeWidth: false), equals('11000111'));
+
+    // we're done, we can end the Simulation
+    Simulator.endSimulation();
+
+    await Simulator.simulationEnded;
   });
 }
