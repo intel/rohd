@@ -181,8 +181,7 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName =
-            _nameValidation(name, reserveName) ?? 'unnamed_module',
+      : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
         _definitionName =
             _nameValidation(definitionName, reserveDefinitionName);
 
