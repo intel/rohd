@@ -8,7 +8,7 @@
 /// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 ///
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:test/test.dart';
 
 class TopModule extends Module {
@@ -53,18 +53,22 @@ void main() {
     await Simulator.reset();
   });
 
-  group('simcompare', () {
-    test('multimodules', () async {
+  group('synth builder', () {
+    test('should throw exception if module is not built', () async {
       final mod = TopModule(Logic(width: 4), Logic());
+      expect(() async {
+        SynthBuilder(mod, SystemVerilogSynthesizer());
+      }, throwsA((dynamic e) => e is ModuleNotBuiltException));
+    });
 
-      final bmod = BModule(Logic());
-      await bmod.build();
+    test('should able to create submodule in system verilog rtl', () async {
+      final mod = TopModule(Logic(width: 4), Logic());
+      await mod.build();
 
-      final syn = SynthBuilder(bmod, SystemVerilogSynthesizer());
-
-      print(syn.toString());
-
-      // expect(simResult, equals(true));
+      for (final submod in mod.subModules) {
+        final synth = SynthBuilder(submod, SystemVerilogSynthesizer());
+        expect(synth.getFileContents()[0], contains(submod.definitionName));
+      }
     });
   });
 }
