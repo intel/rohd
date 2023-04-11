@@ -118,7 +118,71 @@ class ShiftRegister extends Module {
 }
 ```
 
-Now, its time for us to test for the simulation. Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin`. The unit test
+## ROHD Simulator
+
+Now, it's time to dive in unit test and Simulation module in ROHD. ROHD simulator is a static class accessible as `Simulator` which implements a simple event-based simulator. All `Logic`s in Dart have `glitch` events which propagate values to connected `Logic`s downstream. In this way, ROHD propagates values across the entire graph representation of the hardware (without any `Simulator` involvement required).
+
+The simulator has a concept of (unitless) time, and arbitrary Dart function can be registerd to occur ar arbitrary times in the simulator. Asking the `Simulator` to run causes it to iterate through all deposit signals on `logic`s, it propagates values across the hardware.
+
+- To register a function at an arbitrary timestamp, use `Simulator.registerAction`
+
+```dart
+final clk = SimpleClockGenerator(10).clk;
+...
+Simulator.registerAction(25, () => reset.put(0)); // put reset to 0 at time 25
+```
+
+- To set a maximum simulation time, use `Simulator.setMaxSimTime`
+
+```dart
+reset.inject
+...
+Simulator.setMaxSimTime(100); // set maximum time to 100
+```
+
+- To immediately end the simulation at the end of the current timestamp, use `Simulator.endSimulation`
+
+```dart
+Simulator.registerAction(75, Simulator.endSimulation); 
+```
+
+- To run just the next timestamp, use `Simulator.tick`
+
+```dart
+await Simulator.tick();
+print(flipFlop.q.value);
+
+await Simulator.tick();
+print(flipFlop.q.value);
+```
+
+- To run simulator ticks until completion, use `Simulator.run`
+
+```dart
+...
+await Simulator.run();
+```
+
+- To reset the simulator, use `Simulator.reset`
+  - Note that this only resets the `Simulator` and not any `Module`s or `Logic` values
+
+```dart
+// Normally you want to use this when doign unit test to make sure your simulator is in the clean state for every different test
+await Simulator.reset();
+```
+
+- To add an action to the Simulator in the current timestep, use `Simulator.injectAction`
+
+```dart
+Simulator.registerAction(50, () async {
+  Simulator.injectAction(() async {
+    await Future<void>.delayed(const Duration(microseconds: 10));
+    injectedActionExecuted = true;
+  });
+});
+```
+
+Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin` to prevent our signal from being `z` value.
 
 ```dart
 void main() async {
