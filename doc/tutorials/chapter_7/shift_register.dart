@@ -32,6 +32,10 @@ class ShiftRegister extends Module {
 }
 
 void main() async {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('check for value shift', () async {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic(name: 'reset');
@@ -51,6 +55,7 @@ void main() async {
 
     // set a max time in case something goes longer
     Simulator.setMaxSimTime(100);
+    // kick-off the simulator, but we don't want to wait
     unawaited(Simulator.run());
 
     WaveDumper(shiftReg,
@@ -62,7 +67,6 @@ void main() async {
     reset.put(0);
     sin.put(1);
 
-    // kick-off the simulator, but we don't want to wait
     await clk.nextPosedge;
     printFlop();
     expect(
@@ -111,8 +115,48 @@ void main() async {
         shiftReg.sout.value.toString(includeWidth: false), equals('11000111'));
 
     // we're done, we can end the Simulation
-    Simulator.endSimulation();
-
     await Simulator.simulationEnded;
+  });
+
+  test('should return the time when value changed', () async {
+    final clk = SimpleClockGenerator(10).clk;
+    final reset = Logic(name: 'reset');
+    final sin = Logic(name: 'sin');
+
+    final shiftReg = ShiftRegister(clk, reset, sin);
+    await shiftReg.build();
+
+    reset.inject(1);
+    sin.inject(0);
+
+    // Automatically listen to the Simulator
+    print('Sumulator time: ${Simulator.time}');
+
+    Simulator.registerAction(15, () {
+      reset.put(0);
+      sin.put(1);
+    });
+
+    // In register Action when the action is registered,
+    // immediate effect or changed can be observed
+    Simulator.registerAction(35, () {
+      sin.put(0);
+    });
+
+    Simulator.registerAction(65, () {
+      sin.put(1);
+    });
+
+    // Automatically listen to changed
+    shiftReg.sout.changed.listen((event) {
+      print(
+          '@t=${Simulator.time}, input: ${sin.value.toInt()}, sout changed to:'
+          ' ${event.newValue.toString(includeWidth: false)}');
+    });
+
+    Simulator.setMaxSimTime(100);
+    await Simulator.run();
+
+    Simulator.endSimulation();
   });
 }

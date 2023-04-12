@@ -1,7 +1,7 @@
 # Content
 
 - [What is Sequential Logic?](#what-is-sequential-logic)
-- Writting a unit test in Sequential Logic
+- [Sequential Logic in ROHD](#sequential-logic-in-rohd)
 
 ## Learning Outcome
 
@@ -182,7 +182,11 @@ Simulator.registerAction(50, () async {
 });
 ```
 
-Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin` to prevent our signal from being `z` value.
+## Unit Test in Sequential Logic
+
+Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin` to prevent our signal from being `z` value at the start.
+
+We also can create a local function that print the flop of the clock. We can access the Simulator time using `.time()` function. Then, let us kick start the `Simulator` by setting its maximum simulation time and `.run()` the Simulator. Notice that we use `unawaited()` function instead of `await` because we want to do something with the positive edges.
 
 ```dart
 void main() async {
@@ -194,7 +198,77 @@ void main() async {
   await shiftReg.build();
   print(shiftReg.generateSynth());
 
+  // Inject 1 to reset and 0 to shift in
   reset.inject(1);
   sin.inject(0);
+
+  // Print the flop
+  void printFlop([String message = '']) {
+    print('@t=${Simulator.time}:\t'
+        ' input=${sin.value}, output '
+        '=${shiftReg.sout.value.toString(includeWidth: false)}\t$message');
+  }
+
+  Simulator.setMaxSimTime(100);
+  unawaited(Simulator.run());
 }
 ```
+
+Let also add `WaveDumper` to view the waveform of the Simulation results.
+
+```dart
+void main() async {
+  ...
+
+  // Inject 1 to reset and 0 to shift in
+  reset.inject(1);
+  sin.inject(0);
+
+  // Print the flop
+  void printFlop([String message = '']) {
+    print('@t=${Simulator.time}:\t'
+        ' input=${sin.value}, output '
+        '=${shiftReg.sout.value.toString(includeWidth: false)}\t$message');
+  }
+
+  Simulator.setMaxSimTime(100);
+  unawaited(Simulator.run());
+
+  WaveDumper(shiftReg,
+        outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
+}
+```
+
+Now, let print the flop before the first clock Positive edge. We can just call the `printFlop` function created previously.
+
+```dart
+...
+WaveDumper(shiftReg,
+        outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
+printFlop('Before');
+```
+
+On next positive edge, we want to turn off the reset and shift in value of 1. To do that, we have to `await` for `nextPosedge` from clock, then put the value inside.
+
+```dart
+...
+// wait for clock positive edge
+await clk.nextPosedge;
+
+// set the reset value to 0 and shift in 1
+reset.put(0);
+sin.put(1);
+```
+
+Then, we can use `expect()` function from the unit test in previous session to check for matcher on next posedge.
+
+```dart
+await clk.nextPosedge;
+printFlop();
+expect(
+    shiftReg.sout.value.toString(includeWidth: false), equals('00000001'));
+```
+
+Well, that its for unit test in Sequential Logic. After you finish the `Simulation`, you can use `Simulator.endSimulation()` to end the Simulator and await for `Simulator.simulationEnded`.
+
+There is another method of writting unit test using which is using `Simulator.registerAction()`. But we will dive into that in the next chapter.
