@@ -13,6 +13,8 @@ import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+//TODO: reimplement some of these with SSA
+
 class ExampleModule extends Module {
   ExampleModule(Logic codepoint) {
     codepoint = addInput('codepoint', codepoint, width: 21);
@@ -111,27 +113,30 @@ void main() {
 
   // thank you to @chykon in issue #158 for providing this example!
   test('execute math conditionally', () async {
-    final codepoint = Logic(width: 21);
-    final mod = ExampleModule(codepoint);
-    await mod.build();
-    final codepoints = '†† †† † † q†† †'.runes;
+    try {
+      final codepoint = Logic(width: 21);
+      final mod = ExampleModule(codepoint);
+      await mod.build();
+      final codepoints = '†† †† † † q†† †'.runes;
 
-    final vectors = <Vector>[];
-    for (final inputCodepoint in codepoints) {
-      codepoint.put(inputCodepoint);
-      LogicValue expected;
-      if (inputCodepoint == 8224) {
-        expected = LogicValue.ofInt(0xe2, 32);
-      } else {
-        expected = LogicValue.filled(32, LogicValue.x);
+      final vectors = <Vector>[];
+      for (final inputCodepoint in codepoints) {
+        codepoint.put(inputCodepoint);
+        LogicValue expected;
+        if (inputCodepoint == 8224) {
+          expected = LogicValue.ofInt(0xe2, 32);
+        } else {
+          expected = LogicValue.filled(32, LogicValue.x);
+        }
+        vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': expected}));
       }
-      vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': expected}));
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+
+      fail('Expected to throw an exception!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, WriteAfterReadException);
     }
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
   });
 
   test('reduced example', () async {
@@ -170,28 +175,37 @@ void main() {
   });
 
   test('staged example', () async {
-    final a = Logic(name: 'a', width: 8);
-    final mod = StagedExample(a);
-    await mod.build();
+    try {
+      final a = Logic(name: 'a', width: 8);
+      final mod = StagedExample(a);
+      await mod.build();
 
-    final vectors = [
-      Vector({'a': 0xff}, {'b': bin('00001111')})
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+      final vectors = [
+        Vector({'a': 0xff}, {'b': bin('00001111')})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+
+      fail('Expected to throw an exception!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, WriteAfterReadException);
+    }
   });
 
   test('propagation example', () async {
-    final a = Logic(name: 'a', width: 8);
-    final mod = PropExample(a);
-    await mod.build();
+    try {
+      final a = Logic(name: 'a', width: 8);
+      final mod = PropExample(a);
+      await mod.build();
 
-    final vectors = [
-      Vector({'a': 0xff}, {'b': bin('00001111')})
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+      final vectors = [
+        Vector({'a': 0xff}, {'b': bin('00001111')})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+      fail('Expected to throw an exception!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, WriteAfterReadException);
+    }
   });
 }

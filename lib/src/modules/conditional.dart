@@ -334,7 +334,7 @@ class Sequential extends _Always {
     } else if (anyClkPosedge) {
       final allDrivenSignals = DuplicateDetectionSet<Logic>();
       for (final element in conditionals) {
-        element.execute(allDrivenSignals);
+        element.execute(allDrivenSignals, null);
       }
       if (allDrivenSignals.hasDuplicates) {
         throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
@@ -430,7 +430,7 @@ abstract class Conditional {
   /// which consumes the current value of those drivers.  It is used to check
   /// that signals are not "written after read", for example.
   @protected
-  void execute(Set<Logic> drivenSignals, [void Function(Logic toGuard)? guard]);
+  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -614,7 +614,7 @@ class Case extends Conditional {
       // match on the first matchinig item
       if (isMatch(item.value.value)) {
         for (final conditional in item.then) {
-          conditional.execute(drivenSignals);
+          conditional.execute(drivenSignals, guard);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           throw Exception('Unique case statement had multiple matching cases.'
@@ -633,7 +633,7 @@ class Case extends Conditional {
     // no items matched
     if (foundMatch == null && defaultItem != null) {
       for (final conditional in defaultItem!) {
-        conditional.execute(drivenSignals);
+        conditional.execute(drivenSignals, guard);
       }
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
@@ -836,7 +836,7 @@ class IfBlock extends Conditional {
     for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
         for (final conditional in iff.then) {
-          conditional.execute(drivenSignals);
+          conditional.execute(drivenSignals, guard);
         }
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
@@ -984,11 +984,11 @@ class If extends Conditional {
 
     if (driverValue(condition)[0] == LogicValue.one) {
       for (final conditional in then) {
-        conditional.execute(drivenSignals);
+        conditional.execute(drivenSignals, guard);
       }
     } else if (driverValue(condition)[0] == LogicValue.zero) {
       for (final conditional in orElse) {
-        conditional.execute(drivenSignals);
+        conditional.execute(drivenSignals, guard);
       }
     } else {
       // x and z propagation
