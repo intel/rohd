@@ -34,7 +34,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
     for (final conditional in conditionals) {
-      for (final driver in conditional.getDrivers()) {
+      for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
           final inputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
@@ -44,7 +44,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
           idx++;
         }
       }
-      for (final receiver in conditional.getReceivers()) {
+      for (final receiver in conditional.receivers) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
           final outputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
@@ -100,11 +100,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
-///
-/// Note that it is necessary to build this module and any sensitive
-/// dependencies in order for sensitivity detection to work properly
-/// in all cases.
-class Combinational extends _Always with FullyCombinational {
+class Combinational extends _Always {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
   Combinational(super.conditionals, {super.name = 'combinational'}) {
@@ -114,107 +110,6 @@ class Combinational extends _Always with FullyCombinational {
         _execute();
       });
     }
-  }
-
-  @override
-  Future<void> build() async {
-    await super.build();
-
-    // any glitch on an input to an output's sensitivity should
-    // trigger re-execution
-    _listenToSensitivities();
-  }
-
-  /// Sets up additional glitch listening for sensitive modules.
-  void _listenToSensitivities() {
-    final sensitivities = <Logic>{};
-    for (final out in outputs.values) {
-      final newSensitivities = _collectSensitivities(out);
-      if (newSensitivities != null) {
-        sensitivities.addAll(newSensitivities);
-      }
-    }
-
-    for (final sensitivity in sensitivities) {
-      sensitivity.glitch.listen((args) {
-        _execute();
-      });
-    }
-  }
-
-  /// Recursively collects a list of all [Logic]s that this should be sensitive
-  /// to beyond direct inputs.
-  ///
-  /// Use [alreadyParsed] to prevent searching down paths already searched.
-  Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
-    Set<Logic>? collection;
-
-    alreadyParsed ??= {};
-    if (alreadyParsed.contains(src)) {
-      // we're in a loop or already traversed this path, abandon it
-      return null;
-    }
-    alreadyParsed.add(src);
-
-    final dstConnections = src.dstConnections.toSet();
-
-    if (src.isInput) {
-      if (src.parentModule! is Sequential) {
-        // sequential logic can't be a sensitivity, so ditch those
-        return null;
-      }
-
-      // we're at the input to another module, grab all the outputs of it which
-      // are combinationally connected and continue searching
-      dstConnections.addAll(src.parentModule!.combinationalPaths[src]!);
-    }
-
-    if (dstConnections.isEmpty) {
-      // we've reached the end of the line and not hit an input to this
-      // Combinational
-      return null;
-    }
-
-    for (final dst in dstConnections) {
-      // if any of these are an input to this Combinational, then we've found
-      // a sensitivity
-      if (dst.isInput && dst.parentModule! == this) {
-        // make sure we have something to return
-        collection ??= {};
-      } else {
-        // otherwise, let's look deeper to see if any others down the path
-        // are sensitivities
-        final subSensitivities = _collectSensitivities(dst, alreadyParsed);
-
-        if (subSensitivities == null) {
-          // if we get null, then it was a dead end
-          continue;
-        } else {
-          // otherwise, we have some sensitivities to send back
-          collection ??= {};
-          collection.addAll(subSensitivities);
-          if (dst.isInput) {
-            // collect all the inputs of this module too as sensitivities
-            // but only ones which can affect outputs affected by this input!
-
-            if (dst.parentModule! is FullyCombinational) {
-              // for efficiency, if purely combinational just go straight to all
-              collection.addAll(dst.parentModule!.inputs.values);
-            } else {
-              // default, add all inputs that may affect outputs affected
-              // by this input
-              for (final dstDependentOutput
-                  in dst.parentModule!.combinationalPaths[dst]!) {
-                collection.addAll(dst.parentModule!
-                    .reverseCombinationalPaths[dstDependentOutput]!);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return collection;
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to
@@ -465,7 +360,7 @@ abstract class Conditional {
   ) {
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
-    for (final conditional in getConditionals()) {
+    for (final conditional in conditionals) {
       conditional._updateAssignmentMaps(
           assignedReceiverToOutputMap, assignedDriverToInputMap);
     }
@@ -476,7 +371,7 @@ abstract class Conditional {
   void _updateOverrideMap(Map<Logic, LogicValue> driverValueOverrideMap) {
     // this is for always_ff pre-tick values
     _driverValueOverrideMap = driverValueOverrideMap;
-    for (final conditional in getConditionals()) {
+    for (final conditional in conditionals) {
       conditional._updateOverrideMap(driverValueOverrideMap);
     }
   }
@@ -509,16 +404,16 @@ abstract class Conditional {
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
-  List<Logic> getReceivers();
+  List<Logic> get receivers;
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
-  List<Logic> getDrivers();
+  List<Logic> get drivers;
 
   /// Lists of *all* [Conditional]s contained within this [Conditional]
   /// (not including itself).
   ///
   /// Recursively calls down through sub-[Conditional]s.
-  List<Conditional> getConditionals();
+  List<Conditional> get conditionals;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///
@@ -555,11 +450,11 @@ class ConditionalAssign extends Conditional {
   }
 
   @override
-  List<Logic> getReceivers() => [receiver];
+  late final List<Logic> receivers = [receiver];
   @override
-  List<Logic> getDrivers() => [driver];
+  late final List<Logic> drivers = [driver];
   @override
-  List<Conditional> getConditionals() => [];
+  late final List<Conditional> conditionals = [];
 
   @override
   void execute(Set<Logic> drivenSignals) {
@@ -660,7 +555,7 @@ class Case extends Conditional {
   void execute(Set<Logic> drivenSignals) {
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (final receiver in getReceivers()) {
+      for (final receiver in receivers) {
         receiverOutput(receiver).put(LogicValue.x);
         if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
           drivenSignals.add(receiver);
@@ -705,25 +600,29 @@ class Case extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() => [
+  late final List<Conditional> conditionals = _getConditionals();
+
+  List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
         ...defaultItem ?? []
       ];
 
   @override
-  List<Logic> getDrivers() {
+  late final List<Logic> drivers = _getDrivers();
+
+  List<Logic> _getDrivers() {
     final drivers = <Logic>[expression];
     for (final item in items) {
       drivers
         ..add(item.value)
         ..addAll(item.then
-            .map((conditional) => conditional.getDrivers())
+            .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
             .toList());
     }
     if (defaultItem != null) {
       drivers.addAll(defaultItem!
-          .map((conditional) => conditional.getDrivers())
+          .map((conditional) => conditional.drivers)
           .expand((driver) => driver)
           .toList());
     }
@@ -731,17 +630,19 @@ class Case extends Conditional {
   }
 
   @override
-  List<Logic> getReceivers() {
+  late final List<Logic> receivers = _getReceivers();
+
+  List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
       receivers.addAll(item.then
-          .map((conditional) => conditional.getReceivers())
+          .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
           .toList());
     }
     if (defaultItem != null) {
       receivers.addAll(defaultItem!
-          .map((conditional) => conditional.getReceivers())
+          .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
           .toList());
     }
@@ -890,7 +791,7 @@ class IfBlock extends Conditional {
         break;
       } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
         // x and z propagation
-        for (final receiver in getReceivers()) {
+        for (final receiver in receivers) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
           if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
             drivenSignals.add(receiver);
@@ -903,17 +804,21 @@ class IfBlock extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() =>
+  late final List<Conditional> conditionals = _getConditionals();
+
+  List<Conditional> _getConditionals() =>
       iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
 
   @override
-  List<Logic> getDrivers() {
+  late final List<Logic> drivers = _getDrivers();
+
+  List<Logic> _getDrivers() {
     final drivers = <Logic>[];
     for (final iff in iffs) {
       drivers
         ..add(iff.condition)
         ..addAll(iff.then
-            .map((conditional) => conditional.getDrivers())
+            .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
             .toList());
     }
@@ -921,11 +826,13 @@ class IfBlock extends Conditional {
   }
 
   @override
-  List<Logic> getReceivers() {
+  late final List<Logic> receivers = _getReceivers();
+
+  List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final iff in iffs) {
       receivers.addAll(iff.then
-          .map((conditional) => conditional.getReceivers())
+          .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
           .toList());
     }
@@ -987,31 +894,37 @@ class If extends Conditional {
       : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
 
   @override
-  List<Logic> getReceivers() {
+  late final List<Logic> receivers = _getReceivers();
+
+  List<Logic> _getReceivers() {
     final allReceivers = <Logic>[];
     for (final element in then) {
-      allReceivers.addAll(element.getReceivers());
+      allReceivers.addAll(element.receivers);
     }
     for (final element in orElse) {
-      allReceivers.addAll(element.getReceivers());
+      allReceivers.addAll(element.receivers);
     }
     return allReceivers;
   }
 
   @override
-  List<Logic> getDrivers() {
+  late final List<Logic> drivers = _getDrivers();
+
+  List<Logic> _getDrivers() {
     final allDrivers = <Logic>[condition];
     for (final element in then) {
-      allDrivers.addAll(element.getDrivers());
+      allDrivers.addAll(element.drivers);
     }
     for (final element in orElse) {
-      allDrivers.addAll(element.getDrivers());
+      allDrivers.addAll(element.drivers);
     }
     return allDrivers;
   }
 
   @override
-  List<Conditional> getConditionals() => [...then, ...orElse];
+  late final List<Conditional> conditionals = _getConditionals();
+
+  List<Conditional> _getConditionals() => [...then, ...orElse];
 
   @override
   void execute(Set<Logic> drivenSignals) {
@@ -1025,7 +938,7 @@ class If extends Conditional {
       }
     } else {
       // x and z propagation
-      for (final receiver in getReceivers()) {
+      for (final receiver in receivers) {
         receiverOutput(receiver).put(driverValue(condition)[0]);
         if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
           drivenSignals.add(receiver);
