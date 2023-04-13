@@ -15,6 +15,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
@@ -116,6 +117,11 @@ class Combinational extends _Always {
   /// detect reentrance.
   bool _isExecuting = false;
 
+  static void _writeAfterReadViolation(String signalName) {
+    //TODO
+    throw Exception('Write after read on $signalName!');
+  }
+
   /// Performs the functional behavior of this block.
   void _execute() {
     if (_isExecuting) {
@@ -127,9 +133,21 @@ class Combinational extends _Always {
 
     _isExecuting = true;
 
+    // keep track of signals already being guarded for efficiency
+    final guarded = <Logic>{};
+    final guardListeners = <SynchronousSubscription<LogicValueChanged>>[];
+    void guard(Logic toGuard) {
+      if (!guarded.contains(toGuard)) {
+        guarded.add(toGuard);
+        guardListeners.add(toGuard.glitch.listen((args) {
+          _writeAfterReadViolation(toGuard.name);
+        }));
+      }
+    }
+
     final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      element.execute(drivenLogics);
+      element.execute(drivenLogics, guard);
     }
 
     // combinational must always drive all outputs or else you get X!
@@ -139,6 +157,12 @@ class Combinational extends _Always {
           receiverOutputPair.value.put(LogicValue.x, fill: true);
         }
       }
+    }
+
+    // clean up after execution
+
+    for (final guardListener in guardListeners) {
+      guardListener.cancel();
     }
 
     _isExecuting = false;
@@ -399,8 +423,12 @@ abstract class Conditional {
   ///
   /// The [drivenSignals] are used by the caller to determine if signals
   /// were driven an appropriate number of times.
+  ///
+  /// The [guard] function should be called on drivers *prior* to any execution
+  /// being consuming the current value of those drivers.  It is used to check
+  /// that signals are not "written after read", for example.
   @protected
-  void execute(Set<Logic> drivenSignals);
+  void execute(Set<Logic> drivenSignals, [void Function(Logic toGuard)? guard]);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -451,13 +479,20 @@ class ConditionalAssign extends Conditional {
 
   @override
   late final List<Logic> receivers = [receiver];
+
   @override
   late final List<Logic> drivers = [driver];
+
   @override
   late final List<Conditional> conditionals = [];
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals,
+      [void Function(Logic toGuard)? guard]) {
+    if (guard != null) {
+      guard(driver);
+    }
+
     receiverOutput(receiver).put(driverValue(driver));
 
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
@@ -552,7 +587,14 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+    if (guard != null) {
+      guard(expression);
+      for (final item in items) {
+        guard(item.value);
+      }
+    }
+
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
       for (final receiver in receivers) {
@@ -782,7 +824,13 @@ class IfBlock extends Conditional {
   IfBlock(this.iffs);
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+    if (guard != null) {
+      for (final iff in iffs) {
+        guard(iff.condition);
+      }
+    }
+
     for (final iff in iffs) {
       if (driverValue(iff.condition)[0] == LogicValue.one) {
         for (final conditional in iff.then) {
@@ -927,7 +975,11 @@ class If extends Conditional {
   List<Conditional> _getConditionals() => [...then, ...orElse];
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+    if (guard != null) {
+      guard(condition);
+    }
+
     if (driverValue(condition)[0] == LogicValue.one) {
       for (final conditional in then) {
         conditional.execute(drivenSignals);
