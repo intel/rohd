@@ -32,11 +32,13 @@ class CounterInterface extends Interface<CounterDirection> {
 
 class Counter extends Module {
   late final CounterInterface intf;
-  Counter(CounterInterface intf) {
+  late bool resetRoot;
+  Counter(CounterInterface intf, {bool? resetRoot = false}) {
     this.intf = CounterInterface(intf.width)
       ..connectIO(this, intf,
           inputTags: {CounterDirection.inward},
           outputTags: {CounterDirection.outward});
+    this.resetRoot = resetRoot!;
 
     // this should do nothing
     this.intf.connectIO(this, intf);
@@ -49,13 +51,22 @@ class Counter extends Module {
 
     nextVal <= intf.val + 1;
 
-    Sequential(SimpleClockGenerator(10).clk, [
-      If(intf.reset, then: [
-        intf.val < 0
-      ], orElse: [
-        If(intf.en, then: [intf.val < nextVal])
-      ])
-    ]);
+    if (resetRoot) {
+      Sequential(
+          SimpleClockGenerator(10).clk,
+          [
+            If(intf.en, then: [intf.val < nextVal])
+          ],
+          reset: intf.reset);
+    } else {
+      Sequential(SimpleClockGenerator(10).clk, [
+        If(intf.reset, then: [
+          intf.val < 0
+        ], orElse: [
+          If(intf.en, then: [intf.val < nextVal])
+        ])
+      ]);
+    }
   }
 }
 
@@ -85,5 +96,25 @@ void main() {
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
+  });
+  test('resetFlipflop from root', () async {
+    final mod = Counter(CounterInterface(8), resetRoot: true);
+    await mod.build();
+    final vectors = [
+      Vector({'en': 0, 'reset': 1}, {}),
+      Vector({'en': 0, 'reset': 1}, {'val': 0}),
+      Vector({'en': 1, 'reset': 1}, {'val': 0}),
+      Vector({'en': 1, 'reset': 0}, {'val': 0}),
+      Vector({'en': 1, 'reset': 0}, {'val': 1}),
+      Vector({'en': 1, 'reset': 0}, {'val': 2}),
+      Vector({'en': 1, 'reset': 0}, {'val': 3}),
+      Vector({'en': 0, 'reset': 0}, {'val': 4}),
+      Vector({'en': 0, 'reset': 0}, {'val': 4}),
+      Vector({'en': 1, 'reset': 0}, {'val': 4}),
+      Vector({'en': 0, 'reset': 0}, {'val': 5}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
+    expect(simResult, equals(true));
   });
 }
