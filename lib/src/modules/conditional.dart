@@ -119,7 +119,7 @@ class Combinational extends _Always {
 
   static void _writeAfterReadViolation(String signalName) {
     //TODO
-    throw Exception('Write after read on $signalName!');
+    throw WriteAfterReadException(signalName);
   }
 
   /// Performs the functional behavior of this block.
@@ -360,6 +360,8 @@ class Sequential extends _Always {
 
 /// Represents an some logical assignments or actions that will only happen
 /// under certain conditions.
+///
+/// TODO: write a section about "write after read"
 abstract class Conditional {
   /// A [Map] from receiver [Logic] signals passed into this [Conditional] to
   /// the appropriate output logic port.
@@ -425,7 +427,7 @@ abstract class Conditional {
   /// were driven an appropriate number of times.
   ///
   /// The [guard] function should be called on drivers *prior* to any execution
-  /// being consuming the current value of those drivers.  It is used to check
+  /// which consumes the current value of those drivers.  It is used to check
   /// that signals are not "written after read", for example.
   @protected
   void execute(Set<Logic> drivenSignals, [void Function(Logic toGuard)? guard]);

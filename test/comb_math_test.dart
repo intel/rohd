@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -151,16 +152,21 @@ void main() {
   });
 
   test('simpler example', () async {
-    final a = Logic(name: 'a', width: 8);
-    final mod = SimplerExample(a);
-    await mod.build();
+    try {
+      final a = Logic(name: 'a', width: 8);
+      final mod = SimplerExample(a);
+      await mod.build();
 
-    final vectors = [
-      Vector({'a': 0xff}, {'b': bin('00001111')})
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+      final vectors = [
+        Vector({'a': 0xff}, {'b': bin('00001111')})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+
+      fail('Expected to throw an exception!');
+    } on Exception catch (e) {
+      expect(e.runtimeType, WriteAfterReadException);
+    }
   });
 
   test('staged example', () async {
