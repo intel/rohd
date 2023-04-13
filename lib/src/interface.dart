@@ -75,18 +75,20 @@ class Interface<TagType> {
   /// If [inputTags] or [outputTags] is not specified, then, respectively,
   /// no inputs or outputs will be added.
   void connectIO(Module module, Interface<dynamic> srcInterface,
-      {Set<TagType>? inputTags,
-      Set<TagType>? outputTags,
+      {Iterable<TagType>? inputTags,
+      Iterable<TagType>? outputTags,
       String Function(String original)? uniquify}) {
     uniquify ??= (original) => original;
 
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
-        _setPort(
+        port <=
             // ignore: invalid_use_of_protected_member
-            module.addInput(uniquify(port.name), srcInterface.port(port.name),
-                width: port.width),
-            portName: port.name);
+            module.addInput(
+              uniquify(port.name),
+              srcInterface.port(port.name),
+              width: port.width,
+            );
       }
     }
 
@@ -94,9 +96,8 @@ class Interface<TagType> {
       for (final port in getPorts(outputTags).values) {
         // ignore: invalid_use_of_protected_member
         final output = module.addOutput(uniquify(port.name), width: port.width);
-        port <= output;
-        srcInterface.port(port.name) <= port;
-        _setPort(output, portName: port.name);
+        output <= port;
+        srcInterface.port(port.name) <= output;
       }
     }
   }
@@ -105,12 +106,12 @@ class Interface<TagType> {
   /// [Map] from the port name to the [Logic] port.
   ///
   /// Returns all ports if [tags] is null.
-  Map<String, Logic> getPorts([Set<TagType>? tags]) {
+  Map<String, Logic> getPorts([Iterable<TagType>? tags]) {
     if (tags == null) {
       return ports;
     } else {
       final matchingPorts = <String, Logic>{};
-      for (final tag in tags) {
+      for (final tag in tags.toSet().toList()) {
         matchingPorts.addEntries(_ports.keys
             .where(
                 (portName) => _portToTagMap[portName]?.contains(tag) ?? false)
@@ -125,8 +126,12 @@ class Interface<TagType> {
   /// and with name [portName].
   ///
   /// If no [portName] is specified, then [port]'s name is used.
-  void _setPort(Logic port, {List<TagType>? tags, String? portName}) {
+  void _setPort(Logic port, {Iterable<TagType>? tags, String? portName}) {
     portName ??= port.name;
+
+    assert(!_ports.containsKey(portName),
+        'Port named $portName already exists on this interface.');
+
     _ports[portName] = port;
     if (tags != null) {
       if (!_portToTagMap.containsKey(portName)) {
@@ -141,11 +146,42 @@ class Interface<TagType> {
   ///
   /// All names of ports are gotten from the names of the [ports].
   @protected
-  void setPorts(List<Logic> ports, [List<TagType>? tags]) {
+  void setPorts(List<Logic> ports, [Iterable<TagType>? tags]) {
     for (final port in ports) {
       _setPort(port, tags: tags);
     }
   }
+
+  /// Makes `this` drive interface signals tagged as [direction] on [other].
+  void driveOther(Interface<TagType> other, Iterable<TagType> tags) {
+    getPorts(tags).forEach((portName, thisPort) {
+      other.port(portName) <= thisPort;
+    });
+  }
+
+  void receiveOther(Interface<TagType> other, Iterable<TagType> tags) {
+    getPorts(tags).forEach((portName, thisPort) {
+      thisPort <= other.port(portName);
+    });
+  }
+
+  // TODO: what about driving all ports on an interface to some value instead of another instance of an interface?
+
+  List<ConditionalAssign> conditionalDriveOther(
+          Interface<TagType> other, Iterable<TagType> tags) =>
+      getPorts(tags)
+          .map((portName, thisPort) =>
+              MapEntry(portName, other.port(portName) < thisPort))
+          .values
+          .toList();
+
+  List<ConditionalAssign> conditionalReceiveOther(
+          Interface<TagType> other, Iterable<TagType> tags) =>
+      getPorts(tags)
+          .map((portName, thisPort) =>
+              MapEntry(portName, thisPort < other.port(portName)))
+          .values
+          .toList();
 }
 
 // TODO(mkorbel1): addSubInterface type of function
@@ -160,6 +196,7 @@ class PairInterface extends Interface<PairDirection> {
       {List<Port>? portsFromConsumer,
       List<Port>? portsFromProducer,
       List<Port>? sharedInputPorts}) {
+    //TODO: accept a list of subinterfaces that are also PairInterface?
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
     }
@@ -170,12 +207,6 @@ class PairInterface extends Interface<PairDirection> {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
     }
   }
-
-  // why not? is this good?
-  // PairInterface clone() => PairInterface(
-  //     portsFromConsumer: _getMatchPorts(this, PairDirection.fromConsumer),
-  //     portsFromProducer: _getMatchPorts(this, PairDirection.fromProvider),
-  //     sharedInputPorts: _getMatchPorts(this, PairDirection.sharedInputs));
 
   static List<Port> _getMatchPorts(
           Interface<PairDirection> otherInterface, PairDirection tag) =>
@@ -194,52 +225,11 @@ class PairInterface extends Interface<PairDirection> {
             sharedInputPorts:
                 _getMatchPorts(otherInterface, PairDirection.sharedInputs));
 
-  //TODO: we want to add connection to another interface in the same direction, like forwarding
+  // TODO: driveOther could be on Interface in general?
+  // TODO: could add receiveOther as well, for opposite direction?
+  // TODO: conditional versions of those
 
-  /// Connects `this` as a source of `fromProvider` signals to drive `fromProvider` signals of [other]
-  /// Connects `this` as a receiver of `fromConsumer` signals driven by the `fromConsumer` signals of [other]
-  void connectTo(PairInterface other, PairRole thisRole,
-      SharedInputConnectionMode sharedInputConnectionMode) {
-    // options:
-    //  - should other drive this for sharedInputs?
-    //  - should this drive other for sharedInputs?
-
-    // connect other.fromProvider signals to drive fromProvider signals of this
-    getPorts({
-      thisRole == PairRole.provider
-          ? PairDirection.fromConsumer
-          : PairDirection.fromProvider
-    }).forEach((portName, thisPort) {
-      thisPort <= other.port(portName);
-    });
-
-    getPorts({
-      thisRole == PairRole.provider
-          ? PairDirection.fromProvider
-          : PairDirection.fromConsumer
-    }).forEach((portName, thisPort) {
-      other.port(portName) <= thisPort;
-    });
-
-    if (sharedInputConnectionMode ==
-        SharedInputConnectionMode.otherDrivesThis) {
-      getPorts({PairDirection.sharedInputs}).forEach((portName, thisPort) {
-        thisPort <= other.port(portName);
-      });
-    } else if (sharedInputConnectionMode ==
-        SharedInputConnectionMode.thisDrivesOther) {
-      getPorts({PairDirection.sharedInputs}).forEach((portName, thisPort) {
-        other.port(portName) <= thisPort;
-      });
-    }
-  }
-
-  /// Makes `this` drive interface signals tagged as [direction] on [other].
-  void driveOther(PairInterface other, PairDirection direction) {
-    getPorts({direction}).forEach((portName, thisPort) {
-      other.port(portName) <= thisPort;
-    });
-  }
+  //TODO: name things consistently, why simple sometimes, pair others
 
   void simpleConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
