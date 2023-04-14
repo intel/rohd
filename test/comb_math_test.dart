@@ -40,6 +40,31 @@ class ExampleModule extends Module {
   Logic get bytes => output('bytes');
 }
 
+class ExampleModuleSsa extends Module {
+  ExampleModuleSsa(Logic codepoint) {
+    codepoint = addInput('codepoint', codepoint, width: 21);
+    final bytes = addOutput('bytes', width: 32);
+    final count = Logic(name: 'count', width: 2);
+
+    Combinational.ssa((s) => [
+          If(codepoint.eq(0x2020), then: [
+            s(count) < 2,
+            bytes <
+                ((codepoint >>> (Const(6, width: 5) * s(count).zeroExtend(5))) +
+                        Const(0xE0, width: 21))
+                    .slice(7, 0)
+                    .zeroExtend(32),
+            s(count) < s(count) - 2,
+          ], orElse: [
+            // this is necessary for x's in iverilog (https://github.com/steveicarus/iverilog/issues/776)
+            bytes < LogicValue.filled(32, LogicValue.x)
+          ]),
+        ]);
+  }
+
+  Logic get bytes => output('bytes');
+}
+
 class SimplerExample extends Module {
   Logic get b => output('b');
   SimplerExample(Logic a) {
@@ -53,6 +78,22 @@ class SimplerExample extends Module {
       b < a & inner,
       inner < 0,
     ]);
+  }
+}
+
+class SimplerExampleSsa extends Module {
+  Logic get b => output('b');
+  SimplerExampleSsa(Logic a) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+
+    final inner = Logic(name: 'inner', width: 8);
+
+    Combinational.ssa((s) => [
+          s(inner) < 0xf,
+          b < a & s(inner),
+          s(inner) < 0,
+        ]);
   }
 }
 
@@ -111,33 +152,45 @@ void main() {
     await Simulator.reset();
   });
 
-  // thank you to @chykon in issue #158 for providing this example!
-  test('execute math conditionally', () async {
-    try {
-      final codepoint = Logic(width: 21);
-      final mod = ExampleModule(codepoint);
-      await mod.build();
-      final codepoints = '†† †† † † q†† †'.runes;
+  group('execute math conditionally', () {
+    final codepoints = '†† †† † † q†† †'.runes;
 
-      final vectors = <Vector>[];
-      for (final inputCodepoint in codepoints) {
-        codepoint.put(inputCodepoint);
-        LogicValue expected;
-        if (inputCodepoint == 8224) {
-          expected = LogicValue.ofInt(0xe2, 32);
-        } else {
-          expected = LogicValue.filled(32, LogicValue.x);
-        }
-        vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': expected}));
+    final vectors = <Vector>[];
+    for (final inputCodepoint in codepoints) {
+      LogicValue expected;
+      if (inputCodepoint == 8224) {
+        expected = LogicValue.ofInt(0xe2, 32);
+      } else {
+        expected = LogicValue.filled(32, LogicValue.x);
       }
+      vectors.add(Vector({'codepoint': inputCodepoint}, {'bytes': expected}));
+    }
+
+    test('normal', () async {
+      try {
+        final codepoint = Logic(width: 21);
+        final mod = ExampleModule(codepoint);
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+    test('ssa', () async {
+      final codepoint = Logic(width: 21);
+      final mod = ExampleModuleSsa(codepoint);
+      await mod.build();
 
       await SimCompare.checkFunctionalVector(mod, vectors);
 
-      fail('Expected to throw an exception!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, WriteAfterReadException);
-    }
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
   });
+  // thank you to @chykon in issue #158 for providing this example!
 
   test('reduced example', () async {
     final codepoint = Logic(width: 21);
@@ -156,22 +209,33 @@ void main() {
     expect(simResult, equals(true));
   });
 
-  test('simpler example', () async {
-    try {
+  group('simpler example', () {
+    final vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+    test('normal', () async {
+      try {
+        final a = Logic(name: 'a', width: 8);
+        final mod = SimplerExample(a);
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+
+    test('ssa', () async {
       final a = Logic(name: 'a', width: 8);
-      final mod = SimplerExample(a);
+      final mod = SimplerExampleSsa(a);
       await mod.build();
 
-      final vectors = [
-        Vector({'a': 0xff}, {'b': bin('00001111')})
-      ];
-
       await SimCompare.checkFunctionalVector(mod, vectors);
-
-      fail('Expected to throw an exception!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, WriteAfterReadException);
-    }
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
   });
 
   test('staged example', () async {

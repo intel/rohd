@@ -522,6 +522,7 @@ abstract class Conditional {
         toParse.addAll(toParse[i].parentModule!.inputs.values);
       }
       if (toParse[i] is _SsaLogic) {
+        //TODO: AND it belongs to this call?
         foundSsaLogics.add(toParse[i] as _SsaLogic);
       }
     }
