@@ -98,6 +98,11 @@ abstract class _Always extends Module with CustomSystemVerilog {
   }
 }
 
+class _SsaLogic extends Logic {
+  final Logic ref;
+  _SsaLogic(this.ref) : super(width: ref.width, name: ref.name);
+}
+
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
@@ -111,6 +116,31 @@ class Combinational extends _Always {
         _execute();
       });
     }
+  }
+
+  bool _ssaBuild = false;
+
+  factory Combinational.ssa(
+      List<Conditional> Function(Logic Function(Logic signal) s) construct,
+      {String name = 'combinational_ssa'}) {
+    Map<Logic, List<_SsaLogic>> existing = {};
+
+    Logic _getSsa(Logic ref) => _SsaLogic(ref);
+
+    final conditionals = construct(_getSsa);
+    return Combinational(conditionals, name: name).._ssaBuild = true;
+  }
+
+  void _processSsa() {
+    for (final conditional in conditionals) {}
+  }
+
+  @override
+  Future<void> build() async {
+    if (_ssaBuild) {
+      _processSsa();
+    }
+    await super.build();
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to
@@ -459,6 +489,13 @@ abstract class Conditional {
   /// Calculates an amount of padding to provie at the beginning of each new
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
+
+  static List<_SsaLogic> _findSsaDriversFrom(Logic driver) {
+    //TODO: implement
+    return [];
+  }
+
+  // Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings);
 }
 
 /// An assignment that only happens under certain conditions.
@@ -807,13 +844,18 @@ class Else extends Iff {
   Else.s(Conditional then) : this([then]);
 }
 
+@Deprecated('Use `If.block` instead.')
+class IfBlock extends If {
+  IfBlock(List<Iff> iffs) : super.block(iffs);
+}
+
 /// Represents a chain of blocks of code to be conditionally executed, like
 /// `if`/`else if`/`else`.
 ///
 /// This is functionally equivalent to chaining together [If]s, but this syntax
 /// is a little nicer
 /// for long chains.
-class IfBlock extends Conditional {
+class If extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
   /// The first item should be an [Iff], and if an [Else] is included it must
@@ -821,9 +863,25 @@ class IfBlock extends Conditional {
   /// make thefirst item an [ElseIf], it will act just like an [Iff].
   final List<Iff> iffs;
 
+  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
+  If(Logic condition,
+      {List<Conditional> then = const [], List<Conditional> orElse = const []})
+      : this.block([
+          Iff(condition, then),
+          Else(orElse),
+        ]);
+
+  /// If [condition] is 1, then [then] is excutes,
+  /// otherwise [orElse] is executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  /// An optional [orElse] condition can be passed.
+  If.s(Logic condition, Conditional then, [Conditional? orElse])
+      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
+
   /// Checks the conditions for [iffs] in order and executes the first one
   /// whose condition is enabled.
-  IfBlock(this.iffs);
+  If.block(this.iffs);
 
   @override
   void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
@@ -918,114 +976,6 @@ ${padding}end ''');
     verilog.write('\n');
 
     return verilog.toString();
-  }
-}
-
-/// Represents a block of code to be conditionally executed, like `if`/`else`.
-class If extends Conditional {
-  /// [Conditional]s to be executed if [condition] is true.
-  final List<Conditional> then;
-
-  /// [Conditional]s to be executed if [condition] is not true.
-  final List<Conditional> orElse;
-
-  /// The condition that decides if [then] or [orElse] is executed.
-  final Logic condition;
-
-  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
-  If(this.condition, {this.then = const [], this.orElse = const []});
-
-  /// If [condition] is 1, then [then] is excutes,
-  /// otherwise [orElse] is executed.
-  ///
-  /// Use this constructor when you only have a single [then] condition.
-  /// An optional [orElse] condition can be passed.
-  If.s(Logic condition, Conditional then, [Conditional? orElse])
-      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
-
-  @override
-  late final List<Logic> receivers = _getReceivers();
-
-  List<Logic> _getReceivers() {
-    final allReceivers = <Logic>[];
-    for (final element in then) {
-      allReceivers.addAll(element.receivers);
-    }
-    for (final element in orElse) {
-      allReceivers.addAll(element.receivers);
-    }
-    return allReceivers;
-  }
-
-  @override
-  late final List<Logic> drivers = _getDrivers();
-
-  List<Logic> _getDrivers() {
-    final allDrivers = <Logic>[condition];
-    for (final element in then) {
-      allDrivers.addAll(element.drivers);
-    }
-    for (final element in orElse) {
-      allDrivers.addAll(element.drivers);
-    }
-    return allDrivers;
-  }
-
-  @override
-  late final List<Conditional> conditionals = _getConditionals();
-
-  List<Conditional> _getConditionals() => [...then, ...orElse];
-
-  @override
-  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
-    if (guard != null) {
-      guard(condition);
-    }
-
-    if (driverValue(condition)[0] == LogicValue.one) {
-      for (final conditional in then) {
-        conditional.execute(drivenSignals, guard);
-      }
-    } else if (driverValue(condition)[0] == LogicValue.zero) {
-      for (final conditional in orElse) {
-        conditional.execute(drivenSignals, guard);
-      }
-    } else {
-      // x and z propagation
-      for (final receiver in receivers) {
-        receiverOutput(receiver).put(driverValue(condition)[0]);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
-        }
-      }
-    }
-  }
-
-  @override
-  String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final padding = Conditional.calcPadding(indent);
-    final conditionName = inputsNameMap[driverInput(condition).name];
-    final ifContents = then
-        .map((conditional) => conditional.verilogContents(
-            indent + 2, inputsNameMap, outputsNameMap, assignOperator))
-        .join('\n');
-    final elseContents = orElse
-        .map((conditional) => conditional.verilogContents(
-            indent + 2, inputsNameMap, outputsNameMap, assignOperator))
-        .join('\n');
-    var verilog = '''
-${padding}if($conditionName) begin
-$ifContents
-${padding}end ''';
-    if (orElse.isNotEmpty) {
-      verilog += '''
-else begin
-$elseContents
-${padding}end ''';
-    }
-
-    return '$verilog\n';
   }
 }
 
