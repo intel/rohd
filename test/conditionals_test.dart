@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// conditionals_test.dart
-/// Unit tests for conditional calculations (e.g. always_comb, always_ff)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditionals_test.dart
+// Unit tests for conditional calculations (e.g. always_comb, always_ff)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
@@ -108,7 +108,7 @@ class IfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -123,7 +123,7 @@ class SingleIfBlockModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, c < 1),
       ])
     ]);
@@ -138,7 +138,7 @@ class ElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -154,7 +154,7 @@ class SingleElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf.s(a, c < 1),
         Else([c < 0, d < 1])
       ])
@@ -263,7 +263,7 @@ class SingleElseModule extends Module {
     final x = addOutput('x');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, q < 1),
         Else.s(x < 1),
       ])
@@ -317,11 +317,11 @@ class MultipleConditionalModule extends Module {
     final Conditional condOne = c < 1;
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
   }
 }

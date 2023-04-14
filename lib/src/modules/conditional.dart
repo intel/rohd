@@ -1,15 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// conditional.dart
-/// Definitions of conditionallly executed hardware constructs (if/else statements, always_comb, always_ff, etc.)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditional.dart
+// Definitions of conditionallly executed hardware constructs (if/else statements, always_comb, always_ff, etc.)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -105,7 +103,7 @@ class _SsaLogic extends Logic {
 
   /// A unique identifier for the context.
   final int _context;
-  //TODO: keep track of the original generator so we don't accidentally find someone elses!
+
   _SsaLogic(this._ref, this._context)
       : super(width: _ref.width, name: _ref.name);
 }
@@ -130,13 +128,11 @@ class Combinational extends _Always {
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
-    Map<Logic, List<_SsaLogic>> existing = {};
-
     final context = _ssaContextCounter++;
 
-    Logic _getSsa(Logic ref) => _SsaLogic(ref, context);
+    Logic getSsa(Logic ref) => _SsaLogic(ref, context);
 
-    final conditionals = construct(_getSsa);
+    final conditionals = construct(getSsa);
 
     //TODO: since we're reconstructing conditionals up-front, there can't be any
     // funny business with the ssa nodes after the list is provided. need to doc
@@ -912,7 +908,7 @@ class CaseZ extends Case {
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
-/// Intended for use with [IfBlock].
+/// Intended for use with [If.block].
 class ElseIf {
   /// A condition to match against to determine if [then] should be executed.
   final Logic condition;
@@ -931,12 +927,12 @@ class ElseIf {
 
 /// A conditional block to execute only if `condition` is satisified.
 ///
-/// Intended for use with [IfBlock].
+/// Intended for use with [If.block].
 typedef Iff = ElseIf;
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
-/// This should come last in [IfBlock].
+/// This should come last in [If.block].
 class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
