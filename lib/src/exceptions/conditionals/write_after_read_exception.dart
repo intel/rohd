@@ -18,5 +18,7 @@ class WriteAfterReadException extends RohdException {
     String signalName,
   ) : super('Signal "$signalName" changed its value after being used'
             ' within one `Combinational` execution.'
-            ' This can lead to a mismatch between simulation and synthesis.');
+            ' This can lead to a mismatch between simulation and synthesis.'
+            ' You may be able to use `Combinational.ssa` to correct your'
+            ' design with minimal refactoring.');
 }

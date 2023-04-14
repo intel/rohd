@@ -113,6 +113,22 @@ class StagedExample extends Module {
   }
 }
 
+class StagedExampleSsa extends Module {
+  Logic get b => output('b');
+  StagedExampleSsa(Logic a) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+
+    final inner = Logic(name: 'inner', width: 4);
+
+    Combinational.ssa((s) => [
+          s(inner) < 0xf,
+          b < a & s(inner).zeroExtend(8),
+          s(inner) < 0,
+        ]);
+  }
+}
+
 class PropExample extends Module {
   Logic get b => output('b');
   PropExample(Logic a) {
@@ -129,6 +145,25 @@ class PropExample extends Module {
       b < a & inner2,
       inner < 0,
     ]);
+  }
+}
+
+class PropExampleSsa extends Module {
+  Logic get b => output('b');
+  PropExampleSsa(Logic a) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+
+    final inner = Logic(name: 'inner', width: 8);
+    final inner2 = Logic(name: 'inner2', width: 8);
+
+    inner2 <= inner;
+
+    Combinational.ssa((s) => [
+          s(inner) < 0xf,
+          b < a & inner2,
+          s(inner) < 0,
+        ]);
   }
 }
 
@@ -179,6 +214,7 @@ void main() {
         expect(e.runtimeType, WriteAfterReadException);
       }
     });
+
     test('ssa', () async {
       final codepoint = Logic(width: 21);
       final mod = ExampleModuleSsa(codepoint);
@@ -213,6 +249,7 @@ void main() {
     final vectors = [
       Vector({'a': 0xff}, {'b': bin('00001111')})
     ];
+
     test('normal', () async {
       try {
         final a = Logic(name: 'a', width: 8);
@@ -238,38 +275,68 @@ void main() {
     });
   });
 
-  test('staged example', () async {
-    try {
+  group('staged example', () {
+    final vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+
+    test('normal', () async {
+      try {
+        final a = Logic(name: 'a', width: 8);
+        final mod = StagedExample(a);
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+
+    test('ssa', () async {
       final a = Logic(name: 'a', width: 8);
-      final mod = StagedExample(a);
+      final mod = StagedExampleSsa(a);
       await mod.build();
 
-      final vectors = [
-        Vector({'a': 0xff}, {'b': bin('00001111')})
-      ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-
-      fail('Expected to throw an exception!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, WriteAfterReadException);
-    }
-  });
-
-  test('propagation example', () async {
-    try {
-      final a = Logic(name: 'a', width: 8);
-      final mod = PropExample(a);
-      await mod.build();
-
-      final vectors = [
-        Vector({'a': 0xff}, {'b': bin('00001111')})
-      ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
-      fail('Expected to throw an exception!');
-    } on Exception catch (e) {
-      expect(e.runtimeType, WriteAfterReadException);
-    }
+    });
+  });
+
+  group('propagation example', () {
+    final vectors = [
+      Vector({'a': 0xff}, {'b': bin('00001111')})
+    ];
+
+    test('normal', () async {
+      try {
+        final a = Logic(name: 'a', width: 8);
+        final mod = PropExample(a);
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+
+    test('ssa', () async {
+      // this one can't be fixed with SSA, make sure it still fails
+      try {
+        final a = Logic(name: 'a', width: 8);
+        final mod = PropExampleSsa(a);
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
   });
 }
