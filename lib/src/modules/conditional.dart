@@ -9,10 +9,12 @@
 ///
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
@@ -100,6 +102,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
 class _SsaLogic extends Logic {
   final Logic ref;
+  //TODO: keep track of the original generator so we don't accidentally find someone elses!
   _SsaLogic(this.ref) : super(width: ref.width, name: ref.name);
 }
 
@@ -132,7 +135,14 @@ class Combinational extends _Always {
   }
 
   void _processSsa() {
-    for (final conditional in conditionals) {}
+    var mappings = <Logic, Logic>{};
+    for (final conditional in conditionals) {
+      mappings = conditional._evaluateSsa(mappings);
+    }
+
+    for (final mapping in mappings.entries) {
+      mapping.key <= mapping.value;
+    }
   }
 
   @override
@@ -491,11 +501,27 @@ abstract class Conditional {
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver) {
-    //TODO: implement
-    return [];
+    //TODO: use memoization for improved performance, with recursion
+    // but how to avoid stack limit for super deep logic?
+
+    final toParse = TraverseableCollection<Logic>()..add(driver);
+    final foundSsaLogics = <_SsaLogic>{};
+    for (var i = 0; i < toParse.length; i++) {
+      if (toParse[i].srcConnection != null) {
+        toParse.add(toParse[i].srcConnection!);
+      }
+      if (toParse[i].isOutput) {
+        toParse.addAll(toParse[i].parentModule!.inputs.values);
+      }
+      if (toParse[i] is _SsaLogic) {
+        foundSsaLogics.add(toParse[i] as _SsaLogic);
+      }
+    }
+
+    return foundSsaLogics.toList();
   }
 
-  // Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings);
+  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings);
 }
 
 /// An assignment that only happens under certain conditions.
@@ -546,6 +572,24 @@ class ConditionalAssign extends Conditional {
     final driverName = inputsNameMap[driverInput(driver).name]!;
     final receiverName = outputsNameMap[receiverOutput(receiver).name]!;
     return '$padding$receiverName $assignOperator $driverName;';
+  }
+
+  @override
+  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
+    final ssaDrivers = Conditional._findSsaDriversFrom(driver);
+
+    // take all the "current" names for these signals
+    for (final ssaDriver in ssaDrivers) {
+      ssaDriver <= currentMappings[ssaDriver.ref]!;
+    }
+
+    final newMappings = <Logic, Logic>{...currentMappings};
+    // if the receiver is an ssa node, then update the mapping
+    if (receiver is _SsaLogic) {
+      newMappings[(receiver as _SsaLogic).ref] = receiver;
+    }
+
+    return newMappings;
   }
 }
 
@@ -770,6 +814,12 @@ ${subPadding}end
 
     return verilog.toString();
   }
+
+  @override
+  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
+    // TODO: implement _evaluateSsa
+    throw UnimplementedError();
+  }
 }
 
 /// A special version of [Case] which can do wildcard matching via `z` in
@@ -976,6 +1026,12 @@ ${padding}end ''');
     verilog.write('\n');
 
     return verilog.toString();
+  }
+
+  @override
+  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
+    // TODO: implement _evaluateSsa
+    throw UnimplementedError();
   }
 }
 
