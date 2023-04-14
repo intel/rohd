@@ -18,7 +18,9 @@ class PipelineStageInfo {
   /// The [Pipeline] associated with this object.
   final Pipeline _pipeline;
 
-  PipelineStageInfo._(this._pipeline, this.stage);
+  final Logic Function(Logic) _ssa;
+
+  PipelineStageInfo._(this._pipeline, this.stage, this._ssa);
 
   /// Returns a staged version of [identifier] at the current stage, adjusted
   /// by the amount of [stageAdjustment].
@@ -28,12 +30,12 @@ class PipelineStageInfo {
   /// stage, you can access it relatively using [stageAdjustment].  For
   /// example, `p.get(x, -1)` will access the value of `x` one stage prior.
   Logic get(Logic identifier, [int stageAdjustment = 0]) =>
-      _pipeline.get(identifier, stage + stageAdjustment);
+      _ssa(_pipeline.get(identifier, stage + stageAdjustment));
 
   /// Returns a staged version of [identifier] at the specified
   /// absolute [stageIndex].
   Logic getAbs(Logic identifier, int stageIndex) =>
-      _pipeline.get(identifier, stageIndex);
+      _ssa(_pipeline.get(identifier, stageIndex));
 }
 
 class _PipeStage {
@@ -114,20 +116,22 @@ class Pipeline {
 
     signals.forEach(_add);
 
-    final combMiddles = <List<Conditional>>[];
-    for (var i = 0; i < _numStages; i++) {
-      final combMiddle = _stages[i].operation(PipelineStageInfo._(this, i));
-      combMiddles.add(combMiddle);
-    }
-
     for (var stageIndex = 0; stageIndex < _numStages; stageIndex++) {
-      Combinational([
-        for (Logic l in _registeredLogics)
-          get(l, stageIndex) < _i(l, stageIndex),
-        ...combMiddles[stageIndex],
-        for (Logic l in _registeredLogics)
-          _o(l, stageIndex) < get(l, stageIndex),
-      ], name: 'comb_stage$stageIndex');
+      Combinational.ssa((ssa) {
+        //TODO: what if signals are first referenced in later stages???
+
+        // build the conditionals first so that we populate _registeredLogics
+        final stageConditionals = _stages[stageIndex]
+            .operation(PipelineStageInfo._(this, stageIndex, ssa));
+
+        return [
+          for (Logic l in _registeredLogics)
+            ssa(get(l, stageIndex)) < _i(l, stageIndex),
+          ...stageConditionals,
+          for (Logic l in _registeredLogics)
+            _o(l, stageIndex) < ssa(get(l, stageIndex)),
+        ];
+      }, name: 'comb_stage$stageIndex');
     }
   }
 
@@ -180,7 +184,7 @@ class Pipeline {
 
     if (reset != null) {
       ffAssignsWithStall = <Conditional>[
-        IfBlock([
+        If.block([
           Iff(
             reset!,
             ffAssigns.map((conditional) {

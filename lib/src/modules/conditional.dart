@@ -101,9 +101,13 @@ abstract class _Always extends Module with CustomSystemVerilog {
 }
 
 class _SsaLogic extends Logic {
-  final Logic ref;
+  final Logic _ref;
+
+  /// A unique identifier for the context.
+  final int _context;
   //TODO: keep track of the original generator so we don't accidentally find someone elses!
-  _SsaLogic(this.ref) : super(width: ref.width, name: ref.name);
+  _SsaLogic(this._ref, this._context)
+      : super(width: _ref.width, name: _ref.name);
 }
 
 /// Represents a block of combinational logic.
@@ -121,12 +125,16 @@ class Combinational extends _Always {
     }
   }
 
+  static int _ssaContextCounter = 0;
+
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
     Map<Logic, List<_SsaLogic>> existing = {};
 
-    Logic _getSsa(Logic ref) => _SsaLogic(ref);
+    final context = _ssaContextCounter++;
+
+    Logic _getSsa(Logic ref) => _SsaLogic(ref, context);
 
     final conditionals = construct(_getSsa);
 
@@ -134,15 +142,16 @@ class Combinational extends _Always {
     // funny business with the ssa nodes after the list is provided. need to doc
     // this clearly!
 
-    _processSsa(conditionals);
+    _processSsa(conditionals, context: context);
 
     return Combinational(conditionals, name: name);
   }
 
-  static void _processSsa(List<Conditional> conditionals) {
+  static void _processSsa(List<Conditional> conditionals,
+      {required int context}) {
     var mappings = <Logic, Logic>{};
     for (final conditional in conditionals) {
-      mappings = conditional._processSsa(mappings);
+      mappings = conditional._processSsa(mappings, context: context);
     }
 
     for (final mapping in mappings.entries) {
@@ -498,17 +507,18 @@ abstract class Conditional {
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
   static void _connectSsaDriverFromMappings(
-      Logic driver, Map<Logic, Logic> mappings) {
-    final ssaDrivers = Conditional._findSsaDriversFrom(driver);
+      Logic driver, Map<Logic, Logic> mappings,
+      {required int context}) {
+    final ssaDrivers = Conditional._findSsaDriversFrom(driver, context);
 
     // take all the "current" names for these signals
     for (final ssaDriver in ssaDrivers) {
       //TODO: there should be a helpful exception if ref doesn't exist
-      ssaDriver <= mappings[ssaDriver.ref]!;
+      ssaDriver <= mappings[ssaDriver._ref]!;
     }
   }
 
-  static List<_SsaLogic> _findSsaDriversFrom(Logic driver) {
+  static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
     //TODO: use memoization for improved performance, with recursion
     // but how to avoid stack limit for super deep logic?
 
@@ -521,8 +531,8 @@ abstract class Conditional {
       if (toParse[i].isOutput) {
         toParse.addAll(toParse[i].parentModule!.inputs.values);
       }
-      if (toParse[i] is _SsaLogic) {
-        //TODO: AND it belongs to this call?
+      if (toParse[i] is _SsaLogic &&
+          (toParse[i] as _SsaLogic)._context == context) {
         foundSsaLogics.add(toParse[i] as _SsaLogic);
       }
     }
@@ -530,7 +540,8 @@ abstract class Conditional {
     return foundSsaLogics.toList();
   }
 
-  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings);
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context});
 }
 
 /// An assignment that only happens under certain conditions.
@@ -550,6 +561,9 @@ class ConditionalAssign extends Conditional {
       throw Exception('Width for $receiver and $driver must match but do not.');
     }
   }
+
+  @override
+  String toString() => '${receiver.name} < ${driver.name}';
 
   @override
   late final List<Logic> receivers = [receiver];
@@ -584,13 +598,15 @@ class ConditionalAssign extends Conditional {
   }
 
   @override
-  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
-    Conditional._connectSsaDriverFromMappings(driver, currentMappings);
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    Conditional._connectSsaDriverFromMappings(driver, currentMappings,
+        context: context);
 
     final newMappings = <Logic, Logic>{...currentMappings};
     // if the receiver is an ssa node, then update the mapping
     if (receiver is _SsaLogic) {
-      newMappings[(receiver as _SsaLogic).ref] = receiver;
+      newMappings[(receiver as _SsaLogic)._ref] = receiver;
     }
 
     return newMappings;
@@ -820,11 +836,14 @@ ${subPadding}end
   }
 
   @override
-  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
     // first connect direct drivers into the case statement
-    Conditional._connectSsaDriverFromMappings(expression, currentMappings);
+    Conditional._connectSsaDriverFromMappings(expression, currentMappings,
+        context: context);
     for (final itemDriver in items.map((e) => e.value)) {
-      Conditional._connectSsaDriverFromMappings(itemDriver, currentMappings);
+      Conditional._connectSsaDriverFromMappings(itemDriver, currentMappings,
+          context: context);
     }
 
     // calculate mappings locally within each item
@@ -836,7 +855,8 @@ ${subPadding}end
       var localMappings = {...currentMappings};
 
       for (final conditional in conditionals) {
-        localMappings = conditional._processSsa(localMappings);
+        localMappings =
+            conditional._processSsa(localMappings, context: context);
       }
 
       for (final localMapping in localMappings.entries) {
@@ -1064,10 +1084,12 @@ ${padding}end ''');
   }
 
   @override
-  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
     // first connect direct drivers into the if statements
     for (final iff in iffs) {
-      Conditional._connectSsaDriverFromMappings(iff.condition, currentMappings);
+      Conditional._connectSsaDriverFromMappings(iff.condition, currentMappings,
+          context: context);
     }
 
     // calculate mappings locally within each if statement
@@ -1076,7 +1098,8 @@ ${padding}end ''');
       var localMappings = {...currentMappings};
 
       for (final conditional in conditionals) {
-        localMappings = conditional._processSsa(localMappings);
+        localMappings =
+            conditional._processSsa(localMappings, context: context);
       }
 
       for (final localMapping in localMappings.entries) {
