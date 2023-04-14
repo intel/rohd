@@ -121,8 +121,6 @@ class Combinational extends _Always {
     }
   }
 
-  bool _ssaBuild = false;
-
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
@@ -131,26 +129,25 @@ class Combinational extends _Always {
     Logic _getSsa(Logic ref) => _SsaLogic(ref);
 
     final conditionals = construct(_getSsa);
-    return Combinational(conditionals, name: name).._ssaBuild = true;
+
+    //TODO: since we're reconstructing conditionals up-front, there can't be any
+    // funny business with the ssa nodes after the list is provided. need to doc
+    // this clearly!
+
+    _processSsa(conditionals);
+
+    return Combinational(conditionals, name: name);
   }
 
-  void _processSsa() {
+  static void _processSsa(List<Conditional> conditionals) {
     var mappings = <Logic, Logic>{};
     for (final conditional in conditionals) {
-      mappings = conditional._evaluateSsa(mappings);
+      mappings = conditional._processSsa(mappings);
     }
 
     for (final mapping in mappings.entries) {
       mapping.key <= mapping.value;
     }
-  }
-
-  @override
-  Future<void> build() async {
-    if (_ssaBuild) {
-      _processSsa();
-    }
-    await super.build();
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to
@@ -500,6 +497,17 @@ abstract class Conditional {
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
+  static void _connectSsaDriverFromMappings(
+      Logic driver, Map<Logic, Logic> mappings) {
+    final ssaDrivers = Conditional._findSsaDriversFrom(driver);
+
+    // take all the "current" names for these signals
+    for (final ssaDriver in ssaDrivers) {
+      //TODO: there should be a helpful exception if ref doesn't exist
+      ssaDriver <= mappings[ssaDriver.ref]!;
+    }
+  }
+
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver) {
     //TODO: use memoization for improved performance, with recursion
     // but how to avoid stack limit for super deep logic?
@@ -521,7 +529,7 @@ abstract class Conditional {
     return foundSsaLogics.toList();
   }
 
-  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings);
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings);
 }
 
 /// An assignment that only happens under certain conditions.
@@ -575,13 +583,8 @@ class ConditionalAssign extends Conditional {
   }
 
   @override
-  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
-    final ssaDrivers = Conditional._findSsaDriversFrom(driver);
-
-    // take all the "current" names for these signals
-    for (final ssaDriver in ssaDrivers) {
-      ssaDriver <= currentMappings[ssaDriver.ref]!;
-    }
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
+    Conditional._connectSsaDriverFromMappings(driver, currentMappings);
 
     final newMappings = <Logic, Logic>{...currentMappings};
     // if the receiver is an ssa node, then update the mapping
@@ -816,9 +819,40 @@ ${subPadding}end
   }
 
   @override
-  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
-    // TODO: implement _evaluateSsa
-    throw UnimplementedError();
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
+    // first connect direct drivers into the case statement
+    Conditional._connectSsaDriverFromMappings(expression, currentMappings);
+    for (final itemDriver in items.map((e) => e.value)) {
+      Conditional._connectSsaDriverFromMappings(itemDriver, currentMappings);
+    }
+
+    // calculate mappings locally within each item
+    final phiMappings = <Logic, Logic>{};
+    for (final conditionals in [
+      ...items.map((e) => e.then),
+      if (defaultItem != null) defaultItem!,
+    ]) {
+      var localMappings = {...currentMappings};
+
+      for (final conditional in conditionals) {
+        localMappings = conditional._processSsa(localMappings);
+      }
+
+      for (final localMapping in localMappings.entries) {
+        if (!phiMappings.containsKey(localMapping.key)) {
+          phiMappings[localMapping.key] = Logic(
+            name: '${localMapping.key.name}_phi',
+            width: localMapping.key.width,
+          );
+        }
+
+        conditionals.add(phiMappings[localMapping.key]! < localMapping.value);
+      }
+    }
+
+    final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    return newMappings;
   }
 }
 
@@ -1029,8 +1063,7 @@ ${padding}end ''');
   }
 
   @override
-  Map<Logic, Logic> _evaluateSsa(Map<Logic, Logic> currentMappings) {
-    // TODO: implement _evaluateSsa
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
     throw UnimplementedError();
   }
 }
