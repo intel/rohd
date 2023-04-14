@@ -49,6 +49,9 @@ class SsaModCase extends Module {
   }
 }
 
+//TODO: test with multiple ssa things connected to each other that it doesnt get confused!
+//TODO: test crazy hierarcical if/else things
+
 void main() {
   test('ssa simple assignments only', () async {
     final mod = SsaModAssignsOnly(Logic(width: 8));
@@ -58,6 +61,12 @@ void main() {
 
   test('ssa case', () async {
     final mod = SsaModCase(Logic(width: 8));
+    await mod.build();
+    print(mod.generateSynth());
+  });
+
+  test('ssa if', () async {
+    final mod = SsaModIf(Logic(width: 8));
     await mod.build();
     print(mod.generateSynth());
   });

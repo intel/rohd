@@ -1064,7 +1064,35 @@ ${padding}end ''');
 
   @override
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings) {
-    throw UnimplementedError();
+    // first connect direct drivers into the if statements
+    for (final iff in iffs) {
+      Conditional._connectSsaDriverFromMappings(iff.condition, currentMappings);
+    }
+
+    // calculate mappings locally within each if statement
+    final phiMappings = <Logic, Logic>{};
+    for (final conditionals in iffs.map((e) => e.then)) {
+      var localMappings = {...currentMappings};
+
+      for (final conditional in conditionals) {
+        localMappings = conditional._processSsa(localMappings);
+      }
+
+      for (final localMapping in localMappings.entries) {
+        if (!phiMappings.containsKey(localMapping.key)) {
+          phiMappings[localMapping.key] = Logic(
+            name: '${localMapping.key.name}_phi',
+            width: localMapping.key.width,
+          );
+        }
+
+        conditionals.add(phiMappings[localMapping.key]! < localMapping.value);
+      }
+    }
+
+    final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    return newMappings;
   }
 }
 
