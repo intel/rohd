@@ -29,6 +29,25 @@ class SimplePipelineModule extends Module {
   }
 }
 
+class SimplePipelineModuleLateAdd extends Module {
+  SimplePipelineModuleLateAdd(Logic a)
+      : super(name: 'simple_pipeline_module_late_add') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final pipeline = Pipeline(clk, stages: [
+      (p) => [],
+      (p) => [],
+      (p) => [],
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+    ]);
+    b <= pipeline.get(a);
+  }
+}
+
 class RVPipelineModule extends Module {
   RVPipelineModule(Logic a, Logic reset, Logic validIn, Logic readyForOut)
       : super(name: 'rv_pipeline_module') {
@@ -66,6 +85,27 @@ void main() {
         Vector({'a': 1}, {}),
         Vector({'a': 2}, {}),
         Vector({'a': 3}, {}),
+        Vector({'a': 4}, {'b': 4}),
+        Vector({'a': 4}, {'b': 5}),
+        Vector({'a': 4}, {'b': 6}),
+        Vector({'a': 4}, {'b': 7}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      final simResult = SimCompare.iverilogVector(pipem, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('simple pipeline late add', () async {
+      final pipem = SimplePipelineModuleLateAdd(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
         Vector({'a': 4}, {'b': 4}),
         Vector({'a': 4}, {'b': 5}),
         Vector({'a': 4}, {'b': 6}),

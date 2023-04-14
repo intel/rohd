@@ -120,15 +120,28 @@ class Pipeline {
       Combinational.ssa((ssa) {
         //TODO: what if signals are first referenced in later stages???
 
+        // keep track of the previously registered logics:
+        final prevRegisteredLogics = _registeredLogics.toSet();
+
         // build the conditionals first so that we populate _registeredLogics
         final stageConditionals = _stages[stageIndex]
             .operation(PipelineStageInfo._(this, stageIndex, ssa));
 
+        // if any new logics were registered, add some extra assignments
+        // to make up the gap since it didn't get included in prior generations
+        for (final l in _registeredLogics) {
+          if (!prevRegisteredLogics.contains(l)) {
+            for (var i = 0; i < stageIndex; i++) {
+              _o(l, i) <= _i(l, i);
+            }
+          }
+        }
+
         return [
-          for (Logic l in _registeredLogics)
+          for (final l in _registeredLogics)
             ssa(get(l, stageIndex)) < _i(l, stageIndex),
           ...stageConditionals,
-          for (Logic l in _registeredLogics)
+          for (final l in _registeredLogics)
             _o(l, stageIndex) < ssa(get(l, stageIndex)),
         ];
       }, name: 'comb_stage$stageIndex');
