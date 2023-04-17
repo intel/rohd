@@ -38,12 +38,12 @@ class ShorthandAssignModule extends Module {
           s(maOut) < mulAssign,
           s(daOut) < divAssign,
           // Add these tests
-          piOut.incr(s),
-          pdOut.decr(s),
-          piOutWithB.incr(s, b),
-          pdOutWithB.decr(s, b),
-          maOut.mulAssign(s, b),
-          daOut.divAssign(s, b),
+          piOut.incr(s: s),
+          pdOut.decr(s: s),
+          piOutWithB.incr(s: s, val: b),
+          pdOutWithB.decr(s: s, val: b),
+          maOut.mulAssign(s: s, val: b),
+          daOut.divAssign(s: s, val: b),
         ]);
   }
 }
