@@ -518,9 +518,6 @@ abstract class Conditional {
   }
 
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    //TODO: use memoization for improved performance, with recursion
-    // but how to avoid stack limit for super deep logic?
-
     final toParse = TraverseableCollection<Logic>()..add(driver);
     final foundSsaLogics = <_SsaLogic>{};
     for (var i = 0; i < toParse.length; i++) {

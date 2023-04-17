@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import '../benchmark/byte_enable_benchmark.dart';
 import '../benchmark/logic_value_of_benchmark.dart';
+import '../benchmark/many_seq_and_comb_benchmark.dart';
 import '../benchmark/pipeline_benchmark.dart';
 import '../benchmark/wave_dump_benchmark.dart';
 
@@ -30,5 +31,11 @@ void main() {
 
   test('waveform benchmark', () async {
     await WaveDumpBenchmark().measure();
+  });
+
+  test('many seq and comb benchmark', () async {
+    for (final connectionType in ManySeqAndCombCombConnectionType.values) {
+      await ManySeqAndCombBenchmark(connectionType).measure();
+    }
   });
 }
