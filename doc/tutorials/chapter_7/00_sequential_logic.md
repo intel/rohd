@@ -2,10 +2,15 @@
 
 - [What is Sequential Logic?](#what-is-sequential-logic)
 - [Sequential Logic in ROHD](#sequential-logic-in-rohd)
+- [Shift Register](#shift-register)
+- [ROHD Simulator](#rohd-simulator)
+- [Unit Test in Sequential Logic](#unit-test-in-sequential-logic)
 
 ## Learning Outcome
 
 ## What is Sequential Logic?
+
+Sequential Logic is a circuit that consists of flip-flops as memory to generate output. In our previous chapter, we talked about combinational logic which input is only depend on the current state. But in sequential logic, past input will also be taken account before generate the current output.
 
 ## Sequential Logic in ROHD
 
@@ -37,9 +42,9 @@ void main() async {
 }
 ```
 
-Next, let define our inputs to the shift register. So, in our shift register we will need a reset pin `reset`, shift in pin `sin` and a clock `clk`. As for the output, there are one output pin shift out `sout`.
+Next, let define our inputs to the shift register. So, in our shift register we will need a reset pin `reset`, shift in pin `sin` and a clock `clk`. As for the output, there is one output pin shift out `sout`.
 
-Let register or add the inputs and output to our ShiftRegister module. Oh ya, we can add the name to our module as well. You can doing so this by adding `super.name='shift_register'` to the constructor.
+Let register or add the inputs and output to our ShiftRegister module. Oh ya, we can also add the module name for our module as well. You can doing so by adding `super.name='shift_register'` to the constructor.
 
 ```dart
 class ShiftRegister extends Module {
@@ -54,19 +59,9 @@ class ShiftRegister extends Module {
     final sout = addOutput('sout', width: regWidth);
   }
 }
-
-void main() async {
-  final clk = SimpleClockGenerator(10).clk;
-  final reset = Logic(name: 'reset');
-  final sin = Logic(name: 'sin', width: 4);
-
-  final shiftReg = ShiftRegister(clk, reset, sin);
-  await shiftReg.build();
-  print(shiftReg.generateSynth());
-}
 ```
 
-Now, we declared our inputs and output pin. Next, we want to create a local signal name `data` that has same `width` with shift-out pin. This is the value that will get shift during the simulation.
+Now, we declared our inputs and output pin. Next, we want to create a **local** signal name `data` that has same `width` with shift-out pin. This is the value that will get shift during the simulation.
 
 Then, its time to declare the logic of the module. We want to start with creating a `Sequential()` block, that takes in a clock `clk`, a List of `Conditionals`, and a name for the Sequential (optional).
 
@@ -84,7 +79,7 @@ To build our shift register, we want to say something like:
 
 1. IF reset signal
     1.1 data will be set to 0
-2. ELSE swizzle the 3 bits from LSB with the sin
+2. ELSE swizzle the sin with existing value
 3. SET output port to the data
 
 Our `ShiftRegister` module will be look like this instead.
@@ -108,7 +103,7 @@ class ShiftRegister extends Module {
       IfBlock([
         Iff(reset, [data < 0]),
         Else([
-          data < [data.slice(2, 0), sin].swizzle() // left shift
+          data < [data.slice(regWidth - 2, 0), sin].swizzle() 
         ])
       ]),
     ]);
@@ -122,7 +117,7 @@ class ShiftRegister extends Module {
 
 Now, it's time to dive in unit test and Simulation module in ROHD. ROHD simulator is a static class accessible as `Simulator` which implements a simple event-based simulator. All `Logic`s in Dart have `glitch` events which propagate values to connected `Logic`s downstream. In this way, ROHD propagates values across the entire graph representation of the hardware (without any `Simulator` involvement required).
 
-The simulator has a concept of (unitless) time, and arbitrary Dart function can be registerd to occur ar arbitrary times in the simulator. Asking the `Simulator` to run causes it to iterate through all deposit signals on `logic`s, it propagates values across the hardware.
+The simulator has a concept of (unitless) time, and arbitrary Dart function can be registered to occur ar arbitrary times in the simulator. Asking the `Simulator` to run causes it to iterate through all deposit signals on `logic`s, it propagates values across the hardware.
 
 - To register a function at an arbitrary timestamp, use `Simulator.registerAction`
 
@@ -167,7 +162,7 @@ await Simulator.run();
   - Note that this only resets the `Simulator` and not any `Module`s or `Logic` values
 
 ```dart
-// Normally you want to use this when doign unit test to make sure your simulator is in the clean state for every different test
+// Normally you want to use this when doing unit test to make sure your simulator is in the clean state for every different test
 await Simulator.reset();
 ```
 
@@ -209,7 +204,10 @@ void main() async {
         '=${shiftReg.sout.value.toString(includeWidth: false)}\t$message');
   }
 
+  // Set how long you want your simulator to run
   Simulator.setMaxSimTime(100);
+
+  // Run the simulator but don't wait for it
   unawaited(Simulator.run());
 }
 ```
@@ -231,9 +229,13 @@ void main() async {
         '=${shiftReg.sout.value.toString(includeWidth: false)}\t$message');
   }
 
+  // Set how long you want your simulator to run
   Simulator.setMaxSimTime(100);
+
+  // Run the simulator but don't wait for it
   unawaited(Simulator.run());
 
+  // Output the simulation waveform using WaveDumper
   WaveDumper(shiftReg,
         outputPath: 'doc/tutorials/chapter_7/shift_register.vcd');
 }
@@ -265,6 +267,7 @@ Then, we can use `expect()` function from the unit test in previous session to c
 ```dart
 await clk.nextPosedge;
 printFlop();
+// Expect results flops by flops
 expect(
     shiftReg.sout.value.toString(includeWidth: false), equals('00000001'));
 ```
@@ -272,3 +275,10 @@ expect(
 Well, that its for unit test in Sequential Logic. After you finish the `Simulation`, you can use `Simulator.endSimulation()` to end the Simulator and await for `Simulator.simulationEnded`.
 
 There is another method of writting unit test using which is using `Simulator.registerAction()`. But we will dive into that in the next chapter.
+
+You can find the executable version of code at [shift_register.dart](shift_register.dart).
+
+## Exercise
+
+1. Can you try to build a D Flip-Flop using Sequential Logic?
+    - Answer to this exercise can be found at [answers/exercise_1_d_flip_flop.dart](./answers/exercise_1_d_flip_flop.dart)
