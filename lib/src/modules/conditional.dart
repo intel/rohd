@@ -18,6 +18,8 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+//TODO: update CHANGELOG with all the big changes
+
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
@@ -151,6 +153,7 @@ class Combinational extends _Always {
     }
 
     for (final mapping in mappings.entries) {
+      //TODO: error here if already connected means reused logic?
       mapping.key <= mapping.value;
     }
   }

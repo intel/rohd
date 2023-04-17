@@ -30,21 +30,21 @@ class ShorthandAssignModule extends Module {
     final piOutWithB = addOutput('piOutWithB', width: 8);
     final pdOutWithB = addOutput('pdOutWithB', width: 8);
 
-    Combinational([
-      piOutWithB < preIncr,
-      pdOutWithB < preDecr,
-      piOut < preIncr,
-      pdOut < preDecr,
-      maOut < mulAssign,
-      daOut < divAssign,
-      // Add these tests
-      piOut.incr(),
-      pdOut.decr(),
-      piOutWithB.incr(b),
-      pdOutWithB.decr(b),
-      maOut.mulAssign(b),
-      daOut.divAssign(b),
-    ]);
+    Combinational.ssa((s) => [
+          s(piOutWithB) < preIncr,
+          s(pdOutWithB) < preDecr,
+          s(piOut) < preIncr,
+          s(pdOut) < preDecr,
+          s(maOut) < mulAssign,
+          s(daOut) < divAssign,
+          // Add these tests
+          piOut.incr(s),
+          pdOut.decr(s),
+          piOutWithB.incr(s, b),
+          pdOutWithB.decr(s, b),
+          maOut.mulAssign(s, b),
+          daOut.divAssign(s, b),
+        ]);
   }
 }
 
@@ -59,6 +59,20 @@ class LoopyCombModule extends Module {
       x < a,
       x < ~x,
     ]);
+  }
+}
+
+class LoopyCombModuleSsa extends Module {
+  Logic get a => input('a');
+  Logic get x => output('x');
+  LoopyCombModuleSsa(Logic a) : super(name: 'loopycombmodule') {
+    a = addInput('a', a);
+    final x = addOutput('x');
+
+    Combinational.ssa((s) => [
+          s(x) < a,
+          s(x) < ~s(x),
+        ]);
   }
 }
 
@@ -332,11 +346,24 @@ void main() {
   });
 
   group('functional', () {
-    test('conditional loopy comb', () async {
-      final mod = LoopyCombModule(Logic());
-      await mod.build();
-      mod.a.put(1);
-      expect(mod.x.value.toInt(), equals(0));
+    group('conditional loopy comb', () {
+      test('normal', () async {
+        try {
+          final mod = LoopyCombModule(Logic());
+          await mod.build();
+          mod.a.put(1);
+          expect(mod.x.value.toInt(), equals(0));
+          fail('Expected to throw an exception!');
+        } on Exception catch (e) {
+          expect(e.runtimeType, WriteAfterReadException);
+        }
+      });
+      test('ssa', () async {
+        final mod = LoopyCombModuleSsa(Logic());
+        await mod.build();
+        mod.a.put(1);
+        expect(mod.x.value.toInt(), equals(0));
+      });
     });
   });
 

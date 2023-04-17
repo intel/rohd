@@ -597,8 +597,9 @@ class Logic {
   /// ]);
   ///
   /// ```
-  ///
-  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
+  ///TODO: write doc about s
+  ConditionalAssign incr(Logic Function(Logic) s, [dynamic incrVal]) =>
+      s(this) < s(this) + (incrVal ?? 1);
 
   /// Shorthand for a [Conditional] which decrements this by [decrVal]
   ///
@@ -614,8 +615,9 @@ class Logic {
   /// ]);
   ///
   /// ```
-  ///
-  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
+  ///TODO: write doc about s
+  ConditionalAssign decr(Logic Function(Logic) s, [dynamic decrVal]) =>
+      s(this) < s(this) - (decrVal ?? 1);
 
   /// Shorthand for a [Conditional] which increments this by [mulVal]
   ///
@@ -630,8 +632,9 @@ class Logic {
   /// ]);
   ///
   /// ```
-  ///
-  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
+  ///TODO: write doc about s
+  ConditionalAssign mulAssign(Logic Function(Logic) s, dynamic mulVal) =>
+      s(this) < s(this) * mulVal;
 
   /// Shorthand for a [Conditional] which increments this by [divVal]
   ///
@@ -646,8 +649,9 @@ class Logic {
   /// ]);
   ///
   /// ```
-  ///
-  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
+  ///TODO: write doc about s
+  ConditionalAssign divAssign(Logic Function(Logic) s, dynamic divVal) =>
+      s(this) < s(this) / divVal;
 
   /// Conditional assignment operator.
   ///
