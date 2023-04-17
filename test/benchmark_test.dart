@@ -33,9 +33,11 @@ void main() {
     await WaveDumpBenchmark().measure();
   });
 
-  test('many seq and comb benchmark', () async {
+  group('many seq and comb benchmark', () {
     for (final connectionType in ManySeqAndCombCombConnectionType.values) {
-      await ManySeqAndCombBenchmark(connectionType).measure();
+      test(connectionType.name, () async {
+        await ManySeqAndCombBenchmark(connectionType).measure();
+      });
     }
   });
 }
