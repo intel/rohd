@@ -1,3 +1,13 @@
+/// Copyright (C) 2023 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// exercise_1_d_flip_flop.dart
+/// A simple answer for d flip flop implementation based on chapter 7 bootcamp.
+///
+/// 2023 April 17
+/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+///
+
 // ignore_for_file: avoid_print
 
 import 'dart:async';
