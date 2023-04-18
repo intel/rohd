@@ -1004,11 +1004,6 @@ class IfBlock extends If {
 
 /// Represents a chain of blocks of code to be conditionally executed, like
 /// `if`/`else if`/`else`.
-///
-/// This is functionally equivalent to chaining together [If]s, but this syntax
-/// is a little nicer
-/// for long chains.
-/// TODO: rewrite these
 class If extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
@@ -1017,7 +1012,8 @@ class If extends Conditional {
   /// make thefirst item an [ElseIf], it will act just like an [Iff].
   final List<Iff> iffs;
 
-  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
+  /// If [condition] is high, then [then] executes, otherwise [orElse] is
+  /// executed.
   If(Logic condition,
       {List<Conditional> then = const [], List<Conditional> orElse = const []})
       : this.block([
@@ -1025,7 +1021,7 @@ class If extends Conditional {
           Else(orElse),
         ]);
 
-  /// If [condition] is 1, then [then] is excutes,
+  /// If [condition] is high, then [then] is excutes,
   /// otherwise [orElse] is executed.
   ///
   /// Use this constructor when you only have a single [then] condition.

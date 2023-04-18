@@ -13,8 +13,6 @@ import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: reimplement some of these with SSA
-
 class ExampleModule extends Module {
   ExampleModule(Logic codepoint) {
     codepoint = addInput('codepoint', codepoint, width: 21);

@@ -12,8 +12,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: add a pipeline that first uses a variable later than stage0
-
 class SimplePipelineModule extends Module {
   SimplePipelineModule(Logic a) : super(name: 'simple_pipeline_module') {
     final clk = SimpleClockGenerator(10).clk;

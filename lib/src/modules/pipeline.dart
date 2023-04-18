@@ -118,8 +118,6 @@ class Pipeline {
 
     for (var stageIndex = 0; stageIndex < _numStages; stageIndex++) {
       Combinational.ssa((ssa) {
-        //TODO: what if signals are first referenced in later stages???
-
         // keep track of the previously registered logics:
         final prevRegisteredLogics = _registeredLogics.toSet();
 

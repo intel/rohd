@@ -13,8 +13,6 @@ class SsaModAssignsOnly extends Module {
   }
 }
 
-//TODO: test when variable is not "initialized"
-
 class SsaModIf extends Module {
   SsaModIf(Logic a) {
     a = addInput('a', a, width: 8);
@@ -53,6 +51,7 @@ class SsaModCase extends Module {
 //TODO: test crazy hierarcical if/else things
 //TODO: test where an SSA conditional is generated during generation of another SSA conditional
 //TODO: test that uninitialized variable throws exception
+//TODO: test when variable is not "initialized"
 
 void main() {
   test('ssa simple assignments only', () async {
