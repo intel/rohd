@@ -8,6 +8,10 @@
 
 ## Learning Outcome
 
+In this chapter:
+
+- You will learn how to create a sequential logic that are equivalent to System Verilog `always_ff`. We will also review on what is `Simulator` and how to create unit test along with ROHD Simulator.
+
 ## What is Sequential Logic?
 
 Sequential Logic is a circuit that consists of flip-flops as memory to generate output. In our previous chapter, we talked about combinational logic which input is only depend on the current state. But in sequential logic, past input will also be taken account before generate the current output.
