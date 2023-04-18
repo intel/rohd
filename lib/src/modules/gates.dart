@@ -608,10 +608,10 @@ class Mux extends Module with InlineSystemVerilog {
   /// on if [control] is 0 or 1, respectively.
   Mux(Logic control, Logic d1, Logic d0, {super.name = 'mux'}) {
     if (control.width != 1) {
-      throw Exception('Control must be single bit Logic, but found $control.');
+      throw PortWidthMismatchException(control, 1);
     }
     if (d0.width != d1.width) {
-      throw Exception('d0 ($d0) and d1 ($d1) must be same width');
+      throw PortWidthMismatchException.equalWidth(d0, d1);
     }
 
     _controlName = Module.unpreferredName('control_${control.name}');

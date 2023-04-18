@@ -18,6 +18,8 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+import '../exceptions/module/port_width_mismatch_exception.dart';
+
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
@@ -961,7 +963,11 @@ class ElseIf {
   final List<Conditional> then;
 
   /// If [condition] is 1, then [then] will be executed.
-  ElseIf(this.condition, this.then);
+  ElseIf(this.condition, this.then) {
+    if (condition.width != 1) {
+      throw PortWidthMismatchException(condition, 1);
+    }
+  }
 
   /// If [condition] is 1, then [then] will be executed.
   ///

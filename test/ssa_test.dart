@@ -34,7 +34,7 @@ class SsaModIf extends Module {
 
     Combinational.ssa((s) => [
           s(x) < a + 1,
-          If(s(x), then: [
+          If(s(x) > 3, then: [
             s(x) < s(x) + 2,
           ], orElse: [
             s(x) < s(x) + 3,
@@ -81,14 +81,21 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('ssa case', () async {
-    final mod = SsaModCase(Logic(width: 8));
-    await mod.build();
-    // print(mod.generateSynth());
-  });
-
   test('ssa if', () async {
     final mod = SsaModIf(Logic(width: 8));
+    await mod.build();
+
+    final vectors = [
+      for (var a = 0; a < 10; a++)
+        Vector({'a': a}, {'x': a < 3 ? a + 5 : a + 4})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('ssa case', () async {
+    final mod = SsaModCase(Logic(width: 8));
     await mod.build();
     // print(mod.generateSynth());
   });
