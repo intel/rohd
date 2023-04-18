@@ -4,7 +4,7 @@
 // invalid_latch_test.dart
 // Test behavior when latch-like logic is constructed at a gate level.
 //
-// 2023 February 7
+// 2023 April 17
 // Based on bug reports:
 // - https://github.com/intel/rohd/issues/286
 // - https://github.com/intel/rohd/issues/285
@@ -90,6 +90,7 @@ void main() async {
 
           try {
             final dLatch = _DLatch(Logic(), Logic(), combType);
+            await dLatch.build();
             await SimCompare.checkFunctionalVector(dLatch, vectors);
           } on Exception catch (e) {
             expect(e.runtimeType, WriteAfterReadException);

@@ -1,14 +1,28 @@
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// ssa_test.dart
+// Tests for SSA behavior.
+//
+// 2023 April 18
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class SsaModAssignsOnly extends Module {
+  Logic get x => output('x');
+
   SsaModAssignsOnly(Logic a) {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
+    final b = Logic(name: 'b', width: 8);
     Combinational.ssa((s) => [
-          s(x) < a,
-          s(x) < s(x) + 1,
-          s(x) < s(x) + s(x),
+          s(x) < a, // x = a
+          s(b) < s(x) + 1 + s(x), // b = 2a + 1
+          s(x) < s(x) + 1, // x = a + 1
+          s(x) < s(x) + s(x) + s(b), // x = 2(a + 1) + (2a + 1) = 4a + 3
         ]);
   }
 }
@@ -55,9 +69,16 @@ class SsaModCase extends Module {
 
 void main() {
   test('ssa simple assignments only', () async {
-    final mod = SsaModAssignsOnly(Logic(width: 8));
+    final a = Logic(width: 8, name: 'a');
+    final mod = SsaModAssignsOnly(a);
     await mod.build();
-    // print(mod.generateSynth());
+
+    final vectors = [
+      for (var a = 0; a < 10; a++) Vector({'a': a}, {'x': 4 * a + 3})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test('ssa case', () async {

@@ -154,6 +154,29 @@ abstract class SimCompare {
     RegExp('warning: always_comb process has no sensitivities'),
   ];
 
+  /// Executes [vectors] against the Icarus Verilog simulator and checks
+  /// that it passes.
+  static void checkIverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+  }) {
+    expect(
+        iverilogVector(module, vectors,
+            moduleName: moduleName,
+            dontDeleteTmpFiles: dontDeleteTmpFiles,
+            dumpWaves: dumpWaves,
+            iverilogExtraArgs: iverilogExtraArgs,
+            allowWarnings: allowWarnings,
+            maskKnownWarnings: maskKnownWarnings),
+        true);
+  }
+
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
