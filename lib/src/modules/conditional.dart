@@ -14,11 +14,10 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
-
-import '../exceptions/module/port_width_mismatch_exception.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
@@ -174,7 +173,9 @@ class Combinational extends _Always {
   /// There is a construction-time performance penalty for usage of this
   /// roughly proportional to the size of the design feeding into this instance.
   /// This is because it must search for any remapped signals along the entire
-  /// combinational and sequential path feeding into each [Conditional].
+  /// combinational and sequential path feeding into each [Conditional].  This
+  /// penalty is purely at generation time, not in simulation or the actual
+  /// generated design.
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
