@@ -52,6 +52,7 @@ class SsaModCase extends Module {
 //TODO: test with multiple ssa things connected to each other that it doesnt get confused!
 //TODO: test crazy hierarcical if/else things
 //TODO: test where an SSA conditional is generated during generation of another SSA conditional
+//TODO: test that uninitialized variable throws exception
 
 void main() {
   test('ssa simple assignments only', () async {

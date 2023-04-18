@@ -196,7 +196,7 @@ class Combinational extends _Always {
 
     for (final mapping in mappings.entries) {
       if (mapping.key.srcConnection != null) {
-        throw MappedSignalAlreadyAssigned(mapping.key.name);
+        throw MappedSignalAlreadyAssignedException(mapping.key.name);
       }
 
       mapping.key <= mapping.value;
@@ -444,8 +444,6 @@ class Sequential extends _Always {
 
 /// Represents an some logical assignments or actions that will only happen
 /// under certain conditions.
-///
-/// TODO: write a section about "write after read"
 abstract class Conditional {
   /// A [Map] from receiver [Logic] signals passed into this [Conditional] to
   /// the appropriate output logic port.
@@ -551,7 +549,10 @@ abstract class Conditional {
 
     // take all the "current" names for these signals
     for (final ssaDriver in ssaDrivers) {
-      //TODO: there should be a helpful exception if ref doesn't exist
+      if (!mappings.containsKey(ssaDriver._ref)) {
+        throw UninitializedSignalException(ssaDriver._ref.name);
+      }
+
       ssaDriver <= mappings[ssaDriver._ref]!;
     }
   }
@@ -575,6 +576,10 @@ abstract class Conditional {
     return foundSsaLogics.toList();
   }
 
+  /// Given existing [currentMappings], connects [drivers] and [receivers]
+  /// accordingly to [_SsaLogic]s and returns an updated set of mappings.
+  ///
+  /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
 }
