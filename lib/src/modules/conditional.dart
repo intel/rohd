@@ -18,8 +18,6 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-//TODO: update CHANGELOG with all the big changes
-
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
@@ -116,6 +114,10 @@ class _SsaLogic extends Logic {
 class Combinational extends _Always {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
+  ///
+  /// If any "write after read" occurs, then a [WriteAfterReadException] will
+  /// be thrown since it could lead to a mismatch between simulation and
+  /// synthesis.  See [Combinational.ssa] for more details.
   Combinational(super.conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
@@ -125,8 +127,52 @@ class Combinational extends _Always {
     }
   }
 
+  /// An internal counter to keep track of unique contexts.
   static int _ssaContextCounter = 0;
 
+  /// Constructs a new [Combinational] where [construct] generates a list of
+  /// [Conditional]s which use the provided remapping function to enable
+  /// a "static single-asssignment" (SSA) form for procedural execution. The
+  /// Wikipedia article has some good explanation:
+  /// https://en.wikipedia.org/wiki/Static_single-assignment_form
+  ///
+  /// In SystemVerilog, an `always_comb` block can easily produce
+  /// non-synthesizable or ambiguous design blocks which can lead to subtle
+  /// bugs and mismatches between simulation and synthesis.  Since
+  /// [Combinational] maps directly to an `always_comb` block, it is also
+  /// susceptible to these types of issues.
+  ///
+  /// A large class of  these issues can be prevented by avoiding a "write after
+  /// read" scenario, where a signal is assigned a value after that value would
+  /// have had an impact on prior procedural assignment in that same
+  /// [Combinational] execution.
+  ///
+  /// [Combinational.ssa] remaps signals such that signals are only "written"
+  /// once.
+  ///
+  /// The below example shows a simple use case:
+  /// ```dart
+  /// Combinational.ssa((s) => [
+  ///   s(y) < 1,
+  ///   s(y) < s(y) + 1,
+  /// ]);
+  /// ```
+  ///
+  /// Note that every variable in this case must be "initialized" before it
+  /// can be used.
+  ///
+  /// Note that signals returned by the remapping function (`s`) are tied to
+  /// this specific instance of [Combinational] and shouldn't be used elsewhere
+  /// or you may see unexpected behavior.  Also note that each instance of
+  /// signal returned by the remapping function should be used in at most
+  /// one [Conditional] and on either the receiving or driving side, but not
+  /// both.  These restrictions are generally easy to adhere to unless you do
+  /// something strange.
+  ///
+  /// There is a construction-time performance penalty for usage of this
+  /// roughly proportional to the size of the design feeding into this instance.
+  /// This is because it must search for any remapped signals along the entire
+  /// combinational and sequential path feeding into each [Conditional].
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
@@ -135,10 +181,6 @@ class Combinational extends _Always {
     Logic getSsa(Logic ref) => _SsaLogic(ref, context);
 
     final conditionals = construct(getSsa);
-
-    //TODO: since we're reconstructing conditionals up-front, there can't be any
-    // funny business with the ssa nodes after the list is provided. need to doc
-    // this clearly!
 
     _processSsa(conditionals, context: context);
 
@@ -153,7 +195,10 @@ class Combinational extends _Always {
     }
 
     for (final mapping in mappings.entries) {
-      //TODO: error here if already connected means reused logic?
+      if (mapping.key.srcConnection != null) {
+        throw MappedSignalAlreadyAssigned(mapping.key.name);
+      }
+
       mapping.key <= mapping.value;
     }
   }
@@ -161,11 +206,6 @@ class Combinational extends _Always {
   /// Keeps track of whether this block is already mid-execution, in order to
   /// detect reentrance.
   bool _isExecuting = false;
-
-  static void _writeAfterReadViolation(String signalName) {
-    //TODO
-    throw WriteAfterReadException(signalName);
-  }
 
   /// Performs the functional behavior of this block.
   void _execute() {
@@ -185,7 +225,7 @@ class Combinational extends _Always {
       if (!guarded.contains(toGuard)) {
         guarded.add(toGuard);
         guardListeners.add(toGuard.glitch.listen((args) {
-          _writeAfterReadViolation(toGuard.name);
+          throw WriteAfterReadException(toGuard.name);
         }));
       }
     }
@@ -205,7 +245,6 @@ class Combinational extends _Always {
     }
 
     // clean up after execution
-
     for (final guardListener in guardListeners) {
       guardListener.cancel();
     }
@@ -945,9 +984,17 @@ class Else extends Iff {
   Else.s(Conditional then) : this([then]);
 }
 
+/// Represents a chain of blocks of code to be conditionally executed, like
+/// `if`/`else if`/`else`.
+///
+/// This is functionally equivalent to chaining together [If]s, but this syntax
+/// is a little nicer for long chains.
 @Deprecated('Use `If.block` instead.')
 class IfBlock extends If {
-  IfBlock(List<Iff> iffs) : super.block(iffs);
+  /// Checks the conditions for [iffs] in order and executes the first one
+  /// whose condition is enabled.
+  @Deprecated('Use `If.block` instead.')
+  IfBlock(super.iffs) : super.block();
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like
@@ -956,6 +1003,7 @@ class IfBlock extends If {
 /// This is functionally equivalent to chaining together [If]s, but this syntax
 /// is a little nicer
 /// for long chains.
+/// TODO: rewrite these
 class If extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
