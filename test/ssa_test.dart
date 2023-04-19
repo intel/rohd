@@ -12,10 +12,18 @@ import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-class SsaModAssignsOnly extends Module {
+abstract class SsaTestModule extends Module {
+  /// The output of this test module.
   Logic get x => output('x');
 
-  SsaModAssignsOnly(Logic a) {
+  SsaTestModule({super.name});
+
+  /// Calculates the expected output [x] given value [a].
+  int model(int a);
+}
+
+class SsaModAssignsOnly extends SsaTestModule {
+  SsaModAssignsOnly(Logic a) : super(name: 'assigns_only') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
     final b = Logic(name: 'b', width: 8);
@@ -27,11 +35,12 @@ class SsaModAssignsOnly extends Module {
         ]);
   }
 
-  static int model(int a) => 4 * a + 3;
+  @override
+  int model(int a) => 4 * a + 3;
 }
 
-class SsaModIf extends Module {
-  SsaModIf(Logic a) {
+class SsaModIf extends SsaTestModule {
+  SsaModIf(Logic a) : super(name: 'if') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
 
@@ -47,10 +56,13 @@ class SsaModIf extends Module {
           s(x) < s(x) + 1, // x = (a + 1 > 3) ? a + 4 : a + 5
         ]);
   }
+
+  @override
+  int model(int a) => (a + 1 > 3) ? a + 4 : a + 5;
 }
 
-class SsaModCase extends Module {
-  SsaModCase(Logic a) {
+class SsaModCase extends SsaTestModule {
+  SsaModCase(Logic a) : super(name: 'case') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
 
@@ -67,7 +79,8 @@ class SsaModCase extends Module {
         ]);
   }
 
-  static int model(int a) {
+  @override
+  int model(int a) {
     var x = a + 1;
     x = x + 1;
     final match = x % 2;
@@ -84,8 +97,8 @@ class SsaModCase extends Module {
   }
 }
 
-class SsaChain extends Module {
-  SsaChain(Logic a) {
+class SsaChain extends SsaTestModule {
+  SsaChain(Logic a) : super(name: 'chain') {
     a = addInput('a', a, width: 8);
     final b = Logic(name: 'b', width: 8);
     final x = addOutput('x', width: 8);
@@ -100,10 +113,13 @@ class SsaChain extends Module {
           x.incr(s: s),
         ]);
   }
+
+  @override
+  int model(int a) => a + 4;
 }
 
-class SsaMix extends Module {
-  SsaMix(Logic a) {
+class SsaMix extends SsaTestModule {
+  SsaMix(Logic a) : super(name: 'mix') {
     a = addInput('a', a, width: 8);
     final b = Logic(name: 'b', width: 8);
     final x = addOutput('x', width: 8);
@@ -149,7 +165,8 @@ class SsaMix extends Module {
         ]);
   }
 
-  static int model(int a) {
+  @override
+  int model(int a) {
     var b = a + 1;
     b++;
     final sbMod2 = b % 2;
@@ -188,9 +205,7 @@ class SsaMix extends Module {
 }
 
 class SsaUninit extends Module {
-  Logic get x => output('x');
-
-  SsaUninit(Logic a) {
+  SsaUninit(Logic a) : super(name: 'uninit') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
     Combinational.ssa((s) => [
@@ -199,10 +214,8 @@ class SsaUninit extends Module {
   }
 }
 
-class SsaNested extends Module {
-  Logic get x => output('x');
-
-  SsaNested(Logic a) {
+class SsaNested extends SsaTestModule {
+  SsaNested(Logic a) : super(name: 'nested') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
     Combinational.ssa((s) => [
@@ -210,7 +223,8 @@ class SsaNested extends Module {
         ]);
   }
 
-  static int model(int a) => SsaModAssignsOnly.model(a) + 1;
+  @override
+  int model(int a) => SsaModAssignsOnly(Logic(width: 8)).model(a) + 1;
 }
 
 void main() {
@@ -218,83 +232,33 @@ void main() {
     await Simulator.reset();
   });
 
-  test('ssa simple assignments only', () async {
-    final a = Logic(width: 8, name: 'a');
-    final mod = SsaModAssignsOnly(a);
-    await mod.build();
+  final aInput = Logic(width: 8, name: 'a');
+  final mods = [
+    SsaModAssignsOnly(aInput),
+    SsaModIf(aInput),
+    SsaModCase(aInput),
+    SsaChain(aInput),
+    SsaMix(aInput),
+    SsaNested(aInput),
+  ];
 
-    final vectors = [
-      for (var a = 0; a < 10; a++)
-        Vector({'a': a}, {'x': SsaModAssignsOnly.model(a)})
-    ];
+  group('ssa_test_module', () {
+    for (final mod in mods) {
+      test('ssa ${mod.name}', () async {
+        await mod.build();
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-  });
+        final vectors = [
+          for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': mod.model(a)})
+        ];
 
-  test('ssa if', () async {
-    final mod = SsaModIf(Logic(width: 8));
-    await mod.build();
-
-    final vectors = [
-      for (var a = 0; a < 10; a++)
-        Vector({'a': a}, {'x': (a + 1 > 3) ? a + 4 : a + 5})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-  });
-
-  test('ssa case', () async {
-    final mod = SsaModCase(Logic(width: 8));
-    await mod.build();
-
-    final vectors = [
-      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaModCase.model(a)})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-  });
-
-  test('ssa chain', () async {
-    final mod = SsaChain(Logic(width: 8));
-    await mod.build();
-
-    final vectors = [
-      for (var a = 0; a < 10; a++) Vector({'a': a}, {'x': a + 4})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-  });
-
-  test('ssa mix', () async {
-    final mod = SsaMix(Logic(width: 8));
-    await mod.build();
-
-    final vectors = [
-      for (var a = 0; a < 100; a++) Vector({'a': a}, {'x': SsaMix.model(a)})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
   });
 
   test('ssa uninitialized', () async {
     expect(() => SsaUninit(Logic(width: 8)),
         throwsA(isA<UninitializedSignalException>()));
-  });
-
-  test('ssa nested', () async {
-    final mod = SsaNested(Logic(width: 8));
-    await mod.build();
-
-    final vectors = [
-      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaNested.model(a)})
-    ];
-
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 }
