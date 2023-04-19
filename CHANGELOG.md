@@ -1,10 +1,4 @@
 
-## (Next release)
-
-- Added `Combinational.ssa` ...
-- Breaking: `Combinational` now disallows "write after read" behavior which could cause mismatches between simulation and synthesis behavior.
-- Breaking: `Logic` functions `incr`, `decr`, `mulAssign`, and `divAssign` now require an SSA-like renaming function for `Combinational` use since they inherently cause "write after read" behavior without one.  The API has changed to use named parameters to support using this for either `Combinational.ssa` or `Sequential`.
-
 ## 0.4.2
 
 - Added a GitHub Codespace to the repository as a quick way to experiment with ROHD without any environment setup.
