@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -25,6 +26,8 @@ class SsaModAssignsOnly extends Module {
           s(x) < s(x) + s(x) + s(b), // x = 2(a + 1) + (2a + 1) = 4a + 3
         ]);
   }
+
+  static int model(int a) => 4 * a + 3;
 }
 
 class SsaModIf extends Module {
@@ -184,10 +187,31 @@ class SsaMix extends Module {
   }
 }
 
-//TODO: test crazy hierarcical if/else things
-//TODO: test where an SSA conditional is generated during generation of another SSA conditional
-//TODO: test that uninitialized variable throws exception
-//TODO: test when variable is not "initialized"
+class SsaUninit extends Module {
+  Logic get x => output('x');
+
+  SsaUninit(Logic a) {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+    Combinational.ssa((s) => [
+          s(x) < s(x) + 1,
+        ]);
+  }
+}
+
+class SsaNested extends Module {
+  Logic get x => output('x');
+
+  SsaNested(Logic a) {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+    Combinational.ssa((s) => [
+          s(x) < SsaModAssignsOnly(a).x + 1,
+        ]);
+  }
+
+  static int model(int a) => SsaModAssignsOnly.model(a) + 1;
+}
 
 void main() {
   tearDown(() async {
@@ -200,7 +224,8 @@ void main() {
     await mod.build();
 
     final vectors = [
-      for (var a = 0; a < 10; a++) Vector({'a': a}, {'x': 4 * a + 3})
+      for (var a = 0; a < 10; a++)
+        Vector({'a': a}, {'x': SsaModAssignsOnly.model(a)})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -248,13 +273,28 @@ void main() {
     final mod = SsaMix(Logic(width: 8));
     await mod.build();
 
-    WaveDumper(mod);
-
     final vectors = [
-      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaMix.model(a)})
+      for (var a = 0; a < 100; a++) Vector({'a': a}, {'x': SsaMix.model(a)})
     ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors, enableChecking: true);
+    await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('ssa uninitialized', () async {
+    expect(() => SsaUninit(Logic(width: 8)),
+        throwsA(isA<UninitializedSignalException>()));
+  });
+
+  test('ssa nested', () async {
+    final mod = SsaNested(Logic(width: 8));
+    await mod.build();
+
+    final vectors = [
+      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaNested.model(a)})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 }
