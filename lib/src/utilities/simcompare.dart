@@ -165,16 +165,18 @@ abstract class SimCompare {
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
     bool maskKnownWarnings = true,
+    bool enableChecking = true,
   }) {
-    expect(
-        iverilogVector(module, vectors,
-            moduleName: moduleName,
-            dontDeleteTmpFiles: dontDeleteTmpFiles,
-            dumpWaves: dumpWaves,
-            iverilogExtraArgs: iverilogExtraArgs,
-            allowWarnings: allowWarnings,
-            maskKnownWarnings: maskKnownWarnings),
-        true);
+    final result = iverilogVector(module, vectors,
+        moduleName: moduleName,
+        dontDeleteTmpFiles: dontDeleteTmpFiles,
+        dumpWaves: dumpWaves,
+        iverilogExtraArgs: iverilogExtraArgs,
+        allowWarnings: allowWarnings,
+        maskKnownWarnings: maskKnownWarnings);
+    if (enableChecking) {
+      expect(result, true);
+    }
   }
 
   /// Executes [vectors] against the Icarus Verilog simulator.

@@ -136,6 +136,7 @@ class Pipeline {
         }
 
         return [
+          //TODO: can the get<i and o<get be replaced with assignments?
           for (final l in _registeredLogics)
             ssa(get(l, stageIndex)) < _i(l, stageIndex),
           ...stageConditionals,

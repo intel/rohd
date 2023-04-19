@@ -722,7 +722,13 @@ class Case extends Conditional {
   ///
   /// If none of [items] match, then [defaultItem] is executed.
   Case(this.expression, this.items,
-      {this.defaultItem, this.conditionalType = ConditionalType.none});
+      {this.defaultItem, this.conditionalType = ConditionalType.none}) {
+    for (final item in items) {
+      if (item.value.width != expression.width) {
+        throw PortWidthMismatchException.equalWidth(expression, item.value);
+      }
+    }
+  }
 
   /// Returns true iff [value] matches the expressions current value.
   @protected
@@ -1021,11 +1027,10 @@ class If extends Conditional {
 
   /// If [condition] is high, then [then] executes, otherwise [orElse] is
   /// executed.
-  If(Logic condition,
-      {List<Conditional> then = const [], List<Conditional> orElse = const []})
+  If(Logic condition, {List<Conditional>? then, List<Conditional>? orElse})
       : this.block([
-          Iff(condition, then),
-          Else(orElse),
+          Iff(condition, then ?? []),
+          Else(orElse ?? []),
         ]);
 
   /// If [condition] is high, then [then] is excutes,

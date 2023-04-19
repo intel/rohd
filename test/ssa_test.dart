@@ -63,6 +63,22 @@ class SsaModCase extends Module {
           s(x) < s(x) + 2
         ]);
   }
+
+  static int model(int a) {
+    var x = a + 1;
+    x = x + 1;
+    final match = x % 2;
+    if (match == x % 3) {
+      x = x + 4;
+    } else if (match == x % 5) {
+      x = x + 8;
+    } else {
+      x = 3;
+    }
+    // ignore: join_return_with_assignment
+    x = x + 2;
+    return x;
+  }
 }
 
 class SsaChain extends Module {
@@ -71,19 +87,100 @@ class SsaChain extends Module {
     final b = Logic(name: 'b', width: 8);
     final x = addOutput('x', width: 8);
 
-    Combinational.ssa(
-      (s) => [
-        s(b) < a + 1,
-        b.incr(s: s),
-      ],
-    );
+    Combinational.ssa((s) => [
+          s(b) < a + 1,
+          b.incr(s: s),
+        ]);
 
-    Combinational.ssa(
-      (s) => [
-        s(x) < b + 1,
-        x.incr(s: s),
-      ],
-    );
+    Combinational.ssa((s) => [
+          s(x) < b + 1,
+          x.incr(s: s),
+        ]);
+  }
+}
+
+class SsaMix extends Module {
+  SsaMix(Logic a) {
+    a = addInput('a', a, width: 8);
+    final b = Logic(name: 'b', width: 8);
+    final x = addOutput('x', width: 8);
+
+    Combinational.ssa((s) => [
+          s(b) < a + 1,
+          b.incr(s: s),
+          Case((s(b) % 2)[0], [
+            CaseItem(Const(0), [
+              If(
+                s(b) > 5,
+                then: [s(b) < s(b) + 5],
+              ),
+              If(
+                (s(b) % 3).eq(Const(0, width: 8)),
+                then: [s(b) < s(b) - 1],
+                orElse: [s(b) < s(b) + 2],
+              ),
+            ]),
+            CaseItem(Const(1), [
+              CaseZ(s(b), [
+                CaseItem(Const(LogicValue.ofString('zzzz1z1z')), [
+                  s(b) < s(b) * 2,
+                ]),
+                CaseItem(Const(LogicValue.ofString('zzzz0z0z')), [
+                  s(b) < s(b) + 5,
+                ]),
+              ], defaultItem: [
+                s(b) < s(b) + 1,
+              ]),
+            ]),
+          ]),
+        ]);
+
+    Combinational.ssa((s) => [
+          s(x) < b + 1,
+          If(
+            a > 20,
+            then: [s(x) < s(x) - 1],
+            orElse: [s(x) < s(x) + 1],
+          ),
+          x.incr(s: s),
+        ]);
+  }
+
+  static int model(int a) {
+    var b = a + 1;
+    b++;
+    final sbMod2 = b % 2;
+    if (sbMod2 == 0) {
+      if (b > 5) {
+        b += 5;
+      }
+
+      if (b % 3 == 0) {
+        b -= 1;
+      } else {
+        b += 2;
+      }
+    } else if (sbMod2 == 1) {
+      final bLv = LogicValue.ofInt(b, 8);
+      if (bLv[1] == LogicValue.one && bLv[3] == LogicValue.one) {
+        b *= 2;
+      } else if (bLv[1] == LogicValue.zero && bLv[3] == LogicValue.zero) {
+        b += 5;
+      } else {
+        b += 1;
+      }
+    }
+
+    var x = b + 1;
+    if (a > 20) {
+      x = x - 1;
+    } else {
+      x = x + 1;
+    }
+    // ignore: join_return_with_assignment
+    x++;
+
+    return x;
   }
 }
 
@@ -127,24 +224,8 @@ void main() {
     final mod = SsaModCase(Logic(width: 8));
     await mod.build();
 
-    int xCalc(int a) {
-      var x = a + 1;
-      x = x + 1;
-      final match = x % 2;
-      if (match == x % 3) {
-        x = x + 4;
-      } else if (match == x % 5) {
-        x = x + 8;
-      } else {
-        x = 3;
-      }
-      // ignore: join_return_with_assignment
-      x = x + 2;
-      return x;
-    }
-
     final vectors = [
-      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': xCalc(a)})
+      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaModCase.model(a)})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -160,6 +241,20 @@ void main() {
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('ssa mix', () async {
+    final mod = SsaMix(Logic(width: 8));
+    await mod.build();
+
+    WaveDumper(mod);
+
+    final vectors = [
+      for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': SsaMix.model(a)})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors, enableChecking: true);
     SimCompare.checkIverilogVector(mod, vectors);
   });
 }
