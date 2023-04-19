@@ -65,7 +65,28 @@ class SsaModCase extends Module {
   }
 }
 
-//TODO: test with multiple ssa things connected to each other that it doesnt get confused!
+class SsaChain extends Module {
+  SsaChain(Logic a) {
+    a = addInput('a', a, width: 8);
+    final b = Logic(name: 'b', width: 8);
+    final x = addOutput('x', width: 8);
+
+    Combinational.ssa(
+      (s) => [
+        s(b) < a + 1,
+        b.incr(s: s),
+      ],
+    );
+
+    Combinational.ssa(
+      (s) => [
+        s(x) < b + 1,
+        x.incr(s: s),
+      ],
+    );
+  }
+}
+
 //TODO: test crazy hierarcical if/else things
 //TODO: test where an SSA conditional is generated during generation of another SSA conditional
 //TODO: test that uninitialized variable throws exception
@@ -124,6 +145,18 @@ void main() {
 
     final vectors = [
       for (var a = 0; a < 50; a++) Vector({'a': a}, {'x': xCalc(a)})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('ssa chain', () async {
+    final mod = SsaChain(Logic(width: 8));
+    await mod.build();
+
+    final vectors = [
+      for (var a = 0; a < 10; a++) Vector({'a': a}, {'x': a + 4})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
