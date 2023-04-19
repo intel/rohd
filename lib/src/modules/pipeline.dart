@@ -136,14 +136,16 @@ class Pipeline {
         }
 
         return [
-          //TODO: can the get<i and o<get be replaced with assignments?
           for (final l in _registeredLogics)
             ssa(get(l, stageIndex)) < _i(l, stageIndex),
           ...stageConditionals,
-          for (final l in _registeredLogics)
-            _o(l, stageIndex) < ssa(get(l, stageIndex)),
         ];
       }, name: 'comb_stage$stageIndex');
+
+      // do output connections as assignments so they can be collapsed
+      for (final l in _registeredLogics) {
+        _o(l, stageIndex) <= get(l, stageIndex);
+      }
     }
   }
 
