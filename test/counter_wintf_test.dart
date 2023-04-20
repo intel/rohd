@@ -58,7 +58,7 @@ class Counter extends Module {
     final nextVal = Logic(name: 'nextVal', width: intf.width);
     final enVal = Logic(name: 'enResetVal', width: 8);
     enVal < 1;
-    final resetVal = <Logic, Logic>{intf.en: enVal};
+    final resetValues = <Logic, Logic>{intf.en: enVal};
 
     nextVal <= intf.val + 1;
     Sequential(
@@ -67,7 +67,7 @@ class Counter extends Module {
           If(intf.en, then: [intf.val < nextVal])
         ],
         reset: intf.reset,
-        resetVal: resetVal);
+        resetValues: resetValues);
   }
 
   void _buildLogic() {
