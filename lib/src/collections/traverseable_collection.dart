@@ -1,21 +1,19 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// traverseable_collection.dart
-/// Efficient implementation of a set-like datastructure that also has fast
-/// index access
-///
-/// 2021 July 13
-/// Author: Max Korbel <max.korbel@intel.com>
-///
-
-/***/
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// traverseable_collection.dart
+// Efficient implementation of a set-like datastructure that also has fast
+// index access
+//
+// 2021 July 13
+// Author: Max Korbel <max.korbel@intel.com>
+//
 
 /// A limited type of collection that has very fast index access and [contains].
 ///
 /// This collection stores all data twice: once in a [Set] and once in a [List].
-/// For index access, it uses the [List].  For [contains()], it uses the [Set].
-/// Other operations like [add()] and [remove()] pay the penalty of performing
+/// For index access, it uses the [List].  For [contains], it uses the [Set].
+/// Other operations like [add] and [remove] pay the penalty of performing
 /// the operation twice, once oneach collection.
 ///
 /// In situations where it is necessary to iterate through and frequently access

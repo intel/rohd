@@ -14,7 +14,7 @@ import 'package:rohd/rohd.dart';
 ///
 /// The returned signal is inclusive of both the [startIndex] and [endIndex].
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
-class BusSubset extends Module with InlineSystemVerilog, FullyCombinational {
+class BusSubset extends Module with InlineSystemVerilog {
   /// Name for the input port of this module.
   late final String _original;
 
@@ -127,7 +127,7 @@ class BusSubset extends Module with InlineSystemVerilog, FullyCombinational {
 ///
 /// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
 /// use this [Module].
-class Swizzle extends Module with InlineSystemVerilog, FullyCombinational {
+class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Module.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.

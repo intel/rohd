@@ -585,71 +585,100 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
-  /// Shorthand for a [Conditional] which increments this by [incrVal]
+  /// A function that returns whatever [Logic] is provided.
   ///
-  /// By default for a [Logic] variable, if no [incrVal] is provided
-  /// result is ++variable else result is variable+=[incrVal]
-  ///
-  /// ```dart
-  ///
-  /// // Given a and b Logic input and piOut as output
-  /// Combinational([
-  ///   piOut < a,
-  ///   piOut.incr(b),
-  /// ]);
-  ///
-  /// ```
-  ///
-  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
+  /// Used as a default no-op for short-hands.
+  static Logic _nopS(Logic x) => x;
 
-  /// Shorthand for a [Conditional] which decrements this by [decrVal]
+  /// Shorthand for a [Conditional] which increments this by [val].
   ///
-  /// By default for a [Logic] variable, if no [decrVal] is provided
-  /// result is --variable else result is var-=[decrVal]
+  /// By default for a [Logic] variable, if no [val] is provided then the
+  /// result is ++variable else result is variable+=[val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and pdOut as output
-  /// Combinational([
-  ///   pdOut < a,
-  ///   pdOut.decr(b),
+  /// Sequential(clk, [
+  ///   pOut.incr(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.incr(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
+  /// ```
+  ConditionalAssign incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+      s(this) < s(this) + val;
 
-  /// Shorthand for a [Conditional] which increments this by [mulVal]
+  /// Shorthand for a [Conditional] which decrements this by [val].
   ///
-  /// For a [Logic] variable, this is variable *= [mulVal]
+  /// By default for a [Logic] variable, if no [val] is provided then the
+  /// result is --variable else result is var-=[val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and maOut as output
-  /// Combinational([
-  ///   maOut < a,
-  ///   maOut.mulAssign(b),
+  /// Sequential(clk, [
+  ///   pOut.decr(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.decr(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
+  /// ```
+  ConditionalAssign decr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+      s(this) < s(this) - val;
 
-  /// Shorthand for a [Conditional] which increments this by [divVal]
+  /// Shorthand for a [Conditional] which increments this by [val].
   ///
-  /// For a [Logic] variable, this is variable /= [divVal]
+  /// For a [Logic] variable, this is variable *= [val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and daOut as output
-  /// Combinational([
-  ///   daOut < a,
-  ///   daOut.divAssign(b),
+  /// Sequential(clk, [
+  ///   pOut.mulAssign(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.mulAssign(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
+  /// ```
+  ConditionalAssign mulAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+      s(this) < s(this) * val;
+
+  /// Shorthand for a [Conditional] which increments this by [val].
+  ///
+  /// For a [Logic] variable, this is variable /= [val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
+  ///
+  /// ```dart
+  ///
+  /// Sequential(clk, [
+  ///   pOut.divAssign(val: b),
+  /// ]);
+  ///
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.divAssign(val: b, s: s),
+  ///     ]);
+  ///
+  /// ```
+  ConditionalAssign divAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+      s(this) < s(this) / val;
 
   /// Conditional assignment operator.
   ///

@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// conditionals_test.dart
-/// Unit tests for conditional calculations (e.g. always_comb, always_ff)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditionals_test.dart
+// Unit tests for conditional calculations (e.g. always_comb, always_ff)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
@@ -30,21 +30,21 @@ class ShorthandAssignModule extends Module {
     final piOutWithB = addOutput('piOutWithB', width: 8);
     final pdOutWithB = addOutput('pdOutWithB', width: 8);
 
-    Combinational([
-      piOutWithB < preIncr,
-      pdOutWithB < preDecr,
-      piOut < preIncr,
-      pdOut < preDecr,
-      maOut < mulAssign,
-      daOut < divAssign,
-      // Add these tests
-      piOut.incr(),
-      pdOut.decr(),
-      piOutWithB.incr(b),
-      pdOutWithB.decr(b),
-      maOut.mulAssign(b),
-      daOut.divAssign(b),
-    ]);
+    Combinational.ssa((s) => [
+          s(piOutWithB) < preIncr,
+          s(pdOutWithB) < preDecr,
+          s(piOut) < preIncr,
+          s(pdOut) < preDecr,
+          s(maOut) < mulAssign,
+          s(daOut) < divAssign,
+          // Add these tests
+          piOut.incr(s: s),
+          pdOut.decr(s: s),
+          piOutWithB.incr(s: s, val: b),
+          pdOutWithB.decr(s: s, val: b),
+          maOut.mulAssign(s: s, val: b),
+          daOut.divAssign(s: s, val: b),
+        ]);
   }
 }
 
@@ -59,6 +59,20 @@ class LoopyCombModule extends Module {
       x < a,
       x < ~x,
     ]);
+  }
+}
+
+class LoopyCombModuleSsa extends Module {
+  Logic get a => input('a');
+  Logic get x => output('x');
+  LoopyCombModuleSsa(Logic a) : super(name: 'loopycombmodule') {
+    a = addInput('a', a);
+    final x = addOutput('x');
+
+    Combinational.ssa((s) => [
+          s(x) < a,
+          s(x) < ~s(x),
+        ]);
   }
 }
 
@@ -108,7 +122,7 @@ class IfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -123,7 +137,7 @@ class SingleIfBlockModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, c < 1),
       ])
     ]);
@@ -138,7 +152,7 @@ class ElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -154,7 +168,7 @@ class SingleElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf.s(a, c < 1),
         Else([c < 0, d < 1])
       ])
@@ -263,7 +277,7 @@ class SingleElseModule extends Module {
     final x = addOutput('x');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, q < 1),
         Else.s(x < 1),
       ])
@@ -317,11 +331,11 @@ class MultipleConditionalModule extends Module {
     final Conditional condOne = c < 1;
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
   }
 }
@@ -332,11 +346,24 @@ void main() {
   });
 
   group('functional', () {
-    test('conditional loopy comb', () async {
-      final mod = LoopyCombModule(Logic());
-      await mod.build();
-      mod.a.put(1);
-      expect(mod.x.value.toInt(), equals(0));
+    group('conditional loopy comb', () {
+      test('normal', () async {
+        try {
+          final mod = LoopyCombModule(Logic());
+          await mod.build();
+          mod.a.put(1);
+          expect(mod.x.value.toInt(), equals(0));
+          fail('Expected to throw an exception!');
+        } on Exception catch (e) {
+          expect(e.runtimeType, WriteAfterReadException);
+        }
+      });
+      test('ssa', () async {
+        final mod = LoopyCombModuleSsa(Logic());
+        await mod.build();
+        mod.a.put(1);
+        expect(mod.x.value.toInt(), equals(0));
+      });
     });
   });
 

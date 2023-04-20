@@ -439,13 +439,13 @@ Combinational([
 ]);
 ```
 
-#### `IfBlock`
+#### `If.block`
 
-The [`IfBlock`](https://intel.github.io/rohd/rohd/IfBlock-class.html) makes syntax for long chains of if / else if / else chains nicer.  For example:
+The `If.block` constructor makes syntax for long chains of if / else if / else chains nicer.  For example:
 
 ```dart
 Sequential(clk, [
-  IfBlock([
+  If.block([
     // the first one must be Iff (yes, with 2 f's, to differentiate from If above)
     Iff(a & ~b, [
       c < 1,
