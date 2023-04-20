@@ -7,7 +7,6 @@
 /// 2021 May 25
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-import 'dart:developer';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
