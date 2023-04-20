@@ -89,8 +89,7 @@ void main() {
         Vector({'a': 4}, {'b': 7}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('simple pipeline late add', () async {
@@ -110,8 +109,7 @@ void main() {
         Vector({'a': 4}, {'b': 7}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline simple', () async {
@@ -143,8 +141,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline notready', () async {
@@ -198,8 +195,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline multi', () async {
@@ -243,8 +239,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
   });
 }

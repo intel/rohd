@@ -3,7 +3,7 @@
 //
 // many_seq_and_comb_benchmark.dart
 // Benchmarking for a high number of Combinationals and Sequentials connected
-// to each other.  Tests performance sensitivitiy to complex searches.
+// to each other.  Tests performance sensitivity to complex searches.
 //
 // 2023 April 17
 // Based on bug report at https://github.com/intel/rohd/issues/312

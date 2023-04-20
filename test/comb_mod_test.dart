@@ -126,8 +126,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(mod, vectors);
     });
   });
 
@@ -154,8 +153,7 @@ void main() {
       await mod.build();
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(mod, vectors);
     });
   });
 }

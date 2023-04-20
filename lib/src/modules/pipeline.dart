@@ -18,8 +18,10 @@ class PipelineStageInfo {
   /// The [Pipeline] associated with this object.
   final Pipeline _pipeline;
 
+  /// The remapping function from [Combinational.ssa] for this stage.
   final Logic Function(Logic) _ssa;
 
+  /// Constructs a new instance of information for this stage.
   PipelineStageInfo._(this._pipeline, this.stage, this._ssa);
 
   /// Returns a staged version of [identifier] at the current stage, adjusted
@@ -38,15 +40,28 @@ class PipelineStageInfo {
       _ssa(_pipeline.get(identifier, stageIndex));
 }
 
+/// A container for signals and combinational content generation for a stage.
 class _PipeStage {
+  /// A map from original signal name to the inputs of this stage.
   final Map<Logic, Logic> input = {};
+
+  /// A map from original signal name to the in-stage signals for this stage.
   final Map<Logic, Logic> main = {};
+
+  /// A map from original signal name to the outputs of this stage.
   final Map<Logic, Logic> output = {};
+
+  /// If provided, a signal that indicates this stage should be stalling.
   Logic? stall;
 
+  /// The function which generates the combinational contents for this stage.
   final List<Conditional> Function(PipelineStageInfo p) operation;
+
+  /// Constructs a new stage with the specified [operation].
   _PipeStage(this.operation);
 
+  /// Registers [newLogic] with this stage and creates appropriate inputs,
+  /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
     input[newLogic] =
         Logic(name: '${newLogic.name}_stage${index}_i', width: newLogic.width);

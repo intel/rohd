@@ -99,12 +99,17 @@ abstract class _Always extends Module with CustomSystemVerilog {
   }
 }
 
+/// A signal that represents an SSA node in [Combinational.ssa] which is
+/// associated with one specific [Combinational].
 class _SsaLogic extends Logic {
+  /// The signal that this represents.
   final Logic _ref;
 
-  /// A unique identifier for the context.
+  /// A unique identifier for the context of which [Combinational.ssa] it is
+  /// associated with.
   final int _context;
 
+  /// Constructs a new SSA node referring to a signal in a specific context.
   _SsaLogic(this._ref, this._context)
       : super(width: _ref.width, name: _ref.name);
 }
@@ -128,20 +133,21 @@ class Combinational extends _Always {
     }
   }
 
-  /// An internal counter to keep track of unique contexts.
+  /// An internal counter to keep track of unique contexts
+  /// per [Combinational.ssa].
   static int _ssaContextCounter = 0;
 
   /// Constructs a new [Combinational] where [construct] generates a list of
   /// [Conditional]s which use the provided remapping function to enable
   /// a "static single-asssignment" (SSA) form for procedural execution. The
-  /// Wikipedia article has some good explanation:
+  /// Wikipedia article has a good explanation:
   /// https://en.wikipedia.org/wiki/Static_single-assignment_form
   ///
   /// In SystemVerilog, an `always_comb` block can easily produce
   /// non-synthesizable or ambiguous design blocks which can lead to subtle
   /// bugs and mismatches between simulation and synthesis.  Since
   /// [Combinational] maps directly to an `always_comb` block, it is also
-  /// susceptible to these types of issues.
+  /// susceptible to these types of issues in the path to synthesis.
   ///
   /// A large class of  these issues can be prevented by avoiding a "write after
   /// read" scenario, where a signal is assigned a value after that value would
@@ -175,7 +181,10 @@ class Combinational extends _Always {
   /// This is because it must search for any remapped signals along the entire
   /// combinational and sequential path feeding into each [Conditional].  This
   /// penalty is purely at generation time, not in simulation or the actual
-  /// generated design.
+  /// generated design.  For very large designs, this penalty can be
+  /// mitigated by constructing the [Combinational.ssa] before connecting
+  /// inputs to the rest of the design, but usually the impact is so small
+  /// that it will not be noticeable.
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
       {String name = 'combinational_ssa'}) {
@@ -190,6 +199,7 @@ class Combinational extends _Always {
     return Combinational(conditionals, name: name);
   }
 
+  /// Executes the remapping for all the [conditionals] recursively.
   static void _processSsa(List<Conditional> conditionals,
       {required int context}) {
     var mappings = <Logic, Logic>{};
@@ -519,15 +529,31 @@ abstract class Conditional {
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
+  @Deprecated('Use `receivers` instead.')
+  List<Logic> getReceivers() => receivers;
+
+  /// Lists *all* receivers, recursively including all sub-[Conditional]s
+  /// receivers.
   List<Logic> get receivers;
+
+  /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
+  @Deprecated('Use `drivers` instead.')
+  List<Logic> getDrivers() => drivers;
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
   List<Logic> get drivers;
 
-  /// Lists of *all* [Conditional]s contained within this [Conditional]
+  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
   /// (not including itself).
   ///
-  /// Recursively calls down through sub-[Conditional]s.
+  /// Does *not* recursively call down through sub-[Conditional]s.
+  @Deprecated('Use `conditionals` instead.')
+  List<Conditional> getConditionals() => conditionals;
+
+  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
+  /// (not including itself).
+  ///
+  /// Does *not* recursively call down through sub-[Conditional]s.
   List<Conditional> get conditionals;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
@@ -545,6 +571,8 @@ abstract class Conditional {
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
+  /// Connects [driver] to drive all appropriate SSA nodes based on [mappings]
+  /// which match the provided [context].
   static void _connectSsaDriverFromMappings(
       Logic driver, Map<Logic, Logic> mappings,
       {required int context}) {
@@ -560,6 +588,7 @@ abstract class Conditional {
     }
   }
 
+  /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
     final toParse = TraverseableCollection<Logic>()..add(driver);
     final foundSsaLogics = <_SsaLogic>{};
@@ -581,6 +610,8 @@ abstract class Conditional {
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
   /// accordingly to [_SsaLogic]s and returns an updated set of mappings.
+  ///
+  /// This function may add new [Conditional]s to existing [Conditional]s.
   ///
   /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
@@ -615,7 +646,7 @@ class ConditionalAssign extends Conditional {
   late final List<Logic> drivers = [driver];
 
   @override
-  late final List<Conditional> conditionals = [];
+  late final List<Conditional> conditionals = const [];
 
   @override
   void execute(Set<Logic> drivenSignals,
@@ -796,6 +827,7 @@ class Case extends Conditional {
   @override
   late final List<Conditional> conditionals = _getConditionals();
 
+  /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
         ...defaultItem ?? []
@@ -804,6 +836,7 @@ class Case extends Conditional {
   @override
   late final List<Logic> drivers = _getDrivers();
 
+  /// Calculates the set of drivers recursively down.
   List<Logic> _getDrivers() {
     final drivers = <Logic>[expression];
     for (final item in items) {
@@ -826,6 +859,7 @@ class Case extends Conditional {
   @override
   late final List<Logic> receivers = _getReceivers();
 
+  /// Calculates the set of receivers recursively down.
   List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
@@ -1076,12 +1110,14 @@ class If extends Conditional {
   @override
   late final List<Conditional> conditionals = _getConditionals();
 
+  /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() =>
       iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
 
   @override
   late final List<Logic> drivers = _getDrivers();
 
+  /// Calculates the set of drivers recursively down.
   List<Logic> _getDrivers() {
     final drivers = <Logic>[];
     for (final iff in iffs) {
@@ -1098,6 +1134,7 @@ class If extends Conditional {
   @override
   late final List<Logic> receivers = _getReceivers();
 
+  /// Calculates the set of receivers recursively down.
   List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final iff in iffs) {
