@@ -72,6 +72,10 @@ using <a href="../../rohd/SynthBuilder/synthesizer.html">synthesizer</a> for gen
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">SynthBuilder(this.top, this.synthesizer) {
+  if (!top.hasBuilt) {
+    throw ModuleNotBuiltException();
+  }
+
   final modulesToParse = &lt;Module&gt;[top];
   for (var i = 0; i &lt; modulesToParse.length; i++) {
     final moduleI = modulesToParse[i];
