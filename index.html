@@ -381,10 +381,10 @@ class MyModule extends Module {
   ])])
 ]);
 </code></pre>
-<h4 id="ifblock"><code>IfBlock</code></h4>
-<p>The <a href="https://intel.github.io/rohd/rohd/IfBlock-class.html"><code>IfBlock</code></a> makes syntax for long chains of if / else if / else chains nicer.  For example:</p>
+<h4 id="ifblock"><code>If.block</code></h4>
+<p>The <code>If.block</code> constructor makes syntax for long chains of if / else if / else chains nicer.  For example:</p>
 <pre class="language-dart"><code class="language-dart">Sequential(clk, [
-  IfBlock([
+  If.block([
     // the first one must be Iff (yes, with 2 f's, to differentiate from If above)
     Iff(a &amp; ~b, [
       c &lt; 1,

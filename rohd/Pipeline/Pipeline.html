@@ -111,20 +111,36 @@ a stage's stall is asserted, the output of that stage will not change.</p>
 
   signals.forEach(_add);
 
-  final combMiddles = &lt;List&lt;Conditional&gt;&gt;[];
-  for (var i = 0; i &lt; _numStages; i++) {
-    final combMiddle = _stages[i].operation(PipelineStageInfo._(this, i));
-    combMiddles.add(combMiddle);
-  }
-
   for (var stageIndex = 0; stageIndex &lt; _numStages; stageIndex++) {
-    Combinational([
-      for (Logic l in _registeredLogics)
-        get(l, stageIndex) &lt; _i(l, stageIndex),
-      ...combMiddles[stageIndex],
-      for (Logic l in _registeredLogics)
-        _o(l, stageIndex) &lt; get(l, stageIndex),
-    ], name: &#39;comb_stage$stageIndex&#39;);
+    Combinational.ssa((ssa) {
+      &#47;&#47; keep track of the previously registered logics:
+      final prevRegisteredLogics = _registeredLogics.toSet();
+
+      &#47;&#47; build the conditionals first so that we populate _registeredLogics
+      final stageConditionals = _stages[stageIndex]
+          .operation(PipelineStageInfo._(this, stageIndex, ssa));
+
+      &#47;&#47; if any new logics were registered, add some extra assignments
+      &#47;&#47; to make up the gap since it didn&#39;t get included in prior generations
+      for (final l in _registeredLogics) {
+        if (!prevRegisteredLogics.contains(l)) {
+          for (var i = 0; i &lt; stageIndex; i++) {
+            _o(l, i) &lt;= _i(l, i);
+          }
+        }
+      }
+
+      return [
+        for (final l in _registeredLogics)
+          ssa(get(l, stageIndex)) &lt; _i(l, stageIndex),
+        ...stageConditionals,
+      ];
+    }, name: &#39;comb_stage$stageIndex&#39;);
+
+    &#47;&#47; do output connections as assignments so they can be collapsed
+    for (final l in _registeredLogics) {
+      _o(l, stageIndex) &lt;= get(l, stageIndex);
+    }
   }
 }</code></pre>
 </section>

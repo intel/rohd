@@ -70,7 +70,11 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ElseIf(this.condition, this.then);</code></pre>
+  <pre class="language-dart"><code class="language-dart">ElseIf(this.condition, this.then) {
+  if (condition.width != 1) {
+    throw PortWidthMismatchException(condition, 1);
+  }
+}</code></pre>
 </section>
 
 

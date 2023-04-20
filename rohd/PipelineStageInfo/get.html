@@ -80,7 +80,7 @@ example, <code>p.get(x, -1)</code> will access the value of <code>x</code> one s
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic get(Logic identifier, [int stageAdjustment = 0]) =&gt;
-    _pipeline.get(identifier, stage + stageAdjustment);</code></pre>
+    _ssa(_pipeline.get(identifier, stage + stageAdjustment));</code></pre>
 </section>
 
 

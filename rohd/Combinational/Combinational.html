@@ -65,6 +65,9 @@
 <section class="desc markdown">
   <p>Constructs a new <a href="../../rohd/Combinational-class.html">Combinational</a> which executes <code>conditionals</code> in order
 procedurally.</p>
+<p>If any "write after read" occurs, then a <code>WriteAfterReadException</code> will
+be thrown since it could lead to a mismatch between simulation and
+synthesis.  See <a href="../../rohd/Combinational/Combinational.ssa.html">Combinational.ssa</a> for more details.</p>
 </section>
 
 
@@ -104,12 +107,12 @@ procedurally.</p>
 
         <li class="section-title"><a href="../../rohd/Combinational-class.html#constructors">Constructors</a></li>
           <li><a href="../../rohd/Combinational/Combinational.html">Combinational</a></li>
+          <li><a href="../../rohd/Combinational/Combinational.ssa.html">ssa</a></li>
 
 
         <li class="section-title inherited">
           <a href="../../rohd/Combinational-class.html#instance-properties">Properties</a>
         </li>
-          <li class="inherited"><a href="../../rohd/Module/combinationalPaths.html">combinationalPaths</a></li>
           <li class="inherited"><a href="../../rohd/Combinational/conditionals.html">conditionals</a></li>
           <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
           <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
@@ -121,7 +124,6 @@ procedurally.</p>
           <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
           <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
           <li class="inherited"><a href="../../rohd/Module/reserveName.html">reserveName</a></li>
-          <li class="inherited"><a href="../../rohd/Module/reverseCombinationalPaths.html">reverseCombinationalPaths</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li class="inherited"><a href="../../rohd/Module/signals.html">signals</a></li>
           <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
@@ -132,9 +134,8 @@ procedurally.</p>
           <li class="inherited"><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
           <li><a href="../../rohd/Combinational/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
           <li><a href="../../rohd/Combinational/assignOperator.html">assignOperator</a></li>
-          <li><a href="../../rohd/Combinational/build.html">build</a></li>
+          <li class="inherited"><a href="../../rohd/Module/build.html">build</a></li>
           <li class="inherited"><a href="../../rohd/Module/generateSynth.html">generateSynth</a></li>
-          <li class="inherited"><a href="../../rohd/FullyCombinational/getCombinationalPaths.html">getCombinationalPaths</a></li>
           <li class="inherited"><a href="../../rohd/Module/hierarchy.html">hierarchy</a></li>
           <li class="inherited"><a href="../../rohd/Module/hierarchyString.html">hierarchyString</a></li>
           <li class="inherited"><a href="../../rohd/Module/input.html">input</a></li>

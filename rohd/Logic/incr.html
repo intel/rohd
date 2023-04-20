@@ -58,7 +58,10 @@
       
 
 <span class="returntype"><a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
-<span class="name ">incr</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="incr-param-incrVal">[<span class="type-annotation">dynamic</span> <span class="parameter-name">incrVal</span>]</span></li>
+<span class="name ">incr</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="incr-param-s">{<span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<ol class="parameter-list"><li><span class="parameter" id="param-"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span></span></li>
+</ol>
+) = <span class="default-value">_nopS</span>, </span></li>
+<li><span class="parameter" id="incr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span></li>
 </ol>)
 
       
@@ -66,15 +69,20 @@
     </section>
     
 <section class="desc markdown">
-  <p>Shorthand for a <a href="../../rohd/Conditional-class.html">Conditional</a> which increments this by <code>incrVal</code></p>
-<p>By default for a <a href="../../rohd/Logic-class.html">Logic</a> variable, if no <code>incrVal</code> is provided
-result is ++variable else result is variable+=<code>incrVal</code></p>
+  <p>Shorthand for a <a href="../../rohd/Conditional-class.html">Conditional</a> which increments this by <code>val</code>.</p>
+<p>By default for a <a href="../../rohd/Logic-class.html">Logic</a> variable, if no <code>val</code> is provided then the
+result is ++variable else result is variable+=<code>val</code>.</p>
+<p>If using <a href="../../rohd/Combinational-class.html">Combinational</a>, you will need to provide <code>s</code> as a remapping
+function since otherwise this will cause a "write after read" violation.</p>
 <pre class="language-dart"><code class="language-dart">
-// Given a and b Logic input and piOut as output
-Combinational([
-  piOut &lt; a,
-  piOut.incr(b),
+Sequential(clk, [
+  pOut.incr(val: b),
 ]);
+
+Combinational.ssa((s) =&gt; [
+      s(pOut) &lt; a,
+      pOut.incr(val: b, s: s),
+    ]);
 
 </code></pre>
 </section>
@@ -83,7 +91,8 @@ Combinational([
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ConditionalAssign incr([dynamic incrVal]) =&gt; this &lt; this + (incrVal ?? 1);</code></pre>
+  <pre class="language-dart"><code class="language-dart">ConditionalAssign incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =&gt;
+    s(this) &lt; s(this) + val;</code></pre>
 </section>
 
 

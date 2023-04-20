@@ -76,7 +76,7 @@ absolute <code>stageIndex</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic getAbs(Logic identifier, int stageIndex) =&gt;
-    _pipeline.get(identifier, stageIndex);</code></pre>
+    _ssa(_pipeline.get(identifier, stageIndex));</code></pre>
 </section>
 
 

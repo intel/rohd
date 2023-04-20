@@ -75,10 +75,10 @@ on if <code>control</code> is 0 or 1, respectively.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {super.name = &#39;mux&#39;}) {
   if (control.width != 1) {
-    throw Exception(&#39;Control must be single bit Logic, but found $control.&#39;);
+    throw PortWidthMismatchException(control, 1);
   }
   if (d0.width != d1.width) {
-    throw Exception(&#39;d0 ($d0) and d1 ($d1) must be same width&#39;);
+    throw PortWidthMismatchException.equalWidth(d0, d1);
   }
 
   _controlName = Module.unpreferredName(&#39;control_${control.name}&#39;);
@@ -123,7 +123,6 @@ on if <code>control</code> is 0 or 1, respectively.</p>
         <li class="section-title">
           <a href="../../rohd/Mux-class.html#instance-properties">Properties</a>
         </li>
-          <li class="inherited"><a href="../../rohd/Module/combinationalPaths.html">combinationalPaths</a></li>
           <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
           <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/hashCode.html">hashCode</a></li>
@@ -135,7 +134,6 @@ on if <code>control</code> is 0 or 1, respectively.</p>
           <li class="inherited"><a href="../../rohd/Module/parent.html">parent</a></li>
           <li class="inherited"><a href="../../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></li>
           <li class="inherited"><a href="../../rohd/Module/reserveName.html">reserveName</a></li>
-          <li class="inherited"><a href="../../rohd/Module/reverseCombinationalPaths.html">reverseCombinationalPaths</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li class="inherited"><a href="../../rohd/Module/signals.html">signals</a></li>
           <li class="inherited"><a href="../../rohd/Module/subModules.html">subModules</a></li>
@@ -147,7 +145,6 @@ on if <code>control</code> is 0 or 1, respectively.</p>
           <li class="inherited"><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
           <li class="inherited"><a href="../../rohd/Module/build.html">build</a></li>
           <li class="inherited"><a href="../../rohd/Module/generateSynth.html">generateSynth</a></li>
-          <li class="inherited"><a href="../../rohd/FullyCombinational/getCombinationalPaths.html">getCombinationalPaths</a></li>
           <li class="inherited"><a href="../../rohd/Module/hierarchy.html">hierarchy</a></li>
           <li class="inherited"><a href="../../rohd/Module/hierarchyString.html">hierarchyString</a></li>
           <li><a href="../../rohd/Mux/inlineVerilog.html">inlineVerilog</a></li>

@@ -63,7 +63,10 @@
   </div>
 
 <span class="returntype">void</span>
-<span class="name ">execute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">drivenSignals</span></span></li>
+<span class="name ">execute</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">drivenSignals</span>, </span></li>
+<li><span class="parameter" id="execute-param-guard">[<span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<ol class="parameter-list"><li><span class="parameter" id="param-toGuard"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">toGuard</span></span></li>
+</ol>
+)?]</span></li>
 </ol>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -76,6 +79,9 @@ populates <code>drivenSignals</code> with all <a href="../../rohd/Logic-class.ht
 during execution.</p>
 <p>The <code>drivenSignals</code> are used by the caller to determine if signals
 were driven an appropriate number of times.</p>
+<p>The <code>guard</code> function should be called on drivers <em>prior</em> to any execution
+which consumes the current value of those drivers.  It is used to check
+that signals are not "written after read", for example.</p>
 </section>
 
 
@@ -83,7 +89,12 @@ were driven an appropriate number of times.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-void execute(Set&lt;Logic&gt; drivenSignals) {
+void execute(Set&lt;Logic&gt; drivenSignals,
+    [void Function(Logic toGuard)? guard]) {
+  if (guard != null) {
+    guard(driver);
+  }
+
   receiverOutput(receiver).put(driverValue(driver));
 
   if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
@@ -120,21 +131,24 @@ void execute(Set&lt;Logic&gt; drivenSignals) {
         <li class="section-title">
           <a href="../../rohd/ConditionalAssign-class.html#instance-properties">Properties</a>
         </li>
+          <li><a href="../../rohd/ConditionalAssign/conditionals.html">conditionals</a></li>
           <li><a href="../../rohd/ConditionalAssign/driver.html">driver</a></li>
+          <li><a href="../../rohd/ConditionalAssign/drivers.html">drivers</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/hashCode.html">hashCode</a></li>
           <li><a href="../../rohd/ConditionalAssign/receiver.html">receiver</a></li>
+          <li><a href="../../rohd/ConditionalAssign/receivers.html">receivers</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/runtimeType.html">runtimeType</a></li>
 
         <li class="section-title"><a href="../../rohd/ConditionalAssign-class.html#instance-methods">Methods</a></li>
           <li class="inherited"><a href="../../rohd/Conditional/driverInput.html">driverInput</a></li>
           <li class="inherited"><a href="../../rohd/Conditional/driverValue.html">driverValue</a></li>
           <li><a href="../../rohd/ConditionalAssign/execute.html">execute</a></li>
-          <li><a href="../../rohd/ConditionalAssign/getConditionals.html">getConditionals</a></li>
-          <li><a href="../../rohd/ConditionalAssign/getDrivers.html">getDrivers</a></li>
-          <li><a href="../../rohd/ConditionalAssign/getReceivers.html">getReceivers</a></li>
+          <li class="inherited"><a class="deprecated" href="../../rohd/Conditional/getConditionals.html">getConditionals</a></li>
+          <li class="inherited"><a class="deprecated" href="../../rohd/Conditional/getDrivers.html">getDrivers</a></li>
+          <li class="inherited"><a class="deprecated" href="../../rohd/Conditional/getReceivers.html">getReceivers</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
           <li class="inherited"><a href="../../rohd/Conditional/receiverOutput.html">receiverOutput</a></li>
-          <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/toString.html">toString</a></li>
+          <li><a href="../../rohd/ConditionalAssign/toString.html">toString</a></li>
           <li><a href="../../rohd/ConditionalAssign/verilogContents.html">verilogContents</a></li>
 
         <li class="section-title inherited"><a href="../../rohd/ConditionalAssign-class.html#operators">Operators</a></li>
