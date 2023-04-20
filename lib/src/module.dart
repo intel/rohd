@@ -133,17 +133,17 @@ abstract class Module {
   /// Return string type definition name if validation passed
   /// else throw exception.
   ///
-  /// This validation method ensure that [definitionName] is valid if
-  /// [reserveDefinitionName] set to `true`.
-  static String? _nameValidation(
-      String? definitionName, bool reserveDefinitionName) {
-    if (reserveDefinitionName && definitionName == null) {
+  /// This validation method ensure that [name] is valid if
+  /// [reserveName] set to `true`.
+  static String? _nameValidation(String? name, bool reserveName) {
+    if (reserveName && name == null) {
       throw NullReservedNameException();
-    } else if (reserveDefinitionName &&
-        !Sanitizer.isSanitary(definitionName!)) {
+    } else if (reserveName && name!.isEmpty) {
+      throw EmptyReservedNameException();
+    } else if (reserveName && !Sanitizer.isSanitary(name!)) {
       throw InvalidReservedNameException();
     } else {
-      return definitionName;
+      return name;
     }
   }
 
@@ -181,7 +181,7 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName = name,
+      : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
         _definitionName =
             _nameValidation(definitionName, reserveDefinitionName);
 
@@ -555,9 +555,7 @@ abstract class Module {
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
     if (!Sanitizer.isSanitary(name)) {
-      throw Exception(
-          'Invalid name "$name", must be legal SystemVerilog and not collide'
-          ' with any keywords.');
+      throw InvalidPortNameException(name);
     }
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');
