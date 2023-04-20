@@ -73,7 +73,9 @@ to the desired output (e.g. SystemVerilog).</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic({String? name, int width = 1})
-    : name = name == null ? &#39;s${_signalIdx++}&#39; : Sanitizer.sanitizeSV(name),
+    : name = (name == null || name.isEmpty)
+          ? &#39;s${_signalIdx++}&#39;
+          : Sanitizer.sanitizeSV(name),
       _wire = _Wire(width: width) {
   if (width &lt; 0) {
     throw Exception(&#39;Logic width must be greater than or equal to 0.&#39;);

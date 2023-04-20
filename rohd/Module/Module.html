@@ -82,7 +82,7 @@ it is unable to keep from uniquifying <code>definitionName</code> to avoid confl
     this.reserveName = false,
     String? definitionName,
     this.reserveDefinitionName = false})
-    : _uniqueInstanceName = name,
+    : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
       _definitionName =
           _nameValidation(definitionName, reserveDefinitionName);</code></pre>
 </section>
