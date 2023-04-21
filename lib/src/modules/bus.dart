@@ -22,10 +22,10 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final String _subset;
 
   /// The input to get a subset of.
-  Logic get original => input(_original);
+  late final Logic original = input(_original);
 
   /// The output, a subset of [original].
-  Logic get subset => output(_subset);
+  late final Logic subset = output(_subset);
 
   /// Start index of the subset.
   final int startIndex;
@@ -131,7 +131,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Module.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.
-  Logic get out => output(_out);
+  late final Logic out = output(_out);
 
   final List<Logic> _swizzleInputs = [];
 

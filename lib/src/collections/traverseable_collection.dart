@@ -9,6 +9,8 @@
 // Author: Max Korbel <max.korbel@intel.com>
 //
 
+import 'dart:collection';
+
 /// A limited type of collection that has very fast index access and [contains].
 ///
 /// This collection stores all data twice: once in a [Set] and once in a [List].
@@ -21,7 +23,7 @@
 /// wihin it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
 class TraverseableCollection<T> {
-  final Set<T> _set = <T>{};
+  final Set<T> _set = HashSet<T>();
   final List<T> _list = <T>[];
 
   /// The number of objects in this collection.

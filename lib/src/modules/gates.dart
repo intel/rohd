@@ -20,10 +20,10 @@ class NotGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// The input to this [NotGate].
-  Logic get _in => input(_inName);
+  late final Logic _in = input(_inName);
 
   /// The output of this [NotGate].
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// Constructs a [NotGate] with [in_] as its input.
   ///
@@ -70,10 +70,10 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// The input to this gate.
-  Logic get _in => input(_inName);
+  late final Logic _in = input(_inName);
 
   /// The output of this gate (width is always 1).
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// The output of this gate (width is always 1).
   ///
@@ -137,13 +137,13 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// An input to this gate.
-  Logic get _in0 => input(_in0Name);
+  late final Logic _in0 = input(_in0Name);
 
   /// An input to this gate.
-  Logic get _in1 => input(_in1Name);
+  late final Logic _in1 = input(_in1Name);
 
   /// The output of this gate.
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// The output of this gate.
   ///
@@ -233,13 +233,13 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// An input to this gate.
-  Logic get _in0 => input(_in0Name);
+  late final Logic _in0 = input(_in0Name);
 
   /// An input to this gate.
-  Logic get _in1 => input(_in1Name);
+  late final Logic _in1 = input(_in1Name);
 
   /// The output of this gate.
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// The output of this gate.
   ///
@@ -323,13 +323,13 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// The primary input to this gate.
-  Logic get _in => input(_inName);
+  late final Logic _in = input(_inName);
 
   /// The shift amount for this gate.
-  Logic get _shiftAmount => input(_shiftAmountName);
+  late final Logic _shiftAmount = input(_shiftAmountName);
 
   /// The output of this gate.
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in_, LogicValue shiftAmount) _op;
@@ -587,16 +587,16 @@ class Mux extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// The control signal for this [Mux].
-  Logic get _control => input(_controlName);
+  late final Logic _control = input(_controlName);
 
   /// [Mux] input propogated when [out] is `0`.
-  Logic get _d0 => input(_d0Name);
+  late final Logic _d0 = input(_d0Name);
 
   /// [Mux] input propogated when [out] is `1`.
-  Logic get _d1 => input(_d1Name);
+  late final Logic _d1 = input(_d1Name);
 
   /// Output port of the [Mux].
-  Logic get out => output(_outName);
+  late final Logic out = output(_outName);
 
   /// Output port of the [Mux].
   ///
@@ -674,13 +674,13 @@ class IndexGate extends Module with InlineSystemVerilog {
   late final String _selectionName;
 
   /// The primary input to this gate.
-  Logic get _original => input(_originalName);
+  late final Logic _original = input(_originalName);
 
   /// The bit index for this gate.
-  Logic get _index => input(_indexName);
+  late final Logic _index = input(_indexName);
 
   /// The output of this gate.
-  Logic get selection => output(_selectionName);
+  late final Logic selection = output(_selectionName);
 
   /// Constructs a two-input bit index gate for an abitrary custom functional
   /// implementation.
@@ -755,10 +755,10 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   final int _multiplier;
 
   /// The primary input to this gate.
-  Logic get _input => input(_inputName);
+  late final Logic _input = input(_inputName);
 
   /// The output of this gate.
-  Logic get replicated => output(_outputName);
+  late final Logic replicated = output(_outputName);
 
   /// Constructs a ReplicationOp
   ///

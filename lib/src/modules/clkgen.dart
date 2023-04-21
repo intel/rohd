@@ -20,7 +20,7 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
   final int clockPeriod;
 
   /// The generated clock.
-  Logic get clk => output('clk');
+  late final Logic clk = output('clk');
 
   /// Constructs a very simple clock generator.  Generates a non-synthesizable
   /// SystemVerilog representation.

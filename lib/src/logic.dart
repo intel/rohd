@@ -347,7 +347,8 @@ class Logic {
   Logic? _srcConnection;
 
   /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
-  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
+  late final Iterable<Logic> dstConnections =
+      UnmodifiableListView(_dstConnections);
   final Set<Logic> _dstConnections = {};
 
   /// Notifies `this` that [dstConnection] is now directly connected to the
