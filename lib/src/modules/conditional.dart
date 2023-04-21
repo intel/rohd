@@ -240,8 +240,7 @@ class Combinational extends _Always {
   /// A function that sub-[Conditional]s should call to guard signals they
   /// are consuming.
   void _guard(Logic toGuard) {
-    if (!_guarded.contains(toGuard)) {
-      _guarded.add(toGuard);
+    if (_guarded.add(toGuard)) {
       _guardListeners.add(toGuard.glitch.listen((args) {
         throw WriteAfterReadException(toGuard.name);
       }));

@@ -29,11 +29,10 @@ class TraverseableCollection<T> {
   /// The valid indices are 0 through [length] - 1.
   int get length => _list.length;
 
-  /// Adds an element to the collection.
+  /// Adds an element to the collection if it is not already present.
   void add(T item) {
-    if (!contains(item)) {
+    if (_set.add(item)) {
       _list.add(item);
-      _set.add(item);
     }
   }
 
