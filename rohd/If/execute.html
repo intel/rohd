@@ -97,12 +97,12 @@ void execute(Set&lt;Logic&gt; drivenSignals, [void Function(Logic)? guard]) {
   }
 
   for (final iff in iffs) {
-    if (driverValue(iff.condition)[0] == LogicValue.one) {
+    if (driverValue(iff.condition) == LogicValue.one) {
       for (final conditional in iff.then) {
         conditional.execute(drivenSignals, guard);
       }
       break;
-    } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
+    } else if (driverValue(iff.condition) != LogicValue.zero) {
       &#47;&#47; x and z propagation
       for (final receiver in receivers) {
         receiverOutput(receiver).put(driverValue(iff.condition)[0]);

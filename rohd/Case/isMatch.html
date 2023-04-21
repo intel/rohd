@@ -63,7 +63,8 @@
   </div>
 
 <span class="returntype"><a href="https://api.dart.dev/stable/2.19.6/dart-core/bool-class.html">bool</a></span>
-<span class="name ">isMatch</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isMatch-param-value"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">value</span></span></li>
+<span class="name ">isMatch</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isMatch-param-value"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">value</span>, </span></li>
+<li><span class="parameter" id="isMatch-param-expressionValue"><span class="type-annotation"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">expressionValue</span></span></li>
 </ol>)
 
       
@@ -79,7 +80,8 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
-bool isMatch(LogicValue value) =&gt; expression.value == value;</code></pre>
+bool isMatch(LogicValue value, LogicValue expressionValue) =&gt;
+    expressionValue == value;</code></pre>
 </section>
 
 
