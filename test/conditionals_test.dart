@@ -7,6 +7,8 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
@@ -110,6 +112,42 @@ class CaseModule extends Module {
             e < 0,
           ],
           conditionalType: ConditionalType.priority)
+    ]);
+  }
+}
+
+enum SeqCondModuleType { caseNormal, caseZ, ifNormal }
+
+class SeqCondModule extends Module {
+  Logic get equal => output('equal');
+  SeqCondModule(Logic clk, Logic a, {required SeqCondModuleType combType}) {
+    a = addInput('a', a, width: 8);
+    clk = addInput('clk', clk);
+
+    addOutput('equal');
+
+    final aIncr = a + 1;
+
+    final aIncrDelayed = FlipFlop(clk, aIncr).q;
+
+    final genCase =
+        combType == SeqCondModuleType.caseNormal ? Case.new : CaseZ.new;
+
+    Sequential(clk, [
+      if (combType == SeqCondModuleType.ifNormal)
+        If(
+          aIncr.eq(aIncrDelayed),
+          then: [equal < 1],
+          orElse: [equal < 0],
+        )
+      else
+        genCase(aIncr, [
+          CaseItem(aIncrDelayed, [
+            equal < 1,
+          ])
+        ], defaultItem: [
+          equal < 0,
+        ]),
     ]);
   }
 }
@@ -358,12 +396,39 @@ void main() {
           expect(e.runtimeType, WriteAfterReadException);
         }
       });
+
       test('ssa', () async {
         final mod = LoopyCombModuleSsa(Logic());
         await mod.build();
         mod.a.put(1);
         expect(mod.x.value.toInt(), equals(0));
       });
+    });
+
+    group('flopped expressions for conditionals', () {
+      for (final condType in SeqCondModuleType.values) {
+        test(condType.name, () async {
+          final clk = SimpleClockGenerator(10).clk;
+          final a = Logic(name: 'a', width: 8);
+          final mod = SeqCondModule(clk, a, combType: condType);
+
+          a.put(0);
+
+          Simulator.setMaxSimTime(100);
+
+          unawaited(Simulator.run());
+
+          await clk.nextPosedge;
+          a.put(1);
+          await clk.nextPosedge;
+          a.put(2);
+          await clk.nextPosedge;
+
+          expect(mod.equal.value.toBool(), false);
+
+          await Simulator.simulationEnded;
+        });
+      }
     });
   });
 

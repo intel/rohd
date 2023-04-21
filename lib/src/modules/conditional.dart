@@ -781,7 +781,8 @@ class Case extends Conditional {
 
   /// Returns true iff [value] matches the expressions current value.
   @protected
-  bool isMatch(LogicValue value) => expression.value == value;
+  bool isMatch(LogicValue value, LogicValue expressionValue) =>
+      expressionValue == value;
 
   /// Returns the SystemVerilog keyword to represent this case block.
   @protected
@@ -811,7 +812,7 @@ class Case extends Conditional {
 
     for (final item in items) {
       // match on the first matchinig item
-      if (isMatch(item.value.value)) {
+      if (isMatch(driverValue(item.value), driverValue(expression))) {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);
         }
@@ -997,13 +998,9 @@ class CaseZ extends Case {
   String get caseType => 'casez';
 
   @override
-  bool isMatch(LogicValue value) {
-    if (expression.width != value.width) {
-      throw Exception(
-          'Value "$value" and expression "$expression" must be equal width.');
-    }
+  bool isMatch(LogicValue value, LogicValue expressionValue) {
     for (var i = 0; i < expression.width; i++) {
-      if (expression.value[i] != value[i] && value[i] != LogicValue.z) {
+      if (expressionValue[i] != value[i] && value[i] != LogicValue.z) {
         return false;
       }
     }
@@ -1106,12 +1103,12 @@ class If extends Conditional {
     }
 
     for (final iff in iffs) {
-      if (driverValue(iff.condition)[0] == LogicValue.one) {
+      if (driverValue(iff.condition) == LogicValue.one) {
         for (final conditional in iff.then) {
           conditional.execute(drivenSignals, guard);
         }
         break;
-      } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
+      } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
         for (final receiver in receivers) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
