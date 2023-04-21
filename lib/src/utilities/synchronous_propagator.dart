@@ -65,8 +65,8 @@ class SynchronousEmitter<T> {
   void _propagate(T t) {
     _isEmitting = true;
 
-    _subscriptions.forEach(
-      (subscription) => subscription.func(t),
+    _subscriptions.iterate(
+      action: (subscription) => subscription.func(t),
       removeWhere: _doRemove,
     );
 
