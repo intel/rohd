@@ -269,9 +269,8 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
-    if (!_modules.contains(module)) {
-      _modules.add(module);
-    }
+    _modules.add(module);
+
     module._parent = this;
     await module.build();
   }

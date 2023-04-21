@@ -11,6 +11,7 @@
 import 'package:test/test.dart';
 
 import '../benchmark/byte_enable_benchmark.dart';
+import '../benchmark/comb_guard_fanout_benchmark.dart';
 import '../benchmark/logic_value_of_benchmark.dart';
 import '../benchmark/many_seq_and_comb_benchmark.dart';
 import '../benchmark/pipeline_benchmark.dart';
@@ -39,5 +40,9 @@ void main() {
         await ManySeqAndCombBenchmark(connectionType).measure();
       });
     }
+  });
+
+  test('comb guard fanout benchmark', () async {
+    await CombGuardFanoutBenchmark().measure();
   });
 }
