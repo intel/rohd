@@ -8,9 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 //
 
-import 'dart:async';
-import 'dart:collection';
-
 import 'package:rohd/src/collections/iterable_removable_queue.dart';
 
 /// A controller for a [SynchronousEmitter] that allows for

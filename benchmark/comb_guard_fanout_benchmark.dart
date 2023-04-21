@@ -15,9 +15,7 @@ class CombGuardFanout extends Module {
   CombGuardFanout(Logic a,
       {int numStatements = 10, int numCombinationals = 100}) {
     a = addInput('a', a, width: 8);
-    final x = addOutput('x', width: 8);
 
-    // final sxi = List.generate(numStatements, (index) => Logic(width: a.width));
     final sxi = <Logic>[a];
 
     for (var i = 1; i < numStatements; i++) {
@@ -32,6 +30,7 @@ class CombGuardFanout extends Module {
     }
   }
 
+  /// Adds a bunch of listeners to a modified [a] and return it.
   Logic listeners(
     Logic a, {
     int fanout = 5,
@@ -73,5 +72,4 @@ class CombGuardFanoutBenchmark extends AsyncBenchmarkBase {
 
 Future<void> main() async {
   await CombGuardFanoutBenchmark().report();
-  print('done');
 }
