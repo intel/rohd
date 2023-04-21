@@ -761,8 +761,6 @@ class Case extends Conditional {
     }
   }
 
-  //TODO: This should be expression using driverValue!!! BIG BUG!
-
   /// Returns true iff [value] matches the expressions current value.
   @protected
   bool isMatch(LogicValue value, LogicValue expressionValue) =>
@@ -984,7 +982,6 @@ class CaseZ extends Case {
   @override
   bool isMatch(LogicValue value, LogicValue expressionValue) {
     for (var i = 0; i < expression.width; i++) {
-      //TODO: This should be using driverValue!!!
       if (expressionValue[i] != value[i] && value[i] != LogicValue.z) {
         return false;
       }

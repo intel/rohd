@@ -152,8 +152,6 @@ class SeqCondModule extends Module {
   }
 }
 
-// TODO: make one for If also with sequential
-
 class IfBlockModule extends Module {
   IfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
     a = addInput('a', a);
