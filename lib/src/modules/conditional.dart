@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -220,6 +221,33 @@ class Combinational extends _Always {
   /// detect reentrance.
   bool _isExecuting = false;
 
+  /// Keeps track of already-driven logics during [_execute].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _drivenLogics = HashSet<Logic>();
+
+  /// Keeps track of signals already [_guard]ed.
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _guarded = HashSet<Logic>();
+
+  /// Keeps track of subscriptions to glitches for each of the [_guarded].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final List<SynchronousSubscription<LogicValueChanged>> _guardListeners =
+      <SynchronousSubscription<LogicValueChanged>>[];
+
+  /// A function that sub-[Conditional]s should call to guard signals they
+  /// are consuming.
+  void _guard(Logic toGuard) {
+    if (!_guarded.contains(toGuard)) {
+      _guarded.add(toGuard);
+      _guardListeners.add(toGuard.glitch.listen((args) {
+        throw WriteAfterReadException(toGuard.name);
+      }));
+    }
+  }
+
   /// Performs the functional behavior of this block.
   void _execute() {
     if (_isExecuting) {
@@ -231,36 +259,26 @@ class Combinational extends _Always {
 
     _isExecuting = true;
 
-    // keep track of signals already being guarded for efficiency
-    final guarded = <Logic>{};
-    final guardListeners = <SynchronousSubscription<LogicValueChanged>>[];
-    void guard(Logic toGuard) {
-      if (!guarded.contains(toGuard)) {
-        guarded.add(toGuard);
-        guardListeners.add(toGuard.glitch.listen((args) {
-          throw WriteAfterReadException(toGuard.name);
-        }));
-      }
-    }
-
-    final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      element.execute(drivenLogics, guard);
+      element.execute(_drivenLogics, _guard);
     }
 
     // combinational must always drive all outputs or else you get X!
-    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+    if (_assignedReceiverToOutputMap.length != _drivenLogics.length) {
       for (final receiverOutputPair in _assignedReceiverToOutputMap.entries) {
-        if (!drivenLogics.contains(receiverOutputPair.key)) {
+        if (!_drivenLogics.contains(receiverOutputPair.key)) {
           receiverOutputPair.value.put(LogicValue.x, fill: true);
         }
       }
     }
 
     // clean up after execution
-    for (final guardListener in guardListeners) {
+    for (final guardListener in _guardListeners) {
       guardListener.cancel();
     }
+    _guardListeners.clear();
+    _drivenLogics.clear();
+    _guarded.clear();
 
     _isExecuting = false;
   }
