@@ -1234,40 +1234,40 @@ ${padding}end ''');
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
   /// Name for the clk of this flop.
-  late final String _clk;
+  late final String _clkName;
 
   /// Name for the input of this flop.
-  late final String _d;
+  late final String _dName;
 
   /// Name for the output of this flop.
-  late final String _q;
+  late final String _qName;
 
   /// The clock, posedge triggered.
-  Logic get clk => input(_clk);
+  late final Logic _clk = input(_clkName);
 
   /// The input to the flop.
-  Logic get d => input(_d);
+  late final Logic _d = input(_dName);
 
   /// The output of the flop.
-  Logic get q => output(_q);
+  late final Logic q = output(_qName);
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
   FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
-    _clk = Module.unpreferredName('clk');
-    _d = Module.unpreferredName('d');
-    _q = Module.unpreferredName('q');
-    addInput(_clk, clk);
-    addInput(_d, d, width: d.width);
-    addOutput(_q, width: d.width);
+    _clkName = Module.unpreferredName('clk');
+    _dName = Module.unpreferredName('d');
+    _qName = Module.unpreferredName('q');
+    addInput(_clkName, clk);
+    addInput(_dName, d, width: d.width);
+    addOutput(_qName, width: d.width);
     _setup();
   }
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Sequential(clk, [q < d]);
+    Sequential(_clk, [q < _d]);
   }
 
   @override
@@ -1276,9 +1276,9 @@ class FlipFlop extends Module with CustomSystemVerilog {
     if (inputs.length != 2 || outputs.length != 1) {
       throw Exception('FlipFlop has exactly two inputs and one output.');
     }
-    final clk = inputs[_clk]!;
-    final d = inputs[_d]!;
-    final q = outputs[_q]!;
+    final clk = inputs[_clkName]!;
+    final d = inputs[_dName]!;
+    final q = outputs[_qName]!;
     return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
   }
 }
