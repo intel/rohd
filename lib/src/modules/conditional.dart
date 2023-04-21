@@ -26,10 +26,11 @@ abstract class _Always extends Module with CustomSystemVerilog {
   final List<Conditional> conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
-  final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+  final Map<Logic, Logic> _assignedReceiverToOutputMap =
+      HashMap<Logic, Logic>();
 
   /// A mapping from internal driver signals to designated [Module] inputs.
-  final Map<Logic, Logic> _assignedDriverToInputMap = {};
+  final Map<Logic, Logic> _assignedDriverToInputMap = HashMap<Logic, Logic>();
 
   final Uniquifier _portUniquifier = Uniquifier();
 
@@ -326,7 +327,8 @@ class Sequential extends _Always {
 
   /// A map from input [Logic]s to the values that should be used for
   /// computations on the edge.
-  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap = {};
+  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap =
+      HashMap<Logic, LogicValue>();
 
   /// The value of the clock before the tick.
   final List<LogicValue?> _preTickClkValues = [];
@@ -518,9 +520,8 @@ abstract class Conditional {
   /// associated with [driver].
   @protected
   LogicValue driverValue(Logic driver) =>
-      _driverValueOverrideMap.containsKey(driverInput(driver))
-          ? _driverValueOverrideMap[driverInput(driver)]!
-          : _assignedDriverToInputMap[driver]!.value;
+      _driverValueOverrideMap[driverInput(driver)] ??
+      _assignedDriverToInputMap[driver]!.value;
 
   /// Gets the input port associated with [driver].
   @protected
