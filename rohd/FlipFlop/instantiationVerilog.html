@@ -93,9 +93,9 @@ String instantiationVerilog(String instanceType, String instanceName,
   if (inputs.length != 2 || outputs.length != 1) {
     throw Exception(&#39;FlipFlop has exactly two inputs and one output.&#39;);
   }
-  final clk = inputs[_clk]!;
-  final d = inputs[_d]!;
-  final q = outputs[_q]!;
+  final clk = inputs[_clkName]!;
+  final d = inputs[_dName]!;
+  final q = outputs[_qName]!;
   return &#39;always_ff @(posedge $clk) $q &lt;= $d;  &#47;&#47; $instanceName&#39;;
 }</code></pre>
 </section>
@@ -128,8 +128,6 @@ String instantiationVerilog(String instanceType, String instanceName,
         <li class="section-title">
           <a href="../../rohd/FlipFlop-class.html#instance-properties">Properties</a>
         </li>
-          <li><a href="../../rohd/FlipFlop/clk.html">clk</a></li>
-          <li><a href="../../rohd/FlipFlop/d.html">d</a></li>
           <li class="inherited"><a href="../../rohd/Module/definitionName.html">definitionName</a></li>
           <li class="inherited"><a href="../../rohd/Module/hasBuilt.html">hasBuilt</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/2.19.6/dart-core/Object/hashCode.html">hashCode</a></li>

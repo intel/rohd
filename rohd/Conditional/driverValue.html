@@ -81,9 +81,8 @@ associated with <code>driver</code>.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 LogicValue driverValue(Logic driver) =&gt;
-    _driverValueOverrideMap.containsKey(driverInput(driver))
-        ? _driverValueOverrideMap[driverInput(driver)]!
-        : _assignedDriverToInputMap[driver]!.value;</code></pre>
+    _driverValueOverrideMap[driverInput(driver)] ??
+    _assignedDriverToInputMap[driver]!.value;</code></pre>
 </section>
 
 
