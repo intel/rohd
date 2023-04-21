@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -25,10 +26,11 @@ abstract class _Always extends Module with CustomSystemVerilog {
   final List<Conditional> conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
-  final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+  final Map<Logic, Logic> _assignedReceiverToOutputMap =
+      HashMap<Logic, Logic>();
 
   /// A mapping from internal driver signals to designated [Module] inputs.
-  final Map<Logic, Logic> _assignedDriverToInputMap = {};
+  final Map<Logic, Logic> _assignedDriverToInputMap = HashMap<Logic, Logic>();
 
   final Uniquifier _portUniquifier = Uniquifier();
 
@@ -220,6 +222,32 @@ class Combinational extends _Always {
   /// detect reentrance.
   bool _isExecuting = false;
 
+  /// Keeps track of already-driven logics during [_execute].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _drivenLogics = HashSet<Logic>();
+
+  /// Keeps track of signals already [_guard]ed.
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _guarded = HashSet<Logic>();
+
+  /// Keeps track of subscriptions to glitches for each of the [_guarded].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final List<SynchronousSubscription<LogicValueChanged>> _guardListeners =
+      <SynchronousSubscription<LogicValueChanged>>[];
+
+  /// A function that sub-[Conditional]s should call to guard signals they
+  /// are consuming.
+  void _guard(Logic toGuard) {
+    if (_guarded.add(toGuard)) {
+      _guardListeners.add(toGuard.glitch.listen((args) {
+        throw WriteAfterReadException(toGuard.name);
+      }));
+    }
+  }
+
   /// Performs the functional behavior of this block.
   void _execute() {
     if (_isExecuting) {
@@ -231,36 +259,26 @@ class Combinational extends _Always {
 
     _isExecuting = true;
 
-    // keep track of signals already being guarded for efficiency
-    final guarded = <Logic>{};
-    final guardListeners = <SynchronousSubscription<LogicValueChanged>>[];
-    void guard(Logic toGuard) {
-      if (!guarded.contains(toGuard)) {
-        guarded.add(toGuard);
-        guardListeners.add(toGuard.glitch.listen((args) {
-          throw WriteAfterReadException(toGuard.name);
-        }));
-      }
-    }
-
-    final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      element.execute(drivenLogics, guard);
+      element.execute(_drivenLogics, _guard);
     }
 
     // combinational must always drive all outputs or else you get X!
-    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+    if (_assignedReceiverToOutputMap.length != _drivenLogics.length) {
       for (final receiverOutputPair in _assignedReceiverToOutputMap.entries) {
-        if (!drivenLogics.contains(receiverOutputPair.key)) {
+        if (!_drivenLogics.contains(receiverOutputPair.key)) {
           receiverOutputPair.value.put(LogicValue.x, fill: true);
         }
       }
     }
 
     // clean up after execution
-    for (final guardListener in guardListeners) {
+    for (final guardListener in _guardListeners) {
       guardListener.cancel();
     }
+    _guardListeners.clear();
+    _drivenLogics.clear();
+    _guarded.clear();
 
     _isExecuting = false;
   }
@@ -309,7 +327,8 @@ class Sequential extends _Always {
 
   /// A map from input [Logic]s to the values that should be used for
   /// computations on the edge.
-  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap = {};
+  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap =
+      HashMap<Logic, LogicValue>();
 
   /// The value of the clock before the tick.
   final List<LogicValue?> _preTickClkValues = [];
@@ -501,9 +520,8 @@ abstract class Conditional {
   /// associated with [driver].
   @protected
   LogicValue driverValue(Logic driver) =>
-      _driverValueOverrideMap.containsKey(driverInput(driver))
-          ? _driverValueOverrideMap[driverInput(driver)]!
-          : _assignedDriverToInputMap[driver]!.value;
+      _driverValueOverrideMap[driverInput(driver)] ??
+      _assignedDriverToInputMap[driver]!.value;
 
   /// Gets the input port associated with [driver].
   @protected
@@ -1214,40 +1232,40 @@ ${padding}end ''');
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
   /// Name for the clk of this flop.
-  late final String _clk;
+  late final String _clkName;
 
   /// Name for the input of this flop.
-  late final String _d;
+  late final String _dName;
 
   /// Name for the output of this flop.
-  late final String _q;
+  late final String _qName;
 
   /// The clock, posedge triggered.
-  Logic get clk => input(_clk);
+  late final Logic _clk = input(_clkName);
 
   /// The input to the flop.
-  Logic get d => input(_d);
+  late final Logic _d = input(_dName);
 
   /// The output of the flop.
-  Logic get q => output(_q);
+  late final Logic q = output(_qName);
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
   FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
-    _clk = Module.unpreferredName('clk');
-    _d = Module.unpreferredName('d');
-    _q = Module.unpreferredName('q');
-    addInput(_clk, clk);
-    addInput(_d, d, width: d.width);
-    addOutput(_q, width: d.width);
+    _clkName = Module.unpreferredName('clk');
+    _dName = Module.unpreferredName('d');
+    _qName = Module.unpreferredName('q');
+    addInput(_clkName, clk);
+    addInput(_dName, d, width: d.width);
+    addOutput(_qName, width: d.width);
     _setup();
   }
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Sequential(clk, [q < d]);
+    Sequential(_clk, [q < _d]);
   }
 
   @override
@@ -1256,9 +1274,9 @@ class FlipFlop extends Module with CustomSystemVerilog {
     if (inputs.length != 2 || outputs.length != 1) {
       throw Exception('FlipFlop has exactly two inputs and one output.');
     }
-    final clk = inputs[_clk]!;
-    final d = inputs[_d]!;
-    final q = outputs[_q]!;
+    final clk = inputs[_clkName]!;
+    final d = inputs[_dName]!;
+    final q = outputs[_qName]!;
     return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
   }
 }

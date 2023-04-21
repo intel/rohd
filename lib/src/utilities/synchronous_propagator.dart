@@ -8,6 +8,8 @@
 // Author: Max Korbel <max.korbel@intel.com>
 //
 
+import 'package:rohd/src/collections/iterable_removable_queue.dart';
+
 /// A controller for a [SynchronousEmitter] that allows for
 /// adding of events of type [T] to be emitted.
 class SynchronousPropagator<T> {
@@ -42,7 +44,8 @@ class SynchronousEmitter<T> {
   }
 
   /// A [List] of actions to perform for each event.
-  final List<SynchronousSubscription<T>> _subscriptions = [];
+  final IterableRemovableQueue<SynchronousSubscription<T>> _subscriptions =
+      IterableRemovableQueue<SynchronousSubscription<T>>();
 
   /// Returns `true` iff this is currently emitting.
   ///
@@ -50,21 +53,19 @@ class SynchronousEmitter<T> {
   bool get isEmitting => _isEmitting;
   bool _isEmitting = false;
 
+  /// Determines whether a [SynchronousSubscription] should be removed from the
+  /// collection of active [_subscriptions].
+  static bool _doRemove<T>(SynchronousSubscription<T> subscription) =>
+      subscription._cancelled;
+
   /// Sends out [t] to all listeners.
   void _propagate(T t) {
     _isEmitting = true;
 
-    for (var i = 0; i < _subscriptions.length; i++) {
-      final subscription = _subscriptions[i];
-
-      if (subscription._cancelled) {
-        _subscriptions.removeAt(i);
-        i--;
-        continue;
-      }
-
-      subscription.func(t);
-    }
+    _subscriptions.iterate(
+      action: (subscription) => subscription.func(t),
+      removeWhere: _doRemove,
+    );
 
     _isEmitting = false;
   }
@@ -75,8 +76,7 @@ class SynchronousEmitter<T> {
   /// time this would propagate.  Also clears all actions from [other]
   /// so that it will not execute anything in the future.
   void adopt(SynchronousEmitter<T> other) {
-    _subscriptions.addAll(other._subscriptions);
-    other._subscriptions.clear();
+    _subscriptions.takeAll(other._subscriptions);
   }
 }
 

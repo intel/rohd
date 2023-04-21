@@ -7,6 +7,7 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:collection';
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
@@ -47,7 +48,7 @@ class WaveDumper {
   ///
   /// This spans across multiple inject or changed events if they are in the
   /// same timestamp of the [Simulator].
-  final Set<Logic> _changedLogicsThisTimestamp = <Logic>{};
+  final Set<Logic> _changedLogicsThisTimestamp = HashSet<Logic>();
 
   /// The timestamp which is currently being collected for a dump.
   ///

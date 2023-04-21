@@ -41,13 +41,13 @@ abstract class Module {
   /// An internal list of internal-signals.
   ///
   /// Used for waveform dump efficiency.
-  final Set<Logic> _internalSignals = {};
+  final Set<Logic> _internalSignals = HashSet<Logic>();
 
   /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = {};
+  final Map<String, Logic> _inputs = HashMap<String, Logic>();
 
   /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = {};
+  final Map<String, Logic> _outputs = HashMap<String, Logic>();
 
   /// The parent [Module] of this [Module].
   ///
@@ -269,9 +269,8 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
-    if (!_modules.contains(module)) {
-      _modules.add(module);
-    }
+    _modules.add(module);
+
     module._parent = this;
     await module.build();
   }
