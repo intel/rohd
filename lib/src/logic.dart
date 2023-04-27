@@ -574,6 +574,9 @@ class Logic {
   /// Logical equality.
   Logic eq(dynamic other) => Equals(this, other).out;
 
+  /// Logical inequality.
+  Logic neq(dynamic other) => NotEquals(this, other).out;
+
   /// Less-than.
   Logic lt(dynamic other) => LessThan(this, other).out;
 
