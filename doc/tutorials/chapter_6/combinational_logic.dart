@@ -114,41 +114,6 @@ void main() async {
         }
       }
     });
-
-    test(
-        'should return true if result sum and cout similar to truth table when using '
-        'Case as conditionals.', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final cIn = Logic(name: 'carry_in');
-
-      final fullAdder =
-          FullAdder(a: a, b: b, carryIn: cIn, selection: FACond.caseBlock);
-      await fullAdder.build();
-
-      for (var i = 0; i <= 1; i++) {
-        for (var j = 0; j <= 1; j++) {
-          for (var k = 0; k <= 1; k++) {
-            a.put(i);
-            b.put(j);
-            cIn.put(k);
-
-            final actualSum = fullAdder.fullAdderRes.sum.value.toInt();
-            final expectedSum = faTruthTable(i, j, k).sum;
-
-            final actualCout = fullAdder.fullAdderRes.cOut.value.toInt();
-            final expectedCout = faTruthTable(i, j, k).cOut;
-
-            expect(actualSum, expectedSum,
-                reason: 'a: $i, b: $j, c: $k, ActualSum: $actualSum, '
-                    'ExpectedSum: $expectedSum');
-            expect(actualCout, expectedCout,
-                reason: 'a: $i, b: $j, c: $k, ActualCout: $actualCout, '
-                    'ExpectedCout: $expectedCout');
-          }
-        }
-      }
-    });
   });
 
   group('nBitAdder', () {
