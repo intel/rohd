@@ -26,24 +26,32 @@ class ComparisonTestModule extends Module {
     final aLteB = addOutput('a_lte_b');
     final aGtB = addOutput('a_gt_b');
     final aGteB = addOutput('a_gte_b');
+    final aGtOperatorB = addOutput('a_gt_operator_b');
+    final aGteOperatorB = addOutput('a_gte_operator_b');
 
     final aEqC = addOutput('a_eq_c');
     final aLtC = addOutput('a_lt_c');
     final aLteC = addOutput('a_lte_c');
     final aGtC = addOutput('a_gt_c');
     final aGteC = addOutput('a_gte_c');
+    final aGtOperatorC = addOutput('a_gt_operator_c');
+    final aGteOperatorC = addOutput('a_gte_operator_c');
 
     aEqB <= a.eq(b);
     aLtB <= a.lt(b);
     aLteB <= a.lte(b);
-    aGtB <= (a > b);
-    aGteB <= (a >= b);
+    aGtB <= a.gt(b);
+    aGteB <= a.gte(b);
+    aGtOperatorB <= (a > b);
+    aGteOperatorB <= (a >= b);
 
     aEqC <= a.eq(c);
     aLtC <= a.lt(c);
     aLteC <= a.lte(c);
-    aGtC <= (a > c);
-    aGteC <= (a >= c);
+    aGtC <= a.gt(c);
+    aGteC <= a.gte(c);
+    aGtOperatorC <= (a > c);
+    aGteOperatorC <= (a >= c);
   }
 }
 
@@ -66,11 +74,15 @@ void main() {
           'a_lte_b': 1,
           'a_gt_b': 0,
           'a_gte_b': 1,
+          'a_gt_operator_b': 0,
+          'a_gte_operator_b': 1,
           'a_eq_c': 0,
           'a_lt_c': 1,
           'a_lte_c': 1,
           'a_gt_c': 0,
           'a_gte_c': 0,
+          'a_gt_operator_c': 0,
+          'a_gte_operator_c': 0,
         }),
         Vector({
           'a': 5,
@@ -81,11 +93,15 @@ void main() {
           'a_lte_b': 1,
           'a_gt_b': 0,
           'a_gte_b': 0,
+          'a_gt_operator_b': 0,
+          'a_gte_operator_b': 0,
           'a_eq_c': 1,
           'a_lt_c': 0,
           'a_lte_c': 1,
           'a_gt_c': 0,
           'a_gte_c': 1,
+          'a_gt_operator_c': 0,
+          'a_gte_operator_c': 1,
         }),
         Vector({
           'a': 9,
@@ -96,11 +112,15 @@ void main() {
           'a_lte_b': 0,
           'a_gt_b': 1,
           'a_gte_b': 1,
+          'a_gt_operator_b': 1,
+          'a_gte_operator_b': 1,
           'a_eq_c': 0,
           'a_lt_c': 0,
           'a_lte_c': 0,
           'a_gt_c': 1,
           'a_gte_c': 1,
+          'a_gt_operator_c': 1,
+          'a_gte_operator_c': 1,
         }),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);

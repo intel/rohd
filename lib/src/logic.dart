@@ -581,6 +581,12 @@ class Logic {
   Logic lte(dynamic other) => LessThanOrEqual(this, other).out;
 
   /// Greater-than.
+  Logic gt(dynamic other) => GreaterThan(this, other).out;
+
+  /// Greater-than-or-equal-to.
+  Logic gte(dynamic other) => GreaterThanOrEqual(this, other).out;
+
+  /// Greater-than.
   Logic operator >(dynamic other) => GreaterThan(this, other).out;
 
   /// Greater-than-or-equal-to.
