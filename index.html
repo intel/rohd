@@ -245,7 +245,9 @@ a_eq_b    &lt;=  a.eq(b)  // equality              NOTE: == is for Object equali
 a_lt_b    &lt;=  a.lt(b)  // less than             NOTE: &lt;  is for conditional assignment
 a_lte_b   &lt;=  a.lte(b) // less than or equal    NOTE: &lt;= is for assignment
 a_gt_b    &lt;=  (a &gt; b)  // greater than          NOTE: careful with order of operations, &gt; needs parentheses in this case
+                       // Note: a_gt_b &lt;= a.gt(b) is also supported for greater than.
 a_gte_b   &lt;=  (a &gt;= b) // greater than or equal NOTE: careful with order of operations, &gt;= needs parentheses in this case
+                       // Note: a_gte_b &lt;= a.gte(b) is also supported for greater than or equal.
 answer    &lt;=  mux(selectA, a, b) // answer = selectA ? a : b
 </code></pre>
 <h3 id="shift-operations">Shift Operations</h3>

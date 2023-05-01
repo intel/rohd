@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the operator &lt;= method from the Logic class, for the Dart programming language.">
-  <title>operator &lt;= method - Logic class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the gte method from the Logic class, for the Dart programming language.">
+  <title>gte method - Logic class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">operator <= method</li>
+    <li class="self-crumb">gte method</li>
   </ol>
-  <div class="self-name">operator &lt;=</div>
+  <div class="self-name">gte</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -50,15 +50,15 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">operator <=</span> method 
+<h1><span class="kind-method">gte</span> method 
     <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype">void</span>
-<span class="name ">operator &lt;=</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="<=-param-other"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span></li>
+<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
+<span class="name ">gte</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="gte-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span></li>
 </ol>)
 
       
@@ -66,15 +66,14 @@
     </section>
     
 <section class="desc markdown">
-  <p>Connects this <a href="../../rohd/Logic-class.html">Logic</a> directly to another <a href="../../rohd/Logic-class.html">Logic</a>.</p>
-<p>This is shorthand for <a href="../../rohd/Logic/gets.html">gets()</a>.</p>
+  <p>Greater-than-or-equal-to.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">void operator &lt;=(Logic other) =&gt; gets(other);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic gte(dynamic other) =&gt; GreaterThanOrEqual(this, other).out;</code></pre>
 </section>
 
 
@@ -91,7 +90,7 @@
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-  <li class="self-crumb">operator <= method</li>
+  <li class="self-crumb">gte method</li>
 </ol>
 
 
