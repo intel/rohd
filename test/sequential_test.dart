@@ -28,7 +28,7 @@ class DelaySignal extends Module {
 
     final out = addOutput('out', width: bitWidth);
 
-    final zList = <ConditionalAssign>[z[0] < inputVal];
+    final zList = <Conditional>[z[0] < inputVal];
     for (var i = 0; i < z.length; i++) {
       if (i == z.length - 1) {
         zList.add(out < z[i]);

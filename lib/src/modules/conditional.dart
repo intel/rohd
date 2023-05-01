@@ -642,6 +642,54 @@ abstract class Conditional {
       {required int context});
 }
 
+/// Represents a group of [Conditional]s to be executed.
+class ConditionalGroup extends Conditional {
+  final List<Conditional> conditionals;
+  ConditionalGroup(this.conditionals);
+
+  @override
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    var mappings = currentMappings;
+    for (final conditional in conditionals) {
+      mappings = conditional._processSsa(mappings, context: context);
+    }
+    return mappings;
+  }
+
+  @override
+  late final List<Logic> drivers = [
+    for (final conditional in conditionals) ...conditional.drivers
+  ];
+
+  @override
+  late final List<Logic> receivers = [
+    for (final conditional in conditionals) ...conditional.receivers
+  ];
+
+  @override
+  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
+    for (final conditional in conditionals) {
+      conditional.execute(drivenSignals, guard);
+    }
+  }
+
+  @override
+  String verilogContents(int indent, Map<String, String> inputsNameMap,
+      Map<String, String> outputsNameMap, String assignOperator) {
+    final verilog = StringBuffer();
+    for (final conditional in conditionals) {
+      verilog.write(conditional.verilogContents(
+        indent,
+        inputsNameMap,
+        outputsNameMap,
+        assignOperator,
+      ));
+    }
+    return verilog.toString();
+  }
+}
+
 /// An assignment that only happens under certain conditions.
 ///
 /// [Logic] has a short-hand for creating [ConditionalAssign] via the

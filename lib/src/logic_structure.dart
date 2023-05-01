@@ -1,6 +1,9 @@
 import 'dart:collection';
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/module/module_exceptions.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 class LogicStructure implements Logic {
@@ -20,12 +23,21 @@ class LogicStructure implements Logic {
       .toList()
       .swizzle();
 
+  @override
+  final String name;
+
+  /// An internal counter for encouraging unique naming of unnamed signals.
+  static int _structIdx = 0;
+
   /// Creates a new [LogicStructure] with [components] as elements.
-  LogicStructure(List<Logic> components) {
+  LogicStructure(List<Logic> components, {String? name})
+      : name = (name == null || name.isEmpty)
+            ? 'st${_structIdx++}'
+            : Sanitizer.sanitizeSV(name) {
     _components.addAll(components);
   }
 
-  //TODO: dimension List<int>
+  //TODO: dimension List<int> (only on array?)
 
   ///////////////////////////////////////////////
   ///////////////////////////////////////////////
@@ -34,125 +46,150 @@ class LogicStructure implements Logic {
 
   @override
   void put(dynamic val, {bool fill = false}) {
+    final logicVal = LogicValue.of(val, fill: fill, width: width);
+
     var index = 0;
     for (final component in components) {
-      component.put();
+      component.put(logicVal.getRange(index, index + component.width));
       index += component.width;
     }
   }
 
   @override
-  Module? get parentModule =>
-      throw Exception('Cannot access parent of a structure'); //TODO
-  @override
-  set parentModule(Module? newParentModule) =>
-      throw Exception('Cannot access parent of a structure'); //TODO
+  void inject(val, {bool fill = false}) {
+    final logicVal = LogicValue.of(val, fill: fill, width: width);
 
-  @override
-  ConditionalAssign operator <(other) {
-    // TODO: implement <
-    throw UnimplementedError();
+    var index = 0;
+    for (final component in components) {
+      component.inject(logicVal.getRange(index, index + component.width));
+      index += component.width;
+    }
   }
 
   @override
-  void operator <=(Logic other) {
-    // TODO: implement <=
+  Conditional operator <(dynamic other) {
+    final otherLogic = other is Logic ? other : Const(other, width: width);
+
+    if (otherLogic.width != width) {
+      throw PortWidthMismatchException(otherLogic, width);
+    }
+
+    final conditionalAssigns = <Conditional>[];
+
+    var index = 0;
+    for (final component in components) {
+      conditionalAssigns
+          .add(component < otherLogic.getRange(index, index + component.width));
+      index += component.width;
+    }
+
+    return ConditionalGroup(conditionalAssigns);
   }
-
-  @override
-  Logic operator [](index) {
-    // TODO: implement []
-    throw UnimplementedError();
-    //TODO: should this still return just 1 bit or no?
-  }
-
-  @override
-  Logic getRange(int startIndex, [int? endIndex]) {
-    // TODO: implement getRange
-    throw UnimplementedError();
-  }
-
-  @override
-  //TODO
-  Logic slice(int endIndex, int startIndex) =>
-      packed.slice(endIndex, startIndex);
-
-  @override
-  ConditionalAssign decr({Logic Function(Logic p1) s = Logic.nopS, val = 1}) {
-    // TODO: implement decr
-    throw UnimplementedError();
-  }
-
-  @override
-  ConditionalAssign divAssign({Logic Function(Logic p1) s = Logic.nopS, val}) {
-    // TODO: implement divAssign
-    throw UnimplementedError();
-  }
-
-  @override
-  ConditionalAssign mulAssign({Logic Function(Logic p1) s = Logic.nopS, val}) {
-    // TODO: implement mulAssign
-    throw UnimplementedError();
-  }
-
-  @override
-  ConditionalAssign incr({Logic Function(Logic p1) s = Logic.nopS, val = 1}) {
-    // TODO: implement incr
-    throw UnimplementedError();
-  }
-
-  @override
-  // TODO: implement dstConnections
-  Iterable<Logic> get dstConnections => throw UnimplementedError();
 
   @override
   void gets(Logic other) {
-    // TODO: implement gets
+    if (other.width != width) {
+      throw PortWidthMismatchException(other, width);
+    }
+
+    var index = 0;
+    for (final component in components) {
+      component <= other.getRange(index, index + component.width);
+      index += component.width;
+    }
   }
 
   @override
-  void inject(val, {bool fill = false}) {
-    // TODO: implement inject
-  }
+  void operator <=(Logic other) => gets(other);
 
   @override
-  // TODO: implement isInput
-  bool get isInput => throw UnimplementedError();
+  Logic operator [](dynamic index) => packed[index];
+
+  @override
+  Logic getRange(int startIndex, [int? endIndex]) =>
+      packed.getRange(startIndex, endIndex);
+
+  @override
+  Logic slice(int endIndex, int startIndex) =>
+      packed.slice(endIndex, startIndex);
+
+  /// Increments each component of [components] using [Logic.incr].
+  @override
+  Conditional incr(
+          {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
+      ConditionalGroup([
+        for (final component in components) component.incr(s: s, val: val),
+      ]);
+
+  /// Decrements each component of [components] using [Logic.decr].
+  @override
+  Conditional decr(
+          {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
+      ConditionalGroup([
+        for (final component in components) component.decr(s: s, val: val),
+      ]);
+
+  /// Divide-assigns each component of [components] using [Logic.divAssign].
+  @override
+  Conditional divAssign(
+          {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
+      ConditionalGroup([
+        for (final component in components) component.divAssign(s: s, val: val),
+      ]);
+
+  /// Multiply-assigns each component of [components] using [Logic.mulAssign].
+  @override
+  Conditional mulAssign(
+          {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
+      ConditionalGroup([
+        for (final component in components) component.mulAssign(s: s, val: val),
+      ]);
+
+  @override
+  late final Iterable<Logic> dstConnections = [
+    for (final component in components) ...component.dstConnections
+  ];
+
+  //TODO: is this safe to have a separate tracking here?
+  Module? _parentModule;
+
+  @override
+  Module? get parentModule => _parentModule;
+
+  @override
+  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+
+  @override
+  bool get isInput => parentModule?.isInput(this) ?? false;
 
   @override
   // TODO: implement isOutput
-  bool get isOutput => throw UnimplementedError();
+  bool get isOutput => parentModule?.isOutput(this) ?? false;
 
   @override
   // TODO: implement isPort
-  bool get isPort => throw UnimplementedError();
+  bool get isPort => isInput || isOutput;
 
   @override
   void makeUnassignable() {
-    // TODO: implement makeUnassignable
+    for (final component in components) {
+      component.makeUnassignable();
+    }
   }
-
-  @override
-  // TODO: implement name
-  String get name => throw UnimplementedError();
 
   @override
   // TODO: implement srcConnection
   Logic? get srcConnection => throw UnimplementedError();
 
   @override
-  // TODO: implement value
-  LogicValue get value => throw UnimplementedError();
+  LogicValue get value => packed.value;
 
   @override
-  // TODO: implement width
-  int get width => throw UnimplementedError();
+  int get width => packed.width;
 
   @override
-  Logic withSet(int startIndex, Logic update) {
-    // TODO: implement withSet
-    throw UnimplementedError();
-  }
+  Logic withSet(int startIndex, Logic update) =>
+      packed.withSet(startIndex, update);
 
   /////////////////////////////////////////////////
   /////////////////////////////////////////////////

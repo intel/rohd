@@ -37,10 +37,7 @@ class LogicValueChanged {
 class Const extends Logic {
   /// Constructs a [Const] with the specified value.
   ///
-  /// If [val] is a [LogicValue], the [width] is inferred from it.
-  /// Otherwise, if [width] is not specified, the default [width] is 1.
-  /// If [fill] is set to `true`, the value is extended across
-  /// [width] (like `'` in SystemVerilog).
+  /// [val] should be processable by [LogicValue.of].
   Const(dynamic val, {int? width, bool fill = false})
       : super(
             name: 'const_$val',
@@ -370,13 +367,13 @@ class Logic {
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isInput => _parentModule?.isInput(this) ?? false;
+  bool get isInput => parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isOutput => _parentModule?.isOutput(this) ?? false;
+  bool get isOutput => parentModule?.isOutput(this) ?? false;
 
   /// Returns true iff this signal is an input or output of its parent [Module].
   ///
@@ -577,7 +574,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign incr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
+  Conditional incr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
       s(this) < s(this) + val;
 
   /// Shorthand for a [Conditional] which decrements this by [val].
@@ -600,7 +597,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign decr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
+  Conditional decr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
       s(this) < s(this) - val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -622,7 +619,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign mulAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
+  Conditional mulAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
       s(this) < s(this) * val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -644,7 +641,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign divAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
+  Conditional divAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
       s(this) < s(this) / val;
 
   /// Conditional assignment operator.
@@ -652,7 +649,7 @@ class Logic {
   /// Represents conditionally asigning the value of another signal to this.
   /// Returns an instance of [ConditionalAssign] to be be passed to a
   /// [Conditional].
-  ConditionalAssign operator <(dynamic other) {
+  Conditional operator <(dynamic other) {
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
           'It may be a constant expression or otherwise'
