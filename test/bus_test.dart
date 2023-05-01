@@ -260,13 +260,16 @@ void main() {
       expect(out.value.toInt(), equals(0x55aa));
     });
 
-    group('put exceptions', () {
-      test('width mismatch', () {
-        expect(
-          () => Logic(name: 'byteSignal', width: 8)
-              .put(LogicValue.ofString('1010')),
-          throwsA(const TypeMatcher<PutException>()),
-        );
+    group('put width mismatches', () {
+      test('width too small', () {
+        final smallVal = LogicValue.ofString('1010');
+        final byteSignal = Logic(name: 'byteSignal', width: 8)..put(smallVal);
+        expect(byteSignal.value, smallVal.zeroExtend(8));
+      });
+      test('width too big', () {
+        final bigVal = LogicValue.ofString('1010101010');
+        final byteSignal = Logic(name: 'byteSignal', width: 8)..put(bigVal);
+        expect(byteSignal.value, bigVal.getRange(0, 8));
       });
     });
   });

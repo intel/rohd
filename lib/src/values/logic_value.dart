@@ -126,10 +126,10 @@ abstract class LogicValue {
   ///
   /// If the [width] can be inferred from the type ([String] or [LogicValue]),
   /// then [width] does not need to be provided. If [width] is provided and
-  /// does not match an inferred width, an [Exception] will be thrown. If a
+  /// does not match an inferred width, then [width] is used. If a
   /// [width] cannot be inferred, then it is required, or else it will throw
-  /// an [Exception].  If [val] does not fit in a specified [width] and [width]
-  /// cannot be inferred, then the returned value will be truncated.  [bool]s
+  /// an [Exception].  If [val] does not fit in a specified [width],
+  /// then the returned value will be truncated.  [bool]s
   /// will infer a default width of `1`, but it can be overridden.  Invalid
   /// 1-bit [val]s will always be [fill]ed and must provide a [width],
   /// even if [fill] is `false`.
@@ -178,12 +178,6 @@ abstract class LogicValue {
       }
       return LogicValue.ofInt(val ? 1 : 0, width);
     } else if (val is LogicValue) {
-      if (width != null && width != val.width) {
-        throw LogicValueConstructionException(
-            'Inferred width of `val` (${val.width})'
-            ' is not equal to provided `width` ($width)');
-      }
-
       if (fill && val.width != 1) {
         throw LogicValueConstructionException(
             'Only 1-bit `LogicValue`s can be filled');
@@ -200,15 +194,15 @@ abstract class LogicValue {
         throw LogicValueConstructionException(
             'Failed to fill value with $val. To fill, it should be 1 bit.');
       } else {
-        return val;
+        if (val.width == width || width == null) {
+          return val;
+        } else if (width < val.width) {
+          return val.getRange(0, width);
+        } else {
+          return val.zeroExtend(width);
+        }
       }
     } else if (val is String) {
-      if (width != null && width != val.length) {
-        throw LogicValueConstructionException(
-            'Inferred width of `val` (${val.length})'
-            ' is not equal to provided `width` ($width)');
-      }
-
       if (fill && val.length != 1) {
         throw LogicValueConstructionException(
             'Only 1-bit values can be filled');
@@ -224,7 +218,13 @@ abstract class LogicValue {
         throw LogicValueConstructionException(
             'Failed to fill value with $val. To fill, it should be 1 bit.');
       } else {
-        return LogicValue.ofString(val);
+        if (val.length == width || width == null) {
+          return LogicValue.ofString(val);
+        } else if (width < val.length) {
+          return LogicValue.ofString(val.substring(0, width));
+        } else {
+          return LogicValue.ofString(val).zeroExtend(width);
+        }
       }
     } else {
       throw LogicValueConstructionException('Unrecognized value type "$val" - '
