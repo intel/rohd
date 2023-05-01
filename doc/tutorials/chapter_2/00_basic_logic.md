@@ -155,6 +155,7 @@ a_times_b <=  a * b;   // multiplication
 a_div_b   <=  a / b;   // division
 a_mod_b   <=  a % b;   // modulo
 a_eq_b    <=  a.eq(b)  // equality              NOTE: == is for Object equality of Logic's
+a_neq_b   <=  a.neq(b) // inequality            NOTE: != is for Object inequality of Logic's
 a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assignment
 a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
 a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of operations, > needs parentheses in this case

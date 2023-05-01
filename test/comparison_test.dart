@@ -22,6 +22,7 @@ class ComparisonTestModule extends Module {
     b = addInput('b', b, width: b.width);
 
     final aEqB = addOutput('a_eq_b');
+    final aNeqB = addOutput('a_neq_b');
     final aLtB = addOutput('a_lt_b');
     final aLteB = addOutput('a_lte_b');
     final aGtB = addOutput('a_gt_b');
@@ -30,6 +31,7 @@ class ComparisonTestModule extends Module {
     final aGteOperatorB = addOutput('a_gte_operator_b');
 
     final aEqC = addOutput('a_eq_c');
+    final aNeqC = addOutput('a_neq_c');
     final aLtC = addOutput('a_lt_c');
     final aLteC = addOutput('a_lte_c');
     final aGtC = addOutput('a_gt_c');
@@ -38,6 +40,7 @@ class ComparisonTestModule extends Module {
     final aGteOperatorC = addOutput('a_gte_operator_c');
 
     aEqB <= a.eq(b);
+    aNeqB <= a.neq(b);
     aLtB <= a.lt(b);
     aLteB <= a.lte(b);
     aGtB <= a.gt(b);
@@ -46,6 +49,7 @@ class ComparisonTestModule extends Module {
     aGteOperatorB <= (a >= b);
 
     aEqC <= a.eq(c);
+    aNeqC <= a.neq(c);
     aLtC <= a.lt(c);
     aLteC <= a.lte(c);
     aGtC <= a.gt(c);
@@ -70,6 +74,7 @@ void main() {
           'b': 0
         }, {
           'a_eq_b': 1,
+          'a_neq_b': 0,
           'a_lt_b': 0,
           'a_lte_b': 1,
           'a_gt_b': 0,
@@ -77,6 +82,7 @@ void main() {
           'a_gt_operator_b': 0,
           'a_gte_operator_b': 1,
           'a_eq_c': 0,
+          'a_neq_c': 1,
           'a_lt_c': 1,
           'a_lte_c': 1,
           'a_gt_c': 0,
@@ -89,6 +95,7 @@ void main() {
           'b': 6
         }, {
           'a_eq_b': 0,
+          'a_neq_b': 1,
           'a_lt_b': 1,
           'a_lte_b': 1,
           'a_gt_b': 0,
@@ -96,6 +103,7 @@ void main() {
           'a_gt_operator_b': 0,
           'a_gte_operator_b': 0,
           'a_eq_c': 1,
+          'a_neq_c': 0,
           'a_lt_c': 0,
           'a_lte_c': 1,
           'a_gt_c': 0,
@@ -108,6 +116,7 @@ void main() {
           'b': 7
         }, {
           'a_eq_b': 0,
+          'a_neq_b': 1,
           'a_lt_b': 0,
           'a_lte_b': 0,
           'a_gt_b': 1,
@@ -115,6 +124,7 @@ void main() {
           'a_gt_operator_b': 1,
           'a_gte_operator_b': 1,
           'a_eq_c': 0,
+          'a_neq_c': 1,
           'a_lt_c': 0,
           'a_lte_c': 0,
           'a_gt_c': 1,

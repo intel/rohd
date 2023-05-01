@@ -725,6 +725,14 @@ abstract class LogicValue {
   /// [eq] will return `x`.
   LogicValue eq(dynamic other) => _doCompare(other, (a, b) => a == b);
 
+  /// Not equal-to operation.
+  ///
+  /// This is different from != operator because it returns a [LogicValue]
+  /// instead of a [bool]. It does a logical comparison of the two values,
+  /// rather than exact inequality.  For example, if one of the two values is
+  /// invalid, [neq] will return `x`.
+  LogicValue neq(dynamic other) => _doCompare(other, (a, b) => a != b);
+
   /// Less-than operation.
   ///
   /// WARNING: Signed math is not fully tested.

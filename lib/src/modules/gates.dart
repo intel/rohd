@@ -478,6 +478,15 @@ class Equals extends _TwoInputComparisonGate {
       : super((a, b) => a.eq(b), '==', in0, in1, name: name);
 }
 
+/// A two-input inequality comparison module.
+class NotEquals extends _TwoInputComparisonGate {
+  /// Calculates whether [in0] and [in1] are not-equal.
+  ///
+  /// [in1] can be either a [Logic] or [int].
+  NotEquals(Logic in0, dynamic in1, {String name = 'notEquals'})
+      : super((a, b) => a.neq(b), '!=', in0, in1, name: name);
+}
+
 /// A two-input comparison module for less-than.
 class LessThan extends _TwoInputComparisonGate {
   /// Calculates whether [in0] is less than [in1].
