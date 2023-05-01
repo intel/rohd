@@ -242,10 +242,12 @@ class Combinational extends _Always {
   /// are consuming.
   void _guard(Logic toGuard) {
     if (_guarded.add(toGuard)) {
-      _guardListeners.add(toGuard.glitch.listen((args) {
-        throw WriteAfterReadException(toGuard.name);
-      }));
+      _guardListeners.add(toGuard.glitch.listen(_writeAfterRead));
     }
+  }
+
+  static void _writeAfterRead(args) {
+    throw WriteAfterReadException();
   }
 
   /// Performs the functional behavior of this block.
@@ -666,6 +668,9 @@ class ConditionalAssign extends Conditional {
   @override
   late final List<Conditional> conditionals = const [];
 
+  /// A cached copy of the result of [receiverOutput] to save on lookups.
+  late final _receiverOutput = receiverOutput(receiver);
+
   @override
   void execute(Set<Logic> drivenSignals,
       [void Function(Logic toGuard)? guard]) {
@@ -673,7 +678,7 @@ class ConditionalAssign extends Conditional {
       guard(driver);
     }
 
-    receiverOutput(receiver).put(driverValue(driver));
+    _receiverOutput.put(driverValue(driver));
 
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
       drivenSignals.add(receiver);
