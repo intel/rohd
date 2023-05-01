@@ -83,7 +83,7 @@ void main() {
             (index) =>
                 bits[index % bits.length] * (index % 17) +
                 bits[(index + 1) % bits.length] * (index % 2));
-        expect(LogicValue.of(swizzleStrings.map(LogicValue.ofString)),
+        expect(LogicValue.ofIterable(swizzleStrings.map(LogicValue.ofString)),
             equals(LogicValue.ofString(swizzleStrings.reversed.join())));
       });
 
@@ -94,7 +94,7 @@ void main() {
             (index) =>
                 bits[index % bits.length] * (index % 71) +
                 bits[(index + 1) % bits.length] * (index % 2));
-        expect(LogicValue.of(swizzleStrings.map(LogicValue.ofString)),
+        expect(LogicValue.ofIterable(swizzleStrings.map(LogicValue.ofString)),
             equals(LogicValue.ofString(swizzleStrings.reversed.join())));
       });
     });

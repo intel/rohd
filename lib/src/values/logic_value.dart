@@ -115,6 +115,124 @@ abstract class LogicValue {
                     : throw Exception('Failed to convert.');
   }
 
+  /// Constructs a [LogicValue] from [val] which could be of a variety of types.
+  ///
+  /// Supported types include [String], [bool], [int], [BigInt], and
+  /// [LogicValue].
+  ///
+  /// If [fill] is set, then all bits of the returne value will be set to [val].
+  /// If the [val] is not representable as a single bit of information, then
+  /// setting [fill] will throw an [Exception].
+  ///
+  /// If the [width] can be inferred from the type ([String] or [LogicValue]),
+  /// then [width] does not need to be provided. If [width] is provided and
+  /// does not match an inferred width, an [Exception] will be thrown. If a
+  /// [width] cannot be inferred, then it is required, or else it will throw
+  /// an [Exception].  If [val] does not fit in a specified [width] and [width]
+  /// cannot be inferred, then the returned value will be truncated.  [bool]s
+  /// will infer a default width of `1`, but it can be overridden.  Invalid
+  /// 1-bit [val]s will always be [fill]ed and must provide a [width],
+  /// even if [fill] is `false`.
+  static LogicValue of(dynamic val, {bool fill = false, int? width}) {
+    if (val is int) {
+      if (width == null) {
+        throw LogicValueConstructionException(
+            '`width` must be provided for `int`.');
+      }
+
+      if (fill) {
+        return LogicValue.filled(
+            width,
+            val == 0
+                ? LogicValue.zero
+                : val == 1
+                    ? LogicValue.one
+                    : throw LogicValueConstructionException(
+                        '`int` can only can fill 0 or 1, but saw $val.'));
+      } else {
+        return LogicValue.ofInt(val, width);
+      }
+    } else if (val is BigInt) {
+      if (width == null) {
+        throw LogicValueConstructionException(
+            '`width` must be provided for `BigInt`.');
+      }
+
+      if (fill) {
+        return LogicValue.filled(
+            width,
+            val == BigInt.zero
+                ? LogicValue.zero
+                : val == BigInt.one
+                    ? LogicValue.one
+                    : throw LogicValueConstructionException(
+                        '`BigInt` can only fill 0 or 1, but saw $val.'));
+      } else {
+        return LogicValue.ofBigInt(val, width);
+      }
+    } else if (val is bool) {
+      width ??= 1;
+
+      if (fill) {
+        return LogicValue.filled(width, val ? LogicValue.one : LogicValue.zero);
+      }
+      return LogicValue.ofInt(val ? 1 : 0, width);
+    } else if (val is LogicValue) {
+      if (width != null && width != val.width) {
+        throw LogicValueConstructionException(
+            'Inferred width of `val` (${val.width})'
+            ' is not equal to provided `width` ($width)');
+      }
+
+      if (fill && val.width != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit `LogicValue`s can be filled');
+      }
+
+      if (val.width == 1 &&
+          (val == LogicValue.x || val == LogicValue.z || fill)) {
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `LogicValue` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, val);
+      } else if (fill) {
+        throw LogicValueConstructionException(
+            'Failed to fill value with $val. To fill, it should be 1 bit.');
+      } else {
+        return val;
+      }
+    } else if (val is String) {
+      if (width != null && width != val.length) {
+        throw LogicValueConstructionException(
+            'Inferred width of `val` (${val.length})'
+            ' is not equal to provided `width` ($width)');
+      }
+
+      if (fill && val.length != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit values can be filled');
+      }
+
+      if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `String` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, LogicValue.ofString(val));
+      } else if (fill) {
+        throw LogicValueConstructionException(
+            'Failed to fill value with $val. To fill, it should be 1 bit.');
+      } else {
+        return LogicValue.ofString(val);
+      }
+    } else {
+      throw LogicValueConstructionException('Unrecognized value type "$val" - '
+          'Unknown type ${val.runtimeType}'
+          ' cannot be converted to `LogicValue.');
+    }
+  }
+
   /// Constructs a [LogicValue] from [it].
   ///
   /// The order of the created [LogicValue] will be such that the `i`th entry in
@@ -129,7 +247,7 @@ abstract class LogicValue {
   /// var lv = LogicValue.of(it);
   /// print(lv); // This prints `6'b01xzx0`
   /// ```
-  static LogicValue of(Iterable<LogicValue> it) {
+  static LogicValue ofIterable(Iterable<LogicValue> it) {
     var smallBuffer = LogicValue.empty;
     var fullResult = LogicValue.empty;
 
@@ -212,7 +330,7 @@ abstract class LogicValue {
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @Deprecated('Use `of` instead.')
-  static LogicValue from(Iterable<LogicValue> it) => of(it);
+  static LogicValue from(Iterable<LogicValue> it) => ofIterable(it);
 
   /// Returns true if bits in [x] are all 0
   static bool _bigIntIs0(BigInt x, int width) =>
@@ -984,7 +1102,7 @@ abstract class LogicValue {
       throw InvalidMultiplierException(multiplier);
     }
 
-    return LogicValue.of(List.filled(multiplier, this));
+    return LogicValue.ofIterable(List.filled(multiplier, this));
   }
 }
 

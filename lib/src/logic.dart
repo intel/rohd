@@ -208,62 +208,18 @@ class _Wire {
   /// Keeps track of whether there is an active put, to detect reentrance.
   bool _isPutting = false;
 
+  //TODO: update to reference `LogicValue.of`.
+
   /// Puts a value [val] onto this signal, which may or may not be picked up
   /// for [changed] in this [Simulator] tick.
   ///
-  /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
+  /// The type of [val] and usage of [fill] should be supported by
+  /// [LogicValue.of].
   ///
   /// This function is used for propogating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
-  ///
-  /// If [fill] is set, all bits of the signal gets set to [val], similar
-  /// to `'` in SystemVerilog.
   void put(dynamic val, {required String signalName, bool fill = false}) {
-    LogicValue newValue;
-    if (val is int) {
-      if (fill) {
-        newValue = LogicValue.filled(
-            width,
-            val == 0
-                ? LogicValue.zero
-                : val == 1
-                    ? LogicValue.one
-                    : throw PutException(
-                        signalName, 'Only can fill 0 or 1, but saw $val.'));
-      } else {
-        newValue = LogicValue.ofInt(val, width);
-      }
-    } else if (val is BigInt) {
-      if (fill) {
-        newValue = LogicValue.filled(
-            width,
-            val == BigInt.zero
-                ? LogicValue.zero
-                : val == BigInt.one
-                    ? LogicValue.one
-                    : throw PutException(
-                        signalName, 'Only can fill 0 or 1, but saw $val.'));
-      } else {
-        newValue = LogicValue.ofBigInt(val, width);
-      }
-    } else if (val is bool) {
-      newValue = LogicValue.ofInt(val ? 1 : 0, width);
-    } else if (val is LogicValue) {
-      if (val.width == 1 &&
-          (val == LogicValue.x || val == LogicValue.z || fill)) {
-        newValue = LogicValue.filled(width, val);
-      } else if (fill) {
-        throw PutException(signalName,
-            'Failed to fill value with $val.  To fill, it should be 1 bit.');
-      } else {
-        newValue = val;
-      }
-    } else {
-      throw PutException(
-          signalName,
-          'Unrecognized value "$val" to deposit on this signal. '
-          'Unknown type ${val.runtimeType} cannot be deposited.');
-    }
+    var newValue = LogicValue.of(val, fill: fill, width: width);
 
     if (newValue.width != width) {
       throw PutException(signalName,
@@ -598,7 +554,8 @@ class Logic {
   /// A function that returns whatever [Logic] is provided.
   ///
   /// Used as a default no-op for short-hands.
-  static Logic _nopS(Logic x) => x;
+  @protected
+  static Logic nopS(Logic x) => x;
 
   /// Shorthand for a [Conditional] which increments this by [val].
   ///
@@ -620,7 +577,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+  ConditionalAssign incr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
       s(this) < s(this) + val;
 
   /// Shorthand for a [Conditional] which decrements this by [val].
@@ -643,7 +600,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign decr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+  ConditionalAssign decr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
       s(this) < s(this) - val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -665,7 +622,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign mulAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+  ConditionalAssign mulAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
       s(this) < s(this) * val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -687,7 +644,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  ConditionalAssign divAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+  ConditionalAssign divAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
       s(this) < s(this) / val;
 
   /// Conditional assignment operator.

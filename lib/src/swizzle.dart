@@ -46,7 +46,7 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// most significant (highest) bits.
   ///
   /// If you want the opposite, check out [rswizzle].
-  LogicValue swizzle() => LogicValue.of(reversed);
+  LogicValue swizzle() => LogicValue.ofIterable(reversed);
 
   /// Performs a concatenation operation on the list of signals, where index 0
   /// of this list is the *least* significant bit.
@@ -57,7 +57,7 @@ extension LogicValueSwizzle on List<LogicValue> {
   /// least significant (lowest) bits.
   ///
   /// If you want the opposite, check out [swizzle].
-  LogicValue rswizzle() => LogicValue.of(this);
+  LogicValue rswizzle() => LogicValue.ofIterable(this);
 }
 
 /// Performs a concatenation operation on the list of signals, where index 0 of

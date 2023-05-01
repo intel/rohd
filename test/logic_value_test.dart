@@ -262,15 +262,15 @@ void main() {
           equals(LogicValue.ofString('01xx10xxxxxxxxxx')));
       expect(
           // test from Iterable
-          LogicValue.of([LogicValue.one, LogicValue.zero]) ^
-              LogicValue.of([LogicValue.one, LogicValue.zero]),
-          equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
+          LogicValue.ofIterable([LogicValue.one, LogicValue.zero]) ^
+              LogicValue.ofIterable([LogicValue.one, LogicValue.zero]),
+          equals(LogicValue.ofIterable([LogicValue.zero, LogicValue.zero])));
     });
   });
 
   test('LogicValue.of example', () {
     final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
-    final lv = LogicValue.of(it);
+    final lv = LogicValue.ofIterable(it);
     expect(lv.toString(), equals("6'b01xzx0"));
   });
 
