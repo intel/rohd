@@ -708,6 +708,10 @@ class Logic {
     throw Exception('Expected `int` or `Logic`');
   }
 
+  //TODO: test this
+  late final List<Logic> elements =
+      List.generate(width, (index) => this[index], growable: false);
+
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
   ///

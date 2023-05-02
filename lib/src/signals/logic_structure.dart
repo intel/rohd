@@ -16,6 +16,7 @@ import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 class LogicStructure implements Logic {
   /// All elements of this structure.
+  @override
   late final List<Logic> elements = UnmodifiableListView(_elements);
   final List<Logic> _elements = [];
 

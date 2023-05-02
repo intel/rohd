@@ -40,16 +40,21 @@ void main() {
 
       expect(listEq(arr.dimensions, dim), true);
 
+      // make sure we can access elements
+      arr.elements[0].elements[2].elements[1];
+
       for (final element0 in arr.elements) {
-        element0 as LogicArray;
         for (final element1 in element0.elements) {
-          element1 as LogicArray;
           for (final element2 in element1.elements) {
             expect(element2.width, w);
           }
         }
       }
       expect(arr.width, w * dim.reduce((a, b) => a * b));
+      expect(
+          listEq((arr.elements[0] as LogicArray).dimensions,
+              dim.getRange(1, dim.length).toList()),
+          true);
     });
     test('no dim exception', () {
       //TODO
