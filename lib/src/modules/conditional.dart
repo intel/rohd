@@ -246,6 +246,10 @@ class Combinational extends _Always {
     }
   }
 
+  /// A function that throws a [WriteAfterReadException].
+  ///
+  /// Declared as a separate static function so that it doesn't need to be
+  /// created on each [_guard] call.
   static void _writeAfterRead(args) {
     throw WriteAfterReadException();
   }
