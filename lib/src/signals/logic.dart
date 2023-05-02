@@ -1,13 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic.dart
-/// Definition of basic signals, like Logic, and their behavior in the
-/// simulator, as well as basic operations on them
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic.dart
+// Definition of basic signals, like Logic, and their behavior in the
+// simulator, as well as basic operations on them
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:async';
 
 import 'package:collection/collection.dart';
