@@ -356,6 +356,13 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
+  LogicStructure? get parentStructure => _parentStructure;
+  LogicStructure? _parentStructure;
+
+  @protected
+  set parentStructure(LogicStructure? newParentStructure) =>
+      _parentStructure = newParentStructure;
+
   /// Sets the value of [parentModule] to [newParentModule].
   ///
   /// This should *only* be called by [Module.build()].  It is used to

@@ -629,7 +629,7 @@ abstract class Conditional {
       }
     }
 
-    return foundSsaLogics.toList();
+    return foundSsaLogics.toList(growable: false);
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
@@ -921,13 +921,13 @@ class Case extends Conditional {
         ..addAll(item.then
             .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     if (defaultItem != null) {
       drivers.addAll(defaultItem!
           .map((conditional) => conditional.drivers)
           .expand((driver) => driver)
-          .toList());
+          .toList(growable: false));
     }
     return drivers;
   }
@@ -942,13 +942,13 @@ class Case extends Conditional {
       receivers.addAll(item.then
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     if (defaultItem != null) {
       receivers.addAll(defaultItem!
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     return receivers;
   }
@@ -1183,8 +1183,10 @@ class If extends Conditional {
   late final List<Conditional> conditionals = _getConditionals();
 
   /// Calculates the set of conditionals directly within this.
-  List<Conditional> _getConditionals() =>
-      iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
+  List<Conditional> _getConditionals() => iffs
+      .map((iff) => iff.then)
+      .expand((conditional) => conditional)
+      .toList(growable: false);
 
   @override
   late final List<Logic> drivers = _getDrivers();
@@ -1198,7 +1200,7 @@ class If extends Conditional {
         ..addAll(iff.then
             .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     return drivers;
   }
@@ -1213,7 +1215,7 @@ class If extends Conditional {
       receivers.addAll(iff.then
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     return receivers;
   }

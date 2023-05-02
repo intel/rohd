@@ -15,12 +15,12 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 class LogicStructure implements Logic {
-  /// All components of this structure.
-  late final List<Logic> components = UnmodifiableListView(_components);
-  final List<Logic> _components = [];
+  /// All elements of this structure.
+  late final List<Logic> elements = UnmodifiableListView(_elements);
+  final List<Logic> _elements = [];
 
-  /// Packs all [components] into one flattened bus.
-  late final Logic packed = components
+  /// Packs all [elements] into one flattened bus.
+  late final Logic packed = elements
       .map((e) {
         if (e is LogicStructure) {
           return e.packed;
@@ -28,7 +28,7 @@ class LogicStructure implements Logic {
           return e;
         }
       })
-      .toList()
+      .toList(growable: false)
       .swizzle();
 
   @override
@@ -37,12 +37,13 @@ class LogicStructure implements Logic {
   /// An internal counter for encouraging unique naming of unnamed signals.
   static int _structIdx = 0;
 
-  /// Creates a new [LogicStructure] with [components] as elements.
-  LogicStructure(List<Logic> components, {String? name})
+  /// Creates a new [LogicStructure] with [elements] as elements.
+  LogicStructure(List<Logic> elements, {String? name})
       : name = (name == null || name.isEmpty)
             ? 'st${_structIdx++}'
             : Sanitizer.sanitizeSV(name) {
-    _components.addAll(components);
+    //TODO: make sure no components already have a parentComponent
+    _elements.addAll(elements);
   }
 
   //TODO: dimension List<int> (only on array?)
@@ -57,7 +58,7 @@ class LogicStructure implements Logic {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final component in components) {
+    for (final component in elements) {
       component.put(logicVal.getRange(index, index + component.width));
       index += component.width;
     }
@@ -68,7 +69,7 @@ class LogicStructure implements Logic {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final component in components) {
+    for (final component in elements) {
       component.inject(logicVal.getRange(index, index + component.width));
       index += component.width;
     }
@@ -85,7 +86,7 @@ class LogicStructure implements Logic {
     final conditionalAssigns = <Conditional>[];
 
     var index = 0;
-    for (final component in components) {
+    for (final component in elements) {
       conditionalAssigns
           .add(component < otherLogic.getRange(index, index + component.width));
       index += component.width;
@@ -101,7 +102,7 @@ class LogicStructure implements Logic {
     }
 
     var index = 0;
-    for (final component in components) {
+    for (final component in elements) {
       //TODO: consider if other is a struct, and the ranges match
       component <= other.getRange(index, index + component.width);
       index += component.width;
@@ -122,41 +123,41 @@ class LogicStructure implements Logic {
   Logic slice(int endIndex, int startIndex) =>
       packed.slice(endIndex, startIndex);
 
-  /// Increments each component of [components] using [Logic.incr].
+  /// Increments each component of [elements] using [Logic.incr].
   @override
   Conditional incr(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
       ConditionalGroup([
-        for (final component in components) component.incr(s: s, val: val),
+        for (final component in elements) component.incr(s: s, val: val),
       ]);
 
-  /// Decrements each component of [components] using [Logic.decr].
+  /// Decrements each component of [elements] using [Logic.decr].
   @override
   Conditional decr(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
       ConditionalGroup([
-        for (final component in components) component.decr(s: s, val: val),
+        for (final component in elements) component.decr(s: s, val: val),
       ]);
 
-  /// Divide-assigns each component of [components] using [Logic.divAssign].
+  /// Divide-assigns each component of [elements] using [Logic.divAssign].
   @override
   Conditional divAssign(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
       ConditionalGroup([
-        for (final component in components) component.divAssign(s: s, val: val),
+        for (final component in elements) component.divAssign(s: s, val: val),
       ]);
 
-  /// Multiply-assigns each component of [components] using [Logic.mulAssign].
+  /// Multiply-assigns each component of [elements] using [Logic.mulAssign].
   @override
   Conditional mulAssign(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
       ConditionalGroup([
-        for (final component in components) component.mulAssign(s: s, val: val),
+        for (final component in elements) component.mulAssign(s: s, val: val),
       ]);
 
   @override
   late final Iterable<Logic> dstConnections = [
-    for (final component in components) ...component.dstConnections
+    for (final component in elements) ...component.dstConnections
   ];
 
   //TODO: is this safe to have a separate tracking here?
@@ -167,6 +168,15 @@ class LogicStructure implements Logic {
 
   @override
   set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+
+  //TODO: to track naming
+  @override
+  LogicStructure? get parentStructure => _parentStructure;
+  LogicStructure? _parentStructure;
+
+  @override
+  set parentStructure(LogicStructure? newParentStructure) =>
+      _parentStructure = newParentStructure;
 
   @override
   bool get isInput => parentModule?.isInput(this) ?? false;
@@ -181,7 +191,7 @@ class LogicStructure implements Logic {
 
   @override
   void makeUnassignable() {
-    for (final component in components) {
+    for (final component in elements) {
       component.makeUnassignable();
     }
   }

@@ -150,14 +150,14 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
         .map((sig) => 'input logic ${sig.definitionName()}')
-        .toList();
+        .toList(growable: false);
     return declarations;
   }
 
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
         .map((sig) => 'output logic ${sig.definitionName()}')
-        .toList();
+        .toList(growable: false);
     return declarations;
   }
 

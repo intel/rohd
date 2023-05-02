@@ -503,7 +503,8 @@ abstract class LogicValue {
   /// print(lv); // This prints `[1'h0, 1'bx, 1'h1]`
   /// ```
   List<LogicValue> toList() =>
-      List<LogicValue>.generate(width, (index) => this[index]).toList();
+      List<LogicValue>.generate(width, (index) => this[index])
+          .toList(growable: false);
 
   /// Converts this [LogicValue] to a binary [String], including a decorator at
   /// the front in SystemVerilog style.

@@ -32,7 +32,7 @@ extension LogicSwizzle on List<Logic> {
   /// significant (lowest) bits.
   ///
   /// If you want the opposite, check out [swizzle].
-  Logic rswizzle() => Swizzle(reversed.toList()).out;
+  Logic rswizzle() => Swizzle(reversed.toList(growable: false)).out;
 }
 
 /// Allows lists of [LogicValue]s to be swizzled.
