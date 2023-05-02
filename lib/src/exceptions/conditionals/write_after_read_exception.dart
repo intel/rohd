@@ -13,10 +13,9 @@ import 'package:rohd/src/exceptions/rohd_exception.dart';
 ///
 /// This is also sometimes called a "read before write" violation.
 class WriteAfterReadException extends RohdException {
-  /// Creates a [WriteAfterReadException] for [signalName].
-  WriteAfterReadException(
-    String signalName,
-  ) : super('Signal "$signalName" changed its value after being used'
+  /// Creates a [WriteAfterReadException].
+  WriteAfterReadException()
+      : super('Signal changed its value after being used'
             ' within one `Combinational` execution.'
             ' This can lead to a mismatch between simulation and synthesis.'
             ' You may be able to use `Combinational.ssa` to correct your'
