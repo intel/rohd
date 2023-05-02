@@ -95,7 +95,7 @@ void execute(Set&lt;Logic&gt; drivenSignals,
     guard(driver);
   }
 
-  receiverOutput(receiver).put(driverValue(driver));
+  _receiverOutput.put(driverValue(driver));
 
   if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
     drivenSignals.add(receiver);
