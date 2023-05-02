@@ -458,6 +458,12 @@ abstract class Module {
       throw Exception('Port width mismatch, signal "$x" does not'
           ' have specified width "$width".');
     }
+
+    if (x is LogicArray) {
+      // ignore: parameter_assignments
+      x = x.packed;
+    }
+
     final inPort = Logic(name: name, width: width)
       ..gets(x)
       // ignore: invalid_use_of_protected_member

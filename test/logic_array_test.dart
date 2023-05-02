@@ -13,14 +13,16 @@ import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-class SimpleLAModule extends Module {
-  SimpleLAModule(LogicArray laIn) {
+class SimpleLAPassthrough extends Module {
+  SimpleLAPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
 
     addOutputArray('laOut',
             dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
-        ~laIn;
+        laIn;
+
+    //TODO: add some more interesting logic
   }
 }
 
@@ -80,8 +82,10 @@ void main() {
   });
 
   test('simple logic array ports module', () async {
-    final mod = SimpleLAModule(LogicArray([3, 4, 5], 8));
+    final mod = SimpleLAPassthrough(LogicArray([3], 8));
     await mod.build();
+    //TODO: test we don't generate extraneous packed things
+
     File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
   });
 }

@@ -16,6 +16,8 @@ import 'package:rohd/src/exceptions/module/module_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
+//TODO: how to deal with LogicStructure as an input/output?
+
 class LogicStructure implements Logic {
   /// All elements of this structure.
   @override
@@ -65,20 +67,20 @@ class LogicStructure implements Logic {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final component in elements) {
-      component.put(logicVal.getRange(index, index + component.width));
-      index += component.width;
+    for (final element in elements) {
+      element.put(logicVal.getRange(index, index + element.width));
+      index += element.width;
     }
   }
 
   @override
-  void inject(val, {bool fill = false}) {
+  void inject(dynamic val, {bool fill = false}) {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final component in elements) {
-      component.inject(logicVal.getRange(index, index + component.width));
-      index += component.width;
+    for (final element in elements) {
+      element.inject(logicVal.getRange(index, index + element.width));
+      index += element.width;
     }
   }
 
@@ -93,10 +95,10 @@ class LogicStructure implements Logic {
     final conditionalAssigns = <Conditional>[];
 
     var index = 0;
-    for (final component in elements) {
+    for (final element in elements) {
       conditionalAssigns
-          .add(component < otherLogic.getRange(index, index + component.width));
-      index += component.width;
+          .add(element < otherLogic.getRange(index, index + element.width));
+      index += element.width;
     }
 
     return ConditionalGroup(conditionalAssigns);
@@ -109,10 +111,10 @@ class LogicStructure implements Logic {
     }
 
     var index = 0;
-    for (final component in elements) {
+    for (final element in elements) {
       //TODO: consider if other is a struct, and the ranges match
-      component <= other.getRange(index, index + component.width);
-      index += component.width;
+      element <= other.getRange(index, index + element.width);
+      index += element.width;
     }
   }
 
@@ -123,48 +125,75 @@ class LogicStructure implements Logic {
   Logic operator [](dynamic index) => packed[index];
 
   @override
-  Logic getRange(int startIndex, [int? endIndex]) =>
-      packed.getRange(startIndex, endIndex);
+  Logic getRange(int startIndex, [int? endIndex]) {
+    endIndex ??= width;
+
+    //TODO: do math for modified indices!
+
+    //TODO: do range checks
+
+    //TODO: test edge cases here
+
+    // grab all elements that fall in this range, keeping track of the offset
+    int? offset;
+    final matchingElements = <Logic>[];
+
+    final requestedWidth = endIndex - startIndex;
+
+    var index = 0;
+    for (final element in elements) {
+      final elementInRange = (index >= startIndex) && (index < endIndex);
+      if (elementInRange) {
+        matchingElements.add(element);
+        offset ??= index - startIndex;
+      }
+      index += element.width;
+    }
+
+    return matchingElements
+        .swizzle()
+        .getRange(offset!, offset + requestedWidth);
+  }
 
   @override
   Logic slice(int endIndex, int startIndex) =>
       packed.slice(endIndex, startIndex);
 
-  /// Increments each component of [elements] using [Logic.incr].
+  /// Increments each element of [elements] using [Logic.incr].
   @override
   Conditional incr(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
       ConditionalGroup([
-        for (final component in elements) component.incr(s: s, val: val),
+        for (final element in elements) element.incr(s: s, val: val),
       ]);
 
-  /// Decrements each component of [elements] using [Logic.decr].
+  /// Decrements each element of [elements] using [Logic.decr].
   @override
   Conditional decr(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
       ConditionalGroup([
-        for (final component in elements) component.decr(s: s, val: val),
+        for (final element in elements) element.decr(s: s, val: val),
       ]);
 
-  /// Divide-assigns each component of [elements] using [Logic.divAssign].
+  /// Divide-assigns each element of [elements] using [Logic.divAssign].
   @override
   Conditional divAssign(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
       ConditionalGroup([
-        for (final component in elements) component.divAssign(s: s, val: val),
+        for (final element in elements) element.divAssign(s: s, val: val),
       ]);
 
-  /// Multiply-assigns each component of [elements] using [Logic.mulAssign].
+  /// Multiply-assigns each element of [elements] using [Logic.mulAssign].
   @override
   Conditional mulAssign(
           {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
       ConditionalGroup([
-        for (final component in elements) component.mulAssign(s: s, val: val),
+        for (final element in elements) element.mulAssign(s: s, val: val),
       ]);
 
   @override
   late final Iterable<Logic> dstConnections = [
-    for (final component in elements) ...component.dstConnections
+    for (final element in elements) ...element.dstConnections
   ];
 
   //TODO: is this safe to have a separate tracking here?
@@ -200,8 +229,8 @@ class LogicStructure implements Logic {
 
   @override
   void makeUnassignable() {
-    for (final component in elements) {
-      component.makeUnassignable();
+    for (final element in elements) {
+      element.makeUnassignable();
     }
   }
 
@@ -217,7 +246,8 @@ class LogicStructure implements Logic {
   LogicValue get value => packed.value;
 
   @override
-  int get width => packed.width;
+  late final int width =
+      elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
 
   @override
   Logic withSet(int startIndex, Logic update) =>
