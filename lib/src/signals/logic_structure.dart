@@ -1,6 +1,14 @@
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_structure.dart
+// Definition of a structure containing multiple `Logic`s.
+//
+// 2023 May 1
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:collection';
 
-import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/module/module_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -94,6 +102,7 @@ class LogicStructure implements Logic {
 
     var index = 0;
     for (final component in components) {
+      //TODO: consider if other is a struct, and the ranges match
       component <= other.getRange(index, index + component.width);
       index += component.width;
     }

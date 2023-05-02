@@ -13,9 +13,11 @@ import 'package:rohd/src/exceptions/rohd_exception.dart';
 /// An [Exception] thrown when a port has the wrong width.
 class PortWidthMismatchException extends RohdException {
   /// Constructs a new [Exception] for when a port has the wrong width.
-  PortWidthMismatchException(Logic port, int expectedWidth)
+  PortWidthMismatchException(Logic port, int expectedWidth,
+      {String additionalMessage = ''})
       : super('Port ${port.name} has the wrong width.'
-            ' Expected $expectedWidth but found ${port.width}.');
+            ' Expected $expectedWidth but found ${port.width}.'
+            ' $additionalMessage');
 
   /// Constructs a new [Exception] for when two ports should have been the
   /// same width, but were not.
