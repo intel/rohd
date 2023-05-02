@@ -357,6 +357,11 @@ class _SynthModuleDefinition {
 
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
+      if (receiver is LogicArray) {
+        //TODO: is this right?
+        logicsToTraverse.addAll(receiver.srcConnections);
+        continue;
+      }
       final driver = receiver.srcConnection;
 
       final receiverIsModuleInput = module.isInput(receiver);
@@ -385,7 +390,7 @@ class _SynthModuleDefinition {
             _getSynthSubModuleInstantiation(subModule);
         subModuleInstantiation.outputMapping[synthReceiver] = receiver;
 
-        subModule.inputs.values.forEach(logicsToTraverse.add);
+        logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {
           // stop at the input to this module
@@ -583,12 +588,35 @@ class _SynthLogic {
     _needsDeclaration = false;
   }
 
-  String definitionName() {
-    if (logic.width > 1) {
-      return '[${logic.width - 1}:0] $name';
+  static String _widthToRangeDef(int width) {
+    if (width > 1) {
+      return '[${width - 1}:0]';
     } else {
-      return name;
+      return '';
     }
+  }
+
+  String definitionName() {
+    String packedDims;
+
+    if (logic is LogicArray) {
+      final logicArr = logic as LogicArray;
+
+      final packedDimsBuf =
+          StringBuffer(_widthToRangeDef(logicArr.elementWidth));
+
+      final dims = logicArr.dimensions;
+      for (final dim in dims.reversed) {
+        packedDimsBuf.write(_widthToRangeDef(dim));
+      }
+      packedDims = packedDimsBuf.toString();
+    } else {
+      packedDims = _widthToRangeDef(logic.width);
+    }
+
+    //TODO: unpackedDims
+
+    return '$packedDims $name';
   }
 }
 

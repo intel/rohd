@@ -7,9 +7,24 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
+
+class SimpleLAModule extends Module {
+  SimpleLAModule(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+        ~laIn;
+  }
+}
+
+//TODO: test internal array signals as well
 
 void main() {
   group('construct LogicArray', () {
@@ -19,6 +34,7 @@ void main() {
       final arr = LogicArray([0], 20);
       expect(arr.width, 0);
       expect(arr.elements.isEmpty, true);
+      expect(arr.elementWidth, 0);
     });
     test('single-dim array', () {
       final dim = [5];
@@ -32,6 +48,7 @@ void main() {
       }
 
       expect(arr.width, w * dim[0]);
+      expect(arr.elementWidth, w);
     });
     test('many-dim array', () {
       final dim = [5, 8, 3];
@@ -55,9 +72,16 @@ void main() {
           listEq((arr.elements[0] as LogicArray).dimensions,
               dim.getRange(1, dim.length).toList()),
           true);
+      expect(arr.elementWidth, w);
     });
     test('no dim exception', () {
       //TODO
     });
+  });
+
+  test('simple logic array ports module', () async {
+    final mod = SimpleLAModule(LogicArray([3, 4, 5], 8));
+    await mod.build();
+    File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
   });
 }

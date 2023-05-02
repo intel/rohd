@@ -9,6 +9,8 @@
 
 import 'dart:collection';
 
+import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/module/module_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -44,7 +46,11 @@ class LogicStructure implements Logic {
             ? 'st${_structIdx++}'
             : Sanitizer.sanitizeSV(name) {
     //TODO: make sure no components already have a parentComponent
-    _elements.addAll(elements);
+    _elements
+      ..addAll(elements)
+      ..forEach((element) {
+        element.parentStructure = this;
+      });
   }
 
   //TODO: dimension List<int> (only on array?)
@@ -167,6 +173,7 @@ class LogicStructure implements Logic {
   @override
   Module? get parentModule => _parentModule;
 
+  @protected
   @override
   set parentModule(Module? newParentModule) => _parentModule = newParentModule;
 
@@ -175,6 +182,7 @@ class LogicStructure implements Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
+  @protected
   @override
   set parentStructure(LogicStructure? newParentStructure) =>
       _parentStructure = newParentStructure;
@@ -200,6 +208,10 @@ class LogicStructure implements Logic {
   @override
   // TODO: implement srcConnection
   Logic? get srcConnection => throw UnimplementedError();
+
+  @override
+  Iterable<Logic> get srcConnections =>
+      [for (final element in elements) ...element.srcConnections];
 
   @override
   LogicValue get value => packed.value;

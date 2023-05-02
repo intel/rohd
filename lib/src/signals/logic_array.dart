@@ -20,6 +20,8 @@ class LogicArray extends LogicStructure {
 
   late final List<int> dimensions = _calculateDimensions();
 
+  //TODO: support ports that are packed, unpacked, or a mix
+
   List<int> _calculateDimensions() {
     // current dimension is just the length
     final currDim = elements.length;
@@ -31,7 +33,9 @@ class LogicArray extends LogicStructure {
     // check if all elements are:
     // - LogicArrays
     // - with the same dimensions
+    // - with same element widths
 
+    //TODO: if we always construct ourselves, then this is safer?
     final allElementsAreArray =
         elements.firstWhereOrNull((element) => element is! LogicArray) == null;
 
@@ -54,7 +58,21 @@ class LogicArray extends LogicStructure {
     return [currDim, ...firstDim];
   }
 
-  // _CastError (type 'List<Logic>' is not a subtype of type 'List<LogicArray<LogicArray<Logic>>>' in type cast)
+  late final int elementWidth = _calculateElementWidth();
+
+  int _calculateElementWidth() {
+    if (width == 0) {
+      return 0;
+    }
+
+    // assume all elements are the same width
+
+    Logic arr = this;
+    while (arr.elements.first is LogicArray) {
+      arr = arr.elements.first;
+    }
+    return arr.elements.first.width;
+  }
 
   ///TODO
   LogicArray._(super.elements, {super.name}) {
@@ -71,22 +89,24 @@ class LogicArray extends LogicStructure {
   }
 
   ///TODO
-  factory LogicArray(List<int> dimensions, int width) {
+  factory LogicArray(List<int> dimensions, int elementWidth, {String? name}) {
     if (dimensions.isEmpty) {
       //TODO
       throw Exception('Array must have at least 1 dimension');
     }
 
-    return LogicArray._(List.generate(
-        dimensions[0],
-        (index) => dimensions.length == 1
-            ? Logic(width: width)
-            : LogicArray(
-                dimensions
-                    .getRange(1, dimensions.length)
-                    .toList(growable: false),
-                width),
-        growable: false));
+    return LogicArray._(
+        List.generate(
+            dimensions[0],
+            (index) => dimensions.length == 1
+                ? Logic(width: elementWidth)
+                : LogicArray(
+                    dimensions
+                        .getRange(1, dimensions.length)
+                        .toList(growable: false),
+                    elementWidth),
+            growable: false),
+        name: name);
   }
 
   //TODO: can we be stricter about assignments, etc. for arrays, only like-shaped arrays?

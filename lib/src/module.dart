@@ -421,8 +421,8 @@ abstract class Module {
           await _traceInputForModuleContents(dstConnection);
         }
       }
-      if (signal.srcConnection != null) {
-        await _traceOutputForModuleContents(signal.srcConnection!);
+      for (final srcConnection in signal.srcConnections) {
+        await _traceOutputForModuleContents(srcConnection);
       }
     }
   }
@@ -458,12 +458,42 @@ abstract class Module {
       throw Exception('Port width mismatch, signal "$x" does not'
           ' have specified width "$width".');
     }
-    _inputs[name] = Logic(name: name, width: width)..gets(x);
+    final inPort = Logic(name: name, width: width)
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
 
-    // ignore: invalid_use_of_protected_member
-    _inputs[name]!.parentModule = this;
+    _inputs[name] = inPort;
 
-    return _inputs[name]!;
+    return inPort;
+  }
+
+  LogicArray addInputArray(
+    String name,
+    LogicArray x, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numDimensionsPacked = 0, //TODO
+  }) {
+    _checkForSafePortName(name);
+
+    final listEq = const ListEquality<int>().equals;
+
+    if (!listEq(x.dimensions, dimensions)) {
+      //TODO
+    }
+    if (x.elementWidth != elementWidth) {
+      //TODO
+    }
+
+    final inArr = LogicArray(dimensions, elementWidth, name: name)
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _inputs[name] = inArr;
+
+    return inArr;
   }
 
   /// Registers an output to this [Module] and returns an output port that
@@ -473,12 +503,31 @@ abstract class Module {
   @protected
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
-    _outputs[name] = Logic(name: name, width: width);
 
-    // ignore: invalid_use_of_protected_member
-    _outputs[name]!.parentModule = this;
+    final outPort = Logic(name: name, width: width)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
 
-    return _outputs[name]!;
+    _outputs[name] = outPort;
+
+    return outPort;
+  }
+
+  LogicArray addOutputArray(
+    String name, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numDimensionsPacked = 0, //TODO
+  }) {
+    _checkForSafePortName(name);
+
+    final outArr = LogicArray(dimensions, elementWidth, name: name)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _outputs[name] = outArr;
+
+    return outArr;
   }
 
   @override
