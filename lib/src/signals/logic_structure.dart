@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -123,6 +124,7 @@ class LogicStructure implements Logic {
 
     var index = 0;
     for (final element in elements) {
+      //TODO: same as `gets`, iterate if element is array?
       conditionalAssigns
           .add(element < otherLogic.getRange(index, index + element.width));
       index += element.width;
@@ -140,7 +142,17 @@ class LogicStructure implements Logic {
     var index = 0;
     for (final element in elements) {
       //TODO: consider if other is a struct, and the ranges match
-      element <= other.getRange(index, index + element.width);
+      if (element is LogicStructure) {
+        var subIndex = 0;
+        for (final subElement in element.elements) {
+          subElement <=
+              other.getRange(
+                  index + subIndex, index + subIndex + subElement.width);
+          subIndex += subElement.width;
+        }
+      } else {
+        element <= other.getRange(index, index + element.width);
+      }
       index += element.width;
     }
   }
@@ -162,24 +174,37 @@ class LogicStructure implements Logic {
     //TODO: test edge cases here
 
     // grab all elements that fall in this range, keeping track of the offset
-    int? offset;
     final matchingElements = <Logic>[];
 
     final requestedWidth = endIndex - startIndex;
 
     var index = 0;
     for (final element in elements) {
-      final elementInRange = (index >= startIndex) && (index < endIndex);
+      // if the *start* or *end* of `element` is within [startIndex, endIndex],
+      // then we have to include it in `matchingElements`
+      final elementStart = index;
+      final elementEnd = index + element.width;
+
+      final elementInRange =
+          ((elementStart >= startIndex) && (elementStart < endIndex)) ||
+              ((elementEnd > startIndex) && (elementEnd <= endIndex));
+
       if (elementInRange) {
-        matchingElements.add(element);
-        offset ??= index - startIndex;
+        // figure out the subset of `element` that needs to be included
+        final elementStartGrab = max(elementStart, startIndex) - index;
+        final elementEndGrab = min(elementEnd, endIndex) - index;
+
+        matchingElements
+            .add(element.getRange(elementStartGrab, elementEndGrab));
       }
+
       index += element.width;
     }
 
-    return matchingElements
-        .swizzle()
-        .getRange(offset!, offset + requestedWidth);
+    assert(!(matchingElements.isEmpty && requestedWidth != 0),
+        'If the requested width is not 0, expect to get some matches.');
+
+    return matchingElements.swizzle();
   }
 
   @override

@@ -82,11 +82,21 @@ void main() {
     });
   });
 
-  test('simple logic array ports module', () async {
-    final mod = SimpleLAPassthrough(LogicArray([3], 8));
-    await mod.build();
-    //TODO: test we don't generate extraneous packed things
+  group('simple logicarray passthrough module', () {
+    test('single dimension', () async {
+      final mod = SimpleLAPassthrough(LogicArray([3], 8));
+      await mod.build();
+      //TODO: test we don't generate extraneous packed things
 
-    File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
+      File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
+    });
+
+    test('2 dimensions', () async {
+      final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
+      await mod.build();
+      //TODO: test we don't generate extraneous packed things
+
+      File('tmp_simple_la_mod_2dim.sv').writeAsStringSync(mod.generateSynth());
+    });
   });
 }
