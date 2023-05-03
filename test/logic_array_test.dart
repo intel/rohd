@@ -98,5 +98,13 @@ void main() {
 
       File('tmp_simple_la_mod_2dim.sv').writeAsStringSync(mod.generateSynth());
     });
+
+    test('3 dimensions', () async {
+      final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
+      await mod.build();
+      //TODO: test we don't generate extraneous packed things
+
+      File('tmp_simple_la_mod_3dim.sv').writeAsStringSync(mod.generateSynth());
+    });
   });
 }

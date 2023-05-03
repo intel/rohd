@@ -133,26 +133,41 @@ class LogicStructure implements Logic {
     return ConditionalGroup(conditionalAssigns);
   }
 
+  //TODO: cache this
+  List<Logic> _leafElements() {
+    final leaves = <Logic>[];
+    for (final element in elements) {
+      if (element is LogicStructure) {
+        leaves.addAll(element._leafElements());
+      } else {
+        leaves.add(element);
+      }
+    }
+    return leaves;
+  }
+
   @override
   void gets(Logic other) {
     if (other.width != width) {
       throw PortWidthMismatchException(other, width);
     }
 
+    final leafElements = _leafElements();
+
     var index = 0;
-    for (final element in elements) {
+    for (final element in leafElements) {
       //TODO: consider if other is a struct, and the ranges match
-      if (element is LogicStructure) {
-        var subIndex = 0;
-        for (final subElement in element.elements) {
-          subElement <=
-              other.getRange(
-                  index + subIndex, index + subIndex + subElement.width);
-          subIndex += subElement.width;
-        }
-      } else {
-        element <= other.getRange(index, index + element.width);
-      }
+      // if (element is LogicStructure) {
+      //   var subIndex = 0;
+      //   for (final subElement in element.elements) {
+      //     subElement <=
+      //         other.getRange(
+      //             index + subIndex, index + subIndex + subElement.width);
+      //     subIndex += subElement.width;
+      //   }
+      // } else {
+      element <= other.getRange(index, index + element.width);
+      // }
       index += element.width;
     }
   }
@@ -178,8 +193,10 @@ class LogicStructure implements Logic {
 
     final requestedWidth = endIndex - startIndex;
 
+    final leafElements = _leafElements();
+
     var index = 0;
-    for (final element in elements) {
+    for (final element in leafElements) {
       // if the *start* or *end* of `element` is within [startIndex, endIndex],
       // then we have to include it in `matchingElements`
       final elementStart = index;
