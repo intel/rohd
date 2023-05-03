@@ -98,13 +98,14 @@ class LogicArray extends LogicStructure {
     return LogicArray._(
         List.generate(
             dimensions[0],
-            (index) => dimensions.length == 1
+            (index) => (dimensions.length == 1
                 ? Logic(width: elementWidth)
                 : LogicArray(
                     dimensions
                         .getRange(1, dimensions.length)
                         .toList(growable: false),
-                    elementWidth),
+                    elementWidth))
+              ..arrayIndex = index,
             growable: false),
         name: name);
   }

@@ -321,9 +321,14 @@ class _SynthModuleDefinition {
     } else if (logicToSynthMap.containsKey(logic)) {
       return logicToSynthMap[logic]!;
     } else {
+      final synthLogicName = logic.parentStructure is LogicArray
+          ? logic.structureName
+          : _getUniqueSynthLogicName(logic.name, allowPortName);
       final newSynth = _SynthLogic(
-          logic, _getUniqueSynthLogicName(logic.name, allowPortName),
-          renameable: !allowPortName);
+        logic,
+        synthLogicName,
+        renameable: !allowPortName,
+      );
       logicToSynthMap[logic] = newSynth;
       return newSynth;
     }
@@ -359,7 +364,9 @@ class _SynthModuleDefinition {
       final receiver = logicsToTraverse[i];
       if (receiver is LogicArray) {
         //TODO: is this right?
-        logicsToTraverse.addAll(receiver.srcConnections);
+        logicsToTraverse
+          ..addAll(receiver.srcConnections)
+          ..addAll(receiver.elements);
         continue;
       }
       final driver = receiver.srcConnection;
@@ -414,7 +421,8 @@ class _SynthModuleDefinition {
       }
     }
 
-    _collapseAssignments();
+    //TODO: TEMP TEMP TEMP
+    // _collapseAssignments();
 
     _collapseChainableModules();
   }
@@ -546,14 +554,15 @@ class _SynthLogic {
   final String _name;
   final bool _renameable;
   bool get renameable => _mergedNameSynthLogic?.renameable ?? _renameable;
-  bool _needsDeclaration = true;
+  bool _needsDeclaration;
   _SynthLogic? _mergedNameSynthLogic;
   String? _mergedConst;
   bool get needsDeclaration => _needsDeclaration;
   String get name => _mergedNameSynthLogic?.name ?? _mergedConst ?? _name;
 
   _SynthLogic(this.logic, this._name, {bool renameable = true})
-      : _renameable = renameable;
+      : _renameable = renameable & !logic.isArrayMember,
+        _needsDeclaration = !logic.isArrayMember;
 
   @override
   String toString() => "'$name', logic name: '${logic.name}'";

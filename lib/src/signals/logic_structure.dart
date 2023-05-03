@@ -55,7 +55,34 @@ class LogicStructure implements Logic {
       });
   }
 
-  //TODO: dimension List<int> (only on array?)
+  @override
+  LogicStructure get rootStructure {
+    var root = this;
+    while (parentStructure != null) {
+      root = parentStructure!;
+    }
+    return root;
+  }
+
+  //TODO
+  String get structureName {
+    if (parentStructure != null) {
+      if (isArrayMember) {
+        return '${parentStructure!.structureName}[${arrayIndex!}]';
+      } else {
+        return '${parentStructure!.structureName}.$name';
+      }
+    } else {
+      return name;
+    }
+  }
+
+  //TODO: protect this properly
+  @protected
+  int? arrayIndex;
+
+  @override
+  bool get isArrayMember => parentStructure is LogicArray;
 
   ///////////////////////////////////////////////
   ///////////////////////////////////////////////

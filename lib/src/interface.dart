@@ -25,6 +25,8 @@ class Port extends Logic {
   }
 }
 
+//TODO: how to support ports that are arrays?
+
 /// Represents a logical interface to a [Module].
 ///
 /// Interfaces make it easier to define port connections of a [Module]

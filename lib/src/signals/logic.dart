@@ -362,6 +362,40 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
+  LogicStructure? get rootStructure {
+    //TODO: do we even need this?
+    LogicStructure? root;
+    while (parentStructure != null) {
+      root = parentStructure;
+    }
+    return root;
+  }
+
+  /// True if this is a member of a [LogicArray].
+  bool get isArrayMember => parentStructure is LogicArray;
+
+  /// TODO
+  /// Returns the name relative to the [parentStructure]-defined hierarchy, if
+  /// one exists.  Otherwise, this is the same as [name].
+  ///
+  /// This is useful for finding the name of a signal as an element of a
+  /// [LogicArray].
+  String get structureName {
+    if (parentStructure != null) {
+      if (parentStructure is LogicArray) {
+        return '${parentStructure!.structureName}[${arrayIndex!}]';
+      } else {
+        return '${parentStructure!.structureName}.$name';
+      }
+    } else {
+      return name;
+    }
+  }
+
+  //TODO: protect this properly
+  @protected
+  int? arrayIndex;
+
   @protected
   set parentStructure(LogicStructure? newParentStructure) =>
       _parentStructure = newParentStructure;

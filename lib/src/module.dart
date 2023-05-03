@@ -459,7 +459,7 @@ abstract class Module {
           ' have specified width "$width".');
     }
 
-    if (x is LogicArray) {
+    if (x is LogicStructure) {
       // ignore: parameter_assignments
       x = x.packed;
     }
