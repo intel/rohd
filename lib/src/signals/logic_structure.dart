@@ -35,7 +35,7 @@ class LogicStructure implements Logic {
         }
       })
       .toList(growable: false)
-      .swizzle();
+      .rswizzle();
 
   @override
   final String name;
@@ -133,12 +133,16 @@ class LogicStructure implements Logic {
     return ConditionalGroup(conditionalAssigns);
   }
 
+  //TODO
+  late final List<Logic> leafElements =
+      UnmodifiableListView(_calculateLeafElements());
+
   //TODO: cache this
-  List<Logic> _leafElements() {
+  List<Logic> _calculateLeafElements() {
     final leaves = <Logic>[];
     for (final element in elements) {
       if (element is LogicStructure) {
-        leaves.addAll(element._leafElements());
+        leaves.addAll(element._calculateLeafElements());
       } else {
         leaves.add(element);
       }
@@ -152,22 +156,10 @@ class LogicStructure implements Logic {
       throw PortWidthMismatchException(other, width);
     }
 
-    final leafElements = _leafElements();
-
     var index = 0;
     for (final element in leafElements) {
-      //TODO: consider if other is a struct, and the ranges match
-      // if (element is LogicStructure) {
-      //   var subIndex = 0;
-      //   for (final subElement in element.elements) {
-      //     subElement <=
-      //         other.getRange(
-      //             index + subIndex, index + subIndex + subElement.width);
-      //     subIndex += subElement.width;
-      //   }
-      // } else {
       element <= other.getRange(index, index + element.width);
-      // }
+
       index += element.width;
     }
   }
@@ -192,8 +184,6 @@ class LogicStructure implements Logic {
     final matchingElements = <Logic>[];
 
     final requestedWidth = endIndex - startIndex;
-
-    final leafElements = _leafElements();
 
     var index = 0;
     for (final element in leafElements) {

@@ -607,19 +607,23 @@ class _SynthLogic {
     }
   }
 
+  //TODO: how to uniquify names of `LogicArray`?
+
   String definitionName() {
     String packedDims;
 
     if (logic is LogicArray) {
       final logicArr = logic as LogicArray;
 
-      final packedDimsBuf =
-          StringBuffer(_widthToRangeDef(logicArr.elementWidth));
+      final packedDimsBuf = StringBuffer();
 
       final dims = logicArr.dimensions;
-      for (final dim in dims.reversed) {
+      for (final dim in dims) {
         packedDimsBuf.write(_widthToRangeDef(dim));
       }
+
+      packedDimsBuf.write(_widthToRangeDef(logicArr.elementWidth));
+
       packedDims = packedDimsBuf.toString();
     } else {
       packedDims = _widthToRangeDef(logic.width);

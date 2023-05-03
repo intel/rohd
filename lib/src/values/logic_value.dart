@@ -95,7 +95,7 @@ abstract class LogicValue {
   /// Constructs a [LogicValue] with the [width] number of bits, where every
   /// bit has the same value of [fill].
   ///
-  /// [width] must be greater than or equal to 0.
+  /// [width] must be greater than or equal to 0.  [fill] must be 1 bit.
   static LogicValue filled(int width, LogicValue fill) =>
       _FilledLogicValue(fill._enum, width);
 

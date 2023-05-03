@@ -8,12 +8,15 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class SimpleLAPassthrough extends Module {
+  Logic get laOut => output('laOut');
   SimpleLAPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
@@ -83,12 +86,34 @@ void main() {
   });
 
   group('simple logicarray passthrough module', () {
+    Future<void> testArrayPassthrough(SimpleLAPassthrough mod) async {
+      await mod.build();
+
+      const randWidth = 23;
+      final rand = Random(1234);
+      final values = List.generate(
+          10,
+          (index) => LogicValue.ofInt(rand.nextInt(1 << randWidth), randWidth)
+              .replicate(mod.laOut.width ~/ randWidth + 1)
+              .getRange(0, mod.laOut.width));
+
+      final vectors = [
+        for (final value in values) Vector({'laIn': value}, {'laOut': value})
+      ];
+
+      //TODO: test we don't generate extraneous packed things in verilog
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+    }
+
     test('single dimension', () async {
       final mod = SimpleLAPassthrough(LogicArray([3], 8));
-      await mod.build();
-      //TODO: test we don't generate extraneous packed things
+      await testArrayPassthrough(mod);
+      // await mod.build();
+      //
 
-      File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
+      // File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
     });
 
     test('2 dimensions', () async {

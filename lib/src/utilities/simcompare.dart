@@ -66,10 +66,24 @@ class Vector {
   }
 
   /// Converts this vector into a SystemVerilog check.
-  String toTbVerilog() {
-    final assignments = inputValues.keys
-        .map((signalName) => '$signalName = ${inputValues[signalName]};')
-        .join('\n');
+  String toTbVerilog(Module module) {
+    final assignments = inputValues.keys.map((signalName) {
+      final signal = module.signals.firstWhere((e) => e.name == signalName);
+
+      if (signal is LogicArray) {
+        final arrAssigns = StringBuffer();
+        var index = 0;
+        final fulLVal = LogicValue.of(inputValues[signalName]);
+        for (final leaf in signal.leafElements) {
+          final subVal = fulLVal.getRange(index, index + leaf.width);
+          arrAssigns.writeln('${leaf.structureName} = $subVal;');
+          index += leaf.width;
+        }
+        return arrAssigns.toString();
+      } else {
+        return '$signalName = ${inputValues[signalName]};';
+      }
+    }).join('\n');
     final checks = expectedOutputValues.keys
         .map((signalName) => _errorCheckString(signalName,
             expectedOutputValues[signalName], inputValues.toString()))
@@ -123,7 +137,7 @@ abstract class SimCompare {
                     expect(oBit, equals(value), reason: errorReason);
                   }
                 } else {
-                  expect(o.value, equals(value));
+                  expect(o.value, equals(value), reason: errorReason);
                 }
               } else {
                 throw NonSupportedTypeException(value.runtimeType.toString());
@@ -192,7 +206,13 @@ abstract class SimCompare {
   }) {
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
-      if (signal.width != 1) {
+
+      if (signal is LogicArray) {
+        //TODO: handle packed vs unpacked!!
+        // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
+        return signal.dimensions.map((d) => '[${d - 1}:0]').join() +
+            ' [${signal.elementWidth - 1}:0] $signalName';
+      } else if (signal.width != 1) {
         return '[${signal.width - 1}:0] $signalName';
       } else {
         return signalName;
@@ -201,14 +221,15 @@ abstract class SimCompare {
 
     final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
-      for (final e in vectors) ...e.inputValues.keys,
-      for (final e in vectors) ...e.expectedOutputValues.keys,
+      for (final v in vectors) ...v.inputValues.keys,
+      for (final v in vectors) ...v.expectedOutputValues.keys,
     };
     final localDeclarations =
         allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
-    final stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
+    final stimulus =
+        vectors.map((e) => e.toTbVerilog(module)).join('\n'); //TODO for arrays
     final generatedVerilog = module.generateSynth();
 
     // so that when they run in parallel, they dont step on each other
@@ -258,7 +279,7 @@ abstract class SimCompare {
             return line;
           })
           .whereNotNull()
-          .join();
+          .join('\n');
       if (maskedOutput.isNotEmpty) {
         print(maskedOutput);
       }
