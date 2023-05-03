@@ -482,6 +482,13 @@ class Logic {
   void gets(Logic other) {
     _assertConnectable(other);
 
+    // If we are connecting a `LogicStructure` to this simple `Logic`,
+    // then pack it first.
+    if (other is LogicStructure) {
+      // ignore: parameter_assignments
+      other = other.packed;
+    }
+
     _connect(other);
 
     _srcConnection = other;

@@ -29,6 +29,22 @@ class SimpleLAPassthrough extends Module {
   }
 }
 
+class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  PackAndUnpackPassthrough(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+
+    final intermediate = Logic(name: 'intermediate', width: laIn.width);
+
+    intermediate <= laIn;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+        intermediate;
+  }
+}
+
 //TODO: test internal array signals as well
 //TODO: test module hierarchy
 
@@ -85,8 +101,9 @@ void main() {
     });
   });
 
-  group('simple logicarray passthrough module', () {
-    Future<void> testArrayPassthrough(SimpleLAPassthrough mod) async {
+  group('logicarray passthrough', () {
+    Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
+        {bool checkNoSwizzle = true}) async {
       await mod.build();
 
       const randWidth = 23;
@@ -101,7 +118,9 @@ void main() {
         for (final value in values) Vector({'laIn': value}, {'laOut': value})
       ];
 
-      expect(mod.generateSynth().contains('swizzle'), false);
+      if (checkNoSwizzle) {
+        expect(mod.generateSynth().contains('swizzle'), false);
+      }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
@@ -125,6 +144,11 @@ void main() {
     test('4 dimensions', () async {
       final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
       await testArrayPassthrough(mod);
+    });
+
+    test('pack and unpack', () async {
+      final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
+      await testArrayPassthrough(mod, checkNoSwizzle: false);
     });
   });
 }
