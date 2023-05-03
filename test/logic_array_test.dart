@@ -126,29 +126,37 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     }
 
-    test('single dimension', () async {
-      final mod = SimpleLAPassthrough(LogicArray([3], 8));
-      await testArrayPassthrough(mod);
+    group('simple', () {
+      test('single dimension', () async {
+        final mod = SimpleLAPassthrough(LogicArray([3], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('2 dimensions', () async {
+        final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('3 dimensions', () async {
+        final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('4 dimensions', () async {
+        final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
+        await testArrayPassthrough(mod);
+      });
     });
 
-    test('2 dimensions', () async {
-      final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
-      await testArrayPassthrough(mod);
-    });
-
-    test('3 dimensions', () async {
-      final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
-      await testArrayPassthrough(mod);
-    });
-
-    test('4 dimensions', () async {
-      final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
-      await testArrayPassthrough(mod);
-    });
-
-    test('pack and unpack', () async {
-      final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
-      await testArrayPassthrough(mod, checkNoSwizzle: false);
+    group('pack and unpack', () {
+      test('1d', () async {
+        final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
+      test('3d', () async {
+        final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
     });
   });
 }
