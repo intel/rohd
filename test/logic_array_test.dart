@@ -104,7 +104,7 @@ void main() {
       expect(mod.generateSynth().contains('swizzle'), false);
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(mod, vectors);
     }
 
     test('single dimension', () async {
@@ -119,6 +119,11 @@ void main() {
 
     test('3 dimensions', () async {
       final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
+      await testArrayPassthrough(mod);
+    });
+
+    test('4 dimensions', () async {
+      final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
       await testArrayPassthrough(mod);
     });
   });
