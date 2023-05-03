@@ -101,7 +101,7 @@ void main() {
         for (final value in values) Vector({'laIn': value}, {'laOut': value})
       ];
 
-      //TODO: test we don't generate extraneous packed things in verilog
+      expect(mod.generateSynth().contains('swizzle'), false);
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
@@ -110,26 +110,16 @@ void main() {
     test('single dimension', () async {
       final mod = SimpleLAPassthrough(LogicArray([3], 8));
       await testArrayPassthrough(mod);
-      // await mod.build();
-      //
-
-      // File('tmp_simple_la_mod.sv').writeAsStringSync(mod.generateSynth());
     });
 
     test('2 dimensions', () async {
       final mod = SimpleLAPassthrough(LogicArray([3, 2], 8));
-      await mod.build();
-      //TODO: test we don't generate extraneous packed things
-
-      File('tmp_simple_la_mod_2dim.sv').writeAsStringSync(mod.generateSynth());
+      await testArrayPassthrough(mod);
     });
 
     test('3 dimensions', () async {
       final mod = SimpleLAPassthrough(LogicArray([3, 2, 3], 8));
-      await mod.build();
-      //TODO: test we don't generate extraneous packed things
-
-      File('tmp_simple_la_mod_3dim.sv').writeAsStringSync(mod.generateSynth());
+      await testArrayPassthrough(mod);
     });
   });
 }
