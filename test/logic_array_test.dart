@@ -27,6 +27,7 @@ class SimpleLAPassthrough extends Module {
 }
 
 //TODO: test internal array signals as well
+//TODO: test module hierarchy
 
 void main() {
   group('construct LogicArray', () {

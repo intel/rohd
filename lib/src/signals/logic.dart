@@ -364,9 +364,9 @@ class Logic {
 
   LogicStructure? get rootStructure {
     //TODO: do we even need this?
-    LogicStructure? root;
-    while (parentStructure != null) {
-      root = parentStructure;
+    LogicStructure? root = parentStructure;
+    while (root?.parentStructure != null) {
+      root = root?.parentStructure;
     }
     return root;
   }

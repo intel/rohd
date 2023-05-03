@@ -365,8 +365,9 @@ class _SynthModuleDefinition {
       if (receiver is LogicArray) {
         //TODO: is this right?
         logicsToTraverse
-          ..addAll(receiver.srcConnections)
+          // ..addAll(receiver.srcConnections)
           ..addAll(receiver.elements);
+
         continue;
       }
       final driver = receiver.srcConnection;
@@ -399,7 +400,9 @@ class _SynthModuleDefinition {
 
         logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
-        if (!module.isInput(receiver)) {
+        if (!module.isInput(receiver) &&
+            !(receiver.isArrayMember &&
+                module.isInput(receiver.rootStructure!))) {
           // stop at the input to this module
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
@@ -421,8 +424,7 @@ class _SynthModuleDefinition {
       }
     }
 
-    //TODO: TEMP TEMP TEMP
-    // _collapseAssignments();
+    _collapseAssignments();
 
     _collapseChainableModules();
   }

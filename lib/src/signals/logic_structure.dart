@@ -58,8 +58,8 @@ class LogicStructure implements Logic {
   @override
   LogicStructure get rootStructure {
     var root = this;
-    while (parentStructure != null) {
-      root = parentStructure!;
+    while (root.parentStructure != null) {
+      root = root.parentStructure!;
     }
     return root;
   }
