@@ -74,6 +74,9 @@ class LogicArray extends LogicStructure {
     return arr.elements.first.width;
   }
 
+  @override
+  String toString() => 'LogicArray($dimensions, $elementWidth): $name';
+
   ///TODO
   LogicArray._(super.elements, {super.name}) {
     if (elements.isNotEmpty) {
@@ -108,6 +111,18 @@ class LogicArray extends LogicStructure {
               ..arrayIndex = index,
             growable: false),
         name: name);
+  }
+
+  //TODO
+  List<int>? get arrayLocationFromRoot {
+    if (!isArrayMember) {
+      return [];
+    }
+
+    return [
+      ...parentStructure!.arrayLocationFromRoot!,
+      arrayIndex!,
+    ];
   }
 
   //TODO: can we be stricter about assignments, etc. for arrays, only like-shaped arrays?

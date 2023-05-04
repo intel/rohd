@@ -82,6 +82,18 @@ class LogicStructure implements Logic {
   @protected
   int? arrayIndex;
 
+  //TODO
+  List<int>? get arrayLocationFromRoot {
+    if (!isArrayMember) {
+      return null;
+    }
+
+    return [
+      ...parentStructure!.arrayLocationFromRoot!,
+      arrayIndex!,
+    ];
+  }
+
   @override
   bool get isArrayMember => parentStructure is LogicArray;
 
@@ -294,8 +306,8 @@ class LogicStructure implements Logic {
   }
 
   @override
-  // TODO: implement srcConnection
-  Logic? get srcConnection => throw UnimplementedError();
+  // TODO: implement srcConnection, should it be exception or null?
+  Logic? get srcConnection => null;
 
   @override
   Iterable<Logic> get srcConnections =>

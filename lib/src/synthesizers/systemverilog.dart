@@ -315,20 +315,31 @@ class _SynthModuleDefinition {
       _synthInstantiationNameUniquifier.getUniqueName(
           initialName: initialName, nullStarter: 'm', reserved: reserved);
 
+  //TODO: why does this ever need to return null?
   _SynthLogic? _getSynthLogic(Logic? logic, bool allowPortName) {
     if (logic == null) {
       return null;
     } else if (logicToSynthMap.containsKey(logic)) {
       return logicToSynthMap[logic]!;
     } else {
-      final synthLogicName = logic.parentStructure is LogicArray
-          ? logic.structureName
-          : _getUniqueSynthLogicName(logic.name, allowPortName);
-      final newSynth = _SynthLogic(
-        logic,
-        synthLogicName,
-        renameable: !allowPortName,
-      );
+      _SynthLogic newSynth;
+      if (logic.isArrayMember) {
+        // grab the parent array (potentially recursively)
+        final parentArraySynthLogic =
+            _getSynthLogic(logic.parentStructure, allowPortName);
+
+        newSynth = _SynthLogicArrayElement(logic, parentArraySynthLogic!);
+      } else {
+        final synthLogicName =
+            _getUniqueSynthLogicName(logic.name, allowPortName);
+
+        newSynth = _SynthLogic(
+          logic,
+          synthLogicName,
+          renameable: !allowPortName,
+        );
+      }
+
       logicToSynthMap[logic] = newSynth;
       return newSynth;
     }
@@ -367,9 +378,15 @@ class _SynthModuleDefinition {
         logicsToTraverse
           // ..addAll(receiver.srcConnections)
           ..addAll(receiver.elements);
+        //TODO: what about if it's an array inside a struct?
+        // ..add(receiver.rootStructure); //TODO: delete this?
 
-        continue;
+        // continue;
       }
+      if (receiver.isArrayMember) {
+        logicsToTraverse.add(receiver.parentStructure!);
+      }
+
       final driver = receiver.srcConnection;
 
       final receiverIsModuleInput = module.isInput(receiver);
@@ -550,21 +567,34 @@ class _SynthModuleDefinition {
   }
 }
 
+class _SynthLogicArrayElement extends _SynthLogic {
+  /// The [_SynthLogic] tracking the name of the direct parent array.
+  final _SynthLogic parentArray;
+
+  @override
+  bool get _needsDeclaration => false;
+
+  @override
+  String get name => '${parentArray.name}[${logic.arrayIndex!}]';
+
+  _SynthLogicArrayElement(Logic logic, this.parentArray)
+      : super(logic, '**ARRAY_ELEMENT**', renameable: false);
+}
+
 /// Represents a logic signal in the generated code within a module.
 class _SynthLogic {
   final Logic logic;
   final String _name;
   final bool _renameable;
   bool get renameable => _mergedNameSynthLogic?.renameable ?? _renameable;
-  bool _needsDeclaration;
+  bool _needsDeclaration = true;
   _SynthLogic? _mergedNameSynthLogic;
   String? _mergedConst;
   bool get needsDeclaration => _needsDeclaration;
   String get name => _mergedNameSynthLogic?.name ?? _mergedConst ?? _name;
 
   _SynthLogic(this.logic, this._name, {bool renameable = true})
-      : _renameable = renameable & !logic.isArrayMember,
-        _needsDeclaration = !logic.isArrayMember;
+      : _renameable = renameable;
 
   @override
   String toString() => "'$name', logic name: '${logic.name}'";

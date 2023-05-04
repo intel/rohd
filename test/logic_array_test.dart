@@ -45,6 +45,31 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
   }
 }
 
+class PackAndUnpackWithArraysPassthrough extends Module
+    implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  PackAndUnpackWithArraysPassthrough(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+
+    final intermediate1 = Logic(name: 'intermediate1', width: laIn.width);
+    final intermediate3 = Logic(name: 'intermediate3', width: laIn.width);
+
+    // unpack with reversed dimensions
+    final intermediate2 = LogicArray(
+        laIn.dimensions.reversed.toList(), laIn.elementWidth,
+        name: 'intermediate2');
+
+    intermediate1 <= laIn;
+    intermediate2 <= intermediate1;
+    intermediate3 <= intermediate2;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+        intermediate3;
+  }
+}
+
 //TODO: test internal array signals as well
 //TODO: test module hierarchy
 
@@ -153,8 +178,32 @@ void main() {
         final mod = PackAndUnpackPassthrough(LogicArray([3], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
+
       test('3d', () async {
         final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
+    });
+
+    group('pack and unpack with arrays', () {
+      test('1d', () async {
+        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3], 8));
+
+        await mod.build();
+        File('tmp_pack_and_unpack_arr.sv')
+            .writeAsStringSync(mod.generateSynth());
+
+        // await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
+
+      test('2d', () async {
+        final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3, 2], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
+
+      test('3d', () async {
+        final mod =
+            PackAndUnpackWithArraysPassthrough(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
     });

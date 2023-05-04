@@ -47,6 +47,9 @@ class Const extends Logic {
   }
 }
 
+//TODO: move _Wire and all of the "signals" to their own files, use "part"
+// so that we can keep things safer instead of using @protected
+
 /// Represents a physical wire which shares a common value with one or
 /// more [Logic]s.
 class _Wire {
@@ -378,7 +381,7 @@ class Logic {
   /// Returns the name relative to the [parentStructure]-defined hierarchy, if
   /// one exists.  Otherwise, this is the same as [name].
   ///
-  /// This is useful for finding the name of a signal as an element of a
+  /// This is useful for finding the name of a signal as an element of a root
   /// [LogicArray].
   String get structureName {
     if (parentStructure != null) {
@@ -395,6 +398,18 @@ class Logic {
   //TODO: protect this properly
   @protected
   int? arrayIndex;
+
+  //TODO
+  List<int>? get arrayLocationFromRoot {
+    if (!isArrayMember) {
+      return null;
+    }
+
+    return [
+      ...parentStructure!.arrayLocationFromRoot!,
+      arrayIndex!,
+    ];
+  }
 
   @protected
   set parentStructure(LogicStructure? newParentStructure) =>
