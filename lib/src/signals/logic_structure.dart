@@ -317,8 +317,9 @@ class LogicStructure implements Logic {
   LogicValue get value => packed.value;
 
   @override
-  late final int width =
-      elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
+  late final int width = elements.isEmpty
+      ? 0
+      : elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
 
   @override
   Logic withSet(int startIndex, Logic update) =>

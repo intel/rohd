@@ -93,6 +93,10 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
 //TODO: test module hierarchy
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   group('construct LogicArray', () {
     final listEq = const ListEquality<int>().equals;
 
