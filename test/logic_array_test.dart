@@ -70,6 +70,25 @@ class PackAndUnpackWithArraysPassthrough extends Module
   }
 }
 
+class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  RearrangeArraysPassthrough(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+
+    // rearrange with reversed dimensions
+    final intermediate = LogicArray(
+        laIn.dimensions.reversed.toList(), laIn.elementWidth,
+        name: 'intermediate');
+
+    intermediate <= laIn;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+        intermediate;
+  }
+}
+
 //TODO: test internal array signals as well
 //TODO: test module hierarchy
 
@@ -201,6 +220,11 @@ void main() {
             PackAndUnpackWithArraysPassthrough(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
+    });
+
+    test('change array dimensions around and back 3d', () async {
+      final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
+      await testArrayPassthrough(mod);
     });
   });
 }
