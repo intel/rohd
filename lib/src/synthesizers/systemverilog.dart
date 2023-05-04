@@ -389,6 +389,9 @@ class _SynthModuleDefinition {
 
       final driver = receiver.srcConnection;
 
+      // TODO: is this fixing https://github.com/intel/rohd/issues/254? test?
+      final receiverIsConstant = driver == null && receiver is Const;
+
       final receiverIsModuleInput = module.isInput(receiver);
       final receiverIsModuleOutput = module.isOutput(receiver);
       final driverIsModuleInput = driver != null && module.isInput(driver);
@@ -420,13 +423,15 @@ class _SynthModuleDefinition {
         if (!module.isInput(receiver) &&
             !(receiver.isArrayMember &&
                 module.isInput(receiver.rootStructure!))) {
+          //TODO: This is suspicious, doesn't seem right
+
           // stop at the input to this module
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
-      } else if (driver == null && receiver.value.isValid) {
+      } else if (receiverIsConstant && receiver.value.isValid) {
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
-      } else if (driver == null && !receiver.value.isFloating) {
+      } else if (receiverIsConstant && !receiver.value.isFloating) {
         // this is a signal that is *partially* invalid (e.g. 0b1z1x0)
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }
@@ -594,7 +599,9 @@ class _SynthLogic {
   String get name => _mergedNameSynthLogic?.name ?? _mergedConst ?? _name;
 
   _SynthLogic(this.logic, this._name, {bool renameable = true})
-      : _renameable = renameable;
+      : _renameable = renameable &&
+            //TODO: should we never rename arrays?
+            logic is! LogicArray;
 
   @override
   String toString() => "'$name', logic name: '${logic.name}'";

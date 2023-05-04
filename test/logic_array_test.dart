@@ -188,12 +188,7 @@ void main() {
     group('pack and unpack with arrays', () {
       test('1d', () async {
         final mod = PackAndUnpackWithArraysPassthrough(LogicArray([3], 8));
-
-        await mod.build();
-        File('tmp_pack_and_unpack_arr.sv')
-            .writeAsStringSync(mod.generateSynth());
-
-        // await testArrayPassthrough(mod, checkNoSwizzle: false);
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
 
       test('2d', () async {
