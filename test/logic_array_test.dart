@@ -19,10 +19,14 @@ class SimpleLAPassthrough extends Module {
   Logic get laOut => output('laOut');
   SimpleLAPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
-        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
 
     addOutputArray('laOut',
-            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         laIn;
 
     //TODO: add some more interesting logic
@@ -33,14 +37,18 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
   Logic get laOut => output('laOut');
   PackAndUnpackPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
-        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
 
     final intermediate = Logic(name: 'intermediate', width: laIn.width);
 
     intermediate <= laIn;
 
     addOutputArray('laOut',
-            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         intermediate;
   }
 }
@@ -48,9 +56,12 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
 class PackAndUnpackWithArraysPassthrough extends Module
     implements SimpleLAPassthrough {
   Logic get laOut => output('laOut');
-  PackAndUnpackWithArraysPassthrough(LogicArray laIn) {
+  PackAndUnpackWithArraysPassthrough(LogicArray laIn,
+      {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
-        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
 
     final intermediate1 = Logic(name: 'intermediate1', width: laIn.width);
     final intermediate3 = Logic(name: 'intermediate3', width: laIn.width);
@@ -58,39 +69,48 @@ class PackAndUnpackWithArraysPassthrough extends Module
     // unpack with reversed dimensions
     final intermediate2 = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate2');
+        name: 'intermediate2', numDimensionsUnpacked: intermediateUnpacked);
 
     intermediate1 <= laIn;
     intermediate2 <= intermediate1;
     intermediate3 <= intermediate2;
 
     addOutputArray('laOut',
-            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         intermediate3;
   }
 }
 
 class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
   Logic get laOut => output('laOut');
-  RearrangeArraysPassthrough(LogicArray laIn) {
+  RearrangeArraysPassthrough(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
-        dimensions: laIn.dimensions, elementWidth: laIn.elementWidth);
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
 
     // rearrange with reversed dimensions
     final intermediate = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate');
+        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
 
     intermediate <= laIn;
 
     addOutputArray('laOut',
-            dimensions: laIn.dimensions, elementWidth: laIn.elementWidth) <=
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         intermediate;
   }
 }
 
 //TODO: test internal array signals as well
 //TODO: test module hierarchy
+//TODO: test constant assignments (to part and all of array)
+//TODO: Test packed and unpacked arrays both
+//TODO: test passing packed into unpacked, unpacked into packed
 
 void main() {
   tearDown(() async {
@@ -171,7 +191,7 @@ void main() {
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
     }
 
     group('simple', () {
@@ -192,6 +212,12 @@ void main() {
 
       test('4 dimensions', () async {
         final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('4d, half packed', () async {
+        final mod = SimpleLAPassthrough(
+            LogicArray([5, 4, 3, 2], 8, numDimensionsUnpacked: 2));
         await testArrayPassthrough(mod);
       });
     });

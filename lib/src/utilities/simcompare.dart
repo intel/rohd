@@ -48,6 +48,7 @@ class Vector {
   /// the [inputValues].
   String _errorCheckString(
       String sigName, dynamic expected, String inputValues) {
+    //TODO: make this work so that it checks every array element instead
     final expectedHexStr = expected is int
         ? '0x${expected.toRadixString(16)}'
         : expected.toString();
@@ -209,9 +210,14 @@ abstract class SimCompare {
 
       if (signal is LogicArray) {
         //TODO: handle packed vs unpacked!!
+        final unpackedDims =
+            signal.dimensions.getRange(0, signal.numDimensionsUnpacked);
+        final packedDims = signal.dimensions
+            .getRange(signal.numDimensionsUnpacked, signal.dimensions.length);
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
-        return signal.dimensions.map((d) => '[${d - 1}:0]').join() +
-            ' [${signal.elementWidth - 1}:0] $signalName';
+        return packedDims.map((d) => '[${d - 1}:0]').join() +
+            ' [${signal.elementWidth - 1}:0] $signalName' +
+            unpackedDims.map((d) => '[${d - 1}:0]').join();
       } else if (signal.width != 1) {
         return '[${signal.width - 1}:0] $signalName';
       } else {
@@ -228,8 +234,7 @@ abstract class SimCompare {
         allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
-    final stimulus =
-        vectors.map((e) => e.toTbVerilog(module)).join('\n'); //TODO for arrays
+    final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
     final generatedVerilog = module.generateSynth();
 
     // so that when they run in parallel, they dont step on each other

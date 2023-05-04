@@ -396,9 +396,8 @@ class Logic {
   }
 
   //TODO: protect this properly
-  @protected
-  int? arrayIndex;
 
+  int? arrayIndex;
   //TODO
   List<int>? get arrayLocationFromRoot {
     if (!isArrayMember) {

@@ -78,7 +78,7 @@ class LogicArray extends LogicStructure {
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
   ///TODO
-  LogicArray._(super.elements, {super.name}) {
+  LogicArray._(super.elements, {super.name, this.numDimensionsUnpacked = 0}) {
     if (elements.isNotEmpty) {
       final dim0 = elements.first.width;
       for (final component in elements) {
@@ -91,26 +91,39 @@ class LogicArray extends LogicStructure {
     }
   }
 
+  final int numDimensionsUnpacked;
+
   ///TODO
-  factory LogicArray(List<int> dimensions, int elementWidth, {String? name}) {
+  ///
+  /// Setting the [numDimensionsUnpacked] gives a hint to [Synthesizer]s about
+  /// the intent for declaration of signals. By default, all dimensions are
+  /// packed, but if the value is set to more than `0`, then the outer-most
+  /// dimensions (first in [dimensions]) will become unpacked.  It must be less
+  /// than or equal to the length of [dimensions]. Modifying it will have no
+  /// impact on simulation functionality or behavior. In SystemVerilog, there
+  /// are some differences in access patterns for packed vs. unpacked arrays.
+  factory LogicArray(List<int> dimensions, int elementWidth,
+      {String? name, int numDimensionsUnpacked = 0}) {
     if (dimensions.isEmpty) {
       //TODO
       throw Exception('Array must have at least 1 dimension');
     }
 
     return LogicArray._(
-        List.generate(
-            dimensions[0],
-            (index) => (dimensions.length == 1
-                ? Logic(width: elementWidth)
-                : LogicArray(
-                    dimensions
-                        .getRange(1, dimensions.length)
-                        .toList(growable: false),
-                    elementWidth))
-              ..arrayIndex = index,
-            growable: false),
-        name: name);
+      List.generate(
+          dimensions[0],
+          (index) => (dimensions.length == 1
+              ? Logic(width: elementWidth)
+              : LogicArray(
+                  dimensions
+                      .getRange(1, dimensions.length)
+                      .toList(growable: false),
+                  elementWidth))
+            ..arrayIndex = index,
+          growable: false),
+      name: name,
+      numDimensionsUnpacked: numDimensionsUnpacked,
+    );
   }
 
   //TODO

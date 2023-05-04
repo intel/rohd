@@ -481,12 +481,13 @@ abstract class Module {
     LogicArray x, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsPacked = 0, //TODO
+    int numDimensionsUnpacked = 0, //TODO
   }) {
     _checkForSafePortName(name);
 
     final listEq = const ListEquality<int>().equals;
 
+    //TODO: do we care if dimensions match or just width here?
     if (!listEq(x.dimensions, dimensions)) {
       //TODO
     }
@@ -494,7 +495,8 @@ abstract class Module {
       //TODO
     }
 
-    final inArr = LogicArray(dimensions, elementWidth, name: name)
+    final inArr = LogicArray(dimensions, elementWidth,
+        name: name, numDimensionsUnpacked: numDimensionsUnpacked)
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -525,11 +527,14 @@ abstract class Module {
     String name, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsPacked = 0, //TODO
+    int numDimensionsUnpacked = 0, //TODO
   }) {
     _checkForSafePortName(name);
 
-    final outArr = LogicArray(dimensions, elementWidth, name: name)
+    //TODO: checks like are in `addInputArray`
+
+    final outArr = LogicArray(dimensions, elementWidth,
+        name: name, numDimensionsUnpacked: numDimensionsUnpacked)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 

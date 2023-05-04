@@ -583,7 +583,9 @@ class _SynthLogicArrayElement extends _SynthLogic {
   String get name => '${parentArray.name}[${logic.arrayIndex!}]';
 
   _SynthLogicArrayElement(Logic logic, this.parentArray)
-      : super(logic, '**ARRAY_ELEMENT**', renameable: false);
+      : assert(logic.isArrayMember,
+            'Should only be used for elements in a LogicArray'),
+        super(logic, '**ARRAY_ELEMENT**', renameable: false);
 }
 
 /// Represents a logic signal in the generated code within a module.
@@ -648,27 +650,37 @@ class _SynthLogic {
 
   String definitionName() {
     String packedDims;
+    String unpackedDims;
 
     if (logic is LogicArray) {
       final logicArr = logic as LogicArray;
 
       final packedDimsBuf = StringBuffer();
+      final unpackedDimsBuf = StringBuffer();
 
       final dims = logicArr.dimensions;
-      for (final dim in dims) {
-        packedDimsBuf.write(_widthToRangeDef(dim));
+      for (var i = 0; i < dims.length; i++) {
+        final dim = dims[i];
+        final dimStr = _widthToRangeDef(dim);
+        if (i < logicArr.numDimensionsUnpacked) {
+          unpackedDimsBuf.write(dimStr);
+        } else {
+          packedDimsBuf.write(dimStr);
+        }
       }
 
       packedDimsBuf.write(_widthToRangeDef(logicArr.elementWidth));
 
       packedDims = packedDimsBuf.toString();
+      unpackedDims = unpackedDimsBuf.toString();
     } else {
       packedDims = _widthToRangeDef(logic.width);
+      unpackedDims = '';
     }
 
-    //TODO: unpackedDims
-
-    return '$packedDims $name';
+    return [packedDims, name, unpackedDims]
+        .where((e) => e.isNotEmpty)
+        .join(' ');
   }
 }
 
