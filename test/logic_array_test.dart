@@ -106,7 +106,6 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
   }
 }
 
-//TODO: test internal array signals as well
 //TODO: test module hierarchy
 //TODO: test constant assignments (to part and all of array)
 //TODO: Test packed and unpacked arrays both
@@ -261,6 +260,14 @@ void main() {
         final mod = PackAndUnpackPassthrough(LogicArray([5, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
+
+      test('3d unpacked', () async {
+        final mod = PackAndUnpackPassthrough(
+            LogicArray([5, 3, 2], 8, numDimensionsUnpacked: 2));
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+      });
     });
 
     group('pack and unpack with arrays', () {
@@ -279,11 +286,31 @@ void main() {
             PackAndUnpackWithArraysPassthrough(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
       });
+
+      test('3d unpacked', () async {
+        final mod = PackAndUnpackWithArraysPassthrough(
+            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            intermediateUnpacked: 1);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+      });
     });
 
-    test('change array dimensions around and back 3d', () async {
-      final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
-      await testArrayPassthrough(mod);
+    group('change array dimensions around and back', () {
+      test('3d', () async {
+        final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('3d unpacked', () async {
+        final mod = RearrangeArraysPassthrough(
+            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            intermediateUnpacked: 1);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, noSvSim: true);
+      });
     });
   });
 }
