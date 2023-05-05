@@ -111,12 +111,16 @@ abstract class Module {
 
   /// Returns true iff [net] is the same [Logic] as the input port of this
   /// [Module] with the same name.
-  bool isInput(Logic net) => _inputs[net.name] == net;
+  bool isInput(Logic net) =>
+      _inputs[net.name] == net ||
+      (net.isArrayMember && isInput(net.parentStructure!));
   //TODO?  || (net.isArrayMember && isInput(net.rootStructure!));
 
   /// Returns true iff [net] is the same [Logic] as the output port of this
   /// [Module] with the same name.
-  bool isOutput(Logic net) => _outputs[net.name] == net;
+  bool isOutput(Logic net) =>
+      _outputs[net.name] == net ||
+      (net.isArrayMember && isOutput(net.parentStructure!));
   //TODO? ||(net.isArrayMember && isOutput(net.rootStructure!));
 
   /// Returns true iff [net] is the same [Logic] as an input or output port of

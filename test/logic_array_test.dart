@@ -141,11 +141,64 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
   }
 }
 
+class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  SimpleArraysAndHierarchy(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+
+    final intermediate = SimpleLAPassthrough(laIn).laOut;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+        intermediate;
+  }
+}
+
+class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  FancyArraysAndHierarchy(LogicArray laIn, {int intermediateUnpacked = 0}) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+
+    final invertedLaIn = LogicArray(laIn.dimensions, laIn.elementWidth,
+        numDimensionsUnpacked: intermediateUnpacked)
+      ..gets(~laIn);
+
+    final x1 = SimpleLAPassthrough(laIn).laOut;
+    final x2 = SimpleLAPassthrough(laIn).laOut;
+    final x3 = SimpleLAPassthrough(invertedLaIn).laOut;
+    final x4 = SimpleLAPassthrough(invertedLaIn).laOut;
+
+    final y1 = ~(x1 ^ x3);
+    final y2 = ~(x2 ^ x4);
+
+    final z1 = laIn ^ y1;
+    final z2 = y2 ^ laIn;
+
+    final same = z1 & z2;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+        same;
+  }
+}
+
 //TODO: test module hierarchy
 //TODO: test constant assignments (to part and all of array)
-//TODO: Test packed and unpacked arrays both
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
+//TODO: test passing Logic into addInput/OutputArray works
+//TODO: test empty array
+//TODO: test array with 1 element (KNOWN BUG)
 
 //TODO: file issue tracking that unpacked arrays not fully tested
 // https://github.com/steveicarus/iverilog/issues/482
@@ -230,7 +283,8 @@ void main() {
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
+      SimCompare.checkIverilogVector(mod, vectors,
+          buildOnly: noSvSim, dontDeleteTmpFiles: true);
     }
 
     group('simple', () {
@@ -359,6 +413,41 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = ArrayNameConflicts(
+            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            intermediateUnpacked: 1);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+      });
+    });
+
+    group('simple hierarchy', () {
+      test('3d', () async {
+        final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
+        await testArrayPassthrough(mod);
+        //TODO: BAD! where's the sub-module instatiation!!
+
+        expect(mod.generateSynth(), contains('SimpleLAPassthrough'));
+      });
+
+      test('3d unpacked', () async {
+        final mod = SimpleArraysAndHierarchy(
+            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2));
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, noSvSim: true);
+      });
+    });
+
+    group('fancy hierarchy', () {
+      test('3d', () async {
+        final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+        //TODO: BAD! where's the sub-module instatiation!!
+      });
+
+      test('3d unpacked', () async {
+        final mod = FancyArraysAndHierarchy(
             LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
             intermediateUnpacked: 1);
 

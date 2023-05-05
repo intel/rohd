@@ -392,8 +392,10 @@ class _SynthModuleDefinition {
       // TODO: is this fixing https://github.com/intel/rohd/issues/254? test?
       final receiverIsConstant = driver == null && receiver is Const;
 
-      final receiverIsModuleInput = module.isInput(receiver);
-      final receiverIsModuleOutput = module.isOutput(receiver);
+      final receiverIsModuleInput =
+          module.isInput(receiver) && !receiver.isArrayMember;
+      final receiverIsModuleOutput =
+          module.isOutput(receiver) && !receiver.isArrayMember;
       final driverIsModuleInput = driver != null && module.isInput(driver);
       final driverIsModuleOutput = driver != null && module.isOutput(driver);
 

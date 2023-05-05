@@ -275,7 +275,12 @@ class LogicStructure implements Logic {
 
   @protected
   @override
-  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+  set parentModule(Module? newParentModule) {
+    _parentModule = newParentModule;
+    for (final element in elements) {
+      element.parentModule = newParentModule;
+    }
+  }
 
   //TODO: to track naming
   @override
