@@ -111,6 +111,7 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
 //TODO: test constant assignments (to part and all of array)
 //TODO: Test packed and unpacked arrays both
 //TODO: test passing packed into unpacked, unpacked into packed
+//TODO: test that unpacked and packed are properly instantiated in SV
 
 void main() {
   tearDown(() async {
@@ -212,6 +213,12 @@ void main() {
 
       test('4 dimensions', () async {
         final mod = SimpleLAPassthrough(LogicArray([5, 4, 3, 2], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('1d, unpacked', () async {
+        final mod =
+            SimpleLAPassthrough(LogicArray([3], 8, numDimensionsUnpacked: 1));
         await testArrayPassthrough(mod);
       });
 

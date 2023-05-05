@@ -226,6 +226,9 @@ abstract class LogicValue {
           return LogicValue.ofString(val).zeroExtend(width);
         }
       }
+    } else if (val is Iterable<LogicValue>) {
+      // TODO: handle if fill
+      return ofIterable(val);
     } else {
       throw LogicValueConstructionException('Unrecognized value type "$val" - '
           'Unknown type ${val.runtimeType}'

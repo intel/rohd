@@ -46,15 +46,12 @@ class Vector {
   /// Computes a SystemVerilog code string that checks in a SystemVerilog
   /// simulation whether a signal [sigName] has the [expected] value given
   /// the [inputValues].
-  String _errorCheckString(
-      String sigName, dynamic expected, String inputValues) {
-    //TODO: make this work so that it checks every array element instead
+  String _errorCheckString(String sigName, dynamic expected,
+      LogicValue expectedVal, String inputValues) {
     final expectedHexStr = expected is int
         ? '0x${expected.toRadixString(16)}'
         : expected.toString();
-    final expectedValStr = (expected is LogicValue && expected.width == 1)
-        ? "'${expected.toString(includeWidth: false)}"
-        : expected.toString();
+    final expectedValStr = expectedVal.toString();
 
     if (expected is! int && expected is! LogicValue) {
       throw Exception(
@@ -69,7 +66,8 @@ class Vector {
   /// Converts this vector into a SystemVerilog check.
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
-      final signal = module.signals.firstWhere((e) => e.name == signalName);
+      // ignore: invalid_use_of_protected_member
+      final signal = module.input(signalName);
 
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
@@ -85,10 +83,33 @@ class Vector {
         return '$signalName = ${inputValues[signalName]};';
       }
     }).join('\n');
-    final checks = expectedOutputValues.keys
-        .map((signalName) => _errorCheckString(signalName,
-            expectedOutputValues[signalName], inputValues.toString()))
-        .join('\n');
+
+    final checksList = <String>[];
+    for (final expectedOutput in expectedOutputValues.entries) {
+      final outputName = expectedOutput.key;
+      final outputPort = module.output(outputName);
+      final expected = expectedOutput.value;
+      final expectedValue = LogicValue.of(
+        expected,
+        width: outputPort.width,
+      );
+      final inputStimulus = inputValues.toString();
+
+      if (outputPort is LogicArray) {
+        var index = 0;
+        for (final leaf in outputPort.leafElements) {
+          final subVal = expectedValue.getRange(index, index + leaf.width);
+          checksList.add(_errorCheckString(
+              leaf.structureName, subVal, subVal, inputStimulus));
+          index += leaf.width;
+        }
+      } else {
+        checksList.add(_errorCheckString(
+            outputName, expected, expectedValue, inputStimulus));
+      }
+    }
+    final checks = checksList.join('\n');
+
     final tbVerilog = [
       assignments,
       '#$_offset',
