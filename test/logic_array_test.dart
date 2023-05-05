@@ -310,6 +310,9 @@ void main() {
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
+
+        final sv = mod.generateSynth();
+        expect(sv.contains('logic [2:0][3:0][7:0] intermediate [1:0]'), true);
       });
     });
   });
