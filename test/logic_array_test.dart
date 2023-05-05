@@ -64,7 +64,7 @@ class PackAndUnpackWithArraysPassthrough extends Module
         numDimensionsUnpacked: laIn.numDimensionsUnpacked);
 
     final intermediate1 = Logic(name: 'intermediate1', width: laIn.width);
-    final intermediate3 = Logic(name: 'intermediate3', width: laIn.width);
+    final intermediate3 = Logic(name: 'intermediate2', width: laIn.width);
 
     // unpack with reversed dimensions
     final intermediate2 = LogicArray(
@@ -103,6 +103,41 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
             elementWidth: laIn.elementWidth,
             numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         intermediate;
+  }
+}
+
+class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
+  Logic get laOut => output('laOut');
+  ArrayNameConflicts(LogicArray laIn, {int intermediateUnpacked = 0}) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: laIn.dimensions,
+        elementWidth: laIn.elementWidth,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+
+    final intermediate1 = Logic(name: 'intermediate', width: laIn.width);
+    final intermediate3 = Logic(name: 'intermediate', width: laIn.width);
+    final intermediate5 = Logic(name: 'intermediate', width: laIn.width);
+
+    // unpack with reversed dimensions
+    final intermediate2 = LogicArray(
+        laIn.dimensions.reversed.toList(), laIn.elementWidth,
+        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
+
+    final intermediate4 = LogicArray(
+        laIn.dimensions.reversed.toList(), laIn.elementWidth,
+        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
+
+    intermediate1 <= laIn;
+    intermediate2 <= intermediate1;
+    intermediate3 <= intermediate2;
+    intermediate4 <= intermediate3;
+    intermediate5 <= intermediate4;
+
+    addOutputArray('laOut',
+            dimensions: laIn.dimensions,
+            elementWidth: laIn.elementWidth,
+            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+        intermediate5;
   }
 }
 
@@ -313,6 +348,22 @@ void main() {
 
         final sv = mod.generateSynth();
         expect(sv.contains('logic [2:0][3:0][7:0] intermediate [1:0]'), true);
+      });
+    });
+
+    group('name collisions', () {
+      test('3d', () async {
+        final mod = ArrayNameConflicts(LogicArray([4, 3, 2], 8));
+        await testArrayPassthrough(mod, checkNoSwizzle: false);
+      });
+
+      test('3d unpacked', () async {
+        final mod = ArrayNameConflicts(
+            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            intermediateUnpacked: 1);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
       });
     });
   });
