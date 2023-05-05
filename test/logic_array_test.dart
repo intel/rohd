@@ -436,6 +436,8 @@ void main() {
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
+
+        expect(mod.generateSynth(), contains('SimpleLAPassthrough'));
       });
     });
 
