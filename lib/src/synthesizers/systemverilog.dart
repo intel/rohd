@@ -640,8 +640,8 @@ class _SynthLogic {
     _needsDeclaration = false;
   }
 
-  static String _widthToRangeDef(int width) {
-    if (width > 1) {
+  static String _widthToRangeDef(int width, {bool forceRange = false}) {
+    if (width > 1 || forceRange) {
       return '[${width - 1}:0]';
     } else {
       return '';
@@ -663,7 +663,7 @@ class _SynthLogic {
       final dims = logicArr.dimensions;
       for (var i = 0; i < dims.length; i++) {
         final dim = dims[i];
-        final dimStr = _widthToRangeDef(dim);
+        final dimStr = _widthToRangeDef(dim, forceRange: true);
         if (i < logicArr.numDimensionsUnpacked) {
           unpackedDimsBuf.write(dimStr);
         } else {

@@ -283,12 +283,18 @@ void main() {
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
+      SimCompare.checkIverilogVector(mod, vectors,
+          buildOnly: noSvSim, dontDeleteTmpFiles: true);
     }
 
     group('simple', () {
       test('single dimension', () async {
         final mod = SimpleLAPassthrough(LogicArray([3], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('single element', () async {
+        final mod = SimpleLAPassthrough(LogicArray([1], 8));
         await testArrayPassthrough(mod);
       });
 
@@ -317,6 +323,13 @@ void main() {
         final sv = mod.generateSynth();
         expect(sv.contains(RegExp(r'\[7:0\]\s*laIn\s*\[2:0\]')), true);
         expect(sv.contains(RegExp(r'\[7:0\]\s*laOut\s*\[2:0\]')), true);
+      });
+
+      test('single element, unpacked', () async {
+        final mod =
+            SimpleLAPassthrough(LogicArray([1], 8, numDimensionsUnpacked: 1));
+        await testArrayPassthrough(mod, noSvSim: true);
+        //TODO: bug in iverilog? https://github.com/steveicarus/iverilog/issues/915
       });
 
       test('4d, half packed', () async {

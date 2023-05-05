@@ -7,6 +7,8 @@
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/module/module_exceptions.dart';
@@ -109,6 +111,8 @@ class LogicArray extends LogicStructure {
       throw Exception('Array must have at least 1 dimension');
     }
 
+    //TODO: check that numDimensionsUnpacked <= dimensions.length
+
     return LogicArray._(
       List.generate(
           dimensions[0],
@@ -118,7 +122,10 @@ class LogicArray extends LogicStructure {
                   dimensions
                       .getRange(1, dimensions.length)
                       .toList(growable: false),
-                  elementWidth))
+                  elementWidth,
+                  //TODO: test that this gets propagated down properly
+                  numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
+                ))
             ..arrayIndex = index,
           growable: false),
       name: name,
