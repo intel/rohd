@@ -138,5 +138,15 @@ class LogicArray extends LogicStructure {
     ];
   }
 
+  //TODO: doc and test
+  factory LogicArray.of(Logic other,
+          {required List<int> dimensions,
+          required int elementWidth,
+          String? name,
+          int numDimensionsUnpacked = 0}) =>
+      LogicArray(dimensions, elementWidth,
+          name: name, numDimensionsUnpacked: numDimensionsUnpacked)
+        ..gets(other);
+
   //TODO: can we be stricter about assignments, etc. for arrays, only like-shaped arrays?
 }
