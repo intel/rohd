@@ -113,6 +113,10 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
 
+//TODO: file issue tracking that unpacked arrays not fully tested
+// https://github.com/steveicarus/iverilog/issues/482
+// https://github.com/verilator/verilator/issues/2907
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -172,7 +176,7 @@ void main() {
 
   group('logicarray passthrough', () {
     Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
-        {bool checkNoSwizzle = true}) async {
+        {bool checkNoSwizzle = true, bool noSvSim = false}) async {
       await mod.build();
 
       const randWidth = 23;
@@ -192,7 +196,7 @@ void main() {
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
     }
 
     group('simple', () {
@@ -219,13 +223,31 @@ void main() {
       test('1d, unpacked', () async {
         final mod =
             SimpleLAPassthrough(LogicArray([3], 8, numDimensionsUnpacked: 1));
-        await testArrayPassthrough(mod);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, noSvSim: true);
+
+        final sv = mod.generateSynth();
+        expect(sv.contains(RegExp(r'\[7:0\]\s*laIn\s*\[2:0\]')), true);
+        expect(sv.contains(RegExp(r'\[7:0\]\s*laOut\s*\[2:0\]')), true);
       });
 
       test('4d, half packed', () async {
         final mod = SimpleLAPassthrough(
             LogicArray([5, 4, 3, 2], 8, numDimensionsUnpacked: 2));
-        await testArrayPassthrough(mod);
+
+        // unpacked array assignment not fully supported in iverilog
+        await testArrayPassthrough(mod, noSvSim: true);
+
+        final sv = mod.generateSynth();
+        expect(
+            sv.contains(RegExp(
+                r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laIn\s*\[4:0\]\s*\[3:0\]')),
+            true);
+        expect(
+            sv.contains(RegExp(
+                r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laOut\s*\[4:0\]\s*\[3:0\]')),
+            true);
       });
     });
 

@@ -46,7 +46,7 @@ class Vector {
   /// Computes a SystemVerilog code string that checks in a SystemVerilog
   /// simulation whether a signal [sigName] has the [expected] value given
   /// the [inputValues].
-  String _errorCheckString(String sigName, dynamic expected,
+  static String _errorCheckString(String sigName, dynamic expected,
       LogicValue expectedVal, String inputValues) {
     final expectedHexStr = expected is int
         ? '0x${expected.toRadixString(16)}'
@@ -72,9 +72,9 @@ class Vector {
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
-        final fulLVal = LogicValue.of(inputValues[signalName]);
+        final fullVal = LogicValue.of(inputValues[signalName]);
         for (final leaf in signal.leafElements) {
-          final subVal = fulLVal.getRange(index, index + leaf.width);
+          final subVal = fullVal.getRange(index, index + leaf.width);
           arrAssigns.writeln('${leaf.structureName} = $subVal;');
           index += leaf.width;
         }
@@ -202,6 +202,7 @@ abstract class SimCompare {
     bool allowWarnings = false,
     bool maskKnownWarnings = true,
     bool enableChecking = true,
+    bool buildOnly = false,
   }) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
@@ -209,7 +210,8 @@ abstract class SimCompare {
         dumpWaves: dumpWaves,
         iverilogExtraArgs: iverilogExtraArgs,
         allowWarnings: allowWarnings,
-        maskKnownWarnings: maskKnownWarnings);
+        maskKnownWarnings: maskKnownWarnings,
+        buildOnly: buildOnly);
     if (enableChecking) {
       expect(result, true);
     }
@@ -225,6 +227,7 @@ abstract class SimCompare {
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
     bool maskKnownWarnings = true,
+    bool buildOnly = false,
   }) {
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
@@ -324,6 +327,10 @@ abstract class SimCompare {
     }
     if (printIfContentsAndCheckError(compileResult.stderr)) {
       return false;
+    }
+
+    if (buildOnly) {
+      return true;
     }
 
     final simResult = Process.runSync('vvp', [tmpOutput]);
