@@ -551,6 +551,43 @@ void main() {
     });
   });
   group('arithmetic operations', () {
+    test('power', () {
+      expect(
+          // test ofInt
+          LogicValue.ofInt(2, 32).pow(LogicValue.ofInt(0, 32)),
+          equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test ofInt
+          LogicValue.ofInt(2, 32).pow(LogicValue.ofInt(12, 32)),
+          equals(LogicValue.ofInt(4096, 32)));
+      expect(
+          // test ofInt
+          LogicValue.ofInt(3, 32).pow(LogicValue.ofInt(5, 32)),
+          equals(LogicValue.ofInt(243, 32)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.from(31), 128)
+              .pow(LogicValue.ofBigInt(BigInt.from(21), 128)),
+          equals(LogicValue.ofBigInt(
+              BigInt.parse('20825506393391550743120420649631'), 128)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.parse('111234234231234523412665554'), 256)
+              .pow(LogicValue.ofBigInt(BigInt.from(2), 256)),
+          equals(LogicValue.ofBigInt(
+              BigInt.parse(
+                  '12373054865009146225795242412633846245734343458126916'),
+              256)));
+      expect(
+          //test string
+          LogicValue.ofString('000010').pow(LogicValue.ofString('000100')),
+          equals(LogicValue.ofString('010000')));
+      expect(
+          //test invalid input
+          LogicValue.ofString('0001').pow(LogicValue.ofString('000x')),
+          equals(LogicValue.filled(4, LogicValue.x)));
+    });
+
     test('addsub', () {
       expect(
           // + normal

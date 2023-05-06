@@ -23,6 +23,7 @@ class MathTestModule extends Module {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
 
+    final aPowerB = addOutput('a_power_b', width: a.width);
     final aPlusB = addOutput('a_plus_b', width: a.width);
     final aMinusB = addOutput('a_minus_b', width: a.width);
     final aTimesB = addOutput('a_times_b', width: a.width);
@@ -30,6 +31,7 @@ class MathTestModule extends Module {
     final aModuloB = addOutput('a_modulo_b', width: a.width);
     final aModuloConst = addOutput('a_modulo_const', width: a.width);
 
+    final aPowerConst = addOutput('a_power_const', width: a.width);
     final aPlusConst = addOutput('a_plus_const', width: a.width);
     final aMinusConst = addOutput('a_minus_const', width: a.width);
     final aTimesConst = addOutput('a_times_const', width: a.width);
@@ -43,6 +45,7 @@ class MathTestModule extends Module {
     final aSrlConst = addOutput('a_srl_const', width: a.width);
     final aSraConst = addOutput('a_sra_const', width: a.width);
 
+    aPowerB <= a.pow(b);
     aPlusB <= a + b;
     aMinusB <= a - b;
     aTimesB <= a * b;
@@ -50,6 +53,7 @@ class MathTestModule extends Module {
     aModuloB <= a % b;
     aModuloConst <= a % c;
 
+    aPowerConst <= a.pow(c);
     aPlusConst <= a + c;
     aMinusConst <= a - c;
     aTimesConst <= a * c;
@@ -78,6 +82,19 @@ void main() {
       final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     }
+
+    test('power', () async {
+      await runMathVectors([
+        Vector({'a': 1, 'b': 100}, {'a_power_b': 1}),
+        Vector({'a': 1043, 'b': 0}, {'a_power_b': 1}),
+        Vector({'a': 3, 'b': 3}, {'a_power_b': 27}),
+        Vector({'a': 2, 'b': 1}, {'a_power_b': 2}),
+        Vector({'a': 2, 'b': 7}, {'a_power_b': 128}),
+        Vector({'a': 2}, {'a_power_const': 32}),
+        Vector({'a': 5, 'b': 3}, {'a_power_b': 125}),
+        Vector({'a': 7, 'b': 2}, {'a_power_b': 49}),
+      ]);
+    });
 
     test('addition', () async {
       await runMathVectors([

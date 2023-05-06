@@ -149,6 +149,7 @@ a_xor_b   <=  a ^ b;   // xor
 and_a     <=  a.and(); // unary and
 or_a      <=  a.or();  // unary or
 xor_a     <=  a.xor(); // unary xor
+a_pow_b   <=  a.pow(b);// power
 a_plus_b  <=  a + b;   // addition
 a_sub_b   <=  a - b;   // subtraction
 a_times_b <=  a * b;   // multiplication

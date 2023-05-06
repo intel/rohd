@@ -733,6 +733,13 @@ abstract class LogicValue {
   /// invalid, [neq] will return `x`.
   LogicValue neq(dynamic other) => _doCompare(other, (a, b) => a != b);
 
+  /// Power operation.
+  ///
+  /// This will return a [LogicValue] of some input 'base' to the power of other
+  /// input 'exponent'. If one of the two input values is invalid, [pow] will
+  /// return ‘x’ of input size width.
+  LogicValue pow(dynamic other) => _doMath(other, _binPower);
+
   /// Less-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
@@ -760,6 +767,35 @@ abstract class LogicValue {
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
+
+  /// Binary Power
+  ///
+  /// Both inputs [a] and [b] are either of type [int] or [BigInt].
+  /// Returns [a] raise to the power [b] of input type.
+  dynamic _binPower(dynamic a, dynamic b) {
+    dynamic x = a;
+    dynamic y = b;
+    dynamic zero = 0;
+    dynamic res = 1;
+    if (x is BigInt) {
+      res = BigInt.from(1);
+      zero = BigInt.zero;
+    }
+
+    // ignore: avoid_dynamic_calls
+    while ((y > zero) as bool) {
+      // ignore: avoid_dynamic_calls
+      if (y.isOdd as bool) {
+        // ignore: avoid_dynamic_calls
+        res = res * x;
+      }
+      // ignore: avoid_dynamic_calls
+      x = x * x;
+      // ignore: avoid_dynamic_calls
+      y = y >> 1;
+    }
+    return res;
+  }
 
   /// Executes comparison operations between two [LogicValue]s
   ///

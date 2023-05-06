@@ -424,6 +424,15 @@ class Xor2Gate extends _TwoInputBitwiseGate {
       : super((a, b) => a ^ b, '^', in0, in1, name: name);
 }
 
+/// A two-input power module.
+class Power extends _TwoInputBitwiseGate {
+  /// Calculates [in0] raise to power of [in1].
+  ///
+  /// [in1] can be either a [Logic] or [int].
+  Power(Logic in0, dynamic in1, {String name = 'power'})
+      : super((a, b) => a.pow(b), '**', in0, in1, name: name);
+}
+
 /// A two-input addition module.
 class Add extends _TwoInputBitwiseGate {
   /// Calculates the sum of [in0] and [in1].
