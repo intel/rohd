@@ -1240,6 +1240,9 @@ ${padding}end ''');
 
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
+  /// Enable signal for flip-flop
+  late final String _enName;
+
   /// Name for the clk of this flop.
   late final String _clkName;
 
@@ -1253,19 +1256,30 @@ class FlipFlop extends Module with CustomSystemVerilog {
   late final Logic _clk = input(_clkName);
 
   /// The input to the flop.
+  late final Logic _en = input(_enName);
+
+  /// The input to the flop.
   late final Logic _d = input(_dName);
 
   /// The output of the flop.
   late final Logic q = output(_qName);
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
-  FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
+  FlipFlop(Logic clk, Logic d, {Logic? en, super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
+    if (en == null) {
+      en ??= Logic(name: 'en');
+      en.put(1);
+    }
+
+    _enName = Module.unpreferredName('en');
     _clkName = Module.unpreferredName('clk');
     _dName = Module.unpreferredName('d');
     _qName = Module.unpreferredName('q');
+
+    addInput(_enName, en);
     addInput(_clkName, clk);
     addInput(_dName, d, width: d.width);
     addOutput(_qName, width: d.width);
@@ -1274,18 +1288,21 @@ class FlipFlop extends Module with CustomSystemVerilog {
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Sequential(_clk, [q < _d]);
+    Sequential(_clk, [
+      If(_en, then: [q < _d])
+    ]);
   }
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
-    if (inputs.length != 2 || outputs.length != 1) {
-      throw Exception('FlipFlop has exactly two inputs and one output.');
+    if (inputs.length != 3 || outputs.length != 1) {
+      throw Exception('FlipFlop has exactly three inputs and one output.');
     }
     final clk = inputs[_clkName]!;
+    final en = inputs[_enName]!;
     final d = inputs[_dName]!;
     final q = outputs[_qName]!;
-    return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+    return 'always_ff @(posedge $clk) if($en) $q <= $d;  // $instanceName';
   }
 }
