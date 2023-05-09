@@ -5,6 +5,8 @@
 - [Shift Register](#shift-register)
 - [ROHD Simulator](#rohd-simulator)
 - [Unit Test in Sequential Logic](#unit-test-in-sequential-logic)
+- [Wave Dumper](#wave-dumper)
+- [Exercise](#exercise)
 
 ## Learning Outcome
 
@@ -215,6 +217,8 @@ void main() async {
   unawaited(Simulator.run());
 }
 ```
+
+## Wave Dumper
 
 Let also add `WaveDumper` to view the waveform of the Simulation results.
 
