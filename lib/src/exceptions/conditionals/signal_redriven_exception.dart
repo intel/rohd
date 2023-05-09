@@ -11,8 +11,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/rohd_exception.dart';
 
-/// An exception that thrown when a [Logic] signal is
-/// operated multiple times.
+/// An exception that is thrown when a [Logic] signal is
+/// driven multiple times.
 class SignalRedrivenException extends RohdException {
   /// Displays [signals] that are driven multiple times
   /// with default error [message].

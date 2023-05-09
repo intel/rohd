@@ -1,21 +1,21 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// traverseable_collection.dart
-/// Efficient implementation of a set-like datastructure that also has fast
-/// index access
-///
-/// 2021 July 13
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// traverseable_collection.dart
+// Efficient implementation of a set-like datastructure that also has fast
+// index access
+//
+// 2021 July 13
+// Author: Max Korbel <max.korbel@intel.com>
+//
 
-/***/
+import 'dart:collection';
 
 /// A limited type of collection that has very fast index access and [contains].
 ///
 /// This collection stores all data twice: once in a [Set] and once in a [List].
-/// For index access, it uses the [List].  For [contains()], it uses the [Set].
-/// Other operations like [add()] and [remove()] pay the penalty of performing
+/// For index access, it uses the [List].  For [contains], it uses the [Set].
+/// Other operations like [add] and [remove] pay the penalty of performing
 /// the operation twice, once oneach collection.
 ///
 /// In situations where it is necessary to iterate through and frequently access
@@ -23,7 +23,7 @@
 /// wihin it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
 class TraverseableCollection<T> {
-  final Set<T> _set = <T>{};
+  final Set<T> _set = HashSet<T>();
   final List<T> _list = <T>[];
 
   /// The number of objects in this collection.
@@ -31,11 +31,10 @@ class TraverseableCollection<T> {
   /// The valid indices are 0 through [length] - 1.
   int get length => _list.length;
 
-  /// Adds an element to the collection.
+  /// Adds an element to the collection if it is not already present.
   void add(T item) {
-    if (!contains(item)) {
+    if (_set.add(item)) {
       _list.add(item);
-      _set.add(item);
     }
   }
 

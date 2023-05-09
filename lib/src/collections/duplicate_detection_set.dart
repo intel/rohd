@@ -18,10 +18,10 @@ import 'package:collection/collection.dart';
 /// duplicate elements in the Set.
 class DuplicateDetectionSet<T> extends SetBase<T> {
   /// The [Set] which contains unique values.
-  final Set<T> _set = <T>{};
+  final Set<T> _set = HashSet<T>();
 
   /// The [Set] which contains duplicate values.
-  final Set<T> _duplicates = <T>{};
+  final Set<T> _duplicates = HashSet<T>();
 
   @override
   bool add(T value) {
