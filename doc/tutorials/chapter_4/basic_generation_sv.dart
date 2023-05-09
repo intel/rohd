@@ -1,6 +1,8 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+// ignore_for_file: avoid_print
+
 class FullAdderResult {
   final sum = Logic(name: 'sum');
   final cOut = Logic(name: 'c_out');
@@ -82,6 +84,10 @@ void main() async {
     a.put(5);
     b.put(5);
 
-    expect(nbitAdder.sumRes.toInt(), equals(10));
+    final actual = nbitAdder.sumRes.toInt();
+
+    expect(actual, equals(10),
+        reason: 'The value of a: $a, and b: $b will '
+            'give value of $actual');
   });
 }

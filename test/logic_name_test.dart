@@ -9,12 +9,13 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
 class LogicTestModule extends Module {
-  LogicTestModule(Logic a) {
-    addInput(a.name, a, width: a.width);
+  LogicTestModule(String logicName) {
+    addInput(logicName, Logic());
   }
 }
 
@@ -41,5 +42,21 @@ void main() {
       () async {
     final bus = Logic();
     expect(bus.name, equals('s0'));
+  });
+
+  test(
+      'GIVEN logic name is empty string THEN expected to see autogeneration '
+      'of name', () async {
+    final bus = Logic(name: '');
+    expect(bus.name, isNot(equals('')));
+  });
+
+  group('port name:', () {
+    test('GIVEN port name is empty string THEN expected to see exception',
+        () async {
+      expect(() async {
+        LogicTestModule('');
+      }, throwsA((dynamic e) => e is InvalidPortNameException));
+    });
   });
 }

@@ -58,9 +58,10 @@ class LogicGate extends Module {
 }
 
 class ConstantValue extends Module {
-  Logic get a => input('a');
-  ConstantValue(Logic a) : super(name: 'const_val') {
-    a = addInput('a', a, width: a.width);
+  Logic get a => output('a');
+  ConstantValue(Logic val) : super(name: 'const_val') {
+    final a = addOutput('a', width: val.width);
+    a <= val;
   }
 }
 
@@ -68,8 +69,18 @@ class RangeSwizzling extends Module {
   Logic get d => output('d');
   Logic get e => output('e');
   Logic get f => output('f');
-  RangeSwizzling(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f,
-      void Function(Logic a, Logic b, Logic c, Logic d, Logic e, Logic f) slice)
+  Logic get g => output('g');
+  RangeSwizzling(
+      Logic a,
+      Logic b,
+      Logic c,
+      Logic d,
+      Logic e,
+      Logic f,
+      Logic g,
+      void Function(
+              Logic a, Logic b, Logic c, Logic d, Logic e, Logic f, Logic g)
+          slice)
       : super(name: 'range_swizzling') {
     a = addInput(a.name, a, width: a.width);
     b = addInput(b.name, b, width: b.width);
@@ -77,7 +88,8 @@ class RangeSwizzling extends Module {
     d = addOutput(d.name, width: d.width);
     e = addOutput(e.name, width: e.width);
     f = addOutput(f.name, width: f.width);
+    g = addOutput(g.name, width: g.width);
 
-    slice(a, b, c, d, e, f);
+    slice(a, b, c, d, e, f, g);
   }
 }
