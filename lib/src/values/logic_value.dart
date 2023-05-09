@@ -7,7 +7,6 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 part of values;
 
 /// Deprecated: use [LogicValue] instead.
@@ -736,9 +735,9 @@ abstract class LogicValue {
   /// Power operation.
   ///
   /// This will return a [LogicValue] of some input 'base' to the power of other
-  /// input 'exponent'. If one of the two input values is invalid, [pow] will
+  /// input [exponent]. If one of the two input values is invalid, [pow] will
   /// return ‘x’ of input size width.
-  LogicValue pow(dynamic other) => _doMath(other, _binPower);
+  LogicValue pow(dynamic exponent) => _doMath(exponent, _powerOperation);
 
   /// Less-than operation.
   ///
@@ -768,33 +767,18 @@ abstract class LogicValue {
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
 
-  /// Binary Power
+  /// Power operation
   ///
   /// Both inputs [a] and [b] are either of type [int] or [BigInt].
-  /// Returns [a] raise to the power [b] of input type.
-  dynamic _binPower(dynamic a, dynamic b) {
-    dynamic x = a;
-    dynamic y = b;
-    dynamic zero = 0;
-    dynamic res = 1;
-    if (x is BigInt) {
-      res = BigInt.from(1);
-      zero = BigInt.zero;
+  /// Returns [a] raise to the power [b] of same input type.
+  dynamic _powerOperation(dynamic a, dynamic b) {
+    if (a is BigInt) {
+      // ignore: avoid_dynamic_calls
+      return a.pow(b.toInt() as int);
+    } else {
+      // ignore: avoid_dynamic_calls
+      return math.pow(a.toInt() as int, b.toInt() as int);
     }
-
-    // ignore: avoid_dynamic_calls
-    while ((y > zero) as bool) {
-      // ignore: avoid_dynamic_calls
-      if (y.isOdd as bool) {
-        // ignore: avoid_dynamic_calls
-        res = res * x;
-      }
-      // ignore: avoid_dynamic_calls
-      x = x * x;
-      // ignore: avoid_dynamic_calls
-      y = y >> 1;
-    }
-    return res;
   }
 
   /// Executes comparison operations between two [LogicValue]s

@@ -583,8 +583,12 @@ void main() {
           LogicValue.ofString('000010').pow(LogicValue.ofString('000100')),
           equals(LogicValue.ofString('010000')));
       expect(
-          //test invalid input
+          //test invalid exponent input
           LogicValue.ofString('0001').pow(LogicValue.ofString('000x')),
+          equals(LogicValue.filled(4, LogicValue.x)));
+      expect(
+          //test invalid base input
+          LogicValue.ofString('001x').pow(LogicValue.ofString('0001')),
           equals(LogicValue.filled(4, LogicValue.x)));
     });
 
