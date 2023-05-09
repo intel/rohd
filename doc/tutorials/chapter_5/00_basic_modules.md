@@ -4,7 +4,7 @@
 - [First module (one input, one output, simple logic)](#first-module-one-input-one-output-simple-logic)
 - [Converting ROHD Module to System Verilog RTL](#converting-rohd-module-to-system-verilog-rtl)
 - [Exercise 1](#exercise-1)
-- [Composing modules within other modules (N-Bit Adder)](#composing-modules-withon-other-modules-n-bit-adder)
+- [Composing modules within other modules (N-Bit Adder)](#composing-modules-within-other-modules-n-bit-adder)
 - [Exercise 2](#exercise-2)
 
 ## Learning Outcome
