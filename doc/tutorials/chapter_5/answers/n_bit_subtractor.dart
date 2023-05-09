@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 import 'full_subtractor.dart';
