@@ -117,22 +117,24 @@ abstract class LogicValue {
 
   /// Constructs a [LogicValue] from [val] which could be of a variety of types.
   ///
-  /// Supported types include [String], [bool], [int], [BigInt], and
-  /// [LogicValue].
+  /// Supported types include [String], [bool], [int], [BigInt], [LogicValue],
+  /// and [Iterable<LogicValue>].
   ///
-  /// If [fill] is set, then all bits of the returne value will be set to [val].
-  /// If the [val] is not representable as a single bit of information, then
-  /// setting [fill] will throw an [Exception].
+  /// If [fill] is set, then all bits of the returned value will be set to
+  /// [val]. If the [val] is not representable as a single bit of information,
+  /// then setting [fill] will throw an [Exception].
   ///
-  /// If the [width] can be inferred from the type ([String] or [LogicValue]),
-  /// then [width] does not need to be provided. If [width] is provided and
-  /// does not match an inferred width, then [width] is used. If a
-  /// [width] cannot be inferred, then it is required, or else it will throw
-  /// an [Exception].  If [val] does not fit in a specified [width],
-  /// then the returned value will be truncated.  [bool]s
-  /// will infer a default width of `1`, but it can be overridden.  Invalid
-  /// 1-bit [val]s will always be [fill]ed and must provide a [width],
-  /// even if [fill] is `false`.
+  /// If the [width] can be inferred from the type (e.g. [String], [LogicValue],
+  /// [Iterable<LogicValue>]), then [width] does not need to be provided.
+  /// If [width] is provided and does not match an inferred width, then [width]
+  /// is used.
+  /// If a [width] cannot be inferred, then it is required, or else it will
+  /// throw an [Exception].
+  /// If [val] does not fit in a specified [width], then the returned value will
+  /// be truncated.
+  /// [bool]s will infer a default width of `1`, but it can be overridden.
+  /// Invalid 1-bit [val]s will always be [fill]ed even if [fill] is `false`,
+  /// but will default to a width of 1 unless [width] is specified.
   static LogicValue of(dynamic val, {bool fill = false, int? width}) {
     if (val is int) {
       if (width == null) {
@@ -183,16 +185,16 @@ abstract class LogicValue {
             'Only 1-bit `LogicValue`s can be filled');
       }
 
-      if (val.width == 1 &&
-          (val == LogicValue.x || val == LogicValue.z || fill)) {
+      if (val.width == 1 && (!val.isValid || fill)) {
+        if (!val.isValid) {
+          // ignore: parameter_assignments
+          width ??= 1;
+        }
         if (width == null) {
           throw LogicValueConstructionException(
               'Filled `LogicValue` $val must have provided a width.');
         }
         return LogicValue.filled(width, val);
-      } else if (fill) {
-        throw LogicValueConstructionException(
-            'Failed to fill value with $val. To fill, it should be 1 bit.');
       } else {
         if (val.width == width || width == null) {
           return val;
@@ -209,14 +211,15 @@ abstract class LogicValue {
       }
 
       if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
+        if (val == 'x' || val == 'z') {
+          // ignore: parameter_assignments
+          width ??= 1;
+        }
         if (width == null) {
           throw LogicValueConstructionException(
               'Filled `String` $val must have provided a width.');
         }
         return LogicValue.filled(width, LogicValue.ofString(val));
-      } else if (fill) {
-        throw LogicValueConstructionException(
-            'Failed to fill value with $val. To fill, it should be 1 bit.');
       } else {
         if (val.length == width || width == null) {
           return LogicValue.ofString(val);
@@ -227,8 +230,30 @@ abstract class LogicValue {
         }
       }
     } else if (val is Iterable<LogicValue>) {
-      // TODO: handle if fill
-      return ofIterable(val);
+      if (fill && val.length != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit values can be filled');
+      }
+
+      if (val.length == 1 &&
+          (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
+        if (!val.first.isValid) {
+          width ??= 1;
+        }
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `Iterable<LogicValue>` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, val.first);
+      } else {
+        if (val.length == width || width == null) {
+          return LogicValue.ofIterable(val);
+        } else if (width < val.length) {
+          return LogicValue.ofIterable(val).getRange(0, width);
+        } else {
+          return LogicValue.ofIterable(val).zeroExtend(width);
+        }
+      }
     } else {
       throw LogicValueConstructionException('Unrecognized value type "$val" - '
           'Unknown type ${val.runtimeType}'

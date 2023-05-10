@@ -29,7 +29,7 @@ class LogicArray extends LogicStructure {
     final currDim = elements.length;
 
     if (currDim == 0) {
-      return [currDim];
+      return const [0];
     }
 
     // check if all elements are:

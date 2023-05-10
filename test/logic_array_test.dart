@@ -192,13 +192,15 @@ class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
   }
 }
 
-//TODO: test module hierarchy
 //TODO: test constant assignments (to part and all of array)
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
 //TODO: test passing Logic into addInput/OutputArray works
 //TODO: test empty array
 //TODO: test array with 1 element (KNOWN BUG)
+//TODO: test sub-array as a port
+//TODO: test arrays in conditional assignments
+//TODO: test arrays in If/Case expressions
 
 //TODO: file issue tracking that unpacked arrays not fully tested
 // https://github.com/steveicarus/iverilog/issues/482
@@ -263,7 +265,9 @@ void main() {
 
   group('logicarray passthrough', () {
     Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
-        {bool checkNoSwizzle = true, bool noSvSim = false}) async {
+        {bool checkNoSwizzle = true,
+        bool noSvSim = false,
+        bool noIverilog = false}) async {
       await mod.build();
 
       const randWidth = 23;
@@ -283,8 +287,9 @@ void main() {
       }
 
       await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors,
-          buildOnly: noSvSim, dontDeleteTmpFiles: true);
+      if (!noIverilog) {
+        SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
+      }
     }
 
     group('simple', () {
@@ -328,7 +333,7 @@ void main() {
       test('single element, unpacked', () async {
         final mod =
             SimpleLAPassthrough(LogicArray([1], 8, numDimensionsUnpacked: 1));
-        await testArrayPassthrough(mod, noSvSim: true);
+        await testArrayPassthrough(mod, noSvSim: true, noIverilog: true);
         //TODO: bug in iverilog? https://github.com/steveicarus/iverilog/issues/915
       });
 

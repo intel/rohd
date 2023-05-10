@@ -44,7 +44,7 @@ class LogicStructure implements Logic {
   static int _structIdx = 0;
 
   /// Creates a new [LogicStructure] with [elements] as elements.
-  LogicStructure(List<Logic> elements, {String? name})
+  LogicStructure(Iterable<Logic> elements, {String? name})
       : name = (name == null || name.isEmpty)
             ? 'st${_structIdx++}'
             : Sanitizer.sanitizeSV(name) {
@@ -386,8 +386,9 @@ class LogicStructure implements Logic {
   @override
   Logic xor() => packed.xor();
 
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
   @override
-  // ignore: deprecated_member_use_from_same_package
   LogicValue get bit => packed.bit;
 
   @override
@@ -415,11 +416,9 @@ class LogicStructure implements Logic {
   Logic lte(dynamic other) => packed.lte(other);
 
   @override
-  // ignore: deprecated_member_use_from_same_package
   bool hasValidValue() => packed.hasValidValue();
 
   @override
-  // ignore: deprecated_member_use_from_same_package
   bool isFloating() => packed.isFloating();
 
   @override
