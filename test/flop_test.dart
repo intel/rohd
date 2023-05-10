@@ -14,29 +14,22 @@ import 'package:test/test.dart';
 class FlopTestModule extends Module {
   Logic get a => input('a');
   Logic get y => output('y');
-
-  FlopTestModule(Logic a) : super(name: 'floptestmodule') {
-    a = addInput('a', a, width: a.width);
-    final y = addOutput('y', width: a.width);
-
-    final clk = SimpleClockGenerator(10).clk;
-    y <= FlipFlop(clk, a).q;
-  }
-}
-
-class FlopTestModuleWithEnable extends Module {
-  Logic get a => input('a');
   Logic get en => input('en');
-  Logic get y => output('y');
 
-  FlopTestModuleWithEnable(Logic a, Logic en)
-      : super(name: 'floptestmodulewithenable') {
+  FlopTestModule(Logic a, {Logic? en}) : super(name: 'floptestmodule') {
     a = addInput('a', a, width: a.width);
-    en = addInput('en', en, width: en.width);
-    final y = addOutput('y', width: a.width);
+    if (en != null) {
+      en = addInput('en', en, width: en.width);
+    }
 
+    final y = addOutput('y', width: a.width);
     final clk = SimpleClockGenerator(10).clk;
-    y <= FlipFlop(clk, a, en: en).q;
+
+    if (en != null) {
+      y <= FlipFlop(clk, a, en: en).q;
+    } else {
+      y <= FlipFlop(clk, a).q;
+    }
   }
 }
 
@@ -63,7 +56,7 @@ void main() {
     });
 
     test('flop bit with enable', () async {
-      final ftm = FlopTestModuleWithEnable(Logic(), Logic());
+      final ftm = FlopTestModule(Logic(), en: Logic());
       await ftm.build();
       final vectors = [
         Vector({'a': 0, 'en': 1}, {}),
@@ -101,7 +94,7 @@ void main() {
     });
 
     test('flop bus with enable', () async {
-      final ftm = FlopTestModuleWithEnable(Logic(width: 8), Logic());
+      final ftm = FlopTestModule(Logic(width: 8), en: Logic());
       await ftm.build();
       final vectors = [
         Vector({'a': 0, 'en': 1}, {}),
