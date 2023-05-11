@@ -93,6 +93,9 @@ void main() {
         Vector({'a': 2}, {'a_power_const': 32}),
         Vector({'a': 5, 'b': 3}, {'a_power_b': 125}),
         Vector({'a': 7, 'b': 2}, {'a_power_b': 49}),
+        Vector({'a': 0, 'b': 0}, {'a_power_b': 1}),
+        Vector({'a': 0, 'b': 3}, {'a_power_b': 0}),
+        Vector({'a': 1, 'b': 10000000}, {'a_power_b': 1}),
       ]);
     });
 

@@ -7,6 +7,8 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+// ignore_for_file: prefer_single_quotes
+
 part of values;
 
 /// Deprecated: use [LogicValue] instead.
@@ -769,15 +771,24 @@ abstract class LogicValue {
 
   /// Power operation
   ///
-  /// Both inputs [a] and [b] are either of type [int] or [BigInt].
-  /// Returns [a] raise to the power [b] of same input type.
-  dynamic _powerOperation(dynamic a, dynamic b) {
-    if (a is BigInt) {
-      // ignore: avoid_dynamic_calls
-      return a.pow(b.toInt() as int);
-    } else {
-      // ignore: avoid_dynamic_calls
-      return math.pow(a.toInt() as int, b.toInt() as int);
+  /// Both inputs [base] and [exponent] are either of type [int] or [BigInt].
+  /// Returns [base] raise to the power [exponent] of same input type else
+  /// it will throw an exception.
+  dynamic _powerOperation(dynamic base, dynamic exponent) {
+    if ((base is int) && (exponent is int)) {
+      return math.pow(base, exponent);
+    }
+    if ((base is BigInt) && (exponent is BigInt)) {
+      if (base == BigInt.one) {
+        return BigInt.one;
+      } else if (base == BigInt.zero && exponent > BigInt.zero) {
+        return BigInt.zero;
+      } else if (!exponent.isValidInt) {
+        throw Exception("""
+            Input exponent won't fit in int ($_INT_BITS bits) to calculate power operation.""");
+      } else {
+        return base.pow(exponent.toInt());
+      }
     }
   }
 

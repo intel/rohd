@@ -558,12 +558,23 @@ void main() {
           equals(LogicValue.ofInt(1, 32)));
       expect(
           // test ofInt
-          LogicValue.ofInt(2, 32).pow(LogicValue.ofInt(12, 32)),
-          equals(LogicValue.ofInt(4096, 32)));
-      expect(
-          // test ofInt
           LogicValue.ofInt(3, 32).pow(LogicValue.ofInt(5, 32)),
           equals(LogicValue.ofInt(243, 32)));
+      expect(
+          // test ofInt
+          LogicValue.ofInt(0, 32).pow(LogicValue.ofInt(0, 32)),
+          equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test int with BigInt
+          LogicValue.ofInt(2, 64)
+              .pow(LogicValue.ofBigInt(BigInt.parse('10'), 64)),
+          equals(LogicValue.ofBigInt(BigInt.from(1024), 64)));
+
+      expect(
+          // test BigInt with int
+          LogicValue.ofBigInt(BigInt.two, 64).pow(LogicValue.ofInt(10, 64)),
+          equals(LogicValue.ofBigInt(BigInt.from(1024), 64)));
+
       expect(
           // test ofBigInt
           LogicValue.ofBigInt(BigInt.from(31), 128)
@@ -578,6 +589,28 @@ void main() {
               BigInt.parse(
                   '12373054865009146225795242412633846245734343458126916'),
               256)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.zero, 64)
+              .pow(LogicValue.ofBigInt(BigInt.zero, 64)),
+          equals(LogicValue.ofBigInt(BigInt.one, 64)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.one, 512).pow(LogicValue.ofBigInt(
+              BigInt.parse('100000000000000000000000000000000000000'), 512)),
+          equals(LogicValue.ofBigInt(BigInt.one, 512)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.zero, 512).pow(LogicValue.ofBigInt(
+              BigInt.parse('100000000000000000000000000000000000000'), 512)),
+          equals(LogicValue.ofBigInt(BigInt.zero, 512)));
+      expect(
+          // exception when BigInt exponent won't fit in int
+          () => LogicValue.ofBigInt(BigInt.from(2), 512).pow(
+              LogicValue.ofBigInt(
+                  BigInt.parse('100000000000000000000000000000000000000'),
+                  512)),
+          throwsA(isA<Exception>()));
       expect(
           //test string
           LogicValue.ofString('000010').pow(LogicValue.ofString('000100')),
