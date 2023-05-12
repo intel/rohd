@@ -83,8 +83,7 @@ If.block();
 
 To build our shift register, we want to say something like:
 
-1. IF reset signal
-    1.1 data will be set to 0
+1. IF reset signal, then data will be set to 0
 2. ELSE swizzle the sin with existing value
 3. SET output port to the data
 
