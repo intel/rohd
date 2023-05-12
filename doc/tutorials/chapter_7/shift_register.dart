@@ -31,7 +31,7 @@ class ShiftRegister extends Module {
     final data = Logic(name: 'data', width: regWidth); // 0000
 
     Sequential(clk, [
-      IfBlock([
+      If.block([
         Iff(reset, [data < 0]),
         Else([
           data < [data.slice(regWidth - 2, 0), sin].swizzle() // left shift

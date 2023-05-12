@@ -75,10 +75,10 @@ Then, its time to declare the logic of the module. We want to start with creatin
 Sequential(clk, []);
 ```
 
-For our conditionals, we want to wrap `IfBlock` that contains a List of `ElseIf` in the `Conditionals`. Note that the `ElseIf` here also mean `Iff` and `Else` that are implemented in ROHD framework. Don't confuse with dart `if` and `else`.
+For our conditionals, we want to wrap `If.block` that contains a List of `ElseIf` in the `Conditionals`. Note that the `ElseIf` here also mean `Iff` and `Else` that are implemented in ROHD framework. Don't confuse with dart `if` and `else`.
 
 ```dart
-IfBlock();
+If.block();
 ```
 
 To build our shift register, we want to say something like:
@@ -106,7 +106,7 @@ class ShiftRegister extends Module {
     final data = Logic(name: 'data', width: regWidth); // 0000
 
     Sequential(clk, [
-      IfBlock([
+      If.block([
         Iff(reset, [data < 0]),
         Else([
           data < [data.slice(regWidth - 2, 0), sin].swizzle() 
