@@ -43,7 +43,12 @@ void main() async {
           b.put(j);
           cIn.put(k);
 
-          expect(sum.value.toInt(), faTruthTable(i, j, k).sum);
+          final expected = faTruthTable(i, j, k).sum;
+          final actual = sum.value.toInt();
+
+          expect(actual, expected,
+              reason: 'For inputs a=$i, b=$j, cIn=$k,'
+                  ' expected sum=$expected but found $actual');
         }
       }
     }
@@ -58,7 +63,12 @@ void main() async {
           b.put(j);
           cIn.put(k);
 
-          expect(cOut.value.toInt(), faTruthTable(i, j, k).cOut);
+          final expected = faTruthTable(i, j, k).cOut;
+          final actual = cOut.value.toInt();
+
+          expect(actual, expected,
+              reason: 'For inputs a=$i, b=$j, cIn=$k,'
+                  ' expected sum=$expected but found $actual');
         }
       }
     }

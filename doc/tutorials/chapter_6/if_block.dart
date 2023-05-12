@@ -1,8 +1,7 @@
 import 'package:rohd/rohd.dart';
 
-IfBlock truthTableIf(
-        Logic a, Logic b, Logic carryIn, Logic sum, Logic carryOut) =>
-    IfBlock([
+If truthTableIf(Logic a, Logic b, Logic carryIn, Logic sum, Logic carryOut) =>
+    If.block([
       Iff(a.eq(0) & b.eq(0) & carryIn.eq(0), [
         sum < 0,
         carryOut < 0,

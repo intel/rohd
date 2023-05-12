@@ -477,6 +477,29 @@ void main() {
           equals(LogicValue.x));
     });
 
+    test('inequality', () {
+      expect(
+          // != equal
+          LogicValue.ofString('1111') != LogicValue.ofString('1111'),
+          equals(false));
+      expect(
+          // != not equal
+          LogicValue.ofString('1111') != LogicValue.ofString('1110'),
+          equals(true));
+      expect(
+          // neq equal
+          LogicValue.ofString('1111').neq(LogicValue.ofString('1111')),
+          equals(LogicValue.zero));
+      expect(
+          // neq not equal, valid
+          LogicValue.ofString('1111').neq(LogicValue.ofString('1110')),
+          equals(LogicValue.one));
+      expect(
+          // eq not equal, invalid
+          LogicValue.ofString('1111').neq(LogicValue.ofString('111x')),
+          equals(LogicValue.x));
+    });
+
     test('greater', () {
       expect(
           // >

@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// wave_dumper_test.dart
-/// Tests for the WaveDumper
-///
-/// 2021 November 4
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// wave_dumper_test.dart
+// Tests for the WaveDumper
+//
+// 2021 November 4
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
 import 'dart:io';
@@ -220,5 +219,20 @@ void main() {
     );
 
     deleteTemporaryDump(dumpName);
+  });
+
+  test('create non-existent output directories', () async {
+    final mod = SimpleModule(Logic());
+    await mod.build();
+
+    const dir1Path = '$tempDumpDir/dir1';
+
+    final waveDumper = WaveDumper(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+
+    expect(File(waveDumper.outputPath).existsSync(), equals(true));
+
+    if (File(waveDumper.outputPath).existsSync()) {
+      File(dir1Path).deleteSync(recursive: true);
+    }
   });
 }

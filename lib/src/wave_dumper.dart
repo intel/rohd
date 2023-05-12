@@ -1,13 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// wave_dumper.dart
-/// Waveform dumper for a given module hierarchy, dumps to .vcd file.
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// wave_dumper.dart
+// Waveform dumper for a given module hierarchy, dumps to ".vcd" file.
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:collection';
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
@@ -48,7 +48,7 @@ class WaveDumper {
   ///
   /// This spans across multiple inject or changed events if they are in the
   /// same timestamp of the [Simulator].
-  final Set<Logic> _changedLogicsThisTimestamp = <Logic>{};
+  final Set<Logic> _changedLogicsThisTimestamp = HashSet<Logic>();
 
   /// The timestamp which is currently being collected for a dump.
   ///
@@ -59,7 +59,7 @@ class WaveDumper {
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
-      : _outputFile = File(outputPath) {
+      : _outputFile = File(outputPath)..createSync(recursive: true) {
     if (!module.hasBuilt) {
       throw Exception(
           'Module must be built before passed to dumper.  Call build() first.');

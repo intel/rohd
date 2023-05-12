@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:collection';
+
 import 'package:collection/collection.dart';
 
 /// An object that can provide uniquified names in an efficient way.
@@ -21,12 +23,12 @@ class Uniquifier {
   final Map<String, int> _nameCounters = <String, int>{};
 
   /// A [Set] of names already accessed via [getUniqueName()].
-  Set<String> get takenNames => UnmodifiableSetView(_takenNames);
-  final Set<String> _takenNames = <String>{};
+  late final Set<String> takenNames = UnmodifiableSetView(_takenNames);
+  final Set<String> _takenNames = HashSet<String>();
 
   /// A [Set] of names that are reserved, including originally pre-reserved ones
   /// and ones already taken.
-  Set<String> get reservedNames => UnmodifiableSetView(_reservedNames);
+  late final Set<String> reservedNames = UnmodifiableSetView(_reservedNames);
   final Set<String> _reservedNames;
 
   /// Constructs a new [Uniquifier], optionally with a set of

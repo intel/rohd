@@ -13,11 +13,13 @@ In this chapter:
 
 ## What is n-bit adder?
 
+![ripple carry adder](./assets/ripple_carry_adder.png)
+
 The N-bit adder is a common component in many digital systems, and is used to perform arithmetic operations on binary numbers. It consists of N full-adders connected in series, with the carry-out from each full-adder feeding into the carry-in of the next.
 
-N-Bit adder is designed by connecting full adders in series. The figure below shows 4-bit adder. The `a` and `b` is the input binary, `c` is the carry, and `s` is the sum.
+N-Bit adder is designed by connecting full adders in series. The figure above shows 4-bit adder. The `a` and `b` is the input binary, `c` is the carry, and `s` is the sum. Let look at example at below:
 
-![ripple carry adder](./assets/ripple_carry_adder.png)
+![ripple carry adder example](./assets/ripple-carry-adder-eg.png)
 
 So, let say we have:
 
@@ -121,7 +123,7 @@ Logic nBitAdder(Logic a, Logic b) {
 }
 ```
 
-Now, run your test again and you will see All tests passed! 
+Now, run your test again and you will see All tests passed!
 
 You can find the executable code at [basic_generation.dart](./basic_generation.dart) while the system verilog equivalent executable code can be found at [basic_generation_sv.dart](./basic_generation_sv.dart)
 

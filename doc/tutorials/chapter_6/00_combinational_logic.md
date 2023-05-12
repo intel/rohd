@@ -71,16 +71,16 @@ The most important part that you have to notice here is the assignment operator 
 
 Alright, now we know how the operator in ROHD. we can dive into the `If...Else` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate that pieces of hardware. While in ROHD, `If...Else` is conditionally assignment which assign signal to a port, which we can think something like `If` Logic signal `A` is present, `Then` assign output port `B` to `A`.
 
-In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `IfBlock` which is more readable and clean.
+In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `If.block` which is more readable and clean.
 
-*Note: `If...Else` and `Case` in ROHD is written in capital letter.*
+*Note: `If...Else` and `Case` in ROHD is written in capital letter for starting of the alphabet.*
 
 ### Start by declaring a conditional Block
 
-`IfBlock([])`: Represents a chain of blocks of code to be conditionally executed, like `if/else...if/else`.
+`If.block([])`: Represents a chain of blocks of code to be conditionally executed, like if/else...if/else in dart.
 
 ```dart
-IfBlock([
+If.block([
   // your if else inside here
 ]);
 ```
@@ -91,51 +91,51 @@ IfBlock([
 
 ```dart
 // template
-IfBlock([
+If.block([
   Iff(condition, then: [
     // You can wrap condition here
   ]),
-]); // IfBlock
+]); // If.block
 
 // example
-IfBlock([
+If.block([
   Iff(a.eq(0), then: [
     sum < 0    
   ]),
-]); // IfBlock
+]); // If.block
 ```
 
 `ElseIf(condition, then: [])`: `ElseIf` Statement, if the condition in `Iff` is not matched, its will skip and look for next condition in `ElseIf` condition, then execute the `then`.
 
 ```dart
 // template
-IfBlock([
+If.block([
   Iff(condition, then: []), // If statement
   ElseIf(condition, then: []) // Else If Statement
-]); // IfBlock
+]); // If.block
 
 // example
-IfBlock([
+If.block([
   Iff(a.eq(0), then: [
     sum < 1
   ]), // If statement
   ElseIf(b.eq(0), then: [
     sum < 0
   ]) // Else If Statement
-]); // IfBlock
+]); // If.block
 ```
 
 `Else([])`: `Else` statement, execute the `Else` all the `ElseIf` conditions if are not matched.
 
 ```dart
-IfBlock([
+If.block([
   Iff(condition, then: []), // If statement
   ElseIf(condition, then: []), // Else If Statement
   Else([]) // execute this
-]); // IfBlock
+]); // If.block
 
 // example
-IfBlock([
+If.block([
   Iff(a.eq(0), then: [
     sum < 0
   ]), // If statement
@@ -143,9 +143,9 @@ IfBlock([
     sum < 1
   ]), // Else If Statement
   Else([
-    sum < 0>
+    a < 1
   ]) // execute this
-]); // IfBlock
+]); // If.block
 ```
 
 Alright, the syntax is quite easy. You can always come back to this page whenever you are confuse. Let see how we can implement our FullAdder using `If` and `Else` conditionals.
@@ -168,7 +168,7 @@ Well, maybe you already have the idea. Yes, we are going to implement this truth
 ```dart
     // Use Combinational block
     Combinational([
-      IfBlock([
+      If.block([
         Iff(a.eq(0) & b.eq(0) & carryIn.eq(0), [
           sum < 0,
           carryOut < 0,
@@ -230,7 +230,7 @@ class FullAdder extends Module {
 
     // Use Combinational block
     Combinational([
-      IfBlock([
+      If.block([
         Iff(a.eq(0) & b.eq(0) & carryIn.eq(0), [
           sum < 0,
           carryOut < 0,
