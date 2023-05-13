@@ -7,8 +7,6 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-// ignore_for_file: prefer_single_quotes
-
 part of values;
 
 /// Deprecated: use [LogicValue] instead.
@@ -784,8 +782,9 @@ abstract class LogicValue {
       } else if (base == BigInt.zero && exponent > BigInt.zero) {
         return BigInt.zero;
       } else if (!exponent.isValidInt) {
-        throw Exception("""
-            Input exponent won't fit in int ($_INT_BITS bits) to calculate power operation.""");
+        throw InvalidTruncationException(
+            "BigInt (${exponent.bitLength} bits) won't fit in "
+            'int ($_INT_BITS bits)');
       } else {
         return base.pow(exponent.toInt());
       }

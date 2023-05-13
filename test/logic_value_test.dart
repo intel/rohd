@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -610,7 +611,7 @@ void main() {
               LogicValue.ofBigInt(
                   BigInt.parse('100000000000000000000000000000000000000'),
                   512)),
-          throwsA(isA<Exception>()));
+          throwsA(isA<InvalidTruncationException>()));
       expect(
           //test string
           LogicValue.ofString('000010').pow(LogicValue.ofString('000100')),
