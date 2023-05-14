@@ -568,6 +568,9 @@ class Logic {
   /// Logical right-shift.
   Logic operator >>>(dynamic other) => RShift(this, other).out;
 
+  /// Unary clog2
+  Logic clog2() => Clog2Unary(this).out;
+
   /// Unary AND.
   Logic and() => AndUnary(this).out;
 
