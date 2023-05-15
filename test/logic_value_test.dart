@@ -948,7 +948,9 @@ void main() {
       expect(LogicValue.filled(0, LogicValue.one).hashCode,
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
+  });
 
+  group('random value generation ', () {
     test(
         'should return random integer logic value if min and max value '
         'is in integer', () {
@@ -958,7 +960,14 @@ void main() {
       expect(lvInt, isA<LogicValue>());
     });
 
-    test('should return random Big integer logic value', () {
+    test('should return random BigInt value', () {
+      final bigInt = Random(10).nextBigInt(numBits: 100);
+
+      expect(bigInt, isA<BigInt>());
+      expect(bigInt.bitLength, 100);
+    });
+
+    test('should return random BigInt logic value', () {
       final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
 
       expect(lvBigInt, isA<LogicValue>());

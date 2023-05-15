@@ -14,7 +14,16 @@ part 'small_logic_value.dart';
 part 'big_logic_value.dart';
 part 'filled_logic_value.dart';
 
+/// Allows random generation of [LogicValue] for [BigInt] and [int].
 extension RandLogicValue on Random {
+  /// Generate non-negative random [LogicValue] of [int] that uniformly
+  /// distributed in the range from [min], inclusive, to [max], exclusive.
+  ///
+  /// Example:
+  ///
+  /// ```dart
+  /// final lvInt = Random(10).nextLogicValueInt(min: 20, max: 100);
+  /// ```
   LogicValue nextLogicValueInt({required int max, int min = 0}) {
     final randInt = nextInt(max) + min;
     final width = randInt.bitLength;
@@ -22,6 +31,15 @@ extension RandLogicValue on Random {
     return LogicValue.ofInt(randInt, width);
   }
 
+  /// Generate non-negative random [BigInt] value that consists of
+  /// [numBits] bits.
+  ///
+  /// Example:
+  ///
+  /// ```dart
+  /// // generate 100 bits of random BigInt
+  /// final bigInt = Random(10).nextBigInt(numBits: 100);
+  /// ```
   BigInt nextBigInt({required int numBits}) {
     final bitString = StringBuffer('1');
     for (var i = 1; i < numBits; i++) {
@@ -31,6 +49,15 @@ extension RandLogicValue on Random {
     return BigInt.parse(bitString.toString(), radix: 2);
   }
 
+  /// Generate non-negative random [BigInt]'s [LogicValue] that consists of
+  /// [numBits] bits.
+  ///
+  /// Example:
+  ///
+  /// ```dart
+  /// // generate 100 bits of random BigInt LogicValue
+  /// final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
+  /// ```
   LogicValue nextLogicValueBigInt({required int numBits}) {
     final randBigInt = nextBigInt(numBits: numBits);
     final width = randBigInt.bitLength;
