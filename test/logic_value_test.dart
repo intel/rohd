@@ -8,6 +8,8 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -945,6 +947,18 @@ void main() {
           equals(LogicValue.filled(0, LogicValue.zero)));
       expect(LogicValue.filled(0, LogicValue.one).hashCode,
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
+    });
+
+    test('should return random integer logic value', () {
+      final lvInt = Random(10).nextLogicValue(min: 20, max: 100);
+
+      print(lvInt.toInt());
+    });
+
+    test('should return random Big integer logic value', () {
+      final lvBigInt = Random(10).nextBigIntLogicValue(numBits: 100);
+
+      print(lvBigInt.toBigInt());
     });
   });
 }
