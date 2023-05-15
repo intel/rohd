@@ -15,7 +15,7 @@ part 'big_logic_value.dart';
 part 'filled_logic_value.dart';
 
 extension RandLogicValue on Random {
-  LogicValue nextLogicValue({required int max, int min = 0}) {
+  LogicValue nextLogicValueInt({required int max, int min = 0}) {
     final randInt = nextInt(max) + min;
     final width = randInt.bitLength;
 
@@ -23,16 +23,15 @@ extension RandLogicValue on Random {
   }
 
   BigInt nextBigInt({required int numBits}) {
-    // Generate random Bit String
-    var bitString = '1';
+    final bitString = StringBuffer('1');
     for (var i = 1; i < numBits; i++) {
-      bitString += nextInt(2).toString();
+      bitString.write(nextInt(2).toString());
     }
 
-    return BigInt.parse(bitString, radix: 2);
+    return BigInt.parse(bitString.toString(), radix: 2);
   }
 
-  LogicValue nextBigIntLogicValue({required int numBits}) {
+  LogicValue nextLogicValueBigInt({required int numBits}) {
     final randBigInt = nextBigInt(numBits: numBits);
     final width = randBigInt.bitLength;
 

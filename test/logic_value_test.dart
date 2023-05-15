@@ -949,16 +949,21 @@ void main() {
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
 
-    test('should return random integer logic value', () {
-      final lvInt = Random(10).nextLogicValue(min: 20, max: 100);
+    test(
+        'should return random integer logic value if min and max value '
+        'is in integer', () {
+      final lvInt = Random(10).nextLogicValueInt(min: 20, max: 100);
 
-      print(lvInt.toInt());
+      expect(lvInt.toInt(), isA<int>());
+      expect(lvInt, isA<LogicValue>());
     });
 
     test('should return random Big integer logic value', () {
-      final lvBigInt = Random(10).nextBigIntLogicValue(numBits: 100);
+      final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
 
-      print(lvBigInt.toBigInt());
+      expect(lvBigInt, isA<LogicValue>());
+      expect(lvBigInt.toBigInt(), isA<BigInt>());
+      expect(lvBigInt.width, 100);
     });
   });
 }
