@@ -58,10 +58,36 @@ extension RandLogicValue on Random {
   /// // generate 100 bits of random BigInt LogicValue
   /// final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
   /// ```
-  LogicValue nextLogicValueBigInt({required int numBits}) {
+  LogicValue nextLogicValueBigInt(
+      {required int numBits, bool hasInvalidBits = false}) {
     final randBigInt = nextBigInt(numBits: numBits);
     final width = randBigInt.bitLength;
 
     return LogicValue.ofBigInt(randBigInt, width);
+  }
+
+  LogicValue nextLogicValue({
+    required int width,
+    int? max,
+    bool hasInvalidBits = false,
+    int min = 0,
+  }) {
+    final candidatePool =
+        hasInvalidBits == false ? ['1', '0'] : ['1', '0', 'x', 'z'];
+    final bitString = StringBuffer();
+
+    if (hasInvalidBits) {
+      // Generate based on width given
+      for (var i = 0; i < width; i++) {
+        bitString.write(candidatePool[nextInt(4)]);
+      }
+
+      return LogicValue.of([LogicValue.ofString(bitString.toString())]);
+    } else {
+      // Generate the random value of range between min and max
+      // that are still within width
+    }
+
+    return LogicValue.one;
   }
 }

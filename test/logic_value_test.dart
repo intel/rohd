@@ -974,5 +974,19 @@ void main() {
       expect(lvBigInt.toBigInt(), isA<BigInt>());
       expect(lvBigInt.width, 100);
     });
+    test(
+        'should return random logic value with invalid bits '
+        'if hasInvalidBits is true', () {
+      final lvRand = Random().nextLogicValue(width: 10, hasInvalidBits: true);
+
+      print(lvRand);
+    });
+
+    test(
+        'should return random logic value without invalid bits '
+        'if hasInvalidBits is false', () {
+      final lvRand = Random().nextLogicValue(width: 10, max: 20);
+      print(lvRand);
+    });
   });
 }
