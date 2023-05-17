@@ -16,21 +16,6 @@ part 'filled_logic_value.dart';
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
 extension RandLogicValue on Random {
-  /// Generate non-negative random [LogicValue] of [int] that uniformly
-  /// distributed in the range from [min], inclusive, to [max], exclusive.
-  ///
-  /// Example:
-  ///
-  /// ```dart
-  /// final lvInt = Random(10).nextLogicValueInt(min: 20, max: 100);
-  /// ```
-  LogicValue nextLogicValueInt({required int max, int min = 0}) {
-    final randInt = nextInt(max) + min;
-    final width = randInt.bitLength;
-
-    return LogicValue.ofInt(randInt, width);
-  }
-
   /// Generate non-negative random [BigInt] value that consists of
   /// [numBits] bits.
   ///
@@ -40,54 +25,49 @@ extension RandLogicValue on Random {
   /// // generate 100 bits of random BigInt
   /// final bigInt = Random(10).nextBigInt(numBits: 100);
   /// ```
-  BigInt nextBigInt({required int numBits}) {
-    final bitString = StringBuffer('1');
-    for (var i = 1; i < numBits; i++) {
-      bitString.write(nextInt(2).toString());
+  BigInt _nextBigInt({required int numBits}) {
+    var result = BigInt.zero;
+    for (var i = 0; i < numBits; i += 32) {
+      result = (result << 32) | BigInt.from(nextInt(1 << 32));
     }
-
-    return BigInt.parse(bitString.toString(), radix: 2);
+    return result & ((BigInt.one << numBits) - BigInt.one);
   }
 
-  /// Generate non-negative random [BigInt]'s [LogicValue] that consists of
-  /// [numBits] bits.
+  /// Generate non-negative random [LogicValue] based on [width] and [max] num.
+  /// The random number can be mixed in invalid bits x and z by set
+  /// [hasInvalidBits] to `false`.
   ///
   /// Example:
   ///
   /// ```dart
-  /// // generate 100 bits of random BigInt LogicValue
-  /// final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
+  /// // generate 100 bits of random BigInt
+  /// final bigInt = Random(10).nextBigInt(numBits: 100);
   /// ```
-  LogicValue nextLogicValueBigInt(
-      {required int numBits, bool hasInvalidBits = false}) {
-    final randBigInt = nextBigInt(numBits: numBits);
-    final width = randBigInt.bitLength;
-
-    return LogicValue.ofBigInt(randBigInt, width);
-  }
-
   LogicValue nextLogicValue({
     required int width,
     int? max,
     bool hasInvalidBits = false,
-    int min = 0,
   }) {
-    final candidatePool =
-        hasInvalidBits == false ? ['1', '0'] : ['1', '0', 'x', 'z'];
     final bitString = StringBuffer();
 
     if (hasInvalidBits) {
-      // Generate based on width given
       for (var i = 0; i < width; i++) {
-        bitString.write(candidatePool[nextInt(4)]);
+        bitString.write(const ['1', '0', 'x', 'z'][nextInt(4)]);
       }
 
-      return LogicValue.of([LogicValue.ofString(bitString.toString())]);
+      return LogicValue.ofString(bitString.toString());
     } else {
       // Generate the random value of range between min and max
       // that are still within width
-    }
 
-    return LogicValue.one;
+      // 2 ^ 5 = 32 = 100000 = 1 << 5
+      // 32 - 1 = 31 =011111
+
+      if (width <= LogicValue._INT_BITS) {
+        return LogicValue.ofInt(nextInt(1 << width), width);
+      } else {
+        return LogicValue.ofBigInt(_nextBigInt(numBits: width), width);
+      }
+    }
   }
 }
