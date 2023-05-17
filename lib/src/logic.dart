@@ -530,6 +530,9 @@ class Logic {
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
 
+  /// Power operation
+  Logic pow(dynamic other) => Power(this, other).out;
+
   /// Addition.
   ///
   /// WARNING: Signed math is not fully tested.
