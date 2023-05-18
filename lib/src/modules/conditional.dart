@@ -53,7 +53,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
     // Get all Receivers
     final allReceivers =
-        conditionals.map((e) => e.getReceivers()).expand((e) => e).toList();
+        conditionals.map((e) => e.receivers).expand((e) => e).toList();
 
     // This will reset the conditionals on setting the `reset` flag
     if (reset != null) {
