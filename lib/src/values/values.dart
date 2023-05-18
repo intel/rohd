@@ -3,6 +3,8 @@
 
 library values;
 
+import 'dart:math' as math;
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';

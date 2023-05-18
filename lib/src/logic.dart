@@ -347,7 +347,8 @@ class Logic {
   Logic? _srcConnection;
 
   /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
-  Iterable<Logic> get dstConnections => UnmodifiableListView(_dstConnections);
+  late final Iterable<Logic> dstConnections =
+      UnmodifiableListView(_dstConnections);
   final Set<Logic> _dstConnections = {};
 
   /// Notifies `this` that [dstConnection] is now directly connected to the
@@ -432,7 +433,9 @@ class Logic {
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
   Logic({String? name, int width = 1})
-      : name = name == null ? 's${_signalIdx++}' : Sanitizer.sanitizeSV(name),
+      : name = (name == null || name.isEmpty)
+            ? 's${_signalIdx++}'
+            : Sanitizer.sanitizeSV(name),
         _wire = _Wire(width: width) {
     if (width < 0) {
       throw Exception('Logic width must be greater than or equal to 0.');
@@ -527,6 +530,9 @@ class Logic {
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
 
+  /// Power operation
+  Logic pow(dynamic other) => Power(this, other).out;
+
   /// Addition.
   ///
   /// WARNING: Signed math is not fully tested.
@@ -571,6 +577,9 @@ class Logic {
   /// Logical equality.
   Logic eq(dynamic other) => Equals(this, other).out;
 
+  /// Logical inequality.
+  Logic neq(dynamic other) => NotEquals(this, other).out;
+
   /// Less-than.
   Logic lt(dynamic other) => LessThan(this, other).out;
 
@@ -578,76 +587,111 @@ class Logic {
   Logic lte(dynamic other) => LessThanOrEqual(this, other).out;
 
   /// Greater-than.
+  Logic gt(dynamic other) => GreaterThan(this, other).out;
+
+  /// Greater-than-or-equal-to.
+  Logic gte(dynamic other) => GreaterThanOrEqual(this, other).out;
+
+  /// Greater-than.
   Logic operator >(dynamic other) => GreaterThan(this, other).out;
 
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
-  /// Shorthand for a [Conditional] which increments this by [incrVal]
+  /// A function that returns whatever [Logic] is provided.
   ///
-  /// By default for a [Logic] variable, if no [incrVal] is provided
-  /// result is ++variable else result is variable+=[incrVal]
-  ///
-  /// ```dart
-  ///
-  /// // Given a and b Logic input and piOut as output
-  /// Combinational([
-  ///   piOut < a,
-  ///   piOut.incr(b),
-  /// ]);
-  ///
-  /// ```
-  ///
-  ConditionalAssign incr([dynamic incrVal]) => this < this + (incrVal ?? 1);
+  /// Used as a default no-op for short-hands.
+  static Logic _nopS(Logic x) => x;
 
-  /// Shorthand for a [Conditional] which decrements this by [decrVal]
+  /// Shorthand for a [Conditional] which increments this by [val].
   ///
-  /// By default for a [Logic] variable, if no [decrVal] is provided
-  /// result is --variable else result is var-=[decrVal]
+  /// By default for a [Logic] variable, if no [val] is provided then the
+  /// result is ++variable else result is variable+=[val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and pdOut as output
-  /// Combinational([
-  ///   pdOut < a,
-  ///   pdOut.decr(b),
+  /// Sequential(clk, [
+  ///   pOut.incr(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.incr(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign decr([dynamic decrVal]) => this < this - (decrVal ?? 1);
+  /// ```
+  ConditionalAssign incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+      s(this) < s(this) + val;
 
-  /// Shorthand for a [Conditional] which increments this by [mulVal]
+  /// Shorthand for a [Conditional] which decrements this by [val].
   ///
-  /// For a [Logic] variable, this is variable *= [mulVal]
+  /// By default for a [Logic] variable, if no [val] is provided then the
+  /// result is --variable else result is var-=[val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and maOut as output
-  /// Combinational([
-  ///   maOut < a,
-  ///   maOut.mulAssign(b),
+  /// Sequential(clk, [
+  ///   pOut.decr(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.decr(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign mulAssign(dynamic mulVal) => this < this * mulVal;
+  /// ```
+  ConditionalAssign decr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
+      s(this) < s(this) - val;
 
-  /// Shorthand for a [Conditional] which increments this by [divVal]
+  /// Shorthand for a [Conditional] which increments this by [val].
   ///
-  /// For a [Logic] variable, this is variable /= [divVal]
+  /// For a [Logic] variable, this is variable *= [val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
   ///
   /// ```dart
   ///
-  /// // Given a and b Logic input and daOut as output
-  /// Combinational([
-  ///   daOut < a,
-  ///   daOut.divAssign(b),
+  /// Sequential(clk, [
+  ///   pOut.mulAssign(val: b),
   /// ]);
   ///
-  /// ```
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.mulAssign(val: b, s: s),
+  ///     ]);
   ///
-  ConditionalAssign divAssign(dynamic divVal) => this < this / divVal;
+  /// ```
+  ConditionalAssign mulAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+      s(this) < s(this) * val;
+
+  /// Shorthand for a [Conditional] which increments this by [val].
+  ///
+  /// For a [Logic] variable, this is variable /= [val].
+  ///
+  /// If using [Combinational], you will need to provide [s] as a remapping
+  /// function since otherwise this will cause a "write after read" violation.
+  ///
+  /// ```dart
+  ///
+  /// Sequential(clk, [
+  ///   pOut.divAssign(val: b),
+  /// ]);
+  ///
+  /// Combinational.ssa((s) => [
+  ///       s(pOut) < a,
+  ///       pOut.divAssign(val: b, s: s),
+  ///     ]);
+  ///
+  /// ```
+  ConditionalAssign divAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
+      s(this) < s(this) / val;
 
   /// Conditional assignment operator.
   ///

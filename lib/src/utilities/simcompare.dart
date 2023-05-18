@@ -13,6 +13,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
@@ -145,6 +146,39 @@ abstract class SimCompare {
     await Simulator.run();
   }
 
+  /// A collection of warnings that are fine to ignore usually.
+  static final List<RegExp> _knownWarnings = [
+    RegExp('sorry: Case unique/unique0 qualities are ignored.'),
+    RegExp(r'sorry: constant selects in always_\* processes'
+        ' are not currently supported'),
+    RegExp('warning: always_comb process has no sensitivities'),
+  ];
+
+  /// Executes [vectors] against the Icarus Verilog simulator and checks
+  /// that it passes.
+  static void checkIverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool enableChecking = true,
+  }) {
+    final result = iverilogVector(module, vectors,
+        moduleName: moduleName,
+        dontDeleteTmpFiles: dontDeleteTmpFiles,
+        dumpWaves: dumpWaves,
+        iverilogExtraArgs: iverilogExtraArgs,
+        allowWarnings: allowWarnings,
+        maskKnownWarnings: maskKnownWarnings);
+    if (enableChecking) {
+      expect(result, true);
+    }
+  }
+
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
@@ -154,6 +188,7 @@ abstract class SimCompare {
     bool dumpWaves = false,
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
+    bool maskKnownWarnings = true,
   }) {
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
@@ -210,9 +245,24 @@ abstract class SimCompare {
     final compileResult = Process.runSync('iverilog',
         ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
     bool printIfContentsAndCheckError(dynamic output) {
-      if (output.toString().isNotEmpty) {
-        print(output);
+      final maskedOutput = output
+          .toString()
+          .split('\n')
+          .where((element) => element.isNotEmpty)
+          .map((line) {
+            for (final knownWarning in _knownWarnings) {
+              if (knownWarning.hasMatch(line)) {
+                return null;
+              }
+            }
+            return line;
+          })
+          .whereNotNull()
+          .join();
+      if (maskedOutput.isNotEmpty) {
+        print(maskedOutput);
       }
+
       return output.toString().contains(RegExp(
           [
             'error',

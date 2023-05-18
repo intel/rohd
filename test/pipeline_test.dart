@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// pipeline_test.dart
-/// Tests for pipeline generators
-///
-/// 2021 October 11
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// pipeline_test.dart
+// Tests for pipeline generators
+//
+// 2021 October 11
+// Author: Max Korbel <max.korbel@intel.com>
+//
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -19,6 +19,25 @@ class SimplePipelineModule extends Module {
     final b = addOutput('b', width: a.width);
 
     final pipeline = Pipeline(clk, stages: [
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+    ]);
+    b <= pipeline.get(a);
+  }
+}
+
+class SimplePipelineModuleLateAdd extends Module {
+  SimplePipelineModuleLateAdd(Logic a)
+      : super(name: 'simple_pipeline_module_late_add') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final pipeline = Pipeline(clk, stages: [
+      (p) => [],
+      (p) => [],
+      (p) => [],
       (p) => [p.get(a) < p.get(a) + 1],
       (p) => [p.get(a) < p.get(a) + 1],
       (p) => [p.get(a) < p.get(a) + 1],
@@ -70,8 +89,27 @@ void main() {
         Vector({'a': 4}, {'b': 7}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('simple pipeline late add', () async {
+      final pipem = SimplePipelineModuleLateAdd(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {'b': 4}),
+        Vector({'a': 4}, {'b': 5}),
+        Vector({'a': 4}, {'b': 6}),
+        Vector({'a': 4}, {'b': 7}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline simple', () async {
@@ -103,8 +141,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline notready', () async {
@@ -158,8 +195,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline multi', () async {
@@ -203,8 +239,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
   });
 }

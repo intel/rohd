@@ -7,7 +7,6 @@
 /// 2021 August 2
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
-
 part of values;
 
 /// Deprecated: use [LogicValue] instead.
@@ -725,6 +724,21 @@ abstract class LogicValue {
   /// [eq] will return `x`.
   LogicValue eq(dynamic other) => _doCompare(other, (a, b) => a == b);
 
+  /// Not equal-to operation.
+  ///
+  /// This is different from != operator because it returns a [LogicValue]
+  /// instead of a [bool]. It does a logical comparison of the two values,
+  /// rather than exact inequality.  For example, if one of the two values is
+  /// invalid, [neq] will return `x`.
+  LogicValue neq(dynamic other) => _doCompare(other, (a, b) => a != b);
+
+  /// Power operation.
+  ///
+  /// This will return a [LogicValue] of some input 'base' to the power of other
+  /// input [exponent]. If one of the two input values is invalid, [pow] will
+  /// return ‘x’ of input size width.
+  LogicValue pow(dynamic exponent) => _doMath(exponent, _powerOperation);
+
   /// Less-than operation.
   ///
   /// WARNING: Signed math is not fully tested.
@@ -752,6 +766,30 @@ abstract class LogicValue {
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
+
+  /// Power operation
+  ///
+  /// Both inputs [base] and [exponent] are either of type [int] or [BigInt].
+  /// Returns [base] raise to the power [exponent] of same input type else
+  /// it will throw an exception.
+  dynamic _powerOperation(dynamic base, dynamic exponent) {
+    if ((base is int) && (exponent is int)) {
+      return math.pow(base, exponent);
+    }
+    if ((base is BigInt) && (exponent is BigInt)) {
+      if (base == BigInt.one) {
+        return BigInt.one;
+      } else if (base == BigInt.zero && exponent > BigInt.zero) {
+        return BigInt.zero;
+      } else if (!exponent.isValidInt) {
+        throw InvalidTruncationException(
+            "BigInt (${exponent.bitLength} bits) won't fit in "
+            'int ($_INT_BITS bits)');
+      } else {
+        return base.pow(exponent.toInt());
+      }
+    }
+  }
 
   /// Executes comparison operations between two [LogicValue]s
   ///

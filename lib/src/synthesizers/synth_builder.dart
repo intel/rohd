@@ -10,6 +10,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A generic class which can convert a module into a generated output using
@@ -38,6 +39,10 @@ class SynthBuilder {
   /// Constructs a [SynthBuilder] based on the [top] module and
   /// using [synthesizer] for generating outputs.
   SynthBuilder(this.top, this.synthesizer) {
+    if (!top.hasBuilt) {
+      throw ModuleNotBuiltException();
+    }
+
     final modulesToParse = <Module>[top];
     for (var i = 0; i < modulesToParse.length; i++) {
       final moduleI = modulesToParse[i];

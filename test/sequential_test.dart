@@ -1,13 +1,12 @@
-/// SPDX-License-Identifier: BSD-3-Clause
-/// Copyright (C) 2021-2022 Intel Corporation
-///
-/// sequential_test.dart
-/// Unit test for Sequential
-///
-/// 2022 January 31
-/// Substantial portion of test contributed by wswongat in https://github.com/intel/rohd/issues/79
-/// Max Korbel <max.korbel@intel.com>
-///
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (C) 2021-2023 Intel Corporation
+//
+// sequential_test.dart
+// Unit test for Sequential
+//
+// 2022 January 31
+// Substantial portion of test contributed by wswongat in https://github.com/intel/rohd/issues/79
+// Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -39,7 +38,7 @@ class DelaySignal extends Module {
     }
 
     Sequential(clk, [
-      IfBlock([
+      If.block([
         Iff(en, zList),
         Else([
           out < 0,
