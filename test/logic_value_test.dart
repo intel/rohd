@@ -977,7 +977,8 @@ void main() {
     test(
         'should return random logic value with invalid bits '
         'if hasInvalidBits is true', () {
-      final lvRand = Random().nextLogicValue(width: 10, hasInvalidBits: true);
+      final lvRand =
+          Random().nextLogicValue(width: 10, includeInvalidBits: true);
 
       print(lvRand);
     });

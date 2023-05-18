@@ -31,7 +31,7 @@ extension RandLogicValue on Random {
 
   /// Generate unsigned random [LogicValue] based on [width] and [max] num.
   /// The random number can be mixed in invalid bits x and z by set
-  /// [hasInvalidBits] to `false`.
+  /// [includeInvalidBits] to `true`.
   ///
   /// Example:
   ///
@@ -42,11 +42,11 @@ extension RandLogicValue on Random {
   LogicValue nextLogicValue({
     required int width,
     int? max,
-    bool hasInvalidBits = false,
+    bool includeInvalidBits = false,
   }) {
     final bitString = StringBuffer();
 
-    if (hasInvalidBits) {
+    if (includeInvalidBits) {
       for (var i = 0; i < width; i++) {
         bitString.write(const ['1', '0', 'x', 'z'][nextInt(4)]);
       }
