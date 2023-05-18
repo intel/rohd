@@ -15,7 +15,6 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/exceptions/module/module_exceptions.dart';
 import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/config.dart';
@@ -42,21 +41,22 @@ abstract class Module {
   /// An internal list of internal-signals.
   ///
   /// Used for waveform dump efficiency.
-  final Set<Logic> _internalSignals = {};
+  final Set<Logic> _internalSignals = HashSet<Logic>();
 
   /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = {};
+  final Map<String, Logic> _inputs = HashMap<String, Logic>();
 
   /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = {};
+  final Map<String, Logic> _outputs = HashMap<String, Logic>();
 
   /// The parent [Module] of this [Module].
   ///
   /// This only gets populated after its parent [Module], if it exists, has
   /// been built.
   Module? get parent => _parent;
-  Module?
-      _parent; // a cached copy of the parent, useful for debug and efficiency
+
+  /// A cached copy of the parent, useful for debug and efficiency
+  Module? _parent;
 
   /// A map from input port names to this [Module] to corresponding [Logic]
   /// signals.
@@ -133,17 +133,17 @@ abstract class Module {
   /// Return string type definition name if validation passed
   /// else throw exception.
   ///
-  /// This validation method ensure that [definitionName] is valid if
-  /// [reserveDefinitionName] set to `true`.
-  static String? _nameValidation(
-      String? definitionName, bool reserveDefinitionName) {
-    if (reserveDefinitionName && definitionName == null) {
+  /// This validation method ensure that [name] is valid if
+  /// [reserveName] set to `true`.
+  static String? _nameValidation(String? name, bool reserveName) {
+    if (reserveName && name == null) {
       throw NullReservedNameException();
-    } else if (reserveDefinitionName &&
-        !Sanitizer.isSanitary(definitionName!)) {
+    } else if (reserveName && name!.isEmpty) {
+      throw EmptyReservedNameException();
+    } else if (reserveName && !Sanitizer.isSanitary(name!)) {
       throw InvalidReservedNameException();
     } else {
-      return definitionName;
+      return name;
     }
   }
 
@@ -181,7 +181,7 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName = name,
+      : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
         _definitionName =
             _nameValidation(definitionName, reserveDefinitionName);
 
@@ -261,120 +261,6 @@ abstract class Module {
     _hasBuilt = true;
   }
 
-  /// A mapping of purely combinational paths from each input port to all
-  /// downstream output ports.
-  ///
-  /// Each key of the returned [Map] is an [input] of this [Module].  Each
-  /// value of the [Map] is a [List] of [output]s of this [Module] which may
-  /// change combinationally (no sequential logic in-between) as a result
-  /// of the corresponding key [input] changing.
-  ///
-  /// This is the stored result from calling [getCombinationalPaths] at [build]
-  /// time.  The module should be built before calling this (or call it itself)
-  /// or else it may cache an incomplete picture.
-  Map<Logic, List<Logic>> get combinationalPaths =>
-      _combinationalPaths ??= _getCombinationalPaths();
-
-  /// Internal cache storage of [combinationalPaths].
-  Map<Logic, List<Logic>>? _combinationalPaths;
-
-  /// Returns a mapping of purely combinational paths from each input port
-  /// to all downstream output ports.
-  ///
-  /// Each key of the returned [Map] is an [input] of this [Module].  Each
-  /// value of the [Map] is a [List] of [output]s of this [Module] which may
-  /// change combinationally (no sequential logic in-between) as a result
-  /// of the corresponding key [input] changing.
-  ///
-  /// The default behavior of this function is to search through from all
-  /// inputs to all potential outputs.  If a [Module] implements custom behavior
-  /// internally (e.g. a custom gate or a cosimulated module), then it makes
-  /// sense to override this function to give an accurate picture.  If the
-  /// default behavior doesn't work (because no visible connectivity exists
-  /// inside the [Module]), then the return value will end up with all empty
-  /// [List]s in the values of the [Map].
-  ///
-  /// The result of this function is intended to be stored at [build] time, and
-  /// it should be called at [build] time. The result is primarily used for
-  /// calculating valid and complete sensitivity lists for [Combinational]
-  /// execution.
-  @protected
-  Map<Logic, List<Logic>> getCombinationalPaths() {
-    final comboPaths = <Logic, List<Logic>>{};
-    for (final inputPort in inputs.values) {
-      final comboOutputs = <Logic>[];
-      final searchList = TraverseableCollection<Logic>()..add(inputPort);
-      for (var i = 0; i < searchList.length; i++) {
-        for (final dstConnection in inputPort.dstConnections) {
-          if (dstConnection.isInput && dstConnection.parentModule != this) {
-            // this is an input port of a sub-module, jump over it
-            searchList.addAll(
-                dstConnection.parentModule!.combinationalPaths[dstConnection]!);
-          } else if (isOutput(dstConnection)) {
-            // this is an output port of this module, store it!
-            comboOutputs.add(dstConnection);
-          } else {
-            // this is a wire within this module, keep tracing
-            searchList.addAll(dstConnection.dstConnections);
-          }
-        }
-      }
-      comboPaths[inputPort] = comboOutputs;
-    }
-    return comboPaths;
-  }
-
-  /// Returns the value of [getCombinationalPaths] wrapped safely with
-  /// unmodifiable views for caching.
-  Map<Logic, List<Logic>> _getCombinationalPaths() {
-    final initialComboPaths = getCombinationalPaths();
-    return UnmodifiableMapView(
-        Map.fromEntries(inputs.values.map((inputPort) => MapEntry(
-              inputPort,
-              initialComboPaths.containsKey(inputPort)
-                  ? UnmodifiableListView(initialComboPaths[inputPort]!)
-                  : const <Logic>[],
-            ))));
-  }
-
-  /// The opposite of [combinationalPaths], where every key of the [Map] is an
-  /// output and the values are lists of inputs which could combinationally
-  /// affect that output.
-  ///
-  /// This module must be built before calling this.
-  Map<Logic, List<Logic>> get reverseCombinationalPaths =>
-      _reverseCombinationalPaths ??= _getReverseCombinationalPaths();
-
-  /// Internal storage of [reverseCombinationalPaths], cached.
-  Map<Logic, List<Logic>>? _reverseCombinationalPaths;
-
-  /// Calculates the opposite of [combinationalPaths].
-  Map<Logic, List<Logic>> _getReverseCombinationalPaths() {
-    if (!_hasBuilt) {
-      throw ModuleNotBuiltException();
-    }
-
-    assert(_reverseCombinationalPaths == null,
-        'Should not recreate if already cached result.');
-
-    final reverseComboPaths = <Logic, List<Logic>>{};
-    for (final inputPort in combinationalPaths.keys) {
-      for (final outputPort in combinationalPaths[inputPort]!) {
-        reverseComboPaths
-            .putIfAbsent(outputPort, () => <Logic>[])
-            .add(inputPort);
-      }
-    }
-
-    return UnmodifiableMapView(
-        Map.fromEntries(outputs.values.map((outputPort) => MapEntry(
-              outputPort,
-              reverseComboPaths.containsKey(outputPort)
-                  ? UnmodifiableListView(reverseComboPaths[outputPort]!)
-                  : const <Logic>[],
-            ))));
-  }
-
   /// Adds a [Module] to this as a subModule.
   Future<void> _addAndBuildModule(Module module) async {
     if (module.parent != null) {
@@ -383,9 +269,8 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
-    if (!_modules.contains(module)) {
-      _modules.add(module);
-    }
+    _modules.add(module);
+
     module._parent = this;
     await module.build();
   }
@@ -555,9 +440,7 @@ abstract class Module {
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
     if (!Sanitizer.isSanitary(name)) {
-      throw Exception(
-          'Invalid name "$name", must be legal SystemVerilog and not collide'
-          ' with any keywords.');
+      throw InvalidPortNameException(name);
     }
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');

@@ -9,6 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/conditionals/write_after_read_exception.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -40,6 +41,25 @@ class ReuseExample extends Module {
   }
 }
 
+class ReuseExampleSsa extends Module {
+  ReuseExampleSsa(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final intermediate = Logic(name: 'intermediate', width: a.width);
+
+    final inc = IncrModule(intermediate);
+
+    Combinational.ssa((s) => [
+          s(intermediate) < a,
+          s(intermediate) < inc.result,
+          s(intermediate) < inc.result,
+        ]);
+
+    b <= intermediate;
+  }
+}
+
 class DuplicateExample extends Module {
   DuplicateExample(Logic a) {
     a = addInput('a', a, width: a.width);
@@ -57,32 +77,83 @@ class DuplicateExample extends Module {
   }
 }
 
+class DuplicateExampleSsa extends Module {
+  DuplicateExampleSsa(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final intermediate = Logic(name: 'intermediate', width: a.width);
+
+    Combinational.ssa((s) => [
+          s(intermediate) < a,
+          s(intermediate) < IncrModule(s(intermediate)).result,
+          s(intermediate) < IncrModule(s(intermediate)).result,
+        ]);
+
+    b <= intermediate;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
 
-  test('module reuse should apply twice', () async {
-    final mod = ReuseExample(Logic(width: 8));
-    await mod.build();
+  group('module reuse', () {
+    test('should fail normally', () async {
+      try {
+        final mod = ReuseExample(Logic(width: 8));
+        await mod.build();
 
-    final vectors = [
-      Vector({'a': 3}, {'b': 5})
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+        final vectors = [
+          Vector({'a': 3}, {'b': 5}) // apply twice (SV behavior)
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+
+    test('should generate X with combo loop with ssa', () async {
+      final mod = ReuseExampleSsa(Logic(width: 8));
+      await mod.build();
+
+      final vectors = [
+        Vector({'a': 3}, {'b': LogicValue.x})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 
-  test('module duplication should apply twice', () async {
-    final mod = DuplicateExample(Logic(width: 8));
-    await mod.build();
-
+  group('module duplicate assignment', () {
     final vectors = [
       Vector({'a': 3}, {'b': 5})
     ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+
+    test('should fail normally', () async {
+      try {
+        final mod = DuplicateExample(Logic(width: 8));
+        await mod.build();
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+
+        fail('Expected to throw an exception!');
+      } on Exception catch (e) {
+        expect(e.runtimeType, WriteAfterReadException);
+      }
+    });
+
+    test('should apply twice with ssa', () async {
+      final mod = DuplicateExampleSsa(Logic(width: 8));
+      await mod.build();
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 }

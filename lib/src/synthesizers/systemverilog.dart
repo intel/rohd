@@ -385,17 +385,11 @@ class _SynthModuleDefinition {
             _getSynthSubModuleInstantiation(subModule);
         subModuleInstantiation.outputMapping[synthReceiver] = receiver;
 
-        for (final element in subModule.inputs.values) {
-          if (!logicsToTraverse.contains(element)) {
-            logicsToTraverse.add(element);
-          }
-        }
+        subModule.inputs.values.forEach(logicsToTraverse.add);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {
           // stop at the input to this module
-          if (!logicsToTraverse.contains(driver)) {
-            logicsToTraverse.add(driver);
-          }
+          logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
       } else if (driver == null && receiver.value.isValid) {
