@@ -1,19 +1,4 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-
-library values;
-
-import 'dart:math';
-
-import 'package:meta/meta.dart';
-import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
-
-part 'logic_value.dart';
-part 'small_logic_value.dart';
-part 'big_logic_value.dart';
-part 'filled_logic_value.dart';
-part 'random_logic_value.dart';
+part of values;
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
 extension RandLogicValue on Random {
@@ -62,7 +47,7 @@ extension RandLogicValue on Random {
       // that are still within width
 
       // 2 ^ 5 = 32 = 100000 = 1 << 5
-      // 32 - 1 = 31 =011111
+      // 32 - 1 = 31 = 011111
 
       if (width <= LogicValue._INT_BITS) {
         return LogicValue.ofInt(nextInt(1 << width), width);
