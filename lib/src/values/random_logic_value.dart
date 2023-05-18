@@ -44,9 +44,8 @@ extension RandLogicValue on Random {
     int? max,
     bool includeInvalidBits = false,
   }) {
-    final bitString = StringBuffer();
-
     if (includeInvalidBits) {
+      final bitString = StringBuffer();
       for (var i = 0; i < width; i++) {
         bitString.write(const ['1', '0', 'x', 'z'][nextInt(4)]);
       }
