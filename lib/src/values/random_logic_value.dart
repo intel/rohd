@@ -1,3 +1,13 @@
+/// Copyright (C) 2021-2022 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+/// random_logic_value.dart
+/// Random Logic Value generation extension.
+///
+/// 2023 May 18
+/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+///
+
 part of values;
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
