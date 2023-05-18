@@ -12,7 +12,7 @@ part of values;
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
 extension RandLogicValue on Random {
-  /// Generate non-negative random [BigInt] value that consists of
+  /// Generate unsigned random [BigInt] value that consists of
   /// [numBits] bits.
   ///
   /// Example:
@@ -29,7 +29,7 @@ extension RandLogicValue on Random {
     return result & ((BigInt.one << numBits) - BigInt.one);
   }
 
-  /// Generate non-negative random [LogicValue] based on [width] and [max] num.
+  /// Generate unsigned random [LogicValue] based on [width] and [max] num.
   /// The random number can be mixed in invalid bits x and z by set
   /// [hasInvalidBits] to `false`.
   ///
