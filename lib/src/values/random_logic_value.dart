@@ -14,13 +14,6 @@ part of values;
 extension RandLogicValue on Random {
   /// Generate unsigned random [BigInt] value that consists of
   /// [numBits] bits.
-  ///
-  /// Example:
-  ///
-  /// ```dart
-  /// // generate 100 bits of random BigInt
-  /// final bigInt = Random(10).nextBigInt(numBits: 100);
-  /// ```
   BigInt _nextBigInt({required int numBits}) {
     var result = BigInt.zero;
     for (var i = 0; i < numBits; i += 32) {
@@ -31,7 +24,8 @@ extension RandLogicValue on Random {
 
   /// Generate unsigned random [LogicValue] based on [width] and [max] num.
   /// The random number can be mixed in invalid bits x and z by set
-  /// [includeInvalidBits] to `true`.
+  /// [includeInvalidBits] to `true`. [max] only work when [includeInvalidBits]
+  /// is set to false.
   ///
   /// Example:
   ///
