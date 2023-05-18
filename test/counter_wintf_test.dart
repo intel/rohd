@@ -34,7 +34,6 @@ class CounterInterface extends Interface<CounterDirection> {
 
 class Counter extends Module {
   late final CounterInterface intf;
-  late bool resetRoot;
   Counter(CounterInterface intf,
       {bool useBuiltInSequentialReset = false, int resetValue = 0}) {
     this.intf = CounterInterface(intf.width)
