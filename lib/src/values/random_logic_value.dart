@@ -52,12 +52,6 @@ extension RandLogicValue on Random {
 
       return LogicValue.ofString(bitString.toString());
     } else {
-      // Generate the random value of range between min and max
-      // that are still within width
-
-      // 2 ^ 5 = 32 = 100000 = 1 << 5
-      // 32 - 1 = 31 = 011111
-
       if (width <= LogicValue._INT_BITS) {
         return LogicValue.ofInt(nextInt(1 << width), width);
       } else {
