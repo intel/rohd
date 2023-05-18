@@ -36,7 +36,7 @@ class Counter extends Module {
   late final CounterInterface intf;
   late bool resetRoot;
   Counter(CounterInterface intf,
-      {this.resetRoot = false, bool withResetVal = false}) {
+      {bool useBuiltInSequentialReset = false, int resetValue = 0}) {
     this.intf = CounterInterface(intf.width)
       ..connectIO(this, intf,
           inputTags: {CounterDirection.inward},
@@ -45,17 +45,17 @@ class Counter extends Module {
     // this should do nothing
     this.intf.connectIO(this, intf);
 
-    if (withResetVal) {
-      _buildResetValLogic();
+    final nextVal = Logic(name: 'nextVal', width: intf.width);
+    nextVal <= intf.val + 1;
+
+    if (useBuiltInSequentialReset) {
+      _buildResetValLogic(nextVal, resetValue: resetValue);
     } else {
-      _buildLogic();
+      _buildLogic(nextVal);
     }
   }
-  void _buildResetValLogic() {
-    final nextVal = Logic(name: 'nextVal', width: intf.width);
-    final resetValues = <Logic, Logic>{intf.val: Const(3, width: 8)};
-
-    nextVal <= intf.val + 1;
+  void _buildResetValLogic(Logic nextVal, {int resetValue = 0}) {
+    final resetValues = <Logic, Logic>{intf.val: Const(resetValue, width: 8)};
     Sequential(
         SimpleClockGenerator(10).clk,
         [
@@ -65,27 +65,14 @@ class Counter extends Module {
         resetValues: resetValues);
   }
 
-  void _buildLogic() {
-    final nextVal = Logic(name: 'nextVal', width: intf.width);
-
-    nextVal <= intf.val + 1;
-
-    if (resetRoot) {
-      Sequential(
-          SimpleClockGenerator(10).clk,
-          [
-            If(intf.en, then: [intf.val < nextVal])
-          ],
-          reset: intf.reset);
-    } else {
-      Sequential(SimpleClockGenerator(10).clk, [
-        If(intf.reset, then: [
-          intf.val < 0
-        ], orElse: [
-          If(intf.en, then: [intf.val < nextVal])
-        ])
-      ]);
-    }
+  void _buildLogic(Logic nextVal) {
+    Sequential(SimpleClockGenerator(10).clk, [
+      If(intf.reset, then: [
+        intf.val < 0
+      ], orElse: [
+        If(intf.en, then: [intf.val < nextVal])
+      ])
+    ]);
   }
 }
 
@@ -122,13 +109,13 @@ void main() {
     });
   });
   test('resetFlipflop from root w/o resetVal', () async {
-    final mod = Counter(CounterInterface(8), resetRoot: true);
+    final mod = Counter(CounterInterface(8), useBuiltInSequentialReset: true);
     await moduleTest(mod);
   });
 
   test('resetFlipflop from root w/ resetVal', () async {
-    final mod =
-        Counter(CounterInterface(8), resetRoot: true, withResetVal: true);
+    final mod = Counter(CounterInterface(8),
+        useBuiltInSequentialReset: true, resetValue: 3);
     await mod.build();
     final vectors = [
       Vector({'en': 0, 'reset': 1}, {}),

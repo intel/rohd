@@ -10,6 +10,7 @@
 
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
@@ -20,7 +21,9 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  late List<Conditional> conditionals;
+  List<Conditional> get conditionals =>
+      UnmodifiableListView<Conditional>(_conditionals);
+  late List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
@@ -39,7 +42,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// the corresponding value
   /// associated with the driven signal will be set to that value instead upon
   /// reset.
-  _Always(this.conditionals,
+  _Always(this._conditionals,
       {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
@@ -50,18 +53,18 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
     // This will reset the conditionals on setting the `reset` flag
     if (reset != null) {
-      conditionals = [
+      _conditionals = [
+        // If resetValue for a receiver is defined,
         If(
           reset,
+          // then use it for assigning receiver
           then: [
             ...allReceivers.map((rec) {
               final driver = resetValues?[rec] ?? 0;
               return rec < driver;
-              // If resetValue for a receiver is defined,
-              // then use it for assigning receiver
-              // else assign zero as resetValue
             })
           ],
+          // else assign zero as resetValue
           orElse: conditionals,
         ),
       ];
@@ -301,13 +304,6 @@ class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
-  /// This sets the Sequential conditions to reset
-  // ignore: overridden_fields
-  Logic? reset;
-
-  /// This sets a particular Sequential conditions receiver to resetValues
-  Map<Logic, dynamic>? resetValues = {};
-
   /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
       {Logic? reset,
@@ -317,10 +313,8 @@ class Sequential extends _Always {
             name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
-  Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {this.reset, this.resetValues, String name = 'sequential'})
-      : super(conditionals,
-            name: name, reset: reset, resetValues: resetValues) {
+  Sequential.multi(List<Logic> clks, super.conditionals,
+      {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
