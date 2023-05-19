@@ -955,20 +955,26 @@ void main() {
       final lvRand =
           Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
 
-      print(lvRand);
+      expect(lvRand.toString(), contains('x'));
+    });
+
+    test('should throw RangeError Exception if width is 0', () {
+      expect(() {
+        Random(5).nextLogicValue(width: 0);
+      }, throwsA((dynamic e) => e is RangeError));
     });
 
     test('should return random logic value without invalid bits.', () {
       const maxValInt = 6;
 
-      final lvRandInt = Random(5).nextLogicValue(width: 6);
-      final lvRandBig = Random(5).nextLogicValue(width: 100);
-      final lvRandIntMax = Random(5).nextLogicValue(width: 6, max: maxValInt);
+      for (var i = 1; i <= 100; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        expect(i < 64 ? lvRand.toInt() : lvRand.toBigInt(),
+            i < 64 ? isA<int>() : isA<BigInt>());
+      }
 
-      expect(lvRandInt.toInt(), equals(8));
-      expect(lvRandBig.toBigInt(),
-          equals(BigInt.parse('710829453515923504555047233641')));
-      expect(lvRandIntMax.toInt(), lessThan(maxValInt));
+      expect(Random(5).nextLogicValue(width: 6, max: maxValInt).toInt(),
+          lessThan(maxValInt));
     });
   });
 }

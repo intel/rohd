@@ -39,6 +39,10 @@ extension RandLogicValue on Random {
     int? max,
     bool includeInvalidBits = false,
   }) {
+    if (width == 0) {
+      throw RangeError('width size must be larger than 0');
+    }
+
     if (includeInvalidBits) {
       final bitString = StringBuffer();
       for (var i = 0; i < width; i++) {
@@ -48,8 +52,14 @@ extension RandLogicValue on Random {
       return LogicValue.ofString(bitString.toString());
     } else {
       if (width <= LogicValue._INT_BITS) {
-        return LogicValue.ofInt(nextInt(1 << width), width) %
-            (max ?? (1 << width) - 1);
+        LogicValue ranNum;
+        if (width < 32) {
+          ranNum = LogicValue.ofInt(nextInt(1 << width), width);
+        } else {
+          ranNum = LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
+        }
+
+        return ranNum % (max ?? (1 << width) - 1);
       } else {
         return LogicValue.ofBigInt(_nextBigInt(numBits: width), width);
       }
