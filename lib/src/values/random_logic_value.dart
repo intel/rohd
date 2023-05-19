@@ -30,8 +30,9 @@ extension RandLogicValue on Random {
   /// Example:
   ///
   /// ```dart
-  /// // generate 100 bits of random BigInt
-  /// final bigInt = Random(10).nextLogicValue(numBits: 100);
+  /// // generate 100 bits of random LogicValue
+  /// final
+  /// lvRand = Random().nextLogicValue(width: 100, includeInvalidBits: true);
   /// ```
   LogicValue nextLogicValue({
     required int width,

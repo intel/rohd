@@ -955,7 +955,7 @@ void main() {
         'should return random logic value with invalid bits '
         'if hasInvalidBits is true', () {
       final lvRand =
-          Random().nextLogicValue(width: 10, includeInvalidBits: true);
+          Random(10).nextLogicValue(width: 10, includeInvalidBits: true);
 
       print(lvRand);
     });
@@ -963,7 +963,7 @@ void main() {
     test(
         'should return random logic value without invalid bits '
         'if hasInvalidBits is false', () {
-      final lvRand = Random().nextLogicValue(width: 10, max: 20);
+      final lvRand = Random(10).nextLogicValue(width: 10, max: 20);
       print(lvRand);
     });
   });
