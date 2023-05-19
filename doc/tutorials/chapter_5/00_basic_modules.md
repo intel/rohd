@@ -64,21 +64,21 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
-    // constructor
-    SimpleModule(Logic input) {
-        // register input port
-        // add inputs in the constructor, passing in the Logic it is connected to
-        // it's a good idea to re-set the input parameters so you don't accidentally use the wrong one
-        input = addInput('input_1', input);
+  // constructor
+  SimpleModule(Logic input) {
+    // register input port
+    // add inputs in the constructor, passing in the Logic it is connected to
+    // it's a good idea to re-set the input parameters so you don't accidentally use the wrong one
+    input = addInput('input_1', input);
 
-        // register output port
-        // add outputs in the constructor as well
-        // you can capture the output variable to a local variable for use
-        var output = addOutput('out');
+    // register output port
+    // add outputs in the constructor as well
+    // you can capture the output variable to a local variable for use
+    var output = addOutput('out');
 
-        // now you can define your logic
-        // this example is just a passthrough from 'input' to 'output'
-        output <= input;
+    // now you can define your logic
+    // this example is just a passthrough from 'input' to 'output'
+    output <= input;
   }
 }
 
