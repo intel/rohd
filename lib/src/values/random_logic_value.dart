@@ -26,14 +26,6 @@ extension RandLogicValue on Random {
   /// The random number can be mixed in invalid bits x and z by set
   /// [includeInvalidBits] to `true`. [max] only work when [includeInvalidBits]
   /// is set to false and [width] is less than or equal to 64 bits.
-  ///
-  /// Example:
-  ///
-  /// ```dart
-  /// // generate 100 bits of random LogicValue
-  /// final
-  /// lvRand = Random().nextLogicValue(width: 100, includeInvalidBits: true);
-  /// ```
   LogicValue nextLogicValue({
     required int width,
     int? max,
