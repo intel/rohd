@@ -164,6 +164,8 @@ class Swizzle extends Module with InlineSystemVerilog {
     out.put(updatedVal);
   }
 
+  //TODO: what happens when nothing in the swizzle? this is like a 0-width thing bug
+
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != _swizzleInputs.length) {

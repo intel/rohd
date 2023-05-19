@@ -230,6 +230,8 @@ class LogicStructure implements Logic {
   Logic slice(int endIndex, int startIndex) =>
       packed.slice(endIndex, startIndex);
 
+  //TODO: don't make these operate on per-element, just pack the whole thing and do it?
+
   /// Increments each element of [elements] using [Logic.incr].
   @override
   Conditional incr(

@@ -288,7 +288,8 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       if (!noIverilog) {
-        SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
+        SimCompare.checkIverilogVector(mod, vectors,
+            buildOnly: noSvSim, dontDeleteTmpFiles: true);
       }
     }
 
@@ -405,6 +406,13 @@ void main() {
 
     group('change array dimensions around and back', () {
       test('3d', () async {
+        // final x = LogicArray([3], 8);
+        // final y = LogicArray([3], 8);
+        // //TODO: write a part-assign automation
+        // for (var i = 0; i < 2; i++) {
+        //   x.elements[i] <= y.elements[i];
+        // }
+
         final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod);
       });
