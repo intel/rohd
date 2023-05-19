@@ -15,7 +15,7 @@ In this chapter:
 
 ## What is a ROHD Module?
 
-If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD. You may wonder why we need a Module, as we have seen in previous tutorials that we can use ROHD without creating one. However, this is because we haven't delved into the details of simulation or System Verilog code generation.
+If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD.
 
 In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()`, `Simulation()` functions and etc. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
 
