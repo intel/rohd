@@ -25,7 +25,7 @@ extension RandLogicValue on Random {
   /// Generate unsigned random [LogicValue] based on [width] and [max] num.
   /// The random number can be mixed in invalid bits x and z by set
   /// [includeInvalidBits] to `true`. [max] only work when [includeInvalidBits]
-  /// is set to false.
+  /// is set to false and [width] is less than or equal to 64 bits.
   ///
   /// Example:
   ///
@@ -48,7 +48,8 @@ extension RandLogicValue on Random {
       return LogicValue.ofString(bitString.toString());
     } else {
       if (width <= LogicValue._INT_BITS) {
-        return LogicValue.ofInt(nextInt(1 << width), width) % max;
+        return LogicValue.ofInt(nextInt(1 << width), width) %
+            (max ?? (1 << width) - 1);
       } else {
         return LogicValue.ofBigInt(_nextBigInt(numBits: width), width);
       }

@@ -958,13 +958,17 @@ void main() {
       print(lvRand);
     });
 
-    test(
-        'should return random logic value within maxVal '
-        'without invalid bits.', () {
-      const maxVal = 6;
-      final lvRand = Random(5).nextLogicValue(width: 6, max: maxVal);
+    test('should return random logic value without invalid bits.', () {
+      const maxValInt = 6;
 
-      expect(lvRand.toInt(), lessThan(maxVal));
+      final lvRandInt = Random(5).nextLogicValue(width: 6);
+      final lvRandBig = Random(5).nextLogicValue(width: 100);
+      final lvRandIntMax = Random(5).nextLogicValue(width: 6, max: maxValInt);
+
+      expect(lvRandInt.toInt(), equals(8));
+      expect(lvRandBig.toBigInt(),
+          equals(BigInt.parse('710829453515923504555047233641')));
+      expect(lvRandIntMax.toInt(), lessThan(maxValInt));
     });
   });
 }
