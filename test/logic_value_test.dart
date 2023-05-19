@@ -951,20 +951,20 @@ void main() {
   });
 
   group('random value generation ', () {
-    test(
-        'should return random logic value with invalid bits '
-        'if hasInvalidBits is true', () {
+    test('should return random logic value with invalid bits.', () {
       final lvRand =
-          Random(10).nextLogicValue(width: 10, includeInvalidBits: true);
+          Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
 
       print(lvRand);
     });
 
     test(
-        'should return random logic value without invalid bits '
-        'if hasInvalidBits is false', () {
-      final lvRand = Random(10).nextLogicValue(width: 10, max: 20);
-      print(lvRand);
+        'should return random logic value within maxVal '
+        'without invalid bits.', () {
+      const maxVal = 6;
+      final lvRand = Random(5).nextLogicValue(width: 6, max: maxVal);
+
+      expect(lvRand.toInt(), lessThan(maxVal));
     });
   });
 }
