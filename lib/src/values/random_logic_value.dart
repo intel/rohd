@@ -47,7 +47,7 @@ extension RandLogicValue on Random {
       return LogicValue.ofString(bitString.toString());
     } else {
       if (width <= LogicValue._INT_BITS) {
-        return LogicValue.ofInt(nextInt(1 << width), width);
+        return LogicValue.ofInt(nextInt(1 << width), width) % max;
       } else {
         return LogicValue.ofBigInt(_nextBigInt(numBits: width), width);
       }
