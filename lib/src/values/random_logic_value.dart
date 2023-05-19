@@ -31,7 +31,7 @@ extension RandLogicValue on Random {
   ///
   /// ```dart
   /// // generate 100 bits of random BigInt
-  /// final bigInt = Random(10).nextBigInt(numBits: 100);
+  /// final bigInt = Random(10).nextLogicValue(numBits: 100);
   /// ```
   LogicValue nextLogicValue({
     required int width,

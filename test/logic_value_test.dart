@@ -952,29 +952,6 @@ void main() {
 
   group('random value generation ', () {
     test(
-        'should return random integer logic value if min and max value '
-        'is in integer', () {
-      final lvInt = Random(10).nextLogicValueInt(min: 20, max: 100);
-
-      expect(lvInt.toInt(), isA<int>());
-      expect(lvInt, isA<LogicValue>());
-    });
-
-    test('should return random BigInt value', () {
-      final bigInt = Random(10).nextBigInt(numBits: 100);
-
-      expect(bigInt, isA<BigInt>());
-      expect(bigInt.bitLength, 100);
-    });
-
-    test('should return random BigInt logic value', () {
-      final lvBigInt = Random(10).nextLogicValueBigInt(numBits: 100);
-
-      expect(lvBigInt, isA<LogicValue>());
-      expect(lvBigInt.toBigInt(), isA<BigInt>());
-      expect(lvBigInt.width, 100);
-    });
-    test(
         'should return random logic value with invalid bits '
         'if hasInvalidBits is true', () {
       final lvRand =
