@@ -1,6 +1,6 @@
 # Content
 
-- [What is ROHD Module?](#what-is-rohd-module)
+- [What is ROHD Module?](#what-is-a-rohd-module)
 - [First module (one input, one output, simple logic)](#first-module-one-input-one-output-simple-logic)
 - [Converting ROHD Module to System Verilog RTL](#converting-rohd-module-to-system-verilog-rtl)
 - [Exercise 1](#exercise-1)
@@ -13,7 +13,7 @@ In this chapter:
 
 - You will learn what the ROHD module is and the criteria and rules for creating a module. We will then implement a Full-Adder and an N-Bit Adder, building upon the exercises completed previously, using the ROHD Module.
 
-## What is ROHD Module?
+## What is a ROHD Module?
 
 If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD. You may wonder why we need a Module, as we have seen in previous tutorials that we can use ROHD without creating one. However, this is because we haven't delved into the details of simulation or System Verilog code generation.
 
