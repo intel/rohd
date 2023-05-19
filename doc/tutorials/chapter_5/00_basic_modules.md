@@ -92,7 +92,7 @@ void main() async {
 }
 ```
 
-Do note that the `build()` method returns a `Future<void>`, not just `void`. This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator. If you expect your build to consume wallclock time, make sure the Simulator is aware it needs to wait before proceeding.
+Do note that the `build()` method returns a `Future<void>`, not just `void`. This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator. The `build` should always be `await`ed, even if there's nothing known that will cause it to delay. Otherwise dart will continue executing other things instead of building first.
 
 ## Converting ROHD Module to System Verilog RTL
 
