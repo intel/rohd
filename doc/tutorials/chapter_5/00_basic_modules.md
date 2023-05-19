@@ -111,7 +111,7 @@ void main() async {
     print(simModule.generateSynth());
 
     test('should return input value.',
-          () => expect(simModule.signals.first.value.toInt(), equals(1)));
+          () => expect(simModule.out.value.toInt(), equals(1)));
 
     // Add this to test on generate system verilog code
     test(
