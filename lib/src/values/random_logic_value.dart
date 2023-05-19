@@ -11,7 +11,7 @@
 part of values;
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
-extension RandLogicValue on Random {
+extension RandLogicValue on math.Random {
   /// Generate unsigned random [BigInt] value that consists of
   /// [numBits] bits.
   BigInt _nextBigInt({required int numBits}) {
