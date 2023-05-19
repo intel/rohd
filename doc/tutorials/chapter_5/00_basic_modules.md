@@ -64,6 +64,7 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
+  Logic get out => output('out');
   // constructor
   SimpleModule(Logic input) {
     // register input port
@@ -88,7 +89,7 @@ void main() async {
   await simModule.build();
 
   test('should return input value',
-      () => expect(simModule.signals.first.value.toInt(), equals(1)));
+      () => expect(simModule.out.value.toInt(), equals(1)));
 }
 ```
 
