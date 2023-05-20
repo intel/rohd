@@ -269,6 +269,17 @@ void main() {
         );
       });
     });
+
+    group('invalid connection exceptions', () {
+      test('self-connection', () {
+        try {
+          final a = Logic();
+          a <= a;
+        } on Exception catch (e) {
+          expect(e.runtimeType, InvalidConnectionException);
+        }
+      });
+    });
   });
 
   group('simcompare', () {

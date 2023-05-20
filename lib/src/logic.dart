@@ -493,6 +493,9 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
+    if (this == other) {
+      throw InvalidConnectionException(this, other);
+    }
     _unassignable = true;
     _updateWire(other._wire);
   }
