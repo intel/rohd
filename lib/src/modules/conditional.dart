@@ -23,7 +23,9 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  final List<Conditional> conditionals;
+  List<Conditional> get conditionals =>
+      UnmodifiableListView<Conditional>(_conditionals);
+  late List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap =
@@ -34,9 +36,43 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {super.name = 'always'}) {
+  /// Executes provided [conditionals] at the appropriate time (specified by
+  /// child class).
+  ///
+  /// If [reset] is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if [resetValues] is provided then
+  /// the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset.
+  _Always(this._conditionals,
+      {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
+
+    // Get all Receivers
+    final allReceivers =
+        conditionals.map((e) => e.receivers).expand((e) => e).toList();
+
+    // This will reset the conditionals on setting the `reset` flag
+    if (reset != null) {
+      _conditionals = [
+        // If resetValue for a receiver is defined,
+        If(
+          reset,
+          // then use it for assigning receiver
+          then: [
+            ...allReceivers.map((rec) {
+              final driver = resetValues?[rec] ?? 0;
+              return rec < driver;
+            })
+          ],
+          // else assign zero as resetValue
+          orElse: conditionals,
+        ),
+      ];
+    }
+
     for (final conditional in conditionals) {
       for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
@@ -309,13 +345,15 @@ class Sequential extends _Always {
 
   /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : this.multi([clk], conditionals, name: name);
+      {Logic? reset,
+      Map<Logic, dynamic>? resetValues,
+      String name = 'sequential'})
+      : this.multi([clk], conditionals,
+            name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
-  Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : super(conditionals, name: name) {
+  Sequential.multi(List<Logic> clks, super.conditionals,
+      {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
