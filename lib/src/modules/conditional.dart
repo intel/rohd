@@ -1310,6 +1310,10 @@ class FlipFlop extends Module with CustomSystemVerilog {
   late final bool _isEnableProvided;
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
+  ///
+  /// When optional [en] is provided, an additional input will be created for
+  /// flop. If optional [en] is high or not provided, output will vary as per
+  /// input[d]. For low [en], output remains frozen irrespective of input [d]
   FlipFlop(Logic clk, Logic d, {Logic? en, super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
@@ -1324,6 +1328,9 @@ class FlipFlop extends Module with CustomSystemVerilog {
     addOutput(_qName, width: d.width);
 
     if (en != null) {
+      if (en.width != 1) {
+        throw PortWidthMismatchException(en, 1);
+      }
       _enName = Module.unpreferredName('en');
       addInput(_enName, en);
       _isEnableProvided = true;
