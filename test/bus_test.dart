@@ -271,7 +271,7 @@ void main() {
     });
 
     group('invalid connection exceptions', () {
-      test('self-connection', () {
+      test('self-connecting logic', () {
         try {
           final a = Logic();
           a <= a;
