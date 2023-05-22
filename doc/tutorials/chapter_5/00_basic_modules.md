@@ -17,8 +17,6 @@ In this chapter:
 
 If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD.
 
-In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()`, `Simulation()` functions and etc. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
-
 In ROHD, `Module` has inputs and outputs that connects them. However, there are severals rules that **MUST** be followed.
 
 1. All logic within a `Module` must consume only inputs (from the `inputs` or `addInput` methods) to the Module directly or indirectly.
