@@ -15,10 +15,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: test port is a structure with an array in it
-//TODO: test ports are components of a structure
 //TODO: check coverage
-//TODO: Test making a structure that extends LogicStructure
 //TODO: test structures in conditional assignments
 //TODO: test structures in If/Case expressions
 
