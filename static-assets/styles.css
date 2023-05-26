@@ -550,8 +550,8 @@ h1 .category {
   vertical-align: middle;
 }
 
-/* The badge under a declaration for things like "const", "read-only", etc. and for the badges inline like Null safety*/
-/* See https://github.com/dart-lang/dartdoc/blob/master/lib/src/model/feature.dart */
+/* The badge under a declaration for things like "const", "read-only", etc. and for the badges inline like sealed or interface */
+/* See https://github.com/dart-lang/dartdoc/blob/main/lib/src/model/feature.dart */
 .feature {
   display: inline-block;
   background: var(--main-bg-color);
@@ -570,6 +570,7 @@ a.feature:hover {
 
 h1 .feature {
   vertical-align: middle;
+  margin: 0 -2px 0 0;
 }
 
 .source-link {
