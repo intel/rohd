@@ -31,7 +31,22 @@ class MyStruct extends LogicStructure {
         Logic(name: 'valid'),
       );
 
-  MyStruct._(this.ready, this.valid) : super([ready, valid]);
+  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+}
+
+class MyFancyStruct extends LogicStructure {
+  final LogicArray arr;
+  final Logic bus;
+  final LogicStructure subStruct;
+
+  factory MyFancyStruct({int busWidth = 12}) => MyFancyStruct._(
+        LogicArray([3, 3], 8, name: 'arr'),
+        Logic(name: 'bus', width: busWidth),
+        MyStruct(),
+      );
+
+  MyFancyStruct._(this.arr, this.bus, this.subStruct)
+      : super([arr, bus, subStruct], name: 'myFancyStruct');
 }
 
 class ModStructPort extends Module {
@@ -46,13 +61,28 @@ class ModStructPort extends Module {
 
 class ModStructPassthrough extends Module {
   MyStruct get sOut => MyStruct()..gets(output('sOut'));
+
   ModStructPassthrough(MyStruct struct) {
     struct = MyStruct()..gets(addInput('sIn', struct, width: struct.width));
     addOutput('sOut', width: struct.width) <= struct;
   }
 }
 
+class FancyStructInverter extends Module {
+  MyFancyStruct get sOut => MyFancyStruct()..gets(output('sOut'));
+
+  FancyStructInverter(MyFancyStruct struct) {
+    struct = MyFancyStruct()
+      ..gets(addInput('sIn', struct, width: struct.width));
+    addOutput('sOut', width: struct.width) <= ~struct;
+  }
+}
+
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   group('LogicStructure construction', () {
     test('simple construction', () {
       final s = LogicStructure([
@@ -88,6 +118,28 @@ void main() {
         Vector({'sIn': 0}, {'sOut': 0}),
         Vector({'sIn': LogicValue.ofString('10')},
             {'sOut': LogicValue.ofString('10')}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('fancy struct inverter', () async {
+      final struct = MyFancyStruct();
+      final mod = FancyStructInverter(struct);
+      await mod.build();
+
+      struct.arr.elements[2].elements[1].put(0x55);
+      expect(mod.sOut.arr.elements[2].elements[1].value.toInt(), 0xaa);
+
+      struct.bus.put(0x0f0);
+      expect(mod.sOut.bus.value.toInt(), 0xf0f);
+
+      final vectors = [
+        Vector({'sIn': 0},
+            {'sOut': LogicValue.filled(struct.width, LogicValue.one)}),
+        Vector({'sIn': LogicValue.ofString('10' * (struct.width ~/ 2))},
+            {'sOut': LogicValue.ofString('01' * (struct.width ~/ 2))}),
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
