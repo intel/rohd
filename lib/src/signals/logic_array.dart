@@ -7,11 +7,7 @@
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math';
-
-import 'package:collection/collection.dart';
-import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_exceptions.dart';
+part of signals;
 
 class LogicArray extends LogicStructure {
   //TODO: calculate dimension

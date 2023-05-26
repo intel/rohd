@@ -7,15 +7,7 @@
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:collection';
-import 'dart:math';
-
-import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
-import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_exceptions.dart';
-import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd/src/utilities/synchronous_propagator.dart';
+part of signals;
 
 //TODO: how to deal with LogicStructure as an input/output?
 
@@ -461,4 +453,56 @@ class LogicStructure implements Logic {
   @override
   // ignore: deprecated_member_use_from_same_package
   int get valueInt => packed.valueInt;
+
+  /////////////////////////////////////////////
+  /////////////////////////////////////////////
+  /////////////////////////////////////////////
+
+  @override
+  Logic? get _srcConnection => throw UnsupportedError('Delegated to elements');
+
+  @override
+  set _srcConnection(Logic? srcConnection) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  bool get _unassignable => throw UnsupportedError('Delegated to elements');
+
+  @override
+  set _unassignable(bool unassignable) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  _Wire get _wire => throw UnsupportedError('Delegated to elements');
+
+  @override
+  set _wire(_Wire wire) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  void _assertConnectable(Logic other) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  void _connect(Logic other) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  Set<Logic> get _dstConnections =>
+      throw UnsupportedError('Delegated to elements');
+
+  @override
+  void _registerConnection(Logic dstConnection) {
+    throw UnsupportedError('Delegated to elements');
+  }
+
+  @override
+  void _updateWire(_Wire newWire) {
+    throw UnsupportedError('Delegated to elements');
+  }
 }
