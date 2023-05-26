@@ -48,8 +48,6 @@ class ModStructPort extends Module {
 void main() {
   group('LogicStructure construction', () {
     test('simple construction', () {
-      LogicValue.ofBigInt(BigInt.zero, 128) +
-          (LogicValue.ofBigInt(BigInt.zero, 128));
       final s = LogicStructure([
         Logic(),
         Logic(),
@@ -64,7 +62,7 @@ void main() {
       final struct = MyStruct();
       final mod = ModStructPort(struct);
       await mod.build();
-      print(mod.generateSynth());
+      print(mod.generateSynth()); //TODO
     });
   });
 }

@@ -207,15 +207,20 @@ class ConstantAssignmentArrayModule extends Module {
 
   ConstantAssignmentArrayModule(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
-        dimensions: [3, 3, 3, 3], numDimensionsUnpacked: 2, elementWidth: 8);
+        dimensions: [3, 3, 3, 3],
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+        elementWidth: 8);
 
     addOutputArray('laOut',
         dimensions: laIn.dimensions,
         numDimensionsUnpacked: laIn.numDimensionsUnpacked,
         elementWidth: laIn.elementWidth);
 
-    laOut.elements[1] <= Const(1, width: 3 * 3 * 3 * 8, fill: true);
-    laOut.elements[2].elements[1] <= Const(0, width: 3 * 3 * 8);
+    laOut.elements[1] <=
+        Const([for (var i = 0; i < 3 * 3 * 3; i++) LogicValue.ofInt(i, 8)]
+            .rswizzle());
+    laOut.elements[2].elements[1] <=
+        (Logic(width: 3 * 3 * 8)..gets(Const(0, width: 3 * 3 * 8)));
     laOut.elements[2].elements[2].elements[1] <=
         Const(1, width: 3 * 8, fill: true);
     laOut.elements[2].elements[2].elements[2].elements[1] <=
@@ -517,37 +522,52 @@ void main() {
     });
   });
 
-  test('array constant assignments', () async {
-    //TODO: test constant assignments (to part and all of array)
-    final mod = ConstantAssignmentArrayModule(
-        LogicArray([3, 3, 3, 3], 8, numDimensionsUnpacked: 2));
-    await mod.build();
+  group('array constant assignments', () {
+    Future<void> test_array_constant_assignments(
+        {required int numDimensionsUnpacked, bool doSvSim = true}) async {
+      final mod = ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 8,
+          numDimensionsUnpacked: numDimensionsUnpacked));
+      await mod.build();
 
-    final a = <LogicValue>[];
-    for (var i = 0; i < 3; i++) {
-      for (var j = 0; j < 3; j++) {
-        for (var k = 0; k < 3; k++) {
-          for (var l = 0; l < 3; l++) {
-            if (i == 1) {
-              a.add(LogicValue.filled(8, LogicValue.one));
-            } else if (i == 2 && j == 1) {
-              a.add(LogicValue.filled(8, LogicValue.zero));
-            } else if (i == 2 && j == 2 && k == 1) {
-              a.add(LogicValue.filled(8, LogicValue.one));
-            } else if (i == 2 && j == 2 && k == 2 && l == 1) {
-              a.add(LogicValue.filled(8, LogicValue.zero));
-            } else {
-              a.add(LogicValue.filled(8, LogicValue.z));
+      final a = <LogicValue>[];
+      var iIdx = 0;
+      for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+          for (var k = 0; k < 3; k++) {
+            for (var l = 0; l < 3; l++) {
+              if (i == 1) {
+                a.add(LogicValue.ofInt(iIdx, 8));
+                iIdx++;
+              } else if (i == 2 && j == 1) {
+                a.add(LogicValue.filled(8, LogicValue.zero));
+              } else if (i == 2 && j == 2 && k == 1) {
+                a.add(LogicValue.filled(8, LogicValue.one));
+              } else if (i == 2 && j == 2 && k == 2 && l == 1) {
+                a.add(LogicValue.filled(8, LogicValue.zero));
+              } else {
+                a.add(LogicValue.filled(8, LogicValue.z));
+              }
             }
           }
         }
       }
-    }
-    final vectors = [
-      Vector({'laIn': 0}, {'laOut': a.rswizzle()})
-    ];
+      final vectors = [
+        Vector({'laIn': 0}, {'laOut': a.rswizzle()})
+      ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors,
+          dontDeleteTmpFiles: true, buildOnly: !doSvSim);
+    }
+
+    test('with packed only', () async {
+      await test_array_constant_assignments(numDimensionsUnpacked: 0);
+    });
+
+    test('with unpacked also', () async {
+      // unpacked array assignment not fully supported in iverilog
+      await test_array_constant_assignments(
+          numDimensionsUnpacked: 2, doSvSim: false);
+    });
   });
 }

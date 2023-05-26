@@ -374,6 +374,7 @@ class _SynthModuleDefinition {
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
       if (receiver is LogicArray) {
+        //TODO: should this be structure instead of array? maybe not?
         //TODO: is this right?
         logicsToTraverse
           // ..addAll(receiver.srcConnections)
@@ -558,8 +559,9 @@ class _SynthModuleDefinition {
           } else {
             reducedAssignments.add(assignment);
           }
-        } else if (dst.renameable) {
+        } else if (dst.renameable && Module.isUnpreferred(dst.name)) {
           // src is a constant, feed that string directly in
+          // but only if this isn't a preferred signal (e.g. bus subset)
           dst.mergeConst(assignment.srcName());
         } else {
           // nothing can be done here, keep it as-is

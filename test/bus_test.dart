@@ -153,6 +153,14 @@ class BusTestModule extends Module {
   }
 }
 
+class ConstBusModule extends Module {
+  ConstBusModule(int c, {required bool subset}) {
+    final outWidth = subset ? 8 : 16;
+    addOutput('const_subset', width: outWidth) <=
+        Const(c, width: 16).getRange(0, outWidth);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -274,6 +282,33 @@ void main() {
   });
 
   group('simcompare', () {
+    group('const sv gen', () {
+      test('Subset of a const', () async {
+        final mod = ConstBusModule(0xabcd, subset: true);
+        await mod.build();
+        final vectors = [
+          Vector({}, {'const_subset': 0xcd}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+
+      test('Assignment of a const', () async {
+        final mod = ConstBusModule(0xabcd, subset: false);
+        await mod.build();
+        final vectors = [
+          Vector({}, {'const_subset': 0xabcd}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+
+        final sv = mod.generateSynth();
+        expect(sv.contains("assign const_subset = 16'habcd;"), true);
+      });
+    });
+
     test('NotGate bus', () async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
