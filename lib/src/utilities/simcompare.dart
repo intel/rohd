@@ -72,7 +72,8 @@ class Vector {
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
-        final fullVal = LogicValue.of(inputValues[signalName]);
+        final fullVal =
+            LogicValue.of(inputValues[signalName], width: signal.width);
         for (final leaf in signal.leafElements) {
           final subVal = fullVal.getRange(index, index + leaf.width);
           arrAssigns.writeln('${leaf.structureName} = $subVal;');

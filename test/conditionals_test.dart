@@ -366,7 +366,7 @@ class MultipleConditionalModule extends Module {
     b = addInput('b', b);
     final c = addOutput('c');
 
-    final Conditional condOne = c < 1;
+    final condOne = c < 1;
 
     Combinational([
       If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])

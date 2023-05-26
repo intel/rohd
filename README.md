@@ -486,7 +486,7 @@ Combinational([
       c < 0,
       d < 1,
     ],
-    conditionalType: ConditionalType.Unique
+    conditionalType: ConditionalType.unique
   ),
   CaseZ([b,a].swizzle(),[
       CaseItem(Const(LogicValue.ofString('z1')), [
@@ -495,7 +495,7 @@ Combinational([
     ], defaultItem: [
       e < 0,
     ],
-    conditionalType: ConditionalType.Priority
+    conditionalType: ConditionalType.priority
   )
 ]);
 ```

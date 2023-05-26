@@ -28,13 +28,13 @@ class SimpleLAPassthrough extends Module {
             elementWidth: laIn.elementWidth,
             numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
         laIn;
-
-    //TODO: add some more interesting logic
   }
 }
 
 class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   PackAndUnpackPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
@@ -55,7 +55,9 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
 
 class PackAndUnpackWithArraysPassthrough extends Module
     implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   PackAndUnpackWithArraysPassthrough(LogicArray laIn,
       {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
@@ -84,7 +86,9 @@ class PackAndUnpackWithArraysPassthrough extends Module
 }
 
 class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   RearrangeArraysPassthrough(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
@@ -107,7 +111,9 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
 }
 
 class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   ArrayNameConflicts(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
@@ -142,7 +148,9 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
 }
 
 class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   SimpleArraysAndHierarchy(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
@@ -160,7 +168,9 @@ class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
 }
 
 class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
+  @override
   Logic get laOut => output('laOut');
+
   FancyArraysAndHierarchy(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
@@ -192,7 +202,27 @@ class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
   }
 }
 
-//TODO: test constant assignments (to part and all of array)
+class ConstantAssignmentArrayModule extends Module {
+  Logic get laOut => output('laOut');
+
+  ConstantAssignmentArrayModule(LogicArray laIn) {
+    laIn = addInputArray('laIn', laIn,
+        dimensions: [3, 3, 3, 3], numDimensionsUnpacked: 2, elementWidth: 8);
+
+    addOutputArray('laOut',
+        dimensions: laIn.dimensions,
+        numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+        elementWidth: laIn.elementWidth);
+
+    laOut.elements[1] <= Const(1, width: 3 * 3 * 3 * 8, fill: true);
+    laOut.elements[2].elements[1] <= Const(0, width: 3 * 3 * 8);
+    laOut.elements[2].elements[2].elements[1] <=
+        Const(1, width: 3 * 8, fill: true);
+    laOut.elements[2].elements[2].elements[2].elements[1] <=
+        Const(0, width: 8, fill: true);
+  }
+}
+
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
 //TODO: test passing Logic into addInput/OutputArray works
@@ -220,6 +250,7 @@ void main() {
       expect(arr.elements.isEmpty, true);
       expect(arr.elementWidth, 0);
     });
+
     test('single-dim array', () {
       final dim = [5];
       const w = 16;
@@ -234,6 +265,7 @@ void main() {
       expect(arr.width, w * dim[0]);
       expect(arr.elementWidth, w);
     });
+
     test('many-dim array', () {
       final dim = [5, 8, 3];
       const w = 32;
@@ -258,6 +290,7 @@ void main() {
           true);
       expect(arr.elementWidth, w);
     });
+
     test('no dim exception', () {
       //TODO
     });
@@ -482,5 +515,39 @@ void main() {
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
       });
     });
+  });
+
+  test('array constant assignments', () async {
+    //TODO: test constant assignments (to part and all of array)
+    final mod = ConstantAssignmentArrayModule(
+        LogicArray([3, 3, 3, 3], 8, numDimensionsUnpacked: 2));
+    await mod.build();
+
+    final a = <LogicValue>[];
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        for (var k = 0; k < 3; k++) {
+          for (var l = 0; l < 3; l++) {
+            if (i == 1) {
+              a.add(LogicValue.filled(8, LogicValue.one));
+            } else if (i == 2 && j == 1) {
+              a.add(LogicValue.filled(8, LogicValue.zero));
+            } else if (i == 2 && j == 2 && k == 1) {
+              a.add(LogicValue.filled(8, LogicValue.one));
+            } else if (i == 2 && j == 2 && k == 2 && l == 1) {
+              a.add(LogicValue.filled(8, LogicValue.zero));
+            } else {
+              a.add(LogicValue.filled(8, LogicValue.z));
+            }
+          }
+        }
+      }
+    }
+    final vectors = [
+      Vector({'laIn': 0}, {'laOut': a.rswizzle()})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 }

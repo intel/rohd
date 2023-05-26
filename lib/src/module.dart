@@ -496,13 +496,17 @@ abstract class Module {
 
     final listEq = const ListEquality<int>().equals;
 
-    //TODO: do we care if dimensions match or just width here?
+    //TODO: do we care if dimensions match or just width here? if so, test!
+    // think of consistency: logic ports can accept and flatten arrays, so why
+    // not let array ports re-shuffle logic?  then people can add their own
+    // validation if necessary
     if (!listEq(x.dimensions, dimensions)) {
       //TODO
     }
     if (x.elementWidth != elementWidth) {
       //TODO
     }
+    //TODO: also check on the num dimensions unpacked!
 
     final inArr = LogicArray(dimensions, elementWidth,
         name: name, numDimensionsUnpacked: numDimensionsUnpacked)

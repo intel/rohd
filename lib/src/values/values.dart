@@ -6,7 +6,6 @@ library values;
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';
-import 'package:rohd/src/exceptions/logic_value/logic_value_exceptions.dart';
 
 part 'logic_value.dart';
 part 'small_logic_value.dart';

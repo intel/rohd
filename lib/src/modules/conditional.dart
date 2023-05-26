@@ -644,6 +644,9 @@ abstract class Conditional {
 
 /// Represents a group of [Conditional]s to be executed.
 class ConditionalGroup extends Conditional {
+  //TODO: Tests for conditional groups
+  //TODO: add an ability to add comments to these groups
+
   final List<Conditional> conditionals;
   ConditionalGroup(this.conditionals);
 
