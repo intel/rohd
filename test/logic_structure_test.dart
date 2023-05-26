@@ -15,7 +15,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: test port is a structure
 //TODO: test port is a structure with an array in it
 //TODO: test ports are components of a structure
 //TODO: check coverage
@@ -45,6 +44,14 @@ class ModStructPort extends Module {
   }
 }
 
+class ModStructPassthrough extends Module {
+  MyStruct get sOut => MyStruct()..gets(output('sOut'));
+  ModStructPassthrough(MyStruct struct) {
+    struct = MyStruct()..gets(addInput('sIn', struct, width: struct.width));
+    addOutput('sOut', width: struct.width) <= struct;
+  }
+}
+
 void main() {
   group('LogicStructure construction', () {
     test('simple construction', () {
@@ -62,7 +69,29 @@ void main() {
       final struct = MyStruct();
       final mod = ModStructPort(struct);
       await mod.build();
-      print(mod.generateSynth()); //TODO
+
+      final vectors = [
+        Vector({'ready': 0}, {'valid': 0}),
+        Vector({'ready': 1}, {'valid': 1}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('simple passthrough struct', () async {
+      final struct = MyStruct();
+      final mod = ModStructPassthrough(struct);
+      await mod.build();
+
+      final vectors = [
+        Vector({'sIn': 0}, {'sOut': 0}),
+        Vector({'sIn': LogicValue.ofString('10')},
+            {'sOut': LogicValue.ofString('10')}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
     });
   });
 }
