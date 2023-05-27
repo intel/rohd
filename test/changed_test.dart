@@ -114,6 +114,83 @@ void main() {
 
     expect(qHadPosedge, equals(true));
   });
+  test('injection triggers flop with enable logicvalue 1', () async {
+    final baseClk = SimpleClockGenerator(10).clk;
+
+    final clk = Logic();
+    final d = Logic();
+    final en = Logic();
+    final q = FlipFlop(clk, d, en: en).q;
+
+    var qHadPosedge = false;
+
+    Simulator.setMaxSimTime(100);
+
+    unawaited(q.nextPosedge.then((value) {
+      qHadPosedge = true;
+    }));
+
+    unawaited(Simulator.run());
+
+    await baseClk.nextPosedge;
+    en.inject(1);
+    clk.inject(0);
+    d.inject(0);
+    await baseClk.nextPosedge;
+    clk.inject(1);
+    await baseClk.nextPosedge;
+    expect(q.value, equals(LogicValue.zero));
+    en.inject(1);
+    clk.inject(0);
+    d.inject(1);
+    await baseClk.nextPosedge;
+    clk.inject(1);
+    await baseClk.nextPosedge;
+    expect(q.value, equals(LogicValue.one));
+
+    await Simulator.simulationEnded;
+
+    expect(qHadPosedge, equals(true));
+  });
+
+  test('injection triggers flop with enable', () async {
+    final baseClk = SimpleClockGenerator(10).clk;
+
+    final clk = Logic();
+    final d = Logic();
+    final en = Logic();
+    final q = FlipFlop(clk, d, en: en).q;
+
+    var qHadPosedge = false;
+
+    Simulator.setMaxSimTime(100);
+
+    unawaited(q.nextPosedge.then((value) {
+      qHadPosedge = true;
+    }));
+
+    unawaited(Simulator.run());
+
+    await baseClk.nextPosedge;
+    en.inject(1);
+    clk.inject(0);
+    d.inject(0);
+    await baseClk.nextPosedge;
+    clk.inject(1);
+    await baseClk.nextPosedge;
+    expect(q.value, equals(LogicValue.zero));
+    en.inject(0);
+    clk.inject(0);
+    d.inject(1);
+    await baseClk.nextPosedge;
+    clk.inject(1);
+    await baseClk.nextPosedge;
+    expect(q.value, equals(LogicValue.zero));
+
+    await Simulator.simulationEnded;
+
+    expect(qHadPosedge, equals(false));
+  });
 
   test('reconnected signal still hits changed events', () async {
     final a = Logic(name: 'a');
