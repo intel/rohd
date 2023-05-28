@@ -122,84 +122,6 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   }
 }
 
-/// A generic one-input bitwise gate [Module].
-///
-/// It always takes one input and has one output. Output port have the
-/// same width as of input.
-abstract class _OneInputBitwiseGate extends Module with InlineSystemVerilog {
-  /// Name for a  input port of this module.
-  late final String _inName;
-
-  /// Name for the output port of this module.
-  late final String _outName;
-
-  /// An input to this gate.
-  late final Logic _in = input(_inName);
-
-  /// The output of this gate.
-  late final Logic out = output(_outName);
-
-  /// The output of this gate.
-  ///
-  /// Deprecated: use [out] instead.
-  @Deprecated('Use `out` instead.')
-  Logic get y => out;
-
-  /// The functional operation to perform for this gate.
-  final LogicValue Function(LogicValue in_) _op;
-
-  /// The `String` representing the operation to perform in generated code.
-  final String _opStr;
-
-  /// Constructs a one-input bitwise gate for an abitrary custom functional
-  /// implementation.
-  ///
-  /// The function [_op] is executed as the custom functional behavior.  When
-  /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as a
-  /// String of one input signal names (e.g. if [_opStr] was "clog2",
-  /// generated SystemVerilog may look like "$clog2(a)").
-  _OneInputBitwiseGate(this._op, this._opStr, Logic in_,
-      {String name = 'gate3'})
-      : super(name: name) {
-    _inName = Module.unpreferredName('in_${in_.name}');
-    _outName = Module.unpreferredName('${name}_${in_.name}');
-
-    addInput(_inName, in_, width: in_.width);
-    addOutput(_outName, width: in_.width);
-
-    _setup();
-  }
-
-  /// Performs setup steps for custom functional behavior.
-  void _setup() {
-    _execute(); // for initial values
-    _in.glitch.listen((args) {
-      _execute();
-    });
-  }
-
-  /// Executes the functional behavior of this gate.
-  void _execute() {
-    dynamic toPut;
-    try {
-      toPut = _op(_in.value);
-    } on Exception {
-      // in case of things like divide by 0 for utility functions
-      toPut = LogicValue.x;
-    }
-    out.put(toPut);
-  }
-
-  @override
-  String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('Gate has exactly one input.');
-    }
-    final in_ = inputs[_inName]!;
-    return '\$$_opStr($in_)';
-  }
-}
-
 /// A generic two-input bitwise gate [Module].
 ///
 /// It always takes two inputs and has one output.  All ports have the
@@ -609,13 +531,6 @@ class GreaterThanOrEqual extends _TwoInputComparisonGate {
   GreaterThanOrEqual(Logic in0, dynamic in1,
       {String name = 'greaterThanOrEqual'})
       : super((a, b) => a >= b, '>=', in0, in1, name: name);
-}
-
-/// A single input clog2 module
-class Clog2Unary extends _OneInputBitwiseGate {
-  /// Calculates the ceil of log base 2 of [in_].
-  Clog2Unary(Logic in_, {String name = 'uclog2'})
-      : super((a) => a.clog2(), 'clog2', in_, name: name);
 }
 
 /// A unary AND gate.

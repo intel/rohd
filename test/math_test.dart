@@ -69,14 +69,6 @@ class MathTestModule extends Module {
   }
 }
 
-class UnaryMathTestModule extends Module {
-  UnaryMathTestModule(Logic a) : super(name: 'gatetestmodule') {
-    a = addInput('a', a, width: a.width);
-    final aClog2 = addOutput('a_ceil_log2', width: a.width);
-    aClog2 <= a.clog2();
-  }
-}
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -181,28 +173,6 @@ void main() {
         Vector({'a': 0xf, 'b': 0}, {'a_sra_b': 0xf}),
         Vector({'a': 0xfe, 'b': 2}, {'a_sra_b': 0xff}),
         Vector({'a': bin('11000000')}, {'a_sra_const': bin('11111110')}),
-      ]);
-    });
-  });
-
-  group('simcompare for unary math', () {
-    Future<void> runMathVectors(List<Vector> vectors) async {
-      final gtm = UnaryMathTestModule(Logic(width: 64));
-      await gtm.build();
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    }
-
-    test('clog2', () async {
-      await runMathVectors([
-        Vector({'a': 0}, {'a_ceil_log2': 0}),
-        Vector({'a': 1}, {'a_ceil_log2': 0}),
-        Vector({'a': 2}, {'a_ceil_log2': 1}),
-        Vector({'a': 3}, {'a_ceil_log2': 2}),
-        Vector({'a': 16}, {'a_ceil_log2': 4}),
-        Vector({'a': 17}, {'a_ceil_log2': 5}),
-        Vector({'a': -1 >>> 1}, {'a_ceil_log2': 63}),
       ]);
     });
   });
