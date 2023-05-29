@@ -25,17 +25,22 @@ extension RandLogicValue on math.Random {
   /// Generate unsigned random [LogicValue] based on [width] and [max] num.
   /// The random number can be mixed in invalid bits x and z by set
   /// [includeInvalidBits] to `true`. [max] only work when [includeInvalidBits]
-  /// is set to false and [width] is less than or equal to 64 bits.
+  /// is set to false.
   LogicValue nextLogicValue({
     required int width,
-    int? max,
+    LogicValue? max,
     bool includeInvalidBits = false,
   }) {
     if (width == 0) {
-      throw RangeError('width size must be larger than 0');
+      throw RangeError('width size must be larger than 0.');
     }
 
     if (includeInvalidBits) {
+      if (max != null) {
+        throw Exception(
+            'max does not work with invalid bits random number generation.');
+      }
+
       final bitString = StringBuffer();
       for (var i = 0; i < width; i++) {
         bitString.write(const ['1', '0', 'x', 'z'][nextInt(4)]);
@@ -51,9 +56,23 @@ extension RandLogicValue on math.Random {
           ranNum = LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
         }
 
-        return ranNum % (max ?? (1 << width) - 1);
+        return LogicValue.ofInt(
+            ranNum.toInt() % (max == null ? (1 << width) - 1 : max.toInt()),
+            width);
       } else {
-        return LogicValue.ofBigInt(_nextBigInt(numBits: width), width);
+        var ranNum = _nextBigInt(numBits: width);
+
+        if (max == null || ranNum.bitLength < max.width) {
+          return LogicValue.ofBigInt(ranNum, width);
+        } else {
+          final minWidth =
+              max.width < ranNum.bitLength ? max.width : ranNum.bitLength;
+
+          ranNum = (ranNum & ((BigInt.one << minWidth) - BigInt.one)) %
+              max.toBigInt();
+
+          return LogicValue.ofBigInt(ranNum, width);
+        }
       }
     }
   }

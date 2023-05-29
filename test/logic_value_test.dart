@@ -1039,17 +1039,41 @@ void main() {
       }, throwsA((dynamic e) => e is RangeError));
     });
 
+    test(
+        'should throw exception if max is set when generate random num with'
+        ' invalid bits.', () {
+      expect(
+          () => Random(5).nextLogicValue(
+              width: 10,
+              includeInvalidBits: true,
+              max: LogicValue.ofInt(10, 10)),
+          throwsA(isA<Exception>()));
+    });
+
     test('should return random logic value without invalid bits.', () {
-      const maxValInt = 6;
+      final maxValInt = LogicValue.ofInt(8888, 10);
 
-      for (var i = 1; i <= 100; i++) {
+      for (var i = 1; i <= 64; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
-        expect(i < 64 ? lvRand.toInt() : lvRand.toBigInt(),
-            i < 64 ? isA<int>() : isA<BigInt>());
-      }
+        final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValInt);
 
-      expect(Random(5).nextLogicValue(width: 6, max: maxValInt).toInt(),
-          lessThan(maxValInt));
+        expect(lvRand.toInt(), isA<int>());
+        expect(lvRandMax.toInt(), lessThan(maxValInt.toInt()));
+      }
+    });
+
+    test('should return random logic value with width greater than 64.', () {
+      final maxValBigInt = BigInt.parse('1792892660056445836299');
+      final maxValBigIntlv =
+          LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
+
+      for (var i = 65; i <= 100; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        final lvRandMax =
+            Random(5).nextLogicValue(width: i, max: maxValBigIntlv);
+        expect(lvRand.toBigInt(), isA<BigInt>());
+        expect(lvRandMax.toBigInt(), lessThan(maxValBigIntlv.toBigInt()));
+      }
     });
   });
 }
