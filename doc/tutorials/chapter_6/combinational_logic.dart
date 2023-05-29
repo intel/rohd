@@ -116,8 +116,8 @@ void main() async {
     });
 
     test(
-        'should return true if result sum and cout similar to truth table when using '
-        'Case as conditionals.', () async {
+        'should return true if result sum and cout similar to truth table '
+        'when using Case as conditionals.', () async {
       final a = Logic(name: 'a');
       final b = Logic(name: 'b');
       final cIn = Logic(name: 'carry_in');
