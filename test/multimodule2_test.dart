@@ -15,30 +15,50 @@ import 'package:test/test.dart';
 
 class Doublesync extends Module {
   Logic get dso => output('dso');
-  Doublesync(Logic clk, Logic dds) : super(name: 'doublesync') {
+  Doublesync(Logic clk, Logic dds, {Logic? en}) : super(name: 'doublesync') {
     clk = addInput('clk', clk);
     dds = addInput('dds', dds, width: dds.width);
+
     addOutput('dso', width: dds.width);
 
-    dso <= FlipFlop(clk, FlipFlop(clk, dds, name: 'innerflop').q).q;
+    if (en != null) {
+      en = addInput('en', en, width: en.width);
+
+      dso <= FlipFlop(clk, FlipFlop(clk, dds, en: en, name: 'innerflop').q).q;
+    } else {
+      dso <= FlipFlop(clk, FlipFlop(clk, dds, name: 'innerflop').q).q;
+    }
   }
 }
 
 class DSWrap extends Module {
   Logic get sigSyncWrap => output('sig_sync_wrap');
-  DSWrap(Logic clk, Logic sig) : super(name: 'dswrap') {
+  DSWrap(Logic clk, Logic sig, {Logic? en}) : super(name: 'dswrap') {
     sig = addInput('sig', sig);
     clk = addInput('clk', clk);
     addOutput('sig_sync_wrap');
-    sigSyncWrap <= Doublesync(clk, sig).dso;
+
+    if (en != null) {
+      en = addInput('en', en);
+
+      sigSyncWrap <= Doublesync(clk, sig, en: en).dso;
+    } else {
+      sigSyncWrap <= Doublesync(clk, sig).dso;
+    }
   }
 }
 
 class TopModule extends Module {
-  TopModule(Logic sig) : super(name: 'top') {
+  TopModule(Logic sig, {Logic? en}) : super(name: 'top') {
     sig = addInput('sig', sig);
     final sigSync = addOutput('sig_sync');
-    sigSync <= DSWrap(SimpleClockGenerator(10).clk, sig).sigSyncWrap;
+    if (en != null) {
+      en = addInput('en', en);
+
+      sigSync <= DSWrap(SimpleClockGenerator(10).clk, sig, en: en).sigSyncWrap;
+    } else {
+      sigSync <= DSWrap(SimpleClockGenerator(10).clk, sig).sigSyncWrap;
+    }
   }
 }
 
@@ -59,6 +79,31 @@ void main() {
         Vector({'sig': 1}, {'sig_sync': 0}),
         Vector({'sig': 1}, {'sig_sync': 1}),
         Vector({'sig': 1}, {'sig_sync': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(ftm, vectors);
+      final simResult = SimCompare.iverilogVector(ftm, vectors);
+      expect(simResult, equals(true));
+    });
+    test('multimodules2 with enable', () async {
+      final ftm = TopModule(Logic(), en: Logic());
+      await ftm.build();
+      final vectors = [
+        Vector({'sig': 0, 'en': 1}, {}),
+        Vector({'sig': 0, 'en': 1}, {}),
+        Vector({'sig': 0, 'en': 1}, {}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 0}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 0}),
+        Vector({'sig': 0, 'en': 0}, {'sig_sync': 1}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 1}),
+        Vector({'sig': 0, 'en': 1}, {'sig_sync': 1}),
+        Vector({'sig': 0, 'en': 0}, {'sig_sync': 1}),
+        Vector({'sig': 1, 'en': 0}, {'sig_sync': 0}),
+        Vector({'sig': 1, 'en': 0}, {'sig_sync': 0}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 0}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 0}),
+        Vector({'sig': 0, 'en': 1}, {'sig_sync': 1}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 1}),
+        Vector({'sig': 1, 'en': 1}, {'sig_sync': 0}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       final simResult = SimCompare.iverilogVector(ftm, vectors);

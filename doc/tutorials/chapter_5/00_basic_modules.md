@@ -1,6 +1,6 @@
 # Content
 
-- [What is ROHD Module?](#what-is-rohd-module)
+- [What is ROHD Module?](#what-is-a-rohd-module)
 - [First module (one input, one output, simple logic)](#first-module-one-input-one-output-simple-logic)
 - [Converting ROHD Module to System Verilog RTL](#converting-rohd-module-to-system-verilog-rtl)
 - [Exercise 1](#exercise-1)
@@ -13,11 +13,9 @@ In this chapter:
 
 - You will learn what the ROHD module is and the criteria and rules for creating a module. We will then implement a Full-Adder and an N-Bit Adder, building upon the exercises completed previously, using the ROHD Module.
 
-## What is ROHD Module?
+## What is a ROHD Module?
 
-If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD. You may wonder why we need a Module, as we have seen in previous tutorials that we can use ROHD without creating one. However, this is because we haven't delved into the details of simulation or System Verilog code generation.
-
-In a typical ROHD framework, you will need a Module in order to unlock the capabilities of the `generateSynth()`, `Simulation()` functions and etc. Therefore, it is important to learn about the ROHD module in order to increase the flexibility of hardware design. We will be using the `.build()` function extensively in later sequential circuits.
+If you have prior experience with System Verilog, you may already be familiar with the concept of a `Module`, as it is similar to what we are referring to in ROHD.
 
 In ROHD, `Module` has inputs and outputs that connects them. However, there are severals rules that **MUST** be followed.
 
@@ -64,21 +62,22 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SimpleModule extends Module {
-    // constructor
-    SimpleModule(Logic input) {
-        // register input port
-        // add inputs in the constructor, passing in the Logic it is connected to
-        // it's a good idea to re-set the input parameters so you don't accidentally use the wrong one
-        input = addInput('input_1', input);
+  Logic get out => output('out');
+  // constructor
+  SimpleModule(Logic input) {
+    // register input port
+    // add inputs in the constructor, passing in the Logic it is connected to
+    // it's a good idea to re-set the input parameters so you don't accidentally use the wrong one
+    input = addInput('input_1', input);
 
-        // register output port
-        // add outputs in the constructor as well
-        // you can capture the output variable to a local variable for use
-        var output = addOutput('out');
+    // register output port
+    // add outputs in the constructor as well
+    // you can capture the output variable to a local variable for use
+    var output = addOutput('out');
 
-        // now you can define your logic
-        // this example is just a passthrough from 'input' to 'output'
-        output <= input;
+    // now you can define your logic
+    // this example is just a passthrough from 'input' to 'output'
+    output <= input;
   }
 }
 
@@ -88,11 +87,11 @@ void main() async {
   await simModule.build();
 
   test('should return input value',
-      () => expect(simModule.signals.first.value.toInt(), equals(1)));
+      () => expect(simModule.out.value.toInt(), equals(1)));
 }
 ```
 
-Do note that the `build()` method returns a `Future<void>`, not just `void`. This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator. If you expect your build to consume wallclock time, make sure the Simulator is aware it needs to wait before proceeding.
+Do note that the `build()` method returns a `Future<void>`, not just `void`. This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator. The `build` should always be `await`ed, even if there's nothing known that will cause it to delay. Otherwise dart will continue executing other things instead of building first.
 
 ## Converting ROHD Module to System Verilog RTL
 
@@ -110,7 +109,7 @@ void main() async {
     print(simModule.generateSynth());
 
     test('should return input value.',
-          () => expect(simModule.signals.first.value.toInt(), equals(1)));
+          () => expect(simModule.out.value.toInt(), equals(1)));
 
     // Add this to test on generate system verilog code
     test(
