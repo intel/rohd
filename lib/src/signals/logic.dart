@@ -72,9 +72,6 @@ class Logic {
   Logic? get srcConnection => _srcConnection;
   Logic? _srcConnection;
 
-  Iterable<Logic> get srcConnections =>
-      [if (srcConnection != null) srcConnection!];
-
   /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
   late final Iterable<Logic> dstConnections =
       UnmodifiableListView(_dstConnections);
@@ -127,8 +124,9 @@ class Logic {
 
   /// The [Module] that this [Logic] exists within.
   ///
-  /// This only gets populated after its parent [Module], if it exists,
-  /// has been built.
+  /// For internal signals, this only gets populated after its parent [Module],
+  /// if it exists, has been built.  Ports (both input and output) have this
+  /// populated at the time of creation.
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 

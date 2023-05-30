@@ -277,13 +277,10 @@ class LogicStructure implements Logic {
     }
   }
 
+  /// A [LogicStructure] never has a direct source driving it, only its
+  /// [elements] do, so always returns `null`.
   @override
-  // TODO: implement srcConnection, should it be exception or null?
   Logic? get srcConnection => null;
-
-  @override
-  Iterable<Logic> get srcConnections =>
-      [for (final element in elements) ...element.srcConnections];
 
   @override
   LogicValue get value => packed.value;

@@ -375,10 +375,7 @@ class _SynthModuleDefinition {
       final receiver = logicsToTraverse[i];
       if (receiver is LogicArray) {
         //TODO: should this be structure instead of array? maybe not?
-        //TODO: is this right?
-        logicsToTraverse
-          // ..addAll(receiver.srcConnections)
-          ..addAll(receiver.elements);
+        logicsToTraverse.addAll(receiver.elements);
         //TODO: what about if it's an array inside a struct?
 
         // continue;

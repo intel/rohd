@@ -430,8 +430,13 @@ abstract class Module {
           await _traceInputForModuleContents(dstConnection);
         }
       }
-      for (final srcConnection in signal.srcConnections) {
-        await _traceOutputForModuleContents(srcConnection);
+
+      if (signal is LogicStructure) {
+        for (final srcConnection in signal.srcConnections) {
+          await _traceOutputForModuleContents(srcConnection);
+        }
+      } else if (signal.srcConnection != null) {
+        await _traceOutputForModuleContents(signal.srcConnection!);
       }
     }
   }
@@ -591,4 +596,18 @@ abstract class Module {
             .getFileContents()
             .join('\n\n////////////////////\n\n');
   }
+}
+
+extension _ModuleLogicStructureUtils on LogicStructure {
+  /// Provides a list of all source connections of all elements within
+  /// this structure, recursively.
+  ///
+  /// Useful for searching during [Module] build.
+  Iterable<Logic> get srcConnections => [
+        for (final element in elements)
+          if (element is LogicStructure)
+            ...element.srcConnections
+          else if (element.srcConnection != null)
+            element.srcConnection!
+      ];
 }
