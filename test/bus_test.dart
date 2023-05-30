@@ -269,6 +269,28 @@ void main() {
         );
       });
     });
+
+    group('invalid connection exceptions', () {
+      test('self-connecting logic', () {
+        try {
+          final a = Logic();
+          a <= a;
+        } on Exception catch (e) {
+          expect(e.runtimeType, SelfConnectingLogicException);
+        }
+
+        try {
+          final a = Logic();
+          final b = Logic();
+          final c = Logic();
+          a <= b;
+          b <= c;
+          c <= a;
+        } on Exception catch (e) {
+          expect(e.runtimeType, SelfConnectingLogicException);
+        }
+      });
+    });
   });
 
   group('simcompare', () {
