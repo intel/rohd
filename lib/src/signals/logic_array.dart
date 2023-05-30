@@ -56,6 +56,10 @@ class LogicArray extends LogicStructure {
     return [currDim, ...firstDim];
   }
 
+  /// The width of leaf elements in this array.
+  ///
+  /// If the array has no leaf elements and/or the [width] is 0, then the
+  /// [elementWidth] is always 0.
   late final int elementWidth = _calculateElementWidth();
 
   int _calculateElementWidth() {

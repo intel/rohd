@@ -230,7 +230,6 @@ class ConstantAssignmentArrayModule extends Module {
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
 //TODO: test passing Logic into addInput/OutputArray works
-//TODO: test empty array (various empty dimensions)
 //TODO: test arrays in conditional assignments
 //TODO: test arrays in If/Case expressions
 
@@ -250,6 +249,12 @@ void main() {
       final arr = LogicArray([0], 20);
       expect(arr.width, 0);
       expect(arr.elements.isEmpty, true);
+      expect(arr.elementWidth, 0);
+    });
+
+    test('empty multi-dim array', () {
+      final arr = LogicArray([5, 2, 0, 3], 6);
+      expect(arr.width, 0);
       expect(arr.elementWidth, 0);
     });
 
