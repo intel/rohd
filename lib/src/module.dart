@@ -488,28 +488,22 @@ abstract class Module {
     return inPort;
   }
 
+  /// Registers and returns an input [LogicArray] port to this [Module] with
+  /// the specified [dimensions], [elementWidth], and [numDimensionsUnpacked]
+  /// named [name].
+  ///
+  /// This is very similar to [addInput], except for [LogicArray]s.
+  ///
+  /// Performs validation on overall width matching for [x], but not on
+  /// [dimensions], [elementWidth], or [numDimensionsUnpacked].
   LogicArray addInputArray(
     String name,
-    LogicArray x, {
+    Logic x, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsUnpacked = 0, //TODO
+    int numDimensionsUnpacked = 0,
   }) {
     _checkForSafePortName(name);
-
-    final listEq = const ListEquality<int>().equals;
-
-    //TODO: do we care if dimensions match or just width here? if so, test!
-    // think of consistency: logic ports can accept and flatten arrays, so why
-    // not let array ports re-shuffle logic?  then people can add their own
-    // validation if necessary
-    if (!listEq(x.dimensions, dimensions)) {
-      //TODO
-    }
-    if (x.elementWidth != elementWidth) {
-      //TODO
-    }
-    //TODO: also check on the num dimensions unpacked!
 
     final inArr = LogicArray(dimensions, elementWidth,
         name: name, numDimensionsUnpacked: numDimensionsUnpacked)
@@ -539,15 +533,18 @@ abstract class Module {
     return outPort;
   }
 
+  /// Registers and returns an output [LogicArray] port to this [Module] with
+  /// the specified [dimensions], [elementWidth], and [numDimensionsUnpacked]
+  /// named [name].
+  ///
+  /// This is very similar to [addOutput], except for [LogicArray]s.
   LogicArray addOutputArray(
     String name, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsUnpacked = 0, //TODO
+    int numDimensionsUnpacked = 0,
   }) {
     _checkForSafePortName(name);
-
-    //TODO: checks like are in `addInputArray`
 
     final outArr = LogicArray(dimensions, elementWidth,
         name: name, numDimensionsUnpacked: numDimensionsUnpacked)

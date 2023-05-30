@@ -16,16 +16,54 @@ import 'package:test/test.dart';
 
 class SimpleLAPassthrough extends Module {
   Logic get laOut => output('laOut');
-  SimpleLAPassthrough(LogicArray laIn) {
-    laIn = addInputArray('laIn', laIn,
-        dimensions: laIn.dimensions,
-        elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+  SimpleLAPassthrough(
+    LogicArray laIn, {
+    List<int>? dimOverride,
+    int? elemWidthOverride,
+    int? numUnpackedOverride,
+  }) {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: dimOverride ?? laIn.dimensions,
+      elementWidth: elemWidthOverride ?? laIn.elementWidth,
+      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+    );
 
-    addOutputArray('laOut',
-            dimensions: laIn.dimensions,
-            elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+    addOutputArray(
+          'laOut',
+          dimensions: dimOverride ?? laIn.dimensions,
+          elementWidth: elemWidthOverride ?? laIn.elementWidth,
+          numDimensionsUnpacked:
+              numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+        ) <=
+        laIn;
+  }
+}
+
+class SimpleLAPassthroughLogic extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+  SimpleLAPassthroughLogic(
+    Logic laIn, {
+    required List<int> dimensions,
+    required int elementWidth,
+    required int numDimensionsUnpacked,
+  }) {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: dimensions,
+      elementWidth: elementWidth,
+      numDimensionsUnpacked: numDimensionsUnpacked,
+    );
+
+    addOutputArray(
+          'laOut',
+          dimensions: dimensions,
+          elementWidth: elementWidth,
+          numDimensionsUnpacked: numDimensionsUnpacked,
+        ) <=
         laIn;
   }
 }
@@ -229,7 +267,6 @@ class ConstantAssignmentArrayModule extends Module {
 
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
-//TODO: test passing Logic into addInput/OutputArray works
 //TODO: test arrays in conditional assignments
 //TODO: test arrays in If/Case expressions
 
@@ -328,7 +365,8 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       if (!noIverilog) {
-        SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
+        SimCompare.checkIverilogVector(mod, vectors,
+            buildOnly: noSvSim, dontDeleteTmpFiles: true);
       }
     }
 
@@ -476,6 +514,34 @@ void main() {
       });
     });
 
+    group('different port and input widths', () {
+      test('array param mismatch', () async {
+        final i = LogicArray([3, 2], 8, numDimensionsUnpacked: 1);
+        final o = LogicArray([3, 2], 8, numDimensionsUnpacked: 1);
+        final mod = SimpleLAPassthrough(
+          i,
+          dimOverride: [1, 3],
+          elemWidthOverride: 16,
+          numUnpackedOverride: 0,
+        );
+        o <= mod.laOut;
+        await testArrayPassthrough(mod);
+      });
+
+      test('logic into array', () async {
+        final i = Logic(width: 3 * 2 * 8);
+        final o = Logic(width: 3 * 2 * 8);
+        final mod = SimpleLAPassthroughLogic(
+          i,
+          dimensions: [1, 3],
+          elementWidth: 16,
+          numDimensionsUnpacked: 0,
+        );
+        o <= mod.laOut;
+        await testArrayPassthrough(mod);
+      });
+    });
+
     group('name collisions', () {
       test('3d', () async {
         final mod = ArrayNameConflicts(LogicArray([4, 3, 2], 8));
@@ -531,7 +597,7 @@ void main() {
   });
 
   group('array constant assignments', () {
-    Future<void> test_array_constant_assignments(
+    Future<void> testArrayConstantAssignments(
         {required int numDimensionsUnpacked, bool doSvSim = true}) async {
       final mod = ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 8,
           numDimensionsUnpacked: numDimensionsUnpacked));
@@ -568,12 +634,12 @@ void main() {
     }
 
     test('with packed only', () async {
-      await test_array_constant_assignments(numDimensionsUnpacked: 0);
+      await testArrayConstantAssignments(numDimensionsUnpacked: 0);
     });
 
     test('with unpacked also', () async {
       // unpacked array assignment not fully supported in iverilog
-      await test_array_constant_assignments(
+      await testArrayConstantAssignments(
           numDimensionsUnpacked: 2, doSvSim: false);
     });
   });
