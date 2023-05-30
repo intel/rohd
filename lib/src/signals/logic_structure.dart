@@ -43,7 +43,7 @@ class LogicStructure implements Logic {
     _elements
       ..addAll(elements)
       ..forEach((element) {
-        element.parentStructure = this;
+        element._parentStructure = this;
       });
   }
 
@@ -258,11 +258,6 @@ class LogicStructure implements Logic {
   @override
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
-
-  @protected
-  @override
-  set parentStructure(LogicStructure? newParentStructure) =>
-      _parentStructure = newParentStructure;
 
   @override
   bool get isInput => parentModule?.isInput(this) ?? false;

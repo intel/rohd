@@ -132,22 +132,21 @@ class Logic {
   Module? get parentModule => _parentModule;
   Module? _parentModule;
 
+  /// If this is a part of a [LogicStructure], the structure which this is
+  /// a part of.  Otherwise, `null`.
+  ///
+  /// This is usually either a [LogicStructure] or [LogicArray].
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
-
-  @protected
-  set parentStructure(LogicStructure? newParentStructure) =>
-      _parentStructure = newParentStructure;
 
   /// True if this is a member of a [LogicArray].
   bool get isArrayMember => parentStructure is LogicArray;
 
-  /// TODO
   /// Returns the name relative to the [parentStructure]-defined hierarchy, if
   /// one exists.  Otherwise, this is the same as [name].
   ///
   /// This is useful for finding the name of a signal as an element of a root
-  /// [LogicArray].
+  /// [LogicArray] or [LogicStructure].
   String get structureName {
     if (parentStructure != null) {
       if (parentStructure is LogicArray) {
