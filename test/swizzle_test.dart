@@ -20,6 +20,15 @@ class SwizzlyModule extends Module {
   }
 }
 
+class SwizzlyEmpty extends Module {
+  SwizzlyEmpty(Logic a) {
+    a = addInput('a', a, width: a.width);
+    addOutput('b', width: a.width) <=
+        [a, <Logic>[].swizzle()].swizzle() +
+            <Logic>[].swizzle().zeroExtend(a.width);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -164,5 +173,21 @@ void main() {
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
     });
+  });
+
+  test('zero-width swizzle', () {
+    <Logic>[].swizzle();
+  });
+
+  test('zero-width swizzle module', () async {
+    final mod = SwizzlyEmpty(Logic());
+    await mod.build();
+    final vectors = [
+      Vector({'a': 0}, {'b': bin('0')}),
+      Vector({'a': 1}, {'b': bin('1')}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
+    expect(simResult, equals(true));
   });
 }

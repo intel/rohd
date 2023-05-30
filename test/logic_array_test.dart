@@ -366,7 +366,7 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       if (!noIverilog) {
         SimCompare.checkIverilogVector(mod, vectors,
-            buildOnly: noSvSim, dontDeleteTmpFiles: true);
+            buildOnly: noSvSim);
       }
     }
 
