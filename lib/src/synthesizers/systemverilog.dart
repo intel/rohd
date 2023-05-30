@@ -374,12 +374,9 @@ class _SynthModuleDefinition {
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
       if (receiver is LogicArray) {
-        //TODO: should this be structure instead of array? maybe not?
         logicsToTraverse.addAll(receiver.elements);
-        //TODO: what about if it's an array inside a struct?
-
-        // continue;
       }
+
       if (receiver.isArrayMember) {
         logicsToTraverse.add(receiver.parentStructure!);
       }

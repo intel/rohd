@@ -230,9 +230,7 @@ class ConstantAssignmentArrayModule extends Module {
 //TODO: test passing packed into unpacked, unpacked into packed
 //TODO: test that unpacked and packed are properly instantiated in SV
 //TODO: test passing Logic into addInput/OutputArray works
-//TODO: test empty array
-//TODO: test array with 1 element (KNOWN BUG)
-//TODO: test sub-array as a port
+//TODO: test empty array (various empty dimensions)
 //TODO: test arrays in conditional assignments
 //TODO: test arrays in If/Case expressions
 
@@ -390,6 +388,13 @@ void main() {
             sv.contains(RegExp(
                 r'\[2:0\]\s*\[1:0\]\s*\[7:0\]\s*laOut\s*\[4:0\]\s*\[3:0\]')),
             true);
+      });
+
+      test('sub-array', () async {
+        final superArray = LogicArray([4, 3, 2], 8);
+        final subArray = superArray.elements[0] as LogicArray;
+        final mod = SimpleLAPassthrough(subArray);
+        await testArrayPassthrough(mod);
       });
     });
 
