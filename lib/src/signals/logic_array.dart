@@ -129,18 +129,6 @@ class LogicArray extends LogicStructure {
     );
   }
 
-  //TODO
-  List<int>? get arrayLocationFromRoot {
-    if (!isArrayMember) {
-      return [];
-    }
-
-    return [
-      ...parentStructure!.arrayLocationFromRoot!,
-      arrayIndex!,
-    ];
-  }
-
   //TODO: doc and test
   factory LogicArray.of(Logic other,
           {required List<int> dimensions,

@@ -64,18 +64,6 @@ class LogicStructure implements Logic {
   @protected
   int? arrayIndex;
 
-  //TODO
-  List<int>? get arrayLocationFromRoot {
-    if (!isArrayMember) {
-      return null;
-    }
-
-    return [
-      ...parentStructure!.arrayLocationFromRoot!,
-      arrayIndex!,
-    ];
-  }
-
   @override
   bool get isArrayMember => parentStructure is LogicArray;
 

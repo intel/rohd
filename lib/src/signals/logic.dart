@@ -159,17 +159,6 @@ class Logic {
   //TODO: protect this properly
 
   int? arrayIndex;
-  //TODO
-  List<int>? get arrayLocationFromRoot {
-    if (!isArrayMember) {
-      return null;
-    }
-
-    return [
-      ...parentStructure!.arrayLocationFromRoot!,
-      arrayIndex!,
-    ];
-  }
 
   @protected
   set parentStructure(LogicStructure? newParentStructure) =>
