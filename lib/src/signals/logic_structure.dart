@@ -327,6 +327,9 @@ class LogicStructure implements Logic {
   Logic operator %(dynamic other) => packed % other;
 
   @override
+  Logic pow(dynamic exponent) => packed.pow(exponent);
+
+  @override
   Logic operator <<(dynamic other) => packed << other;
 
   @override

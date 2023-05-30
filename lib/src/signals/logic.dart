@@ -302,7 +302,7 @@ class Logic {
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
 
   /// Power operation
-  Logic pow(dynamic other) => Power(this, other).out;
+  Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
   ///

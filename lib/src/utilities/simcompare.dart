@@ -330,16 +330,14 @@ abstract class SimCompare {
       return false;
     }
 
-    if (buildOnly) {
-      return true;
-    }
-
-    final simResult = Process.runSync('vvp', [tmpOutput]);
-    if (printIfContentsAndCheckError(simResult.stdout)) {
-      return false;
-    }
-    if (printIfContentsAndCheckError(simResult.stderr)) {
-      return false;
+    if (!buildOnly) {
+      final simResult = Process.runSync('vvp', [tmpOutput]);
+      if (printIfContentsAndCheckError(simResult.stdout)) {
+        return false;
+      }
+      if (printIfContentsAndCheckError(simResult.stderr)) {
+        return false;
+      }
     }
 
     if (!dontDeleteTmpFiles) {
