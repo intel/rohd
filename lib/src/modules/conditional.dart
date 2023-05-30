@@ -23,7 +23,9 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  final List<Conditional> conditionals;
+  List<Conditional> get conditionals =>
+      UnmodifiableListView<Conditional>(_conditionals);
+  late List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap =
@@ -34,9 +36,43 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {super.name = 'always'}) {
+  /// Executes provided [conditionals] at the appropriate time (specified by
+  /// child class).
+  ///
+  /// If [reset] is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if [resetValues] is provided then
+  /// the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset.
+  _Always(this._conditionals,
+      {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
+
+    // Get all Receivers
+    final allReceivers =
+        conditionals.map((e) => e.receivers).expand((e) => e).toList();
+
+    // This will reset the conditionals on setting the `reset` flag
+    if (reset != null) {
+      _conditionals = [
+        // If resetValue for a receiver is defined,
+        If(
+          reset,
+          // then use it for assigning receiver
+          then: [
+            ...allReceivers.map((rec) {
+              final driver = resetValues?[rec] ?? 0;
+              return rec < driver;
+            })
+          ],
+          // else assign zero as resetValue
+          orElse: conditionals,
+        ),
+      ];
+    }
+
     for (final conditional in conditionals) {
       for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
@@ -309,13 +345,15 @@ class Sequential extends _Always {
 
   /// Constructs a [Sequential] single-triggered by [clk].
   Sequential(Logic clk, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : this.multi([clk], conditionals, name: name);
+      {Logic? reset,
+      Map<Logic, dynamic>? resetValues,
+      String name = 'sequential'})
+      : this.multi([clk], conditionals,
+            name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
-  Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : super(conditionals, name: name) {
+  Sequential.multi(List<Logic> clks, super.conditionals,
+      {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
@@ -1304,6 +1342,9 @@ ${padding}end ''');
 
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
+  /// Name for the enable input of this flop
+  late final String _enName;
+
   /// Name for the clk of this flop.
   late final String _clkName;
 
@@ -1316,24 +1357,54 @@ class FlipFlop extends Module with CustomSystemVerilog {
   /// The clock, posedge triggered.
   late final Logic _clk = input(_clkName);
 
+  /// Optional enable input to the flop.
+  ///
+  /// If enable is  high or enable is not provided then flop output will vary
+  /// on the basis of clock [_clk] and input [_d]. If enable is low, then
+  /// output of the flop remains frozen irrespective of the input [_d].
+  late final Logic _en = input(_enName);
+
   /// The input to the flop.
   late final Logic _d = input(_dName);
 
   /// The output of the flop.
   late final Logic q = output(_qName);
 
+  /// To track if optional enable is provided or not.
+  late final bool _isEnableProvided;
+
   /// Constructs a flip flop which is positive edge triggered on [clk].
-  FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
+  ///
+  /// When optional [en] is provided, an additional input will be created for
+  /// flop. If optional [en] is high or not provided, output will vary as per
+  /// input[d]. For low [en], output remains frozen irrespective of input [d]
+  FlipFlop(Logic clk, Logic d, {Logic? en, super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
+
     _clkName = Module.unpreferredName('clk');
     _dName = Module.unpreferredName('d');
     _qName = Module.unpreferredName('q');
+
     addInput(_clkName, clk);
     addInput(_dName, d, width: d.width);
     addOutput(_qName, width: d.width);
-    _setup();
+
+    if (en != null) {
+      if (en.width != 1) {
+        throw PortWidthMismatchException(en, 1);
+      }
+      _enName = Module.unpreferredName('en');
+      addInput(_enName, en);
+      _isEnableProvided = true;
+
+      _setupWithEnable();
+    } else {
+      _isEnableProvided = false;
+
+      _setup();
+    }
   }
 
   /// Performs setup for custom functional behavior.
@@ -1341,15 +1412,35 @@ class FlipFlop extends Module with CustomSystemVerilog {
     Sequential(_clk, [q < _d]);
   }
 
+  /// Performs setup for custom functional behavior with enable
+  void _setupWithEnable() {
+    Sequential(_clk, [
+      If(_en, then: [q < _d])
+    ]);
+  }
+
   @override
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
-    if (inputs.length != 2 || outputs.length != 1) {
-      throw Exception('FlipFlop has exactly two inputs and one output.');
+    if (_isEnableProvided) {
+      if (inputs.length != 3 || outputs.length != 1) {
+        throw Exception('FlipFlop has exactly three inputs and one output.');
+      }
+    } else {
+      if (inputs.length != 2 || outputs.length != 1) {
+        throw Exception('FlipFlop has exactly two inputs and one output.');
+      }
     }
+
     final clk = inputs[_clkName]!;
     final d = inputs[_dName]!;
     final q = outputs[_qName]!;
-    return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+
+    if (_isEnableProvided) {
+      final en = inputs[_enName]!;
+      return 'always_ff @(posedge $clk) if($en) $q <= $d;  // $instanceName';
+    } else {
+      return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+    }
   }
 }

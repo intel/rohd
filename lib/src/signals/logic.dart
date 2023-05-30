@@ -261,6 +261,9 @@ class Logic {
 
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
+    if (_wire == other._wire) {
+      throw SelfConnectingLogicException(this, other);
+    }
     _unassignable = true;
     _updateWire(other._wire);
   }
@@ -297,6 +300,9 @@ class Logic {
 
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
+
+  /// Power operation
+  Logic pow(dynamic other) => Power(this, other).out;
 
   /// Addition.
   ///
