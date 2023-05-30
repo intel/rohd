@@ -135,6 +135,10 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
+  @protected
+  set parentStructure(LogicStructure? newParentStructure) =>
+      _parentStructure = newParentStructure;
+
   /// True if this is a member of a [LogicArray].
   bool get isArrayMember => parentStructure is LogicArray;
 
@@ -156,13 +160,12 @@ class Logic {
     }
   }
 
-  //TODO: protect this properly
-
-  int? arrayIndex;
-
-  @protected
-  set parentStructure(LogicStructure? newParentStructure) =>
-      _parentStructure = newParentStructure;
+  /// If this is a part of a [LogicArray], the index within that array.
+  /// Othwerise, returns `null`.
+  ///
+  /// If [isArrayMember] is true, this will be non-`null`.
+  int? get arrayIndex => _arrayIndex;
+  int? _arrayIndex;
 
   /// Sets the value of [parentModule] to [newParentModule].
   ///

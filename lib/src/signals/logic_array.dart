@@ -122,7 +122,7 @@ class LogicArray extends LogicStructure {
                   //TODO: test that this gets propagated down properly
                   numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
                 ))
-            ..arrayIndex = index,
+            .._arrayIndex = index,
           growable: false),
       name: name,
       numDimensionsUnpacked: numDimensionsUnpacked,

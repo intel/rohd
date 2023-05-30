@@ -60,9 +60,8 @@ class LogicStructure implements Logic {
     }
   }
 
-  //TODO: protect this properly
-  @protected
-  int? arrayIndex;
+  int? _arrayIndex;
+  int? get arrayIndex => _arrayIndex;
 
   @override
   bool get isArrayMember => parentStructure is LogicArray;
