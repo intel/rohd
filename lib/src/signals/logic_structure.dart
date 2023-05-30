@@ -9,8 +9,6 @@
 
 part of signals;
 
-//TODO: how to deal with LogicStructure as an input/output?
-
 class LogicStructure implements Logic {
   /// All elements of this structure.
   @override
@@ -41,20 +39,12 @@ class LogicStructure implements Logic {
             ? 'st${_structIdx++}'
             : Sanitizer.sanitizeSV(name) {
     //TODO: make sure no components already have a parentComponent
+    // but do we care?
     _elements
       ..addAll(elements)
       ..forEach((element) {
         element.parentStructure = this;
       });
-  }
-
-  @override
-  LogicStructure get rootStructure {
-    var root = this;
-    while (root.parentStructure != null) {
-      root = root.parentStructure!;
-    }
-    return root;
   }
 
   //TODO

@@ -114,14 +114,12 @@ abstract class Module {
   bool isInput(Logic net) =>
       _inputs[net.name] == net ||
       (net.isArrayMember && isInput(net.parentStructure!));
-  //TODO?  || (net.isArrayMember && isInput(net.rootStructure!));
 
   /// Returns true iff [net] is the same [Logic] as the output port of this
   /// [Module] with the same name.
   bool isOutput(Logic net) =>
       _outputs[net.name] == net ||
       (net.isArrayMember && isOutput(net.parentStructure!));
-  //TODO? ||(net.isArrayMember && isOutput(net.rootStructure!));
 
   //TODO: what if inputs/outputs are added multiple times?
   // what if elements of arrays are added again? is that ok?

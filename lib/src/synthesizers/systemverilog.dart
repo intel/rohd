@@ -380,7 +380,6 @@ class _SynthModuleDefinition {
           // ..addAll(receiver.srcConnections)
           ..addAll(receiver.elements);
         //TODO: what about if it's an array inside a struct?
-        // ..add(receiver.rootStructure); //TODO: delete this?
 
         // continue;
       }
@@ -423,9 +422,7 @@ class _SynthModuleDefinition {
 
         logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
-        if (!module.isInput(receiver) &&
-            !(receiver.isArrayMember &&
-                module.isInput(receiver.rootStructure!))) {
+        if (!module.isInput(receiver)) {
           //TODO: This is suspicious, doesn't seem right
 
           // stop at the input to this module

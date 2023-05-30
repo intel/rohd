@@ -5,7 +5,9 @@ library signals;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';

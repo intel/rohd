@@ -135,15 +135,6 @@ class Logic {
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
-  LogicStructure? get rootStructure {
-    //TODO: do we even need this?
-    LogicStructure? root = parentStructure;
-    while (root?.parentStructure != null) {
-      root = root?.parentStructure;
-    }
-    return root;
-  }
-
   /// True if this is a member of a [LogicArray].
   bool get isArrayMember => parentStructure is LogicArray;
 
