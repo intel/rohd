@@ -648,7 +648,10 @@ class ConditionalGroup extends Conditional {
   //TODO: add an ability to add comments to these groups
 
   final List<Conditional> conditionals;
-  ConditionalGroup(this.conditionals);
+
+  final String? description;
+
+  ConditionalGroup(this.conditionals, {this.description});
 
   @override
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
@@ -680,7 +683,12 @@ class ConditionalGroup extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    final verilog = StringBuffer();
+    final verilog = StringBuffer()..writeln();
+
+    if (description != null) {
+      verilog.writeln('// $description');
+    }
+
     for (final conditional in conditionals) {
       verilog.write(conditional.verilogContents(
         indent,
@@ -689,6 +697,9 @@ class ConditionalGroup extends Conditional {
         assignOperator,
       ));
     }
+
+    verilog.writeln();
+
     return verilog.toString();
   }
 }
