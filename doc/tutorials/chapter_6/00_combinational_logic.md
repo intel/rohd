@@ -372,6 +372,22 @@ Combinational([
 
 Yes, that it for `Case` in ROHD.
 
+ROHD also support `CaseZ` statements with the `z` syntax, not the `?` syntax (these are quivalent in SystemVerilog). There is no support for an equivalent of `casex` from SystemVerilog, since it can easily cause unsynthesizable code to be generated [see: https://www.verilogpro.com/verilog-case-casez-casex/](https://www.verilogpro.com/verilog-case-casez-casex/).
+
+Below is the example of using `CaseZ`.
+
+```dart
+CaseZ([b,a].swizzle(),[
+    CaseItem(Const(LogicValue.ofString('z1')), [
+      e < 1,
+    ])
+  ], defaultItem: [
+    e < 0,
+  ],
+  conditionalType: ConditionalType.Priority
+)
+```
+
 ## Exercises
 
 1. In the file [case.dart](case.dart), a `Case` Conditionals is created for full adder truth table but unfortunately there are some bugs on the code. Can you try to fix the bug? A unit test already created, Try your best to make the test work. You might want to refer to [Chapter 2](../chapter_2/00_basic_logic.md) for  this question.
