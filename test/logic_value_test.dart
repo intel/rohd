@@ -1074,7 +1074,7 @@ void main() {
         final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValInt);
 
         expect(lvRand.toInt(), isA<int>());
-        expect(lvRandMax.toInt(), lessThan(maxValInt.toInt()));
+        expect(lvRandMax.toInt(), lessThan(maxValInt));
       }
     });
 
