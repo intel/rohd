@@ -292,8 +292,45 @@ class CondAssignArray extends Module implements SimpleLAPassthrough {
   }
 }
 
-//TODO: test arrays in conditional assignments
-//TODO: test arrays in If/Case expressions
+class CondCompArray extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+  CondCompArray(
+    LogicArray laIn, {
+    List<int>? dimOverride,
+    int? elemWidthOverride,
+    int? numUnpackedOverride,
+  })  : assert(laIn.dimensions.length == 1, 'test assumes 1x1 array'),
+        assert(laIn.width == 1, 'test assumes 1x1 array') {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: dimOverride ?? laIn.dimensions,
+      elementWidth: elemWidthOverride ?? laIn.elementWidth,
+      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+    );
+
+    final laOut = addOutputArray(
+      'laOut',
+      dimensions: dimOverride ?? laIn.dimensions,
+      elementWidth: elemWidthOverride ?? laIn.elementWidth,
+      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+    );
+
+    Combinational([
+      If(
+        laIn,
+        then: [laOut < laIn],
+        orElse: [
+          Case(laIn, [
+            CaseItem(Const(0), [laOut < laIn]),
+            CaseItem(Const(1), [laOut < ~laIn]),
+          ])
+        ],
+      ),
+    ]);
+  }
+}
 
 //TODO: file issue tracking that unpacked arrays not fully tested
 // https://github.com/steveicarus/iverilog/issues/482
@@ -627,6 +664,11 @@ void main() {
     group('conditionals', () {
       test('3 dimensions conditional assignment', () async {
         final mod = CondAssignArray(LogicArray([3, 2, 3], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('1x1 expressions in if and case', () async {
+        final mod = CondCompArray(LogicArray([1], 1));
         await testArrayPassthrough(mod);
       });
     });
