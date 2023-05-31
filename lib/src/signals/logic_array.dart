@@ -107,11 +107,16 @@ class LogicArray extends LogicStructure {
   factory LogicArray(List<int> dimensions, int elementWidth,
       {String? name, int numDimensionsUnpacked = 0}) {
     if (dimensions.isEmpty) {
-      //TODO
+      //TODO: fix exception
+      //TODO: test
       throw Exception('Array must have at least 1 dimension');
     }
 
-    //TODO: check that numDimensionsUnpacked <= dimensions.length
+    if (numDimensionsUnpacked > dimensions.length) {
+      //TODO: fix exception
+      //TODO: test
+      throw Exception('Cannot unpack more than dim length');
+    }
 
     return LogicArray._(
       List.generate(
@@ -133,15 +138,17 @@ class LogicArray extends LogicStructure {
     );
   }
 
-  //TODO: doc and test
-  factory LogicArray.of(Logic other,
-          {required List<int> dimensions,
-          required int elementWidth,
-          String? name,
-          int numDimensionsUnpacked = 0}) =>
-      LogicArray(dimensions, elementWidth,
-          name: name, numDimensionsUnpacked: numDimensionsUnpacked)
-        ..gets(other);
+  //TODO: test rohd cosim with array ports
 
-  //TODO: can we be stricter about assignments, etc. for arrays, only like-shaped arrays?
+  factory LogicArray.port(String name,
+      [List<int> dimensions = const [1],
+      int elementWidth = 1,
+      int numDimensionsUnpacked = 0]) {
+    if (!Sanitizer.isSanitary(name)) {
+      throw InvalidPortNameException(name);
+    }
+
+    return LogicArray(dimensions, elementWidth,
+        numDimensionsUnpacked: numDimensionsUnpacked, name: name);
+  }
 }

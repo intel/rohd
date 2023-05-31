@@ -15,6 +15,7 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 
 export 'logic_value_changed.dart';
+export 'port.dart';
 
 part 'const.dart';
 part 'logic.dart';

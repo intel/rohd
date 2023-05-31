@@ -456,6 +456,7 @@ abstract class Module {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);
     }
+
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');
     }
@@ -469,8 +470,7 @@ abstract class Module {
   Logic addInput(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
-      throw Exception('Port width mismatch, signal "$x" does not'
-          ' have specified width "$width".');
+      throw PortWidthMismatchException(x, width);
     }
 
     if (x is LogicStructure) {
@@ -478,7 +478,7 @@ abstract class Module {
       x = x.packed;
     }
 
-    final inPort = Logic(name: name, width: width)
+    final inPort = Port(name, width)
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -524,7 +524,7 @@ abstract class Module {
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
 
-    final outPort = Logic(name: name, width: width)
+    final outPort = Port(name, width)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 
