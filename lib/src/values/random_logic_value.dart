@@ -50,7 +50,7 @@ extension RandLogicValue on math.Random {
     } else {
       if (width <= LogicValue._INT_BITS) {
         LogicValue ranNum;
-        if (width < 32) {
+        if (width <= 32) {
           ranNum = LogicValue.ofInt(nextInt(1 << width), width);
         } else {
           ranNum = LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
