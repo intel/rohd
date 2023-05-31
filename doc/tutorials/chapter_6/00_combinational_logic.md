@@ -73,7 +73,7 @@ Alright, now we know how the operator in ROHD. we can dive into the `If...Else` 
 
 In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `If.block` which is more readable and clean.
 
-*Note: `If...Else` and `Case` in ROHD is written in capital letter for starting of the alphabet.*
+*Note: `If...Else` and `Case` in ROHD is written with the first letter capitalized to differentiate from the built-in dart keywords and functionality.*
 
 ### Start by declaring a conditional Block
 
