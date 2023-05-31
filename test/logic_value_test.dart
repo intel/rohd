@@ -1038,12 +1038,20 @@ void main() {
       expect(Random(5).nextLogicValue(width: 0).toInt(), equals(0));
     });
 
-    test('should return empty LogicValue if max is 0 for int and big int.', () {
-      final maxBigInt = LogicValue.ofBigInt(BigInt.zero, 100);
-      final maxInt = LogicValue.ofInt(0, 32);
-      expect(Random(5).nextLogicValue(width: 10, max: maxInt), equals(maxInt));
+    test('should return exception if max type and width length not same.', () {
+      expect(
+          () => Random(5).nextLogicValue(
+              width: 10, max: BigInt.parse('99999999999999999')),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
 
-      expect(Random(5).nextLogicValue(width: 80, max: maxBigInt),
+    test('should return empty LogicValue if max is 0 for int and big int.', () {
+      final maxBigInt = BigInt.zero;
+      const maxInt = 0;
+      expect(Random(5).nextLogicValue(width: 10, max: maxInt).toInt(),
+          equals(maxInt));
+
+      expect(Random(5).nextLogicValue(width: 80, max: maxBigInt).toBigInt(),
           equals(maxBigInt));
     });
 
@@ -1059,7 +1067,7 @@ void main() {
     });
 
     test('should return random logic value without invalid bits.', () {
-      final maxValInt = LogicValue.ofInt(8888, 10);
+      const maxValInt = 8888;
 
       for (var i = 1; i <= 64; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
@@ -1077,8 +1085,7 @@ void main() {
 
       for (var i = 65; i <= 500; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
-        final lvRandMax =
-            Random(5).nextLogicValue(width: i, max: maxValBigIntlv);
+        final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
         expect(lvRand.toBigInt(), isA<BigInt>());
         expect(lvRandMax.toBigInt(), lessThan(maxValBigIntlv.toBigInt()));
       }

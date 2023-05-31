@@ -28,15 +28,19 @@ extension RandLogicValue on math.Random {
   /// is set to false else an exception will be thrown.
   LogicValue nextLogicValue({
     required int width,
-    LogicValue? max,
+    dynamic max,
     bool includeInvalidBits = false,
   }) {
     if (width == 0) {
       return LogicValue.empty;
     }
 
-    if (max != null && max.toBigInt() == BigInt.zero) {
-      return max;
+    if (max != null) {
+      if (max is int && max == 0) {
+        return LogicValue.ofInt(max, width);
+      } else if (max is BigInt && max == BigInt.zero) {
+        return LogicValue.ofBigInt(BigInt.zero, width);
+      }
     }
 
     if (includeInvalidBits) {
@@ -60,16 +64,25 @@ extension RandLogicValue on math.Random {
           ranNum = LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
         }
 
-        return max == null
-            ? ranNum
-            : LogicValue.ofInt(ranNum.toInt() % max.toInt(), width);
+        if (max == null) {
+          return ranNum;
+        } else {
+          if (max is BigInt) {
+            throw InvalidRandomLogicValueException(
+                'input width limit only allows Max to be type Int.');
+          } else {
+            max = max as int;
+          }
+          return LogicValue.ofInt(ranNum.toInt() % max, width);
+        }
       } else {
         final ranNum = _nextBigInt(numBits: width);
 
-        if (max == null || ranNum.bitLength < max.width) {
+        if (max == null ||
+            (max is BigInt && ranNum.bitLength < max.bitLength)) {
           return LogicValue.ofBigInt(ranNum, width);
         } else {
-          return LogicValue.ofBigInt(ranNum % max.toBigInt(), width);
+          return LogicValue.ofBigInt(ranNum % (max as BigInt), width);
         }
       }
     }
