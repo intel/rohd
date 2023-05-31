@@ -32,7 +32,7 @@ extension RandLogicValue on math.Random {
     bool includeInvalidBits = false,
   }) {
     if (width == 0) {
-      throw RangeError('width size must be larger than 0.');
+      return LogicValue.empty;
     }
 
     if (includeInvalidBits) {

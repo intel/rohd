@@ -1033,10 +1033,8 @@ void main() {
       expect(lvRand.toString(), contains('x'));
     });
 
-    test('should throw RangeError Exception if width is 0', () {
-      expect(() {
-        Random(5).nextLogicValue(width: 0);
-      }, throwsA((dynamic e) => e is RangeError));
+    test('should return empty LogicValue if width is 0', () {
+      expect(Random(5).nextLogicValue(width: 0).toInt(), equals(0));
     });
 
     test(
