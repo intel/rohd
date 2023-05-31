@@ -35,7 +35,7 @@ extension RandLogicValue on math.Random {
       return LogicValue.empty;
     }
 
-    if (max != null && max == LogicValue.filled(max.width, LogicValue.zero)) {
+    if (max != null && max.toBigInt() == BigInt.zero) {
       return max;
     }
 
@@ -64,18 +64,12 @@ extension RandLogicValue on math.Random {
             ? ranNum
             : LogicValue.ofInt(ranNum.toInt() % max.toInt(), width);
       } else {
-        var ranNum = _nextBigInt(numBits: width);
+        final ranNum = _nextBigInt(numBits: width);
 
         if (max == null || ranNum.bitLength < max.width) {
           return LogicValue.ofBigInt(ranNum, width);
         } else {
-          final minWidth =
-              max.width < ranNum.bitLength ? max.width : ranNum.bitLength;
-
-          ranNum = (ranNum & ((BigInt.one << minWidth) - BigInt.one)) %
-              max.toBigInt();
-
-          return LogicValue.ofBigInt(ranNum, width);
+          return LogicValue.ofBigInt(ranNum % max.toBigInt(), width);
         }
       }
     }

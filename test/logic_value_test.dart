@@ -1041,8 +1041,7 @@ void main() {
     test('should return empty LogicValue if max is 0 for int and big int.', () {
       final maxBigInt = LogicValue.ofBigInt(BigInt.zero, 100);
       final maxInt = LogicValue.ofInt(0, 32);
-      expect(Random(5).nextLogicValue(width: 10, max: maxInt),
-          equals(maxInt));
+      expect(Random(5).nextLogicValue(width: 10, max: maxInt), equals(maxInt));
 
       expect(Random(5).nextLogicValue(width: 80, max: maxBigInt),
           equals(maxBigInt));
@@ -1072,11 +1071,11 @@ void main() {
     });
 
     test('should return random logic value with width greater than 64.', () {
-      final maxValBigInt = BigInt.parse('1792892660056445836299');
+      final maxValBigInt = BigInt.parse('179289266005644583');
       final maxValBigIntlv =
           LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
 
-      for (var i = 65; i <= 100; i++) {
+      for (var i = 65; i <= 500; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMax =
             Random(5).nextLogicValue(width: i, max: maxValBigIntlv);
