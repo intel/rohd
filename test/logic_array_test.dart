@@ -295,8 +295,6 @@ class CondAssignArray extends Module implements SimpleLAPassthrough {
 //TODO: test arrays in conditional assignments
 //TODO: test arrays in If/Case expressions
 
-//TODO: test single-dimension, one-bit elements (looks like normal logic)
-
 //TODO: file issue tracking that unpacked arrays not fully tested
 // https://github.com/steveicarus/iverilog/issues/482
 // https://github.com/verilator/verilator/issues/2907
@@ -404,6 +402,11 @@ void main() {
 
       test('single element', () async {
         final mod = SimpleLAPassthrough(LogicArray([1], 8));
+        await testArrayPassthrough(mod);
+      });
+
+      test('array of bits', () async {
+        final mod = SimpleLAPassthrough(LogicArray([8], 1));
         await testArrayPassthrough(mod);
       });
 
