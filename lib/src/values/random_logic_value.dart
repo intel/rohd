@@ -35,6 +35,10 @@ extension RandLogicValue on math.Random {
       return LogicValue.empty;
     }
 
+    if (max != null && max == LogicValue.filled(max.width, LogicValue.zero)) {
+      return max;
+    }
+
     if (includeInvalidBits) {
       if (max != null) {
         throw InvalidRandomLogicValueException(

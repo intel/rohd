@@ -1034,8 +1034,18 @@ void main() {
       expect(lvRand.toString(), contains('x'));
     });
 
-    test('should return empty LogicValue if width is 0', () {
+    test('should return empty LogicValue if width is 0.', () {
       expect(Random(5).nextLogicValue(width: 0).toInt(), equals(0));
+    });
+
+    test('should return empty LogicValue if max is 0 for int and big int.', () {
+      final maxBigInt = LogicValue.ofBigInt(BigInt.zero, 100);
+      final maxInt = LogicValue.ofInt(0, 32);
+      expect(Random(5).nextLogicValue(width: 10, max: maxInt),
+          equals(maxInt));
+
+      expect(Random(5).nextLogicValue(width: 80, max: maxBigInt),
+          equals(maxBigInt));
     });
 
     test(
