@@ -56,9 +56,9 @@ extension RandLogicValue on math.Random {
           ranNum = LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
         }
 
-        return LogicValue.ofInt(
-            ranNum.toInt() % (max == null ? (1 << width) - 1 : max.toInt()),
-            width);
+        return max == null
+            ? ranNum
+            : LogicValue.ofInt(ranNum.toInt() % max.toInt(), width);
       } else {
         var ranNum = _nextBigInt(numBits: width);
 
