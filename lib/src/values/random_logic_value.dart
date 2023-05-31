@@ -37,7 +37,7 @@ extension RandLogicValue on math.Random {
 
     if (includeInvalidBits) {
       if (max != null) {
-        throw Exception(
+        throw InvalidRandomLogicValueException(
             'max does not work with invalid bits random number generation.');
       }
 

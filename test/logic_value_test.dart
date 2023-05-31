@@ -12,6 +12,7 @@ import 'dart:math';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';
+import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -1045,7 +1046,7 @@ void main() {
               width: 10,
               includeInvalidBits: true,
               max: LogicValue.ofInt(10, 10)),
-          throwsA(isA<Exception>()));
+          throwsA(isA<InvalidRandomLogicValueException>()));
     });
 
     test('should return random logic value without invalid bits.', () {
