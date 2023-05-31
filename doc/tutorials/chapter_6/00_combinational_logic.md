@@ -23,7 +23,7 @@ In this chapter:
 
 There are two types of digital circuit, which are combinational logic and sequential logic. As for this chapter, we will look into combinational logic circuit.
 
-A combinational circuit's outputs depends only on the current values of the inputs; in other words, it combines just the current input values to compute the output. For example, a logic gate is a combinational circuit.A circuit is combinational if it consists of interconnected circuit elements such that:
+A combinational circuit's outputs depends only on the current values of the inputs; in other words, it combines just the current input values to compute the output. For example, a logic gate is a combinational circuit. A circuit is combinational if it consists of interconnected circuit elements such that:
 
 - Every circuit element is itself combinational.
 - Every node of the circuits is either designated as an input to the circuit or connects to exactly one output terminal of a circuit element.
