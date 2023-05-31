@@ -260,15 +260,42 @@ class ConstantAssignmentArrayModule extends Module {
         (Logic(width: 3 * 3 * 8)..gets(Const(0, width: 3 * 3 * 8)));
     laOut.elements[2].elements[2].elements[1] <=
         Const(1, width: 3 * 8, fill: true);
-    laOut.elements[2].elements[2].elements[2].elements[1] <=
-        Const(0, width: 8, fill: true);
+    laOut.elements[2].elements[2].elements[2].elements[1] <= Const(0, width: 8);
   }
 }
 
-//TODO: test passing packed into unpacked, unpacked into packed
-//TODO: test that unpacked and packed are properly instantiated in SV
+class CondAssignArray extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+  CondAssignArray(
+    LogicArray laIn, {
+    List<int>? dimOverride,
+    int? elemWidthOverride,
+    int? numUnpackedOverride,
+  }) {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: dimOverride ?? laIn.dimensions,
+      elementWidth: elemWidthOverride ?? laIn.elementWidth,
+      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+    );
+
+    final laOut = addOutputArray(
+      'laOut',
+      dimensions: dimOverride ?? laIn.dimensions,
+      elementWidth: elemWidthOverride ?? laIn.elementWidth,
+      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+    );
+
+    Combinational([laOut < laIn]);
+  }
+}
+
 //TODO: test arrays in conditional assignments
 //TODO: test arrays in If/Case expressions
+
+//TODO: test single-dimension, one-bit elements (looks like normal logic)
 
 //TODO: file issue tracking that unpacked arrays not fully tested
 // https://github.com/steveicarus/iverilog/issues/482
@@ -365,8 +392,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       if (!noIverilog) {
-        SimCompare.checkIverilogVector(mod, vectors,
-            buildOnly: noSvSim);
+        SimCompare.checkIverilogVector(mod, vectors, buildOnly: noSvSim);
       }
     }
 
@@ -592,6 +618,13 @@ void main() {
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
+      });
+    });
+
+    group('conditionals', () {
+      test('3 dimensions conditional assignment', () async {
+        final mod = CondAssignArray(LogicArray([3, 2, 3], 8));
+        await testArrayPassthrough(mod);
       });
     });
   });

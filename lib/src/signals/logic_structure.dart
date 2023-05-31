@@ -77,7 +77,7 @@ class LogicStructure implements Logic {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final element in elements) {
+    for (final element in leafElements) {
       element.put(logicVal.getRange(index, index + element.width));
       index += element.width;
     }
@@ -88,8 +88,22 @@ class LogicStructure implements Logic {
     final logicVal = LogicValue.of(val, fill: fill, width: width);
 
     var index = 0;
-    for (final element in elements) {
+    for (final element in leafElements) {
       element.inject(logicVal.getRange(index, index + element.width));
+      index += element.width;
+    }
+  }
+
+  @override
+  void gets(Logic other) {
+    if (other.width != width) {
+      throw PortWidthMismatchException(other, width);
+    }
+
+    var index = 0;
+    for (final element in leafElements) {
+      element <= other.getRange(index, index + element.width);
+
       index += element.width;
     }
   }
@@ -105,7 +119,7 @@ class LogicStructure implements Logic {
     final conditionalAssigns = <Conditional>[];
 
     var index = 0;
-    for (final element in elements) {
+    for (final element in leafElements) {
       //TODO: same as `gets`, iterate if element is array?
       conditionalAssigns
           .add(element < otherLogic.getRange(index, index + element.width));
@@ -116,6 +130,7 @@ class LogicStructure implements Logic {
   }
 
   //TODO
+  // mention they are in order!
   late final List<Logic> leafElements =
       UnmodifiableListView(_calculateLeafElements());
 
@@ -130,20 +145,6 @@ class LogicStructure implements Logic {
       }
     }
     return leaves;
-  }
-
-  @override
-  void gets(Logic other) {
-    if (other.width != width) {
-      throw PortWidthMismatchException(other, width);
-    }
-
-    var index = 0;
-    for (final element in leafElements) {
-      element <= other.getRange(index, index + element.width);
-
-      index += element.width;
-    }
   }
 
   @override

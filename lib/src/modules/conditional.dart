@@ -721,22 +721,20 @@ class ConditionalGroup extends Conditional {
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator) {
-    final verilog = StringBuffer()..writeln();
+    final verilog = StringBuffer();
 
     if (description != null) {
       verilog.writeln('// $description');
     }
 
-    for (final conditional in conditionals) {
-      verilog.write(conditional.verilogContents(
-        indent,
-        inputsNameMap,
-        outputsNameMap,
-        assignOperator,
-      ));
-    }
-
-    verilog.writeln();
+    verilog.write(conditionals
+        .map((c) => c.verilogContents(
+              indent,
+              inputsNameMap,
+              outputsNameMap,
+              assignOperator,
+            ))
+        .join('\n'));
 
     return verilog.toString();
   }
@@ -756,7 +754,7 @@ class ConditionalAssign extends Conditional {
   /// Conditionally assigns [receiver] to the value of [driver].
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
-      throw Exception('Width for $receiver and $driver must match but do not.');
+      throw PortWidthMismatchException.equalWidth(receiver, driver);
     }
   }
 
