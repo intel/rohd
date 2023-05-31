@@ -164,7 +164,9 @@ a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of oper
 a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of operations, >= needs parentheses in this case
                        // Note: a_gte_b <= a.gte(b) is also supported for greater than or equal.
 answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
-a_clog2   <=  a.clog2()// ceil of log base 2
+a_clog2   <=  a.clog2()// ceil of log base 2    NOTE: This cannot be used for logical signals in synthesizable design
+                       // It can be used only for constants and logical signals value.
+
 ```
 
 Great, now that you've learned all about our operators, let's continue our journey and create an `AND` gate.
