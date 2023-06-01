@@ -21,13 +21,6 @@ class LogicArray extends LogicStructure {
   @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
-  ///TODO
-  LogicArray._(super.elements,
-      {required this.dimensions,
-      required this.elementWidth,
-      super.name,
-      this.numDimensionsUnpacked = 0});
-
   final int numDimensionsUnpacked;
 
   ///TODO
@@ -42,21 +35,20 @@ class LogicArray extends LogicStructure {
   factory LogicArray(List<int> dimensions, int elementWidth,
       {String? name, int numDimensionsUnpacked = 0}) {
     if (dimensions.isEmpty) {
-      //TODO: fix exception
-      //TODO: test
-      throw Exception('Array must have at least 1 dimension');
+      throw LogicConstructionException(
+          'Arrays must have at least 1 dimension.');
     }
 
     if (numDimensionsUnpacked > dimensions.length) {
-      //TODO: fix exception
-      //TODO: test
-      throw Exception('Cannot unpack more than dim length');
+      throw LogicConstructionException(
+          'Cannot unpack more than all of the dimensions.');
     }
 
     // calculate the next layer's dimensions
     final nextDimensions = dimensions.length == 1
         ? null
-        : dimensions.getRange(1, dimensions.length).toList(growable: false);
+        : UnmodifiableListView(
+            dimensions.getRange(1, dimensions.length).toList(growable: false));
 
     // if the total width will eventually be 0, then force element width to 0
     if (elementWidth != 0 && dimensions.reduce((a, b) => a * b) == 0) {
@@ -69,19 +61,28 @@ class LogicArray extends LogicStructure {
           (index) => (dimensions.length == 1
               ? Logic(width: elementWidth)
               : LogicArray(
-                  nextDimensions!,
-                  elementWidth,
+                  nextDimensions!, elementWidth,
                   //TODO: test that this gets propagated down properly
                   numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
+                  name: '${name}_$index',
                 ))
             .._arrayIndex = index,
           growable: false),
-      name: name,
-      dimensions: dimensions,
+      dimensions: UnmodifiableListView(dimensions),
       elementWidth: elementWidth,
       numDimensionsUnpacked: numDimensionsUnpacked,
+      name: name,
     );
   }
+
+  ///TODO
+  LogicArray._(
+    super.elements, {
+    required this.dimensions,
+    required this.elementWidth,
+    required this.numDimensionsUnpacked,
+    required super.name,
+  });
 
   factory LogicArray.port(String name,
       [List<int> dimensions = const [1],

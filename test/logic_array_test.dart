@@ -11,6 +11,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -444,7 +445,13 @@ void main() {
     });
 
     test('no dim exception', () {
-      //TODO
+      expect(
+          () => LogicArray([], 3), throwsA(isA<LogicConstructionException>()));
+    });
+
+    test('overly unpacking exception', () {
+      expect(() => LogicArray([1, 2, 3], 4, numDimensionsUnpacked: 4),
+          throwsA(isA<LogicConstructionException>()));
     });
   });
 

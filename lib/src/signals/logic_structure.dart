@@ -60,8 +60,11 @@ class LogicStructure implements Logic {
     }
   }
 
-  int? _arrayIndex;
+  @override
   int? get arrayIndex => _arrayIndex;
+
+  @override
+  int? _arrayIndex;
 
   @override
   bool get isArrayMember => parentStructure is LogicArray;
@@ -258,6 +261,8 @@ class LogicStructure implements Logic {
   //TODO: to track naming
   @override
   LogicStructure? get parentStructure => _parentStructure;
+
+  @override
   LogicStructure? _parentStructure;
 
   @override
