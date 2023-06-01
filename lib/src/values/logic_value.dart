@@ -114,6 +114,8 @@ abstract class LogicValue {
                     : throw Exception('Failed to convert.');
   }
 
+  // complete test suite for LogicValue.of
+
   /// Constructs a [LogicValue] from [val] which could be of a variety of types.
   ///
   /// Supported types include [String], [bool], [int], [BigInt], [LogicValue],
@@ -237,6 +239,7 @@ abstract class LogicValue {
       if (val.length == 1 &&
           (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
         if (!val.first.isValid) {
+          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {

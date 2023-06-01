@@ -41,6 +41,56 @@ class SimpleLAPassthrough extends Module {
   }
 }
 
+enum LADir { laIn, laOut }
+
+class LAPassthroughIntf extends Interface<LADir> {
+  final List<int> dimensions;
+  final int elementWidth;
+  final int numDimensionsUnpacked;
+
+  Logic get laIn => port('laIn');
+  Logic get laOut => port('laOut');
+
+  LAPassthroughIntf({
+    required this.dimensions,
+    required this.elementWidth,
+    required this.numDimensionsUnpacked,
+  }) {
+    setPorts([
+      LogicArray.port('laIn', dimensions, elementWidth, numDimensionsUnpacked)
+    ], [
+      LADir.laIn
+    ]);
+
+    setPorts([
+      LogicArray.port('laOut', dimensions, elementWidth, numDimensionsUnpacked)
+    ], [
+      LADir.laOut
+    ]);
+  }
+
+  LAPassthroughIntf.clone(LAPassthroughIntf other)
+      : this(
+          dimensions: other.dimensions,
+          elementWidth: other.elementWidth,
+          numDimensionsUnpacked: other.numDimensionsUnpacked,
+        );
+}
+
+class LAPassthroughWithIntf extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+  LAPassthroughWithIntf(
+    LAPassthroughIntf intf,
+  ) {
+    intf = LAPassthroughIntf.clone(intf)
+      ..connectIO(this, intf,
+          inputTags: {LADir.laIn}, outputTags: {LADir.laOut});
+
+    intf.laOut <= intf.laIn;
+  }
+}
+
 class SimpleLAPassthroughLogic extends Module implements SimpleLAPassthrough {
   @override
   Logic get laOut => output('laOut');
@@ -332,10 +382,6 @@ class CondCompArray extends Module implements SimpleLAPassthrough {
   }
 }
 
-//TODO: file issue tracking that unpacked arrays not fully tested
-// https://github.com/steveicarus/iverilog/issues/482
-// https://github.com/verilator/verilator/issues/2907
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -505,6 +551,15 @@ void main() {
         final mod = SimpleLAPassthrough(subArray);
         await testArrayPassthrough(mod);
       });
+
+      test('3 dimensions with interface', () async {
+        final mod = LAPassthroughWithIntf(LAPassthroughIntf(
+          dimensions: [3, 2, 3],
+          elementWidth: 8,
+          numDimensionsUnpacked: 0,
+        ));
+        await testArrayPassthrough(mod);
+      });
     });
 
     group('pack and unpack', () {
@@ -556,13 +611,6 @@ void main() {
 
     group('change array dimensions around and back', () {
       test('3d', () async {
-        // final x = LogicArray([3], 8);
-        // final y = LogicArray([3], 8);
-        // //TODO: write a part-assign automation
-        // for (var i = 0; i < 2; i++) {
-        //   x.elements[i] <= y.elements[i];
-        // }
-
         final mod = RearrangeArraysPassthrough(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod);
       });

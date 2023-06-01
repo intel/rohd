@@ -12,10 +12,6 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/name/name_exceptions.dart';
-import 'package:rohd/src/utilities/sanitizer.dart';
-
-//TODO: test interfaces with arrays
 
 /// Represents a logical interface to a [Module].
 ///
