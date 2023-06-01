@@ -1038,11 +1038,17 @@ void main() {
       expect(Random(5).nextLogicValue(width: 0).toInt(), equals(0));
     });
 
-    test('should return exception if max type and width length not same.', () {
-      expect(
-          () => Random(5).nextLogicValue(
-              width: 10, max: BigInt.parse('99999999999999999')),
-          throwsA(isA<InvalidRandomLogicValueException>()));
+    test(
+        'should return valid results when using BigInt as max '
+        'when width is integer.', () {
+      for (var i = 0; i <= 64; i++) {
+        final randMaxBigInt = Random(5)
+            .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
+        final randMaxInt =
+            Random(5).nextLogicValue(width: i, max: BigInt.parse('30'));
+        expect(randMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
+        expect(randMaxInt.toInt(), lessThan(30));
+      }
     });
 
     test('should return empty LogicValue if max is 0 for int and big int.', () {

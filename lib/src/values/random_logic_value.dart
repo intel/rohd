@@ -69,12 +69,14 @@ extension RandLogicValue on math.Random {
           return ranNum;
         } else {
           if (max is BigInt) {
-            throw InvalidRandomLogicValueException(
-                'input width limit only allows Max to be type Int.');
+            if (max.isValidInt) {
+              return LogicValue.ofInt(ranNum.toInt() % max.toInt(), width);
+            } else {
+              return ranNum;
+            }
           } else {
-            max = max as int;
+            return LogicValue.ofInt(ranNum.toInt() % (max as int), width);
           }
-          return LogicValue.ofInt(ranNum.toInt() % max, width);
         }
       } else {
         final ranNum = _nextBigInt(numBits: width);
