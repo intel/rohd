@@ -1027,24 +1027,39 @@ void main() {
   });
 
   group('random value generation ', () {
-    test('should return random logic value with invalid bits.', () {
-      final lvRand =
-          Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
-
-      expect(lvRand.toString(), contains('x'));
+    test('should throw exception when max is not int or BigInt.', () {
+      expect(() => Random(5).nextLogicValue(width: 10, max: '10'),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+      expect(() => Random(5).nextLogicValue(width: 10, max: 10.5),
+          throwsA(isA<InvalidRandomLogicValueException>()));
     });
-
-    test('should return empty LogicValue if width is 0.', () {
-      expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
-    });
-
     test('should throw exception when max is less than 0.', () {
       expect(() => Random(5).nextLogicValue(width: 10, max: -1),
           throwsA(isA<InvalidRandomLogicValueException>()));
       expect(() => Random(5).nextLogicValue(width: 10, max: BigInt.from(-10)),
           throwsA(isA<InvalidRandomLogicValueException>()));
     });
+    test(
+        'should throw exception when max is set when generate random num with'
+        ' invalid bits.', () {
+      expect(
+          () => Random(5).nextLogicValue(
+              width: 10,
+              includeInvalidBits: true,
+              max: LogicValue.ofInt(10, 10)),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+    test(
+        'should return random logic value with invalid bits when '
+        'includeInvalidBits is set to true.', () {
+      final lvRand =
+          Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
 
+      expect(lvRand.toString(), contains('x'));
+    });
+    test('should return empty LogicValue when width is 0.', () {
+      expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
+    });
     test(
         'should return valid results when using BigInt as max '
         'and integer width.', () {
@@ -1057,7 +1072,6 @@ void main() {
         expect(randMaxInt.toInt(), lessThan(30));
       }
     });
-
     test(
         'should return valid results when using int as max '
         'and BigInt width.', () {
@@ -1066,15 +1080,8 @@ void main() {
         expect(randMaxInt.toBigInt(), lessThan(BigInt.from(30)));
       }
     });
-
-    test('should throw exception when max is not int or BigInt.', () {
-      expect(() => Random(5).nextLogicValue(width: 10, max: '10'),
-          throwsA(isA<InvalidRandomLogicValueException>()));
-      expect(() => Random(5).nextLogicValue(width: 10, max: 10.5),
-          throwsA(isA<InvalidRandomLogicValueException>()));
-    });
-
-    test('should return empty LogicValue if max is 0 for int and big int.', () {
+    test('should return empty LogicValue when max is 0 for int and big int.',
+        () {
       final maxBigInt = BigInt.zero;
       const maxInt = 0;
       expect(Random(5).nextLogicValue(width: 10, max: maxInt).toInt(),
@@ -1083,19 +1090,9 @@ void main() {
       expect(Random(5).nextLogicValue(width: 80, max: maxBigInt).toBigInt(),
           equals(maxBigInt));
     });
-
     test(
-        'should throw exception if max is set when generate random num with'
-        ' invalid bits.', () {
-      expect(
-          () => Random(5).nextLogicValue(
-              width: 10,
-              includeInvalidBits: true,
-              max: LogicValue.ofInt(10, 10)),
-          throwsA(isA<InvalidRandomLogicValueException>()));
-    });
-
-    test('should return random logic value without invalid bits.', () {
+        'should return random int logic value without invalid bits when'
+        ' having different width and max constraint.', () {
       const maxValInt = 8888;
 
       for (var i = 1; i <= 64; i++) {
@@ -1106,8 +1103,9 @@ void main() {
         expect(lvRandMax.toInt(), lessThan(maxValInt));
       }
     });
-
-    test('should return random logic value with width greater than 64.', () {
+    test(
+        'should return random big integer logic value with width '
+        'greater than 64 when having different width and max constraint.', () {
       final maxValBigInt = BigInt.parse('179289266005644583');
       final maxValBigIntlv =
           LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
