@@ -34,20 +34,26 @@ class LogicStructure implements Logic {
   static int _structIdx = 0;
 
   /// Creates a new [LogicStructure] with [elements] as elements.
+  ///
+  /// None of the [elements] can already be members of another [LogicStructure].
   LogicStructure(Iterable<Logic> elements, {String? name})
       : name = (name == null || name.isEmpty)
             ? 'st${_structIdx++}'
             : Sanitizer.sanitizeSV(name) {
-    //TODO: make sure no components already have a parentComponent
-    // but do we care?
     _elements
       ..addAll(elements)
       ..forEach((element) {
+        if (element._parentStructure != null) {
+          throw LogicConstructionException(
+              '$element already is a member of a structure'
+              ' ${element._parentStructure}.');
+        }
+
         element._parentStructure = this;
       });
   }
 
-  //TODO
+  @override
   String get structureName {
     if (parentStructure != null) {
       if (isArrayMember) {
@@ -123,7 +129,6 @@ class LogicStructure implements Logic {
 
     var index = 0;
     for (final element in leafElements) {
-      //TODO: same as `gets`, iterate if element is array?
       conditionalAssigns
           .add(element < otherLogic.getRange(index, index + element.width));
       index += element.width;
@@ -132,12 +137,12 @@ class LogicStructure implements Logic {
     return ConditionalGroup(conditionalAssigns);
   }
 
-  //TODO
-  // mention they are in order!
+  /// A list of all leaf-level elements at the deepest hierarchy of this
+  /// structure provided in index order.
   late final List<Logic> leafElements =
       UnmodifiableListView(_calculateLeafElements());
 
-  //TODO: cache this
+  /// Compute the list of all leaf elements, to be cached in [leafElements].
   List<Logic> _calculateLeafElements() {
     final leaves = <Logic>[];
     for (final element in elements) {
@@ -386,9 +391,11 @@ class LogicStructure implements Logic {
   @override
   Logic lte(dynamic other) => packed.lte(other);
 
+  @Deprecated('Use value.isValid instead.')
   @override
   bool hasValidValue() => packed.hasValidValue();
 
+  @Deprecated('Use value.isFloating instead.')
   @override
   bool isFloating() => packed.isFloating();
 

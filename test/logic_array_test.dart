@@ -539,7 +539,6 @@ void main() {
         final mod =
             SimpleLAPassthrough(LogicArray([1], 8, numDimensionsUnpacked: 1));
         await testArrayPassthrough(mod, noSvSim: true, noIverilog: true);
-        //TODO: bug in iverilog? https://github.com/steveicarus/iverilog/issues/915
       });
 
       test('4d, half packed', () async {
@@ -691,9 +690,9 @@ void main() {
       test('3d', () async {
         final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
         await testArrayPassthrough(mod);
-        //TODO: BAD! where's the sub-module instatiation!!
 
-        expect(mod.generateSynth(), contains('SimpleLAPassthrough'));
+        expect(mod.generateSynth(),
+            contains('SimpleLAPassthrough  unnamed_module'));
       });
 
       test('3d unpacked', () async {
@@ -711,7 +710,10 @@ void main() {
       test('3d', () async {
         final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
-        //TODO: BAD! where's the sub-module instatiation!!
+
+        // make sure the 4th one is there (since we expect 4)
+        expect(mod.generateSynth(),
+            contains('SimpleLAPassthrough  unnamed_module_2'));
       });
 
       test('3d unpacked', () async {

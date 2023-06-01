@@ -315,7 +315,6 @@ class _SynthModuleDefinition {
       _synthInstantiationNameUniquifier.getUniqueName(
           initialName: initialName, nullStarter: 'm', reserved: reserved);
 
-  //TODO: why does this ever need to return null?
   _SynthLogic? _getSynthLogic(Logic? logic, bool allowPortName) {
     if (logic == null) {
       return null;
@@ -326,7 +325,8 @@ class _SynthModuleDefinition {
       if (logic.isArrayMember) {
         // grab the parent array (potentially recursively)
         final parentArraySynthLogic =
-            _getSynthLogic(logic.parentStructure, allowPortName);
+            // ignore: unnecessary_null_checks
+            _getSynthLogic(logic.parentStructure!, allowPortName);
 
         newSynth = _SynthLogicArrayElement(logic, parentArraySynthLogic!);
       } else {

@@ -8,10 +8,10 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: check coverage
 //TODO: test structures in conditional assignments
 //TODO: test structures in If/Case expressions
 
@@ -84,6 +84,26 @@ void main() {
       ], name: 'structure');
 
       expect(s.name, 'structure');
+    });
+
+    test('sub logic in two structures throws exception', () {
+      final s = LogicStructure([
+        Logic(),
+      ], name: 'structure');
+
+      expect(() => LogicStructure([s.elements.first]),
+          throwsA(isA<LogicConstructionException>()));
+    });
+
+    test('sub structure in two structures throws exception', () {
+      final subS = LogicStructure([Logic()]);
+
+      LogicStructure([
+        subS,
+      ], name: 'structure');
+
+      expect(() => LogicStructure([subS]),
+          throwsA(isA<LogicConstructionException>()));
     });
   });
 
