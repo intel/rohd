@@ -682,14 +682,12 @@ abstract class Conditional {
 
 /// Represents a group of [Conditional]s to be executed.
 class ConditionalGroup extends Conditional {
-  //TODO: Tests for conditional groups
-  //TODO: add an ability to add comments to these groups
-
+  @override
   final List<Conditional> conditionals;
 
-  final String? description;
-
-  ConditionalGroup(this.conditionals, {this.description});
+  /// Creates a group of [conditionals] to be executed in order and bundles
+  /// them into a single [Conditional].
+  ConditionalGroup(this.conditionals);
 
   @override
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
@@ -720,24 +718,15 @@ class ConditionalGroup extends Conditional {
 
   @override
   String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final verilog = StringBuffer();
-
-    if (description != null) {
-      verilog.writeln('// $description');
-    }
-
-    verilog.write(conditionals
-        .map((c) => c.verilogContents(
-              indent,
-              inputsNameMap,
-              outputsNameMap,
-              assignOperator,
-            ))
-        .join('\n'));
-
-    return verilog.toString();
-  }
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      conditionals
+          .map((c) => c.verilogContents(
+                indent,
+                inputsNameMap,
+                outputsNameMap,
+                assignOperator,
+              ))
+          .join('\n');
 }
 
 /// An assignment that only happens under certain conditions.
@@ -951,7 +940,8 @@ class Case extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals = _getConditionals();
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
 
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
@@ -1230,7 +1220,8 @@ class If extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals = _getConditionals();
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
 
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => iffs
