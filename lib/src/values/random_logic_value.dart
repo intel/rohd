@@ -37,6 +37,12 @@ extension RandLogicValue on math.Random {
     }
 
     if (max != null) {
+      if (max is! int && max is! BigInt) {
+        throw InvalidRandomLogicValueException(
+            'invalid max parameter. Max can be only runtimeType of int'
+            ' or BigInt.');
+      }
+
       if (max is int && max == 0) {
         return LogicValue.ofInt(max, width);
       } else if (max is BigInt && max == BigInt.zero) {
@@ -85,7 +91,14 @@ extension RandLogicValue on math.Random {
             (max is BigInt && ranNum.bitLength < max.bitLength)) {
           return LogicValue.ofBigInt(ranNum, width);
         } else {
-          return LogicValue.ofBigInt(ranNum % (max as BigInt), width);
+          if (max is int) {
+            max = BigInt.from(max);
+            return LogicValue.ofBigInt(ranNum % max, width);
+          } else if (max is BigInt) {
+            return LogicValue.ofBigInt(ranNum % max, width);
+          } else {
+            throw InvalidRandomLogicValueException('max value is invalid.');
+          }
         }
       }
     }

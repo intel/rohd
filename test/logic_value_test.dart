@@ -1051,6 +1051,22 @@ void main() {
       }
     });
 
+    test(
+        'should return valid results when using int as max '
+        'when width is BigInt.', () {
+      for (var i = 65; i <= 100; i++) {
+        final randMaxInt = Random(5).nextLogicValue(width: i, max: 30);
+        expect(randMaxInt.toBigInt(), lessThan(BigInt.from(30)));
+      }
+    });
+
+    test('should return exception when max is not int or BigInt.', () {
+      expect(
+          () => Random(5)
+              .nextLogicValue(width: 10, includeInvalidBits: true, max: '10'),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
     test('should return empty LogicValue if max is 0 for int and big int.', () {
       final maxBigInt = BigInt.zero;
       const maxInt = 0;
