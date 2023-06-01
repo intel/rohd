@@ -214,7 +214,7 @@ class LogicStructure implements Logic {
   /// Increments each element of [elements] using [Logic.incr].
   @override
   Conditional incr(
-          {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
+          {Logic Function(Logic p1) s = Logic._nopS, dynamic val = 1}) =>
       ConditionalGroup([
         for (final element in elements) element.incr(s: s, val: val),
       ]);
@@ -222,7 +222,7 @@ class LogicStructure implements Logic {
   /// Decrements each element of [elements] using [Logic.decr].
   @override
   Conditional decr(
-          {Logic Function(Logic p1) s = Logic.nopS, dynamic val = 1}) =>
+          {Logic Function(Logic p1) s = Logic._nopS, dynamic val = 1}) =>
       ConditionalGroup([
         for (final element in elements) element.decr(s: s, val: val),
       ]);
@@ -230,7 +230,7 @@ class LogicStructure implements Logic {
   /// Divide-assigns each element of [elements] using [Logic.divAssign].
   @override
   Conditional divAssign(
-          {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
+          {Logic Function(Logic p1) s = Logic._nopS, dynamic val}) =>
       ConditionalGroup([
         for (final element in elements) element.divAssign(s: s, val: val),
       ]);
@@ -238,7 +238,7 @@ class LogicStructure implements Logic {
   /// Multiply-assigns each element of [elements] using [Logic.mulAssign].
   @override
   Conditional mulAssign(
-          {Logic Function(Logic p1) s = Logic.nopS, dynamic val}) =>
+          {Logic Function(Logic p1) s = Logic._nopS, dynamic val}) =>
       ConditionalGroup([
         for (final element in elements) element.mulAssign(s: s, val: val),
       ]);
@@ -263,7 +263,6 @@ class LogicStructure implements Logic {
     }
   }
 
-  //TODO: to track naming
   @override
   LogicStructure? get parentStructure => _parentStructure;
 

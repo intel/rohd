@@ -234,7 +234,6 @@ abstract class SimCompare {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
       if (signal is LogicArray) {
-        //TODO: handle packed vs unpacked!!
         final unpackedDims =
             signal.dimensions.getRange(0, signal.numDimensionsUnpacked);
         final packedDims = signal.dimensions

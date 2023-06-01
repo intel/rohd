@@ -383,7 +383,6 @@ class _SynthModuleDefinition {
 
       final driver = receiver.srcConnection;
 
-      // TODO: is this fixing https://github.com/intel/rohd/issues/254? test?
       final receiverIsConstant = driver == null && receiver is Const;
 
       final receiverIsModuleInput =
@@ -417,8 +416,6 @@ class _SynthModuleDefinition {
         logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {
-          //TODO: This is suspicious, doesn't seem right
-
           // stop at the input to this module
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
@@ -597,7 +594,7 @@ class _SynthLogic {
 
   _SynthLogic(this.logic, this._name, {bool renameable = true})
       : _renameable = renameable &&
-            //TODO: should we never rename arrays?
+            // don't rename arrays since its elements would need updating too
             logic is! LogicArray;
 
   @override
@@ -641,8 +638,8 @@ class _SynthLogic {
     }
   }
 
-  //TODO: how to uniquify names of `LogicArray`?
-
+  /// Computes the name of the signal at declaration time with appropriate
+  /// dimensions included.
   String definitionName() {
     String packedDims;
     String unpackedDims;

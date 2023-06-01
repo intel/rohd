@@ -167,8 +167,6 @@ class _Wire {
   /// Keeps track of whether there is an active put, to detect reentrance.
   bool _isPutting = false;
 
-  //TODO: update to reference `LogicValue.of`.
-
   /// Puts a value [val] onto this signal, which may or may not be picked up
   /// for [changed] in this [Simulator] tick.
   ///

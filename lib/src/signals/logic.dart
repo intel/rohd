@@ -10,9 +10,6 @@
 
 part of signals;
 
-//TODO: move _Wire and all of the "signals" to their own files, use "part"
-// so that we can keep things safer instead of using @protected
-
 /// Represents a logical signal of any width which can change values.
 class Logic {
   /// An internal counter for encouraging unique naming of unnamed signals.
@@ -132,8 +129,6 @@ class Logic {
 
   /// If this is a part of a [LogicStructure], the structure which this is
   /// a part of.  Otherwise, `null`.
-  ///
-  /// This is usually either a [LogicStructure] or [LogicArray].
   LogicStructure? get parentStructure => _parentStructure;
   LogicStructure? _parentStructure;
 
@@ -372,8 +367,7 @@ class Logic {
   /// A function that returns whatever [Logic] is provided.
   ///
   /// Used as a default no-op for short-hands.
-  @protected
-  static Logic nopS(Logic x) => x;
+  static Logic _nopS(Logic x) => x;
 
   /// Shorthand for a [Conditional] which increments this by [val].
   ///
@@ -395,7 +389,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional incr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
+  Conditional incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
       s(this) < s(this) + val;
 
   /// Shorthand for a [Conditional] which decrements this by [val].
@@ -418,7 +412,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional decr({Logic Function(Logic) s = nopS, dynamic val = 1}) =>
+  Conditional decr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
       s(this) < s(this) - val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -440,7 +434,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional mulAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
+  Conditional mulAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
       s(this) < s(this) * val;
 
   /// Shorthand for a [Conditional] which increments this by [val].
@@ -462,7 +456,7 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional divAssign({Logic Function(Logic) s = nopS, dynamic val}) =>
+  Conditional divAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
       s(this) < s(this) / val;
 
   /// Conditional assignment operator.
