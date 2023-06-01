@@ -1038,7 +1038,7 @@ void main() {
       expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
     });
 
-    test('should return exception when max is less than 0.', () {
+    test('should throw exception when max is less than 0.', () {
       expect(() => Random(5).nextLogicValue(width: 10, max: -1),
           throwsA(isA<InvalidRandomLogicValueException>()));
       expect(() => Random(5).nextLogicValue(width: 10, max: BigInt.from(-10)),
@@ -1047,12 +1047,12 @@ void main() {
 
     test(
         'should return valid results when using BigInt as max '
-        'when width is integer.', () {
+        'and integer width.', () {
       for (var i = 0; i <= 64; i++) {
         final randMaxBigInt = Random(5)
             .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
         final randMaxInt =
-            Random(5).nextLogicValue(width: i, max: BigInt.parse('30'));
+            Random(5).nextLogicValue(width: i, max: BigInt.from(30));
         expect(randMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
         expect(randMaxInt.toInt(), lessThan(30));
       }
@@ -1060,14 +1060,14 @@ void main() {
 
     test(
         'should return valid results when using int as max '
-        'when width is BigInt.', () {
+        'and BigInt width.', () {
       for (var i = 65; i <= 100; i++) {
         final randMaxInt = Random(5).nextLogicValue(width: i, max: 30);
         expect(randMaxInt.toBigInt(), lessThan(BigInt.from(30)));
       }
     });
 
-    test('should return exception when max is not int or BigInt.', () {
+    test('should throw exception when max is not int or BigInt.', () {
       expect(() => Random(5).nextLogicValue(width: 10, max: '10'),
           throwsA(isA<InvalidRandomLogicValueException>()));
       expect(() => Random(5).nextLogicValue(width: 10, max: 10.5),
