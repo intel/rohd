@@ -269,11 +269,9 @@ class LogicStructure implements Logic {
   bool get isInput => parentModule?.isInput(this) ?? false;
 
   @override
-  // TODO: implement isOutput
   bool get isOutput => parentModule?.isOutput(this) ?? false;
 
   @override
-  // TODO: implement isPort
   bool get isPort => isInput || isOutput;
 
   @override

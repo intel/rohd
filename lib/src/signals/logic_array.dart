@@ -61,8 +61,8 @@ class LogicArray extends LogicStructure {
           (index) => (dimensions.length == 1
               ? Logic(width: elementWidth)
               : LogicArray(
-                  nextDimensions!, elementWidth,
-                  //TODO: test that this gets propagated down properly
+                  nextDimensions!,
+                  elementWidth,
                   numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
                   name: '${name}_$index',
                 ))

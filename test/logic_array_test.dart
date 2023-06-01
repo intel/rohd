@@ -453,6 +453,14 @@ void main() {
       expect(() => LogicArray([1, 2, 3], 4, numDimensionsUnpacked: 4),
           throwsA(isA<LogicConstructionException>()));
     });
+
+    test('unpacked dims get passed down', () {
+      final arr = LogicArray([1, 2, 3], 4, numDimensionsUnpacked: 2);
+      expect(arr.numDimensionsUnpacked, 2);
+      expect((arr.elements[0] as LogicArray).numDimensionsUnpacked, 1);
+      expect(
+          (arr.elements[0].elements[0] as LogicArray).numDimensionsUnpacked, 0);
+    });
   });
 
   group('logicarray passthrough', () {
