@@ -10,88 +10,23 @@
 part of signals;
 
 class LogicArray extends LogicStructure {
-  //TODO: calculate dimension
-  // Note: if any level of hierarchy has any elemnt *not* an array, then that's the end of it (flatten from that point down)
-
-  //TODO: if there's complex structure below an array, need to convey that it is flattened when instantiated somehow
-  // OR: just ban lists of anything other than vanilla logics?  that's probably good enough?
-
-  late final List<int> dimensions = _calculateDimensions();
-
-  //TODO: support ports that are packed, unpacked, or a mix
-
-  List<int> _calculateDimensions() {
-    // current dimension is just the length
-    final currDim = elements.length;
-
-    if (currDim == 0) {
-      return const [0];
-    }
-
-    // check if all elements are:
-    // - LogicArrays
-    // - with the same dimensions
-    // - with same element widths
-
-    //TODO: if we always construct ourselves, then this is safer?
-    final allElementsAreArray =
-        elements.firstWhereOrNull((element) => element is! LogicArray) == null;
-
-    if (!allElementsAreArray) {
-      return [currDim];
-    }
-
-    final firstDim = (elements.first as LogicArray).dimensions;
-
-    final listEq = const ListEquality<int>().equals;
-
-    for (final element in elements) {
-      element as LogicArray;
-      if (!listEq(firstDim, element.dimensions)) {
-        return [currDim];
-      }
-    }
-
-    // if they're all the same, return it back up
-    return [currDim, ...firstDim];
-  }
+  final List<int> dimensions;
 
   /// The width of leaf elements in this array.
   ///
   /// If the array has no leaf elements and/or the [width] is 0, then the
   /// [elementWidth] is always 0.
-  late final int elementWidth = _calculateElementWidth();
-
-  int _calculateElementWidth() {
-    if (width == 0) {
-      return 0;
-    }
-
-    // assume all elements are the same width
-
-    Logic arr = this;
-    while (arr.elements.first is LogicArray) {
-      arr = arr.elements.first;
-    }
-    return arr.elements.first.width;
-  }
+  final int elementWidth;
 
   @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
   ///TODO
-  LogicArray._(super.elements, {super.name, this.numDimensionsUnpacked = 0}) {
-    if (elements.isNotEmpty) {
-      final dim0 = elements.first.width;
-      for (final component in elements) {
-        if (component.width != dim0) {
-          throw PortWidthMismatchException(component, dim0,
-              additionalMessage:
-                  'All elements of a `LogicArray` must be equal width.');
-        }
-      }
-    }
-  }
+  LogicArray._(super.elements,
+      {required this.dimensions,
+      required this.elementWidth,
+      super.name,
+      this.numDimensionsUnpacked = 0});
 
   final int numDimensionsUnpacked;
 
@@ -118,15 +53,23 @@ class LogicArray extends LogicStructure {
       throw Exception('Cannot unpack more than dim length');
     }
 
+    // calculate the next layer's dimensions
+    final nextDimensions = dimensions.length == 1
+        ? null
+        : dimensions.getRange(1, dimensions.length).toList(growable: false);
+
+    // if the total width will eventually be 0, then force element width to 0
+    if (elementWidth != 0 && dimensions.reduce((a, b) => a * b) == 0) {
+      elementWidth = 0;
+    }
+
     return LogicArray._(
       List.generate(
-          dimensions[0],
+          dimensions.first,
           (index) => (dimensions.length == 1
               ? Logic(width: elementWidth)
               : LogicArray(
-                  dimensions
-                      .getRange(1, dimensions.length)
-                      .toList(growable: false),
+                  nextDimensions!,
                   elementWidth,
                   //TODO: test that this gets propagated down properly
                   numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
@@ -134,11 +77,11 @@ class LogicArray extends LogicStructure {
             .._arrayIndex = index,
           growable: false),
       name: name,
+      dimensions: dimensions,
+      elementWidth: elementWidth,
       numDimensionsUnpacked: numDimensionsUnpacked,
     );
   }
-
-  //TODO: test rohd cosim with array ports
 
   factory LogicArray.port(String name,
       [List<int> dimensions = const [1],
