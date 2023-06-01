@@ -39,14 +39,17 @@ extension RandLogicValue on math.Random {
     if (max != null) {
       if (max is! int && max is! BigInt) {
         throw InvalidRandomLogicValueException(
-            'invalid max parameter. Max can be only runtimeType of int'
-            ' or BigInt.');
+            'max can be only runtimeType of int or BigInt.');
       }
 
       if (max is int && max == 0) {
         return LogicValue.ofInt(max, width);
       } else if (max is BigInt && max == BigInt.zero) {
         return LogicValue.ofBigInt(BigInt.zero, width);
+      }
+
+      if ((max is int && max < 0) || (max is BigInt && max < BigInt.zero)) {
+        throw InvalidRandomLogicValueException('max cannot be less than 0');
       }
     }
 
