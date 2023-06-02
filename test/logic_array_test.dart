@@ -81,6 +81,29 @@ class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
   }
 }
 
+class WithSetArray extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+
+  WithSetArray(LogicArray laIn) {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: [2, 2],
+      elementWidth: 8,
+    );
+
+    addOutputArray(
+      'laOut',
+      dimensions: laIn.dimensions,
+      elementWidth: laIn.elementWidth,
+      numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+    );
+
+    laOut <= laIn.withSet(8, laIn.elements[0].elements[1]);
+  }
+}
+
 enum LADir { laIn, laOut }
 
 class LAPassthroughIntf extends Interface<LADir> {
@@ -783,6 +806,11 @@ void main() {
     test('slice and dice', () async {
       final mod = RangeAndSliceArrModule(LogicArray([3, 3, 3], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
+    });
+
+    test('withset', () async {
+      final mod = WithSetArray(LogicArray([2, 2], 8));
+      await testArrayPassthrough(mod);
     });
   });
 

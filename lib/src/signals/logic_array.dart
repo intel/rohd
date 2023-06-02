@@ -75,6 +75,11 @@ class LogicArray extends LogicStructure {
     );
   }
 
+  //TODO
+  @override
+  LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
+      numDimensionsUnpacked: numDimensionsUnpacked, name: name ?? this.name);
+
   ///TODO
   LogicArray._(
     super.elements, {

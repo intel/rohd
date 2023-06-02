@@ -651,9 +651,13 @@ class Logic {
   /// if the position of the [update] would cause an overrun past the [width].
   Logic withSet(int startIndex, Logic update) {
     if (startIndex + update.width > width) {
-      throw Exception(
-          'Width of updatedValue $update at startIndex $startIndex would'
+      throw RangeError('Width of update $update at startIndex $startIndex would'
           ' overrun the width of the original ($width).');
+    }
+
+    if (startIndex < 0) {
+      throw RangeError(
+          'Start index must be greater than zero but was $startIndex');
     }
 
     return [

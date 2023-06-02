@@ -53,6 +53,13 @@ class LogicStructure implements Logic {
       });
   }
 
+  //TODO: Test separately from array
+  LogicStructure clone({String? name}) => LogicStructure(
+      elements.map((e) => e is LogicStructure
+          ? e.clone()
+          : Logic(name: e.name, width: e.width)),
+      name: name ?? this.name);
+
   @override
   String get structureName {
     if (parentStructure != null) {
@@ -172,8 +179,6 @@ class LogicStructure implements Logic {
 
     IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
-    //TODO: test edge cases here
-
     // grab all elements that fall in this range, keeping track of the offset
     final matchingElements = <Logic>[];
 
@@ -217,7 +222,6 @@ class LogicStructure implements Logic {
     if (modifiedStartIndex <= modifiedEndIndex) {
       return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {
-      //TODO: special test for this reversed case, make sure SV looks right
       return getRange(modifiedEndIndex, modifiedStartIndex + 1).reversed;
     }
   }
@@ -261,11 +265,10 @@ class LogicStructure implements Logic {
     for (final element in elements) ...element.dstConnections
   ];
 
-  //TODO: is this safe to have a separate tracking here?
-  Module? _parentModule;
-
   @override
   Module? get parentModule => _parentModule;
+  @override
+  Module? _parentModule;
 
   @protected
   @override
@@ -313,8 +316,60 @@ class LogicStructure implements Logic {
 
   // TODO: withset should return a similar structure?? special case for array also?
   @override
-  Logic withSet(int startIndex, Logic update) =>
-      packed.withSet(startIndex, update);
+  Logic withSet(int startIndex, Logic update) {
+    final endIndex = startIndex + update.width;
+
+    if (endIndex > width) {
+      throw RangeError('Width of update $update at startIndex $startIndex would'
+          ' overrun the width of the original ($width).');
+    }
+
+    if (startIndex < 0) {
+      throw RangeError(
+          'Start index must be greater than zero but was $startIndex');
+    }
+
+    //TODO:
+    // loop through elements, assign portions where needed?
+
+    final newWithSet = clone();
+
+    var index = 0;
+    for (var i = 0; i < leafElements.length; i++) {
+      final newElement = newWithSet.leafElements[i];
+      final element = leafElements[i];
+
+      final elementWidth = element.width;
+
+      // if the *start* or *end* of `element` is within [startIndex, endIndex],
+      // then we have to include it in `matchingElements`
+      final elementStart = index;
+      final elementEnd = index + elementWidth;
+
+      final elementInRange =
+          ((elementStart >= startIndex) && (elementStart < endIndex)) ||
+              ((elementEnd > startIndex) && (elementEnd <= endIndex));
+
+      if (elementInRange) {
+        newElement <=
+            element.withSet(
+                startIndex - index,
+                update.getRange(
+                    index - startIndex, index - startIndex + elementWidth));
+      } else {
+        newElement <= element;
+      }
+
+      index += width;
+    }
+
+    return newWithSet;
+    // return [
+    //   getRange(startIndex + update.width, width),
+    //   update,
+    //   getRange(0, startIndex),
+    // ].swizzle();
+  }
 
   /////////////////////////////////////////////////
   /////////////////////////////////////////////////
@@ -433,7 +488,6 @@ class LogicStructure implements Logic {
   @override
   Logic replicate(int multiplier) => packed.replicate(multiplier);
 
-  // TODO: reversed should do something more clever? reverse each individual one and swizzle?
   @override
   Logic get reversed => packed.reversed;
 
