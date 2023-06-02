@@ -208,10 +208,15 @@ class Logic {
           'This signal "$this" is already connected to "$srcConnection",'
           ' so it cannot be connected to "$other".');
     }
+
     if (_unassignable) {
       throw Exception('This signal "$this" has been marked as unassignable.  '
           'It may be a constant expression or otherwise should'
           ' not be assigned.');
+    }
+
+    if (other.width != width) {
+      throw SignalWidthMismatchException(other, width);
     }
   }
 
@@ -259,6 +264,7 @@ class Logic {
     if (_wire == other._wire) {
       throw SelfConnectingLogicException(this, other);
     }
+
     _unassignable = true;
     _updateWire(other._wire);
   }
@@ -541,9 +547,8 @@ class Logic {
   Logic slice(int endIndex, int startIndex) {
     // Given start and end index, if either of them are seen to be -ve index
     // value(s) then convert them to a +ve index value(s)
-    final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+    final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
 
     if (modifiedStartIndex == 0 && modifiedEndIndex == width - 1) {
       // ignore: avoid_returning_this
@@ -589,13 +594,12 @@ class Logic {
     // Given start and end index, if either of them are seen to be -ve index
     // value(s) then conver them to a +ve index value(s)
     final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
-    if (modifiedEndIndex < modifiedStartIndex) {
-      throw Exception(
-          'End $modifiedEndIndex(=$endIndex) cannot be less than start'
-          ' $modifiedStartIndex(=$startIndex).');
-    }
+        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
+    final modifiedEndIndex =
+        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+
+    IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
+
     return slice(modifiedEndIndex - 1, modifiedStartIndex);
   }
 

@@ -368,7 +368,7 @@ void main() {
           // getRange - negative end index and start > end - error! start must
           // be less than end
           () => LogicValue.ofString('0101').getRange(-1, -2),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - same index results zero width value
           LogicValue.ofString('0101').getRange(-1, -1),
@@ -376,11 +376,11 @@ void main() {
       expect(
           // getRange - bad inputs start > end
           () => LogicValue.ofString('0101').getRange(2, 1),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - bad inputs end > length-1
           () => LogicValue.ofString('0101').getRange(0, 7),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(LogicValue.ofString('xz01').slice(2, 1),
           equals(LogicValue.ofString('z0')));
       expect(LogicValue.ofString('xz01').slice(-2, -3),

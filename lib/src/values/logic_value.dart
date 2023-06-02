@@ -595,15 +595,8 @@ abstract class LogicValue {
   /// ```
   ///
   LogicValue operator [](int index) {
-    final modifiedIndex = (index < 0) ? width + index : index;
-    if (modifiedIndex >= width || modifiedIndex < 0) {
-      // The suggestion in the deprecation for this constructor is not available
-      // before 2.19, so keep it in here for now.  Eventually, switch to the
-      // new one.
-      // ignore: deprecated_member_use
-      throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $modifiedIndex(=$index).', width);
-    }
+    final modifiedIndex = IndexUtilities.wrapIndex(index, width);
+
     return _getIndex(modifiedIndex);
   }
 
@@ -643,24 +636,14 @@ abstract class LogicValue {
   ///
   LogicValue getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
+
     final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
-    if (modifiedEndIndex < modifiedStartIndex) {
-      throw Exception(
-          'End $modifiedEndIndex(=$endIndex) cannot be less than start '
-          '$modifiedStartIndex(=$startIndex).');
-    }
-    if (modifiedEndIndex > width) {
-      throw Exception(
-          'End $modifiedEndIndex(=$endIndex) must be less than width'
-          ' ($width).');
-    }
-    if (modifiedStartIndex < 0) {
-      throw Exception(
-          'Start $modifiedStartIndex(=$startIndex) must be greater than or '
-          'equal to 0.');
-    }
+        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
+    final modifiedEndIndex =
+        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+
+    IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
+
     return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
 
@@ -684,9 +667,9 @@ abstract class LogicValue {
   /// LogicValue.ofString('xz01').slice(-2, -2);  // LogicValue.ofString('z')
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
-    final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+    final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
+
     if (modifiedStartIndex <= modifiedEndIndex) {
       return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {

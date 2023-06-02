@@ -106,7 +106,7 @@ class LogicStructure implements Logic {
   @override
   void gets(Logic other) {
     if (other.width != width) {
-      throw PortWidthMismatchException(other, width);
+      throw SignalWidthMismatchException(other, width);
     }
 
     var index = 0;
@@ -122,7 +122,7 @@ class LogicStructure implements Logic {
     final otherLogic = other is Logic ? other : Const(other, width: width);
 
     if (otherLogic.width != width) {
-      throw PortWidthMismatchException(otherLogic, width);
+      throw SignalWidthMismatchException(otherLogic, width);
     }
 
     final conditionalAssigns = <Conditional>[];
@@ -165,16 +165,19 @@ class LogicStructure implements Logic {
   Logic getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
 
-    //TODO: do math for modified indices!
+    final modifiedStartIndex =
+        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
+    final modifiedEndIndex =
+        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
 
-    //TODO: do range checks
+    IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
     //TODO: test edge cases here
 
     // grab all elements that fall in this range, keeping track of the offset
     final matchingElements = <Logic>[];
 
-    final requestedWidth = endIndex - startIndex;
+    final requestedWidth = modifiedEndIndex - modifiedStartIndex;
 
     var index = 0;
     for (final element in leafElements) {
@@ -183,14 +186,15 @@ class LogicStructure implements Logic {
       final elementStart = index;
       final elementEnd = index + element.width;
 
-      final elementInRange =
-          ((elementStart >= startIndex) && (elementStart < endIndex)) ||
-              ((elementEnd > startIndex) && (elementEnd <= endIndex));
+      final elementInRange = ((elementStart >= modifiedStartIndex) &&
+              (elementStart < modifiedEndIndex)) ||
+          ((elementEnd > modifiedStartIndex) &&
+              (elementEnd <= modifiedEndIndex));
 
       if (elementInRange) {
         // figure out the subset of `element` that needs to be included
-        final elementStartGrab = max(elementStart, startIndex) - index;
-        final elementEndGrab = min(elementEnd, endIndex) - index;
+        final elementStartGrab = max(elementStart, modifiedStartIndex) - index;
+        final elementEndGrab = min(elementEnd, modifiedEndIndex) - index;
 
         matchingElements
             .add(element.getRange(elementStartGrab, elementEndGrab));
@@ -202,12 +206,21 @@ class LogicStructure implements Logic {
     assert(!(matchingElements.isEmpty && requestedWidth != 0),
         'If the requested width is not 0, expect to get some matches.');
 
-    return matchingElements.swizzle();
+    return matchingElements.rswizzle();
   }
 
   @override
-  Logic slice(int endIndex, int startIndex) =>
-      packed.slice(endIndex, startIndex); //TODO: this should use getRange
+  Logic slice(int endIndex, int startIndex) {
+    final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+    final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
+
+    if (modifiedStartIndex <= modifiedEndIndex) {
+      return getRange(modifiedStartIndex, modifiedEndIndex + 1);
+    } else {
+      //TODO: special test for this reversed case, make sure SV looks right
+      return getRange(modifiedEndIndex, modifiedStartIndex + 1).reversed;
+    }
+  }
 
   //TODO: don't make these operate on per-element, just pack the whole thing and do it?
 
@@ -298,6 +311,7 @@ class LogicStructure implements Logic {
       ? 0
       : elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
 
+  // TODO: withset should return a similar structure?? special case for array also?
   @override
   Logic withSet(int startIndex, Logic update) =>
       packed.withSet(startIndex, update);
@@ -419,6 +433,7 @@ class LogicStructure implements Logic {
   @override
   Logic replicate(int multiplier) => packed.replicate(multiplier);
 
+  // TODO: reversed should do something more clever? reverse each individual one and swizzle?
   @override
   Logic get reversed => packed.reversed;
 
