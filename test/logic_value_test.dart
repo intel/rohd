@@ -1065,28 +1065,6 @@ void main() {
       expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
     });
 
-    test(
-        'should return valid results when using BigInt as max '
-        'and width is support only integer.', () {
-      for (var i = 0; i <= 64; i++) {
-        final randMaxBigInt = Random(5)
-            .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
-        final randMaxInt =
-            Random(5).nextLogicValue(width: i, max: BigInt.from(30));
-        expect(randMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
-        expect(randMaxInt.toInt(), lessThan(30));
-      }
-    });
-
-    test(
-        'should return valid results when using int as max '
-        'and BigInt width.', () {
-      for (var i = 65; i <= 100; i++) {
-        final randMaxInt = Random(5).nextLogicValue(width: i, max: 30);
-        expect(randMaxInt.toBigInt(), lessThan(BigInt.from(30)));
-      }
-    });
-
     test('should return empty LogicValue when max is 0 for int and big int.',
         () {
       final maxBigInt = BigInt.zero;
@@ -1105,10 +1083,16 @@ void main() {
 
       for (var i = 1; i <= 64; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
-        final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValInt);
+        final lvRandMaxInt = Random(5).nextLogicValue(width: i, max: maxValInt);
+        final lvMaxBigInt = Random(5)
+            .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
+        final lvMaxIntBigInt =
+            Random(5).nextLogicValue(width: i, max: BigInt.from(maxValInt));
 
         expect(lvRand.toInt(), isA<int>());
-        expect(lvRandMax.toInt(), lessThan(maxValInt));
+        expect(lvRandMaxInt.toInt(), lessThan(maxValInt));
+        expect(lvMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
+        expect(lvMaxIntBigInt.toInt(), lessThan(maxValInt));
       }
     });
 
@@ -1118,10 +1102,15 @@ void main() {
       final maxValBigInt = BigInt.parse('179289266005644583');
       final maxValBigIntlv =
           LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
+      const maxInt = 30;
 
       for (var i = 65; i <= 500; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
+
+        final randMaxInt = Random(5).nextLogicValue(width: i, max: maxInt);
+        expect(randMaxInt.toBigInt(), lessThan(BigInt.from(maxInt)));
+
         expect(lvRand.toBigInt(), isA<BigInt>());
         expect(lvRandMax.toBigInt(), lessThan(maxValBigIntlv.toBigInt()));
       }
