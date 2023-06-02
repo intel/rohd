@@ -1067,7 +1067,7 @@ void main() {
 
     test(
         'should return valid results when using BigInt as max '
-        'and integer width.', () {
+        'and width is support only integer.', () {
       for (var i = 0; i <= 64; i++) {
         final randMaxBigInt = Random(5)
             .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));

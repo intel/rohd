@@ -73,7 +73,8 @@ extension RandLogicValue on math.Random {
             ? LogicValue.ofInt(nextInt(1 << width), width)
             : LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
 
-        if (max == null) {
+        if (max == null ||
+            (max is BigInt && max.bitLength > LogicValue._INT_BITS)) {
           return ranNum;
         } else {
           final maxBigInt = max is int ? BigInt.from(max) : max as BigInt;
