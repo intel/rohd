@@ -687,33 +687,33 @@ abstract class LogicValue {
   /// Executes mathematical operations on single [LogicValue]
   ///
   /// Handles invalid input and do proper type conversion to required types
-  LogicValue _doUnaryMath(dynamic Function(dynamic num, int width) op) {
+  LogicValue _doUnaryMath(dynamic Function(dynamic a, int width) op) {
     if (!isValid) {
       return LogicValue.filled(width, LogicValue.x);
     }
     if (this is BigInt ||
         this is _BigLogicValue ||
         (this is _FilledLogicValue && width >= _INT_BITS)) {
-      final num = toBigInt();
-      return LogicValue.ofBigInt(op(num, width) as BigInt, width);
+      final a = toBigInt();
+      return LogicValue.ofBigInt(op(a, width) as BigInt, width);
     } else {
-      final num = toInt();
-      return LogicValue.ofInt(op(num, width) as int, width);
+      final a = toInt();
+      return LogicValue.ofInt(op(a, width) as int, width);
     }
   }
 
   /// Ceil of log base 2 Operation
   ///
-  /// Input [num] will be either of type [int] or [BigInt].
-  /// Returns ceil of log base 2 of [num]  having same type as of input.
-  dynamic _clog2(dynamic num, int width) {
-    if (num is int) {
-      return num < 0 ? width : (num - 1).bitLength;
+  /// Input [a] will be either of type [int] or [BigInt].
+  /// Returns ceil of log base 2 of [a]  having same type as of input [a].
+  static dynamic _clog2(dynamic a, int width) {
+    if (a is int) {
+      return a < 0 ? width : (a - 1).bitLength;
     }
-    if (num is BigInt) {
-      return num < BigInt.zero
-          ? width
-          : BigInt.from((num - BigInt.one).bitLength);
+    if (a is BigInt) {
+      return a < BigInt.zero
+          ? BigInt.from(width)
+          : BigInt.from((a - BigInt.one).bitLength);
     }
   }
 
