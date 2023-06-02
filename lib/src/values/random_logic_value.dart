@@ -23,10 +23,12 @@ extension RandLogicValue on math.Random {
   }
 
   /// Generate unsigned random [LogicValue] based on [width] and [max] num.
+  ///
   /// The random number can be mixed in invalid bits x and z by set
-  /// [includeInvalidBits] to `true`. The [max] can be used to set the maximum
-  /// range of the generated number. [max] only work when [includeInvalidBits]
-  /// is set to false else an exception will be thrown.
+  /// [includeInvalidBits] to `true`. [max] can be used to set the maximum
+  /// range of the generated number and its only accept runtimeType `int` and
+  /// `BigInt`. [max] only work when [includeInvalidBits] is set to false
+  /// else an exception will be thrown.
   LogicValue nextLogicValue({
     required int width,
     dynamic max,
