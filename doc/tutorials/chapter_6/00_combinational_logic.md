@@ -25,7 +25,7 @@ There are two types of digital circuit, which are combinational logic and sequen
 
 A combinational circuit is a type of circuit where the outputs are determined solely by the current inputs. It doesn't store any information or have memory. Each output is calculated based on the current values of the inputs using logical operations. For example, a logic gate is a basic building block of a combinational circuit.
 
-Some criteria to identify a combinational circuit include: each circuit element being combinational, nodes being inputs or connecting to one output terminal, absence of cyclic paths or feedback loops, lack of memory elements, and synchronous operation. It's important to note that these criteria are not exhaustive, and there may be additional criteria to consider.
+Some criteria to identify a combinational circuit include: each circuit element being combinational, absence of cyclic paths or feedback loops, and lack of memory elements. It's important to note that these criteria are not exhaustive, and there may be additional criteria to consider.
 
 ## What is Conditionals?
 
