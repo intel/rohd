@@ -468,6 +468,15 @@ class CondCompArray extends Module implements SimpleLAPassthrough {
   }
 }
 
+class IndexBitOfArrayModule extends Module {
+  IndexBitOfArrayModule() {
+    final o = LogicArray([2, 2, 2], 8);
+    o <= Const(LogicValue.ofString('10').replicate(2 * 2 * 8));
+    addOutput('o0') <= o[0];
+    addOutput('o3') <= o[3];
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -894,6 +903,18 @@ void main() {
       // unpacked array assignment not fully supported in iverilog
       await testArrayConstantAssignments(
           numDimensionsUnpacked: 2, doSvSim: false);
+    });
+
+    test('indexing single bit of array', () async {
+      final mod = IndexBitOfArrayModule();
+      await mod.build();
+
+      final vectors = [
+        Vector({}, {'o0': 0, 'o3': 1})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
     });
   });
 }

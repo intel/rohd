@@ -275,6 +275,52 @@ void main() {
     expect(lv.toString(), equals("6'b01xzx0"));
   });
 
+  group('LogicValue toString', () {
+    test('1 bit', () {
+      expect(LogicValue.one.toString(), "1'h1");
+    });
+
+    test('1 bit invalid', () {
+      expect(LogicValue.x.toString(), "1'bx");
+    });
+
+    test('<64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 60).toString(), "60'h1234");
+    });
+
+    test('<64-bit negative', () {
+      expect(LogicValue.ofInt(-1, 60).toString(), "60'hfffffffffffffff");
+    });
+
+    test('64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 64).toString(), "64'h1234");
+    });
+
+    test('64-bit negative', () {
+      expect(LogicValue.ofInt(0xfaaaaaaa00000005, 64).toString(),
+          "64'hfaaaaaaa00000005");
+    });
+
+    test('>64-bit positive', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0x5faaaaaaa00000005'), 68)
+              .toString(),
+          "68'h5faaaaaaa00000005");
+    });
+
+    test('>64-bit negative', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0xffaaaaaaa00000005'), 68)
+              .toString(),
+          "68'hffaaaaaaa00000005");
+    });
+
+    test('include width', () {
+      expect(
+          LogicValue.ofInt(0x55, 8).toString(includeWidth: false), '01010101');
+    });
+  });
+
   group('unary operations (including "to")', () {
     test('toMethods', () {
       expect(

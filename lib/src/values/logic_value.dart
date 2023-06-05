@@ -551,8 +551,9 @@ abstract class LogicValue {
   @override
   String toString({bool includeWidth = true}) {
     if (isValid && includeWidth) {
-      final hexValue = width > _INT_BITS
-          ? toBigInt().toRadixString(16)
+      // for ==_INT_BITS, still use BigInt so we don't get negatives
+      final hexValue = width >= _INT_BITS
+          ? toBigInt().toUnsigned(width).toRadixString(16)
           : toInt().toRadixString(16);
       return "$width'h$hexValue";
     } else {
@@ -1140,8 +1141,9 @@ abstract class LogicValue {
     }
   }
 
-  /// Returns new [LogicValue] replicated [multiplier] times. An exception will
-  /// be thrown in case the multiplier is <1
+  /// Returns new [LogicValue] replicated [multiplier] times.
+  ///
+  /// An exception will be thrown in case the multiplier is <1.
   LogicValue replicate(int multiplier) {
     if (multiplier < 1) {
       throw InvalidMultiplierException(multiplier);
