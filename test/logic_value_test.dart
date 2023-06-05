@@ -1022,4 +1022,94 @@ void main() {
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
     });
   });
+  group('Utility operations', () {
+    test('clog2 operation', () {
+      expect(
+          // int
+          LogicValue.ofInt(0, 8).clog2(),
+          equals(LogicValue.ofInt(0, 8)));
+      expect(
+          // int
+          LogicValue.ofInt(1, 32).clog2(),
+          equals(LogicValue.ofInt(0, 32)));
+      expect(
+          // int
+          LogicValue.ofInt(2, 16).clog2(),
+          equals(LogicValue.ofInt(1, 16)));
+      expect(
+          // int
+          LogicValue.ofInt(3, 32).clog2(),
+          equals(LogicValue.ofInt(2, 32)));
+      expect(
+          // int
+          LogicValue.ofInt(16, 64).clog2(),
+          equals(LogicValue.ofInt(4, 64)));
+      expect(
+          // int
+          LogicValue.ofInt(17, 64).clog2(),
+          equals(LogicValue.ofInt(5, 64)));
+      expect(
+          // int
+          LogicValue.ofInt(-1 >>> 1, 64).clog2(),
+          equals(LogicValue.ofInt(63, 64)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.zero, 128).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.zero, 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.one, 128).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.zero, 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(
+                  BigInt.parse('100000000000000000000000000000000'), 128)
+              .clog2(),
+          equals(LogicValue.ofBigInt(BigInt.from(107), 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.from(3), 32).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.from(2), 32)));
+      expect(
+          // binary string
+          LogicValue.ofString('000100').clog2(),
+          equals(LogicValue.ofString('000010')));
+      expect(
+          // x involved in binary string
+          LogicValue.ofString('00x0').clog2(),
+          equals(LogicValue.ofString('xxxx')));
+
+      //Negative Int
+      expect(LogicValue.ofInt(-128, 8).clog2().toInt(), 7);
+      expect(LogicValue.ofInt(-127, 8).clog2().toInt(), 8);
+
+      expect(LogicValue.ofInt(-128, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-127, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-1, 64).clog2().toInt(), 64);
+
+      expect(LogicValue.ofInt(-32768, 16).clog2().toInt(), 15);
+      expect(LogicValue.ofInt(-32767, 16).clog2().toInt(), 16);
+      expect(LogicValue.ofInt(-1, 16).clog2().toInt(), 16);
+
+      expect(LogicValue.ofInt(-2147483648, 32).clog2().toInt(), 31);
+      expect(LogicValue.ofInt(-2147483647, 32).clog2().toInt(), 32);
+      expect(LogicValue.ofInt(-1, 32).clog2().toInt(), 32);
+
+      //Negative BigInt
+      expect(
+          LogicValue.ofBigInt(
+                  BigInt.parse('-170141183460469231731687303715884105728'), 128)
+              .clog2()
+              .toBigInt(),
+          BigInt.from(127));
+      expect(
+          LogicValue.ofBigInt(
+                  BigInt.parse('-170141183460469231731687303715884105727'), 128)
+              .clog2()
+              .toBigInt(),
+          BigInt.from(128));
+      expect(LogicValue.ofBigInt(BigInt.from(-1), 128).clog2().toBigInt(),
+          BigInt.from(128));
+    });
+  });
 }

@@ -678,6 +678,45 @@ abstract class LogicValue {
   // ignore: avoid_dynamic_calls
   LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
 
+  /// Ceil of log base 2 operation.
+  ///
+  /// Returns ceil of log base 2 of valid input.
+  /// Returns `x` if any bit of input is invalid.
+  LogicValue clog2() => _doUnaryMath(_clog2);
+
+  /// Executes mathematical operations on single [LogicValue]
+  ///
+  /// Handles invalid input and do proper type conversion to required types
+  LogicValue _doUnaryMath(dynamic Function(dynamic a, int width) op) {
+    if (!isValid) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
+    if (this is BigInt ||
+        this is _BigLogicValue ||
+        (this is _FilledLogicValue && width >= _INT_BITS)) {
+      final a = toBigInt();
+      return LogicValue.ofBigInt(op(a, width) as BigInt, width);
+    } else {
+      final a = toInt();
+      return LogicValue.ofInt(op(a, width) as int, width);
+    }
+  }
+
+  /// Ceil of log base 2 Operation
+  ///
+  /// Input [a] will be either of type [int] or [BigInt].
+  /// Returns ceil of log base 2 of [a]  having same type as of input [a].
+  static dynamic _clog2(dynamic a, int width) {
+    if (a is int) {
+      return a < 0 ? width : (a - 1).bitLength;
+    }
+    if (a is BigInt) {
+      return a < BigInt.zero
+          ? BigInt.from(width)
+          : BigInt.from((a - BigInt.one).bitLength);
+    }
+  }
+
   /// Executes mathematical operations between two [LogicValue]s
   ///
   /// Handles width and bounds checks as well as proper conversion between
