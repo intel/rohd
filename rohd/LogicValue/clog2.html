@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the operator &lt;= method from the LogicValue class, for the Dart programming language.">
-  <title>operator &lt;= method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the clog2 method from the LogicValue class, for the Dart programming language.">
+  <title>clog2 method - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">operator <= method</li>
+    <li class="self-crumb">clog2 method</li>
   </ol>
-  <div class="self-name">operator &lt;=</div>
+  <div class="self-name">clog2</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -53,32 +53,30 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">operator <=</span> method 
+<h1><span class="kind-method">clog2</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
 
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">operator &lt;=</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="<=-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span></li>
-</ol>)
+<span class="name ">clog2</span>(<wbr>)
 
       
 
     </section>
     
 <section class="desc markdown">
-  <p>Less-than-or-equal operation.</p>
-<p>WARNING: Signed math is not fully tested.</p>
+  <p>Ceil of log base 2 operation.</p>
+<p>Returns ceil of log base 2 of valid input.
+Returns <code>x</code> if any bit of input is invalid.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue operator &lt;=(dynamic other) =&gt;
-    &#47;&#47; ignore: avoid_dynamic_calls
-    _doCompare(other, (a, b) =&gt; (a &lt;= b) as bool);</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue clog2() =&gt; _doUnaryMath(_clog2);</code></pre>
 </section>
 
 
@@ -95,7 +93,7 @@
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li class="self-crumb">operator <= method</li>
+  <li class="self-crumb">clog2 method</li>
 </ol>
 
 
