@@ -53,7 +53,6 @@ class LogicStructure implements Logic {
       });
   }
 
-  //TODO: Test separately from array
   LogicStructure clone({String? name}) => LogicStructure(
       elements.map((e) => e is LogicStructure
           ? e.clone()
@@ -300,7 +299,6 @@ class LogicStructure implements Logic {
       ? 0
       : elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
 
-  // TODO: withset should return a similar structure?? special case for array also?
   @override
   Logic withSet(int startIndex, Logic update) {
     final endIndex = startIndex + update.width;
@@ -314,9 +312,6 @@ class LogicStructure implements Logic {
       throw RangeError(
           'Start index must be greater than zero but was $startIndex');
     }
-
-    //TODO:
-    // loop through elements, assign portions where needed?
 
     final newWithSet = clone();
 
@@ -350,11 +345,6 @@ class LogicStructure implements Logic {
     }
 
     return newWithSet;
-    // return [
-    //   getRange(startIndex + update.width, width),
-    //   update,
-    //   getRange(0, startIndex),
-    // ].swizzle();
   }
 
   /////////////////////////////////////////////////

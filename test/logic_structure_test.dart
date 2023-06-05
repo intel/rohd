@@ -25,6 +25,9 @@ class MyStruct extends LogicStructure {
       );
 
   MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+
+  @override
+  LogicStructure clone({String? name}) => MyStruct();
 }
 
 class MyFancyStruct extends LogicStructure {
@@ -42,8 +45,8 @@ class MyFancyStruct extends LogicStructure {
       : super([arr, bus, subStruct], name: 'myFancyStruct');
 }
 
-class ModStructPort extends Module {
-  ModStructPort(MyStruct struct) {
+class StructPortModule extends Module {
+  StructPortModule(MyStruct struct) {
     final ready = addInput('ready', struct.ready);
     final valid = addOutput('valid');
     struct.valid <= valid;
@@ -105,12 +108,22 @@ void main() {
       expect(() => LogicStructure([subS]),
           throwsA(isA<LogicConstructionException>()));
     });
+
+    test('structure clone', () {
+      final orig = MyFancyStruct();
+      final copy = orig.clone();
+
+      expect(copy.name, orig.name);
+      expect(copy.width, orig.width);
+      expect(copy.elements[0], isA<LogicArray>());
+      expect(copy.elements[2], isA<MyStruct>());
+    });
   });
 
   group('LogicStructures with modules', () {
     test('simple struct bi-directional', () async {
       final struct = MyStruct();
-      final mod = ModStructPort(struct);
+      final mod = StructPortModule(struct);
       await mod.build();
 
       final vectors = [
