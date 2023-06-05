@@ -334,14 +334,16 @@ class LogicStructure implements Logic {
       if (elementInRange) {
         newElement <=
             element.withSet(
-                startIndex - index,
+                max(startIndex - index, 0),
                 update.getRange(
-                    index - startIndex, index - startIndex + elementWidth));
+                  max(index - startIndex, 0),
+                  min(index - startIndex + elementWidth, elementWidth),
+                ));
       } else {
         newElement <= element;
       }
 
-      index += width;
+      index += element.width;
     }
 
     return newWithSet;

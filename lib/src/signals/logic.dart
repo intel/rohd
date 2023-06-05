@@ -655,6 +655,11 @@ class Logic {
           'Start index must be greater than zero but was $startIndex');
     }
 
+    if (startIndex == 0 && update.width == width) {
+      // special case, setting whole thing, just return the same thing
+      return update;
+    }
+
     return [
       getRange(startIndex + update.width, width),
       update,

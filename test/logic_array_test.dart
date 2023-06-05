@@ -81,11 +81,11 @@ class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
   }
 }
 
-class WithSetArray extends Module implements SimpleLAPassthrough {
+class WithSetArrayModule extends Module implements SimpleLAPassthrough {
   @override
   Logic get laOut => output('laOut');
 
-  WithSetArray(LogicArray laIn) {
+  WithSetArrayModule(LogicArray laIn) {
     laIn = addInputArray(
       'laIn',
       laIn,
@@ -101,6 +101,29 @@ class WithSetArray extends Module implements SimpleLAPassthrough {
     );
 
     laOut <= laIn.withSet(8, laIn.elements[0].elements[1]);
+  }
+}
+
+class WithSetArrayOffsetModule extends Module implements SimpleLAPassthrough {
+  @override
+  Logic get laOut => output('laOut');
+
+  WithSetArrayOffsetModule(LogicArray laIn) {
+    laIn = addInputArray(
+      'laIn',
+      laIn,
+      dimensions: [2, 2],
+      elementWidth: 8,
+    );
+
+    addOutputArray(
+      'laOut',
+      dimensions: laIn.dimensions,
+      elementWidth: laIn.elementWidth,
+      numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+    );
+
+    laOut <= laIn.withSet(3 + 16, laIn.elements[1].getRange(3, 3 + 9));
   }
 }
 
@@ -550,7 +573,7 @@ void main() {
             reason: 'Expected no swizzles but found one.');
       }
 
-      // await SimCompare.checkFunctionalVector(mod, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
       if (!noIverilog) {
         SimCompare.checkIverilogVector(mod, vectors,
             buildOnly: noSvSim, dontDeleteTmpFiles: dontDeleteTmpFiles);
@@ -809,8 +832,20 @@ void main() {
     });
 
     test('withset', () async {
-      final mod = WithSetArray(LogicArray([2, 2], 8));
+      final mod = WithSetArrayModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod);
+    });
+
+    test('withset offset', () async {
+      final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
+      await testArrayPassthrough(mod, checkNoSwizzle: false);
+
+      // make sure we're reassigning both times it overlaps!
+      expect(
+          RegExp('assign laIn.*=.*swizzled')
+              .allMatches(mod.generateSynth())
+              .length,
+          2);
     });
   });
 
