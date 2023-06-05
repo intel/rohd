@@ -42,9 +42,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// If [reset] is provided, then all signals driven by this block will be
   /// conditionally reset when the signal is high.
   /// The default reset value is to `0`, but if [resetValues] is provided then
-  /// the corresponding value
-  /// associated with the driven signal will be set to that value instead upon
-  /// reset.
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in [resetValues] but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   _Always(this._conditionals,
       {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
@@ -52,21 +53,55 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
     // Get all Receivers
     final allReceivers =
-        conditionals.map((e) => e.receivers).expand((e) => e).toList();
+        conditionals.map((e) => e.receivers).expand((e) => e).toSet();
 
     // This will reset the conditionals on setting the `reset` flag
     if (reset != null) {
+      final allResetCondAssigns = <Conditional>[];
+      final signalsBeingReset = <Logic>{};
+
+      if (resetValues != null) {
+        final toConsiderForElementsReset = <Logic>[
+          ...resetValues.keys,
+        ];
+
+        for (var i = 0; i < toConsiderForElementsReset.length; i++) {
+          final toConsider = toConsiderForElementsReset[i];
+
+          // if it's a structure, we need to consider its elements
+          if (toConsider is LogicStructure) {
+            toConsiderForElementsReset.addAll(toConsider.elements);
+          }
+
+          // if we're already resetting this signal, flag an issue
+          if (signalsBeingReset.contains(toConsider)) {
+            throw SignalRedrivenException([toConsider],
+                'Signal is already being reset by another reset value: ');
+          }
+
+          if (resetValues.containsKey(toConsider)) {
+            // should only be true for top-level structures referenced
+            allResetCondAssigns.add(toConsider < resetValues[toConsider]);
+          }
+
+          // always add the signal, even if this is a sub-element
+          signalsBeingReset.add(toConsider);
+        }
+      }
+
+      // now add the reset to 0 for all the remaining ones
+      for (final receiver in allReceivers.toList()) {
+        if (!signalsBeingReset.contains(receiver)) {
+          allResetCondAssigns.add(receiver < 0);
+        }
+      }
+
       _conditionals = [
         // If resetValue for a receiver is defined,
         If(
           reset,
           // then use it for assigning receiver
-          then: [
-            ...allReceivers.map((rec) {
-              final driver = resetValues?[rec] ?? 0;
-              return rec < driver;
-            })
-          ],
+          then: allResetCondAssigns,
           // else assign zero as resetValue
           orElse: conditionals,
         ),
@@ -344,6 +379,14 @@ class Sequential extends _Always {
   final List<Logic> _clks = [];
 
   /// Constructs a [Sequential] single-triggered by [clk].
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   Sequential(Logic clk, List<Conditional> conditionals,
       {Logic? reset,
       Map<Logic, dynamic>? resetValues,
@@ -352,6 +395,14 @@ class Sequential extends _Always {
             name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   Sequential.multi(List<Logic> clks, super.conditionals,
       {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
@@ -497,7 +548,7 @@ class Sequential extends _Always {
         element.execute(allDrivenSignals, null);
       }
       if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
+        throw SignalRedrivenException(allDrivenSignals.duplicates);
       }
     }
 

@@ -154,7 +154,7 @@ class LogicStructure implements Logic {
     final leaves = <Logic>[];
     for (final element in elements) {
       if (element is LogicStructure) {
-        leaves.addAll(element._calculateLeafElements());
+        leaves.addAll(element.leafElements);
       } else {
         leaves.add(element);
       }
@@ -226,39 +226,25 @@ class LogicStructure implements Logic {
     }
   }
 
-  //TODO: don't make these operate on per-element, just pack the whole thing and do it?
-
   /// Increments each element of [elements] using [Logic.incr].
   @override
-  Conditional incr(
-          {Logic Function(Logic p1) s = Logic._nopS, dynamic val = 1}) =>
-      ConditionalGroup([
-        for (final element in elements) element.incr(s: s, val: val),
-      ]);
+  Conditional incr({Logic Function(Logic p1)? s, dynamic val = 1}) =>
+      s == null ? (this < this + val) : (s(this) < s(this) + val);
 
   /// Decrements each element of [elements] using [Logic.decr].
   @override
-  Conditional decr(
-          {Logic Function(Logic p1) s = Logic._nopS, dynamic val = 1}) =>
-      ConditionalGroup([
-        for (final element in elements) element.decr(s: s, val: val),
-      ]);
+  Conditional decr({Logic Function(Logic p1)? s, dynamic val = 1}) =>
+      s == null ? (this < this - val) : (s(this) < s(this) - val);
 
   /// Divide-assigns each element of [elements] using [Logic.divAssign].
   @override
-  Conditional divAssign(
-          {Logic Function(Logic p1) s = Logic._nopS, dynamic val}) =>
-      ConditionalGroup([
-        for (final element in elements) element.divAssign(s: s, val: val),
-      ]);
+  Conditional divAssign(dynamic val, {Logic Function(Logic p1)? s}) =>
+      s == null ? (this < this / val) : (s(this) < s(this) / val);
 
   /// Multiply-assigns each element of [elements] using [Logic.mulAssign].
   @override
-  Conditional mulAssign(
-          {Logic Function(Logic p1) s = Logic._nopS, dynamic val}) =>
-      ConditionalGroup([
-        for (final element in elements) element.mulAssign(s: s, val: val),
-      ]);
+  Conditional mulAssign(dynamic val, {Logic Function(Logic p1)? s}) =>
+      s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   @override
   late final Iterable<Logic> dstConnections = [

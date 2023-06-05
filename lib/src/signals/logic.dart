@@ -370,11 +370,6 @@ class Logic {
   /// Greater-than-or-equal-to.
   Logic operator >=(dynamic other) => GreaterThanOrEqual(this, other).out;
 
-  /// A function that returns whatever [Logic] is provided.
-  ///
-  /// Used as a default no-op for short-hands.
-  static Logic _nopS(Logic x) => x;
-
   /// Shorthand for a [Conditional] which increments this by [val].
   ///
   /// By default for a [Logic] variable, if no [val] is provided then the
@@ -395,8 +390,8 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
-      s(this) < s(this) + val;
+  Conditional incr({Logic Function(Logic)? s, dynamic val = 1}) =>
+      s == null ? (this < this + val) : (s(this) < s(this) + val);
 
   /// Shorthand for a [Conditional] which decrements this by [val].
   ///
@@ -418,8 +413,8 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional decr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =>
-      s(this) < s(this) - val;
+  Conditional decr({Logic Function(Logic)? s, dynamic val = 1}) =>
+      s == null ? (this < this - val) : (s(this) < s(this) - val);
 
   /// Shorthand for a [Conditional] which increments this by [val].
   ///
@@ -440,8 +435,8 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional mulAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
-      s(this) < s(this) * val;
+  Conditional mulAssign(dynamic val, {Logic Function(Logic)? s}) =>
+      s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   /// Shorthand for a [Conditional] which increments this by [val].
   ///
@@ -462,8 +457,8 @@ class Logic {
   ///     ]);
   ///
   /// ```
-  Conditional divAssign({Logic Function(Logic) s = _nopS, dynamic val}) =>
-      s(this) < s(this) / val;
+  Conditional divAssign(dynamic val, {Logic Function(Logic)? s}) =>
+      s == null ? (this < this / val) : (s(this) < s(this) / val);
 
   /// Conditional assignment operator.
   ///
