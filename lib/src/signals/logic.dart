@@ -105,19 +105,19 @@ class Logic {
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick.
-  Future<LogicValueChanged> get nextChanged => _wire.changed.first;
+  Future<LogicValueChanged> get nextChanged => _wire.nextChanged;
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `0` to `1`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Future<LogicValueChanged> get nextPosedge => _wire.posedge.first;
+  Future<LogicValueChanged> get nextPosedge => _wire.nextPosedge;
 
   /// Triggers at most once, the next time that this [Logic] changes
   /// value at the end of a [Simulator] tick from `1` to `0`.
   ///
   /// Throws an exception if [width] is not `1`.
-  Future<LogicValueChanged> get nextNegedge => _wire.negedge.first;
+  Future<LogicValueChanged> get nextNegedge => _wire.nextNegedge;
 
   /// The [Module] that this [Logic] exists within.
   ///

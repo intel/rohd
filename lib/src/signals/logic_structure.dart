@@ -9,6 +9,8 @@
 
 part of signals;
 
+/// Collects a group of [Logic] signals into one entity which can be manipulated
+/// in a similar way as an individual [Logic].
 class LogicStructure implements Logic {
   /// All elements of this structure.
   @override
@@ -53,6 +55,7 @@ class LogicStructure implements Logic {
       });
   }
 
+  /// Creates a new [LogicStructure] with the same structure as `this`.
   LogicStructure clone({String? name}) => LogicStructure(
       elements.map((e) => e is LogicStructure
           ? e.clone()
@@ -80,12 +83,6 @@ class LogicStructure implements Logic {
 
   @override
   bool get isArrayMember => parentStructure is LogicArray;
-
-  //TODO: delete this crap
-  ///////////////////////////////////////////////
-  ///////////////////////////////////////////////
-  ///////////////////////////////////////////////
-  ///////////////////////////////////////////////
 
   @override
   void put(dynamic val, {bool fill = false}) {

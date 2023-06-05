@@ -9,7 +9,13 @@
 
 part of signals;
 
+/// Represents a multi-dimensional array structure of independent [Logic]s.
 class LogicArray extends LogicStructure {
+  /// The number of elements at each level of the array, starting from the most
+  /// significant outermost level.
+  ///
+  /// For example `[3, 2]` would indicate a 2-dimensional array, where it is
+  /// an array with 3 arrays, each containing 2 arrays.
   final List<int> dimensions;
 
   /// The width of leaf elements in this array.
@@ -21,9 +27,15 @@ class LogicArray extends LogicStructure {
   @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
+  /// The number of [dimensions] which should be treated as "unpacked", starting
+  /// from the outermost (first) elements of [dimensions].
+  ///
+  /// This has no functional impact on simulation or behavior.  It is only used
+  /// as a hint for [Synthesizer]s.
   final int numDimensionsUnpacked;
 
-  ///TODO
+  /// Creates an array with specified [dimensions] and [elementWidth] named
+  /// [name].
   ///
   /// Setting the [numDimensionsUnpacked] gives a hint to [Synthesizer]s about
   /// the intent for declaration of signals. By default, all dimensions are
@@ -75,12 +87,15 @@ class LogicArray extends LogicStructure {
     );
   }
 
-  //TODO
+  /// Creates a new [LogicArray] which has the same [dimensions],
+  /// [elementWidth], [numDimensionsUnpacked] as `this`.
+  ///
+  /// If no new [name] is specified, then it will also have the same name.
   @override
   LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
       numDimensionsUnpacked: numDimensionsUnpacked, name: name ?? this.name);
 
-  ///TODO
+  /// Private constructor for the factory [LogicArray] constructor.
   LogicArray._(
     super.elements, {
     required this.dimensions,
@@ -89,6 +104,9 @@ class LogicArray extends LogicStructure {
     required super.name,
   });
 
+  /// Constructs a new [LogicArray] with a more convenient constructor signature
+  /// for when many ports in an interface are declared together.  Also performs
+  /// some basic checks on the legality of the array as a port of a [Module].
   factory LogicArray.port(String name,
       [List<int> dimensions = const [1],
       int elementWidth = 1,

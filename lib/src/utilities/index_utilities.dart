@@ -33,7 +33,8 @@ abstract class IndexUtilities {
           originalIndex,
           width,
           'IndexOutOfRange',
-          'Index out of range: $modifiedIndex(=$originalIndex) for width $width.',
+          'Index out of range:'
+              ' $modifiedIndex(=$originalIndex) for width $width.',
           width);
     }
 
