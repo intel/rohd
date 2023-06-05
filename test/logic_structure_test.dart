@@ -170,3 +170,22 @@ void main() {
     });
   });
 }
+
+void x() {
+  final rvStruct = LogicStructure([Logic(name: 'ready'), Logic(name: 'valid')]);
+
+  // A 1D array with ten 8-bit elements.
+  LogicArray([10], 8);
+
+  // A 4x3 2D array, with four arrays, each with three 2-bit elements.
+  // The first dimension (4) will be unpacked.
+  LogicArray(
+    [4, 3],
+    2,
+    name: 'array4x3w1unpacked',
+    numUnpackedDimensions: 1,
+  );
+
+  // A 5x5x5 3D array, with 125 total elements, each 128 bits.
+  LogicArray([5, 5, 5], 128);
+}

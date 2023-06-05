@@ -235,9 +235,9 @@ abstract class SimCompare {
 
       if (signal is LogicArray) {
         final unpackedDims =
-            signal.dimensions.getRange(0, signal.numDimensionsUnpacked);
+            signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
-            .getRange(signal.numDimensionsUnpacked, signal.dimensions.length);
+            .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
         return packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +

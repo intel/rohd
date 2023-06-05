@@ -654,7 +654,7 @@ class _SynthLogic {
       for (var i = 0; i < dims.length; i++) {
         final dim = dims[i];
         final dimStr = _widthToRangeDef(dim, forceRange: true);
-        if (i < logicArr.numDimensionsUnpacked) {
+        if (i < logicArr.numUnpackedDimensions) {
           unpackedDimsBuf.write(dimStr);
         } else {
           packedDimsBuf.write(dimStr);

@@ -484,24 +484,24 @@ abstract class Module {
   }
 
   /// Registers and returns an input [LogicArray] port to this [Module] with
-  /// the specified [dimensions], [elementWidth], and [numDimensionsUnpacked]
+  /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
   ///
   /// This is very similar to [addInput], except for [LogicArray]s.
   ///
   /// Performs validation on overall width matching for [x], but not on
-  /// [dimensions], [elementWidth], or [numDimensionsUnpacked].
+  /// [dimensions], [elementWidth], or [numUnpackedDimensions].
   LogicArray addInputArray(
     String name,
     Logic x, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsUnpacked = 0,
+    int numUnpackedDimensions = 0,
   }) {
     _checkForSafePortName(name);
 
     final inArr = LogicArray(dimensions, elementWidth,
-        name: name, numDimensionsUnpacked: numDimensionsUnpacked)
+        name: name, numUnpackedDimensions: numUnpackedDimensions)
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -529,7 +529,7 @@ abstract class Module {
   }
 
   /// Registers and returns an output [LogicArray] port to this [Module] with
-  /// the specified [dimensions], [elementWidth], and [numDimensionsUnpacked]
+  /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
@@ -537,12 +537,12 @@ abstract class Module {
     String name, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
-    int numDimensionsUnpacked = 0,
+    int numUnpackedDimensions = 0,
   }) {
     _checkForSafePortName(name);
 
     final outArr = LogicArray(dimensions, elementWidth,
-        name: name, numDimensionsUnpacked: numDimensionsUnpacked)
+        name: name, numUnpackedDimensions: numUnpackedDimensions)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 

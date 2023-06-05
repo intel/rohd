@@ -32,12 +32,12 @@ class LogicArray extends LogicStructure {
   ///
   /// This has no functional impact on simulation or behavior.  It is only used
   /// as a hint for [Synthesizer]s.
-  final int numDimensionsUnpacked;
+  final int numUnpackedDimensions;
 
   /// Creates an array with specified [dimensions] and [elementWidth] named
   /// [name].
   ///
-  /// Setting the [numDimensionsUnpacked] gives a hint to [Synthesizer]s about
+  /// Setting the [numUnpackedDimensions] gives a hint to [Synthesizer]s about
   /// the intent for declaration of signals. By default, all dimensions are
   /// packed, but if the value is set to more than `0`, then the outer-most
   /// dimensions (first in [dimensions]) will become unpacked.  It must be less
@@ -45,13 +45,13 @@ class LogicArray extends LogicStructure {
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
   factory LogicArray(List<int> dimensions, int elementWidth,
-      {String? name, int numDimensionsUnpacked = 0}) {
+      {String? name, int numUnpackedDimensions = 0}) {
     if (dimensions.isEmpty) {
       throw LogicConstructionException(
           'Arrays must have at least 1 dimension.');
     }
 
-    if (numDimensionsUnpacked > dimensions.length) {
+    if (numUnpackedDimensions > dimensions.length) {
       throw LogicConstructionException(
           'Cannot unpack more than all of the dimensions.');
     }
@@ -75,32 +75,32 @@ class LogicArray extends LogicStructure {
               : LogicArray(
                   nextDimensions!,
                   elementWidth,
-                  numDimensionsUnpacked: max(0, numDimensionsUnpacked - 1),
+                  numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
                   name: '${name}_$index',
                 ))
             .._arrayIndex = index,
           growable: false),
       dimensions: UnmodifiableListView(dimensions),
       elementWidth: elementWidth,
-      numDimensionsUnpacked: numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedDimensions,
       name: name,
     );
   }
 
   /// Creates a new [LogicArray] which has the same [dimensions],
-  /// [elementWidth], [numDimensionsUnpacked] as `this`.
+  /// [elementWidth], [numUnpackedDimensions] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
   @override
   LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
-      numDimensionsUnpacked: numDimensionsUnpacked, name: name ?? this.name);
+      numUnpackedDimensions: numUnpackedDimensions, name: name ?? this.name);
 
   /// Private constructor for the factory [LogicArray] constructor.
   LogicArray._(
     super.elements, {
     required this.dimensions,
     required this.elementWidth,
-    required this.numDimensionsUnpacked,
+    required this.numUnpackedDimensions,
     required super.name,
   });
 
@@ -110,12 +110,12 @@ class LogicArray extends LogicStructure {
   factory LogicArray.port(String name,
       [List<int> dimensions = const [1],
       int elementWidth = 1,
-      int numDimensionsUnpacked = 0]) {
+      int numUnpackedDimensions = 0]) {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);
     }
 
     return LogicArray(dimensions, elementWidth,
-        numDimensionsUnpacked: numDimensionsUnpacked, name: name);
+        numUnpackedDimensions: numUnpackedDimensions, name: name);
   }
 }

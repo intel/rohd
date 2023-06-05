@@ -28,15 +28,15 @@ class SimpleLAPassthrough extends Module {
       laIn,
       dimensions: dimOverride ?? laIn.dimensions,
       elementWidth: elemWidthOverride ?? laIn.elementWidth,
-      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedOverride ?? laIn.numUnpackedDimensions,
     );
 
     addOutputArray(
           'laOut',
           dimensions: dimOverride ?? laIn.dimensions,
           elementWidth: elemWidthOverride ?? laIn.elementWidth,
-          numDimensionsUnpacked:
-              numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+          numUnpackedDimensions:
+              numUnpackedOverride ?? laIn.numUnpackedDimensions,
         ) <=
         laIn;
   }
@@ -58,7 +58,7 @@ class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
       'laOut',
       dimensions: laIn.dimensions,
       elementWidth: laIn.elementWidth,
-      numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: laIn.numUnpackedDimensions,
     );
 
     laOut.elements[0] <=
@@ -97,7 +97,7 @@ class WithSetArrayModule extends Module implements SimpleLAPassthrough {
       'laOut',
       dimensions: laIn.dimensions,
       elementWidth: laIn.elementWidth,
-      numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: laIn.numUnpackedDimensions,
     );
 
     laOut <= laIn.withSet(8, laIn.elements[0].elements[1]);
@@ -120,7 +120,7 @@ class WithSetArrayOffsetModule extends Module implements SimpleLAPassthrough {
       'laOut',
       dimensions: laIn.dimensions,
       elementWidth: laIn.elementWidth,
-      numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: laIn.numUnpackedDimensions,
     );
 
     laOut <= laIn.withSet(3 + 16, laIn.elements[1].getRange(3, 3 + 9));
@@ -132,7 +132,7 @@ enum LADir { laIn, laOut }
 class LAPassthroughIntf extends Interface<LADir> {
   final List<int> dimensions;
   final int elementWidth;
-  final int numDimensionsUnpacked;
+  final int numUnpackedDimensions;
 
   Logic get laIn => port('laIn');
   Logic get laOut => port('laOut');
@@ -140,16 +140,16 @@ class LAPassthroughIntf extends Interface<LADir> {
   LAPassthroughIntf({
     required this.dimensions,
     required this.elementWidth,
-    required this.numDimensionsUnpacked,
+    required this.numUnpackedDimensions,
   }) {
     setPorts([
-      LogicArray.port('laIn', dimensions, elementWidth, numDimensionsUnpacked)
+      LogicArray.port('laIn', dimensions, elementWidth, numUnpackedDimensions)
     ], [
       LADir.laIn
     ]);
 
     setPorts([
-      LogicArray.port('laOut', dimensions, elementWidth, numDimensionsUnpacked)
+      LogicArray.port('laOut', dimensions, elementWidth, numUnpackedDimensions)
     ], [
       LADir.laOut
     ]);
@@ -159,7 +159,7 @@ class LAPassthroughIntf extends Interface<LADir> {
       : this(
           dimensions: other.dimensions,
           elementWidth: other.elementWidth,
-          numDimensionsUnpacked: other.numDimensionsUnpacked,
+          numUnpackedDimensions: other.numUnpackedDimensions,
         );
 }
 
@@ -184,21 +184,21 @@ class SimpleLAPassthroughLogic extends Module implements SimpleLAPassthrough {
     Logic laIn, {
     required List<int> dimensions,
     required int elementWidth,
-    required int numDimensionsUnpacked,
+    required int numUnpackedDimensions,
   }) {
     laIn = addInputArray(
       'laIn',
       laIn,
       dimensions: dimensions,
       elementWidth: elementWidth,
-      numDimensionsUnpacked: numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedDimensions,
     );
 
     addOutputArray(
           'laOut',
           dimensions: dimensions,
           elementWidth: elementWidth,
-          numDimensionsUnpacked: numDimensionsUnpacked,
+          numUnpackedDimensions: numUnpackedDimensions,
         ) <=
         laIn;
   }
@@ -212,7 +212,7 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     final intermediate = Logic(name: 'intermediate', width: laIn.width);
 
@@ -221,7 +221,7 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         intermediate;
   }
 }
@@ -236,7 +236,7 @@ class PackAndUnpackWithArraysPassthrough extends Module
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     final intermediate1 = Logic(name: 'intermediate1', width: laIn.width);
     final intermediate3 = Logic(name: 'intermediate2', width: laIn.width);
@@ -244,7 +244,7 @@ class PackAndUnpackWithArraysPassthrough extends Module
     // unpack with reversed dimensions
     final intermediate2 = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate2', numDimensionsUnpacked: intermediateUnpacked);
+        name: 'intermediate2', numUnpackedDimensions: intermediateUnpacked);
 
     intermediate1 <= laIn;
     intermediate2 <= intermediate1;
@@ -253,7 +253,7 @@ class PackAndUnpackWithArraysPassthrough extends Module
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         intermediate3;
   }
 }
@@ -266,19 +266,19 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     // rearrange with reversed dimensions
     final intermediate = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
+        name: 'intermediate', numUnpackedDimensions: intermediateUnpacked);
 
     intermediate <= laIn;
 
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         intermediate;
   }
 }
@@ -291,7 +291,7 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     final intermediate1 = Logic(name: 'intermediate', width: laIn.width);
     final intermediate3 = Logic(name: 'intermediate', width: laIn.width);
@@ -300,11 +300,11 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
     // unpack with reversed dimensions
     final intermediate2 = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
+        name: 'intermediate', numUnpackedDimensions: intermediateUnpacked);
 
     final intermediate4 = LogicArray(
         laIn.dimensions.reversed.toList(), laIn.elementWidth,
-        name: 'intermediate', numDimensionsUnpacked: intermediateUnpacked);
+        name: 'intermediate', numUnpackedDimensions: intermediateUnpacked);
 
     intermediate1 <= laIn;
     intermediate2 <= intermediate1;
@@ -315,7 +315,7 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         intermediate5;
   }
 }
@@ -328,14 +328,14 @@ class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     final intermediate = SimpleLAPassthrough(laIn).laOut;
 
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         intermediate;
   }
 }
@@ -348,10 +348,10 @@ class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
     laIn = addInputArray('laIn', laIn,
         dimensions: laIn.dimensions,
         elementWidth: laIn.elementWidth,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked);
+        numUnpackedDimensions: laIn.numUnpackedDimensions);
 
     final invertedLaIn = LogicArray(laIn.dimensions, laIn.elementWidth,
-        numDimensionsUnpacked: intermediateUnpacked)
+        numUnpackedDimensions: intermediateUnpacked)
       ..gets(~laIn);
 
     final x1 = SimpleLAPassthrough(laIn).laOut;
@@ -370,7 +370,7 @@ class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
     addOutputArray('laOut',
             dimensions: laIn.dimensions,
             elementWidth: laIn.elementWidth,
-            numDimensionsUnpacked: laIn.numDimensionsUnpacked) <=
+            numUnpackedDimensions: laIn.numUnpackedDimensions) <=
         same;
   }
 }
@@ -381,12 +381,12 @@ class ConstantAssignmentArrayModule extends Module {
   ConstantAssignmentArrayModule(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
         dimensions: [3, 3, 3, 3],
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+        numUnpackedDimensions: laIn.numUnpackedDimensions,
         elementWidth: 8);
 
     addOutputArray('laOut',
         dimensions: laIn.dimensions,
-        numDimensionsUnpacked: laIn.numDimensionsUnpacked,
+        numUnpackedDimensions: laIn.numUnpackedDimensions,
         elementWidth: laIn.elementWidth);
 
     laOut.elements[1] <=
@@ -414,14 +414,14 @@ class CondAssignArray extends Module implements SimpleLAPassthrough {
       laIn,
       dimensions: dimOverride ?? laIn.dimensions,
       elementWidth: elemWidthOverride ?? laIn.elementWidth,
-      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedOverride ?? laIn.numUnpackedDimensions,
     );
 
     final laOut = addOutputArray(
       'laOut',
       dimensions: dimOverride ?? laIn.dimensions,
       elementWidth: elemWidthOverride ?? laIn.elementWidth,
-      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedOverride ?? laIn.numUnpackedDimensions,
     );
 
     Combinational([laOut < laIn]);
@@ -443,14 +443,14 @@ class CondCompArray extends Module implements SimpleLAPassthrough {
       laIn,
       dimensions: dimOverride ?? laIn.dimensions,
       elementWidth: elemWidthOverride ?? laIn.elementWidth,
-      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedOverride ?? laIn.numUnpackedDimensions,
     );
 
     final laOut = addOutputArray(
       'laOut',
       dimensions: dimOverride ?? laIn.dimensions,
       elementWidth: elemWidthOverride ?? laIn.elementWidth,
-      numDimensionsUnpacked: numUnpackedOverride ?? laIn.numDimensionsUnpacked,
+      numUnpackedDimensions: numUnpackedOverride ?? laIn.numUnpackedDimensions,
     );
 
     Combinational([
@@ -544,16 +544,16 @@ void main() {
     });
 
     test('overly unpacking exception', () {
-      expect(() => LogicArray([1, 2, 3], 4, numDimensionsUnpacked: 4),
+      expect(() => LogicArray([1, 2, 3], 4, numUnpackedDimensions: 4),
           throwsA(isA<LogicConstructionException>()));
     });
 
     test('unpacked dims get passed down', () {
-      final arr = LogicArray([1, 2, 3], 4, numDimensionsUnpacked: 2);
-      expect(arr.numDimensionsUnpacked, 2);
-      expect((arr.elements[0] as LogicArray).numDimensionsUnpacked, 1);
+      final arr = LogicArray([1, 2, 3], 4, numUnpackedDimensions: 2);
+      expect(arr.numUnpackedDimensions, 2);
+      expect((arr.elements[0] as LogicArray).numUnpackedDimensions, 1);
       expect(
-          (arr.elements[0].elements[0] as LogicArray).numDimensionsUnpacked, 0);
+          (arr.elements[0].elements[0] as LogicArray).numUnpackedDimensions, 0);
     });
   });
 
@@ -622,7 +622,7 @@ void main() {
 
       test('1d, unpacked', () async {
         final mod =
-            SimpleLAPassthrough(LogicArray([3], 8, numDimensionsUnpacked: 1));
+            SimpleLAPassthrough(LogicArray([3], 8, numUnpackedDimensions: 1));
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
@@ -634,13 +634,13 @@ void main() {
 
       test('single element, unpacked', () async {
         final mod =
-            SimpleLAPassthrough(LogicArray([1], 8, numDimensionsUnpacked: 1));
+            SimpleLAPassthrough(LogicArray([1], 8, numUnpackedDimensions: 1));
         await testArrayPassthrough(mod, noSvSim: true, noIverilog: true);
       });
 
       test('4d, half packed', () async {
         final mod = SimpleLAPassthrough(
-            LogicArray([5, 4, 3, 2], 8, numDimensionsUnpacked: 2));
+            LogicArray([5, 4, 3, 2], 8, numUnpackedDimensions: 2));
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
@@ -667,7 +667,7 @@ void main() {
         final mod = LAPassthroughWithIntf(LAPassthroughIntf(
           dimensions: [3, 2, 3],
           elementWidth: 8,
-          numDimensionsUnpacked: 0,
+          numUnpackedDimensions: 0,
         ));
         await testArrayPassthrough(mod);
       });
@@ -686,7 +686,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = PackAndUnpackPassthrough(
-            LogicArray([5, 3, 2], 8, numDimensionsUnpacked: 2));
+            LogicArray([5, 3, 2], 8, numUnpackedDimensions: 2));
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, checkNoSwizzle: false, noSvSim: true);
@@ -712,7 +712,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = PackAndUnpackWithArraysPassthrough(
-            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
             intermediateUnpacked: 1);
 
         // unpacked array assignment not fully supported in iverilog
@@ -728,7 +728,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = RearrangeArraysPassthrough(
-            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
             intermediateUnpacked: 1);
 
         // unpacked array assignment not fully supported in iverilog
@@ -741,8 +741,8 @@ void main() {
 
     group('different port and input widths', () {
       test('array param mismatch', () async {
-        final i = LogicArray([3, 2], 8, numDimensionsUnpacked: 1);
-        final o = LogicArray([3, 2], 8, numDimensionsUnpacked: 1);
+        final i = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
+        final o = LogicArray([3, 2], 8, numUnpackedDimensions: 1);
         final mod = SimpleLAPassthrough(
           i,
           dimOverride: [1, 3],
@@ -760,7 +760,7 @@ void main() {
           i,
           dimensions: [1, 3],
           elementWidth: 16,
-          numDimensionsUnpacked: 0,
+          numUnpackedDimensions: 0,
         );
         o <= mod.laOut;
         await testArrayPassthrough(mod);
@@ -775,7 +775,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = ArrayNameConflicts(
-            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
             intermediateUnpacked: 1);
 
         // unpacked array assignment not fully supported in iverilog
@@ -794,7 +794,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = SimpleArraysAndHierarchy(
-            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2));
+            LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2));
 
         // unpacked array assignment not fully supported in iverilog
         await testArrayPassthrough(mod, noSvSim: true);
@@ -815,7 +815,7 @@ void main() {
 
       test('3d unpacked', () async {
         final mod = FancyArraysAndHierarchy(
-            LogicArray([4, 3, 2], 8, numDimensionsUnpacked: 2),
+            LogicArray([4, 3, 2], 8, numUnpackedDimensions: 2),
             intermediateUnpacked: 1);
 
         // unpacked array assignment not fully supported in iverilog
@@ -860,9 +860,9 @@ void main() {
 
   group('array constant assignments', () {
     Future<void> testArrayConstantAssignments(
-        {required int numDimensionsUnpacked, bool doSvSim = true}) async {
+        {required int numUnpackedDimensions, bool doSvSim = true}) async {
       final mod = ConstantAssignmentArrayModule(LogicArray([3, 3, 3, 3], 8,
-          numDimensionsUnpacked: numDimensionsUnpacked));
+          numUnpackedDimensions: numUnpackedDimensions));
       await mod.build();
 
       final a = <LogicValue>[];
@@ -896,13 +896,13 @@ void main() {
     }
 
     test('with packed only', () async {
-      await testArrayConstantAssignments(numDimensionsUnpacked: 0);
+      await testArrayConstantAssignments(numUnpackedDimensions: 0);
     });
 
     test('with unpacked also', () async {
       // unpacked array assignment not fully supported in iverilog
       await testArrayConstantAssignments(
-          numDimensionsUnpacked: 2, doSvSim: false);
+          numUnpackedDimensions: 2, doSvSim: false);
     });
 
     test('indexing single bit of array', () async {
