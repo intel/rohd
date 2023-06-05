@@ -672,7 +672,7 @@ void main() {
       );
       await mod.build();
 
-      var vectors = [
+      final vectors = [
         Vector({
           'preIncr': 5,
           'preDecr': 5,

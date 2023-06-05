@@ -517,7 +517,11 @@ class Logic {
     throw Exception('Expected `int` or `Logic`');
   }
 
-  //TODO: test this
+  /// Provides a list of logical elements within this signal.
+  ///
+  /// For a normal [Logic], this will always be a list of 1-bit signals.
+  /// However, for derivatives of [Logic] like [LogicStructure] or [LogicArray],
+  /// each element may be any positive number of bits.
   late final List<Logic> elements = UnmodifiableListView(
       List.generate(width, (index) => this[index], growable: false));
 

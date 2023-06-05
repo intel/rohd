@@ -12,9 +12,6 @@ import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-//TODO: test structures in conditional assignments
-//TODO: test structures in If/Case expressions
-
 class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;

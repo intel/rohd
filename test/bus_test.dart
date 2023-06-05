@@ -140,7 +140,7 @@ class BusTestModule extends Module {
     aNegativeRange3 <= a.getRange(-1, 8);
     aNegativeRange4 <= a.getRange(-3);
 
-    aOperatorIndexing1 <= a[0];
+    aOperatorIndexing1 <= a.elements[0];
     aOperatorIndexing2 <= a[a.width - 1];
     aOperatorIndexing3 <= a[4];
     aOperatorNegIndexing1 <= a[-a.width];
@@ -375,8 +375,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
 
     test('Bus shrink', () async {
