@@ -78,42 +78,55 @@ void main() {
     expect(numPosedges, equals(1));
   });
 
-  test('injection triggers flop', () async {
-    final baseClk = SimpleClockGenerator(10).clk;
+  group('injection triggers flop', () {
+    Future<void> injectionTriggersFlop({required bool useArrays}) async {
+      final baseClk = SimpleClockGenerator(10).clk;
 
-    final clk = Logic();
-    final d = Logic();
+      Logic genSignal() => useArrays ? LogicArray([1], 1) : Logic();
 
-    final q = FlipFlop(clk, d).q;
+      final clk = genSignal();
+      final d = genSignal();
 
-    var qHadPosedge = false;
+      final q = genSignal()..gets(FlipFlop(clk, d).q);
 
-    Simulator.setMaxSimTime(100);
+      var qHadPosedge = false;
 
-    unawaited(q.nextPosedge.then((value) {
-      qHadPosedge = true;
-    }));
+      Simulator.setMaxSimTime(100);
 
-    unawaited(Simulator.run());
+      unawaited(q.nextPosedge.then((value) {
+        qHadPosedge = true;
+      }));
 
-    await baseClk.nextPosedge;
-    clk.inject(0);
-    d.inject(0);
-    await baseClk.nextPosedge;
-    clk.inject(1);
-    await baseClk.nextPosedge;
-    expect(q.value, equals(LogicValue.zero));
-    clk.inject(0);
-    d.inject(1);
-    await baseClk.nextPosedge;
-    clk.inject(1);
-    await baseClk.nextPosedge;
-    expect(q.value, equals(LogicValue.one));
+      unawaited(Simulator.run());
 
-    await Simulator.simulationEnded;
+      await baseClk.nextPosedge;
+      clk.inject(0);
+      d.inject(0);
+      await baseClk.nextPosedge;
+      clk.inject(1);
+      await baseClk.nextPosedge;
+      expect(q.value, equals(LogicValue.zero));
+      clk.inject(0);
+      d.inject(1);
+      await baseClk.nextPosedge;
+      clk.inject(1);
+      await baseClk.nextPosedge;
+      expect(q.value, equals(LogicValue.one));
 
-    expect(qHadPosedge, equals(true));
+      await Simulator.simulationEnded;
+
+      expect(qHadPosedge, equals(true));
+    }
+
+    test('normal logic', () async {
+      await injectionTriggersFlop(useArrays: false);
+    });
+
+    test('arrays', () async {
+      await injectionTriggersFlop(useArrays: true);
+    });
   });
+
   test('injection triggers flop with enable logicvalue 1', () async {
     final baseClk = SimpleClockGenerator(10).clk;
 

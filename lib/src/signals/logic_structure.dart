@@ -100,13 +100,7 @@ class LogicStructure implements Logic {
 
   @override
   void inject(dynamic val, {bool fill = false}) {
-    final logicVal = LogicValue.of(val, fill: fill, width: width);
-
-    var index = 0;
-    for (final element in leafElements) {
-      element.inject(logicVal.getRange(index, index + element.width));
-      index += element.width;
-    }
+    Simulator.injectAction(() => put(val, fill: fill));
   }
 
   @override
