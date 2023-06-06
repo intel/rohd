@@ -71,7 +71,7 @@ class FirFilter extends Module {
           ],
           orElse: [out < 0] +
               // Set all 'z' to zero.
-              List<ConditionalAssign>.generate(depth, (index) => z[index] < 0))
+              List<Conditional>.generate(depth, (index) => z[index] < 0))
     ]);
   }
 }

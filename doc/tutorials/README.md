@@ -36,23 +36,23 @@
 - [Introduction to Test Driven Development](./chapter_3/00_unit_test.md#introduction-to-test-driven-development)
 - [What is a Full-Adder?](./chapter_3/00_unit_test.md#what-is-a-full-adder)
 - [Create a Full-Adder with TDD](./chapter_3/00_unit_test.md#create-full-adder-with-tdd)
+- [Exercise](./chapter_3/00_unit_test.md#exercise)
 
 ## Chapter 4: Basic Generation
 
-- Basic generation: Put adder in a loop (N-Bits Adder)
-- Conditional generation and flow control
-- Using functions to construct hardware
-- Using classes to construct hardware
-- Make a function on one bit full-adder and make a for loop that loop through this adder to make N-bit full adder.
+- [What is n-bit adder?](./chapter_4/00_basic_generation.md#what-is-n-bit-adder)
+- [Create a unit-test](./chapter_4/00_basic_generation.md#create-a-unit-test)
+- [Create Dart function and class](./chapter_4/00_basic_generation.md#create-dart-function-and-class)
+- [Exercise](./chapter_4/00_basic_generation.md#exercise)
 
 ## Chapter 5: Basics of modules
 
-- Full Adder in Module
-- Explanation of purpose of modules (introduce formal hierarchy)
-- First module (one input, one output, simple logic)
-- Converting to SystemVerilog
-- Composing modules within other modules
-- Port
+- [What is ROHD Module?](./chapter_5/00_basic_modules.md#what-is-rohd-module)
+- [First module (one input, one output, simple logic)](./chapter_5/00_basic_modules.md#first-module-one-input-one-output-simple-logic)
+- [Converting ROHD Module to System Verilog RTL](./chapter_5/00_basic_modules.md#converting-rohd-module-to-system-verilog-rtl)
+- [Exercise 1](./chapter_5/00_basic_modules.md#exercise-1)
+- [Composing modules within other modules (N-Bit Adder)](./chapter_5/00_basic_modules.md#composing-modules-withon-other-modules-n-bit-adder)
+- [Exercise 2](./chapter_5/00_basic_modules.md#exercise-2)
 
 ## Chapter 6: Combinational Logic
 

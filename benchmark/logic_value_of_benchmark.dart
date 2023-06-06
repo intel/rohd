@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic_value_of_benchmark.dart
-/// Benchmarking for concatenation of values together into one.
-///
-/// 2022 December 1
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_value_of_benchmark.dart
+// Benchmarking for concatenation of values together into one.
+//
+// 2022 December 1
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:math';
 
@@ -14,7 +13,7 @@ import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
 
 class LogicValueOfBenchmark extends BenchmarkBase {
-  late List<LogicValue> toOf;
+  late final List<LogicValue> toOf;
 
   LogicValueOfBenchmark() : super('LogicValueOf');
 
@@ -33,14 +32,11 @@ class LogicValueOfBenchmark extends BenchmarkBase {
   }
 
   @override
-  void teardown() {}
-
-  @override
   void run() {
-    LogicValue.of(toOf);
+    LogicValue.ofIterable(toOf);
   }
 }
 
-void main() async {
+void main() {
   LogicValueOfBenchmark().report();
 }

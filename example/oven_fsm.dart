@@ -200,7 +200,9 @@ Future<void> main({bool noPrint = false}) async {
   //
   // Check on https://mermaid.js.org/intro/ to view the diagram generated.
   // If you are using vscode, you can download the mermaid extension.
-  oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
+  if (!noPrint) {
+    oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
+  }
 
   // Before we can simulate or generate code with the counter, we need
   // to build it.
