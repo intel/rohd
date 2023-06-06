@@ -310,6 +310,21 @@ that can be consumed.
 
 </dd>
 
+        <dt id="addInputArray" class="callable inherited">
+  <span class="name"><a href="../rohd/Module/addInputArray.html">addInputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addInputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInputArray-param-x"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">x</span>, </span><span class="parameter" id="addInputArray-param-dimensions">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addInputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addInputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Registers and returns an input <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
+the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
+named <code>name</code>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="addOutput" class="callable inherited">
   <span class="name"><a href="../rohd/Module/addOutput.html">addOutput</a></span><span class="signature">(<wbr><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addOutput-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
@@ -320,6 +335,21 @@ that can be consumed.
 <dd class="inherited">
   Registers an output to this <a href="../rohd/Module-class.html">Module</a> and returns an output port that
 can be driven.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="addOutputArray" class="callable inherited">
+  <span class="name"><a href="../rohd/Module/addOutputArray.html">addOutputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addOutputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addOutputArray-param-dimensions">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addOutputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addOutputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Registers and returns an output <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
+the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
+named <code>name</code>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -560,6 +590,7 @@ named <code>name</code>.
         <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
         <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
         <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+        <li><a href="../rohd/ConditionalGroup-class.html">ConditionalGroup</a></li>
         <li><a href="../rohd/Const-class.html">Const</a></li>
         <li><a href="../rohd/Divide-class.html">Divide</a></li>
         <li><a href="../rohd/Else-class.html">Else</a></li>
@@ -576,6 +607,8 @@ named <code>name</code>.
         <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
         <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
         <li><a href="../rohd/Logic-class.html">Logic</a></li>
+        <li><a href="../rohd/LogicArray-class.html">LogicArray</a></li>
+        <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
         <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
         <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
         <li><a href="../rohd/LShift-class.html">LShift</a></li>
@@ -670,7 +703,9 @@ named <code>name</code>.
 
         <li class="section-title inherited"><a href="../rohd/LessThanOrEqual-class.html#instance-methods">Methods</a></li>
           <li class="inherited"><a href="../rohd/Module/addInput.html">addInput</a></li>
+          <li class="inherited"><a href="../rohd/Module/addInputArray.html">addInputArray</a></li>
           <li class="inherited"><a href="../rohd/Module/addOutput.html">addOutput</a></li>
+          <li class="inherited"><a href="../rohd/Module/addOutputArray.html">addOutputArray</a></li>
           <li class="inherited"><a href="../rohd/Module/build.html">build</a></li>
           <li class="inherited"><a href="../rohd/Module/generateSynth.html">generateSynth</a></li>
           <li class="inherited"><a href="../rohd/Module/hierarchy.html">hierarchy</a></li>

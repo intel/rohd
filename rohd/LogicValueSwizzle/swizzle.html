@@ -80,7 +80,7 @@ most significant (highest) bits.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">LogicValue swizzle() =&gt; LogicValue.of(reversed);</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue swizzle() =&gt; length == 1 ? first : LogicValue.ofIterable(reversed);</code></pre>
 </section>
 
 

@@ -332,8 +332,7 @@ of <code>endIndex</code>.
 
 </dt>
 <dd>
-  Returns new <a href="../rohd/LogicValue-class.html">LogicValue</a> replicated <code>multiplier</code> times. An exception will
-be thrown in case the multiplier is &lt;1
+  Returns new <a href="../rohd/LogicValue-class.html">LogicValue</a> replicated <code>multiplier</code> times.
   
 
 </dd>
@@ -836,14 +835,14 @@ number of bits.
 </dd>
 
         <dt id="of" class="callable">
-  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
+  <span class="name"><a href="../rohd/LogicValue/of.html">of</a></span><span class="signature">(<wbr><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="of-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.
+  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>val</code> which could be of a variety of types.
   
 
 </dd>
@@ -886,6 +885,19 @@ one or zero.
 <dd>
   Converts <code>int</code> <code>value</code> to a valid <a href="../rohd/LogicValue-class.html">LogicValue</a> with <code>width</code> number
 of bits.
+  
+
+</dd>
+
+        <dt id="ofIterable" class="callable">
+  <span class="name"><a href="../rohd/LogicValue/ofIterable.html">ofIterable</a></span><span class="signature">(<wbr><span class="parameter" id="ofIterable-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Constructs a <a href="../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.
   
 
 </dd>
@@ -1020,6 +1032,7 @@ of bits.
         <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
         <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
         <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+        <li><a href="../rohd/ConditionalGroup-class.html">ConditionalGroup</a></li>
         <li><a href="../rohd/Const-class.html">Const</a></li>
         <li><a href="../rohd/Divide-class.html">Divide</a></li>
         <li><a href="../rohd/Else-class.html">Else</a></li>
@@ -1036,6 +1049,8 @@ of bits.
         <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
         <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
         <li><a href="../rohd/Logic-class.html">Logic</a></li>
+        <li><a href="../rohd/LogicArray-class.html">LogicArray</a></li>
+        <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
         <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
         <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
         <li><a href="../rohd/LShift-class.html">LShift</a></li>
@@ -1176,6 +1191,7 @@ of bits.
           <li><a href="../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../rohd/LogicValue-class.html#constants">Constants</a></li>

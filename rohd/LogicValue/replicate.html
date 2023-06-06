@@ -68,8 +68,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns new <a href="../../rohd/LogicValue-class.html">LogicValue</a> replicated <code>multiplier</code> times. An exception will
-be thrown in case the multiplier is &lt;1</p>
+  <p>Returns new <a href="../../rohd/LogicValue-class.html">LogicValue</a> replicated <code>multiplier</code> times.</p>
+<p>An exception will be thrown in case the multiplier is &lt;1.</p>
 </section>
 
 
@@ -81,7 +81,7 @@ be thrown in case the multiplier is &lt;1</p>
     throw InvalidMultiplierException(multiplier);
   }
 
-  return LogicValue.of(List.filled(multiplier, this));
+  return LogicValue.ofIterable(List.filled(multiplier, this));
 }</code></pre>
 </section>
 
@@ -178,6 +178,7 @@ be thrown in case the multiplier is &lt;1</p>
           <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>

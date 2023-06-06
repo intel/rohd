@@ -91,8 +91,9 @@ print(lv); // This prints `3b'1x0`
   <pre class="language-dart"><code class="language-dart">@override
 String toString({bool includeWidth = true}) {
   if (isValid &amp;&amp; includeWidth) {
-    final hexValue = width &gt; _INT_BITS
-        ? toBigInt().toRadixString(16)
+    &#47;&#47; for ==_INT_BITS, still use BigInt so we don&#39;t get negatives
+    final hexValue = width &gt;= _INT_BITS
+        ? toBigInt().toUnsigned(width).toRadixString(16)
         : toInt().toRadixString(16);
     return &quot;$width&#39;h$hexValue&quot;;
   } else {
@@ -198,6 +199,7 @@ String toString({bool includeWidth = true}) {
           <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>

@@ -86,12 +86,14 @@ can be driven.</p>
   <pre class="language-dart"><code class="language-dart">@protected
 Logic addOutput(String name, {int width = 1}) {
   _checkForSafePortName(name);
-  _outputs[name] = Logic(name: name, width: width);
 
-  &#47;&#47; ignore: invalid_use_of_protected_member
-  _outputs[name]!.parentModule = this;
+  final outPort = Port(name, width)
+    &#47;&#47; ignore: invalid_use_of_protected_member
+    ..parentModule = this;
 
-  return _outputs[name]!;
+  _outputs[name] = outPort;
+
+  return outPort;
 }</code></pre>
 </section>
 
@@ -140,7 +142,9 @@ Logic addOutput(String name, {int width = 1}) {
 
         <li class="section-title"><a href="../../rohd/Module-class.html#instance-methods">Methods</a></li>
           <li><a href="../../rohd/Module/addInput.html">addInput</a></li>
+          <li><a href="../../rohd/Module/addInputArray.html">addInputArray</a></li>
           <li><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
+          <li><a href="../../rohd/Module/addOutputArray.html">addOutputArray</a></li>
           <li><a href="../../rohd/Module/build.html">build</a></li>
           <li><a href="../../rohd/Module/generateSynth.html">generateSynth</a></li>
           <li><a href="../../rohd/Module/hierarchy.html">hierarchy</a></li>

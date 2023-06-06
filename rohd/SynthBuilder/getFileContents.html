@@ -77,7 +77,7 @@ the <a href="../../rohd/SynthBuilder/synthesizer.html">synthesizer</a>.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">List&lt;String&gt; getFileContents() =&gt; synthesisResults
     .map((synthesisResult) =&gt; synthesisResult.toFileContents())
-    .toList();</code></pre>
+    .toList(growable: false);</code></pre>
 </section>
 
 

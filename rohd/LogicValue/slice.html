@@ -86,9 +86,9 @@ LogicValue.ofString('xz01').slice(-2, -2);  // LogicValue.ofString('z')
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue slice(int endIndex, int startIndex) {
-  final modifiedStartIndex =
-      (startIndex &lt; 0) ? width + startIndex : startIndex;
-  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
+  final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+  final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
+
   if (modifiedStartIndex &lt;= modifiedEndIndex) {
     return getRange(modifiedStartIndex, modifiedEndIndex + 1);
   } else {
@@ -190,6 +190,7 @@ LogicValue.ofString('xz01').slice(-2, -2);  // LogicValue.ofString('z')
           <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>

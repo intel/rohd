@@ -60,7 +60,9 @@
       
 
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">of</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="of-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span></li>
+<span class="name ">of</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span></li>
+<li><span class="parameter" id="of-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>}</span></li>
 </ol>)
 
       
@@ -68,50 +70,154 @@
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.</p>
-<p>The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th entry in
-<code>it</code> corresponds to the <code>i</code>th group of bits.  That is, the 0th element of
-<code>it</code> will be the least significant chunk of bits of the returned
-<a href="../../rohd/LogicValue-class.html">LogicValue</a>.  Bits within each element of <code>it</code> are kept in the same
-order as they were originally.</p>
-<p>For example:</p>
-<pre class="language-dart"><code class="language-dart">var it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
-var lv = LogicValue.of(it);
-print(lv); // This prints `6'b01xzx0`
-</code></pre>
+  <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>val</code> which could be of a variety of types.</p>
+<p>Supported types include <a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a>, <a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a>, <a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a>, <a href="https://api.dart.dev/stable/3.0.3/dart-core/BigInt-class.html">BigInt</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
+and <a href="https://api.dart.dev/stable/3.0.3/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>.</p>
+<p>If <code>fill</code> is set, then all bits of the returned value will be set to
+<code>val</code>. If the <code>val</code> is not representable as a single bit of information,
+then setting <code>fill</code> will throw an <a href="https://api.dart.dev/stable/3.0.3/dart-core/Exception-class.html">Exception</a>.</p>
+<p>If the <code>width</code> can be inferred from the type (e.g. <a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
+<a href="https://api.dart.dev/stable/3.0.3/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>), then <code>width</code> does not need to be provided.
+If <code>width</code> is provided and does not match an inferred width, then <code>width</code>
+is used.
+If a <code>width</code> cannot be inferred, then it is required, or else it will
+throw an <a href="https://api.dart.dev/stable/3.0.3/dart-core/Exception-class.html">Exception</a>.
+If <code>val</code> does not fit in a specified <code>width</code>, then the returned value will
+be truncated.
+<a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a>s will infer a default width of <code>1</code>, but it can be overridden.
+Invalid 1-bit <code>val</code>s will always be <code>fill</code>ed even if <code>fill</code> is <code>false</code>,
+but will default to a width of 1 unless <code>width</code> is specified.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue of(Iterable&lt;LogicValue&gt; it) {
-  var smallBuffer = LogicValue.empty;
-  var fullResult = LogicValue.empty;
-
-  &#47;&#47; shift small chunks in together before shifting BigInt&#39;s, since
-  &#47;&#47; shifting BigInt&#39;s is expensive
-  for (final lv in it) {
-    final lvPlusSmall = lv.width + smallBuffer.width;
-    if (lvPlusSmall &lt;= _INT_BITS) {
-      smallBuffer = lv._concatenate(smallBuffer);
-    } else {
-      &#47;&#47; only put 64-bit chunks onto `fullResult`, rest onto `smallBuffer`
-      final upperBound =
-          _INT_BITS * (lvPlusSmall ~&#47; _INT_BITS) - smallBuffer.width;
-      fullResult = lv
-          .getRange(0, upperBound)
-          ._concatenate(smallBuffer)
-          ._concatenate(fullResult);
-      smallBuffer = lv.getRange(upperBound, lv.width);
+  <pre class="language-dart"><code class="language-dart">static LogicValue of(dynamic val, {bool fill = false, int? width}) {
+  if (val is int) {
+    if (width == null) {
+      throw LogicValueConstructionException(
+          &#39;`width` must be provided for `int`.&#39;);
     }
 
-    assert(smallBuffer.width &lt;= _INT_BITS,
-        &#39;Keep smallBuffer small to meet invariants and efficiency&#39;);
-  }
+    if (fill) {
+      return LogicValue.filled(
+          width,
+          val == 0
+              ? LogicValue.zero
+              : val == 1
+                  ? LogicValue.one
+                  : throw LogicValueConstructionException(
+                      &#39;`int` can only can fill 0 or 1, but saw $val.&#39;));
+    } else {
+      return LogicValue.ofInt(val, width);
+    }
+  } else if (val is BigInt) {
+    if (width == null) {
+      throw LogicValueConstructionException(
+          &#39;`width` must be provided for `BigInt`.&#39;);
+    }
 
-  &#47;&#47; grab what&#39;s left
-  return smallBuffer._concatenate(fullResult);
+    if (fill) {
+      return LogicValue.filled(
+          width,
+          val == BigInt.zero
+              ? LogicValue.zero
+              : val == BigInt.one
+                  ? LogicValue.one
+                  : throw LogicValueConstructionException(
+                      &#39;`BigInt` can only fill 0 or 1, but saw $val.&#39;));
+    } else {
+      return LogicValue.ofBigInt(val, width);
+    }
+  } else if (val is bool) {
+    width ??= 1;
+
+    if (fill) {
+      return LogicValue.filled(width, val ? LogicValue.one : LogicValue.zero);
+    }
+    return LogicValue.ofInt(val ? 1 : 0, width);
+  } else if (val is LogicValue) {
+    if (fill &amp;&amp; val.width != 1) {
+      throw LogicValueConstructionException(
+          &#39;Only 1-bit `LogicValue`s can be filled&#39;);
+    }
+
+    if (val.width == 1 &amp;&amp; (!val.isValid || fill)) {
+      if (!val.isValid) {
+        &#47;&#47; ignore: parameter_assignments
+        width ??= 1;
+      }
+      if (width == null) {
+        throw LogicValueConstructionException(
+            &#39;Filled `LogicValue` $val must have provided a width.&#39;);
+      }
+      return LogicValue.filled(width, val);
+    } else {
+      if (val.width == width || width == null) {
+        return val;
+      } else if (width &lt; val.width) {
+        return val.getRange(0, width);
+      } else {
+        return val.zeroExtend(width);
+      }
+    }
+  } else if (val is String) {
+    if (fill &amp;&amp; val.length != 1) {
+      throw LogicValueConstructionException(
+          &#39;Only 1-bit values can be filled&#39;);
+    }
+
+    if (val.length == 1 &amp;&amp; (val == &#39;x&#39; || val == &#39;z&#39; || fill)) {
+      if (val == &#39;x&#39; || val == &#39;z&#39;) {
+        &#47;&#47; ignore: parameter_assignments
+        width ??= 1;
+      }
+      if (width == null) {
+        throw LogicValueConstructionException(
+            &#39;Filled `String` $val must have provided a width.&#39;);
+      }
+      return LogicValue.filled(width, LogicValue.ofString(val));
+    } else {
+      if (val.length == width || width == null) {
+        return LogicValue.ofString(val);
+      } else if (width &lt; val.length) {
+        return LogicValue.ofString(val.substring(0, width));
+      } else {
+        return LogicValue.ofString(val).zeroExtend(width);
+      }
+    }
+  } else if (val is Iterable&lt;LogicValue&gt;) {
+    if (fill &amp;&amp; val.length != 1) {
+      throw LogicValueConstructionException(
+          &#39;Only 1-bit values can be filled&#39;);
+    }
+
+    if (val.length == 1 &amp;&amp;
+        (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
+      if (!val.first.isValid) {
+        &#47;&#47; ignore: parameter_assignments
+        width ??= 1;
+      }
+      if (width == null) {
+        throw LogicValueConstructionException(
+            &#39;Filled `Iterable&lt;LogicValue&gt;` $val must have provided a width.&#39;);
+      }
+      return LogicValue.filled(width, val.first);
+    } else {
+      if (val.length == width || width == null) {
+        return LogicValue.ofIterable(val);
+      } else if (width &lt; val.length) {
+        return LogicValue.ofIterable(val).getRange(0, width);
+      } else {
+        return LogicValue.ofIterable(val).zeroExtend(width);
+      }
+    }
+  } else {
+    throw LogicValueConstructionException(&#39;Unrecognized value type &quot;$val&quot; - &#39;
+        &#39;Unknown type ${val.runtimeType}&#39;
+        &#39; cannot be converted to `LogicValue.&#39;);
+  }
 }</code></pre>
 </section>
 
@@ -208,6 +314,7 @@ print(lv); // This prints `6'b01xzx0`
           <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>

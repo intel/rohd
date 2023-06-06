@@ -91,13 +91,10 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
   <pre class="language-dart"><code class="language-dart">Logic slice(int endIndex, int startIndex) {
   &#47;&#47; Given start and end index, if either of them are seen to be -ve index
   &#47;&#47; value(s) then convert them to a +ve index value(s)
-  final modifiedStartIndex =
-      (startIndex &lt; 0) ? width + startIndex : startIndex;
-  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
+  final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+  final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
 
-  if (width == 1 &amp;&amp;
-      modifiedEndIndex == 0 &amp;&amp;
-      modifiedEndIndex == modifiedStartIndex) {
+  if (modifiedStartIndex == 0 &amp;&amp; modifiedEndIndex == width - 1) {
     &#47;&#47; ignore: avoid_returning_this
     return this;
   }
@@ -135,11 +132,14 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
         <li class="section-title">
           <a href="../../rohd/Logic-class.html#instance-properties">Properties</a>
         </li>
+          <li><a href="../../rohd/Logic/arrayIndex.html">arrayIndex</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/bit.html">bit</a></li>
           <li><a href="../../rohd/Logic/changed.html">changed</a></li>
           <li><a href="../../rohd/Logic/dstConnections.html">dstConnections</a></li>
+          <li><a href="../../rohd/Logic/elements.html">elements</a></li>
           <li><a href="../../rohd/Logic/glitch.html">glitch</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/hashCode.html">hashCode</a></li>
+          <li><a href="../../rohd/Logic/isArrayMember.html">isArrayMember</a></li>
           <li><a href="../../rohd/Logic/isInput.html">isInput</a></li>
           <li><a href="../../rohd/Logic/isOutput.html">isOutput</a></li>
           <li><a href="../../rohd/Logic/isPort.html">isPort</a></li>
@@ -149,10 +149,12 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
           <li><a href="../../rohd/Logic/nextNegedge.html">nextNegedge</a></li>
           <li><a href="../../rohd/Logic/nextPosedge.html">nextPosedge</a></li>
           <li><a href="../../rohd/Logic/parentModule.html">parentModule</a></li>
+          <li><a href="../../rohd/Logic/parentStructure.html">parentStructure</a></li>
           <li><a href="../../rohd/Logic/posedge.html">posedge</a></li>
           <li><a href="../../rohd/Logic/reversed.html">reversed</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li><a href="../../rohd/Logic/srcConnection.html">srcConnection</a></li>
+          <li><a href="../../rohd/Logic/structureName.html">structureName</a></li>
           <li><a href="../../rohd/Logic/value.html">value</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/valueInt.html">valueInt</a></li>

@@ -80,7 +80,7 @@ significant (highest) bits.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic swizzle() =&gt; Swizzle(this).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic swizzle() =&gt; length == 1 ? first : Swizzle(this).out;</code></pre>
 </section>
 
 

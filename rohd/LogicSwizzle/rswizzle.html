@@ -80,7 +80,8 @@ significant (lowest) bits.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic rswizzle() =&gt; Swizzle(reversed.toList()).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic rswizzle() =&gt;
+    length == 1 ? first : Swizzle(reversed.toList(growable: false)).out;</code></pre>
 </section>
 
 

@@ -79,7 +79,8 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-late final List&lt;Conditional&gt; conditionals = _getConditionals();</code></pre>
+late final List&lt;Conditional&gt; conditionals =
+    UnmodifiableListView(_getConditionals());</code></pre>
 </section>
 
 

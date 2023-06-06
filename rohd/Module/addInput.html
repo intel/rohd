@@ -88,15 +88,22 @@ that can be consumed.</p>
 Logic addInput(String name, Logic x, {int width = 1}) {
   _checkForSafePortName(name);
   if (x.width != width) {
-    throw Exception(&#39;Port width mismatch, signal &quot;$x&quot; does not&#39;
-        &#39; have specified width &quot;$width&quot;.&#39;);
+    throw PortWidthMismatchException(x, width);
   }
-  _inputs[name] = Logic(name: name, width: width)..gets(x);
 
-  &#47;&#47; ignore: invalid_use_of_protected_member
-  _inputs[name]!.parentModule = this;
+  if (x is LogicStructure) {
+    &#47;&#47; ignore: parameter_assignments
+    x = x.packed;
+  }
 
-  return _inputs[name]!;
+  final inPort = Port(name, width)
+    ..gets(x)
+    &#47;&#47; ignore: invalid_use_of_protected_member
+    ..parentModule = this;
+
+  _inputs[name] = inPort;
+
+  return inPort;
 }</code></pre>
 </section>
 
@@ -145,7 +152,9 @@ Logic addInput(String name, Logic x, {int width = 1}) {
 
         <li class="section-title"><a href="../../rohd/Module-class.html#instance-methods">Methods</a></li>
           <li><a href="../../rohd/Module/addInput.html">addInput</a></li>
+          <li><a href="../../rohd/Module/addInputArray.html">addInputArray</a></li>
           <li><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
+          <li><a href="../../rohd/Module/addOutputArray.html">addOutputArray</a></li>
           <li><a href="../../rohd/Module/build.html">build</a></li>
           <li><a href="../../rohd/Module/generateSynth.html">generateSynth</a></li>
           <li><a href="../../rohd/Module/hierarchy.html">hierarchy</a></li>

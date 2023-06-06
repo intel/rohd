@@ -99,24 +99,14 @@ LogicValue.ofString('0101').getRange(0, 7);
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">LogicValue getRange(int startIndex, [int? endIndex]) {
   endIndex ??= width;
+
   final modifiedStartIndex =
-      (startIndex &lt; 0) ? width + startIndex : startIndex;
-  final modifiedEndIndex = (endIndex &lt; 0) ? width + endIndex : endIndex;
-  if (modifiedEndIndex &lt; modifiedStartIndex) {
-    throw Exception(
-        &#39;End $modifiedEndIndex(=$endIndex) cannot be less than start &#39;
-        &#39;$modifiedStartIndex(=$startIndex).&#39;);
-  }
-  if (modifiedEndIndex &gt; width) {
-    throw Exception(
-        &#39;End $modifiedEndIndex(=$endIndex) must be less than width&#39;
-        &#39; ($width).&#39;);
-  }
-  if (modifiedStartIndex &lt; 0) {
-    throw Exception(
-        &#39;Start $modifiedStartIndex(=$startIndex) must be greater than or &#39;
-        &#39;equal to 0.&#39;);
-  }
+      IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
+  final modifiedEndIndex =
+      IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+
+  IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
+
   return _getRange(modifiedStartIndex, modifiedEndIndex);
 }</code></pre>
 </section>
@@ -214,6 +204,7 @@ LogicValue.ofString('0101').getRange(0, 7);
           <li><a href="../../rohd/LogicValue/ofBigInt.html">ofBigInt</a></li>
           <li><a href="../../rohd/LogicValue/ofBool.html">ofBool</a></li>
           <li><a href="../../rohd/LogicValue/ofInt.html">ofInt</a></li>
+          <li><a href="../../rohd/LogicValue/ofIterable.html">ofIterable</a></li>
           <li><a href="../../rohd/LogicValue/ofString.html">ofString</a></li>
 
         <li class="section-title"><a href="../../rohd/LogicValue-class.html#constants">Constants</a></li>

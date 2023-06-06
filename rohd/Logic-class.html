@@ -72,6 +72,7 @@
         <dt>Implementers</dt>
         <dd><ul class="comma-separated clazz-relationships">
           <li><a href="../rohd/Const-class.html">Const</a></li>
+          <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
           <li><a href="../rohd/Port-class.html">Port</a></li>
         </ul></dd>
 
@@ -100,6 +101,18 @@
       <h2>Properties</h2>
 
       <dl class="properties">
+        <dt id="arrayIndex" class="property">
+  <span class="name"><a href="../rohd/Logic/arrayIndex.html">arrayIndex</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a>?</span> 
+
+</dt>
+<dd>
+  If this is a part of a <a href="../rohd/LogicArray-class.html">LogicArray</a>, the index within that array.
+Othwerise, returns <code>null</code>.
+  <div class="features"><span class="feature">read-only</span></div>
+
+</dd>
+
         <dt id="bit" class="property">
   <span class="name"><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></span>
   <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
@@ -135,6 +148,17 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
 </dd>
 
+        <dt id="elements" class="property">
+  <span class="name"><a href="../rohd/Logic/elements.html">elements</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.0.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Provides a list of logical elements within this signal.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="glitch" class="property">
   <span class="name"><a href="../rohd/Logic/glitch.html">glitch</a></span>
   <span class="signature">&#8594; SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
@@ -155,6 +179,17 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 <dd class="inherited">
   The hash code for this object.
   <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="isArrayMember" class="property">
+  <span class="name"><a href="../rohd/Logic/isArrayMember.html">isArrayMember</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a></span> 
+
+</dt>
+<dd>
+  True if this is a member of a <a href="../rohd/LogicArray-class.html">LogicArray</a>.
+  <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
 
@@ -262,6 +297,18 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 
 </dd>
 
+        <dt id="parentStructure" class="property">
+  <span class="name"><a href="../rohd/Logic/parentStructure.html">parentStructure</a></span>
+  <span class="signature">&#8594; <a href="../rohd/LogicStructure-class.html">LogicStructure</a>?</span> 
+
+</dt>
+<dd>
+  If this is a part of a <a href="../rohd/LogicStructure-class.html">LogicStructure</a>, the structure which this is
+a part of.  Otherwise, <code>null</code>.
+  <div class="features"><span class="feature">read-only</span></div>
+
+</dd>
+
         <dt id="posedge" class="property">
   <span class="name"><a href="../rohd/Logic/posedge.html">posedge</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.0.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
@@ -304,6 +351,18 @@ from <code>0</code> to <code>1</code>.
 </dt>
 <dd>
   The <a href="../rohd/Logic-class.html">Logic</a> signal that is driving <code>this</code>, if any.
+  <div class="features"><span class="feature">read-only</span></div>
+
+</dd>
+
+        <dt id="structureName" class="property">
+  <span class="name"><a href="../rohd/Logic/structureName.html">structureName</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.0.3/dart-core/String-class.html">String</a></span> 
+
+</dt>
+<dd>
+  Returns the name relative to the <a href="../rohd/Logic/parentStructure.html">parentStructure</a>-defined hierarchy, if
+one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">name</a>.
   <div class="features"><span class="feature">read-only</span></div>
 
 </dd>
@@ -375,8 +434,8 @@ from <code>0</code> to <code>1</code>.
 </dd>
 
         <dt id="decr" class="callable">
-  <span class="name"><a href="../rohd/Logic/decr.html">decr</a></span><span class="signature">(<wbr><span class="parameter" id="decr-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>) = <span class="default-value">_nopS</span>, </span><span class="parameter" id="decr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+  <span class="name"><a href="../rohd/Logic/decr.html">decr</a></span><span class="signature">(<wbr><span class="parameter" id="decr-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?, </span><span class="parameter" id="decr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
   </span>
   
 
@@ -388,8 +447,8 @@ from <code>0</code> to <code>1</code>.
 </dd>
 
         <dt id="divAssign" class="callable">
-  <span class="name"><a href="../rohd/Logic/divAssign.html">divAssign</a></span><span class="signature">(<wbr><span class="parameter" id="divAssign-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>) = <span class="default-value">_nopS</span>, </span><span class="parameter" id="divAssign-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+  <span class="name"><a href="../rohd/Logic/divAssign.html">divAssign</a></span><span class="signature">(<wbr><span class="parameter" id="divAssign-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="divAssign-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
   </span>
   
 
@@ -480,8 +539,8 @@ from <code>0</code> to <code>1</code>.
 </dd>
 
         <dt id="incr" class="callable">
-  <span class="name"><a href="../rohd/Logic/incr.html">incr</a></span><span class="signature">(<wbr><span class="parameter" id="incr-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>) = <span class="default-value">_nopS</span>, </span><span class="parameter" id="incr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+  <span class="name"><a href="../rohd/Logic/incr.html">incr</a></span><span class="signature">(<wbr><span class="parameter" id="incr-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?, </span><span class="parameter" id="incr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
   </span>
   
 
@@ -573,8 +632,8 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="mulAssign" class="callable">
-  <span class="name"><a href="../rohd/Logic/mulAssign.html">mulAssign</a></span><span class="signature">(<wbr><span class="parameter" id="mulAssign-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>) = <span class="default-value">_nopS</span>, </span><span class="parameter" id="mulAssign-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>}</span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+  <span class="name"><a href="../rohd/Logic/mulAssign.html">mulAssign</a></span><span class="signature">(<wbr><span class="parameter" id="mulAssign-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="mulAssign-param-s">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?}</span>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
   </span>
   
 
@@ -625,7 +684,7 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="pow" class="callable">
-  <span class="name"><a href="../rohd/Logic/pow.html">pow</a></span><span class="signature">(<wbr><span class="parameter" id="pow-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+  <span class="name"><a href="../rohd/Logic/pow.html">pow</a></span><span class="signature">(<wbr><span class="parameter" id="pow-param-exponent"><span class="type-annotation">dynamic</span> <span class="parameter-name">exponent</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -840,7 +899,7 @@ as the most significant bits.
 
         <dt id="operator &lt;" class="callable">
   <span class="name"><a href="../rohd/Logic/operator_less.html">operator <</a></span><span class="signature">(<wbr><span class="parameter" id="<-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+    <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
   </span>
   
 
@@ -1031,6 +1090,7 @@ as the most significant bits.
         <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
         <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
         <li><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></li>
+        <li><a href="../rohd/ConditionalGroup-class.html">ConditionalGroup</a></li>
         <li><a href="../rohd/Const-class.html">Const</a></li>
         <li><a href="../rohd/Divide-class.html">Divide</a></li>
         <li><a href="../rohd/Else-class.html">Else</a></li>
@@ -1047,6 +1107,8 @@ as the most significant bits.
         <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
         <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
         <li><a href="../rohd/Logic-class.html">Logic</a></li>
+        <li><a href="../rohd/LogicArray-class.html">LogicArray</a></li>
+        <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
         <li><a href="../rohd/LogicValue-class.html">LogicValue</a></li>
         <li><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></li>
         <li><a href="../rohd/LShift-class.html">LShift</a></li>
@@ -1122,11 +1184,14 @@ as the most significant bits.
         <li class="section-title">
           <a href="../rohd/Logic-class.html#instance-properties">Properties</a>
         </li>
+          <li><a href="../rohd/Logic/arrayIndex.html">arrayIndex</a></li>
           <li><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></li>
           <li><a href="../rohd/Logic/changed.html">changed</a></li>
           <li><a href="../rohd/Logic/dstConnections.html">dstConnections</a></li>
+          <li><a href="../rohd/Logic/elements.html">elements</a></li>
           <li><a href="../rohd/Logic/glitch.html">glitch</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/hashCode.html">hashCode</a></li>
+          <li><a href="../rohd/Logic/isArrayMember.html">isArrayMember</a></li>
           <li><a href="../rohd/Logic/isInput.html">isInput</a></li>
           <li><a href="../rohd/Logic/isOutput.html">isOutput</a></li>
           <li><a href="../rohd/Logic/isPort.html">isPort</a></li>
@@ -1136,10 +1201,12 @@ as the most significant bits.
           <li><a href="../rohd/Logic/nextNegedge.html">nextNegedge</a></li>
           <li><a href="../rohd/Logic/nextPosedge.html">nextPosedge</a></li>
           <li><a href="../rohd/Logic/parentModule.html">parentModule</a></li>
+          <li><a href="../rohd/Logic/parentStructure.html">parentStructure</a></li>
           <li><a href="../rohd/Logic/posedge.html">posedge</a></li>
           <li><a href="../rohd/Logic/reversed.html">reversed</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li><a href="../rohd/Logic/srcConnection.html">srcConnection</a></li>
+          <li><a href="../rohd/Logic/structureName.html">structureName</a></li>
           <li><a href="../rohd/Logic/value.html">value</a></li>
           <li><a class="deprecated" href="../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
           <li><a class="deprecated" href="../rohd/Logic/valueInt.html">valueInt</a></li>

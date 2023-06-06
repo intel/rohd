@@ -69,6 +69,13 @@
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/Sequential-class.html">Sequential</a> single-triggered by <code>clk</code>.</p>
+<p>If <code>reset</code> is provided, then all signals driven by this block will be
+conditionally reset when the signal is high.
+The default reset value is to <code>0</code>, but if <code>resetValues</code> is provided then
+the corresponding value associated with the driven signal will be set to
+that value instead upon reset. If a signal is in <code>resetValues</code> but not
+driven by any other <a href="../../rohd/Conditional-class.html">Conditional</a> in this block, it will be driven to the
+specified reset value.</p>
 </section>
 
 
@@ -130,7 +137,9 @@
 
         <li class="section-title"><a href="../../rohd/Sequential-class.html#instance-methods">Methods</a></li>
           <li class="inherited"><a href="../../rohd/Module/addInput.html">addInput</a></li>
+          <li class="inherited"><a href="../../rohd/Module/addInputArray.html">addInputArray</a></li>
           <li class="inherited"><a href="../../rohd/Module/addOutput.html">addOutput</a></li>
+          <li class="inherited"><a href="../../rohd/Module/addOutputArray.html">addOutputArray</a></li>
           <li><a href="../../rohd/Sequential/alwaysVerilogStatement.html">alwaysVerilogStatement</a></li>
           <li><a href="../../rohd/Sequential/assignOperator.html">assignOperator</a></li>
           <li class="inherited"><a href="../../rohd/Module/build.html">build</a></li>

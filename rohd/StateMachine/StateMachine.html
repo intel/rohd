@@ -106,11 +106,11 @@ on the next clock cycle.</p>
                                     _stateValueLookup[
                                         _stateLookup[entry.value]]
                               ]))
-                          .toList(),
+                          .toList(growable: false),
                       conditionalType: ConditionalType.unique,
                       defaultItem: [nextState &lt; currentState])
                 ]))
-            .toList(),
+            .toList(growable: false),
         conditionalType: ConditionalType.unique,
         defaultItem: [nextState &lt; currentState])
   ]);

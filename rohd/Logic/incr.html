@@ -59,10 +59,10 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span>
+<span class="returntype"><a href="../../rohd/Conditional-class.html">Conditional</a></span>
 <span class="name ">incr</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="incr-param-s">{<span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<ol class="parameter-list"><li><span class="parameter" id="param-"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span></span></li>
 </ol>
-) = <span class="default-value">_nopS</span>, </span></li>
+)?, </span></li>
 <li><span class="parameter" id="incr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span>}</span></li>
 </ol>)
 
@@ -93,8 +93,8 @@ Combinational.ssa((s) =&gt; [
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ConditionalAssign incr({Logic Function(Logic) s = _nopS, dynamic val = 1}) =&gt;
-    s(this) &lt; s(this) + val;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Conditional incr({Logic Function(Logic)? s, dynamic val = 1}) =&gt;
+    s == null ? (this &lt; this + val) : (s(this) &lt; s(this) + val);</code></pre>
 </section>
 
 
@@ -125,11 +125,14 @@ Combinational.ssa((s) =&gt; [
         <li class="section-title">
           <a href="../../rohd/Logic-class.html#instance-properties">Properties</a>
         </li>
+          <li><a href="../../rohd/Logic/arrayIndex.html">arrayIndex</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/bit.html">bit</a></li>
           <li><a href="../../rohd/Logic/changed.html">changed</a></li>
           <li><a href="../../rohd/Logic/dstConnections.html">dstConnections</a></li>
+          <li><a href="../../rohd/Logic/elements.html">elements</a></li>
           <li><a href="../../rohd/Logic/glitch.html">glitch</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/hashCode.html">hashCode</a></li>
+          <li><a href="../../rohd/Logic/isArrayMember.html">isArrayMember</a></li>
           <li><a href="../../rohd/Logic/isInput.html">isInput</a></li>
           <li><a href="../../rohd/Logic/isOutput.html">isOutput</a></li>
           <li><a href="../../rohd/Logic/isPort.html">isPort</a></li>
@@ -139,10 +142,12 @@ Combinational.ssa((s) =&gt; [
           <li><a href="../../rohd/Logic/nextNegedge.html">nextNegedge</a></li>
           <li><a href="../../rohd/Logic/nextPosedge.html">nextPosedge</a></li>
           <li><a href="../../rohd/Logic/parentModule.html">parentModule</a></li>
+          <li><a href="../../rohd/Logic/parentStructure.html">parentStructure</a></li>
           <li><a href="../../rohd/Logic/posedge.html">posedge</a></li>
           <li><a href="../../rohd/Logic/reversed.html">reversed</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.3/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li><a href="../../rohd/Logic/srcConnection.html">srcConnection</a></li>
+          <li><a href="../../rohd/Logic/structureName.html">structureName</a></li>
           <li><a href="../../rohd/Logic/value.html">value</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/valueBigInt.html">valueBigInt</a></li>
           <li><a class="deprecated" href="../../rohd/Logic/valueInt.html">valueInt</a></li>
