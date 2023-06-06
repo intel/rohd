@@ -121,10 +121,10 @@ void main() {
       }
 
       test('setting with bigger number throws exception', () async {
-        expect(() => withSetVectors([], 0, 9), throwsException);
+        expect(() => withSetVectors([], 0, 9), throwsRangeError);
       });
       test('setting with number in middle overrun throws exception', () async {
-        expect(() => withSetVectors([], 4, 5), throwsException);
+        expect(() => withSetVectors([], 4, 5), throwsRangeError);
       });
       test('setting same width returns only new', () async {
         await withSetVectors([

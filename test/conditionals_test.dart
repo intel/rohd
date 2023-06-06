@@ -16,8 +16,33 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class ShorthandAssignModule extends Module {
+  final bool useArrays;
+
+  @override
+  Logic addInput(String name, Logic x, {int width = 1}) {
+    assert(width.isEven, 'if arrays, split width in 2');
+    if (useArrays) {
+      return super
+          .addInputArray(name, x, dimensions: [2], elementWidth: width ~/ 2);
+    } else {
+      return super.addInput(name, x, width: width);
+    }
+  }
+
+  @override
+  Logic addOutput(String name, {int width = 1}) {
+    assert(width.isEven, 'if arrays, split width in 2');
+    if (useArrays) {
+      return super
+          .addOutputArray(name, dimensions: [2], elementWidth: width ~/ 2);
+    } else {
+      return super.addOutput(name, width: width);
+    }
+  }
+
   ShorthandAssignModule(
-      Logic preIncr, Logic preDecr, Logic mulAssign, Logic divAssign, Logic b)
+      Logic preIncr, Logic preDecr, Logic mulAssign, Logic divAssign, Logic b,
+      {this.useArrays = false})
       : super(name: 'shorthandmodule') {
     preIncr = addInput('preIncr', preIncr, width: 8);
     preDecr = addInput('preDecr', preDecr, width: 8);
@@ -44,8 +69,8 @@ class ShorthandAssignModule extends Module {
           pdOut.decr(s: s),
           piOutWithB.incr(s: s, val: b),
           pdOutWithB.decr(s: s, val: b),
-          maOut.mulAssign(s: s, val: b),
-          daOut.divAssign(s: s, val: b),
+          maOut.mulAssign(b, s: s),
+          daOut.divAssign(b, s: s),
         ]);
   }
 }
@@ -366,7 +391,7 @@ class MultipleConditionalModule extends Module {
     b = addInput('b', b);
     final c = addOutput('c');
 
-    final Conditional condOne = c < 1;
+    final condOne = c < 1;
 
     Combinational([
       If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
@@ -634,56 +659,74 @@ void main() {
     }
   });
 
-  test('shorthand operations', () async {
-    final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
-        Logic(width: 8), Logic(width: 8), Logic(width: 8));
-    await mod.build();
-    final vectors = [
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 5
-      }, {
-        'piOutWithB': 10,
-        'pdOutWithB': 0,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 25,
-        'daOut': 1,
-      }),
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 0
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 5,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 0,
-        'daOut': LogicValue.x,
-      }),
-      Vector({
-        'preIncr': 0,
-        'preDecr': 0,
-        'mulAssign': 0,
-        'divAssign': 0,
-        'b': 5
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 0xfb,
-        'piOut': 1,
-        'pdOut': 0xff,
-        'maOut': 0,
-        'daOut': 0,
-      })
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+  group('shorthand operations', () {
+    Future<void> testShorthand(
+        {required bool useArrays, required bool useSequential}) async {
+      final mod = ShorthandAssignModule(
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        useArrays: useArrays,
+      );
+      await mod.build();
+
+      final vectors = [
+        Vector({
+          'preIncr': 5,
+          'preDecr': 5,
+          'mulAssign': 5,
+          'divAssign': 5,
+          'b': 5
+        }, {
+          'piOutWithB': 10,
+          'pdOutWithB': 0,
+          'piOut': 6,
+          'pdOut': 4,
+          'maOut': 25,
+          'daOut': 1,
+        }),
+        Vector({
+          'preIncr': 5,
+          'preDecr': 5,
+          'mulAssign': 5,
+          'divAssign': 5,
+          'b': 0
+        }, {
+          'piOutWithB': 5,
+          'pdOutWithB': 5,
+          'piOut': 6,
+          'pdOut': 4,
+          'maOut': 0,
+          'daOut': LogicValue.x,
+        }),
+        Vector({
+          'preIncr': 0,
+          'preDecr': 0,
+          'mulAssign': 0,
+          'divAssign': 0,
+          'b': 5
+        }, {
+          'piOutWithB': 5,
+          'pdOutWithB': 0xfb,
+          'piOut': 1,
+          'pdOut': 0xff,
+          'maOut': 0,
+          'daOut': 0,
+        })
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    }
+
+    test('normal logic', () async {
+      await testShorthand(useArrays: false, useSequential: false);
+    });
+
+    test('arrays', () async {
+      await testShorthand(useArrays: true, useSequential: false);
+    });
   });
 }

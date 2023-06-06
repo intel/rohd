@@ -94,7 +94,7 @@ abstract class LogicValue {
   /// Constructs a [LogicValue] with the [width] number of bits, where every
   /// bit has the same value of [fill].
   ///
-  /// [width] must be greater than or equal to 0.
+  /// [width] must be greater than or equal to 0.  [fill] must be 1 bit.
   static LogicValue filled(int width, LogicValue fill) =>
       _FilledLogicValue(fill._enum, width);
 
@@ -114,6 +114,155 @@ abstract class LogicValue {
                     : throw Exception('Failed to convert.');
   }
 
+  // complete test suite for LogicValue.of
+
+  /// Constructs a [LogicValue] from [val] which could be of a variety of types.
+  ///
+  /// Supported types include [String], [bool], [int], [BigInt], [LogicValue],
+  /// and [Iterable<LogicValue>].
+  ///
+  /// If [fill] is set, then all bits of the returned value will be set to
+  /// [val]. If the [val] is not representable as a single bit of information,
+  /// then setting [fill] will throw an [Exception].
+  ///
+  /// If the [width] can be inferred from the type (e.g. [String], [LogicValue],
+  /// [Iterable<LogicValue>]), then [width] does not need to be provided.
+  /// If [width] is provided and does not match an inferred width, then [width]
+  /// is used.
+  /// If a [width] cannot be inferred, then it is required, or else it will
+  /// throw an [Exception].
+  /// If [val] does not fit in a specified [width], then the returned value will
+  /// be truncated.
+  /// [bool]s will infer a default width of `1`, but it can be overridden.
+  /// Invalid 1-bit [val]s will always be [fill]ed even if [fill] is `false`,
+  /// but will default to a width of 1 unless [width] is specified.
+  static LogicValue of(dynamic val, {bool fill = false, int? width}) {
+    if (val is int) {
+      if (width == null) {
+        throw LogicValueConstructionException(
+            '`width` must be provided for `int`.');
+      }
+
+      if (fill) {
+        return LogicValue.filled(
+            width,
+            val == 0
+                ? LogicValue.zero
+                : val == 1
+                    ? LogicValue.one
+                    : throw LogicValueConstructionException(
+                        '`int` can only can fill 0 or 1, but saw $val.'));
+      } else {
+        return LogicValue.ofInt(val, width);
+      }
+    } else if (val is BigInt) {
+      if (width == null) {
+        throw LogicValueConstructionException(
+            '`width` must be provided for `BigInt`.');
+      }
+
+      if (fill) {
+        return LogicValue.filled(
+            width,
+            val == BigInt.zero
+                ? LogicValue.zero
+                : val == BigInt.one
+                    ? LogicValue.one
+                    : throw LogicValueConstructionException(
+                        '`BigInt` can only fill 0 or 1, but saw $val.'));
+      } else {
+        return LogicValue.ofBigInt(val, width);
+      }
+    } else if (val is bool) {
+      width ??= 1;
+
+      if (fill) {
+        return LogicValue.filled(width, val ? LogicValue.one : LogicValue.zero);
+      }
+      return LogicValue.ofInt(val ? 1 : 0, width);
+    } else if (val is LogicValue) {
+      if (fill && val.width != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit `LogicValue`s can be filled');
+      }
+
+      if (val.width == 1 && (!val.isValid || fill)) {
+        if (!val.isValid) {
+          // ignore: parameter_assignments
+          width ??= 1;
+        }
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `LogicValue` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, val);
+      } else {
+        if (val.width == width || width == null) {
+          return val;
+        } else if (width < val.width) {
+          return val.getRange(0, width);
+        } else {
+          return val.zeroExtend(width);
+        }
+      }
+    } else if (val is String) {
+      if (fill && val.length != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit values can be filled');
+      }
+
+      if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
+        if (val == 'x' || val == 'z') {
+          // ignore: parameter_assignments
+          width ??= 1;
+        }
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `String` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, LogicValue.ofString(val));
+      } else {
+        if (val.length == width || width == null) {
+          return LogicValue.ofString(val);
+        } else if (width < val.length) {
+          return LogicValue.ofString(val.substring(0, width));
+        } else {
+          return LogicValue.ofString(val).zeroExtend(width);
+        }
+      }
+    } else if (val is Iterable<LogicValue>) {
+      if (fill && val.length != 1) {
+        throw LogicValueConstructionException(
+            'Only 1-bit values can be filled');
+      }
+
+      if (val.length == 1 &&
+          (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
+        if (!val.first.isValid) {
+          // ignore: parameter_assignments
+          width ??= 1;
+        }
+        if (width == null) {
+          throw LogicValueConstructionException(
+              'Filled `Iterable<LogicValue>` $val must have provided a width.');
+        }
+        return LogicValue.filled(width, val.first);
+      } else {
+        if (val.length == width || width == null) {
+          return LogicValue.ofIterable(val);
+        } else if (width < val.length) {
+          return LogicValue.ofIterable(val).getRange(0, width);
+        } else {
+          return LogicValue.ofIterable(val).zeroExtend(width);
+        }
+      }
+    } else {
+      throw LogicValueConstructionException('Unrecognized value type "$val" - '
+          'Unknown type ${val.runtimeType}'
+          ' cannot be converted to `LogicValue.');
+    }
+  }
+
   /// Constructs a [LogicValue] from [it].
   ///
   /// The order of the created [LogicValue] will be such that the `i`th entry in
@@ -128,7 +277,7 @@ abstract class LogicValue {
   /// var lv = LogicValue.of(it);
   /// print(lv); // This prints `6'b01xzx0`
   /// ```
-  static LogicValue of(Iterable<LogicValue> it) {
+  static LogicValue ofIterable(Iterable<LogicValue> it) {
     var smallBuffer = LogicValue.empty;
     var fullResult = LogicValue.empty;
 
@@ -211,7 +360,7 @@ abstract class LogicValue {
   /// print(lv); // This prints `3b'1x0`
   /// ```
   @Deprecated('Use `of` instead.')
-  static LogicValue from(Iterable<LogicValue> it) => of(it);
+  static LogicValue from(Iterable<LogicValue> it) => ofIterable(it);
 
   /// Returns true if bits in [x] are all 0
   static bool _bigIntIs0(BigInt x, int width) =>
@@ -384,7 +533,8 @@ abstract class LogicValue {
   /// print(lv); // This prints `[1'h0, 1'bx, 1'h1]`
   /// ```
   List<LogicValue> toList() =>
-      List<LogicValue>.generate(width, (index) => this[index]).toList();
+      List<LogicValue>.generate(width, (index) => this[index])
+          .toList(growable: false);
 
   /// Converts this [LogicValue] to a binary [String], including a decorator at
   /// the front in SystemVerilog style.
@@ -401,8 +551,9 @@ abstract class LogicValue {
   @override
   String toString({bool includeWidth = true}) {
     if (isValid && includeWidth) {
-      final hexValue = width > _INT_BITS
-          ? toBigInt().toRadixString(16)
+      // for ==_INT_BITS, still use BigInt so we don't get negatives
+      final hexValue = width >= _INT_BITS
+          ? toBigInt().toUnsigned(width).toRadixString(16)
           : toInt().toRadixString(16);
       return "$width'h$hexValue";
     } else {
@@ -445,15 +596,8 @@ abstract class LogicValue {
   /// ```
   ///
   LogicValue operator [](int index) {
-    final modifiedIndex = (index < 0) ? width + index : index;
-    if (modifiedIndex >= width || modifiedIndex < 0) {
-      // The suggestion in the deprecation for this constructor is not available
-      // before 2.19, so keep it in here for now.  Eventually, switch to the
-      // new one.
-      // ignore: deprecated_member_use
-      throw IndexError(index, this, 'LogicValueIndexOutOfRange',
-          'Index out of range: $modifiedIndex(=$index).', width);
-    }
+    final modifiedIndex = IndexUtilities.wrapIndex(index, width);
+
     return _getIndex(modifiedIndex);
   }
 
@@ -493,24 +637,14 @@ abstract class LogicValue {
   ///
   LogicValue getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
+
     final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
-    if (modifiedEndIndex < modifiedStartIndex) {
-      throw Exception(
-          'End $modifiedEndIndex(=$endIndex) cannot be less than start '
-          '$modifiedStartIndex(=$startIndex).');
-    }
-    if (modifiedEndIndex > width) {
-      throw Exception(
-          'End $modifiedEndIndex(=$endIndex) must be less than width'
-          ' ($width).');
-    }
-    if (modifiedStartIndex < 0) {
-      throw Exception(
-          'Start $modifiedStartIndex(=$startIndex) must be greater than or '
-          'equal to 0.');
-    }
+        IndexUtilities.wrapIndex(startIndex, width, allowWidth: true);
+    final modifiedEndIndex =
+        IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
+
+    IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
+
     return _getRange(modifiedStartIndex, modifiedEndIndex);
   }
 
@@ -534,9 +668,9 @@ abstract class LogicValue {
   /// LogicValue.ofString('xz01').slice(-2, -2);  // LogicValue.ofString('z')
   /// ```
   LogicValue slice(int endIndex, int startIndex) {
-    final modifiedStartIndex =
-        (startIndex < 0) ? width + startIndex : startIndex;
-    final modifiedEndIndex = (endIndex < 0) ? width + endIndex : endIndex;
+    final modifiedStartIndex = IndexUtilities.wrapIndex(startIndex, width);
+    final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
+
     if (modifiedStartIndex <= modifiedEndIndex) {
       return getRange(modifiedStartIndex, modifiedEndIndex + 1);
     } else {
@@ -1046,14 +1180,15 @@ abstract class LogicValue {
     }
   }
 
-  /// Returns new [LogicValue] replicated [multiplier] times. An exception will
-  /// be thrown in case the multiplier is <1
+  /// Returns new [LogicValue] replicated [multiplier] times.
+  ///
+  /// An exception will be thrown in case the multiplier is <1.
   LogicValue replicate(int multiplier) {
     if (multiplier < 1) {
       throw InvalidMultiplierException(multiplier);
     }
 
-    return LogicValue.of(List.filled(multiplier, this));
+    return LogicValue.ofIterable(List.filled(multiplier, this));
   }
 }
 

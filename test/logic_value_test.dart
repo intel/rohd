@@ -263,16 +263,62 @@ void main() {
           equals(LogicValue.ofString('01xx10xxxxxxxxxx')));
       expect(
           // test from Iterable
-          LogicValue.of([LogicValue.one, LogicValue.zero]) ^
-              LogicValue.of([LogicValue.one, LogicValue.zero]),
-          equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
+          LogicValue.ofIterable([LogicValue.one, LogicValue.zero]) ^
+              LogicValue.ofIterable([LogicValue.one, LogicValue.zero]),
+          equals(LogicValue.ofIterable([LogicValue.zero, LogicValue.zero])));
     });
   });
 
   test('LogicValue.of example', () {
     final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
-    final lv = LogicValue.of(it);
+    final lv = LogicValue.ofIterable(it);
     expect(lv.toString(), equals("6'b01xzx0"));
+  });
+
+  group('LogicValue toString', () {
+    test('1 bit', () {
+      expect(LogicValue.one.toString(), "1'h1");
+    });
+
+    test('1 bit invalid', () {
+      expect(LogicValue.x.toString(), "1'bx");
+    });
+
+    test('<64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 60).toString(), "60'h1234");
+    });
+
+    test('<64-bit negative', () {
+      expect(LogicValue.ofInt(-1, 60).toString(), "60'hfffffffffffffff");
+    });
+
+    test('64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 64).toString(), "64'h1234");
+    });
+
+    test('64-bit negative', () {
+      expect(LogicValue.ofInt(0xfaaaaaaa00000005, 64).toString(),
+          "64'hfaaaaaaa00000005");
+    });
+
+    test('>64-bit positive', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0x5faaaaaaa00000005'), 68)
+              .toString(),
+          "68'h5faaaaaaa00000005");
+    });
+
+    test('>64-bit negative', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0xffaaaaaaa00000005'), 68)
+              .toString(),
+          "68'hffaaaaaaa00000005");
+    });
+
+    test('include width', () {
+      expect(
+          LogicValue.ofInt(0x55, 8).toString(includeWidth: false), '01010101');
+    });
   });
 
   group('unary operations (including "to")', () {
@@ -368,7 +414,7 @@ void main() {
           // getRange - negative end index and start > end - error! start must
           // be less than end
           () => LogicValue.ofString('0101').getRange(-1, -2),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - same index results zero width value
           LogicValue.ofString('0101').getRange(-1, -1),
@@ -376,11 +422,11 @@ void main() {
       expect(
           // getRange - bad inputs start > end
           () => LogicValue.ofString('0101').getRange(2, 1),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - bad inputs end > length-1
           () => LogicValue.ofString('0101').getRange(0, 7),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(LogicValue.ofString('xz01').slice(2, 1),
           equals(LogicValue.ofString('z0')));
       expect(LogicValue.ofString('xz01').slice(-2, -3),

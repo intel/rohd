@@ -42,9 +42,10 @@ abstract class _Always extends Module with CustomSystemVerilog {
   /// If [reset] is provided, then all signals driven by this block will be
   /// conditionally reset when the signal is high.
   /// The default reset value is to `0`, but if [resetValues] is provided then
-  /// the corresponding value
-  /// associated with the driven signal will be set to that value instead upon
-  /// reset.
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in [resetValues] but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   _Always(this._conditionals,
       {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
@@ -52,21 +53,55 @@ abstract class _Always extends Module with CustomSystemVerilog {
 
     // Get all Receivers
     final allReceivers =
-        conditionals.map((e) => e.receivers).expand((e) => e).toList();
+        conditionals.map((e) => e.receivers).expand((e) => e).toSet();
 
     // This will reset the conditionals on setting the `reset` flag
     if (reset != null) {
+      final allResetCondAssigns = <Conditional>[];
+      final signalsBeingReset = <Logic>{};
+
+      if (resetValues != null) {
+        final toConsiderForElementsReset = <Logic>[
+          ...resetValues.keys,
+        ];
+
+        for (var i = 0; i < toConsiderForElementsReset.length; i++) {
+          final toConsider = toConsiderForElementsReset[i];
+
+          // if it's a structure, we need to consider its elements
+          if (toConsider is LogicStructure) {
+            toConsiderForElementsReset.addAll(toConsider.elements);
+          }
+
+          // if we're already resetting this signal, flag an issue
+          if (signalsBeingReset.contains(toConsider)) {
+            throw SignalRedrivenException([toConsider],
+                'Signal is already being reset by another reset value: ');
+          }
+
+          if (resetValues.containsKey(toConsider)) {
+            // should only be true for top-level structures referenced
+            allResetCondAssigns.add(toConsider < resetValues[toConsider]);
+          }
+
+          // always add the signal, even if this is a sub-element
+          signalsBeingReset.add(toConsider);
+        }
+      }
+
+      // now add the reset to 0 for all the remaining ones
+      for (final receiver in allReceivers.toList()) {
+        if (!signalsBeingReset.contains(receiver)) {
+          allResetCondAssigns.add(receiver < 0);
+        }
+      }
+
       _conditionals = [
         // If resetValue for a receiver is defined,
         If(
           reset,
           // then use it for assigning receiver
-          then: [
-            ...allReceivers.map((rec) {
-              final driver = resetValues?[rec] ?? 0;
-              return rec < driver;
-            })
-          ],
+          then: allResetCondAssigns,
           // else assign zero as resetValue
           orElse: conditionals,
         ),
@@ -344,6 +379,14 @@ class Sequential extends _Always {
   final List<Logic> _clks = [];
 
   /// Constructs a [Sequential] single-triggered by [clk].
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   Sequential(Logic clk, List<Conditional> conditionals,
       {Logic? reset,
       Map<Logic, dynamic>? resetValues,
@@ -352,6 +395,14 @@ class Sequential extends _Always {
             name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   Sequential.multi(List<Logic> clks, super.conditionals,
       {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
@@ -497,7 +548,7 @@ class Sequential extends _Always {
         element.execute(allDrivenSignals, null);
       }
       if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
+        throw SignalRedrivenException(allDrivenSignals.duplicates);
       }
     }
 
@@ -667,7 +718,7 @@ abstract class Conditional {
       }
     }
 
-    return foundSsaLogics.toList();
+    return foundSsaLogics.toList(growable: false);
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
@@ -678,6 +729,55 @@ abstract class Conditional {
   /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
+}
+
+/// Represents a group of [Conditional]s to be executed.
+class ConditionalGroup extends Conditional {
+  @override
+  final List<Conditional> conditionals;
+
+  /// Creates a group of [conditionals] to be executed in order and bundles
+  /// them into a single [Conditional].
+  ConditionalGroup(this.conditionals);
+
+  @override
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    var mappings = currentMappings;
+    for (final conditional in conditionals) {
+      mappings = conditional._processSsa(mappings, context: context);
+    }
+    return mappings;
+  }
+
+  @override
+  late final List<Logic> drivers = [
+    for (final conditional in conditionals) ...conditional.drivers
+  ];
+
+  @override
+  late final List<Logic> receivers = [
+    for (final conditional in conditionals) ...conditional.receivers
+  ];
+
+  @override
+  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
+    for (final conditional in conditionals) {
+      conditional.execute(drivenSignals, guard);
+    }
+  }
+
+  @override
+  String verilogContents(int indent, Map<String, String> inputsNameMap,
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      conditionals
+          .map((c) => c.verilogContents(
+                indent,
+                inputsNameMap,
+                outputsNameMap,
+                assignOperator,
+              ))
+          .join('\n');
 }
 
 /// An assignment that only happens under certain conditions.
@@ -694,7 +794,7 @@ class ConditionalAssign extends Conditional {
   /// Conditionally assigns [receiver] to the value of [driver].
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
-      throw Exception('Width for $receiver and $driver must match but do not.');
+      throw PortWidthMismatchException.equalWidth(receiver, driver);
     }
   }
 
@@ -891,7 +991,8 @@ class Case extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals = _getConditionals();
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
 
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
@@ -911,13 +1012,13 @@ class Case extends Conditional {
         ..addAll(item.then
             .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     if (defaultItem != null) {
       drivers.addAll(defaultItem!
           .map((conditional) => conditional.drivers)
           .expand((driver) => driver)
-          .toList());
+          .toList(growable: false));
     }
     return drivers;
   }
@@ -932,13 +1033,13 @@ class Case extends Conditional {
       receivers.addAll(item.then
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     if (defaultItem != null) {
       receivers.addAll(defaultItem!
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     return receivers;
   }
@@ -1170,11 +1271,14 @@ class If extends Conditional {
   }
 
   @override
-  late final List<Conditional> conditionals = _getConditionals();
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
 
   /// Calculates the set of conditionals directly within this.
-  List<Conditional> _getConditionals() =>
-      iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
+  List<Conditional> _getConditionals() => iffs
+      .map((iff) => iff.then)
+      .expand((conditional) => conditional)
+      .toList(growable: false);
 
   @override
   late final List<Logic> drivers = _getDrivers();
@@ -1188,7 +1292,7 @@ class If extends Conditional {
         ..addAll(iff.then
             .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     return drivers;
   }
@@ -1203,7 +1307,7 @@ class If extends Conditional {
       receivers.addAll(iff.then
           .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     return receivers;
   }
