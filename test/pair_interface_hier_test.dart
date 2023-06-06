@@ -41,8 +41,8 @@ class TopLevelInterface extends PairInterface {
 
   @override
   void connectIO(Module module, Interface<dynamic> srcInterface,
-      {Set<PairDirection>? inputTags,
-      Set<PairDirection>? outputTags,
+      {Iterable<PairDirection>? inputTags,
+      Iterable<PairDirection>? outputTags,
       String Function(String original)? uniquify}) {
     super.connectIO(module, srcInterface,
         inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);

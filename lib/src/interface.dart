@@ -155,7 +155,7 @@ class Interface<TagType> {
 
   // TODO: what about driving all ports on an interface to some value instead of another instance of an interface?
 
-  List<ConditionalAssign> conditionalDriveOther(
+  List<Conditional> conditionalDriveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
       getPorts(tags)
           .map((portName, thisPort) =>
@@ -163,7 +163,7 @@ class Interface<TagType> {
           .values
           .toList();
 
-  List<ConditionalAssign> conditionalReceiveOther(
+  List<Conditional> conditionalReceiveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
       getPorts(tags)
           .map((portName, thisPort) =>
