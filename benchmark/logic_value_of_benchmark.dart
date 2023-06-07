@@ -33,7 +33,7 @@ class LogicValueOfBenchmark extends BenchmarkBase {
 
   @override
   void run() {
-    LogicValue.of(toOf);
+    LogicValue.ofIterable(toOf);
   }
 }
 

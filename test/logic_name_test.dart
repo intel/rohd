@@ -19,6 +19,19 @@ class LogicTestModule extends Module {
   }
 }
 
+class LogicWithInternalSignalModule extends Module {
+  LogicWithInternalSignalModule(Logic i) {
+    i = addInput('i', i);
+
+    final o = addOutput('o');
+
+    // this `put` should *not* impact the name of x
+    final x = Logic(name: 'shouldExist')..put(1);
+
+    o <= i & x;
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -58,5 +71,14 @@ void main() {
         LogicTestModule('');
       }, throwsA((dynamic e) => e is InvalidPortNameException));
     });
+  });
+
+  test(
+      'non-synthesizable signal deposition should not impact generated verilog',
+      () async {
+    final mod = LogicWithInternalSignalModule(Logic());
+    await mod.build();
+
+    expect(mod.generateSynth(), contains('shouldExist'));
   });
 }

@@ -47,12 +47,12 @@
 
 ## Chapter 5: Basics of modules
 
-- Full Adder in Module
-- Explanation of purpose of modules (introduce formal hierarchy)
-- First module (one input, one output, simple logic)
-- Converting to SystemVerilog
-- Composing modules within other modules
-- Port
+- [What is ROHD Module?](./chapter_5/00_basic_modules.md#what-is-rohd-module)
+- [First module (one input, one output, simple logic)](./chapter_5/00_basic_modules.md#first-module-one-input-one-output-simple-logic)
+- [Converting ROHD Module to System Verilog RTL](./chapter_5/00_basic_modules.md#converting-rohd-module-to-system-verilog-rtl)
+- [Exercise 1](./chapter_5/00_basic_modules.md#exercise-1)
+- [Composing modules within other modules (N-Bit Adder)](./chapter_5/00_basic_modules.md#composing-modules-withon-other-modules-n-bit-adder)
+- [Exercise 2](./chapter_5/00_basic_modules.md#exercise-2)
 
 ## Chapter 6: Combinational Logic
 

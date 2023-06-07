@@ -9,7 +9,7 @@
 ///
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/logic/logic_exceptions.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -140,7 +140,7 @@ class BusTestModule extends Module {
     aNegativeRange3 <= a.getRange(-1, 8);
     aNegativeRange4 <= a.getRange(-3);
 
-    aOperatorIndexing1 <= a[0];
+    aOperatorIndexing1 <= a.elements[0];
     aOperatorIndexing2 <= a[a.width - 1];
     aOperatorIndexing3 <= a[4];
     aOperatorNegIndexing1 <= a[-a.width];
@@ -151,6 +151,14 @@ class BusTestModule extends Module {
 
     expressionBitSelect <=
         [aBJoined, aShrunk1, aRange1, aRSliced1, aPlusB].swizzle().slice(3, 0);
+  }
+}
+
+class ConstBusModule extends Module {
+  ConstBusModule(int c, {required bool subset}) {
+    final outWidth = subset ? 8 : 16;
+    addOutput('const_subset', width: outWidth) <=
+        Const(c, width: 16).getRange(0, outWidth);
   }
 }
 
@@ -260,18 +268,70 @@ void main() {
       expect(out.value.toInt(), equals(0x55aa));
     });
 
-    group('put exceptions', () {
-      test('width mismatch', () {
-        expect(
-          () => Logic(name: 'byteSignal', width: 8)
-              .put(LogicValue.ofString('1010')),
-          throwsA(const TypeMatcher<PutException>()),
-        );
+    group('put width mismatches', () {
+      test('width too small', () {
+        final smallVal = LogicValue.ofString('1010');
+        final byteSignal = Logic(name: 'byteSignal', width: 8)..put(smallVal);
+        expect(byteSignal.value, smallVal.zeroExtend(8));
+      });
+      test('width too big', () {
+        final bigVal = LogicValue.ofString('1010101010');
+        final byteSignal = Logic(name: 'byteSignal', width: 8)..put(bigVal);
+        expect(byteSignal.value, bigVal.getRange(0, 8));
+      });
+    });
+
+    group('invalid connection exceptions', () {
+      test('self-connecting logic', () {
+        try {
+          final a = Logic();
+          a <= a;
+        } on Exception catch (e) {
+          expect(e.runtimeType, SelfConnectingLogicException);
+        }
+
+        try {
+          final a = Logic();
+          final b = Logic();
+          final c = Logic();
+          a <= b;
+          b <= c;
+          c <= a;
+        } on Exception catch (e) {
+          expect(e.runtimeType, SelfConnectingLogicException);
+        }
       });
     });
   });
 
   group('simcompare', () {
+    group('const sv gen', () {
+      test('Subset of a const', () async {
+        final mod = ConstBusModule(0xabcd, subset: true);
+        await mod.build();
+        final vectors = [
+          Vector({}, {'const_subset': 0xcd}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+
+      test('Assignment of a const', () async {
+        final mod = ConstBusModule(0xabcd, subset: false);
+        await mod.build();
+        final vectors = [
+          Vector({}, {'const_subset': 0xabcd}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+
+        final sv = mod.generateSynth();
+        expect(sv.contains("assign const_subset = 16'habcd;"), true);
+      });
+    });
+
     test('NotGate bus', () async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
@@ -315,8 +375,7 @@ void main() {
       ];
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
 
     test('Bus shrink', () async {
