@@ -1,24 +1,27 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// pair_interface_test.dart
-/// Tests for PairInterface
-///
-/// 2023 March 9
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// pair_interface_test.dart
+// Tests for PairInterface
+//
+// 2023 March 9
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SimpleInterface extends PairInterface {
   Logic get clk => port('clk');
+  Logic get req => port('req');
+  Logic get rsp => port('rsp');
+
   SimpleInterface()
       : super(
           portsFromConsumer: [Port('rsp')],
-          portsFromProducer: [Port('req')],
+          portsFromProvider: [Port('req')],
           sharedInputPorts: [Port('clk')],
         );
+
   SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
 }
 
@@ -29,17 +32,6 @@ class SimpleProvider extends Module {
       ..simpleConnectIO(this, intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
-
-    // final copyIntf = SimpleInterface.clone(_intf)
-    //   ..connectTo(
-    //       _intf, PairRole.provider, SharedInputConnectionMode.otherDrivesThis);
-
-    // final copyIntf = SimpleInterface.clone(_intf);
-    // _intf.driveOther(copyIntf, PairDirection.fromConsumer);
-    // _intf.driveOther(copyIntf, PairDirection.sharedInputs);
-    // copyIntf.driveOther(_intf, PairDirection.fromProvider);
-
-    // SimpleSubProvider(copyIntf);
   }
 }
 

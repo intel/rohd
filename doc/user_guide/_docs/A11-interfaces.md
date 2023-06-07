@@ -6,8 +6,6 @@ last_modified_at: 2022-12-06
 toc: true
 ---
 
-### Interfaces
-
 Interfaces make it easier to define port connections of a module in a reusable way.  An example of the counter re-implemented using interfaces is shown below.
 
 [`Interface`]({{ site.baseurl }}api/rohd/Interface-class.html) takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
@@ -73,5 +71,104 @@ class Counter extends Module {
       ])])
     ]);
   }
+}
+```
+
+## Pair Interfaces
+
+A typical use case for interfaces is for two components to talk to each other, with some shared system inputs like clocks, resets, etc.  Additionally, interfaces may be broken down into sub-interfaces.  The `PairInterface` class can help automate a lot of the boilerplate for these types of common use cases.
+
+A simple interface with a clock, request, and response might look like this:
+
+```dart
+class SimpleInterface extends PairInterface {
+  Logic get clk => port('clk');
+  Logic get req => port('req');
+  Logic get rsp => port('rsp');
+
+  SimpleInterface()
+      : super(
+          portsFromConsumer: [Port('rsp')],
+          portsFromProducer: [Port('req')],
+          sharedInputPorts: [Port('clk')],
+        );
+
+  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
+}
+```
+
+Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `simpleConnectIO` function which references the "role" of the component rather than listing input and output tags explicitly.
+
+```dart
+class SimpleProvider extends Module {
+  late final SimpleInterface _intf;
+  SimpleProvider(SimpleInterface intf) {
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.provider);
+
+    SimpleSubProvider(_intf);
+  }
+}
+
+class SimpleSubProvider extends Module {
+  late final SimpleInterface _intf;
+  SimpleSubProvider(SimpleInterface intf) {
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.provider);
+  }
+}
+
+class SimpleConsumer extends Module {
+  late final SimpleInterface _intf;
+  SimpleConsumer(SimpleInterface intf) {
+    _intf = SimpleInterface.clone(intf)
+      ..simpleConnectIO(this, intf, PairRole.consumer);
+  }
+}
+
+class SimpleTop extends Module {
+  SimpleTop(Logic clk) {
+    clk = addInput('clk', clk);
+    final intf = SimpleInterface();
+    intf.clk <= clk;
+    SimpleConsumer(intf);
+    SimpleProvider(intf);
+  }
+}
+```
+
+You can easily add interface hierarchy with the `addSubInterface` function.  For example:
+
+```dart
+class SubInterface extends PairInterface {
+  Logic get rsp => port('rsp');
+  Logic get req => port('req');
+
+  SubInterface()
+      : super(
+          portsFromConsumer: [Port('rsp')],
+          portsFromProvider: [Port('req')],
+        );
+  SubInterface.clone(SubInterface super.otherInterface) : super.clone();
+}
+
+class TopLevelInterface extends PairInterface {
+  Logic get clk => port('clk');
+
+  final int numSubInterfaces;
+
+  final List<SubInterface> subIntfs = [];
+
+  TopLevelInterface(this.numSubInterfaces)
+      : super(
+          sharedInputPorts: [Port('clk')],
+        ) {
+    for (var i = 0; i < numSubInterfaces; i++) {
+      subIntfs.add(addSubInterface('sub$i', SubInterface()));
+    }
+  }
+
+  TopLevelInterface.clone(TopLevelInterface otherInterface)
+      : this(otherInterface.numSubInterfaces);
 }
 ```

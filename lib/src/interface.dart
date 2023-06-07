@@ -12,6 +12,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logical interface to a [Module].
 ///
@@ -176,20 +177,24 @@ class Interface<TagType> {
 
 enum PairDirection { fromProvider, fromConsumer, sharedInputs }
 
-enum PairRole { provider, consumer }
+enum PairRole { provider, consumer, monitor }
 
 class PairInterface extends Interface<PairDirection> {
+  String Function(String original)? uniquify;
+
   /// TODO(): fix doc
-  PairInterface(
-      {List<Port>? portsFromConsumer,
-      List<Port>? portsFromProducer,
-      List<Port>? sharedInputPorts}) {
+  PairInterface({
+    List<Port>? portsFromConsumer,
+    List<Port>? portsFromProvider,
+    List<Port>? sharedInputPorts,
+    this.uniquify,
+  }) {
     //TODO: accept a list of subinterfaces that are also PairInterface?
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
     }
-    if (portsFromProducer != null) {
-      setPorts(portsFromProducer, [PairDirection.fromProvider]);
+    if (portsFromProvider != null) {
+      setPorts(portsFromProvider, [PairDirection.fromProvider]);
     }
     if (sharedInputPorts != null) {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
@@ -208,7 +213,7 @@ class PairInterface extends Interface<PairDirection> {
       : this(
             portsFromConsumer:
                 _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-            portsFromProducer:
+            portsFromProvider:
                 _getMatchPorts(otherInterface, PairDirection.fromProvider),
             sharedInputPorts:
                 _getMatchPorts(otherInterface, PairDirection.sharedInputs));
@@ -222,50 +227,145 @@ class PairInterface extends Interface<PairDirection> {
   void simpleConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    connectIO(module, srcInterface,
-        inputTags: {
+    Set<PairDirection> inputTags;
+    Set<PairDirection> outputTags;
+
+    switch (role) {
+      case PairRole.consumer:
+        inputTags = {
           PairDirection.sharedInputs,
-          if (role == PairRole.provider)
-            PairDirection.fromConsumer
-          else
-            PairDirection.fromProvider
-        },
-        outputTags: role == PairRole.consumer
-            ? {PairDirection.fromConsumer}
-            : {PairDirection.fromProvider},
-        uniquify: uniquify);
+          PairDirection.fromProvider,
+        };
+        outputTags = {
+          PairDirection.fromConsumer,
+        };
+        break;
 
-    // for(final subInterface in _subInterfaces) {
-    //   subInterface.interface.connectIO(module, srcInterface)
-    // }
+      case PairRole.provider:
+        inputTags = {
+          PairDirection.sharedInputs,
+          PairDirection.fromConsumer,
+        };
+        outputTags = {
+          PairDirection.fromProvider,
+        };
+        break;
+
+      case PairRole.monitor:
+        inputTags = {
+          PairDirection.sharedInputs,
+          PairDirection.fromConsumer,
+          PairDirection.fromProvider,
+        };
+        outputTags = {};
+    }
+
+    connectIO(module, srcInterface,
+        inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);
   }
 
-  final Map<String, _SubInterface> _subInterfaces = {};
+  @override
+  void connectIO(Module module, Interface<dynamic> srcInterface,
+      {Iterable<PairDirection>? inputTags,
+      Iterable<PairDirection>? outputTags,
+      String Function(String original)? uniquify}) {
+    super.connectIO(module, srcInterface,
+        inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);
+
+    uniquify ??= (original) => original;
+
+    if (subInterfaces.isNotEmpty) {
+      if (srcInterface is! PairInterface) {
+        throw Exception(
+            'Sub interfaces but not connecting to pair interface'); //TODO
+      }
+
+      // srcInterface as PairInterface;
+
+      for (final subInterfaceEntry in _subInterfaces.values) {
+        final subInterface = subInterfaceEntry.interface;
+        final subInterfaceName = subInterfaceEntry.name;
+        final subInterfaceUniquify =
+            subInterface.uniquify ?? (original) => original;
+
+        if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
+          throw Exception(
+              'no corresponding sub interface $subInterfaceName'); //TODO
+        }
+
+        // handle possible reversal as best as we can
+        Iterable<PairDirection>? subIntfInputTags;
+        Iterable<PairDirection>? subIntfOutputTags;
+        if (subInterfaceEntry.reverse) {
+          // swap consumer tag
+          if (inputTags?.contains(PairDirection.fromConsumer) ?? false) {
+            subIntfOutputTags = {PairDirection.fromConsumer};
+          }
+          if (outputTags?.contains(PairDirection.fromConsumer) ?? false) {
+            subIntfInputTags = {PairDirection.fromConsumer};
+          }
+
+          // swap provider tag
+          if (outputTags?.contains(PairDirection.fromProvider) ?? false) {
+            subIntfInputTags = {PairDirection.fromProvider};
+          }
+          if (inputTags?.contains(PairDirection.fromProvider) ?? false) {
+            subIntfOutputTags = {PairDirection.fromProvider};
+          }
+
+          // keep sharedInputs, if it's there
+          if (inputTags?.contains(PairDirection.sharedInputs) ?? false) {
+            subIntfInputTags = {
+              if (subIntfInputTags != null) ...subIntfInputTags,
+              PairDirection.sharedInputs,
+            };
+          }
+        } else {
+          subIntfInputTags = inputTags;
+          subIntfOutputTags = outputTags;
+        }
+
+        subInterface.connectIO(
+          module,
+          srcInterface._subInterfaces[subInterfaceName]!.interface,
+          inputTags: subIntfInputTags,
+          outputTags: subIntfOutputTags,
+          uniquify: (original) => uniquify!(
+            subInterfaceUniquify(original),
+          ),
+        );
+      }
+    }
+  }
+
+  Map<String, PairInterface> get subInterfaces =>
+      UnmodifiableMapView(_subInterfaces
+          .map((name, subInterface) => MapEntry(name, subInterface.interface)));
+
+  final Map<String, _SubPairInterface> _subInterfaces = {};
 
   @protected
-  void addSubInterface<T>(
+  PairInterfaceType addSubInterface<PairInterfaceType extends PairInterface>(
     String name,
-    Interface<T> subInterface,
-    _SimpleConnectFunction<T> connectSubInterface,
-  ) {
-    _subInterfaces[name] =
-        (_SubInterface<T>(name, subInterface, connectSubInterface));
+    PairInterfaceType subInterface, {
+    bool reverse = false,
+  }) {
+    if (_subInterfaces.containsKey(name)) {
+      throw Exception('subintf name not unique'); //TODO
+    }
+
+    if (!Sanitizer.isSanitary(name)) {
+      throw Exception('Invalid name'); //TODO
+    }
+
+    _subInterfaces[name] = _SubPairInterface(name, subInterface, reverse);
+    return subInterface;
   }
-
-  @protected
-  void addSubPairInterface(String name, PairInterface subInterface) =>
-      addSubInterface(name, subInterface, simpleConnectIO);
 }
 
-enum SharedInputConnectionMode { dontConnect, thisDrivesOther, otherDrivesThis }
-
-class _SubInterface<T> {
+class _SubPairInterface<PairInterfaceType extends PairInterface> {
   final String name;
-  final Interface<T> interface;
-  final _SimpleConnectFunction<T> connect;
-  _SubInterface(this.name, this.interface, this.connect);
+  final PairInterfaceType interface;
+  final bool reverse;
+  _SubPairInterface(this.name, this.interface, this.reverse);
 }
-
-typedef _SimpleConnectFunction<T> = void Function(
-    Module module, Interface<T> srcInterface, PairRole dir,
-    {String Function(String original)? uniquify});

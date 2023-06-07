@@ -1,23 +1,25 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// pair_interface_hier_test.dart
-/// Tests for PairInterface with hierarchy
-///
-/// 2023 March 9
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// pair_interface_hier_test.dart
+// Tests for PairInterface with hierarchy
+//
+// 2023 March 9
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SubInterface extends PairInterface {
+  Logic get rsp => port('rsp');
+  Logic get req => port('req');
+
   SubInterface()
       : super(
           portsFromConsumer: [Port('rsp')],
-          portsFromProducer: [Port('req')],
+          portsFromProvider: [Port('req')],
         );
-  SubInterface.match(SubInterface super.otherInterface) : super.clone();
+  SubInterface.clone(SubInterface super.otherInterface) : super.clone();
 }
 
 class TopLevelInterface extends PairInterface {
@@ -25,55 +27,38 @@ class TopLevelInterface extends PairInterface {
 
   final int numSubInterfaces;
 
-  final List<SubInterface> subInterfaces = [];
+  final List<SubInterface> subIntfs = [];
+
   TopLevelInterface(this.numSubInterfaces)
       : super(
           sharedInputPorts: [Port('clk')],
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
-      final subInterface = SubInterface();
-      subInterfaces.add(subInterface);
+      subIntfs.add(addSubInterface('sub$i', SubInterface()));
     }
   }
 
-  TopLevelInterface.match(TopLevelInterface otherInterface)
+  TopLevelInterface.clone(TopLevelInterface otherInterface)
       : this(otherInterface.numSubInterfaces);
-
-  @override
-  void connectIO(Module module, Interface<dynamic> srcInterface,
-      {Iterable<PairDirection>? inputTags,
-      Iterable<PairDirection>? outputTags,
-      String Function(String original)? uniquify}) {
-    super.connectIO(module, srcInterface,
-        inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);
-
-    srcInterface as TopLevelInterface;
-
-    final role = outputTags!.contains(PairDirection.fromProvider)
-        ? PairRole.provider
-        : PairRole.consumer;
-
-    for (var i = 0; i < numSubInterfaces; i++) {
-      subInterfaces[i].simpleConnectIO(
-          module, srcInterface.subInterfaces[i], role,
-          uniquify: (original) => '${original}_$i');
-    }
-  }
 }
 
 class HierProducer extends Module {
   late final TopLevelInterface _intf;
   HierProducer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.match(intf)
+    _intf = TopLevelInterface.clone(intf)
       ..simpleConnectIO(this, intf, PairRole.provider);
+
+    _intf.subIntfs[0].req <= FlipFlop(_intf.clk, _intf.subIntfs[0].rsp).q;
   }
 }
 
 class HierConsumer extends Module {
   late final TopLevelInterface _intf;
   HierConsumer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.match(intf)
+    _intf = TopLevelInterface.clone(intf)
       ..simpleConnectIO(this, intf, PairRole.consumer);
+
+    _intf.subIntfs[1].rsp <= FlipFlop(_intf.clk, _intf.subIntfs[1].req).q;
   }
 }
 
