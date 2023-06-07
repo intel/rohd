@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the nextLogicValue method from the RandLogicValue extension, for the Dart programming language.">
+  <title>nextLogicValue method - RandLogicValue extension - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/RandLogicValue.html">RandLogicValue</a></li>
+    <li class="self-crumb">nextLogicValue method</li>
+  </ol>
+  <div class="self-name">nextLogicValue</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        brightness_4
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        brightness_5
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+
+  <div id="dartdoc-main-content" class="main-content">
+      <div>
+<h1><span class="kind-method">nextLogicValue</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+
+<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
+<span class="name ">nextLogicValue</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="nextLogicValue-param-width">{<span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span>, </span></li>
+<li><span class="parameter" id="nextLogicValue-param-max"><span class="type-annotation">dynamic</span> <span class="parameter-name">max</span>, </span></li>
+<li><span class="parameter" id="nextLogicValue-param-includeInvalidBits"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">includeInvalidBits</span> = <span class="default-value">false</span>}</span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Generate unsigned random <a href="../../rohd/LogicValue-class.html">LogicValue</a> based on <code>width</code> and <code>max</code> num.</p>
+<p>The random number can be mixed in invalid bits x and z by set
+<code>includeInvalidBits</code> to <code>true</code>. <code>max</code> can be used to set the maximum
+range of the generated number and its only accept runtimeType <code>int</code> and
+<code>BigInt</code>. <code>max</code> only work when <code>includeInvalidBits</code> is set to false
+else an exception will be thrown.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">LogicValue nextLogicValue({
+  required int width,
+  dynamic max,
+  bool includeInvalidBits = false,
+}) {
+  if (width == 0) {
+    return LogicValue.empty;
+  }
+
+  if (max != null) {
+    if (max is! int &amp;&amp; max is! BigInt) {
+      throw InvalidRandomLogicValueException(
+          &#39;max can be only runtimeType of int or BigInt.&#39;);
+    }
+
+    if (max is int &amp;&amp; max == 0) {
+      return LogicValue.ofInt(max, width);
+    } else if (max is BigInt &amp;&amp; max == BigInt.zero) {
+      return LogicValue.ofBigInt(BigInt.zero, width);
+    }
+
+    if ((max is int &amp;&amp; max &lt; 0) || (max is BigInt &amp;&amp; max &lt; BigInt.zero)) {
+      throw InvalidRandomLogicValueException(&#39;max cannot be less than 0&#39;);
+    }
+  }
+
+  if (includeInvalidBits) {
+    if (max != null) {
+      throw InvalidRandomLogicValueException(
+          &#39;max does not work with invalid bits random number generation.&#39;);
+    }
+
+    final bitString = StringBuffer();
+    for (var i = 0; i &lt; width; i++) {
+      bitString.write(const [&#39;1&#39;, &#39;0&#39;, &#39;x&#39;, &#39;z&#39;][nextInt(4)]);
+    }
+
+    return LogicValue.ofString(bitString.toString());
+  } else {
+    if (width &lt;= LogicValue._INT_BITS) {
+      final ranNum = width &lt;= 32
+          ? LogicValue.ofInt(nextInt(1 &lt;&lt; width), width)
+          : LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
+
+      if (max == null ||
+          (max is BigInt &amp;&amp; max.bitLength &gt; LogicValue._INT_BITS)) {
+        return ranNum;
+      } else {
+        return LogicValue.ofInt(
+            ranNum.toInt() % (max is int ? max : (max as BigInt).toInt()),
+            width);
+      }
+    } else {
+      final ranNum = _nextBigInt(numBits: width);
+
+      if (max == null ||
+          (max is BigInt &amp;&amp; ranNum.bitLength &lt; max.bitLength)) {
+        return LogicValue.ofBigInt(ranNum, width);
+      } else {
+        final maxBigInt = max is int ? BigInt.from(max) : max as BigInt;
+        return LogicValue.ofBigInt(ranNum % maxBigInt, width);
+      }
+    }
+  }
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="../../index.html">rohd</a></li>
+  <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+  <li><a href="../../rohd/RandLogicValue.html">RandLogicValue</a></li>
+  <li class="self-crumb">nextLogicValue method</li>
+</ol>
+
+
+    <h5>RandLogicValue extension</h5>
+    <ol>
+
+
+
+
+
+        <li class="section-title"><a href="../../rohd/RandLogicValue.html#instance-methods">Methods</a></li>
+          <li><a href="../../rohd/RandLogicValue/nextLogicValue.html">nextLogicValue</a></li>
+
+
+
+
+</ol>
+
+  </div><!--/.sidebar-offcanvas-->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.4.2
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+
+
+</body>
+
+</html>
+
