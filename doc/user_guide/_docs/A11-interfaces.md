@@ -172,3 +172,5 @@ class TopLevelInterface extends PairInterface {
       : this(otherInterface.numSubInterfaces);
 }
 ```
+
+There are some other utilities available in `PairInterface` as well, such as the ability to reverse sub-interfaces. Check out the API docs for full details.

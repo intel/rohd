@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: BSD-3-Clause
 
 export 'src/external.dart';
-export 'src/interface.dart';
+export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
 export 'src/modules/modules.dart';
 export 'src/signals/signals.dart';

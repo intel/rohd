@@ -81,7 +81,7 @@ class PassthroughPairIntfModule extends Module {
     if (useConditional) {
       Combinational([
         intf1.conditionalDriveOther(intf2, {PairDirection.fromProvider}),
-        intf1.conditionalReceiveOther(intf2, {PairDirection.fromConsumer})
+        intf1.conditionalReceiveOther(intf2, {PairDirection.fromConsumer}),
       ]);
     } else {
       intf1
