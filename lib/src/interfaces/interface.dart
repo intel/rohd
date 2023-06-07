@@ -159,21 +159,22 @@ class Interface<TagType> {
     }
   }
 
-  /// Makes `this` drive interface signals tagged as [direction] on [other].
+  /// Makes `this` drive interface signals tagged with [tags] on [other].
   void driveOther(Interface<TagType> other, Iterable<TagType> tags) {
     getPorts(tags).forEach((portName, thisPort) {
       other.port(portName) <= thisPort;
     });
   }
 
+  /// Makes `this` signals tagged with [tags] be driven by [other].
   void receiveOther(Interface<TagType> other, Iterable<TagType> tags) {
     getPorts(tags).forEach((portName, thisPort) {
       thisPort <= other.port(portName);
     });
   }
 
-  // TODO: what about driving all ports on an interface to some value instead of another instance of an interface?
-
+  /// Makes `this` conditionally drive interface signals tagged with [tags] on
+  /// [other].
   Conditional conditionalDriveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
       ConditionalGroup(getPorts(tags)
@@ -182,6 +183,8 @@ class Interface<TagType> {
           .values
           .toList());
 
+  /// Makes `this` signals tagged with [tags] be driven conditionally by
+  /// [other].
   Conditional conditionalReceiveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
       ConditionalGroup(getPorts(tags)

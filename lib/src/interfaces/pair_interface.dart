@@ -14,24 +14,47 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/interface/interface_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
-enum PairDirection { fromProvider, fromConsumer, sharedInputs }
+/// A direction for signals between a pair of components.
+enum PairDirection {
+  /// Signals driven as outputs by the "provider" in the pair.
+  fromProvider,
 
-enum PairRole { provider, consumer, monitor }
+  /// Signals driven as outputs by the "consumer" in the pair.
+  fromConsumer,
 
+  /// Signals that are inputs to both components in the pair.
+  sharedInputs
+}
+
+/// The role that a component in a pair plays.
+enum PairRole {
+  /// The side of the "provider".
+  provider,
+
+  /// The side of the "consumer".
+  consumer,
+}
+
+/// A simplified version of [Interface] which is intended for a common situation
+/// where two components are communicating with each other and may share some
+/// common inputs.
+///
+/// It can be either directly used for simple scenarios, or extended for more
+/// complex situations.
 class PairInterface extends Interface<PairDirection> {
   /// A function that can be used to modify all port names in a certain way.
   String Function(String original)? modify;
 
-  //TODO: should modify come as part of the main interface?
-
-  /// TODO(): fix doc
+  /// Constructs an instance of a [PairInterface] with the specified ports.
+  ///
+  /// The [modify] function will allow modification of all port names, in
+  /// addition to the usual uniquification that can occur during [connectIO].
   PairInterface({
     List<Port>? portsFromConsumer,
     List<Port>? portsFromProvider,
     List<Port>? sharedInputPorts,
     this.modify,
   }) {
-    //TODO: accept a list of subinterfaces that are also PairInterface?
     if (portsFromConsumer != null) {
       setPorts(portsFromConsumer, [PairDirection.fromConsumer]);
     }
@@ -43,14 +66,17 @@ class PairInterface extends Interface<PairDirection> {
     }
   }
 
+  /// Collects ports on a given [interface] tagged with [tag].
   static List<Port> _getMatchPorts(
-          Interface<PairDirection> otherInterface, PairDirection tag) =>
-      otherInterface
+          Interface<PairDirection> interface, PairDirection tag) =>
+      interface
           .getPorts({tag})
           .entries
           .map((e) => Port(e.key, e.value.width))
           .toList();
 
+  /// Creates a new instance of a [PairInterface] with the same ports other
+  /// characteristics.
   PairInterface.clone(PairInterface otherInterface)
       : this(
           portsFromConsumer:
@@ -62,6 +88,8 @@ class PairInterface extends Interface<PairDirection> {
           modify: otherInterface.modify,
         );
 
+  /// A simplified version of [connectIO] for [PairInterface]s where by only
+  /// specifying the [role], the input and output tags can be inferred.
   void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
@@ -88,15 +116,6 @@ class PairInterface extends Interface<PairDirection> {
           PairDirection.fromProvider,
         };
         break;
-
-      //TODO: test monitor one
-      case PairRole.monitor:
-        inputTags = {
-          PairDirection.sharedInputs,
-          PairDirection.fromConsumer,
-          PairDirection.fromProvider,
-        };
-        outputTags = {};
     }
 
     connectIO(module, srcInterface,
@@ -124,19 +143,19 @@ class PairInterface extends Interface<PairDirection> {
             ' can only connect to a PairInterface');
       }
 
-      for (final subInterfaceEntry in _subInterfaces.values) {
-        final subInterface = subInterfaceEntry.interface;
-        final subInterfaceName = subInterfaceEntry.name;
+      for (final subInterfaceEntry in _subInterfaces.entries) {
+        final subInterface = subInterfaceEntry.value.interface;
+        final subInterfaceName = subInterfaceEntry.key;
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
-          throw Exception(
-              'no corresponding sub interface $subInterfaceName'); //TODO
+          throw InterfaceTypeException(
+              srcInterface, 'missing a sub-interface named $subInterfaceName');
         }
 
         // handle possible reversal as best as we can
         Iterable<PairDirection>? subIntfInputTags;
         Iterable<PairDirection>? subIntfOutputTags;
-        if (subInterfaceEntry.reverse) {
+        if (subInterfaceEntry.value.reverse) {
           // swap consumer tag
           if (inputTags?.contains(PairDirection.fromConsumer) ?? false) {
             subIntfOutputTags = {PairDirection.fromConsumer};
@@ -176,12 +195,20 @@ class PairInterface extends Interface<PairDirection> {
     }
   }
 
+  /// A mapping from sub-interface names to instances of sub-interfaces.
   Map<String, PairInterface> get subInterfaces =>
       UnmodifiableMapView(_subInterfaces
           .map((name, subInterface) => MapEntry(name, subInterface.interface)));
 
   final Map<String, _SubPairInterface> _subInterfaces = {};
 
+  /// Registers a new [subInterface] on this [PairInterface], enabling a simple
+  /// way to build hierarchical interface definitions.
+  ///
+  /// If [reverse] is set, then this [subInterface] will be connected in the
+  /// opposite way as it usually is with respect to the [PairRole] specified.
+  ///
+  /// Sub-interfaces are connected via [connectIO] based on the [name].
   @protected
   PairInterfaceType addSubInterface<PairInterfaceType extends PairInterface>(
     String name,
@@ -199,15 +226,20 @@ class PairInterface extends Interface<PairDirection> {
       throw InterfaceNameException(name, 'Sub-interface name is not sanitary.');
     }
 
-    _subInterfaces[name] =
-        _SubPairInterface(name, subInterface, reverse: reverse);
+    _subInterfaces[name] = _SubPairInterface(subInterface, reverse: reverse);
     return subInterface;
   }
 }
 
+/// An internal tracking object for sub-interfaces and characteristics useful
+/// when connecting it.
 class _SubPairInterface<PairInterfaceType extends PairInterface> {
-  final String name;
+  /// The [interface] for this instance.
   final PairInterfaceType interface;
+
+  /// Whether or not this interface should be connected in a reverse way.
   final bool reverse;
-  _SubPairInterface(this.name, this.interface, {required this.reverse});
+
+  /// Constructs a new sub-interface tracking object with characteristics.
+  _SubPairInterface(this.interface, {required this.reverse});
 }
