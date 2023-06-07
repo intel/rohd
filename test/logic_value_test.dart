@@ -8,8 +8,11 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';
+import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -1156,6 +1159,97 @@ void main() {
           BigInt.from(128));
       expect(LogicValue.ofBigInt(BigInt.from(-1), 128).clog2().toBigInt(),
           BigInt.from(128));
+    });
+  });
+
+  group('random value generation ', () {
+    test('should throw exception when max is not int or BigInt.', () {
+      expect(() => Random(5).nextLogicValue(width: 10, max: '10'),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+      expect(() => Random(5).nextLogicValue(width: 10, max: 10.5),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test('should throw exception when max is less than 0.', () {
+      expect(() => Random(5).nextLogicValue(width: 10, max: -1),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+      expect(() => Random(5).nextLogicValue(width: 10, max: BigInt.from(-10)),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test(
+        'should throw exception when max is set when generate random num with'
+        ' invalid bits.', () {
+      expect(
+          () => Random(5).nextLogicValue(
+              width: 10,
+              includeInvalidBits: true,
+              max: LogicValue.ofInt(10, 10)),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test(
+        'should return random logic value with invalid bits when '
+        'includeInvalidBits is set to true.', () {
+      final lvRand =
+          Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
+
+      expect(lvRand.toString(), contains('x'));
+    });
+
+    test('should return empty LogicValue when width is 0.', () {
+      expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
+    });
+
+    test('should return empty LogicValue when max is 0 for int and big int.',
+        () {
+      final maxBigInt = BigInt.zero;
+      const maxInt = 0;
+      expect(Random(5).nextLogicValue(width: 10, max: maxInt).toInt(),
+          equals(maxInt));
+
+      expect(Random(5).nextLogicValue(width: 80, max: maxBigInt).toBigInt(),
+          equals(maxBigInt));
+    });
+
+    test(
+        'should return random int logic value without invalid bits when'
+        ' having different width and max constraint.', () {
+      const maxValInt = 8888;
+
+      for (var i = 1; i <= 64; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        final lvRandMaxInt = Random(5).nextLogicValue(width: i, max: maxValInt);
+        final lvMaxBigInt = Random(5)
+            .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
+        final lvMaxIntBigInt =
+            Random(5).nextLogicValue(width: i, max: BigInt.from(maxValInt));
+
+        expect(lvRand.toInt(), isA<int>());
+        expect(lvRandMaxInt.toInt(), lessThan(maxValInt));
+        expect(lvMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
+        expect(lvMaxIntBigInt.toInt(), lessThan(maxValInt));
+      }
+    });
+
+    test(
+        'should return random big integer logic value with width '
+        'greater than 64 when having different width and max constraint.', () {
+      final maxValBigInt = BigInt.parse('179289266005644583');
+      final maxValBigIntlv =
+          LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
+      const maxInt = 30;
+
+      for (var i = 65; i <= 500; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
+
+        final randMaxInt = Random(5).nextLogicValue(width: i, max: maxInt);
+        expect(randMaxInt.toBigInt(), lessThan(BigInt.from(maxInt)));
+
+        expect(lvRand.toBigInt(), isA<BigInt>());
+        expect(lvRandMax.toBigInt(), lessThan(maxValBigIntlv.toBigInt()));
+      }
     });
   });
 }
