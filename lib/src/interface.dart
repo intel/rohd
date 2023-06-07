@@ -72,19 +72,40 @@ class Interface<TagType> {
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
         port <=
-            // ignore: invalid_use_of_protected_member
-            module.addInput(
-              uniquify(port.name),
-              srcInterface.port(port.name),
-              width: port.width,
-            );
+            (port is LogicArray
+                // ignore: invalid_use_of_protected_member
+                ? module.addInputArray(
+                    port.name,
+                    srcInterface.port(port.name),
+                    dimensions: port.dimensions,
+                    elementWidth: port.elementWidth,
+                    numUnpackedDimensions: port.numUnpackedDimensions,
+                  )
+                // ignore: invalid_use_of_protected_member
+                : module.addInput(
+                    uniquify(port.name),
+                    srcInterface.port(port.name),
+                    width: port.width,
+                  ));
       }
     }
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
         // ignore: invalid_use_of_protected_member
-        final output = module.addOutput(uniquify(port.name), width: port.width);
+        final output = (port is LogicArray
+            // ignore: invalid_use_of_protected_member
+            ? module.addOutputArray(
+                port.name,
+                dimensions: port.dimensions,
+                elementWidth: port.elementWidth,
+                numUnpackedDimensions: port.numUnpackedDimensions,
+              )
+            // ignore: invalid_use_of_protected_member
+            : module.addOutput(
+                uniquify(port.name),
+                width: port.width,
+              ));
         output <= port;
         srcInterface.port(port.name) <= output;
       }

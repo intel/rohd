@@ -491,6 +491,7 @@ abstract class Module {
   ///
   /// Performs validation on overall width matching for [x], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
+  @protected
   LogicArray addInputArray(
     String name,
     Logic x, {
@@ -533,6 +534,7 @@ abstract class Module {
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
+  @protected
   LogicArray addOutputArray(
     String name, {
     List<int> dimensions = const [1],
