@@ -20,7 +20,7 @@ class DataInterface extends PairInterface {
       : super(
             portsFromProvider: [Port('data', 32), Port('valid')],
             portsFromConsumer: [Port('ready')],
-            uniquify: (original) => [
+            modify: (original) => [
                   if (prefix != null) prefix,
                   original,
                 ].join('_'));
@@ -31,7 +31,7 @@ class RequestInterface extends PairInterface {
   final String name;
   final int numWd;
   RequestInterface({this.numWd = 2, this.name = 'req'})
-      : super(uniquify: (original) => '${original}_$name') {
+      : super(modify: (original) => '${original}_$name') {
     for (var wd = 0; wd < numWd; wd++) {
       writeDatas.add(
           addSubInterface('write_data$wd', DataInterface(prefix: 'wd$wd')));
@@ -44,7 +44,7 @@ class RequestInterface extends PairInterface {
 
 class ResponseInterface extends PairInterface {
   late final DataInterface readData;
-  ResponseInterface() : super(uniquify: (original) => '${original}_rsp') {
+  ResponseInterface() : super(modify: (original) => '${original}_rsp') {
     readData = addSubInterface('read_data', DataInterface(prefix: 'rd'),
         reverse: true);
   }

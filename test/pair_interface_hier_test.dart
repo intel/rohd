@@ -14,7 +14,7 @@ class SubInterface extends PairInterface {
   Logic get rsp => port('rsp');
   Logic get req => port('req');
 
-  SubInterface()
+  SubInterface({super.modify})
       : super(
           portsFromConsumer: [Port('rsp')],
           portsFromProvider: [Port('req')],
@@ -34,7 +34,11 @@ class TopLevelInterface extends PairInterface {
           sharedInputPorts: [Port('clk')],
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
-      subIntfs.add(addSubInterface('sub$i', SubInterface()));
+      subIntfs.add(addSubInterface(
+          'sub$i',
+          SubInterface(
+            modify: (original) => '${original}_$i',
+          )));
     }
   }
 
@@ -76,6 +80,9 @@ void main() {
   test('hier pair interface', () async {
     final mod = HierTop(Logic());
     await mod.build();
-    print(mod.generateSynth());
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('HierConsumer  unnamed_module'));
+    expect(sv, contains('HierProducer  unnamed_module'));
   });
 }

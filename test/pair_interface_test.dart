@@ -20,6 +20,7 @@ class SimpleInterface extends PairInterface {
           portsFromConsumer: [Port('rsp')],
           portsFromProvider: [Port('req')],
           sharedInputPorts: [Port('clk')],
+          modify: (original) => 'simple_$original',
         );
 
   SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
@@ -36,18 +37,14 @@ class SimpleProvider extends Module {
 }
 
 class SimpleSubProvider extends Module {
-  late final SimpleInterface _intf;
   SimpleSubProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.provider);
+    SimpleInterface.clone(intf).simpleConnectIO(this, intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
-  late final SimpleInterface _intf;
   SimpleConsumer(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.consumer);
+    SimpleInterface.clone(intf).simpleConnectIO(this, intf, PairRole.consumer);
   }
 }
 
@@ -65,6 +62,9 @@ void main() {
   test('simple pair interface', () async {
     final mod = SimpleTop(Logic());
     await mod.build();
-    print(mod.generateSynth());
+
+    // Make sure the "modify" went through:
+    final sv = mod.generateSynth();
+    expect(sv, contains('input logic simple_clk'));
   });
 }

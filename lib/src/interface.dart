@@ -201,14 +201,18 @@ enum PairDirection { fromProvider, fromConsumer, sharedInputs }
 enum PairRole { provider, consumer, monitor }
 
 class PairInterface extends Interface<PairDirection> {
-  String Function(String original)? uniquify;
+  /// A function that can be used to modify all port names in a certain way.
+  String Function(String original)? modify;
+
+  //TODO: test modify without any subinterfaces works
+  //TODO: should modify come as part of the main interface?
 
   /// TODO(): fix doc
   PairInterface({
     List<Port>? portsFromConsumer,
     List<Port>? portsFromProvider,
     List<Port>? sharedInputPorts,
-    this.uniquify,
+    this.modify,
   }) {
     //TODO: accept a list of subinterfaces that are also PairInterface?
     if (portsFromConsumer != null) {
@@ -230,14 +234,16 @@ class PairInterface extends Interface<PairDirection> {
           .map((e) => Port(e.key, e.value.width))
           .toList();
 
-  PairInterface.clone(Interface<PairDirection> otherInterface)
+  PairInterface.clone(PairInterface otherInterface)
       : this(
-            portsFromConsumer:
-                _getMatchPorts(otherInterface, PairDirection.fromConsumer),
-            portsFromProvider:
-                _getMatchPorts(otherInterface, PairDirection.fromProvider),
-            sharedInputPorts:
-                _getMatchPorts(otherInterface, PairDirection.sharedInputs));
+          portsFromConsumer:
+              _getMatchPorts(otherInterface, PairDirection.fromConsumer),
+          portsFromProvider:
+              _getMatchPorts(otherInterface, PairDirection.fromProvider),
+          sharedInputPorts:
+              _getMatchPorts(otherInterface, PairDirection.sharedInputs),
+          modify: otherInterface.modify,
+        );
 
   // TODO: driveOther could be on Interface in general?
   // TODO: could add receiveOther as well, for opposite direction?
@@ -290,10 +296,13 @@ class PairInterface extends Interface<PairDirection> {
       {Iterable<PairDirection>? inputTags,
       Iterable<PairDirection>? outputTags,
       String Function(String original)? uniquify}) {
-    super.connectIO(module, srcInterface,
-        inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);
+    final nonNullUniquify = uniquify ?? (original) => original;
+    final nonNullModify = modify ?? (original) => original;
+    String newUniquify(String original) =>
+        nonNullUniquify(nonNullModify(original));
 
-    uniquify ??= (original) => original;
+    super.connectIO(module, srcInterface,
+        inputTags: inputTags, outputTags: outputTags, uniquify: newUniquify);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -306,8 +315,6 @@ class PairInterface extends Interface<PairDirection> {
       for (final subInterfaceEntry in _subInterfaces.values) {
         final subInterface = subInterfaceEntry.interface;
         final subInterfaceName = subInterfaceEntry.name;
-        final subInterfaceUniquify =
-            subInterface.uniquify ?? (original) => original;
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw Exception(
@@ -351,9 +358,7 @@ class PairInterface extends Interface<PairDirection> {
           srcInterface._subInterfaces[subInterfaceName]!.interface,
           inputTags: subIntfInputTags,
           outputTags: subIntfOutputTags,
-          uniquify: (original) => uniquify!(
-            subInterfaceUniquify(original),
-          ),
+          uniquify: newUniquify,
         );
       }
     }
