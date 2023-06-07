@@ -65,9 +65,9 @@ class Provider extends Module {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
     reqIntf = RequestInterface.clone(reqIntf)
-      ..simpleConnectIO(this, reqIntf, PairRole.provider);
+      ..pairConnectIO(this, reqIntf, PairRole.provider);
     rspIntf = ResponseInterface()
-      ..simpleConnectIO(this, rspIntf, PairRole.provider);
+      ..pairConnectIO(this, rspIntf, PairRole.provider);
 
     reqIntf.writeDatas[0].valid <= Const(1);
     reqIntf.writeDatas[1].valid <= Const(1);
@@ -85,9 +85,9 @@ class Consumer extends Module {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
     reqIntf = RequestInterface.clone(reqIntf)
-      ..simpleConnectIO(this, reqIntf, PairRole.consumer);
+      ..pairConnectIO(this, reqIntf, PairRole.consumer);
     rspIntf = ResponseInterface()
-      ..simpleConnectIO(this, rspIntf, PairRole.consumer);
+      ..pairConnectIO(this, rspIntf, PairRole.consumer);
 
     rspIntf.readData.valid <= Const(1);
 
@@ -115,6 +115,10 @@ class PCTop extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('provider and consumer', () async {
     final mod = PCTop(Logic());
     await mod.build();

@@ -50,7 +50,7 @@ class HierProducer extends Module {
   late final TopLevelInterface _intf;
   HierProducer(TopLevelInterface intf) {
     _intf = TopLevelInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.provider);
+      ..pairConnectIO(this, intf, PairRole.provider);
 
     _intf.subIntfs[0].req <= FlipFlop(_intf.clk, _intf.subIntfs[0].rsp).q;
   }
@@ -60,7 +60,7 @@ class HierConsumer extends Module {
   late final TopLevelInterface _intf;
   HierConsumer(TopLevelInterface intf) {
     _intf = TopLevelInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.consumer);
+      ..pairConnectIO(this, intf, PairRole.consumer);
 
     _intf.subIntfs[1].rsp <= FlipFlop(_intf.clk, _intf.subIntfs[1].req).q;
   }
@@ -77,6 +77,10 @@ class HierTop extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('hier pair interface', () async {
     final mod = HierTop(Logic());
     await mod.build();

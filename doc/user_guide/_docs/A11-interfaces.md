@@ -97,14 +97,14 @@ class SimpleInterface extends PairInterface {
 }
 ```
 
-Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `simpleConnectIO` function which references the "role" of the component rather than listing input and output tags explicitly.
+Note that it comes with helpers in the super constructor for grouping ports as well as cloning the interface.  Using this interface in a simple provider/consumer scenario, even with module hierarchy is easy.  You can use the `pairConnectIO` function which references the "role" of the component rather than listing input and output tags explicitly.
 
 ```dart
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
     _intf = SimpleInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.provider);
+      ..pairConnectIO(this, intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -114,7 +114,7 @@ class SimpleSubProvider extends Module {
   late final SimpleInterface _intf;
   SimpleSubProvider(SimpleInterface intf) {
     _intf = SimpleInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.provider);
+      ..pairConnectIO(this, intf, PairRole.provider);
   }
 }
 
@@ -122,7 +122,7 @@ class SimpleConsumer extends Module {
   late final SimpleInterface _intf;
   SimpleConsumer(SimpleInterface intf) {
     _intf = SimpleInterface.clone(intf)
-      ..simpleConnectIO(this, intf, PairRole.consumer);
+      ..pairConnectIO(this, intf, PairRole.consumer);
   }
 }
 

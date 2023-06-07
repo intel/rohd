@@ -12,6 +12,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/interface/interface_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logical interface to a [Module].
@@ -162,6 +163,8 @@ class Interface<TagType> {
     }
   }
 
+  //TODO: test these *other things
+
   /// Makes `this` drive interface signals tagged as [direction] on [other].
   void driveOther(Interface<TagType> other, Iterable<TagType> tags) {
     getPorts(tags).forEach((portName, thisPort) {
@@ -177,21 +180,21 @@ class Interface<TagType> {
 
   // TODO: what about driving all ports on an interface to some value instead of another instance of an interface?
 
-  List<Conditional> conditionalDriveOther(
+  Conditional conditionalDriveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
-      getPorts(tags)
+      ConditionalGroup(getPorts(tags)
           .map((portName, thisPort) =>
               MapEntry(portName, other.port(portName) < thisPort))
           .values
-          .toList();
+          .toList());
 
-  List<Conditional> conditionalReceiveOther(
+  Conditional conditionalReceiveOther(
           Interface<TagType> other, Iterable<TagType> tags) =>
-      getPorts(tags)
+      ConditionalGroup(getPorts(tags)
           .map((portName, thisPort) =>
               MapEntry(portName, thisPort < other.port(portName)))
           .values
-          .toList();
+          .toList());
 }
 
 // TODO(mkorbel1): addSubInterface type of function
@@ -206,6 +209,8 @@ class PairInterface extends Interface<PairDirection> {
 
   //TODO: test modify without any subinterfaces works
   //TODO: should modify come as part of the main interface?
+
+  //TODO: reverse should be a characteristic of interface, not sub interface?
 
   /// TODO(): fix doc
   PairInterface({
@@ -245,13 +250,7 @@ class PairInterface extends Interface<PairDirection> {
           modify: otherInterface.modify,
         );
 
-  // TODO: driveOther could be on Interface in general?
-  // TODO: could add receiveOther as well, for opposite direction?
-  // TODO: conditional versions of those
-
-  //TODO: name things consistently, why simple sometimes, pair others
-
-  void simpleConnectIO(
+  void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
     Set<PairDirection> inputTags;
@@ -278,6 +277,7 @@ class PairInterface extends Interface<PairDirection> {
         };
         break;
 
+      //TODO: test monitor one
       case PairRole.monitor:
         inputTags = {
           PairDirection.sharedInputs,
@@ -377,14 +377,18 @@ class PairInterface extends Interface<PairDirection> {
     bool reverse = false,
   }) {
     if (_subInterfaces.containsKey(name)) {
-      throw Exception('subintf name not unique'); //TODO
+      throw InterfaceNameException(
+          name,
+          'Sub-interface name is not unique.'
+          ' There is already a sub-interface with that name');
     }
 
     if (!Sanitizer.isSanitary(name)) {
-      throw Exception('Invalid name'); //TODO
+      throw InterfaceNameException(name, 'Sub-interface name is not sanitary.');
     }
 
-    _subInterfaces[name] = _SubPairInterface(name, subInterface, reverse);
+    _subInterfaces[name] =
+        _SubPairInterface(name, subInterface, reverse: reverse);
     return subInterface;
   }
 }
@@ -393,5 +397,5 @@ class _SubPairInterface<PairInterfaceType extends PairInterface> {
   final String name;
   final PairInterfaceType interface;
   final bool reverse;
-  _SubPairInterface(this.name, this.interface, this.reverse);
+  _SubPairInterface(this.name, this.interface, {required this.reverse});
 }
