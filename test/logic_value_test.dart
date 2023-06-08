@@ -1277,7 +1277,7 @@ void main() {
         expect(values[i].toInt(), expected[i]);
       }
     });
-    test('signed values - int 64 bits', () {
+    test('unsigned values - int 64 bits', () {
       final a = LogicValue.ofInt(3, 64);
       final b = LogicValue.ofInt(0, 64);
       final c = LogicValue.ofInt(1, 64);
@@ -1289,19 +1289,21 @@ void main() {
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
-      final expected = List<int>.filled(values.length, 0);
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
 
       for (var i = 0; i < values.length; i++) {
-        expected[i] = values[i].toInt();
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
       }
 
       values.sort();
       expected.sort();
       for (var i = 0; i < values.length; i++) {
-        expect(values[i].toInt(), expected[i]);
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
       }
     });
-    test('signed values - int 8 bits', () {
+    test('unsigned values - int 8 bits', () {
       final a = LogicValue.ofInt(3, 8);
       final b = LogicValue.ofInt(0, 8);
       final c = LogicValue.ofInt(1, 8);
@@ -1313,19 +1315,22 @@ void main() {
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
-      final expected = List<int>.filled(values.length, 0);
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
 
       for (var i = 0; i < values.length; i++) {
-        expected[i] = values[i].toInt();
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
       }
 
       values.sort();
       expected.sort();
+
       for (var i = 0; i < values.length; i++) {
-        expect(values[i].toInt(), expected[i]);
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
       }
     });
-    test('signed  BigInt(invalid int)  & int ', () {
+    test('unsigned  BigInt(invalid int)  & int ', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final b = LogicValue.ofBigInt(BigInt.zero, 64);
       final c = LogicValue.ofBigInt(BigInt.from(-1), 64); //Invalid Int
@@ -1337,19 +1342,21 @@ void main() {
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
-      final expectedInt = List<int>.filled(values.length, 0);
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
       for (var i = 0; i < values.length; i++) {
-        expectedInt[i] = values[i].toInt();
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
       }
 
       values.sort();
-      expectedInt.sort();
+      expected.sort();
       for (var i = 0; i < values.length; i++) {
-        expect(values[i].toInt(), expectedInt[i]);
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
       }
     });
 
-    test('signed  BigInt (validInt) & int ', () {
+    test('unsigned  BigInt (validInt) & int ', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final b = LogicValue.ofBigInt(BigInt.zero, 64);
       final c = LogicValue.ofBigInt(BigInt.parse('-9223372036854775809'), 64);
@@ -1361,23 +1368,21 @@ void main() {
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
-      final expectedInt = List<int>.filled(values.length, 0);
-      final expectedBigInt = List<BigInt>.filled(values.length, BigInt.zero);
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
       for (var i = 0; i < values.length; i++) {
-        expectedBigInt[i] = values[i].toBigInt();
-        expectedInt[i] = values[i].toInt();
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
       }
 
       values.sort();
-      expectedInt.sort();
-      expectedBigInt.sort();
+      expected.sort();
       for (var i = 0; i < values.length; i++) {
-        expect(values[i].toBigInt(), expectedBigInt[i]);
-        expect(values[i].toInt(), expectedInt[i]);
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
       }
     });
 
-    test('signed BigInt', () {
+    test('unsigned BigInt', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 128);
       final b = LogicValue.ofBigInt(BigInt.zero, 128);
       final c = LogicValue.ofBigInt(BigInt.from(-1), 128);
@@ -1395,13 +1400,13 @@ void main() {
       final expected = List<BigInt>.filled(values.length, BigInt.zero);
 
       for (var i = 0; i < values.length; i++) {
-        expected[i] = values[i].toBigInt();
+        expected[i] = values[i].toBigInt().toUnsigned(values[i].width);
       }
 
       values.sort();
       expected.sort();
       for (var i = 0; i < values.length; i++) {
-        expect(values[i].toBigInt(), expected[i]);
+        expect(values[i].toBigInt().toUnsigned(values[i].width), expected[i]);
       }
     });
     test('Exceptions', () {
@@ -1424,28 +1429,13 @@ void main() {
       final excBigIntWidth = <LogicValue>[a64, b64, a128];
       final excIntWidth = <LogicValue>[e64, e8, f64];
 
-      try {
-        excBigIntWidth.sort();
-      } on Exception catch (e) {
-        expect(e.runtimeType, WidthMismatchException);
-      }
-      try {
-        excIntWidth.sort();
-      } on Exception catch (e) {
-        expect(e.runtimeType, WidthMismatchException);
-      }
-      try {
-        //Invalid logic value
-        <LogicValue>[e8, invalidLogicX].sort();
-      } on Exception catch (e) {
-        expect(e.runtimeType, InvalidLogicValueException);
-      }
-      try {
-        //Invalid logic value
-        <LogicValue>[e8, invalidLogicZ].sort();
-      } on Exception catch (e) {
-        expect(e.runtimeType, InvalidLogicValueException);
-      }
+      expect(excBigIntWidth.sort, throwsA(isA<ValueWidthMismatchException>()));
+      expect(excIntWidth.sort, throwsA(isA<ValueWidthMismatchException>()));
+
+      expect(<LogicValue>[e8, invalidLogicX].sort,
+          throwsA(isA<InvalidLogicValueException>()));
+      expect(<LogicValue>[e8, invalidLogicZ].sort,
+          throwsA(isA<InvalidLogicValueException>()));
     });
   });
 }

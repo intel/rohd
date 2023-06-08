@@ -570,12 +570,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Returns a negative number if `this` is less than `other`, zero if they are
   /// equal, and a positive number if `this` is greater than `other`.
   ///
-  /// It will throw an exception for invalid `LogicValue.x` & `LogicValue.z`
-  /// values, or for non-equal `LogicValue` [width].
+  /// It will throw an exception if `this` or [other] is not [isValid] or for
+  /// non-equal `LogicValue` [width].
   @override
   int compareTo(Object other) {
     if (other is! LogicValue) {
-      throw Exception('Input should be of type LogicValue');
+      throw TypeError();
     }
     if (!isValid) {
       throw InvalidLogicValueException(this);
@@ -585,20 +585,35 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
 
     if (other.width != width) {
-      throw WidthMismatchException(this, other);
+      throw ValueWidthMismatchException(this, other);
     }
 
-    if (this is _BigLogicValue ||
-        this is BigInt ||
-        this is _BigLogicValue ||
-        width > _INT_BITS) {
+    if (width > _INT_BITS || other.width > _INT_BITS) {
       final a = toBigInt();
       final b = other.toBigInt();
-      return a.compareTo(b);
+      final valueZero = BigInt.zero;
+
+      if ((a < valueZero && b < valueZero) ||
+          (a >= valueZero && b >= valueZero)) {
+        return a.compareTo(b);
+      } else if (a < valueZero && b >= valueZero) {
+        return 1;
+      } else {
+        return -1;
+      }
     } else {
       final a = toInt();
       final b = other.toInt();
-      return a.compareTo(b);
+      const valueZero = 0;
+
+      if ((a < valueZero && b < valueZero) ||
+          (a >= valueZero && b >= valueZero)) {
+        return a.compareTo(b);
+      } else if (a < valueZero && b >= valueZero) {
+        return 1;
+      } else {
+        return -1;
+      }
     }
   }
 
