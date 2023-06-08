@@ -1,16 +1,14 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// interface.dart
-/// Definitions for interfaces and ports
-///
-/// 2021 May 25
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// interface.dart
+// Definitions for interfaces and ports
+//
+// 2021 May 25
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
 
 /// Represents a logical interface to a [Module].
@@ -63,28 +61,50 @@ class Interface<TagType> {
   /// If [inputTags] or [outputTags] is not specified, then, respectively,
   /// no inputs or outputs will be added.
   void connectIO(Module module, Interface<dynamic> srcInterface,
-      {Set<TagType>? inputTags,
-      Set<TagType>? outputTags,
+      {Iterable<TagType>? inputTags,
+      Iterable<TagType>? outputTags,
       String Function(String original)? uniquify}) {
     uniquify ??= (original) => original;
 
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
-        _setPort(
-            // ignore: invalid_use_of_protected_member
-            module.addInput(uniquify(port.name), srcInterface.port(port.name),
-                width: port.width),
-            portName: port.name);
+        port <=
+            (port is LogicArray
+                // ignore: invalid_use_of_protected_member
+                ? module.addInputArray(
+                    port.name,
+                    srcInterface.port(port.name),
+                    dimensions: port.dimensions,
+                    elementWidth: port.elementWidth,
+                    numUnpackedDimensions: port.numUnpackedDimensions,
+                  )
+                // ignore: invalid_use_of_protected_member
+                : module.addInput(
+                    uniquify(port.name),
+                    srcInterface.port(port.name),
+                    width: port.width,
+                  ));
       }
     }
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
         // ignore: invalid_use_of_protected_member
-        final output = module.addOutput(uniquify(port.name), width: port.width);
-        port <= output;
-        srcInterface.port(port.name) <= port;
-        _setPort(output, portName: port.name);
+        final output = (port is LogicArray
+            // ignore: invalid_use_of_protected_member
+            ? module.addOutputArray(
+                port.name,
+                dimensions: port.dimensions,
+                elementWidth: port.elementWidth,
+                numUnpackedDimensions: port.numUnpackedDimensions,
+              )
+            // ignore: invalid_use_of_protected_member
+            : module.addOutput(
+                uniquify(port.name),
+                width: port.width,
+              ));
+        output <= port;
+        srcInterface.port(port.name) <= output;
       }
     }
   }
@@ -93,12 +113,12 @@ class Interface<TagType> {
   /// [Map] from the port name to the [Logic] port.
   ///
   /// Returns all ports if [tags] is null.
-  Map<String, Logic> getPorts([Set<TagType>? tags]) {
+  Map<String, Logic> getPorts([Iterable<TagType>? tags]) {
     if (tags == null) {
       return ports;
     } else {
       final matchingPorts = <String, Logic>{};
-      for (final tag in tags) {
+      for (final tag in tags.toSet().toList()) {
         matchingPorts.addEntries(_ports.keys
             .where(
                 (portName) => _portToTagMap[portName]?.contains(tag) ?? false)
@@ -113,8 +133,12 @@ class Interface<TagType> {
   /// and with name [portName].
   ///
   /// If no [portName] is specified, then [port]'s name is used.
-  void _setPort(Logic port, {List<TagType>? tags, String? portName}) {
+  void _setPort(Logic port, {Iterable<TagType>? tags, String? portName}) {
     portName ??= port.name;
+
+    assert(!_ports.containsKey(portName),
+        'Port named $portName already exists on this interface.');
+
     _ports[portName] = port;
     if (tags != null) {
       if (!_portToTagMap.containsKey(portName)) {
@@ -129,9 +153,43 @@ class Interface<TagType> {
   ///
   /// All names of ports are gotten from the names of the [ports].
   @protected
-  void setPorts(List<Logic> ports, [List<TagType>? tags]) {
+  void setPorts(List<Logic> ports, [Iterable<TagType>? tags]) {
     for (final port in ports) {
       _setPort(port, tags: tags);
     }
   }
+
+  /// Makes `this` drive interface signals tagged with [tags] on [other].
+  void driveOther(Interface<TagType> other, Iterable<TagType> tags) {
+    getPorts(tags).forEach((portName, thisPort) {
+      other.port(portName) <= thisPort;
+    });
+  }
+
+  /// Makes `this` signals tagged with [tags] be driven by [other].
+  void receiveOther(Interface<TagType> other, Iterable<TagType> tags) {
+    getPorts(tags).forEach((portName, thisPort) {
+      thisPort <= other.port(portName);
+    });
+  }
+
+  /// Makes `this` conditionally drive interface signals tagged with [tags] on
+  /// [other].
+  Conditional conditionalDriveOther(
+          Interface<TagType> other, Iterable<TagType> tags) =>
+      ConditionalGroup(getPorts(tags)
+          .map((portName, thisPort) =>
+              MapEntry(portName, other.port(portName) < thisPort))
+          .values
+          .toList());
+
+  /// Makes `this` signals tagged with [tags] be driven conditionally by
+  /// [other].
+  Conditional conditionalReceiveOther(
+          Interface<TagType> other, Iterable<TagType> tags) =>
+      ConditionalGroup(getPorts(tags)
+          .map((portName, thisPort) =>
+              MapEntry(portName, thisPort < other.port(portName)))
+          .values
+          .toList());
 }

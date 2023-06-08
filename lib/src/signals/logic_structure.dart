@@ -45,10 +45,10 @@ class LogicStructure implements Logic {
     _elements
       ..addAll(elements)
       ..forEach((element) {
-        if (element._parentStructure != null) {
+        if (element.parentStructure != null) {
           throw LogicConstructionException(
               '$element already is a member of a structure'
-              ' ${element._parentStructure}.');
+              ' ${element.parentStructure}.');
         }
 
         element._parentStructure = this;
