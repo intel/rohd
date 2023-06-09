@@ -71,7 +71,7 @@
 
 ## Chapter 7: Sequential Logic
 
-- [What is Sequential Logic?](./chapter_7/00_sequential_logic.mdwhat-is-sequential-logic)
+- [What is Sequential Logic?](./chapter_7/00_sequential_logic.md#what-is-sequential-logic)
 - [Sequential Logic in ROHD](./chapter_7/00_sequential_logic.md#sequential-logic-in-rohd)
 - [Shift Register](./chapter_7/00_sequential_logic.md#shift-register)
 - [ROHD Simulator](./chapter_7/00_sequential_logic.md#rohd-simulator)
