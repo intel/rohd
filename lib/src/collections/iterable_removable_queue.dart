@@ -24,7 +24,7 @@ class IterableRemovableQueue<T> {
   /// Adds a new item to the end of the queue.
   void add(T item) {
     final newElement = _IterableRemovableElement<T>(item);
-    if (_first == null) {
+    if (isEmpty) {
       _first = newElement;
       _last = _first;
     } else {

@@ -85,11 +85,11 @@ class StateMachine<StateIdentifier> {
                                       _stateValueLookup[
                                           _stateLookup[entry.value]]
                                 ]))
-                            .toList(),
+                            .toList(growable: false),
                         conditionalType: ConditionalType.unique,
                         defaultItem: [nextState < currentState])
                   ]))
-              .toList(),
+              .toList(growable: false),
           conditionalType: ConditionalType.unique,
           defaultItem: [nextState < currentState])
     ]);

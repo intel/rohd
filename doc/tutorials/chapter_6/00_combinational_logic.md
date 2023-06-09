@@ -23,11 +23,9 @@ In this chapter:
 
 There are two types of digital circuit, which are combinational logic and sequential logic. As for this chapter, we will look into combinational logic circuit.
 
-A combinational circuit's outputs depends only on the current values of the inputs; in other words, it combines just the current input values to compute the output. For example, a logic gate is a combinational circuit.A circuit is combinational if it consists of interconnected circuit elements such that:
+A combinational circuit is a type of circuit where the outputs are determined solely by the current inputs. It doesn't store any information or have memory. Each output is calculated based on the current values of the inputs using logical operations. For example, a logic gate is a basic building block of a combinational circuit.
 
-- Every circuit element is itself combinational.
-- Every node of the circuits is either designated as an input to the circuit or connects to exactly one output terminal of a circuit element.
-- The circuit contains no cyclic paths: every path through the circuit visits each circuit node at most once.
+Some criteria to identify a combinational circuit include: each circuit element being combinational, absence of cyclic paths or feedback loops, and lack of memory elements. It's important to note that these criteria are not exhaustive, and there may be additional criteria to consider.
 
 ## What is Conditionals?
 
@@ -69,11 +67,11 @@ The most important part that you have to notice here is the assignment operator 
 
 ## If, ElseIf, Else
 
-Alright, now we know how the operator in ROHD. we can dive into the `If...Else` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate that pieces of hardware. While in ROHD, `If...Else` is conditionally assignment which assign signal to a port, which we can think something like `If` Logic signal `A` is present, `Then` assign output port `B` to `A`.
+Alright, now we know how the operator in ROHD. we can dive into the `If...Else` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate that pieces of hardware. While in ROHD, `If...Else` is conditionally assignment which assign signal to a port, which we can think something like `If` Logic signal `A` is high, `Then` assign output port `B` to `A`.
 
 In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `If.block` which is more readable and clean.
 
-*Note: `If...Else` and `Case` in ROHD is written in capital letter for starting of the alphabet.*
+*Note: `If...Else` and `Case` in ROHD is written with the first letter capitalized to differentiate from the built-in dart keywords and functionality.*
 
 ### Start by declaring a conditional Block
 
@@ -371,6 +369,22 @@ Combinational([
 ```
 
 Yes, that it for `Case` in ROHD.
+
+ROHD also support `CaseZ` statements with the `z` syntax, not the `?` syntax (these are quivalent in SystemVerilog). There is no support for an equivalent of `casex` from SystemVerilog, since it can easily cause unsynthesizable code to be generated [see: https://www.verilogpro.com/verilog-case-casez-casex/](https://www.verilogpro.com/verilog-case-casez-casex/).
+
+Below is the example of using `CaseZ`.
+
+```dart
+CaseZ([b,a].swizzle(),[
+    CaseItem(Const(LogicValue.ofString('z1')), [
+      e < 1,
+    ])
+  ], defaultItem: [
+    e < 0,
+  ],
+  conditionalType: ConditionalType.Priority
+)
+```
 
 ## Exercises
 
