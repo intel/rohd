@@ -1380,6 +1380,14 @@ ${padding}end ''');
   }
 }
 
+/// Constructs a positive edge triggered flip flop on [clk].
+///
+/// It returns [FlipFlop.q]. When optional [en] is provided, an additional
+/// input will be created for flop. If optional [en] is high or not provided,
+/// output will vary as per input[d]. For low [en], output remains frozen
+/// irrespective of input [d]
+Logic flop(Logic clk, Logic d, {Logic? en}) => FlipFlop(clk, d, en: en).q;
+
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
   /// Name for the enable input of this flop

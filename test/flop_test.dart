@@ -26,9 +26,9 @@ class FlopTestModule extends Module {
     final clk = SimpleClockGenerator(10).clk;
 
     if (en != null) {
-      y <= FlipFlop(clk, a, en: en).q;
+      y <= flop(clk, a, en: en);
     } else {
-      y <= FlipFlop(clk, a).q;
+      y <= flop(clk, a);
     }
   }
 }
