@@ -403,18 +403,6 @@ class MultipleConditionalModule extends Module {
   }
 }
 
-class OnlyElseMod extends Module {
-  OnlyElseMod(Logic a) {
-    a = addInput('a', a);
-    final b = addOutput('b');
-    Combinational([
-      If.block([
-        Else([b < a])
-      ])
-    ]);
-  }
-}
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
