@@ -72,7 +72,21 @@ whose condition is enabled.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">If.block(this.iffs);</code></pre>
+  <pre class="language-dart"><code class="language-dart">If.block(this.iffs) {
+  for (final iff in iffs) {
+    if (iff is Else) {
+      if (iff != iffs.last) {
+        throw InvalidConditionalException(
+            &#39;Else must come last in an IfBlock.&#39;);
+      }
+
+      if (iff == iffs.first) {
+        throw InvalidConditionalException(
+            &#39;Else cannot be the first in an IfBlock.&#39;);
+      }
+    }
+  }
+}</code></pre>
 </section>
 
 
