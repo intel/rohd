@@ -1219,7 +1219,9 @@ class If extends Conditional {
   ///
   /// The first item should be an [Iff], and if an [Else] is included it must
   /// be the last item.  Any other items should be [ElseIf].  It is okay to
-  /// make thefirst item an [ElseIf], it will act just like an [Iff].
+  /// make the first item an [ElseIf], it will act just like an [Iff]. If an
+  /// [Else] is included, it cannot be the only element (it must be preceded
+  /// by an [Iff] or [ElseIf]).
   final List<Iff> iffs;
 
   /// If [condition] is high, then [then] executes, otherwise [orElse] is
