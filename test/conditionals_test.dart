@@ -403,6 +403,18 @@ class MultipleConditionalModule extends Module {
   }
 }
 
+class OnlyElseMod extends Module {
+  OnlyElseMod(Logic a) {
+    a = addInput('a', a);
+    final b = addOutput('b');
+    Combinational([
+      If.block([
+        Else([b < a])
+      ])
+    ]);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -454,6 +466,35 @@ void main() {
           await Simulator.simulationEnded;
         });
       }
+    });
+
+    group('bad if blocks', () {
+      test('IfBlock with only else fails', () async {
+        expect(
+            () => If.block([
+                  Else([]),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else in the middle fails', () {
+        expect(
+            () => If.block([
+                  ElseIf(Logic(), []),
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else at the start fails', () {
+        expect(
+            () => If.block([
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
     });
   });
 
