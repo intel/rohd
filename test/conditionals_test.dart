@@ -455,6 +455,35 @@ void main() {
         });
       }
     });
+
+    group('bad if blocks', () {
+      test('IfBlock with only else fails', () async {
+        expect(
+            () => If.block([
+                  Else([]),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else in the middle fails', () {
+        expect(
+            () => If.block([
+                  ElseIf(Logic(), []),
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else at the start fails', () {
+        expect(
+            () => If.block([
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
+    });
   });
 
   group('simcompare', () {

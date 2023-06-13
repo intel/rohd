@@ -1219,7 +1219,9 @@ class If extends Conditional {
   ///
   /// The first item should be an [Iff], and if an [Else] is included it must
   /// be the last item.  Any other items should be [ElseIf].  It is okay to
-  /// make thefirst item an [ElseIf], it will act just like an [Iff].
+  /// make the first item an [ElseIf], it will act just like an [Iff]. If an
+  /// [Else] is included, it cannot be the only element (it must be preceded
+  /// by an [Iff] or [ElseIf]).
   final List<Iff> iffs;
 
   /// If [condition] is high, then [then] executes, otherwise [orElse] is
@@ -1240,7 +1242,21 @@ class If extends Conditional {
 
   /// Checks the conditions for [iffs] in order and executes the first one
   /// whose condition is enabled.
-  If.block(this.iffs);
+  If.block(this.iffs) {
+    for (final iff in iffs) {
+      if (iff is Else) {
+        if (iff != iffs.last) {
+          throw InvalidConditionalException(
+              'Else must come last in an IfBlock.');
+        }
+
+        if (iff == iffs.first) {
+          throw InvalidConditionalException(
+              'Else cannot be the first in an IfBlock.');
+        }
+      }
+    }
+  }
 
   @override
   void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
@@ -1318,9 +1334,6 @@ class If extends Conditional {
     final padding = Conditional.calcPadding(indent);
     final verilog = StringBuffer();
     for (final iff in iffs) {
-      if (iff is Else && iff != iffs.last) {
-        throw Exception('Else must come last in an IfBlock.');
-      }
       final header = iff == iffs.first
           ? 'if'
           : iff is Else
