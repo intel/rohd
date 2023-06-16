@@ -110,7 +110,7 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  LogicValue get reversed => LogicValue.of(toList().reversed);
+  LogicValue get reversed => LogicValue.ofIterable(toList().reversed);
 
   @override
   bool get isValid => _invalid.sign == 0;

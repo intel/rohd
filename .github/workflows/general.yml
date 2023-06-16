@@ -51,6 +51,12 @@ jobs:
 
       - name: Check folder - tmp_test
         run: tool/gh_actions/check_folder_tmp_test.sh
+      
+      # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
+      - name: Build dev container and run tests in it
+        uses: devcontainers/ci@v0.3
+        with:
+          runCmd: tool/gh_actions/run_tests.sh
 
   deploy-documentation:
     name: Deploy Documentation

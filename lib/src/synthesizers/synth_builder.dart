@@ -65,7 +65,7 @@ class SynthBuilder {
   /// the [synthesizer].
   List<String> getFileContents() => synthesisResults
       .map((synthesisResult) => synthesisResult.toFileContents())
-      .toList();
+      .toList(growable: false);
 
   /// Provides an instance type name for [module].
   ///

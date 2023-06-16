@@ -526,10 +526,10 @@ void main() {
       expect(testLogicZero[-1].value.toInt(), 0);
       expect(testLogicInvalid[-1].value, LogicValue.x);
 
-      expect(() => testLogic[10], throwsException);
-      expect(() => testLogicOne[1], throwsException);
-      expect(() => testLogicZero[1], throwsException);
-      expect(() => testLogicInvalid[1], throwsException);
+      expect(() => testLogic[10], throwsA(isA<IndexError>()));
+      expect(() => testLogicOne[1], throwsA(isA<IndexError>()));
+      expect(() => testLogicZero[1], throwsA(isA<IndexError>()));
+      expect(() => testLogicInvalid[1], throwsA(isA<IndexError>()));
     });
 
     test('index Logic(1bit) by Logic index out of bounds test', () {
@@ -551,10 +551,10 @@ void main() {
       expect(testLogicZero.slice(0, 0), equals(testLogicZero));
       expect(testLogicInvalid.slice(0, 0), equals(testLogicInvalid));
 
-      expect(() => testLogic.slice(0, 10), throwsException);
-      expect(() => testLogicOne.slice(0, 1), throwsException);
-      expect(() => testLogicZero.slice(0, 1), throwsException);
-      expect(() => testLogicInvalid.slice(0, 1), throwsException);
+      expect(() => testLogic.slice(0, 10), throwsA(isA<IndexError>()));
+      expect(() => testLogicOne.slice(0, 1), throwsA(isA<IndexError>()));
+      expect(() => testLogicZero.slice(0, 1), throwsA(isA<IndexError>()));
+      expect(() => testLogicInvalid.slice(0, 1), throwsA(isA<IndexError>()));
     });
 
     test('Index Logic by does not accept input other than int or Logic', () {

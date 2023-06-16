@@ -111,11 +111,15 @@ abstract class Module {
 
   /// Returns true iff [net] is the same [Logic] as the input port of this
   /// [Module] with the same name.
-  bool isInput(Logic net) => _inputs[net.name] == net;
+  bool isInput(Logic net) =>
+      _inputs[net.name] == net ||
+      (net.isArrayMember && isInput(net.parentStructure!));
 
   /// Returns true iff [net] is the same [Logic] as the output port of this
   /// [Module] with the same name.
-  bool isOutput(Logic net) => _outputs[net.name] == net;
+  bool isOutput(Logic net) =>
+      _outputs[net.name] == net ||
+      (net.isArrayMember && isOutput(net.parentStructure!));
 
   /// Returns true iff [net] is the same [Logic] as an input or output port of
   /// this [Module] with the same name.
@@ -421,7 +425,12 @@ abstract class Module {
           await _traceInputForModuleContents(dstConnection);
         }
       }
-      if (signal.srcConnection != null) {
+
+      if (signal is LogicStructure) {
+        for (final srcConnection in signal.srcConnections) {
+          await _traceOutputForModuleContents(srcConnection);
+        }
+      } else if (signal.srcConnection != null) {
         await _traceOutputForModuleContents(signal.srcConnection!);
       }
     }
@@ -442,6 +451,7 @@ abstract class Module {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);
     }
+
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
       throw Exception('Already defined a port with name "$name".');
     }
@@ -455,15 +465,51 @@ abstract class Module {
   Logic addInput(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
-      throw Exception('Port width mismatch, signal "$x" does not'
-          ' have specified width "$width".');
+      throw PortWidthMismatchException(x, width);
     }
-    _inputs[name] = Logic(name: name, width: width)..gets(x);
 
-    // ignore: invalid_use_of_protected_member
-    _inputs[name]!.parentModule = this;
+    if (x is LogicStructure) {
+      // ignore: parameter_assignments
+      x = x.packed;
+    }
 
-    return _inputs[name]!;
+    final inPort = Port(name, width)
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _inputs[name] = inPort;
+
+    return inPort;
+  }
+
+  /// Registers and returns an input [LogicArray] port to this [Module] with
+  /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
+  /// named [name].
+  ///
+  /// This is very similar to [addInput], except for [LogicArray]s.
+  ///
+  /// Performs validation on overall width matching for [x], but not on
+  /// [dimensions], [elementWidth], or [numUnpackedDimensions].
+  @protected
+  LogicArray addInputArray(
+    String name,
+    Logic x, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
+    _checkForSafePortName(name);
+
+    final inArr = LogicArray(dimensions, elementWidth,
+        name: name, numUnpackedDimensions: numUnpackedDimensions)
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _inputs[name] = inArr;
+
+    return inArr;
   }
 
   /// Registers an output to this [Module] and returns an output port that
@@ -473,12 +519,38 @@ abstract class Module {
   @protected
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
-    _outputs[name] = Logic(name: name, width: width);
 
-    // ignore: invalid_use_of_protected_member
-    _outputs[name]!.parentModule = this;
+    final outPort = Port(name, width)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
 
-    return _outputs[name]!;
+    _outputs[name] = outPort;
+
+    return outPort;
+  }
+
+  /// Registers and returns an output [LogicArray] port to this [Module] with
+  /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
+  /// named [name].
+  ///
+  /// This is very similar to [addOutput], except for [LogicArray]s.
+  @protected
+  LogicArray addOutputArray(
+    String name, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
+    _checkForSafePortName(name);
+
+    final outArr = LogicArray(dimensions, elementWidth,
+        name: name, numUnpackedDimensions: numUnpackedDimensions)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _outputs[name] = outArr;
+
+    return outArr;
   }
 
   @override
@@ -518,4 +590,18 @@ abstract class Module {
             .getFileContents()
             .join('\n\n////////////////////\n\n');
   }
+}
+
+extension _ModuleLogicStructureUtils on LogicStructure {
+  /// Provides a list of all source connections of all elements within
+  /// this structure, recursively.
+  ///
+  /// Useful for searching during [Module] build.
+  Iterable<Logic> get srcConnections => [
+        for (final element in elements)
+          if (element is LogicStructure)
+            ...element.srcConnections
+          else if (element.srcConnection != null)
+            element.srcConnection!
+      ];
 }

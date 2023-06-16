@@ -219,7 +219,7 @@ class Pipeline {
             ffAssigns.map((conditional) {
               conditional as ConditionalAssign;
               return conditional.receiver < (resetValue ?? 0);
-            }).toList(),
+            }).toList(growable: false),
           ),
           Else(ffAssignsWithStall)
         ])

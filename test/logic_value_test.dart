@@ -8,7 +8,11 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
+import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -262,16 +266,62 @@ void main() {
           equals(LogicValue.ofString('01xx10xxxxxxxxxx')));
       expect(
           // test from Iterable
-          LogicValue.of([LogicValue.one, LogicValue.zero]) ^
-              LogicValue.of([LogicValue.one, LogicValue.zero]),
-          equals(LogicValue.of([LogicValue.zero, LogicValue.zero])));
+          LogicValue.ofIterable([LogicValue.one, LogicValue.zero]) ^
+              LogicValue.ofIterable([LogicValue.one, LogicValue.zero]),
+          equals(LogicValue.ofIterable([LogicValue.zero, LogicValue.zero])));
     });
   });
 
   test('LogicValue.of example', () {
     final it = [LogicValue.zero, LogicValue.x, LogicValue.ofString('01xz')];
-    final lv = LogicValue.of(it);
+    final lv = LogicValue.ofIterable(it);
     expect(lv.toString(), equals("6'b01xzx0"));
+  });
+
+  group('LogicValue toString', () {
+    test('1 bit', () {
+      expect(LogicValue.one.toString(), "1'h1");
+    });
+
+    test('1 bit invalid', () {
+      expect(LogicValue.x.toString(), "1'bx");
+    });
+
+    test('<64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 60).toString(), "60'h1234");
+    });
+
+    test('<64-bit negative', () {
+      expect(LogicValue.ofInt(-1, 60).toString(), "60'hfffffffffffffff");
+    });
+
+    test('64-bit positive', () {
+      expect(LogicValue.ofInt(0x1234, 64).toString(), "64'h1234");
+    });
+
+    test('64-bit negative', () {
+      expect(LogicValue.ofInt(0xfaaaaaaa00000005, 64).toString(),
+          "64'hfaaaaaaa00000005");
+    });
+
+    test('>64-bit positive', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0x5faaaaaaa00000005'), 68)
+              .toString(),
+          "68'h5faaaaaaa00000005");
+    });
+
+    test('>64-bit negative', () {
+      expect(
+          LogicValue.ofBigInt(BigInt.parse('0xffaaaaaaa00000005'), 68)
+              .toString(),
+          "68'hffaaaaaaa00000005");
+    });
+
+    test('include width', () {
+      expect(
+          LogicValue.ofInt(0x55, 8).toString(includeWidth: false), '01010101');
+    });
   });
 
   group('unary operations (including "to")', () {
@@ -367,7 +417,7 @@ void main() {
           // getRange - negative end index and start > end - error! start must
           // be less than end
           () => LogicValue.ofString('0101').getRange(-1, -2),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - same index results zero width value
           LogicValue.ofString('0101').getRange(-1, -1),
@@ -375,11 +425,11 @@ void main() {
       expect(
           // getRange - bad inputs start > end
           () => LogicValue.ofString('0101').getRange(2, 1),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(
           // getRange - bad inputs end > length-1
           () => LogicValue.ofString('0101').getRange(0, 7),
-          throwsA(isA<Exception>()));
+          throwsA(isA<RangeError>()));
       expect(LogicValue.ofString('xz01').slice(2, 1),
           equals(LogicValue.ofString('z0')));
       expect(LogicValue.ofString('xz01').slice(-2, -3),
@@ -551,6 +601,80 @@ void main() {
     });
   });
   group('arithmetic operations', () {
+    test('power', () {
+      expect(
+          // test ofInt
+          LogicValue.ofInt(2, 32).pow(LogicValue.ofInt(0, 32)),
+          equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test ofInt
+          LogicValue.ofInt(3, 32).pow(LogicValue.ofInt(5, 32)),
+          equals(LogicValue.ofInt(243, 32)));
+      expect(
+          // test ofInt
+          LogicValue.ofInt(0, 32).pow(LogicValue.ofInt(0, 32)),
+          equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test int with BigInt
+          LogicValue.ofInt(2, 64)
+              .pow(LogicValue.ofBigInt(BigInt.parse('10'), 64)),
+          equals(LogicValue.ofBigInt(BigInt.from(1024), 64)));
+
+      expect(
+          // test BigInt with int
+          LogicValue.ofBigInt(BigInt.two, 64).pow(LogicValue.ofInt(10, 64)),
+          equals(LogicValue.ofBigInt(BigInt.from(1024), 64)));
+
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.from(31), 128)
+              .pow(LogicValue.ofBigInt(BigInt.from(21), 128)),
+          equals(LogicValue.ofBigInt(
+              BigInt.parse('20825506393391550743120420649631'), 128)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.parse('111234234231234523412665554'), 256)
+              .pow(LogicValue.ofBigInt(BigInt.from(2), 256)),
+          equals(LogicValue.ofBigInt(
+              BigInt.parse(
+                  '12373054865009146225795242412633846245734343458126916'),
+              256)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.zero, 64)
+              .pow(LogicValue.ofBigInt(BigInt.zero, 64)),
+          equals(LogicValue.ofBigInt(BigInt.one, 64)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.one, 512).pow(LogicValue.ofBigInt(
+              BigInt.parse('100000000000000000000000000000000000000'), 512)),
+          equals(LogicValue.ofBigInt(BigInt.one, 512)));
+      expect(
+          // test ofBigInt
+          LogicValue.ofBigInt(BigInt.zero, 512).pow(LogicValue.ofBigInt(
+              BigInt.parse('100000000000000000000000000000000000000'), 512)),
+          equals(LogicValue.ofBigInt(BigInt.zero, 512)));
+      expect(
+          // exception when BigInt exponent won't fit in int
+          () => LogicValue.ofBigInt(BigInt.from(2), 512).pow(
+              LogicValue.ofBigInt(
+                  BigInt.parse('100000000000000000000000000000000000000'),
+                  512)),
+          throwsA(isA<InvalidTruncationException>()));
+      expect(
+          //test string
+          LogicValue.ofString('000010').pow(LogicValue.ofString('000100')),
+          equals(LogicValue.ofString('010000')));
+      expect(
+          //test invalid exponent input
+          LogicValue.ofString('0001').pow(LogicValue.ofString('000x')),
+          equals(LogicValue.filled(4, LogicValue.x)));
+      expect(
+          //test invalid base input
+          LogicValue.ofString('001x').pow(LogicValue.ofString('0001')),
+          equals(LogicValue.filled(4, LogicValue.x)));
+    });
+
     test('addsub', () {
       expect(
           // + normal
@@ -945,6 +1069,187 @@ void main() {
           equals(LogicValue.filled(0, LogicValue.zero)));
       expect(LogicValue.filled(0, LogicValue.one).hashCode,
           equals(LogicValue.filled(0, LogicValue.zero).hashCode));
+    });
+  });
+  group('Utility operations', () {
+    test('clog2 operation', () {
+      expect(
+          // int
+          LogicValue.ofInt(0, 8).clog2(),
+          equals(LogicValue.ofInt(0, 8)));
+      expect(
+          // int
+          LogicValue.ofInt(1, 32).clog2(),
+          equals(LogicValue.ofInt(0, 32)));
+      expect(
+          // int
+          LogicValue.ofInt(2, 16).clog2(),
+          equals(LogicValue.ofInt(1, 16)));
+      expect(
+          // int
+          LogicValue.ofInt(3, 32).clog2(),
+          equals(LogicValue.ofInt(2, 32)));
+      expect(
+          // int
+          LogicValue.ofInt(16, 64).clog2(),
+          equals(LogicValue.ofInt(4, 64)));
+      expect(
+          // int
+          LogicValue.ofInt(17, 64).clog2(),
+          equals(LogicValue.ofInt(5, 64)));
+      expect(
+          // int
+          LogicValue.ofInt(-1 >>> 1, 64).clog2(),
+          equals(LogicValue.ofInt(63, 64)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.zero, 128).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.zero, 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.one, 128).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.zero, 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(
+                  BigInt.parse('100000000000000000000000000000000'), 128)
+              .clog2(),
+          equals(LogicValue.ofBigInt(BigInt.from(107), 128)));
+      expect(
+          //  BigInt
+          LogicValue.ofBigInt(BigInt.from(3), 32).clog2(),
+          equals(LogicValue.ofBigInt(BigInt.from(2), 32)));
+      expect(
+          // binary string
+          LogicValue.ofString('000100').clog2(),
+          equals(LogicValue.ofString('000010')));
+      expect(
+          // x involved in binary string
+          LogicValue.ofString('00x0').clog2(),
+          equals(LogicValue.ofString('xxxx')));
+
+      //Negative Int
+      expect(LogicValue.ofInt(-128, 8).clog2().toInt(), 7);
+      expect(LogicValue.ofInt(-127, 8).clog2().toInt(), 8);
+
+      expect(LogicValue.ofInt(-128, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-127, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-1, 64).clog2().toInt(), 64);
+
+      expect(LogicValue.ofInt(-32768, 16).clog2().toInt(), 15);
+      expect(LogicValue.ofInt(-32767, 16).clog2().toInt(), 16);
+      expect(LogicValue.ofInt(-1, 16).clog2().toInt(), 16);
+
+      expect(LogicValue.ofInt(-2147483648, 32).clog2().toInt(), 31);
+      expect(LogicValue.ofInt(-2147483647, 32).clog2().toInt(), 32);
+      expect(LogicValue.ofInt(-1, 32).clog2().toInt(), 32);
+
+      //Negative BigInt
+      expect(
+          LogicValue.ofBigInt(
+                  BigInt.parse('-170141183460469231731687303715884105728'), 128)
+              .clog2()
+              .toBigInt(),
+          BigInt.from(127));
+      expect(
+          LogicValue.ofBigInt(
+                  BigInt.parse('-170141183460469231731687303715884105727'), 128)
+              .clog2()
+              .toBigInt(),
+          BigInt.from(128));
+      expect(LogicValue.ofBigInt(BigInt.from(-1), 128).clog2().toBigInt(),
+          BigInt.from(128));
+    });
+  });
+
+  group('random value generation ', () {
+    test('should throw exception when max is not int or BigInt.', () {
+      expect(() => Random(5).nextLogicValue(width: 10, max: '10'),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+      expect(() => Random(5).nextLogicValue(width: 10, max: 10.5),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test('should throw exception when max is less than 0.', () {
+      expect(() => Random(5).nextLogicValue(width: 10, max: -1),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+      expect(() => Random(5).nextLogicValue(width: 10, max: BigInt.from(-10)),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test(
+        'should throw exception when max is set when generate random num with'
+        ' invalid bits.', () {
+      expect(
+          () => Random(5).nextLogicValue(
+              width: 10,
+              includeInvalidBits: true,
+              max: LogicValue.ofInt(10, 10)),
+          throwsA(isA<InvalidRandomLogicValueException>()));
+    });
+
+    test(
+        'should return random logic value with invalid bits when '
+        'includeInvalidBits is set to true.', () {
+      final lvRand =
+          Random(5).nextLogicValue(width: 10, includeInvalidBits: true);
+
+      expect(lvRand.toString(), contains('x'));
+    });
+
+    test('should return empty LogicValue when width is 0.', () {
+      expect(Random(5).nextLogicValue(width: 0), equals(LogicValue.empty));
+    });
+
+    test('should return empty LogicValue when max is 0 for int and big int.',
+        () {
+      final maxBigInt = BigInt.zero;
+      const maxInt = 0;
+      expect(Random(5).nextLogicValue(width: 10, max: maxInt).toInt(),
+          equals(maxInt));
+
+      expect(Random(5).nextLogicValue(width: 80, max: maxBigInt).toBigInt(),
+          equals(maxBigInt));
+    });
+
+    test(
+        'should return random int logic value without invalid bits when'
+        ' having different width and max constraint.', () {
+      const maxValInt = 8888;
+
+      for (var i = 1; i <= 64; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        final lvRandMaxInt = Random(5).nextLogicValue(width: i, max: maxValInt);
+        final lvMaxBigInt = Random(5)
+            .nextLogicValue(width: i, max: BigInt.parse('9999999999999999999'));
+        final lvMaxIntBigInt =
+            Random(5).nextLogicValue(width: i, max: BigInt.from(maxValInt));
+
+        expect(lvRand.toInt(), isA<int>());
+        expect(lvRandMaxInt.toInt(), lessThan(maxValInt));
+        expect(lvMaxBigInt, equals(Random(5).nextLogicValue(width: i)));
+        expect(lvMaxIntBigInt.toInt(), lessThan(maxValInt));
+      }
+    });
+
+    test(
+        'should return random big integer logic value with width '
+        'greater than 64 when having different width and max constraint.', () {
+      final maxValBigInt = BigInt.parse('179289266005644583');
+      final maxValBigIntlv =
+          LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
+      const maxInt = 30;
+
+      for (var i = 65; i <= 500; i++) {
+        final lvRand = Random(5).nextLogicValue(width: i);
+        final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
+
+        final randMaxInt = Random(5).nextLogicValue(width: i, max: maxInt);
+        expect(randMaxInt.toBigInt(), lessThan(BigInt.from(maxInt)));
+
+        expect(lvRand.toBigInt(), isA<BigInt>());
+        expect(lvRandMax.toBigInt(), lessThan(maxValBigIntlv.toBigInt()));
+      }
     });
   });
 }

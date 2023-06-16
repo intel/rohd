@@ -254,6 +254,7 @@ a_xor_b   <=  a ^ b;   // xor
 and_a     <=  a.and(); // unary and
 or_a      <=  a.or();  // unary or
 xor_a     <=  a.xor(); // unary xor
+a_pow_b   <=  a.pow(b);// exponent
 a_plus_b  <=  a + b;   // addition
 a_sub_b   <=  a - b;   // subtraction
 a_times_b <=  a * b;   // multiplication
@@ -486,7 +487,7 @@ Combinational([
       c < 0,
       d < 1,
     ],
-    conditionalType: ConditionalType.Unique
+    conditionalType: ConditionalType.unique
   ),
   CaseZ([b,a].swizzle(),[
       CaseItem(Const(LogicValue.ofString('z1')), [
@@ -495,7 +496,7 @@ Combinational([
     ], defaultItem: [
       e < 0,
     ],
-    conditionalType: ConditionalType.Priority
+    conditionalType: ConditionalType.priority
   )
 ]);
 ```
