@@ -120,8 +120,8 @@ class Logic {
   Future<LogicValueChanged> get nextNegedge => _wire.nextNegedge;
 
   /// The [value] of this signal before the most recent [Simulator.tick] had
-  /// completed. The first time it is called, it creates a pre-tick listener,
-  /// so until the first tick after the first call, it will return `null`.
+  /// completed. It will be `null` before the first tick after this signal is
+  /// created.
   ///
   /// If this is called mid-tick, it will be the value from before the tick
   /// started. If this is called post-tick, it will be the value from before

@@ -27,8 +27,6 @@ void main() {
 
     Simulator.registerAction(11, () => a.put(1));
 
-    c.previousValue;
-
     clk.posedge.listen((event) {
       if (Simulator.time == 25) {
         expect(c.previousValue!.toInt(), 0);
@@ -49,8 +47,6 @@ void main() {
     final c = flop(clk, b);
 
     Simulator.registerAction(11, () => a.put(1));
-
-    c.previousValue;
 
     Future<void> clkLoop() async {
       while (!Simulator.simulationHasEnded) {

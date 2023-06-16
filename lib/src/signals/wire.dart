@@ -13,7 +13,9 @@ part of signals;
 /// more [Logic]s.
 class _Wire {
   _Wire({required this.width})
-      : _currentValue = LogicValue.filled(width, LogicValue.z);
+      : _currentValue = LogicValue.filled(width, LogicValue.z) {
+    _setupPreTickListener();
+  }
 
   /// The current active value of this signal.
   LogicValue get value => _currentValue;
@@ -53,8 +55,6 @@ class _Wire {
       // them! saves performance!
       _changedBeingWatched = true;
 
-      _setupPreTickListener();
-
       _postTickSubscription ??= Simulator.postTick.listen((event) {
         if (value != _preTickValue && _preTickValue != null) {
           _changedController.add(LogicValueChanged(value, _preTickValue!));
@@ -74,8 +74,8 @@ class _Wire {
   }
 
   /// The [value] of this signal before the most recent [Simulator.tick] had
-  /// completed. The first time it is called, it creates a pre-tick listener,
-  /// so until the first tick after the first call, it will return `null`.
+  /// completed. It will be `null` before the first tick after this signal is
+  /// created.
   ///
   /// If this is called mid-tick, it will be the value from before the tick
   /// started. If this is called post-tick, it will be the value from before
@@ -87,10 +87,7 @@ class _Wire {
   ///
   /// Note that if a signal is connected to another signal, the listener may
   /// be reset.
-  LogicValue? get previousValue {
-    _setupPreTickListener();
-    return _preTickValue;
-  }
+  LogicValue? get previousValue => _preTickValue;
 
   /// The subscription to the [Simulator]'s `preTick`.
   ///
