@@ -203,8 +203,6 @@ void main() {
     control.put(1);
 
     expect(result.value, LogicValue.one);
-
-    // cases(control, {d0: 0, d1: 1});
   });
 
   test('Cases test Int', () {
@@ -297,8 +295,7 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, vectors, dontDeleteTmpFiles: true);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 
