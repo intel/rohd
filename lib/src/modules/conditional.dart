@@ -16,6 +16,7 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
@@ -907,12 +908,16 @@ Logic cases(Logic expression, Map<Logic, dynamic> conditions, {int? width}) {
     width ??= inferredWidth;
 
     if (width != inferredWidth && inferredWidth != null) {
-      throw Exception('Width of (${condition.value}) '
-          'must match width ($width)');
+      //throw Exception('Width of (${condition.value}) '
+      //    'must match width ($width)');
+      throw SignalWidthMismatchException.forDynamic(
+          condition.value, width!, inferredWidth);
     }
     if (expression.width != condition.key.width) {
-      throw Exception('Width of (${condition.key}) '
-          'must match with width of ($expression)');
+      //  throw Exception('Width of (${condition.key}) '
+      //      'must match with width of ($expression)');
+      throw SignalWidthMismatchException.forDynamic(
+          condition.key, expression.width, condition.key.width);
     }
   }
 

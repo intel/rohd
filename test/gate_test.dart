@@ -8,6 +8,7 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -249,27 +250,42 @@ void main() {
   });
 
   test('Cases test Exceptions(Int)', () {
-    final control = Logic();
+    final control = Logic(width: 4);
     final d0 = Logic(width: 4);
     final d1 = Logic(width: 8);
 
-    control.put(2);
+    control.put(LogicValue.ofInt(2, 4));
     d0.put(LogicValue.ofInt(2, 4));
     d1.put(LogicValue.ofInt(3, 8));
 
-    expect(() => cases(control, {d0: 2, d1: 3}), throwsException);
+    expect(() => cases(control, {d0: 2, d1: 3}),
+        throwsA(isA<SignalWidthMismatchException>()));
   });
 
-  test('Cases test Exceptions 2', () {
+  test('Cases test Condition width Exception', () {
     final control = Logic();
     final d0 = Logic();
     final d1 = Logic(width: 8);
 
-    control.put(0);
+    control.put(LogicValue.zero);
     d0.put(LogicValue.zero);
     d1.put(LogicValue.ofInt(1, 8));
 
-    expect(() => cases(control, {d0: 0, d1: 1}), throwsException);
+    expect(() => cases(control, {d0: 0, d1: 1}),
+        throwsA(isA<SignalWidthMismatchException>()));
+  });
+
+  test('Cases test Expression width Exception', () {
+    final control = Logic();
+    final d0 = Logic(width: 8);
+    final d1 = Logic(width: 8);
+
+    control.put(LogicValue.one);
+    d0.put(LogicValue.zero);
+    d1.put(LogicValue.one);
+
+    expect(() => cases(control, {d0: 0, d1: 1}),
+        throwsA(isA<SignalWidthMismatchException>()));
   });
 
   group('simcompare', () {

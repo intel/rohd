@@ -18,4 +18,12 @@ class SignalWidthMismatchException extends RohdException {
       : super('Signal ${signal.name} has the wrong width.'
             ' Expected $expectedWidth but found ${signal.width}.'
             ' $additionalMessage');
+
+  /// Constructs a new [Exception] for when a dynamic has a wrong width.
+  SignalWidthMismatchException.forDynamic(
+      dynamic val, int expectedWidth, int actualWidth,
+      {String additionalMessage = ''})
+      : super('Value $val has the wrong width.'
+            ' Excepted $expectedWidth but found $actualWidth.'
+            ' $additionalMessage');
 }
