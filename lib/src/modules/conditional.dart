@@ -908,14 +908,10 @@ Logic cases(Logic expression, Map<Logic, dynamic> conditions, {int? width}) {
     width ??= inferredWidth;
 
     if (width != inferredWidth && inferredWidth != null) {
-      //throw Exception('Width of (${condition.value}) '
-      //    'must match width ($width)');
       throw SignalWidthMismatchException.forDynamic(
           condition.value, width!, inferredWidth);
     }
     if (expression.width != condition.key.width) {
-      //  throw Exception('Width of (${condition.key}) '
-      //      'must match with width of ($expression)');
       throw SignalWidthMismatchException.forDynamic(
           condition.key, expression.width, condition.key.width);
     }
