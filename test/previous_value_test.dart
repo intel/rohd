@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// previous_value_Test.dart
+// previous_value_test.dart
 // Tests for Logic.previousValue
 //
 // 2023 June 16
