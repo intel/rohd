@@ -315,4 +315,38 @@ void main() {
     Simulator.setMaxSimTime(5000);
     await Simulator.run();
   });
+
+  test('chain of changed and injects', () async {
+    final a = Logic()..put(0);
+    final b = Logic()..put(0);
+    final c = Logic()..put(0);
+    final d = Logic()..put(0);
+
+    var changeCount = 0;
+
+    a.changed.listen((event) {
+      b.inject(~b.value);
+    });
+
+    b.changed.listen((event) {
+      c.inject(~c.value);
+    });
+
+    c.changed.listen((event) {
+      d.inject(~d.value);
+    });
+
+    d.changed.listen((event) {
+      changeCount++;
+    });
+
+    Simulator.registerAction(10, () => a.put(~a.value));
+    Simulator.registerAction(20, () => a.put(~a.value));
+
+    Simulator.setMaxSimTime(500);
+
+    await Simulator.run();
+
+    expect(changeCount, 2);
+  });
 }
