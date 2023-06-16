@@ -445,7 +445,8 @@ void main() {
         Vector({'a': 1, 'b': 1, 'd': 8}, {'y': 1, 'z': 1, 'x': 1, 'q': 8}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
+      final simResult =
+          SimCompare.iverilogVector(mod, vectors, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
 

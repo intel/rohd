@@ -9,6 +9,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:js_interop';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -750,6 +751,43 @@ enum ConditionalType {
 
   /// Expect that at least one condition is true, and the first one is executed.
   priority
+}
+
+/// Shorthand for a [Conditional] inside a [Case] block.
+/// Returns a [Logic] signal based on the expression and conditions.
+/// The width of the result is determined by the width of the value of the
+/// conditions.
+Logic cases(Logic expression, Map<Logic, dynamic> conditions, {int? width}) {
+  for (final condition in conditions.entries) {
+    int? inferredWidth;
+    if (condition.value is Logic) {
+      inferredWidth = (condition.value as Logic).width;
+    } else if (condition.value is LogicValue) {
+      inferredWidth = (condition.value as LogicValue).width;
+    }
+
+    width ??= inferredWidth;
+
+    if (width != inferredWidth && inferredWidth != null) {
+      throw Exception('Width of (${condition.value}) '
+          'must match width ($width)');
+    }
+    if (expression.width != condition.key.width) {
+      throw Exception('Width of (${condition.key}) '
+          'must match with width of ($expression)');
+    }
+  }
+
+  final result = Logic(name: 'result', width: width!);
+
+  Combinational([
+    Case(expression, [
+      for (final condition in conditions.entries)
+        CaseItem(condition.key, [result < condition.value])
+    ])
+  ]);
+
+  return result;
 }
 
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]

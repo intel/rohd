@@ -187,6 +187,91 @@ void main() {
     });
   });
 
+  test('mux shorthand', () {
+    final control = Logic();
+    final d0 = Logic();
+    final d1 = Logic();
+    final result = mux(control, d1, d0);
+
+    d0.put(0);
+    d1.put(1);
+    control.put(0);
+
+    expect(result.value, LogicValue.zero);
+
+    control.put(1);
+
+    expect(result.value, LogicValue.one);
+
+    // cases(control, {d0: 0, d1: 1});
+  });
+
+  test('Cases test Int', () {
+    final control = Logic(width: 8);
+    final d0 = Logic(width: 8);
+    final d1 = Logic(width: 8);
+    final result = cases(
+        control,
+        {
+          d0: 2,
+          d1: 3,
+        },
+        width: 8);
+
+    d0.put(2);
+    d1.put(3);
+    control.put(2);
+
+    expect(result.value, LogicValue.ofInt(2, 8));
+
+    control.put(3);
+
+    expect(result.value, LogicValue.ofInt(3, 8));
+  });
+
+  test('Cases test Logic', () {
+    final control = Logic();
+    final d0 = Logic();
+    final d1 = Logic();
+    final result = cases(control, {
+      d0: LogicValue.zero,
+      d1: LogicValue.one,
+    });
+
+    d0.put(LogicValue.zero);
+    d1.put(LogicValue.one);
+
+    control.put(0);
+    expect(result.value, LogicValue.zero);
+
+    control.put(1);
+    expect(result.value, LogicValue.one);
+  });
+
+  test('Cases test Exceptions(Int)', () {
+    final control = Logic();
+    final d0 = Logic(width: 4);
+    final d1 = Logic(width: 8);
+
+    control.put(2);
+    d0.put(LogicValue.ofInt(2, 4));
+    d1.put(LogicValue.ofInt(3, 8));
+
+    expect(() => cases(control, {d0: 2, d1: 3}), throwsException);
+  });
+
+  test('Cases test Exceptions 2', () {
+    final control = Logic();
+    final d0 = Logic();
+    final d1 = Logic(width: 8);
+
+    control.put(0);
+    d0.put(LogicValue.zero);
+    d1.put(LogicValue.ofInt(1, 8));
+
+    expect(() => cases(control, {d0: 0, d1: 1}), throwsException);
+  });
+
   group('simcompare', () {
     test('NotGate single bit', () async {
       final gtm = GateTestModule(Logic(), Logic());
@@ -196,7 +281,8 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
+      final simResult =
+          SimCompare.iverilogVector(gtm, vectors, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
 
