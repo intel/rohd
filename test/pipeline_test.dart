@@ -142,7 +142,7 @@ void main() {
         Vector({'a': 2, 'b': 2}, {}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('simple pipeline late add', () async {
