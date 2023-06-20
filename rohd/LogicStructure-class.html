@@ -350,6 +350,19 @@ from <code>0</code> to <code>1</code>.
 
 </dd>
 
+        <dt id="previousValue" class="property">
+  <span class="name"><a href="../rohd/LogicStructure/previousValue.html">previousValue</a></span>
+  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a>?</span> 
+
+</dt>
+<dd>
+  The <a href="../rohd/LogicStructure/value.html">value</a> of this signal before the most recent <a href="../rohd/Simulator/tick.html">Simulator.tick</a> had
+completed. It will be <code>null</code> before the first tick after this signal is
+created.
+  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+
+</dd>
+
         <dt id="reversed" class="property">
   <span class="name"><a href="../rohd/LogicStructure/reversed.html">reversed</a></span>
   <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
@@ -1252,6 +1265,7 @@ as the most significant bits.
           <li><a href="../rohd/LogicStructure/parentModule.html">parentModule</a></li>
           <li><a href="../rohd/LogicStructure/parentStructure.html">parentStructure</a></li>
           <li><a href="../rohd/LogicStructure/posedge.html">posedge</a></li>
+          <li><a href="../rohd/LogicStructure/previousValue.html">previousValue</a></li>
           <li><a href="../rohd/LogicStructure/reversed.html">reversed</a></li>
           <li class="inherited"><a href="https://api.dart.dev/stable/3.0.5/dart-core/Object/runtimeType.html">runtimeType</a></li>
           <li><a href="../rohd/LogicStructure/srcConnection.html">srcConnection</a></li>

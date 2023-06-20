@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the zeroExtend method from the LogicStructure class, for the Dart programming language.">
-  <title>zeroExtend method - LogicStructure class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the previousValue property from the LogicStructure class, for the Dart programming language.">
+  <title>previousValue property - LogicStructure class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">zeroExtend method</li>
+    <li class="self-crumb">previousValue property</li>
   </ol>
-  <div class="self-name">zeroExtend</div>
+  <div class="self-name">previousValue</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -53,38 +53,48 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">zeroExtend</span> method 
+<h1><span class="kind-property">previousValue</span> property 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
+
+        
+<section id="getter">
+
+<section class="multi-line-signature">
+  
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.0.5/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
+  <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a>?</span>
+  <span class="name ">previousValue</span>
+  <div class="features"><span class="feature">override</span></div>
 
-<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">zeroExtend</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.5/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span></li>
-</ol>)
-
-      <div class="features"><span class="feature">override</span></div>
-
-    </section>
-    
-<section class="desc markdown">
-  <p>Returns a new <a href="../../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are zeros
-as the most significant bits.</p>
-<p>The <code>newWidth</code> must be greater than or equal to the current width or an
-exception will be thrown.</p>
 </section>
 
 
-    
+<section class="desc markdown">
+  <p>The <a href="../../rohd/LogicStructure/value.html">value</a> of this signal before the most recent <a href="../../rohd/Simulator/tick.html">Simulator.tick</a> had
+completed. It will be <code>null</code> before the first tick after this signal is
+created.</p>
+<p>If this is called mid-tick, it will be the value from before the tick
+started. If this is called post-tick, it will be the value from before
+that last tick started.</p>
+<p>This is useful for querying the value of a signal in a testbench before
+some change event occurred, for example sampling a signal before a clock
+edge for code that was triggered on that edge.</p>
+<p>Note that if a signal is connected to another signal, the listener may
+be reset.</p>
+</section>
+
+
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Logic zeroExtend(int newWidth) =&gt; packed.zeroExtend(newWidth);</code></pre>
+LogicValue? get previousValue =&gt; packed.previousValue;</code></pre>
+</section>
+
 </section>
 
 
@@ -101,7 +111,7 @@ Logic zeroExtend(int newWidth) =&gt; packed.zeroExtend(newWidth);</code></pre>
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-  <li class="self-crumb">zeroExtend method</li>
+  <li class="self-crumb">previousValue property</li>
 </ol>
 
 

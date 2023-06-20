@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the lte method from the Logic class, for the Dart programming language.">
-  <title>lte method - Logic class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the previousValue property from the Logic class, for the Dart programming language.">
+  <title>previousValue property - Logic class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-    <li class="self-crumb">lte method</li>
+    <li class="self-crumb">previousValue property</li>
   </ol>
-  <div class="self-name">lte</div>
+  <div class="self-name">previousValue</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -53,29 +53,42 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">lte</span> method 
+<h1><span class="kind-property">previousValue</span> property 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
 
-<span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">lte</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="lte-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span></li>
-</ol>)
+        
+<section id="getter">
 
-      
+<section class="multi-line-signature">
+  
+  <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a>?</span>
+  <span class="name ">previousValue</span>
+  
 
-    </section>
-    
-<section class="desc markdown">
-  <p>Less-than-or-equal-to.</p>
 </section>
 
 
-    
+<section class="desc markdown">
+  <p>The <a href="../../rohd/Logic/value.html">value</a> of this signal before the most recent <a href="../../rohd/Simulator/tick.html">Simulator.tick</a> had
+completed. It will be <code>null</code> before the first tick after this signal is
+created.</p>
+<p>If this is called mid-tick, it will be the value from before the tick
+started. If this is called post-tick, it will be the value from before
+that last tick started.</p>
+<p>This is useful for querying the value of a signal in a testbench before
+some change event occurred, for example sampling a signal before a clock
+edge for code that was triggered on that edge.</p>
+<p>Note that if a signal is connected to another signal, the listener may
+be reset.</p>
+</section>
+
+
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic lte(dynamic other) =&gt; LessThanOrEqual(this, other).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">LogicValue? get previousValue =&gt; _wire.previousValue;</code></pre>
+</section>
+
 </section>
 
 
@@ -92,7 +105,7 @@
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/Logic-class.html">Logic</a></li>
-  <li class="self-crumb">lte method</li>
+  <li class="self-crumb">previousValue property</li>
 </ol>
 
 
