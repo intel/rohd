@@ -19,7 +19,7 @@ typedef LogicValues = LogicValue;
 /// Each bit of [LogicValue] can be represented as a [LogicValue]
 /// of `0`, `1`, `x` (contention), or `z` (floating).
 @immutable
-abstract class LogicValue {
+abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in an int.
   // ignore: constant_identifier_names
   static const int _INT_BITS = 64;
@@ -562,6 +562,60 @@ abstract class LogicValue {
         ...List<String>.generate(width, (index) => this[index]._bitString())
             .reversed
       ].join();
+    }
+  }
+
+  /// Compares this to `other`.
+  ///
+  /// Returns a negative number if `this` is less than `other`, zero if they are
+  /// equal, and a positive number if `this` is greater than `other`.
+  ///
+  /// It will throw an exception if `this` or [other] is not [isValid] or for
+  /// non-equal `LogicValue` [width].
+  @override
+  int compareTo(Object other) {
+    if (other is! LogicValue) {
+      throw Exception('Input must be of type LogicValue ');
+    }
+
+    if (!isValid) {
+      throw InvalidValueOperationException(this, 'Comparison');
+    }
+
+    if (!other.isValid) {
+      throw InvalidValueOperationException(other, 'Comparison');
+    }
+
+    if (other.width != width) {
+      throw ValueWidthMismatchException(this, other);
+    }
+
+    if (width > _INT_BITS || other.width > _INT_BITS) {
+      final a = toBigInt();
+      final b = other.toBigInt();
+      final valueZero = BigInt.zero;
+
+      if ((a < valueZero && b < valueZero) ||
+          (a >= valueZero && b >= valueZero)) {
+        return a.compareTo(b);
+      } else if (a < valueZero && b >= valueZero) {
+        return 1;
+      } else {
+        return -1;
+      }
+    } else {
+      final a = toInt();
+      final b = other.toInt();
+      const valueZero = 0;
+
+      if ((a < valueZero && b < valueZero) ||
+          (a >= valueZero && b >= valueZero)) {
+        return a.compareTo(b);
+      } else if (a < valueZero && b >= valueZero) {
+        return 1;
+      } else {
+        return -1;
+      }
     }
   }
 

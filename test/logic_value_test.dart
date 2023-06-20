@@ -1252,4 +1252,162 @@ void main() {
       }
     });
   });
+  group('Comparable LogicValue', () {
+    test('positive - int', () {
+      final a = LogicValue.ofInt(3, 8);
+      final b = LogicValue.ofInt(0, 8);
+      final c = LogicValue.ofInt(1, 8);
+      final d = LogicValue.ofInt(2, 8);
+      final e = LogicValue.ofInt(23, 8);
+      final f = LogicValue.ofInt(44, 8);
+      final g = LogicValue.ofInt(2, 8);
+      final h = LogicValue.ofInt(9, 8);
+
+      final values = <LogicValue>[a, b, c, d, e, f, g, h];
+
+      final expected = List<int>.filled(values.length, 0);
+
+      for (var i = 0; i < values.length; i++) {
+        expected[i] = values[i].toInt();
+      }
+
+      values.sort();
+      expected.sort();
+      for (var i = 0; i < values.length; i++) {
+        expect(values[i].toInt(), expected[i]);
+      }
+    });
+    test('unsigned values - int 64 bits', () {
+      final a = LogicValue.ofInt(3, 64);
+      final b = LogicValue.ofInt(0, 64);
+      final c = LogicValue.ofInt(1, 64);
+      final d = LogicValue.ofInt(2, 64);
+      final e = LogicValue.ofInt(23, 64);
+      final f = LogicValue.ofInt(-127, 64);
+      final g = LogicValue.ofInt(-128, 64);
+      final h = LogicValue.ofInt(-1, 64);
+
+      final values = <LogicValue>[a, b, c, d, e, f, g, h];
+
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
+
+      for (var i = 0; i < values.length; i++) {
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
+      }
+
+      values.sort();
+      expected.sort();
+      for (var i = 0; i < values.length; i++) {
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
+      }
+    });
+    test('unsigned values - int 8 bits', () {
+      final a = LogicValue.ofInt(3, 8);
+      final b = LogicValue.ofInt(0, 8);
+      final c = LogicValue.ofInt(1, 8);
+      final d = LogicValue.ofInt(2, 8);
+      final e = LogicValue.ofInt(23, 8);
+      final f = LogicValue.ofInt(-127, 8);
+      final g = LogicValue.ofInt(-128, 8);
+      final h = LogicValue.ofInt(-1, 8);
+
+      final values = <LogicValue>[a, b, c, d, e, f, g, h];
+
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
+
+      for (var i = 0; i < values.length; i++) {
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
+      }
+
+      values.sort();
+      expected.sort();
+
+      for (var i = 0; i < values.length; i++) {
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
+      }
+    });
+    test('unsigned  BigInt & int ', () {
+      final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
+      final b = LogicValue.ofBigInt(BigInt.zero, 64);
+      final c = LogicValue.ofBigInt(BigInt.from(-1), 64);
+      final d = LogicValue.ofBigInt(BigInt.one, 64);
+      final e = LogicValue.ofInt(-4611686018427387903, 64);
+      final f = LogicValue.ofInt(-9223372036854775808, 64);
+      final g = LogicValue.ofInt(-9223372036854775807, 64);
+      final h = LogicValue.ofInt(-1, 64);
+
+      final values = <LogicValue>[a, b, c, d, e, f, g, h];
+
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
+      for (var i = 0; i < values.length; i++) {
+        expected[i] =
+            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
+      }
+
+      values.sort();
+      expected.sort();
+      for (var i = 0; i < values.length; i++) {
+        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
+            expected[i]);
+      }
+    });
+    test('unsigned BigInt', () {
+      final a = LogicValue.ofBigInt(BigInt.parse('3'), 128);
+      final b = LogicValue.ofBigInt(BigInt.zero, 128);
+      final c = LogicValue.ofBigInt(BigInt.from(-1), 128);
+      final d = LogicValue.ofBigInt(BigInt.one, 128);
+      final e = LogicValue.ofBigInt(
+          BigInt.parse('340282366920938463463374607431768211455'), 128);
+      final f = LogicValue.ofBigInt(
+          BigInt.parse('-170141183460469231731687303715884105727'), 128);
+      final g = LogicValue.ofBigInt(
+          BigInt.parse('-170141183460469231731687303715884105728'), 128);
+      final h = LogicValue.ofBigInt(BigInt.one, 128);
+
+      final values = <LogicValue>[a, b, c, d, e, f, g, h];
+
+      final expected = List<BigInt>.filled(values.length, BigInt.zero);
+
+      for (var i = 0; i < values.length; i++) {
+        expected[i] = values[i].toBigInt().toUnsigned(values[i].width);
+      }
+
+      values.sort();
+      expected.sort();
+      for (var i = 0; i < values.length; i++) {
+        expect(values[i].toBigInt().toUnsigned(values[i].width), expected[i]);
+      }
+    });
+    test('Exceptions', () {
+      final a64 = LogicValue.ofBigInt(BigInt.parse('3'), 64);
+      final a128 = LogicValue.ofBigInt(BigInt.parse('3'), 128);
+      final b64 = LogicValue.ofBigInt(BigInt.zero, 64);
+      final c64 = LogicValue.ofBigInt(BigInt.from(-1), 64);
+      final d64 = LogicValue.ofBigInt(BigInt.one, 64);
+      final e64 = LogicValue.ofInt(23, 64);
+      final e8 = LogicValue.ofInt(23, 8);
+      final f64 = LogicValue.ofInt(-9223372036854775808, 64);
+      final g64 = LogicValue.ofInt(-9223372036854775807, 64);
+      final h64 = LogicValue.ofInt(-1, 64);
+      final invalidLogicX = LogicValue.filled(8, LogicValue.x);
+      final invalidLogicZ = LogicValue.filled(8, LogicValue.z);
+
+      <LogicValue>[a64, b64, c64, d64, e64, f64, g64, h64].sort();
+
+      final excBigIntWidth = <LogicValue>[a64, b64, a128];
+      final excIntWidth = <LogicValue>[e64, e8, f64];
+
+      expect(excBigIntWidth.sort, throwsA(isA<ValueWidthMismatchException>()));
+      expect(excIntWidth.sort, throwsA(isA<ValueWidthMismatchException>()));
+
+      expect(<LogicValue>[e8, invalidLogicX].sort,
+          throwsA(isA<InvalidValueOperationException>()));
+      expect(<LogicValue>[e8, invalidLogicZ].sort,
+          throwsA(isA<InvalidValueOperationException>()));
+    });
+  });
 }
