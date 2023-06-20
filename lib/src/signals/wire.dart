@@ -91,8 +91,7 @@ class _Wire {
 
   /// The subscription to the [Simulator]'s `preTick`.
   ///
-  /// Non-null if [_changedBeingWatched] is true or someone has requested the
-  /// [previousValue].
+  /// Non-null after the first tick has occurred after creation of `this`.
   StreamSubscription<void>? _preTickSubscription;
 
   /// The subscription to the [Simulator]'s `postTick`.
