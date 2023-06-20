@@ -16,7 +16,7 @@ In this chapter:
 
 ## What is Sequential Logic?
 
-Sequential Logic is a circuit that consists of flip-flops as memory to generate output. In our previous chapter, we talked about combinational logic which input is only depend on the current state. But in sequential logic, past input will also be taken account before generate the current output.
+Sequential logic consists of elements that store state (such as flip-flops). In our previous chapter, we talked about combinational logic which input is only depend on the current state. But in sequential logic, past input will also be taken account before generate the current output.
 
 ## Sequential Logic in ROHD
 
@@ -50,7 +50,7 @@ void main() async {
 
 Next, let define our inputs to the shift register. So, in our shift register we will need a reset pin `reset`, shift in pin `sin` and a clock `clk`. As for the output, there is one output pin shift out `sout`.
 
-Let register or add the inputs and output to our ShiftRegister module. Oh ya, we can also add the module name for our module as well. You can doing so by adding `super.name='shift_register'` to the constructor.
+Let register or add the inputs and output to our ShiftRegister module.
 
 ```dart
 class ShiftRegister extends Module {
@@ -146,7 +146,7 @@ Simulator.setMaxSimTime(100); // set maximum time to 100
 Simulator.registerAction(75, Simulator.endSimulation); 
 ```
 
-- To run just the next timestamp, use `Simulator.tick`
+- To run just the next timestamp
 
 ```dart
 await Simulator.tick();
@@ -186,7 +186,7 @@ Simulator.registerAction(50, () async {
 
 Let see how we can actually build a unit test in `Sequential`. Before we start the simulation, let inject value of 1 to signals `reset` and `sin` to prevent our signal from being `z` value at the start.
 
-We also can create a local function that print the flop of the clock. We can access the Simulator time using `.time()` function. Then, let us kick start the `Simulator` by setting its maximum simulation time and `.run()` the Simulator. Notice that we use `unawaited()` function instead of `await` because we want to do something with the positive edges.
+We also can create a local function that print the flop of the clock. We can access the Simulator time using `.time` getter. Then, let us kick start the `Simulator` by setting its maximum simulation time and `.run()` the Simulator. Notice that we use `unawaited()` function instead of `await` because we want to do something with the positive edges. `unawaited()` here is basically telling Dart not to wait for `Simulator.run()` to complete before continuing.
 
 ```dart
 void main() async {
