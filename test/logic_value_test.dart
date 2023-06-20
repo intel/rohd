@@ -1330,12 +1330,12 @@ void main() {
             expected[i]);
       }
     });
-    test('unsigned  BigInt(invalid int)  & int ', () {
+    test('unsigned  BigInt & int ', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final b = LogicValue.ofBigInt(BigInt.zero, 64);
-      final c = LogicValue.ofBigInt(BigInt.from(-1), 64); //Invalid Int
+      final c = LogicValue.ofBigInt(BigInt.from(-1), 64);
       final d = LogicValue.ofBigInt(BigInt.one, 64);
-      final e = LogicValue.ofInt(23, 64);
+      final e = LogicValue.ofInt(-4611686018427387903, 64);
       final f = LogicValue.ofInt(-9223372036854775808, 64);
       final g = LogicValue.ofInt(-9223372036854775807, 64);
       final h = LogicValue.ofInt(-1, 64);
@@ -1355,33 +1355,6 @@ void main() {
             expected[i]);
       }
     });
-
-    test('unsigned  BigInt (validInt) & int ', () {
-      final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
-      final b = LogicValue.ofBigInt(BigInt.zero, 64);
-      final c = LogicValue.ofBigInt(BigInt.parse('-9223372036854775809'), 64);
-      final d = LogicValue.ofBigInt(BigInt.one, 64);
-      final e = LogicValue.ofInt(23, 64);
-      final f = LogicValue.ofInt(-4611686018427387903, 64);
-      final g = LogicValue.ofInt(32, 64);
-      final h = LogicValue.ofInt(-9223372036854775808, 64);
-
-      final values = <LogicValue>[a, b, c, d, e, f, g, h];
-
-      final expected = List<BigInt>.filled(values.length, BigInt.zero);
-      for (var i = 0; i < values.length; i++) {
-        expected[i] =
-            BigInt.from(values[i].toInt()).toUnsigned(values[i].width);
-      }
-
-      values.sort();
-      expected.sort();
-      for (var i = 0; i < values.length; i++) {
-        expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
-            expected[i]);
-      }
-    });
-
     test('unsigned BigInt', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 128);
       final b = LogicValue.ofBigInt(BigInt.zero, 128);
@@ -1412,7 +1385,6 @@ void main() {
     test('Exceptions', () {
       final a64 = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final a128 = LogicValue.ofBigInt(BigInt.parse('3'), 128);
-
       final b64 = LogicValue.ofBigInt(BigInt.zero, 64);
       final c64 = LogicValue.ofBigInt(BigInt.from(-1), 64);
       final d64 = LogicValue.ofBigInt(BigInt.one, 64);
@@ -1433,9 +1405,9 @@ void main() {
       expect(excIntWidth.sort, throwsA(isA<ValueWidthMismatchException>()));
 
       expect(<LogicValue>[e8, invalidLogicX].sort,
-          throwsA(isA<InvalidLogicValueException>()));
+          throwsA(isA<InvalidValueOperationException>()));
       expect(<LogicValue>[e8, invalidLogicZ].sort,
-          throwsA(isA<InvalidLogicValueException>()));
+          throwsA(isA<InvalidValueOperationException>()));
     });
   });
 }

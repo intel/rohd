@@ -575,13 +575,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
   @override
   int compareTo(Object other) {
     if (other is! LogicValue) {
-      throw TypeError();
+      throw Exception('Input must be of type LogicValue ');
     }
+
     if (!isValid) {
-      throw InvalidLogicValueException(this);
+      throw InvalidValueOperationException(this, 'Comparison');
     }
+
     if (!other.isValid) {
-      throw InvalidLogicValueException(other);
+      throw InvalidValueOperationException(other, 'Comparison');
     }
 
     if (other.width != width) {
