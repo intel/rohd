@@ -13,7 +13,9 @@ part of signals;
 /// more [Logic]s.
 class _Wire {
   _Wire({required this.width})
-      : _currentValue = LogicValue.filled(width, LogicValue.z);
+      : _currentValue = LogicValue.filled(width, LogicValue.z) {
+    _setupPreTickListener();
+  }
 
   /// The current active value of this signal.
   LogicValue get value => _currentValue;
@@ -53,10 +55,7 @@ class _Wire {
       // them! saves performance!
       _changedBeingWatched = true;
 
-      _preTickSubscription = Simulator.preTick.listen((event) {
-        _preTickValue = value;
-      });
-      _postTickSubscription = Simulator.postTick.listen((event) {
+      _postTickSubscription ??= Simulator.postTick.listen((event) {
         if (value != _preTickValue && _preTickValue != null) {
           _changedController.add(LogicValueChanged(value, _preTickValue!));
         }
@@ -65,22 +64,48 @@ class _Wire {
     return _changedController.stream;
   }
 
+  /// Sets up the pre-tick listener for [_preTickValue].
+  ///
+  /// If one already exists, it will not create a new one.
+  void _setupPreTickListener() {
+    _preTickSubscription ??= Simulator.preTick.listen((event) {
+      _preTickValue = value;
+    });
+  }
+
+  /// The [value] of this signal before the most recent [Simulator.tick] had
+  /// completed. It will be `null` before the first tick after this signal is
+  /// created.
+  ///
+  /// If this is called mid-tick, it will be the value from before the tick
+  /// started. If this is called post-tick, it will be the value from before
+  /// that last tick started.
+  ///
+  /// This is useful for querying the value of a signal in a testbench before
+  /// some change event occurred, for example sampling a signal before a clock
+  /// edge for code that was triggered on that edge.
+  ///
+  /// Note that if a signal is connected to another signal, the listener may
+  /// be reset.
+  LogicValue? get previousValue => _preTickValue;
+
   /// The subscription to the [Simulator]'s `preTick`.
   ///
-  /// Only non-null if [_changedBeingWatched] is true.
-  late final StreamSubscription<void> _preTickSubscription;
+  /// Non-null after the first tick has occurred after creation of `this`.
+  StreamSubscription<void>? _preTickSubscription;
 
   /// The subscription to the [Simulator]'s `postTick`.
   ///
   /// Only non-null if [_changedBeingWatched] is true.
-  late final StreamSubscription<void> _postTickSubscription;
+  StreamSubscription<void>? _postTickSubscription;
 
   /// Cancels all [Simulator] subscriptions and uses [newChanged] as the
   /// source to replace all [changed] events for this [_Wire].
   void _migrateChangedTriggers(Stream<LogicValueChanged> newChanged) {
+    unawaited(_preTickSubscription?.cancel());
+
     if (_changedBeingWatched) {
-      unawaited(_preTickSubscription.cancel());
-      unawaited(_postTickSubscription.cancel());
+      unawaited(_postTickSubscription?.cancel());
       newChanged.listen(_changedController.add);
       _changedBeingWatched = false;
     }

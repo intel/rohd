@@ -119,6 +119,22 @@ class Logic {
   /// Throws an exception if [width] is not `1`.
   Future<LogicValueChanged> get nextNegedge => _wire.nextNegedge;
 
+  /// The [value] of this signal before the most recent [Simulator.tick] had
+  /// completed. It will be `null` before the first tick after this signal is
+  /// created.
+  ///
+  /// If this is called mid-tick, it will be the value from before the tick
+  /// started. If this is called post-tick, it will be the value from before
+  /// that last tick started.
+  ///
+  /// This is useful for querying the value of a signal in a testbench before
+  /// some change event occurred, for example sampling a signal before a clock
+  /// edge for code that was triggered on that edge.
+  ///
+  /// Note that if a signal is connected to another signal, the listener may
+  /// be reset.
+  LogicValue? get previousValue => _wire.previousValue;
+
   /// The [Module] that this [Logic] exists within.
   ///
   /// For internal signals, this only gets populated after its parent [Module],
