@@ -697,6 +697,17 @@ abstract class Conditional {
         throw UninitializedSignalException(ssaDriver._ref.name);
       }
 
+      // if these are already connected, just skip it, we're fine already
+      if (ssaDriver.srcConnection != null &&
+          ssaDriver.srcConnection == mappings[ssaDriver._ref]!) {
+        continue;
+      }
+
+      // if these are the same signal, also just skip it
+      if (ssaDriver == mappings[ssaDriver._ref]!) {
+        continue;
+      }
+
       ssaDriver <= mappings[ssaDriver._ref]!;
     }
   }

@@ -227,6 +227,29 @@ class SsaNested extends SsaTestModule {
   int model(int a) => SsaModAssignsOnly(Logic(width: 8)).model(a) + 1;
 }
 
+class SsaMultiDep extends SsaTestModule {
+  SsaMultiDep(Logic a) : super(name: 'nested') {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+    final y = addOutput('y', width: 8);
+
+    Combinational.ssa((s) {
+      final mid = Logic(name: 'mid', width: 8);
+
+      final mid2 = s(mid) + 1;
+
+      return [
+        s(mid) < a + 1,
+        s(x) < mid2 + 1,
+        s(y) < mid2 + 1,
+      ];
+    });
+  }
+
+  @override
+  int model(int a) => a + 3;
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -240,6 +263,7 @@ void main() {
     SsaChain(aInput),
     SsaMix(aInput),
     SsaNested(aInput),
+    SsaMultiDep(aInput),
   ];
 
   group('ssa_test_module', () {
