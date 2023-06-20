@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the from method from the LogicValue class, for the Dart programming language.">
-  <title>from method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the compareTo method from the LogicValue class, for the Dart programming language.">
+  <title>compareTo method - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb"><span class="deprecated">from</span> static method</li>
+    <li class="self-crumb">compareTo method</li>
   </ol>
-  <div class="self-name">from</div>
+  <div class="self-name">compareTo</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -53,42 +53,83 @@
 
   <div id="dartdoc-main-content" class="main-content">
       <div>
-<h1><span class="kind-method">from</span> static method 
+<h1><span class="kind-method">compareTo</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.0.5/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `of` instead.&#39;)</li>
+        <li>@<a href="https://api.dart.dev/stable/3.0.5/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name deprecated">from</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="from-param-it"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.5/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">it</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.0.5/dart-core/int-class.html">int</a></span>
+<span class="name ">compareTo</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="compareTo-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.0.5/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span></li>
 </ol>)
 
-      
+      <div class="features"><span class="feature">override</span></div>
 
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>it</code>.</p>
-<p>The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that the <code>i</code>th entry
-in <code>it</code> corresponds to the <code>i</code>th bit.  That is, the 0th element of <code>it</code>
-will be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<pre class="language-dart"><code class="language-dart">var it = [LogicValue.zero, LogicValue.x, LogicValue.one];
-var lv = LogicValue.from(it);
-print(lv); // This prints `3b'1x0`
-</code></pre>
+  <p>Compares this to <code>other</code>.</p>
+<p>Returns a negative number if <code>this</code> is less than <code>other</code>, zero if they are
+equal, and a positive number if <code>this</code> is greater than <code>other</code>.</p>
+<p>It will throw an exception if <code>this</code> or <code>other</code> is not <a href="../../rohd/LogicValue/isValid.html">isValid</a> or for
+non-equal <code>LogicValue</code> <a href="../../rohd/LogicValue/width.html">width</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `of` instead.&#39;)
-static LogicValue from(Iterable&lt;LogicValue&gt; it) =&gt; ofIterable(it);</code></pre>
+  <pre class="language-dart"><code class="language-dart">@override
+int compareTo(Object other) {
+  if (other is! LogicValue) {
+    throw Exception(&#39;Input must be of type LogicValue &#39;);
+  }
+
+  if (!isValid) {
+    throw InvalidValueOperationException(this, &#39;Comparison&#39;);
+  }
+
+  if (!other.isValid) {
+    throw InvalidValueOperationException(other, &#39;Comparison&#39;);
+  }
+
+  if (other.width != width) {
+    throw ValueWidthMismatchException(this, other);
+  }
+
+  if (width &gt; _INT_BITS || other.width &gt; _INT_BITS) {
+    final a = toBigInt();
+    final b = other.toBigInt();
+    final valueZero = BigInt.zero;
+
+    if ((a &lt; valueZero &amp;&amp; b &lt; valueZero) ||
+        (a &gt;= valueZero &amp;&amp; b &gt;= valueZero)) {
+      return a.compareTo(b);
+    } else if (a &lt; valueZero &amp;&amp; b &gt;= valueZero) {
+      return 1;
+    } else {
+      return -1;
+    }
+  } else {
+    final a = toInt();
+    final b = other.toInt();
+    const valueZero = 0;
+
+    if ((a &lt; valueZero &amp;&amp; b &lt; valueZero) ||
+        (a &gt;= valueZero &amp;&amp; b &gt;= valueZero)) {
+      return a.compareTo(b);
+    } else if (a &lt; valueZero &amp;&amp; b &gt;= valueZero) {
+      return 1;
+    } else {
+      return -1;
+    }
+  }
+}</code></pre>
 </section>
 
 
@@ -105,7 +146,7 @@ static LogicValue from(Iterable&lt;LogicValue&gt; it) =&gt; ofIterable(it);</cod
   <li><a href="../../index.html">rohd</a></li>
   <li><a href="../../rohd/rohd-library.html">rohd</a></li>
   <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-  <li class="self-crumb"><span class="deprecated">from</span> static method</li>
+  <li class="self-crumb">compareTo method</li>
 </ol>
 
 
