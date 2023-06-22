@@ -14,3 +14,5 @@ toc: true
   - WSL: <https://docs.microsoft.com/en-us/windows/wsl/install-win10>
   - Remote SSH: <https://code.visualstudio.com/blogs/2019/07/25/remote-ssh>
   - Dart extension for vscode: <https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code>
+
+Head over to the [user guide]({{ site.baseurl }}{% link _docs/A01-sample-example.md %}) to learn more about how to use ROHD.

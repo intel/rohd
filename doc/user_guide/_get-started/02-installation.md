@@ -26,7 +26,7 @@ If you need some help, you can join the [Discord server](https://discord.com/inv
 
 You also may be interested to join the [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
 
-Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.14.0).  If you're using the version of Dart that came with Flutter, it might be older than that.
+Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.18.0).
 
 ## Package Managers for Hardware
 
