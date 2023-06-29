@@ -112,7 +112,20 @@ on the next clock cycle.</p>
                 ]))
             .toList(growable: false),
         conditionalType: ConditionalType.unique,
-        defaultItem: [nextState &lt; currentState])
+        defaultItem: [
+          nextState &lt; currentState,
+
+          &#47;&#47; zero out all other receivers from state actions...
+          &#47;&#47; even though out-of-state is unreachable,
+          &#47;&#47; we don&#39;t want any inferred latches
+          ..._states
+              .map((state) =&gt; state.actions)
+              .flattened
+              .map((conditional) =&gt; conditional.receivers)
+              .flattened
+              .toSet()
+              .map((receiver) =&gt; receiver &lt; 0)
+        ])
   ]);
 
   Sequential(clk, [
