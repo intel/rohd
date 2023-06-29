@@ -8,10 +8,10 @@
 /// Author: Shubham Kumar <shubham.kumar@intel.com>
 ///
 
-import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 
 /// Simple class for FSM [StateMachine].
@@ -91,7 +91,20 @@ class StateMachine<StateIdentifier> {
                   ]))
               .toList(growable: false),
           conditionalType: ConditionalType.unique,
-          defaultItem: [nextState < currentState])
+          defaultItem: [
+            nextState < currentState,
+
+            // zero out all other receivers from state actions...
+            // even though out-of-state is unreachable,
+            // we don't want any inferred latches
+            ..._states
+                .map((state) => state.actions)
+                .flattened
+                .map((conditional) => conditional.receivers)
+                .flattened
+                .toSet()
+                .map((receiver) => receiver < 0)
+          ])
     ]);
 
     Sequential(clk, [
