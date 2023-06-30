@@ -71,17 +71,13 @@
 
 ## Chapter 7: Sequential Logic
 
-- Shift Register
-- Example of Sequential
-- Simulator (Merged with tutorial 8)
-- Explanation of role of Simulator
-- Registering arbitrary events
-- Starting and running the simulator
-- Clock generator
-- Run a sequential logic module in the simulator
-- Non-synthesizable signal deposition (inject vs. put)
-- WaveDumper, and view waves
-- Interfaces <https://en.wikipedia.org/wiki/Serial_Peripheral_Interface>
+- [What is Sequential Logic?](./chapter_7/00_sequential_logic.md#what-is-sequential-logic)
+- [Sequential Logic in ROHD](./chapter_7/00_sequential_logic.md#sequential-logic-in-rohd)
+- [Shift Register](./chapter_7/00_sequential_logic.md#shift-register)
+- [ROHD Simulator](./chapter_7/00_sequential_logic.md#rohd-simulator)
+- [Unit Test in Sequential Logic](./chapter_7/00_sequential_logic.md#unit-test-in-sequential-logic)
+- [Wave Dumper](./chapter_7/00_sequential_logic.md#wave-dumper)
+- [Exercise](./chapter_7/00_sequential_logic.md#exercise)
 
 ## Chapter 8: Abstractions
 
@@ -101,7 +97,7 @@
 - ROHD Cosim
 
 ----------------
-2023 February 13
+2023 June 9
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
 Copyright (C) 2021-2023 Intel Corporation  
