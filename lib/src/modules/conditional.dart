@@ -10,6 +10,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
@@ -645,6 +646,11 @@ abstract class Conditional {
   @Deprecated('Use `receivers` instead.')
   List<Logic> getReceivers() => receivers;
 
+  /// The same as [receivers], but uncached for situations where the list of
+  /// [conditionals] may still be modified or to compute the cached result
+  /// for [receivers] itself.
+  List<Logic> _getReceivers();
+
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
   List<Logic> get receivers;
@@ -767,9 +773,11 @@ class ConditionalGroup extends Conditional {
   ];
 
   @override
-  late final List<Logic> receivers = [
-    for (final conditional in conditionals) ...conditional.receivers
-  ];
+  late final List<Logic> receivers = _getReceivers();
+
+  @override
+  List<Logic> _getReceivers() =>
+      [for (final conditional in conditionals) ...conditional.receivers];
 
   @override
   void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
@@ -814,6 +822,9 @@ class ConditionalAssign extends Conditional {
 
   @override
   late final List<Logic> receivers = [receiver];
+
+  @override
+  List<Logic> _getReceivers() => receivers;
 
   @override
   late final List<Logic> drivers = [driver];
@@ -917,7 +928,8 @@ class Case extends Conditional {
   final List<CaseItem> items;
 
   /// The default to execute when there was no match with any other [CaseItem]s.
-  final List<Conditional>? defaultItem;
+  List<Conditional>? get defaultItem => _defaultItem;
+  List<Conditional>? _defaultItem;
 
   /// The type of case block this is, for special attributes
   /// (e.g. [ConditionalType.unique], [ConditionalType.priority]).
@@ -929,7 +941,9 @@ class Case extends Conditional {
   ///
   /// If none of [items] match, then [defaultItem] is executed.
   Case(this.expression, this.items,
-      {this.defaultItem, this.conditionalType = ConditionalType.none}) {
+      {List<Conditional>? defaultItem,
+      this.conditionalType = ConditionalType.none})
+      : _defaultItem = defaultItem {
     for (final item in items) {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
@@ -1008,7 +1022,7 @@ class Case extends Conditional {
   /// Calculates the set of conditionals directly within this.
   List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
-        ...defaultItem ?? []
+        if (defaultItem != null) ...defaultItem!
       ];
 
   @override
@@ -1037,19 +1051,19 @@ class Case extends Conditional {
   @override
   late final List<Logic> receivers = _getReceivers();
 
-  /// Calculates the set of receivers recursively down.
+  @override
   List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
       receivers.addAll(item.then
           .map((conditional) => conditional.receivers)
-          .expand((receiver) => receiver)
+          .flattened
           .toList(growable: false));
     }
     if (defaultItem != null) {
       receivers.addAll(defaultItem!
           .map((conditional) => conditional.receivers)
-          .expand((receiver) => receiver)
+          .flattened
           .toList(growable: false));
     }
     return receivers;
@@ -1099,6 +1113,9 @@ ${subPadding}end
   @override
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context}) {
+    // add an empty default if there isn't already one, since we need it for phi
+    _defaultItem ??= [];
+
     // first connect direct drivers into the case statement
     Conditional._connectSsaDriverFromMappings(expression, currentMappings,
         context: context);
@@ -1111,7 +1128,7 @@ ${subPadding}end
     final phiMappings = <Logic, Logic>{};
     for (final conditionals in [
       ...items.map((e) => e.then),
-      if (defaultItem != null) defaultItem!,
+      defaultItem!,
     ]) {
       var localMappings = {...currentMappings};
 
@@ -1133,6 +1150,30 @@ ${subPadding}end
     }
 
     final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    // find all the SSA signals that are driven by anything in this case block,
+    // since we need to ensure every case drives them or else we may create
+    // an inferred latch
+    final signalsNeedingInit = [
+      ...items.map((e) => e.then).flattened,
+      ...defaultItem!,
+    ].map((e) => e._getReceivers()).flattened.whereType<_SsaLogic>().toSet();
+    for (final conditionals in [
+      ...items.map((e) => e.then),
+      defaultItem!,
+    ]) {
+      final alreadyDrivenSsaSignals = conditionals
+          .map((e) => e._getReceivers())
+          .flattened
+          .whereType<_SsaLogic>()
+          .toSet();
+
+      for (final signalNeedingInit in signalsNeedingInit) {
+        if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
+          conditionals.add(signalNeedingInit < 0);
+        }
+      }
+    }
 
     return newMappings;
   }
@@ -1240,7 +1281,7 @@ class If extends Conditional {
   If(Logic condition, {List<Conditional>? then, List<Conditional>? orElse})
       : this.block([
           Iff(condition, then ?? []),
-          Else(orElse ?? []),
+          if (orElse != null) Else(orElse),
         ]);
 
   /// If [condition] is high, then [then] is excutes,
@@ -1327,7 +1368,7 @@ class If extends Conditional {
   @override
   late final List<Logic> receivers = _getReceivers();
 
-  /// Calculates the set of receivers recursively down.
+  @override
   List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final iff in iffs) {
@@ -1370,6 +1411,11 @@ ${padding}end ''');
   @override
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context}) {
+    // add an empty else if there isn't already one, since we need it for phi
+    if (iffs.last is! Else) {
+      iffs.add(Else([]));
+    }
+
     // first connect direct drivers into the if statements
     for (final iff in iffs) {
       Conditional._connectSsaDriverFromMappings(iff.condition, currentMappings,
@@ -1399,6 +1445,30 @@ ${padding}end ''');
     }
 
     final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    // find all the SSA signals that are driven by anything in this if block,
+    // since we need to ensure every case drives them or else we may create
+    // an inferred latch
+    final signalsNeedingInit = iffs
+        .map((e) => e.then)
+        .flattened
+        .map((e) => e._getReceivers())
+        .flattened
+        .whereType<_SsaLogic>()
+        .toSet();
+    for (final iff in iffs) {
+      final alreadyDrivenSsaSignals = iff.then
+          .map((e) => e._getReceivers())
+          .flattened
+          .whereType<_SsaLogic>()
+          .toSet();
+
+      for (final signalNeedingInit in signalsNeedingInit) {
+        if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
+          iff.then.add(signalNeedingInit < 0);
+        }
+      }
+    }
 
     return newMappings;
   }
