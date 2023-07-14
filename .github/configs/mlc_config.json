@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "^https://www.cadence.com/en_US/home/tools/digital-design-and-signoff/synthesis/stratus-high-level-synthesis.html$"
+    },
+    {
+      "pattern":"^https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html$"
     }
   ]
 }
