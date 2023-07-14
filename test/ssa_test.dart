@@ -228,7 +228,7 @@ class SsaNested extends SsaTestModule {
 }
 
 class SsaMultiDep extends SsaTestModule {
-  SsaMultiDep(Logic a) : super(name: 'nested') {
+  SsaMultiDep(Logic a) : super(name: 'multidep') {
     a = addInput('a', a, width: 8);
     final x = addOutput('x', width: 8);
     final y = addOutput('y', width: 8);
@@ -250,23 +250,93 @@ class SsaMultiDep extends SsaTestModule {
   int model(int a) => a + 3;
 }
 
+class SsaSequenceOfIfs extends Module {
+  SsaSequenceOfIfs(Logic a, Logic reset) : super(name: 'seqofifs') {
+    final incr = addInput('a', a, width: 8)[0];
+    reset = addInput('reset', reset);
+    final decr = Const(0);
+    final x = addOutput('x', width: 8);
+
+    final val = Logic(width: 8)..put(0); // this is ok for this test...
+    final nextVal = Logic(width: 8);
+
+    final checkVal = Const(3, width: 4).zeroExtend(8);
+
+    Combinational.ssa((s) => [
+          s(nextVal) < val,
+          If(incr, then: [nextVal.incr(s: s)]),
+          If(decr & (s(nextVal) > 0), then: [
+            nextVal.decr(s: s),
+          ]),
+          If(s(nextVal) > checkVal, then: [
+            s(nextVal) < checkVal,
+          ])
+        ]);
+
+    Sequential(SimpleClockGenerator(10).clk, reset: reset, [
+      val < nextVal,
+    ]);
+
+    x <= (nextVal > 0).zeroExtend(8);
+  }
+}
+
+class SsaSequenceOfCases extends Module {
+  SsaSequenceOfCases(Logic a, Logic reset) : super(name: 'seqofifs') {
+    final incr = addInput('a', a, width: 8)[0];
+    reset = addInput('reset', reset);
+    final decr = Const(0);
+    final x = addOutput('x', width: 8);
+
+    final val = Logic(width: 8)..put(0); // this is ok for this test...
+    final nextVal = Logic(width: 8);
+
+    final checkVal = Const(3, width: 4).zeroExtend(8);
+
+    Combinational.ssa((s) => [
+          s(nextVal) < val,
+          Case(Const(1), [
+            CaseItem(incr, [
+              nextVal.incr(s: s),
+            ])
+          ]),
+          Case(Const(1), [
+            CaseItem(decr & (s(nextVal) > 0), [
+              nextVal.decr(s: s),
+            ])
+          ]),
+          Case(Const(1), [
+            CaseItem(s(nextVal) > checkVal, [
+              s(nextVal) < checkVal,
+            ])
+          ]),
+        ]);
+
+    Sequential(SimpleClockGenerator(10).clk, reset: reset, [
+      val < nextVal,
+    ]);
+
+    x <= (nextVal > 0).zeroExtend(8);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
 
-  final aInput = Logic(width: 8, name: 'a');
-  final mods = [
-    SsaModAssignsOnly(aInput),
-    SsaModIf(aInput),
-    SsaModCase(aInput),
-    SsaChain(aInput),
-    SsaMix(aInput),
-    SsaNested(aInput),
-    SsaMultiDep(aInput),
-  ];
-
   group('ssa_test_module', () {
+    final aInput = Logic(width: 8, name: 'a');
+    final mods = [
+      SsaModAssignsOnly(aInput),
+      SsaModIf(aInput),
+      SsaModCase(aInput),
+      SsaChain(aInput),
+      SsaMix(aInput),
+      SsaNested(aInput),
+      SsaMultiDep(aInput),
+    ];
+
     for (final mod in mods) {
       test('ssa ${mod.name}', () async {
         await mod.build();
@@ -279,6 +349,61 @@ void main() {
         SimCompare.checkIverilogVector(mod, vectors);
       });
     }
+  });
+
+  test('ssa seq of ifs', () async {
+    final mod = SsaSequenceOfIfs(Logic(width: 8), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0, 'reset': 1}, {}),
+      Vector({'a': 0, 'reset': 0}, {}),
+      Vector({'a': 0}, {'x': 0}),
+      Vector({'a': 0}, {'x': 0}),
+      Vector({'a': 1}, {'x': 1}),
+      Vector({'a': 1}, {'x': 1}),
+      Vector({'a': 1}, {'x': 1}),
+    ];
+
+    // make sure we don't have any inferred latches (X's)
+    for (final signal in mod.signals) {
+      signal.changed.listen((event) {
+        expect(event.newValue.isValid, isTrue);
+      });
+    }
+    Simulator.registerAction(15, () {
+      for (final signal in mod.signals) {
+        expect(signal.value.isValid, isTrue);
+      }
+    });
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('ssa seq of cases', () async {
+    final mod = SsaSequenceOfCases(Logic(width: 8), Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0, 'reset': 1}, {}),
+      Vector({'a': 0, 'reset': 0}, {}),
+      Vector({'a': 0}, {'x': 0}),
+      Vector({'a': 0}, {'x': 0}),
+      Vector({'a': 1}, {'x': 1}),
+      Vector({'a': 1}, {'x': 1}),
+      Vector({'a': 1}, {'x': 1}),
+    ];
+
+    // make sure we don't have any inferred latches (X's)
+    Simulator.registerAction(15, () {
+      for (final signal in mod.signals) {
+        expect(signal.value.isValid, isTrue);
+      }
+    });
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test('ssa uninitialized', () async {
