@@ -889,17 +889,29 @@ enum ConditionalType {
   priority
 }
 
-/// Shorthand for a [Conditional] inside a [Case] block.
-/// Returns a [Logic] signal based on the expression and conditions.
-/// The width of the result is determined by the width of the value of the
-/// conditions.
-Logic cases(Logic expression, Map<Logic, dynamic> conditions, {int? width}) {
+/// Shorthand for a [Case] inside a [Conditional] block.
+///
+/// It is used to assign a signal based on a condition with multiple cases to
+/// consider. For e.g., this can be used instead of a nested [mux].
+///
+/// The result is of type [Logic] and it is determined by conditionaly matching
+/// the expression with the values of each item in conditions. If width of the
+/// input is not provided, then the width of  the result is inferred from the
+/// width of the entries.
+Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
+    {int? width, ConditionalType conditionalType = ConditionalType.none}) {
   for (final condition in conditions.entries) {
     int? inferredWidth;
+
     if (condition.value is Logic) {
       inferredWidth = (condition.value as Logic).width;
     } else if (condition.value is LogicValue) {
       inferredWidth = (condition.value as LogicValue).width;
+    }
+
+    if (width != inferredWidth && width != null && inferredWidth != null) {
+      throw SignalWidthMismatchException.forDynamic(
+          condition.value, width, inferredWidth);
     }
 
     width ??= inferredWidth;
@@ -908,19 +920,35 @@ Logic cases(Logic expression, Map<Logic, dynamic> conditions, {int? width}) {
       throw SignalWidthMismatchException.forDynamic(
           condition.value, width!, inferredWidth);
     }
-    if (expression.width != condition.key.width) {
-      throw SignalWidthMismatchException.forDynamic(
-          condition.key, expression.width, condition.key.width);
+    if (condition.key is Logic) {
+      if (expression.width != (condition.key as Logic).width) {
+        throw SignalWidthMismatchException.forDynamic(
+            condition.key, expression.width, (condition.key as Logic).width);
+      }
+    }
+
+    if (condition.key is LogicValue) {
+      if (expression.width != (condition.key as LogicValue).width) {
+        throw SignalWidthMismatchException.forDynamic(condition.key,
+            expression.width, (condition.key as LogicValue).width);
+      }
     }
   }
 
   final result = Logic(name: 'result', width: width!);
 
   Combinational([
-    Case(expression, [
-      for (final condition in conditions.entries)
-        CaseItem(condition.key, [result < condition.value])
-    ])
+    Case(
+        expression,
+        [
+          for (final condition in conditions.entries)
+            CaseItem(
+                condition.key is Logic
+                    ? condition.key as Logic
+                    : Const(condition.key, width: expression.width),
+                [result < condition.value])
+        ],
+        conditionalType: conditionalType)
   ]);
 
   return result;

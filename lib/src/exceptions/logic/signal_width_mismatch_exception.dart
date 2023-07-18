@@ -24,6 +24,6 @@ class SignalWidthMismatchException extends RohdException {
       dynamic val, int expectedWidth, int actualWidth,
       {String additionalMessage = ''})
       : super('Value $val has the wrong width.'
-            ' Excepted $expectedWidth but found $actualWidth.'
+            ' Expected $expectedWidth but found $actualWidth.'
             ' $additionalMessage');
 }
