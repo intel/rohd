@@ -831,7 +831,14 @@ class ConditionalAssign extends Conditional {
       guard(driver);
     }
 
-    _receiverOutput.put(driverValue(driver));
+
+    final currentValue = driverValue(driver);
+    if (!currentValue.isValid ){
+        _receiverOutput.put(LogicValue.x);
+    }
+    else{
+       _receiverOutput.put(currentValue);
+    }
 
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
       drivenSignals.add(receiver);
@@ -965,6 +972,12 @@ class Case extends Conditional {
       }
       return;
     }
+     
+     for (final receiver in receivers) {
+        receiver.put(LogicValue.x);
+     }
+
+
 
     CaseItem? foundMatch;
 

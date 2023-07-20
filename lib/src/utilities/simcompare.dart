@@ -81,7 +81,9 @@ class Vector {
         }
         return arrAssigns.toString();
       } else {
-        return '$signalName = ${inputValues[signalName]};';
+        final signalVal =
+            LogicValue.of(inputValues[signalName], width: signal.width);
+        return '$signalName = $signalVal;';
       }
     }).join('\n');
 
