@@ -13,6 +13,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
@@ -45,14 +46,12 @@ class Vector {
   /// Computes a SystemVerilog code string that checks in a SystemVerilog
   /// simulation whether a signal [sigName] has the [expected] value given
   /// the [inputValues].
-  String _errorCheckString(
-      String sigName, dynamic expected, String inputValues) {
+  static String _errorCheckString(String sigName, dynamic expected,
+      LogicValue expectedVal, String inputValues) {
     final expectedHexStr = expected is int
         ? '0x${expected.toRadixString(16)}'
         : expected.toString();
-    final expectedValStr = (expected is LogicValue && expected.width == 1)
-        ? "'${expected.toString(includeWidth: false)}"
-        : expected.toString();
+    final expectedValStr = expectedVal.toString();
 
     if (expected is! int && expected is! LogicValue) {
       throw Exception(
@@ -65,14 +64,53 @@ class Vector {
   }
 
   /// Converts this vector into a SystemVerilog check.
-  String toTbVerilog() {
-    final assignments = inputValues.keys
-        .map((signalName) => '$signalName = ${inputValues[signalName]};')
-        .join('\n');
-    final checks = expectedOutputValues.keys
-        .map((signalName) => _errorCheckString(signalName,
-            expectedOutputValues[signalName], inputValues.toString()))
-        .join('\n');
+  String toTbVerilog(Module module) {
+    final assignments = inputValues.keys.map((signalName) {
+      // ignore: invalid_use_of_protected_member
+      final signal = module.input(signalName);
+
+      if (signal is LogicArray) {
+        final arrAssigns = StringBuffer();
+        var index = 0;
+        final fullVal =
+            LogicValue.of(inputValues[signalName], width: signal.width);
+        for (final leaf in signal.leafElements) {
+          final subVal = fullVal.getRange(index, index + leaf.width);
+          arrAssigns.writeln('${leaf.structureName} = $subVal;');
+          index += leaf.width;
+        }
+        return arrAssigns.toString();
+      } else {
+        return '$signalName = ${inputValues[signalName]};';
+      }
+    }).join('\n');
+
+    final checksList = <String>[];
+    for (final expectedOutput in expectedOutputValues.entries) {
+      final outputName = expectedOutput.key;
+      final outputPort = module.output(outputName);
+      final expected = expectedOutput.value;
+      final expectedValue = LogicValue.of(
+        expected,
+        width: outputPort.width,
+      );
+      final inputStimulus = inputValues.toString();
+
+      if (outputPort is LogicArray) {
+        var index = 0;
+        for (final leaf in outputPort.leafElements) {
+          final subVal = expectedValue.getRange(index, index + leaf.width);
+          checksList.add(_errorCheckString(
+              leaf.structureName, subVal, subVal, inputStimulus));
+          index += leaf.width;
+        }
+      } else {
+        checksList.add(_errorCheckString(
+            outputName, expected, expectedValue, inputStimulus));
+      }
+    }
+    final checks = checksList.join('\n');
+
     final tbVerilog = [
       assignments,
       '#$_offset',
@@ -122,7 +160,7 @@ abstract class SimCompare {
                     expect(oBit, equals(value), reason: errorReason);
                   }
                 } else {
-                  expect(o.value, equals(value));
+                  expect(o.value, equals(value), reason: errorReason);
                 }
               } else {
                 throw NonSupportedTypeException(value.runtimeType.toString());
@@ -145,6 +183,41 @@ abstract class SimCompare {
     await Simulator.run();
   }
 
+  /// A collection of warnings that are fine to ignore usually.
+  static final List<RegExp> _knownWarnings = [
+    RegExp('sorry: Case unique/unique0 qualities are ignored.'),
+    RegExp(r'sorry: constant selects in always_\* processes'
+        ' are not currently supported'),
+    RegExp('warning: always_comb process has no sensitivities'),
+  ];
+
+  /// Executes [vectors] against the Icarus Verilog simulator and checks
+  /// that it passes.
+  static void checkIverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool enableChecking = true,
+    bool buildOnly = false,
+  }) {
+    final result = iverilogVector(module, vectors,
+        moduleName: moduleName,
+        dontDeleteTmpFiles: dontDeleteTmpFiles,
+        dumpWaves: dumpWaves,
+        iverilogExtraArgs: iverilogExtraArgs,
+        allowWarnings: allowWarnings,
+        maskKnownWarnings: maskKnownWarnings,
+        buildOnly: buildOnly);
+    if (enableChecking) {
+      expect(result, true);
+    }
+  }
+
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
@@ -154,10 +227,22 @@ abstract class SimCompare {
     bool dumpWaves = false,
     List<String> iverilogExtraArgs = const [],
     bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool buildOnly = false,
   }) {
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
-      if (signal.width != 1) {
+
+      if (signal is LogicArray) {
+        final unpackedDims =
+            signal.dimensions.getRange(0, signal.numUnpackedDimensions);
+        final packedDims = signal.dimensions
+            .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
+        // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
+        return packedDims.map((d) => '[${d - 1}:0]').join() +
+            ' [${signal.elementWidth - 1}:0] $signalName' +
+            unpackedDims.map((d) => '[${d - 1}:0]').join();
+      } else if (signal.width != 1) {
         return '[${signal.width - 1}:0] $signalName';
       } else {
         return signalName;
@@ -166,14 +251,14 @@ abstract class SimCompare {
 
     final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
-      for (final e in vectors) ...e.inputValues.keys,
-      for (final e in vectors) ...e.expectedOutputValues.keys,
+      for (final v in vectors) ...v.inputValues.keys,
+      for (final v in vectors) ...v.expectedOutputValues.keys,
     };
     final localDeclarations =
         allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
     final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
-    final stimulus = vectors.map((e) => e.toTbVerilog()).join('\n');
+    final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
     final generatedVerilog = module.generateSynth();
 
     // so that when they run in parallel, they dont step on each other
@@ -210,9 +295,24 @@ abstract class SimCompare {
     final compileResult = Process.runSync('iverilog',
         ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
     bool printIfContentsAndCheckError(dynamic output) {
-      if (output.toString().isNotEmpty) {
-        print(output);
+      final maskedOutput = output
+          .toString()
+          .split('\n')
+          .where((element) => element.isNotEmpty)
+          .map((line) {
+            for (final knownWarning in _knownWarnings) {
+              if (knownWarning.hasMatch(line)) {
+                return null;
+              }
+            }
+            return line;
+          })
+          .whereNotNull()
+          .join('\n');
+      if (maskedOutput.isNotEmpty) {
+        print(maskedOutput);
       }
+
       return output.toString().contains(RegExp(
           [
             'error',
@@ -229,12 +329,14 @@ abstract class SimCompare {
       return false;
     }
 
-    final simResult = Process.runSync('vvp', [tmpOutput]);
-    if (printIfContentsAndCheckError(simResult.stdout)) {
-      return false;
-    }
-    if (printIfContentsAndCheckError(simResult.stderr)) {
-      return false;
+    if (!buildOnly) {
+      final simResult = Process.runSync('vvp', [tmpOutput]);
+      if (printIfContentsAndCheckError(simResult.stdout)) {
+        return false;
+      }
+      if (printIfContentsAndCheckError(simResult.stderr)) {
+        return false;
+      }
     }
 
     if (!dontDeleteTmpFiles) {

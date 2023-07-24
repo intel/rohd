@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// wave_dump_benchmark.dart
-/// Benchmarking for wave dumping
-///
-/// 2023 January 5
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// wave_dump_benchmark.dart
+// Benchmarking for wave dumping
+//
+// 2023 January 5
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:io';
 

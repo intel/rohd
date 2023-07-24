@@ -1,12 +1,14 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// conditionals_test.dart
-/// Unit tests for conditional calculations (e.g. always_comb, always_ff)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditionals_test.dart
+// Unit tests for conditional calculations (e.g. always_comb, always_ff)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
+
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
@@ -14,8 +16,33 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class ShorthandAssignModule extends Module {
+  final bool useArrays;
+
+  @override
+  Logic addInput(String name, Logic x, {int width = 1}) {
+    assert(width.isEven, 'if arrays, split width in 2');
+    if (useArrays) {
+      return super
+          .addInputArray(name, x, dimensions: [2], elementWidth: width ~/ 2);
+    } else {
+      return super.addInput(name, x, width: width);
+    }
+  }
+
+  @override
+  Logic addOutput(String name, {int width = 1}) {
+    assert(width.isEven, 'if arrays, split width in 2');
+    if (useArrays) {
+      return super
+          .addOutputArray(name, dimensions: [2], elementWidth: width ~/ 2);
+    } else {
+      return super.addOutput(name, width: width);
+    }
+  }
+
   ShorthandAssignModule(
-      Logic preIncr, Logic preDecr, Logic mulAssign, Logic divAssign, Logic b)
+      Logic preIncr, Logic preDecr, Logic mulAssign, Logic divAssign, Logic b,
+      {this.useArrays = false})
       : super(name: 'shorthandmodule') {
     preIncr = addInput('preIncr', preIncr, width: 8);
     preDecr = addInput('preDecr', preDecr, width: 8);
@@ -30,21 +57,21 @@ class ShorthandAssignModule extends Module {
     final piOutWithB = addOutput('piOutWithB', width: 8);
     final pdOutWithB = addOutput('pdOutWithB', width: 8);
 
-    Combinational([
-      piOutWithB < preIncr,
-      pdOutWithB < preDecr,
-      piOut < preIncr,
-      pdOut < preDecr,
-      maOut < mulAssign,
-      daOut < divAssign,
-      // Add these tests
-      piOut.incr(),
-      pdOut.decr(),
-      piOutWithB.incr(b),
-      pdOutWithB.decr(b),
-      maOut.mulAssign(b),
-      daOut.divAssign(b),
-    ]);
+    Combinational.ssa((s) => [
+          s(piOutWithB) < preIncr,
+          s(pdOutWithB) < preDecr,
+          s(piOut) < preIncr,
+          s(pdOut) < preDecr,
+          s(maOut) < mulAssign,
+          s(daOut) < divAssign,
+          // Add these tests
+          piOut.incr(s: s),
+          pdOut.decr(s: s),
+          piOutWithB.incr(s: s, val: b),
+          pdOutWithB.decr(s: s, val: b),
+          maOut.mulAssign(b, s: s),
+          daOut.divAssign(b, s: s),
+        ]);
   }
 }
 
@@ -59,6 +86,20 @@ class LoopyCombModule extends Module {
       x < a,
       x < ~x,
     ]);
+  }
+}
+
+class LoopyCombModuleSsa extends Module {
+  Logic get a => input('a');
+  Logic get x => output('x');
+  LoopyCombModuleSsa(Logic a) : super(name: 'loopycombmodule') {
+    a = addInput('a', a);
+    final x = addOutput('x');
+
+    Combinational.ssa((s) => [
+          s(x) < a,
+          s(x) < ~s(x),
+        ]);
   }
 }
 
@@ -100,6 +141,42 @@ class CaseModule extends Module {
   }
 }
 
+enum SeqCondModuleType { caseNormal, caseZ, ifNormal }
+
+class SeqCondModule extends Module {
+  Logic get equal => output('equal');
+  SeqCondModule(Logic clk, Logic a, {required SeqCondModuleType combType}) {
+    a = addInput('a', a, width: 8);
+    clk = addInput('clk', clk);
+
+    addOutput('equal');
+
+    final aIncr = a + 1;
+
+    final aIncrDelayed = FlipFlop(clk, aIncr).q;
+
+    final genCase =
+        combType == SeqCondModuleType.caseNormal ? Case.new : CaseZ.new;
+
+    Sequential(clk, [
+      if (combType == SeqCondModuleType.ifNormal)
+        If(
+          aIncr.eq(aIncrDelayed),
+          then: [equal < 1],
+          orElse: [equal < 0],
+        )
+      else
+        genCase(aIncr, [
+          CaseItem(aIncrDelayed, [
+            equal < 1,
+          ])
+        ], defaultItem: [
+          equal < 0,
+        ]),
+    ]);
+  }
+}
+
 class IfBlockModule extends Module {
   IfBlockModule(Logic a, Logic b) : super(name: 'ifblockmodule') {
     a = addInput('a', a);
@@ -108,7 +185,7 @@ class IfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -123,7 +200,7 @@ class SingleIfBlockModule extends Module {
     final c = addOutput('c');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, c < 1),
       ])
     ]);
@@ -138,7 +215,7 @@ class ElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf(a & ~b, [c < 1, d < 0]),
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
@@ -154,7 +231,7 @@ class SingleElseIfBlockModule extends Module {
     final d = addOutput('d');
 
     Combinational([
-      IfBlock([
+      If.block([
         ElseIf.s(a, c < 1),
         Else([c < 0, d < 1])
       ])
@@ -263,7 +340,7 @@ class SingleElseModule extends Module {
     final x = addOutput('x');
 
     Combinational([
-      IfBlock([
+      If.block([
         Iff.s(a, q < 1),
         Else.s(x < 1),
       ])
@@ -314,14 +391,14 @@ class MultipleConditionalModule extends Module {
     b = addInput('b', b);
     final c = addOutput('c');
 
-    final Conditional condOne = c < 1;
+    final condOne = c < 1;
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
 
     Combinational([
-      IfBlock([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
+      If.block([ElseIf.s(a, condOne), ElseIf.s(b, condOne)])
     ]);
   }
 }
@@ -332,11 +409,80 @@ void main() {
   });
 
   group('functional', () {
-    test('conditional loopy comb', () async {
-      final mod = LoopyCombModule(Logic());
-      await mod.build();
-      mod.a.put(1);
-      expect(mod.x.value.toInt(), equals(0));
+    group('conditional loopy comb', () {
+      test('normal', () async {
+        try {
+          final mod = LoopyCombModule(Logic());
+          await mod.build();
+          mod.a.put(1);
+          expect(mod.x.value.toInt(), equals(0));
+          fail('Expected to throw an exception!');
+        } on Exception catch (e) {
+          expect(e.runtimeType, WriteAfterReadException);
+        }
+      });
+
+      test('ssa', () async {
+        final mod = LoopyCombModuleSsa(Logic());
+        await mod.build();
+        mod.a.put(1);
+        expect(mod.x.value.toInt(), equals(0));
+      });
+    });
+
+    group('flopped expressions for conditionals', () {
+      for (final condType in SeqCondModuleType.values) {
+        test(condType.name, () async {
+          final clk = SimpleClockGenerator(10).clk;
+          final a = Logic(name: 'a', width: 8);
+          final mod = SeqCondModule(clk, a, combType: condType);
+
+          a.put(0);
+
+          Simulator.setMaxSimTime(100);
+
+          unawaited(Simulator.run());
+
+          await clk.nextPosedge;
+          a.put(1);
+          await clk.nextPosedge;
+          a.put(2);
+          await clk.nextPosedge;
+
+          expect(mod.equal.value.toBool(), false);
+
+          await Simulator.simulationEnded;
+        });
+      }
+    });
+
+    group('bad if blocks', () {
+      test('IfBlock with only else fails', () async {
+        expect(
+            () => If.block([
+                  Else([]),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else in the middle fails', () {
+        expect(
+            () => If.block([
+                  ElseIf(Logic(), []),
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
+
+      test('IfBlock with else at the start fails', () {
+        expect(
+            () => If.block([
+                  Else([]),
+                  ElseIf(Logic(), []),
+                ]),
+            throwsException);
+      });
     });
   });
 
@@ -542,56 +688,74 @@ void main() {
     }
   });
 
-  test('shorthand operations', () async {
-    final mod = ShorthandAssignModule(Logic(width: 8), Logic(width: 8),
-        Logic(width: 8), Logic(width: 8), Logic(width: 8));
-    await mod.build();
-    final vectors = [
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 5
-      }, {
-        'piOutWithB': 10,
-        'pdOutWithB': 0,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 25,
-        'daOut': 1,
-      }),
-      Vector({
-        'preIncr': 5,
-        'preDecr': 5,
-        'mulAssign': 5,
-        'divAssign': 5,
-        'b': 0
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 5,
-        'piOut': 6,
-        'pdOut': 4,
-        'maOut': 0,
-        'daOut': LogicValue.x,
-      }),
-      Vector({
-        'preIncr': 0,
-        'preDecr': 0,
-        'mulAssign': 0,
-        'divAssign': 0,
-        'b': 5
-      }, {
-        'piOutWithB': 5,
-        'pdOutWithB': 0xfb,
-        'piOut': 1,
-        'pdOut': 0xff,
-        'maOut': 0,
-        'daOut': 0,
-      })
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+  group('shorthand operations', () {
+    Future<void> testShorthand(
+        {required bool useArrays, required bool useSequential}) async {
+      final mod = ShorthandAssignModule(
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        Logic(width: 8),
+        useArrays: useArrays,
+      );
+      await mod.build();
+
+      final vectors = [
+        Vector({
+          'preIncr': 5,
+          'preDecr': 5,
+          'mulAssign': 5,
+          'divAssign': 5,
+          'b': 5
+        }, {
+          'piOutWithB': 10,
+          'pdOutWithB': 0,
+          'piOut': 6,
+          'pdOut': 4,
+          'maOut': 25,
+          'daOut': 1,
+        }),
+        Vector({
+          'preIncr': 5,
+          'preDecr': 5,
+          'mulAssign': 5,
+          'divAssign': 5,
+          'b': 0
+        }, {
+          'piOutWithB': 5,
+          'pdOutWithB': 5,
+          'piOut': 6,
+          'pdOut': 4,
+          'maOut': 0,
+          'daOut': LogicValue.x,
+        }),
+        Vector({
+          'preIncr': 0,
+          'preDecr': 0,
+          'mulAssign': 0,
+          'divAssign': 0,
+          'b': 5
+        }, {
+          'piOutWithB': 5,
+          'pdOutWithB': 0xfb,
+          'piOut': 1,
+          'pdOut': 0xff,
+          'maOut': 0,
+          'daOut': 0,
+        })
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    }
+
+    test('normal logic', () async {
+      await testShorthand(useArrays: false, useSequential: false);
+    });
+
+    test('arrays', () async {
+      await testShorthand(useArrays: true, useSequential: false);
+    });
   });
 }

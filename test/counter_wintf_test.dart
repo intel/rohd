@@ -7,6 +7,7 @@
 /// 2021 May 25
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -17,6 +18,7 @@ class CounterInterface extends Interface<CounterDirection> {
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
+  Logic get resetVal => port('resetVal');
 
   final int width;
   CounterInterface(this.width) {
@@ -32,7 +34,8 @@ class CounterInterface extends Interface<CounterDirection> {
 
 class Counter extends Module {
   late final CounterInterface intf;
-  Counter(CounterInterface intf) {
+  Counter(CounterInterface intf,
+      {bool useBuiltInSequentialReset = false, int resetValue = 0}) {
     this.intf = CounterInterface(intf.width)
       ..connectIO(this, intf,
           inputTags: {CounterDirection.inward},
@@ -41,14 +44,27 @@ class Counter extends Module {
     // this should do nothing
     this.intf.connectIO(this, intf);
 
-    _buildLogic();
-  }
-
-  void _buildLogic() {
     final nextVal = Logic(name: 'nextVal', width: intf.width);
-
     nextVal <= intf.val + 1;
 
+    if (useBuiltInSequentialReset) {
+      _buildResetValLogic(nextVal, resetValue: resetValue);
+    } else {
+      _buildLogic(nextVal);
+    }
+  }
+  void _buildResetValLogic(Logic nextVal, {int resetValue = 0}) {
+    final resetValues = <Logic, Logic>{intf.val: Const(resetValue, width: 8)};
+    Sequential(
+        SimpleClockGenerator(10).clk,
+        [
+          If(intf.en, then: [intf.val < nextVal])
+        ],
+        reset: intf.reset,
+        resetValues: resetValues);
+  }
+
+  void _buildLogic(Logic nextVal) {
     Sequential(SimpleClockGenerator(10).clk, [
       If(intf.reset, then: [
         intf.val < 0
@@ -59,6 +75,27 @@ class Counter extends Module {
   }
 }
 
+Future<void> moduleTest(Counter mod) async {
+  await mod.build();
+  final vectors = [
+    Vector({'en': 0, 'reset': 1}, {}),
+    Vector({'en': 0, 'reset': 1}, {'val': 0}),
+    Vector({'en': 1, 'reset': 1}, {'val': 0}),
+    Vector({'en': 1, 'reset': 0}, {'val': 0}),
+    Vector({'en': 1, 'reset': 0}, {'val': 1}),
+    Vector({'en': 1, 'reset': 0}, {'val': 2}),
+    Vector({'en': 1, 'reset': 0}, {'val': 3}),
+    Vector({'en': 0, 'reset': 0}, {'val': 4}),
+    Vector({'en': 0, 'reset': 0}, {'val': 4}),
+    Vector({'en': 1, 'reset': 0}, {'val': 4}),
+    Vector({'en': 0, 'reset': 0}, {'val': 5}),
+    Vector({'en': 0, 'reset': 0}, {'val': 5}),
+  ];
+  await SimCompare.checkFunctionalVector(mod, vectors);
+  final simResult = SimCompare.iverilogVector(mod, vectors);
+  expect(simResult, equals(true));
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -67,23 +104,34 @@ void main() {
   group('simcompare', () {
     test('counter', () async {
       final mod = Counter(CounterInterface(8));
-      await mod.build();
-      final vectors = [
-        Vector({'en': 0, 'reset': 1}, {}),
-        Vector({'en': 0, 'reset': 1}, {'val': 0}),
-        Vector({'en': 1, 'reset': 1}, {'val': 0}),
-        Vector({'en': 1, 'reset': 0}, {'val': 0}),
-        Vector({'en': 1, 'reset': 0}, {'val': 1}),
-        Vector({'en': 1, 'reset': 0}, {'val': 2}),
-        Vector({'en': 1, 'reset': 0}, {'val': 3}),
-        Vector({'en': 0, 'reset': 0}, {'val': 4}),
-        Vector({'en': 0, 'reset': 0}, {'val': 4}),
-        Vector({'en': 1, 'reset': 0}, {'val': 4}),
-        Vector({'en': 0, 'reset': 0}, {'val': 5}),
-      ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
-      expect(simResult, equals(true));
+      await moduleTest(mod);
     });
+  });
+  test('resetFlipflop from root w/o resetVal', () async {
+    final mod = Counter(CounterInterface(8), useBuiltInSequentialReset: true);
+    await moduleTest(mod);
+  });
+
+  test('resetFlipflop from root w/ resetVal', () async {
+    final mod = Counter(CounterInterface(8),
+        useBuiltInSequentialReset: true, resetValue: 3);
+    await mod.build();
+    final vectors = [
+      Vector({'en': 0, 'reset': 1}, {}),
+      Vector({'en': 0, 'reset': 1}, {'val': 3}),
+      Vector({'en': 1, 'reset': 1}, {'val': 3}),
+      Vector({'en': 1, 'reset': 0}, {'val': 3}),
+      Vector({'en': 1, 'reset': 0}, {'val': 4}),
+      Vector({'en': 1, 'reset': 0}, {'val': 5}),
+      Vector({'en': 1, 'reset': 0}, {'val': 6}),
+      Vector({'en': 0, 'reset': 0}, {'val': 7}),
+      Vector({'en': 0, 'reset': 0}, {'val': 7}),
+      Vector({'en': 1, 'reset': 0}, {'val': 7}),
+      Vector({'en': 0, 'reset': 0}, {'val': 8}),
+      Vector({'en': 0, 'reset': 0}, {'val': 8}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    final simResult = SimCompare.iverilogVector(mod, vectors);
+    expect(simResult, equals(true));
   });
 }

@@ -150,14 +150,14 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
         .map((sig) => 'input logic ${sig.definitionName()}')
-        .toList();
+        .toList(growable: false);
     return declarations;
   }
 
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
         .map((sig) => 'output logic ${sig.definitionName()}')
-        .toList();
+        .toList(growable: false);
     return declarations;
   }
 
@@ -321,9 +321,25 @@ class _SynthModuleDefinition {
     } else if (logicToSynthMap.containsKey(logic)) {
       return logicToSynthMap[logic]!;
     } else {
-      final newSynth = _SynthLogic(
-          logic, _getUniqueSynthLogicName(logic.name, allowPortName),
-          renameable: !allowPortName);
+      _SynthLogic newSynth;
+      if (logic.isArrayMember) {
+        // grab the parent array (potentially recursively)
+        final parentArraySynthLogic =
+            // ignore: unnecessary_null_checks
+            _getSynthLogic(logic.parentStructure!, allowPortName);
+
+        newSynth = _SynthLogicArrayElement(logic, parentArraySynthLogic!);
+      } else {
+        final synthLogicName =
+            _getUniqueSynthLogicName(logic.name, allowPortName);
+
+        newSynth = _SynthLogic(
+          logic,
+          synthLogicName,
+          renameable: !allowPortName,
+        );
+      }
+
       logicToSynthMap[logic] = newSynth;
       return newSynth;
     }
@@ -357,10 +373,22 @@ class _SynthModuleDefinition {
 
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
+      if (receiver is LogicArray) {
+        logicsToTraverse.addAll(receiver.elements);
+      }
+
+      if (receiver.isArrayMember) {
+        logicsToTraverse.add(receiver.parentStructure!);
+      }
+
       final driver = receiver.srcConnection;
 
-      final receiverIsModuleInput = module.isInput(receiver);
-      final receiverIsModuleOutput = module.isOutput(receiver);
+      final receiverIsConstant = driver == null && receiver is Const;
+
+      final receiverIsModuleInput =
+          module.isInput(receiver) && !receiver.isArrayMember;
+      final receiverIsModuleOutput =
+          module.isOutput(receiver) && !receiver.isArrayMember;
       final driverIsModuleInput = driver != null && module.isInput(driver);
       final driverIsModuleOutput = driver != null && module.isOutput(driver);
 
@@ -385,22 +413,16 @@ class _SynthModuleDefinition {
             _getSynthSubModuleInstantiation(subModule);
         subModuleInstantiation.outputMapping[synthReceiver] = receiver;
 
-        for (final element in subModule.inputs.values) {
-          if (!logicsToTraverse.contains(element)) {
-            logicsToTraverse.add(element);
-          }
-        }
+        logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {
           // stop at the input to this module
-          if (!logicsToTraverse.contains(driver)) {
-            logicsToTraverse.add(driver);
-          }
+          logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver, synthReceiver));
         }
-      } else if (driver == null && receiver.value.isValid) {
+      } else if (receiverIsConstant && receiver.value.isValid) {
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
-      } else if (driver == null && !receiver.value.isFloating) {
+      } else if (receiverIsConstant && !receiver.value.isFloating) {
         // this is a signal that is *partially* invalid (e.g. 0b1z1x0)
         assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }
@@ -525,8 +547,9 @@ class _SynthModuleDefinition {
           } else {
             reducedAssignments.add(assignment);
           }
-        } else if (dst.renameable) {
+        } else if (dst.renameable && Module.isUnpreferred(dst.name)) {
           // src is a constant, feed that string directly in
+          // but only if this isn't a preferred signal (e.g. bus subset)
           dst.mergeConst(assignment.srcName());
         } else {
           // nothing can be done here, keep it as-is
@@ -539,6 +562,22 @@ class _SynthModuleDefinition {
         ..addAll(reducedAssignments);
     }
   }
+}
+
+class _SynthLogicArrayElement extends _SynthLogic {
+  /// The [_SynthLogic] tracking the name of the direct parent array.
+  final _SynthLogic parentArray;
+
+  @override
+  bool get _needsDeclaration => false;
+
+  @override
+  String get name => '${parentArray.name}[${logic.arrayIndex!}]';
+
+  _SynthLogicArrayElement(Logic logic, this.parentArray)
+      : assert(logic.isArrayMember,
+            'Should only be used for elements in a LogicArray'),
+        super(logic, '**ARRAY_ELEMENT**', renameable: false);
 }
 
 /// Represents a logic signal in the generated code within a module.
@@ -554,7 +593,9 @@ class _SynthLogic {
   String get name => _mergedNameSynthLogic?.name ?? _mergedConst ?? _name;
 
   _SynthLogic(this.logic, this._name, {bool renameable = true})
-      : _renameable = renameable;
+      : _renameable = renameable &&
+            // don't rename arrays since its elements would need updating too
+            logic is! LogicArray;
 
   @override
   String toString() => "'$name', logic name: '${logic.name}'";
@@ -589,12 +630,49 @@ class _SynthLogic {
     _needsDeclaration = false;
   }
 
-  String definitionName() {
-    if (logic.width > 1) {
-      return '[${logic.width - 1}:0] $name';
+  static String _widthToRangeDef(int width, {bool forceRange = false}) {
+    if (width > 1 || forceRange) {
+      return '[${width - 1}:0]';
     } else {
-      return name;
+      return '';
     }
+  }
+
+  /// Computes the name of the signal at declaration time with appropriate
+  /// dimensions included.
+  String definitionName() {
+    String packedDims;
+    String unpackedDims;
+
+    if (logic is LogicArray) {
+      final logicArr = logic as LogicArray;
+
+      final packedDimsBuf = StringBuffer();
+      final unpackedDimsBuf = StringBuffer();
+
+      final dims = logicArr.dimensions;
+      for (var i = 0; i < dims.length; i++) {
+        final dim = dims[i];
+        final dimStr = _widthToRangeDef(dim, forceRange: true);
+        if (i < logicArr.numUnpackedDimensions) {
+          unpackedDimsBuf.write(dimStr);
+        } else {
+          packedDimsBuf.write(dimStr);
+        }
+      }
+
+      packedDimsBuf.write(_widthToRangeDef(logicArr.elementWidth));
+
+      packedDims = packedDimsBuf.toString();
+      unpackedDims = unpackedDimsBuf.toString();
+    } else {
+      packedDims = _widthToRangeDef(logic.width);
+      unpackedDims = '';
+    }
+
+    return [packedDims, name, unpackedDims]
+        .where((e) => e.isNotEmpty)
+        .join(' ');
   }
 }
 

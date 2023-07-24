@@ -1,40 +1,116 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// conditional.dart
-/// Definitions of conditionallly executed hardware constructs (if/else statements, always_comb, always_ff, etc.)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditional.dart
+// Definitions of conditionallly executed hardware constructs (if/else statements, always_comb, always_ff, etc.)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
+import 'dart:collection';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
+import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
   /// A [List] of the [Conditional]s to execute.
-  final List<Conditional> conditionals;
+  List<Conditional> get conditionals =>
+      UnmodifiableListView<Conditional>(_conditionals);
+  late List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
-  final Map<Logic, Logic> _assignedReceiverToOutputMap = {};
+  final Map<Logic, Logic> _assignedReceiverToOutputMap =
+      HashMap<Logic, Logic>();
 
   /// A mapping from internal driver signals to designated [Module] inputs.
-  final Map<Logic, Logic> _assignedDriverToInputMap = {};
+  final Map<Logic, Logic> _assignedDriverToInputMap = HashMap<Logic, Logic>();
 
   final Uniquifier _portUniquifier = Uniquifier();
 
-  _Always(this.conditionals, {super.name = 'always'}) {
+  /// Executes provided [conditionals] at the appropriate time (specified by
+  /// child class).
+  ///
+  /// If [reset] is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if [resetValues] is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in [resetValues] but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
+  _Always(this._conditionals,
+      {Logic? reset, Map<Logic, dynamic>? resetValues, super.name = 'always'}) {
     // create a registration of all inputs and outputs of this module
     var idx = 0;
+
+    // Get all Receivers
+    final allReceivers =
+        conditionals.map((e) => e.receivers).expand((e) => e).toSet();
+
+    // This will reset the conditionals on setting the `reset` flag
+    if (reset != null) {
+      final allResetCondAssigns = <Conditional>[];
+      final signalsBeingReset = <Logic>{};
+
+      if (resetValues != null) {
+        final toConsiderForElementsReset = <Logic>[
+          ...resetValues.keys,
+        ];
+
+        for (var i = 0; i < toConsiderForElementsReset.length; i++) {
+          final toConsider = toConsiderForElementsReset[i];
+
+          // if it's a structure, we need to consider its elements
+          if (toConsider is LogicStructure) {
+            toConsiderForElementsReset.addAll(toConsider.elements);
+          }
+
+          // if we're already resetting this signal, flag an issue
+          if (signalsBeingReset.contains(toConsider)) {
+            throw SignalRedrivenException([toConsider],
+                'Signal is already being reset by another reset value: ');
+          }
+
+          if (resetValues.containsKey(toConsider)) {
+            // should only be true for top-level structures referenced
+            allResetCondAssigns.add(toConsider < resetValues[toConsider]);
+          }
+
+          // always add the signal, even if this is a sub-element
+          signalsBeingReset.add(toConsider);
+        }
+      }
+
+      // now add the reset to 0 for all the remaining ones
+      for (final receiver in allReceivers.toList()) {
+        if (!signalsBeingReset.contains(receiver)) {
+          allResetCondAssigns.add(receiver < 0);
+        }
+      }
+
+      _conditionals = [
+        // If resetValue for a receiver is defined,
+        If(
+          reset,
+          // then use it for assigning receiver
+          then: allResetCondAssigns,
+          // else assign zero as resetValue
+          orElse: conditionals,
+        ),
+      ];
+    }
+
     for (final conditional in conditionals) {
-      for (final driver in conditional.getDrivers()) {
+      for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
           final inputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
@@ -44,7 +120,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
           idx++;
         }
       }
-      for (final receiver in conditional.getReceivers()) {
+      for (final receiver in conditional.receivers) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
           final outputName = _portUniquifier.getUniqueName(
               initialName: Module.unpreferredName(
@@ -97,16 +173,31 @@ abstract class _Always extends Module with CustomSystemVerilog {
   }
 }
 
+/// A signal that represents an SSA node in [Combinational.ssa] which is
+/// associated with one specific [Combinational].
+class _SsaLogic extends Logic {
+  /// The signal that this represents.
+  final Logic _ref;
+
+  /// A unique identifier for the context of which [Combinational.ssa] it is
+  /// associated with.
+  final int _context;
+
+  /// Constructs a new SSA node referring to a signal in a specific context.
+  _SsaLogic(this._ref, this._context)
+      : super(width: _ref.width, name: _ref.name);
+}
+
 /// Represents a block of combinational logic.
 ///
 /// This is similar to an `always_comb` block in SystemVerilog.
-///
-/// Note that it is necessary to build this module and any sensitive
-/// dependencies in order for sensitivity detection to work properly
-/// in all cases.
-class Combinational extends _Always with FullyCombinational {
+class Combinational extends _Always {
   /// Constructs a new [Combinational] which executes [conditionals] in order
   /// procedurally.
+  ///
+  /// If any "write after read" occurs, then a [WriteAfterReadException] will
+  /// be thrown since it could lead to a mismatch between simulation and
+  /// synthesis.  See [Combinational.ssa] for more details.
   Combinational(super.conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
@@ -116,110 +207,124 @@ class Combinational extends _Always with FullyCombinational {
     }
   }
 
-  @override
-  Future<void> build() async {
-    await super.build();
+  /// An internal counter to keep track of unique contexts
+  /// per [Combinational.ssa].
+  static int _ssaContextCounter = 0;
 
-    // any glitch on an input to an output's sensitivity should
-    // trigger re-execution
-    _listenToSensitivities();
-  }
-
-  /// Sets up additional glitch listening for sensitive modules.
-  void _listenToSensitivities() {
-    final sensitivities = <Logic>{};
-    for (final out in outputs.values) {
-      final newSensitivities = _collectSensitivities(out);
-      if (newSensitivities != null) {
-        sensitivities.addAll(newSensitivities);
-      }
-    }
-
-    for (final sensitivity in sensitivities) {
-      sensitivity.glitch.listen((args) {
-        _execute();
-      });
-    }
-  }
-
-  /// Recursively collects a list of all [Logic]s that this should be sensitive
-  /// to beyond direct inputs.
+  /// Constructs a new [Combinational] where [construct] generates a list of
+  /// [Conditional]s which use the provided remapping function to enable
+  /// a "static single-asssignment" (SSA) form for procedural execution. The
+  /// Wikipedia article has a good explanation:
+  /// https://en.wikipedia.org/wiki/Static_single-assignment_form
   ///
-  /// Use [alreadyParsed] to prevent searching down paths already searched.
-  Set<Logic>? _collectSensitivities(Logic src, [Set<Logic>? alreadyParsed]) {
-    Set<Logic>? collection;
+  /// In SystemVerilog, an `always_comb` block can easily produce
+  /// non-synthesizable or ambiguous design blocks which can lead to subtle
+  /// bugs and mismatches between simulation and synthesis.  Since
+  /// [Combinational] maps directly to an `always_comb` block, it is also
+  /// susceptible to these types of issues in the path to synthesis.
+  ///
+  /// A large class of  these issues can be prevented by avoiding a "write after
+  /// read" scenario, where a signal is assigned a value after that value would
+  /// have had an impact on prior procedural assignment in that same
+  /// [Combinational] execution.
+  ///
+  /// [Combinational.ssa] remaps signals such that signals are only "written"
+  /// once.
+  ///
+  /// The below example shows a simple use case:
+  /// ```dart
+  /// Combinational.ssa((s) => [
+  ///   s(y) < 1,
+  ///   s(y) < s(y) + 1,
+  /// ]);
+  /// ```
+  ///
+  /// Note that every variable in this case must be "initialized" before it
+  /// can be used.
+  ///
+  /// Note that signals returned by the remapping function (`s`) are tied to
+  /// this specific instance of [Combinational] and shouldn't be used elsewhere
+  /// or you may see unexpected behavior.  Also note that each instance of
+  /// signal returned by the remapping function should be used in at most
+  /// one [Conditional] and on either the receiving or driving side, but not
+  /// both.  These restrictions are generally easy to adhere to unless you do
+  /// something strange.
+  ///
+  /// There is a construction-time performance penalty for usage of this
+  /// roughly proportional to the size of the design feeding into this instance.
+  /// This is because it must search for any remapped signals along the entire
+  /// combinational and sequential path feeding into each [Conditional].  This
+  /// penalty is purely at generation time, not in simulation or the actual
+  /// generated design.  For very large designs, this penalty can be
+  /// mitigated by constructing the [Combinational.ssa] before connecting
+  /// inputs to the rest of the design, but usually the impact is so small
+  /// that it will not be noticeable.
+  factory Combinational.ssa(
+      List<Conditional> Function(Logic Function(Logic signal) s) construct,
+      {String name = 'combinational_ssa'}) {
+    final context = _ssaContextCounter++;
 
-    alreadyParsed ??= {};
-    if (alreadyParsed.contains(src)) {
-      // we're in a loop or already traversed this path, abandon it
-      return null;
+    Logic getSsa(Logic ref) => _SsaLogic(ref, context);
+
+    final conditionals = construct(getSsa);
+
+    _processSsa(conditionals, context: context);
+
+    return Combinational(conditionals, name: name);
+  }
+
+  /// Executes the remapping for all the [conditionals] recursively.
+  static void _processSsa(List<Conditional> conditionals,
+      {required int context}) {
+    var mappings = <Logic, Logic>{};
+    for (final conditional in conditionals) {
+      mappings = conditional._processSsa(mappings, context: context);
     }
-    alreadyParsed.add(src);
 
-    final dstConnections = src.dstConnections.toSet();
-
-    if (src.isInput) {
-      if (src.parentModule! is Sequential) {
-        // sequential logic can't be a sensitivity, so ditch those
-        return null;
+    for (final mapping in mappings.entries) {
+      if (mapping.key.srcConnection != null) {
+        throw MappedSignalAlreadyAssignedException(mapping.key.name);
       }
 
-      // we're at the input to another module, grab all the outputs of it which
-      // are combinationally connected and continue searching
-      dstConnections.addAll(src.parentModule!.combinationalPaths[src]!);
+      mapping.key <= mapping.value;
     }
-
-    if (dstConnections.isEmpty) {
-      // we've reached the end of the line and not hit an input to this
-      // Combinational
-      return null;
-    }
-
-    for (final dst in dstConnections) {
-      // if any of these are an input to this Combinational, then we've found
-      // a sensitivity
-      if (dst.isInput && dst.parentModule! == this) {
-        // make sure we have something to return
-        collection ??= {};
-      } else {
-        // otherwise, let's look deeper to see if any others down the path
-        // are sensitivities
-        final subSensitivities = _collectSensitivities(dst, alreadyParsed);
-
-        if (subSensitivities == null) {
-          // if we get null, then it was a dead end
-          continue;
-        } else {
-          // otherwise, we have some sensitivities to send back
-          collection ??= {};
-          collection.addAll(subSensitivities);
-          if (dst.isInput) {
-            // collect all the inputs of this module too as sensitivities
-            // but only ones which can affect outputs affected by this input!
-
-            if (dst.parentModule! is FullyCombinational) {
-              // for efficiency, if purely combinational just go straight to all
-              collection.addAll(dst.parentModule!.inputs.values);
-            } else {
-              // default, add all inputs that may affect outputs affected
-              // by this input
-              for (final dstDependentOutput
-                  in dst.parentModule!.combinationalPaths[dst]!) {
-                collection.addAll(dst.parentModule!
-                    .reverseCombinationalPaths[dstDependentOutput]!);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return collection;
   }
 
   /// Keeps track of whether this block is already mid-execution, in order to
   /// detect reentrance.
   bool _isExecuting = false;
+
+  /// Keeps track of already-driven logics during [_execute].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _drivenLogics = HashSet<Logic>();
+
+  /// Keeps track of signals already [_guard]ed.
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final Set<Logic> _guarded = HashSet<Logic>();
+
+  /// Keeps track of subscriptions to glitches for each of the [_guarded].
+  ///
+  /// Must be cleared at the end of each [_execute].
+  final List<SynchronousSubscription<LogicValueChanged>> _guardListeners =
+      <SynchronousSubscription<LogicValueChanged>>[];
+
+  /// A function that sub-[Conditional]s should call to guard signals they
+  /// are consuming.
+  void _guard(Logic toGuard) {
+    if (_guarded.add(toGuard)) {
+      _guardListeners.add(toGuard.glitch.listen(_writeAfterRead));
+    }
+  }
+
+  /// A function that throws a [WriteAfterReadException].
+  ///
+  /// Declared as a separate static function so that it doesn't need to be
+  /// created on each [_guard] call.
+  static void _writeAfterRead(args) {
+    throw WriteAfterReadException();
+  }
 
   /// Performs the functional behavior of this block.
   void _execute() {
@@ -232,19 +337,26 @@ class Combinational extends _Always with FullyCombinational {
 
     _isExecuting = true;
 
-    final drivenLogics = <Logic>{};
     for (final element in conditionals) {
-      element.execute(drivenLogics);
+      element.execute(_drivenLogics, _guard);
     }
 
     // combinational must always drive all outputs or else you get X!
-    if (_assignedReceiverToOutputMap.length != drivenLogics.length) {
+    if (_assignedReceiverToOutputMap.length != _drivenLogics.length) {
       for (final receiverOutputPair in _assignedReceiverToOutputMap.entries) {
-        if (!drivenLogics.contains(receiverOutputPair.key)) {
+        if (!_drivenLogics.contains(receiverOutputPair.key)) {
           receiverOutputPair.value.put(LogicValue.x, fill: true);
         }
       }
     }
+
+    // clean up after execution
+    for (final guardListener in _guardListeners) {
+      guardListener.cancel();
+    }
+    _guardListeners.clear();
+    _drivenLogics.clear();
+    _guarded.clear();
 
     _isExecuting = false;
   }
@@ -268,14 +380,32 @@ class Sequential extends _Always {
   final List<Logic> _clks = [];
 
   /// Constructs a [Sequential] single-triggered by [clk].
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
   Sequential(Logic clk, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : this.multi([clk], conditionals, name: name);
+      {Logic? reset,
+      Map<Logic, dynamic>? resetValues,
+      String name = 'sequential'})
+      : this.multi([clk], conditionals,
+            name: name, reset: reset, resetValues: resetValues);
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
-  Sequential.multi(List<Logic> clks, List<Conditional> conditionals,
-      {String name = 'sequential'})
-      : super(conditionals, name: name) {
+  ///
+  /// If `reset` is provided, then all signals driven by this block will be
+  /// conditionally reset when the signal is high.
+  /// The default reset value is to `0`, but if `resetValues` is provided then
+  /// the corresponding value associated with the driven signal will be set to
+  /// that value instead upon reset. If a signal is in `resetValues` but not
+  /// driven by any other [Conditional] in this block, it will be driven to the
+  /// specified reset value.
+  Sequential.multi(List<Logic> clks, super.conditionals,
+      {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
@@ -293,7 +423,8 @@ class Sequential extends _Always {
 
   /// A map from input [Logic]s to the values that should be used for
   /// computations on the edge.
-  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap = {};
+  final Map<Logic, LogicValue> _inputToPreTickInputValuesMap =
+      HashMap<Logic, LogicValue>();
 
   /// The value of the clock before the tick.
   final List<LogicValue?> _preTickClkValues = [];
@@ -415,10 +546,10 @@ class Sequential extends _Always {
     } else if (anyClkPosedge) {
       final allDrivenSignals = DuplicateDetectionSet<Logic>();
       for (final element in conditionals) {
-        element.execute(allDrivenSignals);
+        element.execute(allDrivenSignals, null);
       }
       if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(allDrivenSignals.duplicates.toString());
+        throw SignalRedrivenException(allDrivenSignals.duplicates);
       }
     }
 
@@ -465,7 +596,7 @@ abstract class Conditional {
   ) {
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
-    for (final conditional in getConditionals()) {
+    for (final conditional in conditionals) {
       conditional._updateAssignmentMaps(
           assignedReceiverToOutputMap, assignedDriverToInputMap);
     }
@@ -476,7 +607,7 @@ abstract class Conditional {
   void _updateOverrideMap(Map<Logic, LogicValue> driverValueOverrideMap) {
     // this is for always_ff pre-tick values
     _driverValueOverrideMap = driverValueOverrideMap;
-    for (final conditional in getConditionals()) {
+    for (final conditional in conditionals) {
       conditional._updateOverrideMap(driverValueOverrideMap);
     }
   }
@@ -485,9 +616,8 @@ abstract class Conditional {
   /// associated with [driver].
   @protected
   LogicValue driverValue(Logic driver) =>
-      _driverValueOverrideMap.containsKey(driverInput(driver))
-          ? _driverValueOverrideMap[driverInput(driver)]!
-          : _assignedDriverToInputMap[driver]!.value;
+      _driverValueOverrideMap[driverInput(driver)] ??
+      _assignedDriverToInputMap[driver]!.value;
 
   /// Gets the input port associated with [driver].
   @protected
@@ -504,21 +634,46 @@ abstract class Conditional {
   ///
   /// The [drivenSignals] are used by the caller to determine if signals
   /// were driven an appropriate number of times.
+  ///
+  /// The [guard] function should be called on drivers *prior* to any execution
+  /// which consumes the current value of those drivers.  It is used to check
+  /// that signals are not "written after read", for example.
   @protected
-  void execute(Set<Logic> drivenSignals);
+  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
-  List<Logic> getReceivers();
+  @Deprecated('Use `receivers` instead.')
+  List<Logic> getReceivers() => receivers;
+
+  /// The same as [receivers], but uncached for situations where the list of
+  /// [conditionals] may still be modified or to compute the cached result
+  /// for [receivers] itself.
+  List<Logic> _getReceivers();
+
+  /// Lists *all* receivers, recursively including all sub-[Conditional]s
+  /// receivers.
+  List<Logic> get receivers;
 
   /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
-  List<Logic> getDrivers();
+  @Deprecated('Use `drivers` instead.')
+  List<Logic> getDrivers() => drivers;
 
-  /// Lists of *all* [Conditional]s contained within this [Conditional]
+  /// Lists *all* drivers, recursively including all sub-[Conditional]s drivers.
+  List<Logic> get drivers;
+
+  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
   /// (not including itself).
   ///
-  /// Recursively calls down through sub-[Conditional]s.
-  List<Conditional> getConditionals();
+  /// Does *not* recursively call down through sub-[Conditional]s.
+  @Deprecated('Use `conditionals` instead.')
+  List<Conditional> getConditionals() => conditionals;
+
+  /// Lists of *all* [Conditional]s directly contained within this [Conditional]
+  /// (not including itself).
+  ///
+  /// Does *not* recursively call down through sub-[Conditional]s.
+  List<Conditional> get conditionals;
 
   /// Returns a [String] of SystemVerilog to be used in generated output.
   ///
@@ -534,6 +689,114 @@ abstract class Conditional {
   /// Calculates an amount of padding to provie at the beginning of each new
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
+
+  /// Connects [driver] to drive all appropriate SSA nodes based on [mappings]
+  /// which match the provided [context].
+  static void _connectSsaDriverFromMappings(
+      Logic driver, Map<Logic, Logic> mappings,
+      {required int context}) {
+    final ssaDrivers = Conditional._findSsaDriversFrom(driver, context);
+
+    // take all the "current" names for these signals
+    for (final ssaDriver in ssaDrivers) {
+      if (!mappings.containsKey(ssaDriver._ref)) {
+        throw UninitializedSignalException(ssaDriver._ref.name);
+      }
+
+      // if these are already connected, just skip it, we're fine already
+      if (ssaDriver.srcConnection != null &&
+          ssaDriver.srcConnection == mappings[ssaDriver._ref]!) {
+        continue;
+      }
+
+      // if these are the same signal, also just skip it
+      if (ssaDriver == mappings[ssaDriver._ref]!) {
+        continue;
+      }
+
+      ssaDriver <= mappings[ssaDriver._ref]!;
+    }
+  }
+
+  /// Searches for SSA nodes from a source [driver] which match the [context].
+  static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
+    final toParse = TraverseableCollection<Logic>()..add(driver);
+    final foundSsaLogics = <_SsaLogic>{};
+    for (var i = 0; i < toParse.length; i++) {
+      if (toParse[i].srcConnection != null) {
+        toParse.add(toParse[i].srcConnection!);
+      }
+      if (toParse[i].isOutput) {
+        toParse.addAll(toParse[i].parentModule!.inputs.values);
+      }
+      if (toParse[i] is _SsaLogic &&
+          (toParse[i] as _SsaLogic)._context == context) {
+        foundSsaLogics.add(toParse[i] as _SsaLogic);
+      }
+    }
+
+    return foundSsaLogics.toList(growable: false);
+  }
+
+  /// Given existing [currentMappings], connects [drivers] and [receivers]
+  /// accordingly to [_SsaLogic]s and returns an updated set of mappings.
+  ///
+  /// This function may add new [Conditional]s to existing [Conditional]s.
+  ///
+  /// This is used for [Combinational.ssa].
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context});
+}
+
+/// Represents a group of [Conditional]s to be executed.
+class ConditionalGroup extends Conditional {
+  @override
+  final List<Conditional> conditionals;
+
+  /// Creates a group of [conditionals] to be executed in order and bundles
+  /// them into a single [Conditional].
+  ConditionalGroup(this.conditionals);
+
+  @override
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    var mappings = currentMappings;
+    for (final conditional in conditionals) {
+      mappings = conditional._processSsa(mappings, context: context);
+    }
+    return mappings;
+  }
+
+  @override
+  late final List<Logic> drivers = [
+    for (final conditional in conditionals) ...conditional.drivers
+  ];
+
+  @override
+  late final List<Logic> receivers = _getReceivers();
+
+  @override
+  List<Logic> _getReceivers() =>
+      [for (final conditional in conditionals) ...conditional.receivers];
+
+  @override
+  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
+    for (final conditional in conditionals) {
+      conditional.execute(drivenSignals, guard);
+    }
+  }
+
+  @override
+  String verilogContents(int indent, Map<String, String> inputsNameMap,
+          Map<String, String> outputsNameMap, String assignOperator) =>
+      conditionals
+          .map((c) => c.verilogContents(
+                indent,
+                inputsNameMap,
+                outputsNameMap,
+                assignOperator,
+              ))
+          .join('\n');
 }
 
 /// An assignment that only happens under certain conditions.
@@ -550,20 +813,36 @@ class ConditionalAssign extends Conditional {
   /// Conditionally assigns [receiver] to the value of [driver].
   ConditionalAssign(this.receiver, this.driver) {
     if (driver.width != receiver.width) {
-      throw Exception('Width for $receiver and $driver must match but do not.');
+      throw PortWidthMismatchException.equalWidth(receiver, driver);
     }
   }
 
   @override
-  List<Logic> getReceivers() => [receiver];
-  @override
-  List<Logic> getDrivers() => [driver];
-  @override
-  List<Conditional> getConditionals() => [];
+  String toString() => '${receiver.name} < ${driver.name}';
 
   @override
-  void execute(Set<Logic> drivenSignals) {
-    receiverOutput(receiver).put(driverValue(driver));
+  late final List<Logic> receivers = [receiver];
+
+  @override
+  List<Logic> _getReceivers() => receivers;
+
+  @override
+  late final List<Logic> drivers = [driver];
+
+  @override
+  late final List<Conditional> conditionals = const [];
+
+  /// A cached copy of the result of [receiverOutput] to save on lookups.
+  late final _receiverOutput = receiverOutput(receiver);
+
+  @override
+  void execute(Set<Logic> drivenSignals,
+      [void Function(Logic toGuard)? guard]) {
+    if (guard != null) {
+      guard(driver);
+    }
+
+    _receiverOutput.put(driverValue(driver));
 
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
       drivenSignals.add(receiver);
@@ -577,6 +856,21 @@ class ConditionalAssign extends Conditional {
     final driverName = inputsNameMap[driverInput(driver).name]!;
     final receiverName = outputsNameMap[receiverOutput(receiver).name]!;
     return '$padding$receiverName $assignOperator $driverName;';
+  }
+
+  @override
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    Conditional._connectSsaDriverFromMappings(driver, currentMappings,
+        context: context);
+
+    final newMappings = <Logic, Logic>{...currentMappings};
+    // if the receiver is an ssa node, then update the mapping
+    if (receiver is _SsaLogic) {
+      newMappings[(receiver as _SsaLogic)._ref] = receiver;
+    }
+
+    return newMappings;
   }
 }
 
@@ -634,7 +928,8 @@ class Case extends Conditional {
   final List<CaseItem> items;
 
   /// The default to execute when there was no match with any other [CaseItem]s.
-  final List<Conditional>? defaultItem;
+  List<Conditional>? get defaultItem => _defaultItem;
+  List<Conditional>? _defaultItem;
 
   /// The type of case block this is, for special attributes
   /// (e.g. [ConditionalType.unique], [ConditionalType.priority]).
@@ -646,21 +941,37 @@ class Case extends Conditional {
   ///
   /// If none of [items] match, then [defaultItem] is executed.
   Case(this.expression, this.items,
-      {this.defaultItem, this.conditionalType = ConditionalType.none});
+      {List<Conditional>? defaultItem,
+      this.conditionalType = ConditionalType.none})
+      : _defaultItem = defaultItem {
+    for (final item in items) {
+      if (item.value.width != expression.width) {
+        throw PortWidthMismatchException.equalWidth(expression, item.value);
+      }
+    }
+  }
 
   /// Returns true iff [value] matches the expressions current value.
   @protected
-  bool isMatch(LogicValue value) => expression.value == value;
+  bool isMatch(LogicValue value, LogicValue expressionValue) =>
+      expressionValue == value;
 
   /// Returns the SystemVerilog keyword to represent this case block.
   @protected
   String get caseType => 'case';
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+    if (guard != null) {
+      guard(expression);
+      for (final item in items) {
+        guard(item.value);
+      }
+    }
+
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (final receiver in getReceivers()) {
+      for (final receiver in receivers) {
         receiverOutput(receiver).put(LogicValue.x);
         if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
           drivenSignals.add(receiver);
@@ -673,9 +984,9 @@ class Case extends Conditional {
 
     for (final item in items) {
       // match on the first matchinig item
-      if (isMatch(item.value.value)) {
+      if (isMatch(driverValue(item.value), driverValue(expression))) {
         for (final conditional in item.then) {
-          conditional.execute(drivenSignals);
+          conditional.execute(drivenSignals, guard);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           throw Exception('Unique case statement had multiple matching cases.'
@@ -694,7 +1005,7 @@ class Case extends Conditional {
     // no items matched
     if (foundMatch == null && defaultItem != null) {
       for (final conditional in defaultItem!) {
-        conditional.execute(drivenSignals);
+        conditional.execute(drivenSignals, guard);
       }
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
@@ -705,45 +1016,55 @@ class Case extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() => [
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
+
+  /// Calculates the set of conditionals directly within this.
+  List<Conditional> _getConditionals() => [
         ...items.map((item) => item.then).expand((conditional) => conditional),
-        ...defaultItem ?? []
+        if (defaultItem != null) ...defaultItem!
       ];
 
   @override
-  List<Logic> getDrivers() {
+  late final List<Logic> drivers = _getDrivers();
+
+  /// Calculates the set of drivers recursively down.
+  List<Logic> _getDrivers() {
     final drivers = <Logic>[expression];
     for (final item in items) {
       drivers
         ..add(item.value)
         ..addAll(item.then
-            .map((conditional) => conditional.getDrivers())
+            .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     if (defaultItem != null) {
       drivers.addAll(defaultItem!
-          .map((conditional) => conditional.getDrivers())
+          .map((conditional) => conditional.drivers)
           .expand((driver) => driver)
-          .toList());
+          .toList(growable: false));
     }
     return drivers;
   }
 
   @override
-  List<Logic> getReceivers() {
+  late final List<Logic> receivers = _getReceivers();
+
+  @override
+  List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final item in items) {
       receivers.addAll(item.then
-          .map((conditional) => conditional.getReceivers())
-          .expand((receiver) => receiver)
-          .toList());
+          .map((conditional) => conditional.receivers)
+          .flattened
+          .toList(growable: false));
     }
     if (defaultItem != null) {
       receivers.addAll(defaultItem!
-          .map((conditional) => conditional.getReceivers())
-          .expand((receiver) => receiver)
-          .toList());
+          .map((conditional) => conditional.receivers)
+          .flattened
+          .toList(growable: false));
     }
     return receivers;
   }
@@ -788,6 +1109,74 @@ ${subPadding}end
 
     return verilog.toString();
   }
+
+  @override
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    // add an empty default if there isn't already one, since we need it for phi
+    _defaultItem ??= [];
+
+    // first connect direct drivers into the case statement
+    Conditional._connectSsaDriverFromMappings(expression, currentMappings,
+        context: context);
+    for (final itemDriver in items.map((e) => e.value)) {
+      Conditional._connectSsaDriverFromMappings(itemDriver, currentMappings,
+          context: context);
+    }
+
+    // calculate mappings locally within each item
+    final phiMappings = <Logic, Logic>{};
+    for (final conditionals in [
+      ...items.map((e) => e.then),
+      defaultItem!,
+    ]) {
+      var localMappings = {...currentMappings};
+
+      for (final conditional in conditionals) {
+        localMappings =
+            conditional._processSsa(localMappings, context: context);
+      }
+
+      for (final localMapping in localMappings.entries) {
+        if (!phiMappings.containsKey(localMapping.key)) {
+          phiMappings[localMapping.key] = Logic(
+            name: '${localMapping.key.name}_phi',
+            width: localMapping.key.width,
+          );
+        }
+
+        conditionals.add(phiMappings[localMapping.key]! < localMapping.value);
+      }
+    }
+
+    final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    // find all the SSA signals that are driven by anything in this case block,
+    // since we need to ensure every case drives them or else we may create
+    // an inferred latch
+    final signalsNeedingInit = [
+      ...items.map((e) => e.then).flattened,
+      ...defaultItem!,
+    ].map((e) => e._getReceivers()).flattened.whereType<_SsaLogic>().toSet();
+    for (final conditionals in [
+      ...items.map((e) => e.then),
+      defaultItem!,
+    ]) {
+      final alreadyDrivenSsaSignals = conditionals
+          .map((e) => e._getReceivers())
+          .flattened
+          .whereType<_SsaLogic>()
+          .toSet();
+
+      for (final signalNeedingInit in signalsNeedingInit) {
+        if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
+          conditionals.add(signalNeedingInit < 0);
+        }
+      }
+    }
+
+    return newMappings;
+  }
 }
 
 /// A special version of [Case] which can do wildcard matching via `z` in
@@ -809,13 +1198,9 @@ class CaseZ extends Case {
   String get caseType => 'casez';
 
   @override
-  bool isMatch(LogicValue value) {
-    if (expression.width != value.width) {
-      throw Exception(
-          'Value "$value" and expression "$expression" must be equal width.');
-    }
+  bool isMatch(LogicValue value, LogicValue expressionValue) {
     for (var i = 0; i < expression.width; i++) {
-      if (expression.value[i] != value[i] && value[i] != LogicValue.z) {
+      if (expressionValue[i] != value[i] && value[i] != LogicValue.z) {
         return false;
       }
     }
@@ -825,7 +1210,7 @@ class CaseZ extends Case {
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
-/// Intended for use with [IfBlock].
+/// Intended for use with [If.block].
 class ElseIf {
   /// A condition to match against to determine if [then] should be executed.
   final Logic condition;
@@ -834,7 +1219,11 @@ class ElseIf {
   final List<Conditional> then;
 
   /// If [condition] is 1, then [then] will be executed.
-  ElseIf(this.condition, this.then);
+  ElseIf(this.condition, this.then) {
+    if (condition.width != 1) {
+      throw PortWidthMismatchException(condition, 1);
+    }
+  }
 
   /// If [condition] is 1, then [then] will be executed.
   ///
@@ -844,12 +1233,12 @@ class ElseIf {
 
 /// A conditional block to execute only if `condition` is satisified.
 ///
-/// Intended for use with [IfBlock].
+/// Intended for use with [If.block].
 typedef Iff = ElseIf;
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
-/// This should come last in [IfBlock].
+/// This should come last in [If.block].
 class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
@@ -866,31 +1255,78 @@ class Else extends Iff {
 /// `if`/`else if`/`else`.
 ///
 /// This is functionally equivalent to chaining together [If]s, but this syntax
-/// is a little nicer
-/// for long chains.
-class IfBlock extends Conditional {
+/// is a little nicer for long chains.
+@Deprecated('Use `If.block` instead.')
+class IfBlock extends If {
+  /// Checks the conditions for [iffs] in order and executes the first one
+  /// whose condition is enabled.
+  @Deprecated('Use `If.block` instead.')
+  IfBlock(super.iffs) : super.block();
+}
+
+/// Represents a chain of blocks of code to be conditionally executed, like
+/// `if`/`else if`/`else`.
+class If extends Conditional {
   /// A set of conditional items to check against for execution, in order.
   ///
   /// The first item should be an [Iff], and if an [Else] is included it must
   /// be the last item.  Any other items should be [ElseIf].  It is okay to
-  /// make thefirst item an [ElseIf], it will act just like an [Iff].
+  /// make the first item an [ElseIf], it will act just like an [Iff]. If an
+  /// [Else] is included, it cannot be the only element (it must be preceded
+  /// by an [Iff] or [ElseIf]).
   final List<Iff> iffs;
+
+  /// If [condition] is high, then [then] executes, otherwise [orElse] is
+  /// executed.
+  If(Logic condition, {List<Conditional>? then, List<Conditional>? orElse})
+      : this.block([
+          Iff(condition, then ?? []),
+          if (orElse != null) Else(orElse),
+        ]);
+
+  /// If [condition] is high, then [then] is excutes,
+  /// otherwise [orElse] is executed.
+  ///
+  /// Use this constructor when you only have a single [then] condition.
+  /// An optional [orElse] condition can be passed.
+  If.s(Logic condition, Conditional then, [Conditional? orElse])
+      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
 
   /// Checks the conditions for [iffs] in order and executes the first one
   /// whose condition is enabled.
-  IfBlock(this.iffs);
+  If.block(this.iffs) {
+    for (final iff in iffs) {
+      if (iff is Else) {
+        if (iff != iffs.last) {
+          throw InvalidConditionalException(
+              'Else must come last in an IfBlock.');
+        }
+
+        if (iff == iffs.first) {
+          throw InvalidConditionalException(
+              'Else cannot be the first in an IfBlock.');
+        }
+      }
+    }
+  }
 
   @override
-  void execute(Set<Logic> drivenSignals) {
+  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+    if (guard != null) {
+      for (final iff in iffs) {
+        guard(iff.condition);
+      }
+    }
+
     for (final iff in iffs) {
-      if (driverValue(iff.condition)[0] == LogicValue.one) {
+      if (driverValue(iff.condition) == LogicValue.one) {
         for (final conditional in iff.then) {
-          conditional.execute(drivenSignals);
+          conditional.execute(drivenSignals, guard);
         }
         break;
-      } else if (driverValue(iff.condition)[0] != LogicValue.zero) {
+      } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
-        for (final receiver in getReceivers()) {
+        for (final receiver in receivers) {
           receiverOutput(receiver).put(driverValue(iff.condition)[0]);
           if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
             drivenSignals.add(receiver);
@@ -903,31 +1339,43 @@ class IfBlock extends Conditional {
   }
 
   @override
-  List<Conditional> getConditionals() =>
-      iffs.map((iff) => iff.then).expand((conditional) => conditional).toList();
+  late final List<Conditional> conditionals =
+      UnmodifiableListView(_getConditionals());
+
+  /// Calculates the set of conditionals directly within this.
+  List<Conditional> _getConditionals() => iffs
+      .map((iff) => iff.then)
+      .expand((conditional) => conditional)
+      .toList(growable: false);
 
   @override
-  List<Logic> getDrivers() {
+  late final List<Logic> drivers = _getDrivers();
+
+  /// Calculates the set of drivers recursively down.
+  List<Logic> _getDrivers() {
     final drivers = <Logic>[];
     for (final iff in iffs) {
       drivers
         ..add(iff.condition)
         ..addAll(iff.then
-            .map((conditional) => conditional.getDrivers())
+            .map((conditional) => conditional.drivers)
             .expand((driver) => driver)
-            .toList());
+            .toList(growable: false));
     }
     return drivers;
   }
 
   @override
-  List<Logic> getReceivers() {
+  late final List<Logic> receivers = _getReceivers();
+
+  @override
+  List<Logic> _getReceivers() {
     final receivers = <Logic>[];
     for (final iff in iffs) {
       receivers.addAll(iff.then
-          .map((conditional) => conditional.getReceivers())
+          .map((conditional) => conditional.receivers)
           .expand((receiver) => receiver)
-          .toList());
+          .toList(growable: false));
     }
     return receivers;
   }
@@ -938,9 +1386,6 @@ class IfBlock extends Conditional {
     final padding = Conditional.calcPadding(indent);
     final verilog = StringBuffer();
     for (final iff in iffs) {
-      if (iff is Else && iff != iffs.last) {
-        throw Exception('Else must come last in an IfBlock.');
-      }
       final header = iff == iffs.first
           ? 'if'
           : iff is Else
@@ -962,154 +1407,182 @@ ${padding}end ''');
 
     return verilog.toString();
   }
-}
-
-/// Represents a block of code to be conditionally executed, like `if`/`else`.
-class If extends Conditional {
-  /// [Conditional]s to be executed if [condition] is true.
-  final List<Conditional> then;
-
-  /// [Conditional]s to be executed if [condition] is not true.
-  final List<Conditional> orElse;
-
-  /// The condition that decides if [then] or [orElse] is executed.
-  final Logic condition;
-
-  /// If [condition] is 1, then [then] executes, otherwise [orElse] is executed.
-  If(this.condition, {this.then = const [], this.orElse = const []});
-
-  /// If [condition] is 1, then [then] is excutes,
-  /// otherwise [orElse] is executed.
-  ///
-  /// Use this constructor when you only have a single [then] condition.
-  /// An optional [orElse] condition can be passed.
-  If.s(Logic condition, Conditional then, [Conditional? orElse])
-      : this(condition, then: [then], orElse: orElse == null ? [] : [orElse]);
 
   @override
-  List<Logic> getReceivers() {
-    final allReceivers = <Logic>[];
-    for (final element in then) {
-      allReceivers.addAll(element.getReceivers());
+  Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
+      {required int context}) {
+    // add an empty else if there isn't already one, since we need it for phi
+    if (iffs.last is! Else) {
+      iffs.add(Else([]));
     }
-    for (final element in orElse) {
-      allReceivers.addAll(element.getReceivers());
-    }
-    return allReceivers;
-  }
 
-  @override
-  List<Logic> getDrivers() {
-    final allDrivers = <Logic>[condition];
-    for (final element in then) {
-      allDrivers.addAll(element.getDrivers());
+    // first connect direct drivers into the if statements
+    for (final iff in iffs) {
+      Conditional._connectSsaDriverFromMappings(iff.condition, currentMappings,
+          context: context);
     }
-    for (final element in orElse) {
-      allDrivers.addAll(element.getDrivers());
-    }
-    return allDrivers;
-  }
 
-  @override
-  List<Conditional> getConditionals() => [...then, ...orElse];
+    // calculate mappings locally within each if statement
+    final phiMappings = <Logic, Logic>{};
+    for (final conditionals in iffs.map((e) => e.then)) {
+      var localMappings = {...currentMappings};
 
-  @override
-  void execute(Set<Logic> drivenSignals) {
-    if (driverValue(condition)[0] == LogicValue.one) {
-      for (final conditional in then) {
-        conditional.execute(drivenSignals);
+      for (final conditional in conditionals) {
+        localMappings =
+            conditional._processSsa(localMappings, context: context);
       }
-    } else if (driverValue(condition)[0] == LogicValue.zero) {
-      for (final conditional in orElse) {
-        conditional.execute(drivenSignals);
+
+      for (final localMapping in localMappings.entries) {
+        if (!phiMappings.containsKey(localMapping.key)) {
+          phiMappings[localMapping.key] = Logic(
+            name: '${localMapping.key.name}_phi',
+            width: localMapping.key.width,
+          );
+        }
+
+        conditionals.add(phiMappings[localMapping.key]! < localMapping.value);
       }
-    } else {
-      // x and z propagation
-      for (final receiver in getReceivers()) {
-        receiverOutput(receiver).put(driverValue(condition)[0]);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
+    }
+
+    final newMappings = <Logic, Logic>{...currentMappings}..addAll(phiMappings);
+
+    // find all the SSA signals that are driven by anything in this if block,
+    // since we need to ensure every case drives them or else we may create
+    // an inferred latch
+    final signalsNeedingInit = iffs
+        .map((e) => e.then)
+        .flattened
+        .map((e) => e._getReceivers())
+        .flattened
+        .whereType<_SsaLogic>()
+        .toSet();
+    for (final iff in iffs) {
+      final alreadyDrivenSsaSignals = iff.then
+          .map((e) => e._getReceivers())
+          .flattened
+          .whereType<_SsaLogic>()
+          .toSet();
+
+      for (final signalNeedingInit in signalsNeedingInit) {
+        if (!alreadyDrivenSsaSignals.contains(signalNeedingInit)) {
+          iff.then.add(signalNeedingInit < 0);
         }
       }
     }
-  }
 
-  @override
-  String verilogContents(int indent, Map<String, String> inputsNameMap,
-      Map<String, String> outputsNameMap, String assignOperator) {
-    final padding = Conditional.calcPadding(indent);
-    final conditionName = inputsNameMap[driverInput(condition).name];
-    final ifContents = then
-        .map((conditional) => conditional.verilogContents(
-            indent + 2, inputsNameMap, outputsNameMap, assignOperator))
-        .join('\n');
-    final elseContents = orElse
-        .map((conditional) => conditional.verilogContents(
-            indent + 2, inputsNameMap, outputsNameMap, assignOperator))
-        .join('\n');
-    var verilog = '''
-${padding}if($conditionName) begin
-$ifContents
-${padding}end ''';
-    if (orElse.isNotEmpty) {
-      verilog += '''
-else begin
-$elseContents
-${padding}end ''';
-    }
-
-    return '$verilog\n';
+    return newMappings;
   }
 }
 
+/// Constructs a positive edge triggered flip flop on [clk].
+///
+/// It returns [FlipFlop.q]. When optional [en] is provided, an additional
+/// input will be created for flop. If optional [en] is high or not provided,
+/// output will vary as per input[d]. For low [en], output remains frozen
+/// irrespective of input [d]
+Logic flop(Logic clk, Logic d, {Logic? en}) => FlipFlop(clk, d, en: en).q;
+
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
+  /// Name for the enable input of this flop
+  late final String _enName;
+
   /// Name for the clk of this flop.
-  late final String _clk;
+  late final String _clkName;
 
   /// Name for the input of this flop.
-  late final String _d;
+  late final String _dName;
 
   /// Name for the output of this flop.
-  late final String _q;
+  late final String _qName;
 
   /// The clock, posedge triggered.
-  Logic get clk => input(_clk);
+  late final Logic _clk = input(_clkName);
+
+  /// Optional enable input to the flop.
+  ///
+  /// If enable is  high or enable is not provided then flop output will vary
+  /// on the basis of clock [_clk] and input [_d]. If enable is low, then
+  /// output of the flop remains frozen irrespective of the input [_d].
+  late final Logic _en = input(_enName);
 
   /// The input to the flop.
-  Logic get d => input(_d);
+  late final Logic _d = input(_dName);
 
   /// The output of the flop.
-  Logic get q => output(_q);
+  late final Logic q = output(_qName);
+
+  /// To track if optional enable is provided or not.
+  late final bool _isEnableProvided;
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
-  FlipFlop(Logic clk, Logic d, {super.name = 'flipflop'}) {
+  ///
+  /// When optional [en] is provided, an additional input will be created for
+  /// flop. If optional [en] is high or not provided, output will vary as per
+  /// input[d]. For low [en], output remains frozen irrespective of input [d]
+  FlipFlop(Logic clk, Logic d, {Logic? en, super.name = 'flipflop'}) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
-    _clk = Module.unpreferredName('clk');
-    _d = Module.unpreferredName('d');
-    _q = Module.unpreferredName('q');
-    addInput(_clk, clk);
-    addInput(_d, d, width: d.width);
-    addOutput(_q, width: d.width);
-    _setup();
+
+    _clkName = Module.unpreferredName('clk');
+    _dName = Module.unpreferredName('d');
+    _qName = Module.unpreferredName('q');
+
+    addInput(_clkName, clk);
+    addInput(_dName, d, width: d.width);
+    addOutput(_qName, width: d.width);
+
+    if (en != null) {
+      if (en.width != 1) {
+        throw PortWidthMismatchException(en, 1);
+      }
+      _enName = Module.unpreferredName('en');
+      addInput(_enName, en);
+      _isEnableProvided = true;
+
+      _setupWithEnable();
+    } else {
+      _isEnableProvided = false;
+
+      _setup();
+    }
   }
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Sequential(clk, [q < d]);
+    Sequential(_clk, [q < _d]);
+  }
+
+  /// Performs setup for custom functional behavior with enable
+  void _setupWithEnable() {
+    Sequential(_clk, [
+      If(_en, then: [q < _d])
+    ]);
   }
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
-    if (inputs.length != 2 || outputs.length != 1) {
-      throw Exception('FlipFlop has exactly two inputs and one output.');
+    if (_isEnableProvided) {
+      if (inputs.length != 3 || outputs.length != 1) {
+        throw Exception('FlipFlop has exactly three inputs and one output.');
+      }
+    } else {
+      if (inputs.length != 2 || outputs.length != 1) {
+        throw Exception('FlipFlop has exactly two inputs and one output.');
+      }
     }
-    final clk = inputs[_clk]!;
-    final d = inputs[_d]!;
-    final q = outputs[_q]!;
-    return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+
+    final clk = inputs[_clkName]!;
+    final d = inputs[_dName]!;
+    final q = outputs[_qName]!;
+
+    if (_isEnableProvided) {
+      final en = inputs[_enName]!;
+      return 'always_ff @(posedge $clk) if($en) $q <= $d;  // $instanceName';
+    } else {
+      return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+    }
   }
 }
