@@ -103,7 +103,7 @@ class _SmallLogicValue extends LogicValue {
   bool get isFloating => (_invalid == _mask) && (_value == _mask);
 
   @override
-  BigInt toBigInt() => BigInt.from(toInt());
+  BigInt toBigInt() => BigInt.from(toInt()).toUnsigned(width);
 
   @override
   int toInt() {
