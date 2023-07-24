@@ -971,10 +971,6 @@ class Case extends Conditional {
       return;
     }
 
-    for (final receiver in receivers) {
-      receiver.put(LogicValue.x);
-    }
-
     CaseItem? foundMatch;
 
     for (final item in items) {
