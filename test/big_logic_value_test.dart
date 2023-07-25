@@ -1,8 +1,10 @@
-//
-// bigint_test.dart
-// Test of very wide bitvector comparison failure
-//
-//
+/// Copyright (C) 2021-2023 Intel Corporation
+/// SPDX-License-Identifier: BSD-3-Clause
+///
+///
+/// bigint_test.dart
+/// Test of very wide bitvector comparison failure
+///
 
 import 'dart:math';
 import 'package:rohd/rohd.dart';
