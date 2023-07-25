@@ -1,0 +1,22 @@
+{
+	"Create ROHD Module": {
+		"prefix": ["mod", "Module"],
+		"body": [
+			"class $1 extends Module {",
+			"\t$1(Logic ${2:a}) {",
+			"\t// Add to Input Port",
+			"\t$2 = addInput('$2', $2);",
+			"\t}",
+			"}"
+		],
+		"description": "Create ROHD Module."
+	},
+	"Create ROHD Sequential Logic": {
+		"prefix": ["seq", "Sequential"],
+		"body": [
+			"Sequential(clk, [",
+			"])"
+		],
+		"description": "Create ROHD Sequential Logic."
+	}
+}
