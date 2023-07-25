@@ -34,7 +34,9 @@ class TestModule extends Module {
       }, actions: [
         b < c,
       ]),
-      State<MyStates>(MyStates.state2, events: {}, actions: []),
+      State<MyStates>(MyStates.state2, events: {}, actions: [
+        b < 1,
+      ]),
       State<MyStates>(MyStates.state3, events: {}, actions: [
         b < ~c,
       ]),
@@ -119,6 +121,15 @@ void main() {
   });
 
   setUpAll(() => Directory(_tmpDir).createSync(recursive: true));
+
+  test('zero-out receivers in default case', () async {
+    final pipem = TestModule(Logic(), Logic(), Logic());
+    await pipem.build();
+
+    final sv = pipem.generateSynth();
+
+    expect(sv, contains("b = 1'h0;"));
+  });
 
   group('simcompare', () {
     test('simple fsm', () async {

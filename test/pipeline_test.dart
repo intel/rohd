@@ -69,6 +69,44 @@ class RVPipelineModule extends Module {
   }
 }
 
+/// Based on a portion of the pipelined integer multiplier from ROHD-HCL
+class PipelineWithMultiUseModule extends Module {
+  PipelineWithMultiUseModule(Logic a, Logic b) {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: 8);
+    b = addInput('b', b, width: 8);
+
+    final mid = Logic(name: 'mid');
+    final mid2 = Logic(name: 'mid2');
+
+    final out = addOutput('out');
+
+    final pipeline = Pipeline(clk, stages: [
+      ...List.generate(
+        3,
+        (row) => (p) {
+          final columnAdder = <Conditional>[];
+          final maxIndexA = a.width - 1;
+
+          for (var column = maxIndexA; column >= row; column--) {
+            final tmpA =
+                column == maxIndexA || row == 0 ? Const(0) : p.get(a[column]);
+            final tmpB = p.get(a)[column - row] & p.get(b)[row];
+
+            columnAdder
+              ..add(p.get(mid) < tmpA + tmpB)
+              ..add(p.get(mid2) < tmpA + tmpB);
+          }
+
+          return columnAdder;
+        },
+      ),
+    ]);
+
+    out <= pipeline.get(mid);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -87,6 +125,21 @@ void main() {
         Vector({'a': 4}, {'b': 5}),
         Vector({'a': 4}, {'b': 6}),
         Vector({'a': 4}, {'b': 7}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('multiuse pipeline', () async {
+      final pipem =
+          PipelineWithMultiUseModule(Logic(width: 8), Logic(width: 8));
+      await pipem.build();
+
+      // module is gibberish, just make sure it builds and stuff
+      final vectors = [
+        Vector({'a': 1, 'b': 1}, {}),
+        Vector({'a': 2, 'b': 1}, {}),
+        Vector({'a': 2, 'b': 2}, {}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
