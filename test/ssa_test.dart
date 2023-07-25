@@ -366,14 +366,14 @@ void main() {
     ];
 
     // make sure we don't have any inferred latches (X's)
-    for (final signal in mod.signals) {
-      signal.changed.listen((event) {
-        expect(event.newValue.isValid, isTrue);
-      });
-    }
     Simulator.registerAction(15, () {
       for (final signal in mod.signals) {
         expect(signal.value.isValid, isTrue);
+      }
+      for (final signal in mod.signals) {
+        signal.changed.listen((event) {
+          expect(event.newValue.isValid, isTrue);
+        });
       }
     });
 
@@ -399,6 +399,11 @@ void main() {
     Simulator.registerAction(15, () {
       for (final signal in mod.signals) {
         expect(signal.value.isValid, isTrue);
+      }
+      for (final signal in mod.signals) {
+        signal.changed.listen((event) {
+          expect(event.newValue.isValid, isTrue);
+        });
       }
     });
 
