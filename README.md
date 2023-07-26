@@ -1,5 +1,5 @@
 <a href="https://intel.github.io/rohd-website/">
-  <h1 align="center" style="background-color:white; padding:20px">
+  <h1 align="center" style="padding:20px">
     <img alt="ROHD" src="https://intel.github.io/rohd-website/assets/images/rohd_logo.svg">
   </h1>
 </a>
