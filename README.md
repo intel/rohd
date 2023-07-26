@@ -1,3 +1,9 @@
+<a href="https://intel.github.io/rohd-website/">
+  <h1 align="center" style="background-color:white; padding:20px">
+    <img alt="ROHD" src="https://intel.github.io/rohd-website/assets/images/rohd_logo.svg">
+  </h1>
+</a>
+
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
 
 [![Tests](https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push)](https://github.com/intel/rohd/actions/workflows/general.yml)
@@ -6,7 +12,7 @@
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
-# ![ROHD Logo](https://intel.github.io/rohd-website/assets/images/favicon/favicon-32x32.png) Rapid Open Hardware Development (ROHD) Framework
+# Rapid Open Hardware Development (ROHD) Framework
 
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
 
