@@ -1,10 +1,8 @@
-<a href="https://intel.github.io/rohd-website/">
-  <h1 align="center" style="padding:20px; background-image: url(https://placehold.co/15x15/ffffff/ffffff.png)">
-    <img alt="ROHD" src="https://intel.github.io/rohd-website/assets/images/rohd_logo.svg" height="80px">
-  </h1>
-</a>
+<p align="center">
+  <img alt="ROHD" src="https://intel.github.io/rohd-website/assets/images/rohd_logo_w_white_background.svg">
+</p>
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
+# Rapid Open Hardware Development (ROHD) Framework
 
 [![Tests](https://github.com/intel/rohd/actions/workflows/general.yml/badge.svg?event=push)](https://github.com/intel/rohd/actions/workflows/general.yml)
 [![API Docs](https://img.shields.io/badge/API%20Docs-generated-success)](https://intel.github.io/rohd/rohd/rohd-library.html)
@@ -12,13 +10,31 @@
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
 
-# Rapid Open Hardware Development (ROHD) Framework
-
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
+
+## Documentation
 
 For documentation, guides, and more, [**visit the ROHD Website!**](https://intel.github.io/rohd-website/)
 
-Features of ROHD include:
+- [Install now](https://intel.github.io/rohd-website/get-started/overview/)
+- [Try it in-browser](https://dartpad.dev/?id=375e800a9d0bd402c9bfa5ebe2210c40)
+- [User Guide](https://intel.github.io/rohd-website/docs/sample-example/)
+- [Tutorials](https://github.com/intel/rohd/tree/main/doc/tutorials)
+- [API Docs](https://intel.github.io/rohd/rohd/rohd-library.html)
+- [Blog](https://intel.github.io/rohd-website/blog/blog-intro/)
+- [Contributing](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md)
+
+You can also open this repository in a GitHub Codespace to run the example in your browser with a full IDE.  This is also an easy way to get started with contributions!
+
+  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=409325108)
+
+### Get involved
+
+- [Join the Discord chat](https://discord.gg/jubxF84yGw)
+- [Attend the ROHD Forum meetings](https://intel.github.io/rohd-website/forum/rohd-forum/)
+- [GitHub Discussions](https://github.com/intel/rohd/discussions)
+
+## About ROHD
 
 - Full power of the modern **Dart language** for hardware design and verification
 - Makes **validation collateral** simpler to develop and debug.  The [ROHD Verification Framework](https://github.com/intel/rohd-vf) helps build well-structured testbenches.

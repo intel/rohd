@@ -24,7 +24,7 @@ There are complete API docs available at <https://intel.github.io/rohd/rohd/rohd
 
 If you need some help, you can join the [Discord server](https://discord.com/invite/jubxF84yGw) or visit our [Discussions](https://github.com/intel/rohd/discussions) page.  These are friendly places where you can ask questions, share ideas, or just discuss openly!  You could also head to [StackOverflow.com](https://stackoverflow.com/) (use the tag `rohd`) to ask questions or look for answers.
 
-You also may be interested to join the [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
+You also may be interested to join the [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) periodic meetings with other users and developers in the ROHD community.  The meetings are open to anyone interested!
 
 Be sure to note the minimum Dart version required for ROHD specified in pubspec.yaml (at least 2.18.0).
 
