@@ -205,85 +205,114 @@ void main() {
     expect(result.value, LogicValue.one);
   });
 
-  test('Cases test Int', () {
-    final control = Logic(width: 8);
-    final d0 = Logic(width: 8);
-    final d1 = Logic(width: 8);
-    final result = cases(
-        control,
-        {
-          d0: 2,
-          d1: 3,
-        },
-        width: 8);
+  group('cases', () {
+    test('Cases test Int', () {
+      final control = Logic(width: 8);
+      final d0 = Logic(width: 8);
+      final d1 = Logic(width: 8);
+      final result = cases(
+          control,
+          {
+            d0: 2,
+            d1: 3,
+          },
+          width: 8);
 
-    d0.put(2);
-    d1.put(3);
-    control.put(2);
+      d0.put(2);
+      d1.put(3);
+      control.put(2);
 
-    expect(result.value, LogicValue.ofInt(2, 8));
+      expect(result.value, LogicValue.ofInt(2, 8));
 
-    control.put(3);
+      control.put(3);
 
-    expect(result.value, LogicValue.ofInt(3, 8));
-  });
-
-  test('Cases test Logic', () {
-    final control = Logic();
-    final d0 = Logic();
-    final d1 = Logic();
-    final result = cases(control, {
-      d0: LogicValue.zero,
-      d1: LogicValue.one,
+      expect(result.value, LogicValue.ofInt(3, 8));
     });
 
-    d0.put(LogicValue.zero);
-    d1.put(LogicValue.one);
+    test('Cases test Logic', () {
+      final control = Logic();
+      final d0 = Logic();
+      final d1 = Logic();
+      final result = cases(control, {
+        d0: LogicValue.zero,
+        d1: LogicValue.one,
+      });
 
-    control.put(0);
-    expect(result.value, LogicValue.zero);
+      d0.put(LogicValue.zero);
+      d1.put(LogicValue.one);
 
-    control.put(1);
-    expect(result.value, LogicValue.one);
-  });
+      control.put(0);
+      expect(result.value, LogicValue.zero);
 
-  test('Cases test Exceptions(Int)', () {
-    final control = Logic(width: 4);
-    final d0 = Logic(width: 4);
-    final d1 = Logic(width: 8);
+      control.put(1);
+      expect(result.value, LogicValue.one);
+    });
 
-    control.put(LogicValue.ofInt(2, 4));
-    d0.put(LogicValue.ofInt(2, 4));
-    d1.put(LogicValue.ofInt(3, 8));
+    test('Cases test Default', () {
+      final control = Logic(width: 4);
+      const d0 = 1;
+      const d1 = 2;
+      final result = cases(
+          control,
+          {
+            d0: 1,
+            d1: 2,
+          },
+          width: 4,
+          defaultValue: 3);
 
-    expect(() => cases(control, {d0: 2, d1: 3}),
-        throwsA(isA<SignalWidthMismatchException>()));
-  });
+      control.put(LogicValue.zero);
+      expect(result.value, LogicValue.ofInt(3, 4));
+    });
 
-  test('Cases test Condition width Exception', () {
-    final control = Logic();
-    final d0 = Logic();
-    final d1 = Logic(width: 8);
+    test('Cases test Exceptions(Int)', () {
+      final control = Logic(width: 4);
+      final d0 = Logic(width: 4);
+      final d1 = Logic(width: 8);
 
-    control.put(LogicValue.zero);
-    d0.put(LogicValue.zero);
-    d1.put(LogicValue.ofInt(1, 8));
+      control.put(LogicValue.ofInt(2, 4));
+      d0.put(LogicValue.ofInt(2, 4));
+      d1.put(LogicValue.ofInt(3, 8));
 
-    expect(() => cases(control, {d0: 0, d1: 1}),
-        throwsA(isA<SignalWidthMismatchException>()));
-  });
+      expect(() => cases(control, {d0: 2, d1: 3}),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
 
-  test('Cases test Expression width Exception', () {
-    final control = Logic();
-    final d0 = Logic(width: 8);
-    final d1 = Logic(width: 8);
+    test('Cases test Condition width Exception', () {
+      final control = Logic();
+      final d0 = Logic();
+      final d1 = Logic(width: 8);
 
-    control.put(LogicValue.one);
-    d0.put(LogicValue.zero);
-    d1.put(LogicValue.one);
+      control.put(LogicValue.zero);
+      d0.put(LogicValue.zero);
+      d1.put(LogicValue.ofInt(1, 8));
 
-    expect(() => cases(control, {d0: 0, d1: 1}),
-        throwsA(isA<SignalWidthMismatchException>()));
+      expect(() => cases(control, {d0: 0, d1: 1}),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('Cases test Expression width Exception', () {
+      final control = Logic();
+      final d0 = Logic(width: 8);
+      final d1 = Logic(width: 8);
+
+      control.put(LogicValue.one);
+      d0.put(LogicValue.zero);
+      d1.put(LogicValue.one);
+
+      expect(() => cases(control, {d0: 0, d1: 1}),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('Cases test Null width Exception', () {
+      final control = Logic();
+      const d0 = 2;
+      const d1 = 4;
+
+      control.put(LogicValue.zero);
+      expect(() => cases(control, {d0: 2, d1: 4}, defaultValue: 3),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
   });
 
   group('simcompare', () {

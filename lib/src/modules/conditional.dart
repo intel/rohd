@@ -10,6 +10,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
@@ -18,6 +19,7 @@ import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:test/test.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
 abstract class _Always extends Module with CustomSystemVerilog {
@@ -899,27 +901,41 @@ enum ConditionalType {
 /// input is not provided, then the width of  the result is inferred from the
 /// width of the entries.
 Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
-    {int? width, ConditionalType conditionalType = ConditionalType.none}) {
-  for (final condition in conditions.entries) {
+    {int? width,
+    ConditionalType conditionalType = ConditionalType.none,
+    dynamic defaultValue}) {
+  for (final conditionValue in [
+    ...conditions.values,
+    if (defaultValue != null) defaultValue
+  ]) {
     int? inferredWidth;
 
-    if (condition.value is Logic) {
-      inferredWidth = (condition.value as Logic).width;
-    } else if (condition.value is LogicValue) {
-      inferredWidth = (condition.value as LogicValue).width;
+    if (conditionValue is Logic) {
+      inferredWidth = conditionValue.width;
+    } else if (conditionValue is LogicValue) {
+      inferredWidth = conditionValue.width;
     }
 
     if (width != inferredWidth && width != null && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          condition.value, width, inferredWidth);
+          conditionValue, width, inferredWidth);
     }
 
     width ??= inferredWidth;
 
+    if (width == null && inferredWidth == null) {
+      throw SignalWidthMismatchException.forNull(conditionValue);
+    }
+
     if (width != inferredWidth && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          condition.value, width!, inferredWidth);
+          conditionValue, width!, inferredWidth);
     }
+  }
+
+  if (defaultValue == null) {}
+
+  for (final condition in conditions.entries) {
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
         throw SignalWidthMismatchException.forDynamic(
@@ -948,7 +964,8 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
                     : Const(condition.key, width: expression.width),
                 [result < condition.value])
         ],
-        conditionalType: conditionalType)
+        conditionalType: conditionalType,
+        defaultItem: defaultValue != null ? [result < defaultValue] : [])
   ]);
 
   return result;
