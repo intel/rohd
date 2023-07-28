@@ -933,8 +933,6 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
   }
 
-  if (defaultValue == null) {}
-
   for (final condition in conditions.entries) {
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
