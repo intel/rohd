@@ -30,6 +30,6 @@ class SignalWidthMismatchException extends RohdException {
   /// Constructs a new [Exception] for when a dynamic has no width or it could
   /// not be inferred.
   SignalWidthMismatchException.forNull(dynamic val)
-      : super('Could not infer width of value $val.'
+      : super('Could not infer width of input $val.'
             ' Please provide a valid width.');
 }

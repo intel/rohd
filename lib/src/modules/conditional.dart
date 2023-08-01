@@ -923,14 +923,14 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
     width ??= inferredWidth;
 
-    if (width == null && inferredWidth == null) {
-      throw SignalWidthMismatchException.forNull(conditionValue);
-    }
-
     if (width != inferredWidth && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
           conditionValue, width!, inferredWidth);
     }
+  }
+
+  if (width == null) {
+    throw SignalWidthMismatchException.forNull(conditions);
   }
 
   for (final condition in conditions.entries) {
@@ -963,7 +963,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
                 [result < condition.value])
         ],
         conditionalType: conditionalType,
-        defaultItem: defaultValue != null ? [result < defaultValue] : [])
+        defaultItem: defaultValue != null ? [result < defaultValue] : null)
   ]);
 
   return result;
