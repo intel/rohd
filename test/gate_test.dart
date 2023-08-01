@@ -205,11 +205,11 @@ void main() {
     expect(result.value, LogicValue.one);
   });
 
-  group('cases', () {
-    test('Cases test Int', () {
+  group('Cases', () {
+    test('test LogicValue', () {
       final control = Logic(width: 8);
-      final d0 = Logic(width: 8);
-      final d1 = Logic(width: 8);
+      final d0 = LogicValue.ofInt(2, 8);
+      final d1 = LogicValue.ofInt(3, 8);
       final result = cases(
           control,
           {
@@ -218,8 +218,6 @@ void main() {
           },
           width: 8);
 
-      d0.put(2);
-      d1.put(3);
       control.put(2);
 
       expect(result.value, LogicValue.ofInt(2, 8));
@@ -229,17 +227,31 @@ void main() {
       expect(result.value, LogicValue.ofInt(3, 8));
     });
 
-    test('Cases test Logic', () {
+    test('test Int', () {
+      final control = Logic(width: 4)..put(LogicValue.ofInt(2, 4));
+      const d0 = 2;
+      const d1 = 3;
+
+      final result = cases(
+          control,
+          {
+            d0: 2,
+            d1: 3,
+          },
+          width: 4,
+          defaultValue: 3);
+
+      expect(result.value, LogicValue.ofInt(2, 4));
+    });
+
+    test('test Logic', () {
       final control = Logic();
-      final d0 = Logic();
-      final d1 = Logic();
+      final d0 = Logic()..put(LogicValue.zero);
+      final d1 = Logic()..put(LogicValue.one);
       final result = cases(control, {
         d0: LogicValue.zero,
         d1: LogicValue.one,
       });
-
-      d0.put(LogicValue.zero);
-      d1.put(LogicValue.one);
 
       control.put(0);
       expect(result.value, LogicValue.zero);
@@ -248,7 +260,7 @@ void main() {
       expect(result.value, LogicValue.one);
     });
 
-    test('Cases test Default', () {
+    test('test Default', () {
       final control = Logic(width: 4);
       const d0 = 1;
       const d1 = 2;
@@ -265,7 +277,7 @@ void main() {
       expect(result.value, LogicValue.ofInt(3, 4));
     });
 
-    test('Cases test Exceptions(Int)', () {
+    test('test Exceptions(Int)', () {
       final control = Logic(width: 4);
       final d0 = Logic(width: 4);
       final d1 = Logic(width: 8);
@@ -278,7 +290,7 @@ void main() {
           throwsA(isA<SignalWidthMismatchException>()));
     });
 
-    test('Cases test Condition width Exception', () {
+    test('test Condition width Exception', () {
       final control = Logic();
       final d0 = Logic();
       final d1 = Logic(width: 8);
@@ -291,7 +303,7 @@ void main() {
           throwsA(isA<SignalWidthMismatchException>()));
     });
 
-    test('Cases test Expression width Exception', () {
+    test('test Expression width Exception', () {
       final control = Logic();
       final d0 = Logic(width: 8);
       final d1 = Logic(width: 8);
@@ -304,7 +316,7 @@ void main() {
           throwsA(isA<SignalWidthMismatchException>()));
     });
 
-    test('Cases test Null width Exception', () {
+    test('test Null width Exception', () {
       final control = Logic();
       const d0 = 2;
       const d1 = 4;
