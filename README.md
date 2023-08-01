@@ -21,7 +21,7 @@ For documentation, guides, and more, [**visit the ROHD Website!**](https://intel
 - [User Guide](https://intel.github.io/rohd-website/docs/sample-example/)
 - [Tutorials](https://github.com/intel/rohd/tree/main/doc/tutorials)
 - [API Docs](https://intel.github.io/rohd/rohd/rohd-library.html)
-- [Blog](https://intel.github.io/rohd-website/blog/blog-intro/)
+- [Blog](https://intel.github.io/rohd-website/blog/)
 - [Contributing](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md)
 
 You can also open this repository in a GitHub Codespace to run the example in your browser with a full IDE.  This is also an easy way to get started with contributions!
