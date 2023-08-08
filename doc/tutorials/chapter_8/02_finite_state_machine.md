@@ -350,4 +350,4 @@ In this case study, the transitions between the states are as follows:
 - If the vending machine is in "Coin Inserted" state and a dispense button is pressed, it transitions to the "Dispensing" state.
 - If the vending machine is in the "Dispensing" state, it dispenses the toy capsule and transitions back to the Idle State.
 
-Answer to this exercise can be found at [answers/exercise_1_toycapsule_fsm.dart](./answers/exercise_1_toycapsule_fsm.dart)
+Answer to this exercise can be found at [answers/exercise_2_toycapsule_fsm.dart](./answers/exercise_2_toycapsule_fsm.dart)
