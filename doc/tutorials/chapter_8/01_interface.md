@@ -173,4 +173,4 @@ Serial Peripheral Interface (SPI) is an interface bus commonly used to send data
 
 Build a SPI using ROHD interface. You can use the shift register as the peripheral, you can just build the unit test for peripheral.
 
-Answer to this exercise can be found at [answers/exercise_2_spi.dart](./answers/exercise_2_spi.dart)
+Answer to this exercise can be found at [answers/exercise_1_spi.dart](./answers/exercise_1_spi.dart)
