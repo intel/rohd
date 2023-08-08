@@ -81,8 +81,10 @@
 
 ## Chapter 8: Abstractions
 
-- Pipelines: Normally Delayed exists in between a big circuit, abstractions split the logic across multiple cycles and let us decide what logic do you want it to occur in each of the cycle.
-- Finite state machines
+- [ROHD Abstraction](./chapter_8/00_abstraction.md#rohd-abstraction)
+- [Interface](./chapter_8/01_interface.md)
+- [Finite State Machine](./chapter_8/02_finite_state_machine.md)
+- [Pipeline](./chapter_8/03_pipeline.md)
 
 ## Chapter 9: ROHD-COSIM External SystemVerilog Modules (Coming Soon!)
 
