@@ -111,9 +111,50 @@
             "\t// eg. reset.put(0);",
             "});",
             "Simulator.setMaxSimTime(${4:100});",
-            "await Simulator.run();",
+            "await Simulator.run();"
         ],
         "description": "Add simulation snippet. Normally used in performing testing."
+    },
+    "ROHD: Counter example.": {
+        "prefix": ["example", "rohd", "counter"],
+        "body": [
+            "// Import the ROHD package",
+            "import 'package:rohd/rohd.dart';",
+            "// Define a class Counter that extends ROHD's abstract Module class",
+            "class Counter extends Module {",
+            "\t// For convenience, map interesting outputs to ",
+            "\t// short variable names for consumers of this module",
+            "\tLogic get val => output('val');\n",
+            "\t// This counter supports any width, determined at run-time",
+            "\tfinal int width;",
+            "\tCounter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) ",
+            "\t\t\t: super(name: name) {\n",
+            "\t\t// Register inputs and outputs of the module in the constructor.",
+            "\t\t// Module logic must consume registered inputs and output to registered outputs.",
+            "\t\ten    = addInput('en', en);",
+            "\t\treset = addInput('reset', reset);",
+            "\t\tclk   = addInput('clk', clk);",
+            "\t\tvar val = addOutput('val', width: width);\n",
+            "\t\t// A local signal named 'nextVal'",
+            "\t\tvar nextVal = Logic(name: 'nextVal', width: width);",
+            "\t\t// Assignment statement of nextVal to be val+1 (<= is the assignment operator)",
+            "\t\tnextVal <= val + 1;\n",
+            "\t\t// `Sequential` is like SystemVerilog's always_ff, ",
+            "\t\t// in this case trigger on the positive edge of clk",
+            "\t\tSequential(clk, [",
+            "\t\t\t// `If` is a conditional if statement, ",
+            "\t\t\t// like `if` in SystemVerilog always blocks",
+            "\t\t\tIf(reset, then:[",
+            "\t\t\t\t// the '<' operator is a conditional assignment",
+            "\t\t\t\tval < 0",
+            "\t\t\t], orElse: [If(en, then: [",
+            "\t\t\t\tval < nextVal",
+            "\t\t\t])])",
+            "\t\t]);",
+            "\t}",
+            "}"
+        ],
+        "description": "A counter example build using ROHD. Can be use as a reference or simple template to build a module. Visit https://intel.github.io/rohd-website/docs/sample-example/ for details."
     }
 	
 }
