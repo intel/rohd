@@ -37,7 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 
 		
-
 		// generate logic parameters in the constructor
 		const inputStrings = (nInputs: number): [string, string] => {
 			let i = 0;

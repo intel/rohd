@@ -1,22 +1,119 @@
 {
-	"Create ROHD Module": {
-		"prefix": ["mod", "Module"],
+	"ROHD: Create Module": {
+		"prefix": ["mod", "module", "Mod", "Module"],
 		"body": [
-			"class $1 extends Module {",
+			"class $1extends Module {",
 			"\t$1(Logic ${2:a}) {",
 			"\t// Add to Input Port",
 			"\t$2 = addInput('$2', $2);",
 			"\t}",
 			"}"
 		],
-		"description": "Create ROHD Module."
+		"description": "ROHD: Create Module."
 	},
-	"Create ROHD Sequential Logic": {
-		"prefix": ["seq", "Sequential"],
+	"ROHD: Create Sequential Logic": {
+		"prefix": ["seq", "sequential", "Seq", "Sequential"],
 		"body": [
 			"Sequential(clk, [",
-			"])"
+			"]);"
 		],
-		"description": "Create ROHD Sequential Logic."
-	}
+		"description": "ROHD: Create Sequential Logic."
+	},
+	"ROHD: Combinational Logic": {
+		"prefix": ["comb", "combinational", "Comb", "Combinational"],
+		"body": [
+			"Combinational([",
+            "\t//Assignment Here",
+            "\t// e.g a0 < a1",
+            "]);"
+		],
+		"description": "Create ROHD Combinational Logic."
+	},
+    "ROHD: Simple assign <=": {
+        "prefix": ["assign"],
+        "body": [
+            "${1:srcLogic} <= ${2:destLogic};"
+        ],
+        "description": "Assignment Operator <= which used outside of the Sequential or Combinational conditional operator."
+    },
+    "ROHD: Conditional Assign": {
+        "prefix": ["assign"],
+        "body": [
+            "${1:srcLogic} < ${2:destLogic};"
+        ],
+        "description": "Assignment Operator < which used in Sequential and Combinational conditional Operator."
+    },
+	"ROHD: Create If conditional": {
+        "prefix": ["If", "if"],
+        "body": [
+            "If.block([",
+            "\tIff(${1:condition}, [",
+            "\t\t// If conditional and the respective then",
+            "\t]),",
+            "\tElseIf(${2:condition}, [",
+            "\t\t// ElseIf conditional assignment, remove if not using",
+            "\t]),",
+            "\tElse([",
+            "\t\t// Else condition, remove if not using",
+            "\t])",
+            "])"
+        ],
+        "description": "Create conditional with if, elseif, and else."
+    },
+    "ROHD: Create Case conditional": {
+        "prefix": ["case", "Case"],
+        "body": [
+            "Case(${1:condition}, [",
+            "\tCaseItem(${2:value}, [",
+            "\t\t// Conditional assignment here",
+            "\t]),",
+            "\tCaseItem(${3:value}, [",
+            "\t\t// Conditional Assignment here",
+            "\t]),",
+            "\t], defaultItem: [",
+            "\t\t// optional to give a default item",
+            "\t],",
+            "\t// you can change to unique or priority on type",
+            "\tconditionalType: ConditionalType.none",
+            "\t),"
+        ],
+        "description": "Create case conditional."
+    },
+    "ROHD: Create CaseZ conditional": {
+        "prefix": ["case", "Case", "caseZ", "CaseZ"],
+        "body": [
+            "CaseZ(",
+            "\t\t${1:condition},",
+            "\t\t[",
+            "\t\t\tCaseItem(${2:value}, [",
+            "\t\t\t\t// Conditional assignment here",
+            "\t\t]),",
+            "\t\t\tCaseItem(${3:value}, [",
+            "\t\t\t\t// Conditional Assignment here",
+            "\t\t]),",
+            "\t\t],",
+            "\t\tdefaultItem: [",
+            "\t\t\t\t// optional to give a default item",
+            "\t\t],",
+            "\t\t\t\t// you can change to unique or priority on type",
+            "\t\t\tconditionalType: ConditionalType.none),"
+        ],
+        "description": "Create CaseZ conditional"
+    },
+    "ROHD: Generate Simulation snippet.": {
+        "prefix": ["sim", "Simulator", "simulation"],
+        "body": [
+            "WaveDumper(${1:module}, outputPath: '${2:wavedumpername}.vcd');",
+            "// What is the timestep yu want to register your action?",
+            "Simulator.registerAction(${3:25}, () {",
+            "\t// Your control here",
+            "\t// eg. en.put(1);",
+            "\t// eg. reset.put(0);",
+            "});",
+            "Simulator.setMaxSimTime(${4:100});",
+            "await Simulator.run();",
+        ],
+        "description": "Add simulation snippet. Normally used in performing testing."
+    }
+	
 }
