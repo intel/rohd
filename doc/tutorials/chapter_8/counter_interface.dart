@@ -13,7 +13,12 @@ class CounterInterface extends Interface<CounterDirection> {
 
   final int width;
   CounterInterface({this.width = 8}) {
-    setPorts([Port('en'), Port('reset')], [CounterDirection.inward]);
+    setPorts([
+      Port('en'),
+      Port('reset'),
+    ], [
+      CounterDirection.inward
+    ]);
 
     setPorts([
       Port('val', width),
@@ -21,7 +26,11 @@ class CounterInterface extends Interface<CounterDirection> {
       CounterDirection.outward
     ]);
 
-    setPorts([Port('clk')], [CounterDirection.misc]);
+    setPorts([
+      Port('clk'),
+    ], [
+      CounterDirection.misc
+    ]);
   }
 }
 
@@ -43,37 +52,39 @@ class Counter extends Module {
 
     final nextVal = Logic(name: 'nextVal', width: intf.width);
 
-    nextVal <= val + 1;
+    nextVal <= intf.val + 1;
 
-    Sequential(clk, [
-      If(reset, then: [
-        val < 0
+    Sequential(intf.clk, [
+      If(intf.reset, then: [
+        intf.val < 0
       ], orElse: [
-        If(en, then: [val < nextVal])
+        If(
+          intf.en,
+          then: [intf.val < nextVal],
+        )
       ])
     ]);
   }
 }
 
 Future<void> main() async {
-  final counterInterface = CounterInterface();
+  final intf = CounterInterface();
+  intf.clk <= SimpleClockGenerator(10).clk;
 
-  counterInterface.clk <= SimpleClockGenerator(10).clk;
+  final counter = Counter(intf);
 
-  final counter = Counter(counterInterface);
+  intf.en.inject(0);
+  intf.reset.inject(1);
 
   await counter.build();
-
-  counterInterface.en.inject(0);
-  counterInterface.reset.inject(1);
 
   print(counter.generateSynth());
 
   WaveDumper(counter,
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');
   Simulator.registerAction(25, () {
-    counterInterface.en.put(1);
-    counterInterface.reset.put(0);
+    intf.en.put(1);
+    intf.reset.put(0);
   });
 
   Simulator.setMaxSimTime(100);
