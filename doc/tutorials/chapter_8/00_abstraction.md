@@ -21,7 +21,7 @@ Interface make it easier to define port connections of a module in a reusable wa
 
 ### [Finite State Machine (FSM)](02_finite_state_machine.md)
 
-An easy and more verbose implementation of Finite State Machine with ROHD API.
+An easy and fast implementation of Finite State Machine with ROHD API.
 
 ### [Pipeline](03_pipeline.md)
 
