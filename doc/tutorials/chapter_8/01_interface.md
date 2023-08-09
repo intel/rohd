@@ -29,7 +29,7 @@ In ROHD, the [`Counter` module](../../../example/example.dart) reside in the exa
 
 In the `Counter` module, its take in inputs `enable`, `reset`, `clk` and output `val`.
 
-On every positive edge of the clock, the value of `val` will be increment by 1 if enable `en` is true.
+On every positive edge of the clock, the value of `val` will be increment by 1 if enable `en` is set to true.
 
 ```dart
 // Define a class Counter that extends ROHD's abstract Module class.
@@ -81,7 +81,7 @@ Let us see how we can change the `ROHD` module to `Counter` interface. First, we
 
 Then, we can create our interface `CounterInterface` that extends from parents `Interface<TagType>`. The `TagType` is the enum that we create earlier. Let create the getters to all ports for `Counter` to allows us to send signals to the interface.
 
-As normal, we will need to create the constructor `CounterInterface`. Inside the constuctor, add `setPorts()` function to group our common port. `setPorts` takes have function signature of `void setPorts(List<Logic> ports, [List<CounterDirection>? tags])` which received a List of `Logic` and tags.
+Let start by creating a constructor `CounterInterface`. Inside the constructor, add `setPorts()` function to group our common port. `setPorts` have function signature of `void setPorts(List<Logic> ports, [List<CounterDirection>? tags])` which received a List of `Logic` and `tags`.
 
 Hence, the `CounterInterface` will look something like this:
 
@@ -113,8 +113,8 @@ class CounterInterface extends Interface<CounterDirection> {
 Next, we want to modify the `Counter` module constructor to receive the interface. Then, we **MUST** create a new instance of the interface to avoid modify the interface inside the constructor.
 
 ```dart
-// create a new interface instance.
-late final CounterInterface intf;
+// create a new interface instance. Let make it a private variable.
+late final CounterInterface _intf;
 Counter(CounterInterface intf): super('counter') {}
 ```
 
@@ -122,10 +122,25 @@ Now, let use the `connectIO()` function. As mentioned [previously](#rohd-interfa
 
 ```dart
 Counter(CounterInterface intf) : super(name: 'counter') {
-    this.intf = CounterInterface(width: intf.width)
+    _intf = CounterInterface(width: intf.width)
       ..connectIO(this, intf,
           inputTags: {CounterDirection.inward, CounterDirection.misc},
           outputTags: {CounterDirection.outward});
+
+    final nextVal = Logic(name: 'nextVal', width: intf.width);
+
+    nextVal <= _intf.val + 1;
+
+    Sequential(_intf.clk, [
+      If.block([
+        Iff(_intf.reset, [
+          _intf.val < 0,
+        ]),
+        ElseIf(_intf.en, [
+          _intf.val < nextVal,
+        ])
+      ]),
+    ]);
 }
 ```
 
@@ -163,7 +178,7 @@ Future<void> main() async {
 }
 ```
 
-That it for the ROHD interface. By using interface, you code can be a lot cleaner and readable. Hop you enjoy the tutorials. You can find the executable version of code at [counter_interface.dart](./counter_interface.dart).
+Thats it for the ROHD interface. By using interface, you code can be a lot cleaner and readable. Hope you enjoy the tutorials. You can find the executable version of code at [counter_interface.dart](./counter_interface.dart).
 
 ## Exercise
 
