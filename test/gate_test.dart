@@ -208,13 +208,13 @@ void main() {
   group('Cases', () {
     test('test LogicValue', () {
       final control = Logic(width: 8);
-      final d0 = LogicValue.ofInt(2, 8);
-      final d1 = LogicValue.ofInt(3, 8);
+      final d0 = Logic(width: 8)..put(LogicValue.ofInt(2, 8));
+      final d1 = Logic(width: 8)..put(LogicValue.ofInt(3, 8));
       final result = cases(
           control,
           {
-            d0: 2,
-            d1: 3,
+            d0: LogicValue.ofInt(2, 8),
+            d1: LogicValue.ofInt(3, 8),
           },
           width: 8);
 
@@ -286,11 +286,11 @@ void main() {
       d0.put(LogicValue.ofInt(2, 4));
       d1.put(LogicValue.ofInt(3, 8));
 
-      expect(() => cases(control, {d0: 2, d1: 3}),
+      expect(() => cases(control, {d0: 2, d1: 3}, width: 4),
           throwsA(isA<SignalWidthMismatchException>()));
     });
 
-    test('test Condition width Exception', () {
+    test('test Condition width mismatch Exception', () {
       final control = Logic();
       final d0 = Logic();
       final d1 = Logic(width: 8);
@@ -299,20 +299,36 @@ void main() {
       d0.put(LogicValue.zero);
       d1.put(LogicValue.ofInt(1, 8));
 
-      expect(() => cases(control, {d0: 0, d1: 1}),
+      expect(
+          () =>
+              cases(control, {d0: LogicValue.zero, d1: LogicValue.ofInt(1, 8)}),
           throwsA(isA<SignalWidthMismatchException>()));
     });
 
-    test('test Expression width Exception', () {
+    test('test Expression width mismatch Exception for Logic', () {
       final control = Logic();
       final d0 = Logic(width: 8);
       final d1 = Logic(width: 8);
 
       control.put(LogicValue.one);
-      d0.put(LogicValue.zero);
-      d1.put(LogicValue.one);
 
-      expect(() => cases(control, {d0: 0, d1: 1}),
+      expect(
+          () => cases(control, {d0: Logic(width: 8), d1: Logic(width: 8)},
+              width: 8),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('test Expression width mismatch Exception for LogicValue', () {
+      final control = Logic();
+      final d0 = LogicValue.ofInt(0, 8);
+      final d1 = LogicValue.ofInt(1, 8);
+
+      control.put(LogicValue.one);
+
+      expect(
+          () => cases(
+              control, {d0: LogicValue.ofInt(0, 8), d1: LogicValue.ofInt(1, 8)},
+              width: 8),
           throwsA(isA<SignalWidthMismatchException>()));
     });
 

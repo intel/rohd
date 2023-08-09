@@ -922,11 +922,6 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
 
     width ??= inferredWidth;
-
-    if (width != inferredWidth && inferredWidth != null) {
-      throw SignalWidthMismatchException.forDynamic(
-          conditionValue, width!, inferredWidth);
-    }
   }
 
   if (width == null) {
@@ -949,7 +944,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
   }
 
-  final result = Logic(name: 'result', width: width!);
+  final result = Logic(name: 'result', width: width);
 
   Combinational([
     Case(
