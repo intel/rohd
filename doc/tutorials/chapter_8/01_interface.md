@@ -81,7 +81,7 @@ Let us see how we can change the `ROHD` module to `Counter` interface. First, we
 
 Then, we can create our interface `CounterInterface` that extends from parents `Interface<TagType>`. The `TagType` is the enum that we create earlier. Let create the getters to all ports for `Counter` to allows us to send signals to the interface.
 
-As normal, we will need to create the constructor `CounterInterface`. Inside the constuctor, add `setPorts()` function to group our common port. `setPorts` takes have function sinature of `void setPorts(List<Logic> ports, [List<CounterDirection>? tags])` which received a List of `Logic` and tags.
+As normal, we will need to create the constructor `CounterInterface`. Inside the constuctor, add `setPorts()` function to group our common port. `setPorts` takes have function signature of `void setPorts(List<Logic> ports, [List<CounterDirection>? tags])` which received a List of `Logic` and tags.
 
 Hence, the `CounterInterface` will look something like this:
 
