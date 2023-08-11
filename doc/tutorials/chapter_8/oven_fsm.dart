@@ -65,7 +65,7 @@ class OvenModule extends Module {
     // outputs. `led` output also added as the output port.
     button = addInput('button', button, width: button.width);
     reset = addInput('reset', reset);
-    final led = addOutput('led', width: button.width);
+    final led = addOutput('led', width: 8);
 
     // An internal clock generator.
     final clk = SimpleClockGenerator(10).clk;
