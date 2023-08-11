@@ -23,15 +23,15 @@ enum OvenState { standby, cooking, paused, completed }
 // One-hot encoded `Button` using dart enhanced enums.
 // Represent start, pause, and resume as integer value 0, 1,
 // and 2 respectively.
-enum Button {
-  start(value: 0),
-  pause(value: 1),
-  resume(value: 2);
+// enum Button {
+//   start(value: 0),
+//   pause(value: 1),
+//   resume(value: 2);
 
-  const Button({required this.value});
+//   const Button({required this.value});
 
-  final int value;
-}
+//   final int value;
+// }
 
 // One-hot encoded `LEDLight` using dart enhanced enums.
 // Represent yellow, blue, red, and green  as integer value 0, 1,
@@ -54,6 +54,13 @@ class OvenModule extends Module {
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
   late StateMachine<OvenState> _oven;
+
+  // A hashmap
+  final Map<String, int> btnVal = {
+    'start': 0,
+    'pause': 1,
+    'resume': 2,
+  };
 
   // We can expose an LED light output as a getter to retrieve it value.
   Logic get led => output('led');
@@ -98,8 +105,8 @@ class OvenModule extends Module {
           // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
+                  ..gets(
+                      button.eq(Const(btnVal['start'], width: button.width))):
                 OvenState.cooking,
           },
           // actions:
@@ -122,8 +129,8 @@ class OvenModule extends Module {
           // OvenState will changed to `OvenState.completed` state.
           events: {
             Logic(name: 'button_pause')
-                  ..gets(button
-                      .eq(Const(Button.pause.value, width: button.width))):
+                  ..gets(
+                      button.eq(Const(btnVal['pause'], width: button.width))):
                 OvenState.paused,
             Logic(name: 'counter_time_complete')
               ..gets(counterInterface.val.eq(4)): OvenState.completed
@@ -145,8 +152,8 @@ class OvenModule extends Module {
           // OvenState will changed to `OvenState.cooking` state.
           events: {
             Logic(name: 'button_resume')
-                  ..gets(button
-                      .eq(Const(Button.resume.value, width: button.width))):
+                  ..gets(
+                      button.eq(Const(btnVal['resume'], width: button.width))):
                 OvenState.cooking
           },
           // actions:
@@ -166,8 +173,8 @@ class OvenModule extends Module {
           // OvenState will changed to `OvenState.standby` state.
           events: {
             Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
+                  ..gets(
+                      button.eq(Const(btnVal['start'], width: button.width))):
                 OvenState.standby
           },
           // actions:
@@ -238,17 +245,17 @@ Future<void> main({bool noPrint = false}) async {
 
   // Press button start => `00` at time 25.
   Simulator.registerAction(25, () {
-    button.put(Button.start.value);
+    button.put(oven.btnVal['start']);
   });
 
   // Press button pause => `01` at time 50.
   Simulator.registerAction(50, () {
-    button.put(Button.pause.value);
+    button.put(oven.btnVal['pause']);
   });
 
   // Press button resume => `10` at time 70.
   Simulator.registerAction(70, () {
-    button.put(Button.resume.value);
+    button.put(oven.btnVal['resume']);
   });
 
   // Print a message when we're done with the simulation!
