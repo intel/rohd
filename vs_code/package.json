@@ -3,9 +3,19 @@
   "displayName": "ROHD",
   "description": "ROHD extension for vscode",
   "version": "0.0.1",
+  "publisher": "ROHD",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intel/rohd"
+  },
+  "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.80.0"
   },
+  "keywords": [
+    "rohd"
+  ],
   "categories": [
     "Snippets"
   ],
