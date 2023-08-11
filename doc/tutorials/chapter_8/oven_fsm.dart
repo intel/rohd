@@ -125,8 +125,8 @@ class OvenModule extends Module {
                   ..gets(button
                       .eq(Const(Button.pause.value, width: button.width))):
                 OvenState.paused,
-            Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
-                OvenState.completed
+            Logic(name: 'counter_time_complete')
+              ..gets(counterInterface.val.eq(4)): OvenState.completed
           },
           // actions:
           // During the cooking state, `led` is change to yellow; timer's
