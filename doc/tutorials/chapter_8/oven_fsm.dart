@@ -20,33 +20,6 @@ import './counter_interface.dart';
 // `standby`, `cooking`,`paused`, and `completed`.
 enum OvenState { standby, cooking, paused, completed }
 
-// One-hot encoded `Button` using dart enhanced enums.
-// Represent start, pause, and resume as integer value 0, 1,
-// and 2 respectively.
-// enum Button {
-//   start(value: 0),
-//   pause(value: 1),
-//   resume(value: 2);
-
-//   const Button({required this.value});
-
-//   final int value;
-// }
-
-// One-hot encoded `LEDLight` using dart enhanced enums.
-// Represent yellow, blue, red, and green  as integer value 0, 1,
-// 2, and 3 respectively.
-enum LEDLight {
-  yellow(value: 0),
-  blue(value: 1),
-  red(value: 2),
-  green(value: 3);
-
-  const LEDLight({required this.value});
-
-  final int value;
-}
-
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
   // A private variable with type StateMachine<OvenState> `_oven`.
@@ -55,11 +28,19 @@ class OvenModule extends Module {
   // and will be assign in the later section.
   late StateMachine<OvenState> _oven;
 
-  // A hashmap
+  // A hashmap that represent button value
   final Map<String, int> btnVal = {
     'start': 0,
     'pause': 1,
     'resume': 2,
+  };
+
+  // A hashmap that represent LED value
+  final Map<String, int> ledLight = {
+    'yellow': 0,
+    'blue': 1,
+    'red': 2,
+    'green': 3
   };
 
   // We can expose an LED light output as a getter to retrieve it value.
@@ -114,7 +95,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 1 (Reset the timer);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.blue.value,
+            led < ledLight['blue'],
             counterReset < 1,
             en < 0,
           ]),
@@ -140,7 +121,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 1 (Enable value update).
           actions: [
-            led < LEDLight.yellow.value,
+            led < ledLight['yellow'],
             counterReset < 0,
             en < 1,
           ]),
@@ -161,7 +142,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 0 (Do not reset);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.red.value,
+            led < ledLight['red'],
             counterReset < 0,
             en < 0,
           ]),
@@ -182,7 +163,7 @@ class OvenModule extends Module {
           // `counterReset` is set to 1 (Reset value);
           // timer's `en` is set to 0 (Disable value update).
           actions: [
-            led < LEDLight.green.value,
+            led < ledLight['green'],
             counterReset < 1,
             en < 0,
           ])
@@ -233,7 +214,8 @@ Future<void> main({bool noPrint = false}) async {
     // We can listen to the streams on LED light changes based on time.
     oven.led.changed.listen((event) {
       // Get the led light enum name from LogicValue.
-      final ledVal = LEDLight.values[event.newValue.toInt()].name;
+      final ledVal = oven.ledLight.keys.firstWhere(
+          (element) => oven.ledLight[element] == event.newValue.toInt());
 
       // Print the Simulator time when the LED light changes.
       print('@t=${Simulator.time}, LED changed to: $ledVal');
