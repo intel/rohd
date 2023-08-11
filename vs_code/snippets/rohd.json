@@ -2,7 +2,7 @@
 	"ROHD: Create Module": {
 		"prefix": ["mod", "module", "Mod", "Module"],
 		"body": [
-			"class $1extends Module {",
+			"class $1 extends Module {",
 			"\t$1(Logic ${2:a}) {",
 			"\t// Add to Input Port",
 			"\t$2 = addInput('$2', $2);",
