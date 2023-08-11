@@ -179,7 +179,7 @@ final states = [
                   ..gets(button
                       .eq(Const(Button.pause.value, width: button.width))):
                 OvenState.paused,
-            Logic(name: 'counter_time_complete')..gets(counter.val.eq(4)):
+            Logic(name: 'counter_time_complete')..gets(counterInterface.val.eq(4)):
                 OvenState.completed
           },
           // actions:
