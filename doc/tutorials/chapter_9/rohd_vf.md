@@ -92,7 +92,7 @@ class TopTB {
 
 ### B. Define the Stimulus for Counter
 
-Next, we need to know what is the sequence item that we want to pass to the Test. In our case, our sequence item will consists of enable of 1 or 0 which represented using boolean of True and False.  If the enabled is True, the Counter will start and stop when enabled is False.
+Next, we need to know what is the `SequenceItem` that we want to pass to the `Test`. In our case, our `SequenceItem` will consists of enable pin 1 or 0 which represented using boolean of True and False.  If the enabled is True, the Counter will start and stop when enabled is False.
 
 ```dart
 class MySeqItem extends SequenceItem {
@@ -420,3 +420,5 @@ Future<void> main({Level loggerLevel = Level.FINER}) async {
   await test.start();
 }
 ```
+
+Well, that all about the ROHD-VF. Although its not necessary, but having some understanding on the UVM could be helpful if you are interested in more details of the verification framework. Happy coding.
