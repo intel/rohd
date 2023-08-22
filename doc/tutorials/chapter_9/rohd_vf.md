@@ -19,7 +19,7 @@
 
 In this chapter:
 
-- You will learn how to use ROHD-VF to perform verification on a Counter DUT. You will be constructing the DUT, Agen, Env and a Test to verify.
+- You will learn how to use ROHD-VF to perform verification on a Counter DUT. You will be constructing the DUT, Agent, Env and a Test to verify.
 
 ## ROHD Verification Framework
 
