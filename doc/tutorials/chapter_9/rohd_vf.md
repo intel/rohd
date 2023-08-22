@@ -63,11 +63,11 @@ To log a message from any ROHD-VF object or component, just use the inherited `l
 
 ## Test a Counter module with ROHD-VF
 
-Today, we are going to test a `Counter` module using ROHD-VF. The `Counter` module can be found on the chapter 8 interface. Let start with creating a test plan. Say that, we want to test:
+### A. Define Counter DUT
 
-- If the value of the Counter are increasing in every cycle
+Today, we are going to test a `Counter` module using ROHD-VF. The `Counter` module can be found on the chapter 8 interface. Let create a simple test to make sure that `Counter` increment it value when enable is 1.
 
-First and foremost, let start by creating a top level testbench.
+First and foremost, let start by creating a top level testbench. Our top level teshbench is a simple instantiation of the `Counter`'s interface. Then, we connect the interface clock pin to the `SimpleClockGenerator` and instantiate the DUT.
 
 ```dart
 // The DUT to test.
@@ -90,13 +90,18 @@ class TopTB {
 }
 ```
 
-Next, we need to know what is the sequence item that we want to pass to the Test. In our case, our sequence item will consists of enable of 1 or 0 which represented using boolean True or False.  If the enabled is True, the Counter will start and stop when enabled is False.
+### B. Define the Stimulus for Counter
+
+Next, we need to know what is the sequence item that we want to pass to the Test. In our case, our sequence item will consists of enable of 1 or 0 which represented using boolean of True and False.  If the enabled is True, the Counter will start and stop when enabled is False.
 
 ```dart
 class MySeqItem extends SequenceItem {
+
   // your control pin
   // in this case is enable pin
   final bool _enable;
+
+  // We can use constructor to set enable to True or False.
   MySeqItem(this._enable);
 
   int get en => _enable ? 1 : 0;
@@ -106,7 +111,7 @@ class MySeqItem extends SequenceItem {
 }
 ```
 
-After define our sequence item, we want to explicitly define the type that are going to the Sequencer.
+After define our sequence item, we want to explicitly define the type that are going to the Sequencer. Notice that `Sequencer<MySeqItem>` actually takes in `MySeqItem`.
 
 ```dart
 class MySequencer extends Sequencer<MySeqItem> {
@@ -115,11 +120,11 @@ class MySequencer extends Sequencer<MySeqItem> {
 }
 ```
 
-Since Sequencer will take input from a sequence, we also need to declare our own Sequence that can be used by the Sequencer.
+Since `Sequencer` takes input from a sequence, we also need to declare our own `Sequence` that can be used by the `Sequencer`. In the run method, the `Sequence` actually register the `SequenceItem` which allows `Sequencer` to drive.
 
 ```dart
 class MySequence extends Sequence {
-  //------------------------ Comment Out later ---------------------------
+ 
   final int numRepeat;
 
   MySequence(this.numRepeat, {String name = 'mySequence'}) : super(name);
@@ -128,18 +133,21 @@ class MySequence extends Sequence {
   Future<void> body(Sequencer sequencer) async {
     final mySequencer = sequencer as MySequencer;
     for (var i = 0; i < numRepeat; i++) {
+      // Let add SequenceItem to sequencer.
       mySequencer.add(MySeqItem(true));
     }
   }
-  //---------------------------------------------------------------------
 }
 ```
 
-Now, we have finished declared all the Stimulus. We can hop into constructing our `Agent`. Agent consists of a sequencer, driver and monitor. We had defined our Sequencer, so now we want to implement the driver and monitor.
+### C. Counter Agent
 
-You can have several Monitor in ROHD-VF testbench. Let start by having a Monitor that monitor for Counter's Value. Let add the interface value to the stream by using the `add()` function. We can define it at the `run()` function.
+Now, we have finished declared all the Stimulus. We can hop into constructing our `Agent`. Agent consists of a `Sequencer`, `Driver` and `Monitor`. We had defined our `Sequencer`, so now we want to implement the `Driver` and `Monitor`.
+
+You can have several `Monitor` in ROHD-VF testbench. Let start by having a `Monitor` that monitor for Counter's Value. Let add the interface value to the stream by using the `add()` function. We can define it at the `run()` function.
 
 ```dart
+// This monitor will monitor for value changed at the posedge.
 class MyValueMonitor extends Monitor<LogicValue> {
   /// Instance of the [Interface] to the DUT.
   final MyCounterInterface intf;
@@ -160,7 +168,7 @@ class MyValueMonitor extends Monitor<LogicValue> {
 }
 ```
 
-Next, we will need to create a `driver` that drive the value from `Sequencer`. In your Driver, you need to declare the interface and the pending items from Queue. In your run function, basically what you do is listen to the sequencer stream to retrived sequence item and add to the queue. After that, we will drive the sequence item in either positive and negative edge of the clock.
+Next, we will need to create a `Driver` that drive the value from `Sequencer`. In your `Driver`, you need to declare the interface and the pending items from Queue. At the `run()` function, basically what you need to do is listen to the `Sequencer` stream to retrived sequence item and add to the queue. After that, we will drive the sequence item in either positive and negative edge of the clock.
 
 ```dart
 class MyDriver extends Driver<MySeqItem> {
@@ -188,7 +196,6 @@ class MyDriver extends Driver<MySeqItem> {
     });
 
     // Every clock negative edge, drive the next pending item if it exists
-    // TODO: Let user choose to drive at posedge or negedge
     intf.clk.negedge.listen((args) {
       if (_pendingItems.isNotEmpty) {
         final nextItem = _pendingItems.removeFirst();
@@ -202,7 +209,6 @@ class MyDriver extends Driver<MySeqItem> {
   }
 
   // Translate a SequenceItem into pin wiggles
-  // use inject instead of put here
   void drive(MySeqItem? item) {
     if (item == null) {
       intf.en.inject(0);
@@ -213,7 +219,7 @@ class MyDriver extends Driver<MySeqItem> {
 }
 ```
 
-Lastly, we will need to create an Agent that used the sequencer, monitor, and driver. Basically, we just need to instantiate it by extending Agent class.
+Lastly, we will need to create an Agent that instantiate the `Sequencer`, `Monitor`, and `Driver`. Basically, we just need to instantiate it by extending `Agent` class.
 
 ```dart
 class MyAgent extends Agent {
@@ -231,7 +237,7 @@ class MyAgent extends Agent {
 }
 ```
 
-The next things we want to do is checking for the test case using Scoreboard. We are expecting the value to keep on increasing when enabled pin is 1.
+The next things that we want to do is checking for the test case using a `Scoreboard`. We are expecting the value to keep on increasing when enabled pin is 1.
 
 ```dart
 class MyScoreboard extends Component {
@@ -288,7 +294,9 @@ class MyScoreboard extends Component {
 }
 ```
 
-The same things like Agent, we want to wrap everything to the Environment `Env`. Our Env will contains agent, scoreboard and interface. 
+### D. Counter Environment
+
+For `Env`, we want to wrap everything to the Environment `Env`. Our `Env` will contains `Agent`, `Scoreboard` and `Interface`.
 
 ```dart
 class MyEnv extends Env {
@@ -316,7 +324,9 @@ class MyEnv extends Env {
 }
 ```
 
-Now, let wrap and connect everythings through Test. In the run function, we can set the flow on how we going to do the test.
+### E. Counter Test
+
+Now, let's wrap and connect everythings through `Test`. In `run()`, we can set the flow on how we going to do the test. For example, I can control the `reset` pin value using `Simulator.registerAction()`.
 
 ```dart
 class MyTest extends Test {
@@ -384,7 +394,9 @@ class MyTest extends Test {
 }
 ```
 
-As usual, we can create an entry point main() and start the Test.
+### D. Create an Entry Point
+
+As usual, we can create an entry point `main()` and start the `Test()`.
 
 ```dart
 Future<void> main({Level loggerLevel = Level.FINER}) async {
