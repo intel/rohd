@@ -1,4 +1,27 @@
-# ROHD Verification Framework
+# Content
+
+- [ROHD Verification Framework](#rohd-verification-framework)
+- [Testbenches](#testbenches)
+  - [Constructing Objects](#constructing-objects)
+  - [Component's Phases](#components-phases)
+  - [Component](#component)
+  - [Stimulus](#stimulus)
+  - [Logging](#logging)
+- [Test a Counter module with ROHD-VF](#test-a-counter-module-with-rohd-vf)
+  - [A. Define Counter DUT](#a-define-counter-dut)
+  - [B. Define the Stimulus for Counter](#b-define-the-stimulus-for-counter)
+  - [C. Counter Agent](#c-counter-agent)
+  - [D. Counter Environment](#d-counter-environment)
+  - [E. Counter Test](#e-counter-test)
+  - [F. Create an Entry Point](#f-create-an-entry-point)
+
+## Learning Outcome
+
+In this chapter:
+
+- You will learn how to use ROHD-VF to perform verification on a Counter DUT. You will be constructing the DUT, Agen, Env and a Test to verify.
+
+## ROHD Verification Framework
 
 In this chapter, we are going to learn how to use ROHD-VF, a verification framework that are built upon Rapid Open Hardware Development (ROHD) framework. ROHD-VF offers testbench in a way that are similar to UVM. For those who are unfamiliar with UVM, worry not as we will covered it piece by piece as we move along with this tutorial.
 
@@ -12,7 +35,7 @@ A testbench is a software used to interact with and test a device under test (DU
 
 ROHD-VF does not comes with a built-in "factory" (like UVM) for constructing Components in the testbench. But, it is a good idea to build a testbench with modularity and configurability in mind. There is no restriction against using factory design pattern to build a test bench if you feel that are the right approach.
 
-#### Component's Phases
+### Component's Phases
 
 Most of the setup occur in the constuctor of the object. ROHD-VF comes with some phasing (similar to UVM) to help configure, connect and run a testbench in coordinated steps. Every Component goes through phases.
 
@@ -27,7 +50,7 @@ Most of the setup occur in the constuctor of the object. ROHD-VF comes with some
 - `void check()`
   - A function that gets called at the end of the simulation, for checking the end state for correctness
 
-#### Component
+### Component
 
 A `component` is an object which holds a fixed hierarchical position in the testbench. All the below classes extend `Component`.
 
@@ -44,7 +67,7 @@ A `component` is an object which holds a fixed hierarchical position in the test
 - **Test**
   - A `Test` is like a top-level testing entity that contains the top testbench `Env` and kicks off `Sequence`s. Only one `Test` should be running at a time. The `Test` also containsa central `Random` object to be used for randomization in a reproducible way.
 
-#### Stimulus
+### Stimulus
 
 Sending stimulus through the testbench to the device undertest is done by passing `SequenceItem`s through sequencer to `Driver`.
 
@@ -53,7 +76,7 @@ Sending stimulus through the testbench to the device undertest is done by passin
 - **Sequence**
   - A `Sequence` is a modular object which has instructions for how to send `SequenceItem`s to a `Sequencer`. A typical use case would be sending a collection of `SequenceItem`s in a specific order.
 
-#### Logging
+### Logging
 
 ROHD-VF uses Dart `logging` package for all logging. It comes with a variety of verbosity levels and excellent customizability.
 
@@ -62,6 +85,8 @@ The `Test` object contains settings for `killLevel` and `failLevel` which will, 
 To log a message from any ROHD-VF object or component, just use the inherited `logger` object.
 
 ## Test a Counter module with ROHD-VF
+
+Before you start to code any ROHD-VF framework, you are require to install the `ROHD-VF` packages. You can do that by running the command `dart pub add rohd_vf` on your terminal. The details of the packages can be find in [pub.dev](https://pub.dev/packages/rohd_vf).
 
 ### A. Define Counter DUT
 
@@ -394,7 +419,7 @@ class MyTest extends Test {
 }
 ```
 
-### D. Create an Entry Point
+### F. Create an Entry Point
 
 As usual, we can create an entry point `main()` and start the `Test()`.
 

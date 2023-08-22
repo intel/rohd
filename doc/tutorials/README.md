@@ -84,20 +84,25 @@
 - Pipelines: Normally Delayed exists in between a big circuit, abstractions split the logic across multiple cycles and let us decide what logic do you want it to occur in each of the cycle.
 - Finite state machines
 
-## Chapter 9: ROHD-COSIM External SystemVerilog Modules (Coming Soon!)
+## Chapter 9: ROHD-VF
 
-- More functionality
-- Using and depending on other packages
-
-## Chapter 10: ROHD-VF (Coming Soon!)
-
-- Contributing to ROHD
-- Building your own package
-- ROHD-VF <https://colorlesscube.com/uvm-guide-for-beginners/chapter-1-the-dut/>
-- ROHD Cosim
+- [ROHD Verification Framework](./chapter_9/rohd_vf.md#rohd-verification-framework)
+- [Testbenches](./chapter_9/rohd_vf.md#testbenches)
+  - [Constructing Objects](./chapter_9/rohd_vf.md#constructing-objects)
+  - [Component's Phases](./chapter_9/rohd_vf.md#components-phases)
+  - [Component](./chapter_9/rohd_vf.md#component)
+  - [Stimulus](./chapter_9/rohd_vf.md#stimulus)
+  - [Logging](./chapter_9/rohd_vf.md#logging)
+- [Test a Counter module with ROHD-VF](./chapter_9/rohd_vf.md#test-a-counter-module-with-rohd-vf)
+  - [A. Define Counter DUT](./chapter_9/rohd_vf.md#a-define-counter-dut)
+  - [B. Define the Stimulus for Counter](./chapter_9/rohd_vf.md#b-define-the-stimulus-for-counter)
+  - [C. Counter Agent](./chapter_9/rohd_vf.md#c-counter-agent)
+  - [D. Counter Environment](./chapter_9/rohd_vf.md#d-counter-environment)
+  - [E. Counter Test](./chapter_9/rohd_vf.md#e-counter-test)
+  - [F. Create an Entry Point](./chapter_9/rohd_vf.md#f-create-an-entry-point)
 
 ----------------
-2023 June 9
+2023 August 22
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
 Copyright (C) 2021-2023 Intel Corporation  
