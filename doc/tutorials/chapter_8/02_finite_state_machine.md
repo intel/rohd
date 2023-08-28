@@ -44,32 +44,12 @@ import 'package:rohd/rohd.dart';
 import './counter_interface.dart';
 ```
 
-We also want to represent the standby, cooking, paused, and completed states and the buttons start, pause and resume in dart enums. However, we want to one-hot encoded the buttons with custom value with dart enhanced enums.
+We also want to represent the standby, cooking, paused, and completed states.
 
 Next, we can also use enums to represent the LED light on the oven. Similar to buttons, we want to also encoded the LED light with customs value instead.
 
 ```dart
 enum OvenState { standby, cooking, paused, completed }
-enum Button {
-  start(value: 0),
-  pause(value: 1),
-  resume(value: 2);
-
-  const Button({required this.value});
-
-  final int value;
-}
-
-enum LEDLight {
-  yellow(value: 0),
-  blue(value: 1),
-  red(value: 2),
-  green(value: 3);
-
-  const LEDLight({required this.value});
-
-  final int value;
-}
 ```
 
 Then, its time to create our `OvenModule`. Let start by creating the Module class.
@@ -86,9 +66,27 @@ In ROHD, we can use `StateMachine` API library. The `StateMachine` constructs a 
 
 Let start by intitialize a variable called `_oven` that is `StateMachine` with `StateIdentifier` as  `OvenState`.
 
+Besides, we can use a simple hashmap to map over the button and LED value to integer.
+
 ```dart
 class OvenModule extends Module {
   late StateMachine<OvenState> _oven;
+
+  // A hashmap that represent button value
+  final Map<String, int> btnVal = {
+    'start': 0,
+    'pause': 1,
+    'resume': 2,
+  };
+
+  // A hashmap that represent LED value
+  final Map<String, int> ledLight = {
+    'yellow': 0,
+    'blue': 1,
+    'red': 2,
+    'green': 3
+  };
+
   OvenModule(): super(name: 'OvenModule') {
     // logic here
   }
