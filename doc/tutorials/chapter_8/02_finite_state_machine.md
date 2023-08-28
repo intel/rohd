@@ -266,6 +266,10 @@ The FSM abstraction come with state diagram generator using mermaid. We can crea
 oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
 ```
 
+Then, you can preview the generated fsm diagram.
+
+![FSM Mermaid](../chapter_8/assets/fsm_mermaid.PNG)
+
 Before we start the simulation, we need to build the module using `await oven.build()`. Let start by inject value of 1 to `reset` to not allows the FSM start.
 
 ```dart
