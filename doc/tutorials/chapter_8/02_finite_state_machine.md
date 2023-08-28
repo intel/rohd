@@ -237,15 +237,17 @@ final states = [
 
 By now, you already have a list of `state` ready to be passed to the `StateMachine`. Let assign the the `state` to the StateMachine declared. Note that, we also passed `OvenState.standby` to the StateMachine to understand that is the State when reset signal is given.
 
+ROHD FSM abstraction come with state diagram generator using mermaid. We can create a markdown file using the function `generateDiagram()`. You can install mermaid extension in VSCode to preview the diagram.
+
 ```dart
 _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
+
+_oven.generateDiagram(outputPath: 'doc/tutorials/chapter_8/oven_fsm.md');
 ```
 
-Let also create a getter to expose `_oven` to the public as we can used it to generate a FSM diagram.
+Then, you can preview the generated fsm diagram.
 
-```dart
-StateMachine<OvenState> get ovenStateMachine => _oven;
-```
+![FSM Mermaid](../chapter_8/assets/fsm_mermaid.png)
 
 ## FSM Simulation
 
@@ -258,16 +260,6 @@ Future<void> main({bool noPrint = false}) async {
   final oven = OvenModule(button, reset);
 }
 ```
-
-The FSM abstraction come with state diagram generator using mermaid. We can create a markdown file using the function `generateDiagram()`. You can install mermaid extension in VSCode to preview the diagram.
-
-```dart
-oven.ovenStateMachine.generateDiagram(outputPath: 'oven_fsm.md');
-```
-
-Then, you can preview the generated fsm diagram.
-
-![FSM Mermaid](../chapter_8/assets/fsm_mermaid.png)
 
 Before we start the simulation, we need to build the module using `await oven.build()`. Let start by inject value of 1 to `reset` to not allows the FSM start.
 

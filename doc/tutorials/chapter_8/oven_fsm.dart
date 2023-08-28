@@ -70,8 +70,6 @@ class OvenModule extends Module {
     counterInterface.en <= en;
     counterInterface.reset <= counterReset;
 
-    final counter = Counter(counterInterface);
-
     // A list of `OvenState` that describe the FSM. Note that
     // `OvenState` consists of identifier, events and actions. We
     // can think of `identifier` as the state name, `events` is a map of event
@@ -171,10 +169,14 @@ class OvenModule extends Module {
 
     // Assign the _oven StateMachine object to private variable declared.
     _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
-  }
 
-  // An ovenStateMachine that represent in getter.
-  StateMachine<OvenState> get ovenStateMachine => _oven;
+    // Generate a Mermaid FSM diagram and save as the name `oven_fsm.md`.
+    // Note that the extension of the files is recommend as .md or .mmd.
+    //
+    // Check on https://mermaid.js.org/intro/ to view the diagram generated.
+    // If you are using vscode, you can download the mermaid extension.
+    _oven.generateDiagram(outputPath: 'doc/tutorials/chapter_8/oven_fsm.md');
+  }
 }
 
 Future<void> main({bool noPrint = false}) async {
@@ -187,14 +189,6 @@ Future<void> main({bool noPrint = false}) async {
 
   // Build an Oven Module and passed the `button` and `reset`.
   final oven = OvenModule(button, reset);
-
-  // Generate a Mermaid FSM diagram and save as the name `oven_fsm.md`.
-  // Note that the extension of the files is recommend as .md or .mmd.
-  //
-  // Check on https://mermaid.js.org/intro/ to view the diagram generated.
-  // If you are using vscode, you can download the mermaid extension.
-  oven.ovenStateMachine
-      .generateDiagram(outputPath: 'doc/tutorials/chapter_8/oven_fsm.md');
 
   // Before we can simulate or generate code with the counter, we need
   // to build it.
