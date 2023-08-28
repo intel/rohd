@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// example.dart
-/// A very basic example of a counter module.
-///
-/// 2021 September 17
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// example.dart
+// A very basic example of a counter module.
+//
+// 2021 September 17
+// Author: Max Korbel <max.korbel@intel.com>
 
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):

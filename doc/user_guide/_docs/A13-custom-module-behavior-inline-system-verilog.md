@@ -6,8 +6,6 @@ last_modified_at: 2022-12-06
 toc: true
 ---
 
-### Custom module behavior with custom in-line SystemVerilog representation
-
 Many of the basic built-in gates in Dart implement custom behavior.  An implementation of the NotGate is shown below as an example.  There is different syntax for functions which can be inlined versus those which cannot (the ~ can be inlined).  In this case, the `InlineSystemVerilog` mixin is used, but if it were not inlineable, you could use `CustomSystemVerilog`.  Note that it is mandatory to provide an initial value computation when the module is first created for non-sequential modules.
 
 ```dart
