@@ -247,7 +247,7 @@ _oven.generateDiagram(outputPath: 'doc/tutorials/chapter_8/oven_fsm.md');
 
 Then, you can preview the generated fsm diagram.
 
-![FSM Mermaid](../chapter_8/assets/fsm_mermaid.png)
+![FSM Mermaid](./assets/fsm_mermaid.png)
 
 ## FSM Simulation
 
