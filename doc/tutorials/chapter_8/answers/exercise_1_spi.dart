@@ -37,15 +37,13 @@ class SPIInterface extends Interface<SPIDirection> {
 
 class Controller extends Module {
   late final Logic _reset;
-  late final Logic _clk;
   late final Logic _sin;
 
-  Controller(SPIInterface intf, Logic reset, Logic clk, Logic sin)
+  Controller(SPIInterface intf, Logic reset, Logic sin)
       : super(name: 'controller') {
     // set input port to private variable instead,
     // we don't want other class to access this
     _reset = addInput('reset', reset);
-    _clk = addInput('clk', clk);
     _sin = addInput('sin', sin);
 
     // define a new interface, and connect it
@@ -59,7 +57,6 @@ class Controller extends Module {
       );
 
     intf.cs <= Const(1);
-    intf.sck <= _clk;
 
     Sequential(intf.sck, [
       If.block([
@@ -84,21 +81,21 @@ class Peripheral extends Module {
 
   late final SPIInterface shiftRegIntF;
 
-  Peripheral(SPIInterface shiftRegIntF) : super(name: 'shift_register') {
-    this.shiftRegIntF = SPIInterface()
+  Peripheral(SPIInterface periIntF) : super(name: 'shift_register') {
+    shiftRegIntF = SPIInterface()
       ..connectIO(
         this,
-        shiftRegIntF,
+        periIntF,
         inputTags: {SPIDirection.controllerOutput},
         outputTags: {SPIDirection.peripheralOutput},
       );
-    // _buildLogic();
+
     const regWidth = 8;
     final data = Logic(name: 'data', width: regWidth);
     final sout = addOutput('sout', width: 8);
 
     Sequential(sck, [
-      If(cs, then: [
+      If(shiftRegIntF.cs, then: [
         data < [data.slice(regWidth - 2, 0), sdi].swizzle()
       ], orElse: [
         data < 0
@@ -106,7 +103,7 @@ class Peripheral extends Module {
     ]);
 
     sout <= data;
-    sdo <= data.getRange(0, 1);
+    shiftRegIntF.sdo <= data.getRange(0, 1);
   }
 }
 
@@ -123,7 +120,7 @@ class TestBench extends Module {
     final sout = addOutput('sout', width: 8);
 
     // ignore: unused_local_variable
-    final ctrl = Controller(spiInterface, reset, clk, sin);
+    final ctrl = Controller(spiInterface, reset, clk);
     final peripheral = Peripheral(spiInterface);
 
     sout <= peripheral.sout;
