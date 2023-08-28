@@ -103,6 +103,7 @@ Let also create an internal clock generator `clk` inside the module. This clk ge
 class OvenModule extends Module {
   late StateMachine<OvenState> _oven;
   Logic get led => output('led');
+
   OvenModule(): super(name: 'OvenModule') {
     // FSM input and output
     button = addInput('button', button, width: button.width);
@@ -147,92 +148,92 @@ The other states are coded as below. The code are well documented with comments 
 final states = [
   // identifier: standby state, represent by `OvenState.standby`.
   State<OvenState>(OvenState.standby,
-      // events:
-      // When the button `start` is pressed during standby state,
-      // OvenState will changed to `OvenState.cooking` state.
-      events: {
-        Logic(name: 'button_start')
-              ..gets(button
-                  .eq(Const(Button.start.value, width: button.width))):
-            OvenState.cooking,
-      },
-      // actions:
-      // During the standby state, `led` is change to blue; timer's
-      // `counterReset` is set to 1 (Reset the timer);
-      // timer's `en` is set to 0 (Disable value update).
-      actions: [
-        led < LEDLight.blue.value,
-        counterReset < 1,
-        en < 0,
-      ]),
+    // events:
+    // When the button `start` is pressed during standby state,
+    // OvenState will changed to `OvenState.cooking` state.
+    events: {
+      Logic(name: 'button_start')
+            ..gets(button
+                .eq(Const(Button.start.value, width: button.width))):
+          OvenState.cooking,
+    },
+    // actions:
+    // During the standby state, `led` is change to blue; timer's
+    // `counterReset` is set to 1 (Reset the timer);
+    // timer's `en` is set to 0 (Disable value update).
+    actions: [
+      led < LEDLight.blue.value,
+      counterReset < 1,
+      en < 0,
+    ]),
 
   // identifier: cooking state, represent by `OvenState.cooking`.
   State<OvenState>(OvenState.cooking,
-      // events:
-      // When the button `paused` is pressed during cooking state,
-      // OvenState will changed to `OvenState.paused` state.
-      //
-      // When the button `counter` time is elapsed during cooking state,
-      // OvenState will changed to `OvenState.completed` state.
-      events: {
-        Logic(name: 'button_pause')
-              ..gets(button
-                  .eq(Const(Button.pause.value, width: button.width))):
-            OvenState.paused,
-        Logic(name: 'counter_time_complete')..gets(counterInterface.val.eq(4)):
-            OvenState.completed
-      },
-      // actions:
-      // During the cooking state, `led` is change to yellow; timer's
-      // `counterReset` is set to 0 (Do not reset);
-      // timer's `en` is set to 1 (Enable value update).
-      actions: [
-        led < LEDLight.yellow.value,
-        counterReset < 0,
-        en < 1,
-      ]),
+    // events:
+    // When the button `paused` is pressed during cooking state,
+    // OvenState will changed to `OvenState.paused` state.
+    //
+    // When the button `counter` time is elapsed during cooking state,
+    // OvenState will changed to `OvenState.completed` state.
+    events: {
+      Logic(name: 'button_pause')
+            ..gets(button
+                .eq(Const(Button.pause.value, width: button.width))):
+          OvenState.paused,
+      Logic(name: 'counter_time_complete')..gets(counterInterface.val.eq(4)):
+          OvenState.completed
+    },
+    // actions:
+    // During the cooking state, `led` is change to yellow; timer's
+    // `counterReset` is set to 0 (Do not reset);
+    // timer's `en` is set to 1 (Enable value update).
+    actions: [
+      led < LEDLight.yellow.value,
+      counterReset < 0,
+      en < 1,
+    ]),
 
   // identifier: paused state, represent by `OvenState.paused`.
   State<OvenState>(OvenState.paused,
-      // events:
-      // When the button `resume` is pressed during paused state,
-      // OvenState will changed to `OvenState.cooking` state.
-      events: {
-        Logic(name: 'button_resume')
-              ..gets(button
-                  .eq(Const(Button.resume.value, width: button.width))):
-            OvenState.cooking
-      },
-      // actions:
-      // During the paused state, `led` is change to red; timer's
-      // `counterReset` is set to 0 (Do not reset);
-      // timer's `en` is set to 0 (Disable value update).
-      actions: [
-        led < LEDLight.red.value,
-        counterReset < 0,
-        en < 0,
-      ]),
+    // events:
+    // When the button `resume` is pressed during paused state,
+    // OvenState will changed to `OvenState.cooking` state.
+    events: {
+      Logic(name: 'button_resume')
+            ..gets(button
+                .eq(Const(Button.resume.value, width: button.width))):
+          OvenState.cooking
+    },
+    // actions:
+    // During the paused state, `led` is change to red; timer's
+    // `counterReset` is set to 0 (Do not reset);
+    // timer's `en` is set to 0 (Disable value update).
+    actions: [
+      led < LEDLight.red.value,
+      counterReset < 0,
+      en < 0,
+    ]),
 
   // identifier: completed state, represent by `OvenState.completed`.
   State<OvenState>(OvenState.completed,
-      // events:
-      // When the button `start` is pressed during completed state,
-      // OvenState will changed to `OvenState.standby` state.
-      events: {
-        Logic(name: 'button_start')
-              ..gets(button
-                  .eq(Const(Button.start.value, width: button.width))):
-            OvenState.standby
-      },
-      // actions:
-      // During the start state, `led` is change to green; timer's
-      // `counterReset` is set to 1 (Reset value);
-      // timer's `en` is set to 0 (Disable value update).
-      actions: [
-        led < LEDLight.green.value,
-        counterReset < 1,
-        en < 0,
-      ])
+    // events:
+    // When the button `start` is pressed during completed state,
+    // OvenState will changed to `OvenState.standby` state.
+    events: {
+      Logic(name: 'button_start')
+            ..gets(button
+                .eq(Const(Button.start.value, width: button.width))):
+          OvenState.standby
+    },
+    // actions:
+    // During the start state, `led` is change to green; timer's
+    // `counterReset` is set to 1 (Reset value);
+    // timer's `en` is set to 0 (Disable value update).
+    actions: [
+      led < LEDLight.green.value,
+      counterReset < 1,
+      en < 0,
+    ])
 ];
 ```
 
