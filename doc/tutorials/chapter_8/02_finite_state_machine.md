@@ -76,9 +76,9 @@ Then, its time to create our `OvenModule`. Let start by creating the Module clas
 
 ```dart
 class OvenModule extends Module {
-    OvenModule(): super(name: 'OvenModule') {
-        // logic here
-    }
+  OvenModule(): super(name: 'OvenModule') {
+    // logic here
+  }
 }
 ```
 
@@ -88,10 +88,10 @@ Let start by intitialize a variable called `_oven` that is `StateMachine` with `
 
 ```dart
 class OvenModule extends Module {
-    late StateMachine<OvenState> _oven;
-    OvenModule(): super(name: 'OvenModule') {
-        // logic here
-    }
+  late StateMachine<OvenState> _oven;
+  OvenModule(): super(name: 'OvenModule') {
+    // logic here
+  }
 }
 ```
 
@@ -101,25 +101,25 @@ Let also create an internal clock generator `clk` inside the module. This clk ge
 
 ```dart
 class OvenModule extends Module {
-    late StateMachine<OvenState> _oven;
-    Logic get led => output('led');
-    OvenModule(): super(name: 'OvenModule') {
-        // FSM input and output
-        button = addInput('button', button, width: button.width);
-        reset = addInput('reset', reset);
-        final led = addOutput('led', width: 8);
-        
-        // Counter internal signals
-        final clk = SimpleClockGenerator(10).clk;
-        final counterReset = Logic(name: 'counter_reset');
-        final en = Logic(name: 'counter_en');
-        final counterInterface = CounterInterface();
-        counterInterface.clk <= clk;
-        counterInterface.en <= en;
-        counterInterface.reset <= counterReset;
+  late StateMachine<OvenState> _oven;
+  Logic get led => output('led');
+  OvenModule(): super(name: 'OvenModule') {
+    // FSM input and output
+    button = addInput('button', button, width: button.width);
+    reset = addInput('reset', reset);
+    final led = addOutput('led', width: 8);
+    
+    // Counter internal signals
+    final clk = SimpleClockGenerator(10).clk;
+    final counterReset = Logic(name: 'counter_reset');
+    final en = Logic(name: 'counter_en');
+    final counterInterface = CounterInterface();
+    counterInterface.clk <= clk;
+    counterInterface.en <= en;
+    counterInterface.reset <= counterReset;
 
-        final counter = Counter(counterInterface);
-    }
+    final counter = Counter(counterInterface);
+  }
 }
 ```
 
@@ -145,95 +145,95 @@ The other states are coded as below. The code are well documented with comments 
 
 ```dart
 final states = [
-      // identifier: standby state, represent by `OvenState.standby`.
-      State<OvenState>(OvenState.standby,
-          // events:
-          // When the button `start` is pressed during standby state,
-          // OvenState will changed to `OvenState.cooking` state.
-          events: {
-            Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
-                OvenState.cooking,
-          },
-          // actions:
-          // During the standby state, `led` is change to blue; timer's
-          // `counterReset` is set to 1 (Reset the timer);
-          // timer's `en` is set to 0 (Disable value update).
-          actions: [
-            led < LEDLight.blue.value,
-            counterReset < 1,
-            en < 0,
-          ]),
+  // identifier: standby state, represent by `OvenState.standby`.
+  State<OvenState>(OvenState.standby,
+      // events:
+      // When the button `start` is pressed during standby state,
+      // OvenState will changed to `OvenState.cooking` state.
+      events: {
+        Logic(name: 'button_start')
+              ..gets(button
+                  .eq(Const(Button.start.value, width: button.width))):
+            OvenState.cooking,
+      },
+      // actions:
+      // During the standby state, `led` is change to blue; timer's
+      // `counterReset` is set to 1 (Reset the timer);
+      // timer's `en` is set to 0 (Disable value update).
+      actions: [
+        led < LEDLight.blue.value,
+        counterReset < 1,
+        en < 0,
+      ]),
 
-      // identifier: cooking state, represent by `OvenState.cooking`.
-      State<OvenState>(OvenState.cooking,
-          // events:
-          // When the button `paused` is pressed during cooking state,
-          // OvenState will changed to `OvenState.paused` state.
-          //
-          // When the button `counter` time is elapsed during cooking state,
-          // OvenState will changed to `OvenState.completed` state.
-          events: {
-            Logic(name: 'button_pause')
-                  ..gets(button
-                      .eq(Const(Button.pause.value, width: button.width))):
-                OvenState.paused,
-            Logic(name: 'counter_time_complete')..gets(counterInterface.val.eq(4)):
-                OvenState.completed
-          },
-          // actions:
-          // During the cooking state, `led` is change to yellow; timer's
-          // `counterReset` is set to 0 (Do not reset);
-          // timer's `en` is set to 1 (Enable value update).
-          actions: [
-            led < LEDLight.yellow.value,
-            counterReset < 0,
-            en < 1,
-          ]),
+  // identifier: cooking state, represent by `OvenState.cooking`.
+  State<OvenState>(OvenState.cooking,
+      // events:
+      // When the button `paused` is pressed during cooking state,
+      // OvenState will changed to `OvenState.paused` state.
+      //
+      // When the button `counter` time is elapsed during cooking state,
+      // OvenState will changed to `OvenState.completed` state.
+      events: {
+        Logic(name: 'button_pause')
+              ..gets(button
+                  .eq(Const(Button.pause.value, width: button.width))):
+            OvenState.paused,
+        Logic(name: 'counter_time_complete')..gets(counterInterface.val.eq(4)):
+            OvenState.completed
+      },
+      // actions:
+      // During the cooking state, `led` is change to yellow; timer's
+      // `counterReset` is set to 0 (Do not reset);
+      // timer's `en` is set to 1 (Enable value update).
+      actions: [
+        led < LEDLight.yellow.value,
+        counterReset < 0,
+        en < 1,
+      ]),
 
-      // identifier: paused state, represent by `OvenState.paused`.
-      State<OvenState>(OvenState.paused,
-          // events:
-          // When the button `resume` is pressed during paused state,
-          // OvenState will changed to `OvenState.cooking` state.
-          events: {
-            Logic(name: 'button_resume')
-                  ..gets(button
-                      .eq(Const(Button.resume.value, width: button.width))):
-                OvenState.cooking
-          },
-          // actions:
-          // During the paused state, `led` is change to red; timer's
-          // `counterReset` is set to 0 (Do not reset);
-          // timer's `en` is set to 0 (Disable value update).
-          actions: [
-            led < LEDLight.red.value,
-            counterReset < 0,
-            en < 0,
-          ]),
+  // identifier: paused state, represent by `OvenState.paused`.
+  State<OvenState>(OvenState.paused,
+      // events:
+      // When the button `resume` is pressed during paused state,
+      // OvenState will changed to `OvenState.cooking` state.
+      events: {
+        Logic(name: 'button_resume')
+              ..gets(button
+                  .eq(Const(Button.resume.value, width: button.width))):
+            OvenState.cooking
+      },
+      // actions:
+      // During the paused state, `led` is change to red; timer's
+      // `counterReset` is set to 0 (Do not reset);
+      // timer's `en` is set to 0 (Disable value update).
+      actions: [
+        led < LEDLight.red.value,
+        counterReset < 0,
+        en < 0,
+      ]),
 
-      // identifier: completed state, represent by `OvenState.completed`.
-      State<OvenState>(OvenState.completed,
-          // events:
-          // When the button `start` is pressed during completed state,
-          // OvenState will changed to `OvenState.standby` state.
-          events: {
-            Logic(name: 'button_start')
-                  ..gets(button
-                      .eq(Const(Button.start.value, width: button.width))):
-                OvenState.standby
-          },
-          // actions:
-          // During the start state, `led` is change to green; timer's
-          // `counterReset` is set to 1 (Reset value);
-          // timer's `en` is set to 0 (Disable value update).
-          actions: [
-            led < LEDLight.green.value,
-            counterReset < 1,
-            en < 0,
-          ])
-    ];
+  // identifier: completed state, represent by `OvenState.completed`.
+  State<OvenState>(OvenState.completed,
+      // events:
+      // When the button `start` is pressed during completed state,
+      // OvenState will changed to `OvenState.standby` state.
+      events: {
+        Logic(name: 'button_start')
+              ..gets(button
+                  .eq(Const(Button.start.value, width: button.width))):
+            OvenState.standby
+      },
+      // actions:
+      // During the start state, `led` is change to green; timer's
+      // `counterReset` is set to 1 (Reset value);
+      // timer's `en` is set to 0 (Disable value update).
+      actions: [
+        led < LEDLight.green.value,
+        counterReset < 1,
+        en < 0,
+      ])
+];
 ```
 
 By now, you already have a list of `state` ready to be passed to the `StateMachine`. Let assign the the `state` to the StateMachine declared. Note that, we also passed `OvenState.standby` to the StateMachine to understand that is the State when reset signal is given.
@@ -254,9 +254,9 @@ Let test and simulate our FSM module. First, let create a main function and inst
 
 ```dart
 Future<void> main({bool noPrint = false}) async {
-    final button = Logic(name: 'button', width: 2);
-    final reset = Logic(name: 'reset');
-    final oven = OvenModule(button, reset);
+  final button = Logic(name: 'button', width: 2);
+  final reset = Logic(name: 'reset');
+  final oven = OvenModule(button, reset);
 }
 ```
 
@@ -281,7 +281,7 @@ Let also attach a `WaveDumper` to preview what is the waveform and what happened
 
 ```dart
 if (!noPrint) {
-    WaveDumper(oven, outputPath: 'oven.vcd');
+  WaveDumper(oven, outputPath: 'oven.vcd');
 }
 ```
 
@@ -289,15 +289,15 @@ Let add a listener to the to listen to the `Steams` and print the outputs when t
 
 ```dart
 if (!noPrint) {
-    // We can listen to the streams on LED light changes based on time.
-    oven.led.changed.listen((event) {
-      // Get the led light enum name from LogicValue.
-      final ledVal = LEDLight.values[event.newValue.toInt()].name;
+  // We can listen to the streams on LED light changes based on time.
+  oven.led.changed.listen((event) {
+    // Get the led light enum name from LogicValue.
+    final ledVal = LEDLight.values[event.newValue.toInt()].name;
 
-      // Print the Simulator time when the LED light changes.
-      print('@t=${Simulator.time}, LED changed to: $ledVal');
-    });
-  }
+    // Print the Simulator time when the LED light changes.
+    print('@t=${Simulator.time}, LED changed to: $ledVal');
+  });
+}
 ```
 
 Now, let start the simulation. At time 25, we want to drop the reset and press on the start button.
@@ -308,7 +308,7 @@ Simulator.registerAction(25, () => reset.put(0));
 
 // Press button start => `00` at time 25.
 Simulator.registerAction(25, () {
-button.put(Button.start.value);
+  button.put(Button.start.value);
 });
 ```
 
@@ -316,14 +316,14 @@ Then, we want to press the pause button at time 50 and press resume button at ti
 
 ```dart
 // Press button pause => `01` at time 50.
-  Simulator.registerAction(50, () {
-    button.put(Button.pause.value);
-  });
+Simulator.registerAction(50, () {
+  button.put(Button.pause.value);
+});
 
-  // Press button resume => `10` at time 70.
-  Simulator.registerAction(70, () {
-    button.put(Button.resume.value);
-  });
+// Press button resume => `10` at time 70.
+Simulator.registerAction(70, () {
+  button.put(Button.resume.value);
+});
 ```
 
 Finally, we want to `setMaxSimTime` to 120 and register a print function on time 120 to indicate that the Simulation completed.
