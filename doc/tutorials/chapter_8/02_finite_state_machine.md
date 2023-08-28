@@ -107,7 +107,7 @@ class OvenModule extends Module {
         // FSM input and output
         button = addInput('button', button, width: button.width);
         reset = addInput('reset', reset);
-        final led = addOutput('led', width: button.width);
+        final led = addOutput('led', width: 8);
         
         // Counter internal signals
         final clk = SimpleClockGenerator(10).clk;
