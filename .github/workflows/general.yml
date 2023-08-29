@@ -28,6 +28,9 @@ jobs:
           use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
           config-file: .github/configs/mlc_config.json
 
+      - name: Check Dart lints
+        run: tool/gh_actions/check_dart_lints.sh
+
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
