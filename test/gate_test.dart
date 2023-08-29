@@ -8,6 +8,7 @@
 /// Author: Max Korbel <max.korbel@intel.com>
 ///
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -184,6 +185,161 @@ void main() {
       a.put(1);
       b.put(1);
       expect(out.value.toInt(), equals(0));
+    });
+  });
+
+  test('mux shorthand', () {
+    final control = Logic();
+    final d0 = Logic();
+    final d1 = Logic();
+    final result = mux(control, d1, d0);
+
+    d0.put(0);
+    d1.put(1);
+    control.put(0);
+
+    expect(result.value, LogicValue.zero);
+
+    control.put(1);
+
+    expect(result.value, LogicValue.one);
+  });
+
+  group('Cases', () {
+    test('test LogicValue', () {
+      final control = Logic(width: 8);
+      final d0 = Logic(width: 8)..put(LogicValue.ofInt(2, 8));
+      final d1 = Logic(width: 8)..put(LogicValue.ofInt(3, 8));
+      final result = cases(
+          control,
+          {
+            d0: LogicValue.ofInt(2, 8),
+            d1: LogicValue.ofInt(3, 8),
+          },
+          width: 8);
+
+      control.put(2);
+
+      expect(result.value, LogicValue.ofInt(2, 8));
+
+      control.put(3);
+
+      expect(result.value, LogicValue.ofInt(3, 8));
+    });
+
+    test('test Int', () {
+      final control = Logic(width: 4)..put(LogicValue.ofInt(2, 4));
+      const d0 = 2;
+      const d1 = 3;
+
+      final result = cases(
+          control,
+          {
+            d0: 2,
+            d1: 3,
+          },
+          width: 4,
+          defaultValue: 3);
+
+      expect(result.value, LogicValue.ofInt(2, 4));
+    });
+
+    test('test Logic', () {
+      final control = Logic();
+      final d0 = Logic()..put(LogicValue.zero);
+      final d1 = Logic()..put(LogicValue.one);
+      final result = cases(control, {
+        d0: LogicValue.zero,
+        d1: LogicValue.one,
+      });
+
+      control.put(0);
+      expect(result.value, LogicValue.zero);
+
+      control.put(1);
+      expect(result.value, LogicValue.one);
+    });
+
+    test('test Default', () {
+      final control = Logic(width: 4);
+      const d0 = 1;
+      const d1 = 2;
+      final result = cases(
+          control,
+          {
+            d0: 1,
+            d1: 2,
+          },
+          width: 4,
+          defaultValue: 3);
+
+      control.put(LogicValue.zero);
+      expect(result.value, LogicValue.ofInt(3, 4));
+    });
+
+    test('test Exceptions(Int)', () {
+      final control = Logic(width: 4);
+      final d0 = Logic(width: 4);
+      final d1 = Logic(width: 8);
+
+      control.put(LogicValue.ofInt(2, 4));
+      d0.put(LogicValue.ofInt(2, 4));
+      d1.put(LogicValue.ofInt(3, 8));
+
+      expect(() => cases(control, {d0: 2, d1: 3}, width: 4),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('test Condition width mismatch Exception', () {
+      final control = Logic();
+      final d0 = Logic();
+      final d1 = Logic(width: 8);
+
+      control.put(LogicValue.zero);
+      d0.put(LogicValue.zero);
+      d1.put(LogicValue.ofInt(1, 8));
+
+      expect(
+          () =>
+              cases(control, {d0: LogicValue.zero, d1: LogicValue.ofInt(1, 8)}),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('test Expression width mismatch Exception for Logic', () {
+      final control = Logic();
+      final d0 = Logic(width: 8);
+      final d1 = Logic(width: 8);
+
+      control.put(LogicValue.one);
+
+      expect(
+          () => cases(control, {d0: Logic(width: 8), d1: Logic(width: 8)},
+              width: 8),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('test Expression width mismatch Exception for LogicValue', () {
+      final control = Logic();
+      final d0 = LogicValue.ofInt(0, 8);
+      final d1 = LogicValue.ofInt(1, 8);
+
+      control.put(LogicValue.one);
+
+      expect(
+          () => cases(
+              control, {d0: LogicValue.ofInt(0, 8), d1: LogicValue.ofInt(1, 8)},
+              width: 8),
+          throwsA(isA<SignalWidthMismatchException>()));
+    });
+
+    test('test Null width Exception', () {
+      final control = Logic();
+      const d0 = 2;
+      const d1 = 4;
+
+      control.put(LogicValue.zero);
+      expect(() => cases(control, {d0: 2, d1: 4}, defaultValue: 3),
+          throwsA(isA<SignalWidthMismatchException>()));
     });
   });
 

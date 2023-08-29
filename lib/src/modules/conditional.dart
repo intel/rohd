@@ -15,8 +15,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -910,6 +909,79 @@ enum ConditionalType {
 
   /// Expect that at least one condition is true, and the first one is executed.
   priority
+}
+
+/// Shorthand for a [Case] inside a [Conditional] block.
+///
+/// It is used to assign a signal based on a condition with multiple cases to
+/// consider. For e.g., this can be used instead of a nested [mux].
+///
+/// The result is of type [Logic] and it is determined by conditionaly matching
+/// the expression with the values of each item in conditions. If width of the
+/// input is not provided, then the width of  the result is inferred from the
+/// width of the entries.
+Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
+    {int? width,
+    ConditionalType conditionalType = ConditionalType.none,
+    dynamic defaultValue}) {
+  for (final conditionValue in [
+    ...conditions.values,
+    if (defaultValue != null) defaultValue
+  ]) {
+    int? inferredWidth;
+
+    if (conditionValue is Logic) {
+      inferredWidth = conditionValue.width;
+    } else if (conditionValue is LogicValue) {
+      inferredWidth = conditionValue.width;
+    }
+
+    if (width != inferredWidth && width != null && inferredWidth != null) {
+      throw SignalWidthMismatchException.forDynamic(
+          conditionValue, width, inferredWidth);
+    }
+
+    width ??= inferredWidth;
+  }
+
+  if (width == null) {
+    throw SignalWidthMismatchException.forNull(conditions);
+  }
+
+  for (final condition in conditions.entries) {
+    if (condition.key is Logic) {
+      if (expression.width != (condition.key as Logic).width) {
+        throw SignalWidthMismatchException.forDynamic(
+            condition.key, expression.width, (condition.key as Logic).width);
+      }
+    }
+
+    if (condition.key is LogicValue) {
+      if (expression.width != (condition.key as LogicValue).width) {
+        throw SignalWidthMismatchException.forDynamic(condition.key,
+            expression.width, (condition.key as LogicValue).width);
+      }
+    }
+  }
+
+  final result = Logic(name: 'result', width: width);
+
+  Combinational([
+    Case(
+        expression,
+        [
+          for (final condition in conditions.entries)
+            CaseItem(
+                condition.key is Logic
+                    ? condition.key as Logic
+                    : Const(condition.key, width: expression.width),
+                [result < condition.value])
+        ],
+        conditionalType: conditionalType,
+        defaultItem: defaultValue != null ? [result < defaultValue] : null)
+  ]);
+
+  return result;
 }
 
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
