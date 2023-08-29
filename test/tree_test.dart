@@ -57,7 +57,7 @@ void main() {
 
       final vectors = [
         Vector({
-          for (var i in List<int>.generate(16, (index) => index)) 'seq$i': i
+          for (final i in List<int>.generate(16, (index) => index)) 'seq$i': i
         }, {
           'out': 15
         }),
