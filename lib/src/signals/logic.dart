@@ -8,7 +8,7 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-part of signals;
+part of 'signals.dart';
 
 /// Represents a logical signal of any width which can change values.
 class Logic {

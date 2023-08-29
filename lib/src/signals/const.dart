@@ -7,7 +7,7 @@
 // 2023 May 26
 // Author: Max Korbel <max.korbel@intel.com>
 
-part of signals;
+part of 'signals.dart';
 
 /// Represents a [Logic] that never changes value.
 class Const extends Logic {
