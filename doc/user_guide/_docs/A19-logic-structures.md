@@ -5,7 +5,7 @@ last_modified_at: 2022-6-5
 toc: true
 ---
 
-A `LogicStructure` is a useful way to group or bundle related `Logic` signals together. They operate in a similar way to "`packed` `structs`" in SystemVerilog, or a `class` containing multiple `Logic`s in ROHD, but with some important differences.
+A [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html) is a useful way to group or bundle related `Logic` signals together. They operate in a similar way to "`packed` `structs`" in SystemVerilog, or a `class` containing multiple `Logic`s in ROHD, but with some important differences.
 
 **`LogicStructure`s will _not_ convert to `struct`s in generated SystemVerilog.** They are purely a way to deal with signals during generation time in ROHD.
 

@@ -10,5 +10,5 @@ contact_links:
     about: Instant communication... if someone is online.
 
   - name: ROHD Forum
-    url: https://github.com/intel/rohd/wiki/ROHD-Forum
+    url: https://intel.github.io/rohd-website/forum/rohd-forum/
     about: Public periodic meeting for users and developers to discuss topics related to ROHD.

@@ -10,7 +10,7 @@ Please make sure you had setup your ROHD Framework before running the test. Info
 
 ## A full example of a counter module
 
-To get a quick feel for what ROHD looks like, below is an example of what a simple counter module looks like in ROHD.
+To get a quick feel for what ROHD looks like, below is an example of what a simple counter module looks like in ROHD. Note that this is not the shortest way to describe a simple counter, but expanded to give some examples of different capabilities and be more easily comparable to designs in other languages like SystemVerilog.
 
 ```dart
 // Import the ROHD package
