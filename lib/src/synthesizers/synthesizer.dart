@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// synthesizer.dart
-/// Generic definition for something that synthesizes output files
-///
-/// 2021 August 26
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synthesizer.dart
+// Generic definition for something that synthesizes output files
+//
+// 2021 August 26
+// Author: Max Korbel <max.korbel@intel.com>
+//
 
 import 'package:rohd/rohd.dart';
 

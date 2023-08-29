@@ -1,12 +1,11 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// uniquifier.dart
-/// Efficient implementation to provide unique names
-///
-/// 2021 July 13
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// uniquifier.dart
+// Efficient implementation to provide unique names
+//
+// 2021 July 13
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:collection';
 

@@ -1,12 +1,12 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// definition_name_test.dart
-/// Unit tests for name definition usage
-///
-/// 2022 October 26
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// definition_name_test.dart
+// Unit tests for name definition usage
+//
+// 2022 October 26
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:test/test.dart';

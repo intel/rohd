@@ -197,7 +197,7 @@ class Combinational extends _Always {
   /// If any "write after read" occurs, then a [WriteAfterReadException] will
   /// be thrown since it could lead to a mismatch between simulation and
   /// synthesis.  See [Combinational.ssa] for more details.
-  Combinational(super.conditionals, {super.name = 'combinational'}) {
+  Combinational(super._conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
       driver.glitch.listen((args) {
@@ -403,7 +403,7 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential.multi(List<Logic> clks, super.conditionals,
+  Sequential.multi(List<Logic> clks, super._conditionals,
       {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];

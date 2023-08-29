@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// state_machine.dart
-/// fsm generators
-///
-/// 2022 April 22
-/// Author: Shubham Kumar <shubham.kumar@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// state_machine.dart
+// fsm generators
+//
+// 2022 April 22
+// Author: Shubham Kumar <shubham.kumar@intel.com>
 
 import 'dart:io';
 import 'dart:math';

@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// module_not_build_exception.dart
-/// Definition for exception when module is not built
-///
-/// 2022 December 30
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// module_not_build_exception.dart
+// Definition for exception when module is not built
+//
+// 2022 December 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/rohd_exception.dart';

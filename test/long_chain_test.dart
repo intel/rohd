@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// long_chain_test.dart
-/// Tests with long chains of combinational logic.
-///
-/// 2022 November 8
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// long_chain_test.dart
+// Tests with long chains of combinational logic.
+//
+// 2022 November 8
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/passthrough.dart';
