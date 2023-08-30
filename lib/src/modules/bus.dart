@@ -1,12 +1,11 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus.dart
-/// Definition for modules related to bus operations
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// bus.dart
+// Definition for modules related to bus operations
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 

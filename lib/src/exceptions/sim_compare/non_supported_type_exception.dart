@@ -1,13 +1,12 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// non_supported_type_exception.dart
-/// An exception that thrown when `runtimetype` of expected
-/// vector output from SimCompare is invalid or unsupported.
-///
-/// 2022 November 17
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// non_supported_type_exception.dart
+// An exception that thrown when `runtimetype` of expected
+// vector output from SimCompare is invalid or unsupported.
+//
+// 2022 November 17
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:rohd/src/exceptions/rohd_exception.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

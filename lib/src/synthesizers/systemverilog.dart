@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// systemverilog.dart
-/// Definition for SystemVerilog Synthesizer
-///
-/// 2021 August 26
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog.dart
+// Definition for SystemVerilog Synthesizer
+//
+// 2021 August 26
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';

@@ -1,15 +1,12 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// sanitizer.dart
-/// Sanitizes strings so they don't collide with generated code in other
-/// languages (e.g. SystemVerilog)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
-
-/***/
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// sanitizer.dart
+// Sanitizes strings so they don't collide with generated code in other
+// languages (e.g. SystemVerilog)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 /// A utility for ensuring generated code is "sanitary".
 ///

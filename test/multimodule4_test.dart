@@ -1,13 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// multimodule4_test.dart
-/// Unit tests for a hierarchy of multiple modules and multiple instantiation
-/// (another type)
-///
-/// 2021 June 30
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// multimodule4_test.dart
+// Unit tests for a hierarchy of multiple modules and multiple instantiation
+// (another type)
+//
+// 2021 June 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/passthrough.dart';

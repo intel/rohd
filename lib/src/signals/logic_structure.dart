@@ -7,7 +7,7 @@
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>
 
-part of signals;
+part of 'signals.dart';
 
 /// Collects a group of [Logic] signals into one entity which can be manipulated
 /// in a similar way as an individual [Logic].
