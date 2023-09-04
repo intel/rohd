@@ -3,7 +3,7 @@
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
-// Import the counter module implement in example.dart.
+// Import the counter module interface.
 import './counter_interface.dart';
 
 // Enumerated type named `OvenState` with four possible states:
