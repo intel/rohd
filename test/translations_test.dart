@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// translations_test.dart
-/// Unit tests looking at redoing some real implementations in a better way
-///
-/// 2021 May 20
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// translations_test.dart
+// Unit tests looking at redoing some real implementations in a better way
+//
+// 2021 May 20
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
 

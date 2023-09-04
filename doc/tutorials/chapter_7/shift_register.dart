@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// shift_register.dart
-/// A simple shift register module in ROHD.
-///
-/// 2023 April 17
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// shift_register.dart
+// A simple shift register module in ROHD.
+//
+// 2023 April 17
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 // ignore_for_file: avoid_print
 

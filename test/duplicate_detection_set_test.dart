@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// duplicate_detection_set_test.dart
-/// Unit tests for DuplicateDetectionSet
-///
-/// 2022 November 11
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// duplicate_detection_set_test.dart
+// Unit tests for DuplicateDetectionSet
+//
+// 2022 November 11
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:test/test.dart';

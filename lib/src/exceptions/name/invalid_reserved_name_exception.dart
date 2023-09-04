@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// invalid_reserved_name_exception.dart
-/// An exception that thrown when a reserved name is invalid.
-///
-/// 2022 October 25
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// invalid_reserved_name_exception.dart
+// An exception that thrown when a reserved name is invalid.
+//
+// 2022 October 25
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:rohd/src/exceptions/rohd_exception.dart';
 

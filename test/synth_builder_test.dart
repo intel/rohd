@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// synth_builder_test.dart
-/// Unit tests for generation of the system verilog using synth builder.
-///
-/// 2023 April 10
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_builder_test.dart
+// Unit tests for generation of the system verilog using synth builder.
+//
+// 2023 April 10
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:test/test.dart';

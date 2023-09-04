@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// comb_sensitivity_search_test.dart
-/// Unit tests related to Combinational sensitivity searching.
-///
-/// 2023 January 5
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// comb_sensitivity_search_test.dart
+// Unit tests related to Combinational sensitivity searching.
+//
+// 2023 January 5
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';

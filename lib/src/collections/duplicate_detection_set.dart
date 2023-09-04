@@ -1,12 +1,12 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// redriven_monitor_set.dart
-/// A set that monitor for duplication.
-///
-/// 2022 November 2
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// redriven_monitor_set.dart
+// A set that monitor for duplication.
+//
+// 2022 November 2
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:collection';
 import 'dart:core';
 
