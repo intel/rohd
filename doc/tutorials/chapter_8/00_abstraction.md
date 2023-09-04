@@ -9,11 +9,11 @@
 
 In this chapter:
 
-- You will lern how to use ROHD abstraction to speed up the development process.
+- You will learn how to use ROHD abstraction to speed up the development process.
 
 ## ROHD Abstraction
 
-ROHD provides several abstraction layer to fasten the development work. As of now, ROHD provides several abstraction catalog which listed as below:
+ROHD provides several abstraction layer to accelerate the development work. As of now, ROHD provides several abstraction catalog which listed as below:
 
 ### [Interface](01_interface.md)
 
@@ -25,4 +25,4 @@ An easy and fast implementation of Finite State Machine with ROHD API.
 
 ### [Pipeline](03_pipeline.md)
 
-Pipeline can be build with ROHD API in a simple and refractable way.
+Pipeline can be build with ROHD API in a simple and refactorable way.

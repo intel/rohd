@@ -276,7 +276,7 @@ if (!noPrint) {
 }
 ```
 
-Let add a listener to the to listen to the `Steams` and print the outputs when the value changed. This can be achieved by `.changed.listen()` function.
+Let add a listener to the to listen to the `Steam` and print the outputs when the value changed. This can be achieved by `.changed.listen()` function.
 
 ```dart
 if (!noPrint) {
