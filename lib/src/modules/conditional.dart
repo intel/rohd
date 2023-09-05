@@ -740,6 +740,16 @@ abstract class Conditional {
   /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
+
+  /// Drives X to all receivers.
+  void _driveX(Set<Logic> drivenSignals) {
+    for (final receiver in receivers) {
+      receiverOutput(receiver).put(LogicValue.x);
+      if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+        drivenSignals.add(receiver);
+      }
+    }
+  }
 }
 
 /// Represents a group of [Conditional]s to be executed.
@@ -957,12 +967,7 @@ class Case extends Conditional {
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (final receiver in receivers) {
-        receiverOutput(receiver).put(LogicValue.x);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
-        }
-      }
+      _driveX(drivenSignals);
       return;
     }
 
@@ -975,9 +980,8 @@ class Case extends Conditional {
           conditional.execute(drivenSignals, guard);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
-          throw Exception('Unique case statement had multiple matching cases.'
-              ' Original: "$foundMatch".'
-              ' Duplicate: "$item".');
+          _driveX(drivenSignals);
+          return;
         }
 
         foundMatch = item;
@@ -996,8 +1000,8 @@ class Case extends Conditional {
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
             conditionalType == ConditionalType.priority)) {
-      throw Exception('$conditionalType case statement had no matching case,'
-          ' and type was $conditionalType.');
+      _driveX(drivenSignals);
+      return;
     }
   }
 
