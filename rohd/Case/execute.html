@@ -105,12 +105,7 @@ void execute(Set&lt;Logic&gt; drivenSignals, [void Function(Logic)? guard]) {
 
   if (!expression.value.isValid) {
     &#47;&#47; if expression has X or Z, then propogate X&#39;s!
-    for (final receiver in receivers) {
-      receiverOutput(receiver).put(LogicValue.x);
-      if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-        drivenSignals.add(receiver);
-      }
-    }
+    _driveX(drivenSignals);
     return;
   }
 
@@ -123,9 +118,8 @@ void execute(Set&lt;Logic&gt; drivenSignals, [void Function(Logic)? guard]) {
         conditional.execute(drivenSignals, guard);
       }
       if (foundMatch != null &amp;&amp; conditionalType == ConditionalType.unique) {
-        throw Exception(&#39;Unique case statement had multiple matching cases.&#39;
-            &#39; Original: &quot;$foundMatch&quot;.&#39;
-            &#39; Duplicate: &quot;$item&quot;.&#39;);
+        _driveX(drivenSignals);
+        return;
       }
 
       foundMatch = item;
@@ -144,8 +138,8 @@ void execute(Set&lt;Logic&gt; drivenSignals, [void Function(Logic)? guard]) {
   } else if (foundMatch == null &amp;&amp;
       (conditionalType == ConditionalType.unique ||
           conditionalType == ConditionalType.priority)) {
-    throw Exception(&#39;$conditionalType case statement had no matching case,&#39;
-        &#39; and type was $conditionalType.&#39;);
+    _driveX(drivenSignals);
+    return;
   }
 }</code></pre>
 </section>
