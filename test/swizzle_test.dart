@@ -1,12 +1,11 @@
-/// Copyright (C) 2022-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// swizzle_test.dart
-/// Tests for swizzling values
-///
-/// 2022 January 6
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// swizzle_test.dart
+// Tests for swizzling values
+//
+// 2022 January 6
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

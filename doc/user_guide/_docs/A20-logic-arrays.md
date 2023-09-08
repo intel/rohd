@@ -5,7 +5,7 @@ last_modified_at: 2022-6-5
 toc: true
 ---
 
-A `LogicArray` is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog.  In ROHD, the `LogicArray` type inherits a lot of functionality from `LogicStructure`, so it can behave like a `Logic` where it makes sense or be individually referenced in other places.
+A [`LogicArray`](https://intel.github.io/rohd/rohd/LogicArray-class.html) is a type of `LogicStructure` that mirrors multi-dimensional arrays in hardware languages like SystemVerilog.  In ROHD, the `LogicArray` type inherits a lot of functionality from `LogicStructure`, so it can behave like a `Logic` where it makes sense or be individually referenced in other places.
 
 `LogicArray`s can be constructed easily using the constructor:
 

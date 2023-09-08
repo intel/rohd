@@ -1,5 +1,5 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
 
 export 'invalid_conditional_exception.dart';
 export 'mapped_signal_already_assigned_exception.dart';

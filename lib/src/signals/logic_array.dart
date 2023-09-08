@@ -7,7 +7,7 @@
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>
 
-part of signals;
+part of 'signals.dart';
 
 /// Represents a multi-dimensional array structure of independent [Logic]s.
 class LogicArray extends LogicStructure {

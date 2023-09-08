@@ -1,12 +1,11 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// config.dart
-/// A configuration file of ROHD.
-///
-/// 2022 December 1
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// config.dart
+// A configuration file of ROHD.
+//
+// 2022 December 1
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 /// A utility for ROHD configuration file.
 class Config {

@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// e_logic_gate_part_2.dart
-/// Add assignment and mathematical & operator to create Logic Gate.
-///
-/// 2023 February 20
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// e_logic_gate_part_2.dart
+// Add assignment and mathematical & operator to create Logic Gate.
+//
+// 2023 February 20
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 // ignore_for_file: avoid_print, unused_local_variable
 

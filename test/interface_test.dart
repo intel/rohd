@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// interface_test.dart
-/// Tests for Interface
-///
-/// 2021 November 30
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// interface_test.dart
+// Tests for Interface
+//
+// 2021 November 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
 

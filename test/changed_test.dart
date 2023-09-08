@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// changed_test.dart
-/// Unit tests for Logic change events
-///
-/// 2021 November 5
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// changed_test.dart
+// Unit tests for Logic change events
+//
+// 2021 November 5
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
 

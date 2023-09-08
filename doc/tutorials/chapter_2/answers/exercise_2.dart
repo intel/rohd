@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// exercise_2.dart
-/// Answer to exercise 2.
-///
-/// 2023 February 14
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// exercise_2.dart
+// Answer to exercise 2.
+//
+// 2023 February 14
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 // ignore_for_file: avoid_print, unnecessary_this
 import 'package:rohd/rohd.dart';
