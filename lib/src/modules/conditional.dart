@@ -15,8 +15,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -198,7 +197,7 @@ class Combinational extends _Always {
   /// If any "write after read" occurs, then a [WriteAfterReadException] will
   /// be thrown since it could lead to a mismatch between simulation and
   /// synthesis.  See [Combinational.ssa] for more details.
-  Combinational(super.conditionals, {super.name = 'combinational'}) {
+  Combinational(super._conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
       driver.glitch.listen((args) {
@@ -404,7 +403,7 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential.multi(List<Logic> clks, super.conditionals,
+  Sequential.multi(List<Logic> clks, super._conditionals,
       {super.reset, super.resetValues, super.name = 'sequential'}) {
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
@@ -746,6 +745,16 @@ abstract class Conditional {
   /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
+
+  /// Drives X to all receivers.
+  void _driveX(Set<Logic> drivenSignals) {
+    for (final receiver in receivers) {
+      receiverOutput(receiver).put(LogicValue.x);
+      if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+        drivenSignals.add(receiver);
+      }
+    }
+  }
 }
 
 /// Represents a group of [Conditional]s to be executed.
@@ -912,6 +921,79 @@ enum ConditionalType {
   priority
 }
 
+/// Shorthand for a [Case] inside a [Conditional] block.
+///
+/// It is used to assign a signal based on a condition with multiple cases to
+/// consider. For e.g., this can be used instead of a nested [mux].
+///
+/// The result is of type [Logic] and it is determined by conditionaly matching
+/// the expression with the values of each item in conditions. If width of the
+/// input is not provided, then the width of  the result is inferred from the
+/// width of the entries.
+Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
+    {int? width,
+    ConditionalType conditionalType = ConditionalType.none,
+    dynamic defaultValue}) {
+  for (final conditionValue in [
+    ...conditions.values,
+    if (defaultValue != null) defaultValue
+  ]) {
+    int? inferredWidth;
+
+    if (conditionValue is Logic) {
+      inferredWidth = conditionValue.width;
+    } else if (conditionValue is LogicValue) {
+      inferredWidth = conditionValue.width;
+    }
+
+    if (width != inferredWidth && width != null && inferredWidth != null) {
+      throw SignalWidthMismatchException.forDynamic(
+          conditionValue, width, inferredWidth);
+    }
+
+    width ??= inferredWidth;
+  }
+
+  if (width == null) {
+    throw SignalWidthMismatchException.forNull(conditions);
+  }
+
+  for (final condition in conditions.entries) {
+    if (condition.key is Logic) {
+      if (expression.width != (condition.key as Logic).width) {
+        throw SignalWidthMismatchException.forDynamic(
+            condition.key, expression.width, (condition.key as Logic).width);
+      }
+    }
+
+    if (condition.key is LogicValue) {
+      if (expression.width != (condition.key as LogicValue).width) {
+        throw SignalWidthMismatchException.forDynamic(condition.key,
+            expression.width, (condition.key as LogicValue).width);
+      }
+    }
+  }
+
+  final result = Logic(name: 'result', width: width);
+
+  Combinational([
+    Case(
+        expression,
+        [
+          for (final condition in conditions.entries)
+            CaseItem(
+                condition.key is Logic
+                    ? condition.key as Logic
+                    : Const(condition.key, width: expression.width),
+                [result < condition.value])
+        ],
+        conditionalType: conditionalType,
+        defaultItem: defaultValue != null ? [result < defaultValue] : null)
+  ]);
+
+  return result;
+}
+
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
 /// is executed.
 ///
@@ -971,12 +1053,7 @@ class Case extends Conditional {
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (final receiver in receivers) {
-        receiverOutput(receiver).put(LogicValue.x);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
-        }
-      }
+      _driveX(drivenSignals);
       return;
     }
 
@@ -989,9 +1066,8 @@ class Case extends Conditional {
           conditional.execute(drivenSignals, guard);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
-          throw Exception('Unique case statement had multiple matching cases.'
-              ' Original: "$foundMatch".'
-              ' Duplicate: "$item".');
+          _driveX(drivenSignals);
+          return;
         }
 
         foundMatch = item;
@@ -1010,8 +1086,8 @@ class Case extends Conditional {
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
             conditionalType == ConditionalType.priority)) {
-      throw Exception('$conditionalType case statement had no matching case,'
-          ' and type was $conditionalType.');
+      _driveX(drivenSignals);
+      return;
     }
   }
 

@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic_value_test.dart
-/// Tests for LogicValue
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_value_test.dart
+// Tests for LogicValue
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:math';
 

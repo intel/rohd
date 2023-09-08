@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// comb_mod_test.dart
-/// Unit tests related to Combinationals and other Modules.
-///
-/// 2022 September 26
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// comb_mod_test.dart
+// Unit tests related to Combinationals and other Modules.
+//
+// 2022 September 26
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/conditionals/write_after_read_exception.dart';

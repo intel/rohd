@@ -1,14 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// big_logic_value.dart
-/// Definition for a logical value where all bits are the same value.
-///
-/// 2022 March 28
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// big_logic_value.dart
+// Definition for a logical value where all bits are the same value.
+//
+// 2022 March 28
+// Author: Max Korbel <max.korbel@intel.com>
 
-part of values;
+part of 'values.dart';
 
 /// Extends [BigInt] with utility functions that are useful for dealing with
 /// large bit vectors and conversion between types.

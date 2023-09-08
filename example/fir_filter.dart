@@ -1,11 +1,10 @@
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// fir_filter.dart
-/// A basic example of a FIR filter.
-///
-/// 2022 February 02
-/// Author: wswongat
-///
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// fir_filter.dart
+// A basic example of a FIR filter.
+//
+// 2022 February 02
+// Author: wswongat
 
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):

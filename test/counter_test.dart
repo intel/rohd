@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// counter_test.dart
-/// Unit tests for a basic counter
-///
-/// 2021 May 10
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// counter_test.dart
+// Unit tests for a basic counter
+//
+// 2021 May 10
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
 import 'package:rohd/rohd.dart';

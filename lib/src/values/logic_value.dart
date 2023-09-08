@@ -1,13 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic_values.dart
-/// Definitions for a set of logical values of any width
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
-part of values;
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_values.dart
+// Definitions for a set of logical values of any width
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
+
+part of 'values.dart';
 
 /// Deprecated: use [LogicValue] instead.
 @Deprecated('Use `LogicValue` instead.'

@@ -34,7 +34,7 @@ You can file an issue here: <https://github.com/intel/rohd/issues/new/choose>
 
 ### Meetings in the ROHD Forum
 
-The [ROHD Forum](https://github.com/intel/rohd/wiki/ROHD-Forum) is a periodic virtual meeting for developers and users of ROHD that anyone can join. Feel free to join the call!
+The [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) is a periodic virtual meeting for developers and users of ROHD that anyone can join. Feel free to join the call!
 
 ## Getting Started
 

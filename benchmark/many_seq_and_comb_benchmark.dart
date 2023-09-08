@@ -192,11 +192,6 @@ class ManySeqAndCombBenchmark extends AsyncBenchmarkBase {
       : super('ManySeqAndCombBenchmark_${combConnectionType.name}');
 
   @override
-  Future<void> teardown() async {
-    await Simulator.reset();
-  }
-
-  @override
   Future<void> run() async {
     final combinationalWrapper = _CombinationalWrapper(
       _MCUInterface(memorySizeOverride: 1024),

@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// arithmetic_shift_right_test.dart
-/// Tests related to special circumstances around arithmetic right-shift.
-///
-/// 2023 March 1
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// arithmetic_shift_right_test.dart
+// Tests related to special circumstances around arithmetic right-shift.
+//
+// 2023 March 1
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

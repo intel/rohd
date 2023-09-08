@@ -1,13 +1,12 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// version_hash_dumper_test.dart
-/// Tests to verify if ROHD configuration being output to
-/// the generation of system verilog.
-///
-/// 2022 December 1
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// version_hash_dumper_test.dart
+// Tests to verify if ROHD configuration being output to
+// the generation of system verilog.
+//
+// 2022 December 1
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:io';
 import 'package:rohd/rohd.dart';
