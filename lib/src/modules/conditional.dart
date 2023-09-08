@@ -1563,7 +1563,7 @@ Logic flop(
   Logic d, {
   Logic? en,
   Logic? reset,
-  dynamic resetValue = 0,
+  dynamic resetValue,
 }) =>
     FlipFlop(
       clk,
