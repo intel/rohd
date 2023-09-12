@@ -1,13 +1,3 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// counter.dart
-/// A simple counter module that can be tested in an example testbench
-///
-/// 2021 May 11
-/// Author: Max Korbel <max.korbel@intel.com>
-///
-
 import 'package:rohd/rohd.dart';
 
 enum CounterDirection { inward, outward, misc }

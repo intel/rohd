@@ -30,13 +30,13 @@ class TopTB {
 class MySeqItem extends SequenceItem {
   // your control pin
   // in this case is enable pin
-  final bool _enable;
-  MySeqItem(this._enable);
+  final bool enable;
+  MySeqItem({required this.enable});
 
-  int get en => _enable ? 1 : 0;
+  int get en => enable ? 1 : 0;
 
   @override
-  String toString() => 'enable=$_enable';
+  String toString() => 'enable=$enable';
 }
 
 // Sending stimulus through the testbench to the device under test is done by
@@ -59,7 +59,7 @@ class MySequence extends Sequence {
   Future<void> body(Sequencer sequencer) async {
     final mySequencer = sequencer as MySequencer;
     for (var i = 0; i < numRepeat; i++) {
-      mySequencer.add(MySeqItem(true));
+      mySequencer.add(MySeqItem(enable: true));
     }
   }
   //---------------------------------------------------------------------
@@ -93,7 +93,7 @@ class MyDriver extends Driver<MySeqItem> {
     });
 
     // Every clock negative edge, drive the next pending item if it exists
-    // TODO: Let user choose to drive at posedge or negedge
+    // Let user choose to drive at posedge or negedge
     intf.clk.negedge.listen((args) {
       if (_pendingItems.isNotEmpty) {
         final nextItem = _pendingItems.removeFirst();
@@ -286,7 +286,7 @@ class MyTest extends Test {
     });
 
     // Add an individual SequenceItem to set enable to 0 at the start
-    _mySequencer.add(MySeqItem(false));
+    _mySequencer.add(MySeqItem(enable: false));
 
     // Wait for the next negative edge of reset
     await dut.counterintf.reset.nextNegedge;
