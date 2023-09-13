@@ -68,12 +68,12 @@ void main() {
   });
 
   group('maybe port', () {
-    test('tryInput, exists', () {
+    test('tryPort, exists', () {
       final intf = MaybePortInterface(includePort: true);
       expect(intf.p, isNotNull);
     });
 
-    test('tryInput, doesnt exist', () {
+    test('tryPort, doesnt exist', () {
       final intf = MaybePortInterface(includePort: false);
       expect(intf.p, null);
     });
