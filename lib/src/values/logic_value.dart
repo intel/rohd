@@ -553,9 +553,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   String toString({bool includeWidth = true}) {
     if (isValid && includeWidth) {
       // for ==_INT_BITS, still use BigInt so we don't get negatives
-      final hexValue = width > _INT_BITS
+      final hexValue = width >= _INT_BITS
           ? toBigInt().toUnsigned(width).toRadixString(16)
-          : toBigInt().toRadixString(16);
+          : toInt().toRadixString(16);
       return "$width'h$hexValue";
     } else {
       return [
