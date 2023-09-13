@@ -34,15 +34,15 @@ void main() {
   });
   group('values test', () {
     for (final len in [63, 64, 65]) {
-      final sslv = LogicValue.ofInt(3, len); // small Int hold Big
+      final sslv = LogicValue.ofInt(4, len); // small Int hold Big
       final bslv = LogicValue.ofInt(-0xFFFF, len); // 18446744073709486081
       final fslv = LogicValue.ofInt(-2, len); // 18446744073709551614
 
-      final sblv = LogicValue.ofBigInt(BigInt.from(3), len);
+      final sblv = LogicValue.ofBigInt(BigInt.from(4), len);
       final bblv = LogicValue.ofBigInt(BigInt.from(-0xFFFF), len);
       final fblv = LogicValue.ofBigInt(BigInt.from(-2), len);
 
-      test('small Int storage', () {
+      test('small Int storage len=$len', () {
         expect(sslv < bslv, LogicValue.one);
         expect(bslv < sslv, LogicValue.zero);
         expect(sslv > bslv, LogicValue.zero);
@@ -58,7 +58,7 @@ void main() {
         expect(bslv > fslv, LogicValue.zero);
         expect(fslv > bslv, LogicValue.one);
       });
-      test('big Int storage', () {
+      test('big Int storage len=$len', () {
         expect(sblv < bblv, LogicValue.one);
         expect(bblv < sblv, LogicValue.zero);
         expect(sblv > bblv, LogicValue.zero);
@@ -73,6 +73,31 @@ void main() {
         expect(fblv < bblv, LogicValue.zero);
         expect(bblv > fblv, LogicValue.zero);
         expect(fblv > bblv, LogicValue.one);
+      });
+      test('big math len=$len', () {
+        expect(sslv + fslv, LogicValue.ofInt(2, len));
+        expect(sslv - fslv, LogicValue.ofInt(6, len));
+        expect(fslv - sslv, LogicValue.ofInt(-6, len));
+
+        expect(sslv * fslv, LogicValue.ofInt(-8, len));
+
+        expect(sslv + fslv, LogicValue.ofBigInt(BigInt.from(2), len));
+        expect(sslv - fslv, LogicValue.ofBigInt(BigInt.from(6), len));
+        expect(fslv - sslv, LogicValue.ofBigInt(BigInt.from(-6), len));
+
+        expect(fslv * sslv, LogicValue.ofBigInt(BigInt.from(-8), len));
+
+        expect(sblv + fblv, LogicValue.ofInt(2, len));
+        expect(sblv - fblv, LogicValue.ofInt(6, len));
+        expect(fblv - sblv, LogicValue.ofInt(-6, len));
+
+        expect(sblv * fblv, LogicValue.ofInt(-8, len));
+
+        expect(sblv + fblv, LogicValue.ofBigInt(BigInt.from(2), len));
+        expect(sblv - fblv, LogicValue.ofBigInt(BigInt.from(6), len));
+        expect(fblv - sblv, LogicValue.ofBigInt(BigInt.from(-6), len));
+
+        expect(fblv * sblv, LogicValue.ofBigInt(BigInt.from(-8), len));
       });
     }
   });
