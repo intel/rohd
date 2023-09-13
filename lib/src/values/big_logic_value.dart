@@ -45,7 +45,8 @@ class _BigLogicValue extends LogicValue {
   static final Map<int, BigInt> _masksOfWidth = {};
   static BigInt _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = (BigInt.one << width) - BigInt.one;
+      _masksOfWidth[width] =
+          ((BigInt.one << width) - BigInt.one).toUnsigned(width);
     }
     return _masksOfWidth[width]!;
   }
@@ -60,8 +61,8 @@ class _BigLogicValue extends LogicValue {
       : assert(width > LogicValue._INT_BITS,
             '_BigLogicValue should only be used for large values'),
         super._(width) {
-    _value = _mask & value;
-    _invalid = _mask & invalid;
+    _value = (_mask & value).toUnsigned(width);
+    _invalid = (_mask & invalid).toUnsigned(width);
 
     assert(
         allowInefficientRepresentation ||
