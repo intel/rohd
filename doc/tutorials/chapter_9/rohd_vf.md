@@ -72,7 +72,7 @@ A `component` is an object which holds a fixed hierarchical position in the test
 Sending stimulus through the testbench to the device under test is done by passing `SequenceItem`s through sequencer to `Driver`.
 
 - **SequenceItem**
-  - A `SequenceItem` represents a collection of information to transmit across an interface. A typical use case would be sending a collection of `SequenceItem`s in a specific order.
+  - A `SequenceItem` represents a collection of information to transmit across an interface. A typical use case would be an object representing a transaction to be driven over a standardized hardware interface.
 - **Sequence**
   - A `Sequence` is a modular object which has instructions for how to send `SequenceItem`s to a `Sequencer`. A typical use case would be sending a collection of `SequenceItem`s in a specific order.
 
