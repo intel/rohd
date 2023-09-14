@@ -27,7 +27,7 @@ In this chapter, we are going to learn how to use ROHD-VF, a verification framew
 
 ## Testbenches
 
-A testbench is a software used to interact with and test a device under test (DUT). ROHD-VF testbenches are organized in a modular and extenable way using simple base classes which have specific roles. Below are the diagram of the ROHD-VF testbench.
+A testbench is a software used to interact with and test a device under test (DUT). ROHD-VF testbenches are organized in a modular and extensible way using simple base classes which have specific roles. Below is a diagram of an example ROHD-VF testbench.
 
 ![ROHD-VF Design](./assets/ROHD_VF_Design.png)
 
@@ -55,7 +55,7 @@ Most of the setup occur in the constuctor of the object. ROHD-VF comes with some
 A `component` is an object which holds a fixed hierarchical position in the testbench. All the below classes extend `Component`.
 
 - **Monitor**
-  - A `Monitor` is responsible for watching an interface and reporting out interesting events onto an output stream. This bridges the hardware world into an object that can be manipulated in the testbench. Many things can listen to a `Minotor`, often logging or checking logic.
+  - A `Monitor` is responsible for watching an interface and reporting out interesting events onto an output stream. This bridges the hardware world into an object that can be manipulated in the testbench. Many things can listen to a `Monitor`, often logging or checking logic.
 - **Driver**
   - A driver is responsible for converting a `SequenceItem` into signal transitions on a hardware interface. The driver accepts incoming items from a `Sequencer`.
 - **Sequencer**
@@ -65,11 +65,11 @@ A `component` is an object which holds a fixed hierarchical position in the test
 - **Env**
   - The `Env` is a wrapper for a collection of related components, often each with their own hierarchy. `Env`s are usually composed of `Agent`s, scoreboards, configuration & coordination logic, other smaller `Env`s, etc.
 - **Test**
-  - A `Test` is like a top-level testing entity that contains the top testbench `Env` and kicks off `Sequence`s. Only one `Test` should be running at a time. The `Test` also containsa central `Random` object to be used for randomization in a reproducible way.
+  - A `Test` is like a top-level testing entity that contains the top testbench `Env` and kicks off `Sequence`s. Only one `Test` should be running at a time. The `Test` also contains central `Random` object to be used for randomization in a reproducible way.
 
 ### Stimulus
 
-Sending stimulus through the testbench to the device undertest is done by passing `SequenceItem`s through sequencer to `Driver`.
+Sending stimulus through the testbench to the device under test is done by passing `SequenceItem`s through sequencer to `Driver`.
 
 - **SequenceItem**
   - A `SequenceItem` represents a collection of information to transmit across an interface. A typical use case would be sending a collection of `SequenceItem`s in a specific order.
