@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:logging/logging.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd_vf/rohd_vf.dart';
-import 'counter.dart';
+import '../../counter.dart';
 
 // The DUT to test.
 class TopTB {

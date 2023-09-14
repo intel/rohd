@@ -1,0 +1,17 @@
+name: rohd_vf_example
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.1.0
+
+# Add regular dependencies here.
+dependencies:
+  rohd: ^0.4.2
+  rohd_vf: ^0.4.1
+  logging: ^1.0.1
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.21.0
