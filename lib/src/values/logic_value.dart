@@ -256,6 +256,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
           return LogicValue.ofIterable(val).zeroExtend(width);
         }
       }
+    } else if (val == null) {
+      throw LogicValueConstructionException('Cannot construct from `null`.');
     } else {
       throw LogicValueConstructionException('Unrecognized value type "$val" - '
           'Unknown type ${val.runtimeType}'

@@ -37,6 +37,16 @@ class UncleanPortInterface extends Interface<MyDirection> {
   }
 }
 
+class MaybePortInterface extends Interface<MyDirection> {
+  Logic? get p => tryPort('p');
+
+  MaybePortInterface({required bool includePort}) {
+    if (includePort) {
+      setPorts([Port('p')], {MyDirection.dir1});
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -55,5 +65,17 @@ void main() {
     expect(() async {
       UncleanPortInterface();
     }, throwsException);
+  });
+
+  group('maybe port', () {
+    test('tryPort, exists', () {
+      final intf = MaybePortInterface(includePort: true);
+      expect(intf.p, isNotNull);
+    });
+
+    test('tryPort, doesnt exist', () {
+      final intf = MaybePortInterface(includePort: false);
+      expect(intf.p, null);
+    });
   });
 }

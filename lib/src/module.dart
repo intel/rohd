@@ -91,12 +91,18 @@ abstract class Module {
   /// Accesses the [Logic] associated with this [Module]s input port
   /// named [name].
   ///
-  /// Logic within this [Module] should consume this signal.
+  /// Only logic within this [Module] should consume this signal.
   @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
           'Input name "$name" not found as an input to this Module.');
+
+  /// Provides the [input] named [name] if it exists, otherwise `null`.
+  ///
+  /// Only logic within this [Module] should consume this signal.
+  @protected
+  Logic? tryInput(String name) => _inputs[name];
 
   /// Accesses the [Logic] associated with this [Module]s output port
   /// named [name].
@@ -107,6 +113,9 @@ abstract class Module {
       ? _outputs[name]!
       : throw Exception(
           'Output name "$name" not found as an output of this Module.');
+
+  /// Provides the [output] named [name] if it exists, otherwise `null`.
+  Logic? tryOutput(String name) => _outputs[name];
 
   /// Returns true iff [net] is the same [Logic] as the input port of this
   /// [Module] with the same name.
