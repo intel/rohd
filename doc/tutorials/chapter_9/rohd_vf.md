@@ -25,9 +25,9 @@ In this chapter:
 
 In this chapter, we are going to learn how to use ROHD-VF, a verification framework that are built upon Rapid Open Hardware Development (ROHD) framework. ROHD-VF offers testbench in a way that are similar to UVM. For those who are unfamiliar with UVM, worry not as we will covered it piece by piece as we move along with this tutorial.
 
-## Testbenches
+## Testbench
 
-A testbench is a software used to interact with and test a device under test (DUT). ROHD-VF testbenches are organized in a modular and extensible way using simple base classes which have specific roles. Below is a diagram of an example ROHD-VF testbench.
+A testbench is a software used to interact with and test a device under test (DUT). ROHD-VF testbench are organized in a modular and extensible way using simple base classes which have specific roles. Below is a diagram of an example ROHD-VF testbench.
 
 ![ROHD-VF Design](./assets/ROHD_VF_Design.png)
 
@@ -37,7 +37,7 @@ ROHD-VF does not comes with a built-in "factory" (like UVM) for constructing Com
 
 ### Component's Phases
 
-Most of the setup occur in the constuctor of the object. ROHD-VF comes with some phasing (similar to UVM) to help configure, connect and run a testbench in coordinated steps. Every Component goes through phases.
+Most of the setup occur in the constructor of the object. ROHD-VF comes with some phasing (similar to UVM) to help configure, connect and run a testbench in coordinated steps. Every Component goes through phases.
 
 - The constructor
   - Clearly enumerate what is required to build the component as part of the constructor parameters.
@@ -59,7 +59,7 @@ A `component` is an object which holds a fixed hierarchical position in the test
 - **Driver**
   - A driver is responsible for converting a `SequenceItem` into signal transitions on a hardware interface. The driver accepts incoming items from a `Sequencer`.
 - **Sequencer**
-  - A `Sequencer` accepts `SequenceItem`s from stimulus sources (e.g. `Sequence`s) and determine how to pass them to the appropriate `Driver`(s). The default behaviour of a `Sequencer` is to directly pass them to the `Driver` immediately, but can be changed.
+  - A `Sequencer` accepts `SequenceItem`s from stimulus sources (e.g. `Sequence`s) and determine how to pass them to the appropriate `Driver`(s). The default behavior of a `Sequencer` is to directly pass them to the `Driver` immediately, but can be changed.
 - **Agent**
   - The `Agent` is a wrapper for related components, often which all look at a single interface or set of interfaces.
 - **Env**
@@ -80,7 +80,7 @@ Sending stimulus through the testbench to the device under test is done by passi
 
 ROHD-VF uses Dart `logging` package for all logging. It comes with a variety of verbosity levels and excellent customizability.
 
-The `Test` object contains settings for `killLevel` and `failLevel` which will, repectively, immediately end the test or cause a test failure when the simulation finishes running. These levels are associated with the levels from the `logging` package.
+The `Test` object contains settings for `killLevel` and `failLevel` which will, respectively, immediately end the test or cause a test failure when the simulation finishes running. These levels are associated with the levels from the `logging` package.
 
 To log a message from any ROHD-VF object or component, just use the inherited `logger` object.
 
@@ -92,7 +92,7 @@ Before you start to code any ROHD-VF framework, you are require to install the `
 
 Today, we are going to test a `Counter` module using ROHD-VF. The `Counter` module can be found on the chapter 8 interface. Let create a simple test to make sure that `Counter` increment it value when enable is 1.
 
-First and foremost, let start by creating a top level testbench. Our top level teshbench is a simple instantiation of the `Counter`'s interface. Then, we connect the interface clock pin to the `SimpleClockGenerator` and instantiate the DUT.
+First and foremost, let start by creating a top level testbench. Our top level testbench is a simple instantiation of the `Counter`'s interface. Then, we connect the interface clock pin to the `SimpleClockGenerator` and instantiate the DUT.
 
 ```dart
 // The DUT to test.
@@ -193,7 +193,7 @@ class MyValueMonitor extends Monitor<LogicValue> {
 }
 ```
 
-Next, we will need to create a `Driver` that drive the value from `Sequencer`. In your `Driver`, you need to declare the interface and the pending items from Queue. At the `run()` function, basically what you need to do is listen to the `Sequencer` stream to retrived sequence item and add to the queue. After that, we will drive the sequence item in either positive and negative edge of the clock.
+Next, we will need to create a `Driver` that drive the value from `Sequencer`. In your `Driver`, you need to declare the interface and the pending items from Queue. At the `run()` function, basically what you need to do is listen to the `Sequencer` stream to retrieved sequence item and add to the queue. After that, we will drive the sequence item in either positive and negative edge of the clock.
 
 ```dart
 class MyDriver extends Driver<MySeqItem> {
@@ -351,7 +351,7 @@ class MyEnv extends Env {
 
 ### E. Counter Test
 
-Now, let's wrap and connect everythings through `Test`. In `run()`, we can set the flow on how we going to do the test. For example, I can control the `reset` pin value using `Simulator.registerAction()`.
+Now, let's wrap and connect everything through `Test`. In `run()`, we can set the flow on how we going to do the test. For example, I can control the `reset` pin value using `Simulator.registerAction()`.
 
 ```dart
 class MyTest extends Test {
