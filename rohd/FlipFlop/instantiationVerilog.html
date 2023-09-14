@@ -64,15 +64,15 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.1.0/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.1.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span>
-<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.0/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>
+<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -84,7 +84,7 @@
 instantiation.</p>
 <p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name,
 respectively of the module that would have been instantiated had it not
-been overridden.  The <a href="https://api.dart.dev/stable/3.1.0/dart-core/Map-class.html">Map</a>s <code>inputs</code> and <code>outputs</code> are a mapping from the
+been overridden.  The <a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a>s <code>inputs</code> and <code>outputs</code> are a mapping from the
 <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are passed into
 those ports in the generated SystemVerilog.</p>
 </section>
@@ -96,26 +96,43 @@ those ports in the generated SystemVerilog.</p>
   <pre class="language-dart"><code class="language-dart">@override
 String instantiationVerilog(String instanceType, String instanceName,
     Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) {
-  if (_isEnableProvided) {
-    if (inputs.length != 3 || outputs.length != 1) {
-      throw Exception(&#39;FlipFlop has exactly three inputs and one output.&#39;);
-    }
-  } else {
-    if (inputs.length != 2 || outputs.length != 1) {
-      throw Exception(&#39;FlipFlop has exactly two inputs and one output.&#39;);
-    }
+  var expectedInputs = 2;
+  if (_en != null) {
+    expectedInputs++;
+  }
+  if (_reset != null) {
+    expectedInputs++;
+  }
+  if (_resetValuePort != null) {
+    expectedInputs++;
+  }
+
+  if (inputs.length != expectedInputs || outputs.length != 1) {
+    throw Exception(
+        &#39;FlipFlop has exactly $expectedInputs inputs and one output.&#39;);
   }
 
   final clk = inputs[_clkName]!;
   final d = inputs[_dName]!;
   final q = outputs[_qName]!;
 
-  if (_isEnableProvided) {
-    final en = inputs[_enName]!;
-    return &#39;always_ff @(posedge $clk) if($en) $q &lt;= $d;  &#47;&#47; $instanceName&#39;;
-  } else {
-    return &#39;always_ff @(posedge $clk) $q &lt;= $d;  &#47;&#47; $instanceName&#39;;
+  final svBuffer = StringBuffer(&#39;always_ff @(posedge $clk) &#39;);
+
+  if (_reset != null) {
+    final resetValueString = _resetValuePort != null
+        ? inputs[_resetValueName]!
+        : _resetValueConst.toString();
+    svBuffer
+        .write(&#39;if(${inputs[_resetName]}) $q &lt;= $resetValueString; else &#39;);
   }
+
+  if (_en != null) {
+    svBuffer.write(&#39;if(${inputs[_enName]!}) &#39;);
+  }
+
+  svBuffer.write(&#39;$q &lt;= $d;  &#47;&#47; $instanceName&#39;);
+
+  return svBuffer.toString();
 }</code></pre>
 </section>
 

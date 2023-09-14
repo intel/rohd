@@ -66,7 +66,9 @@
 <span class="returntype"><a href="../rohd/Logic-class.html">Logic</a></span>
 <span class="name ">flop</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="flop-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
 <li><span class="parameter" id="flop-param-d"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d</span>, </span></li>
-<li><span class="parameter" id="flop-param-en">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>}</span></li>
+<li><span class="parameter" id="flop-param-en">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span></li>
+<li><span class="parameter" id="flop-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
+<li><span class="parameter" id="flop-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>}</span></li>
 </ol>)
 
         
@@ -75,17 +77,33 @@
     
 <section class="desc markdown">
   <p>Constructs a positive edge triggered flip flop on <code>clk</code>.</p>
-<p>It returns <a href="../rohd/FlipFlop/q.html">FlipFlop.q</a>. When optional <code>en</code> is provided, an additional
-input will be created for flop. If optional <code>en</code> is high or not provided,
-output will vary as per input<code>d</code>. For low <code>en</code>, output remains frozen
-irrespective of input <code>d</code></p>
+<p>It returns <a href="../rohd/FlipFlop/q.html">FlipFlop.q</a>.</p>
+<p>When the optional <code>en</code> is provided, an additional input will be created for
+flop. If optional <code>en</code> is high or not provided, output will vary as per
+input<code>d</code>. For low <code>en</code>, output remains frozen irrespective of input <code>d</code>.</p>
+<p>When the optional <code>reset</code> is provided, the flop will be reset (active-high).
+If no <code>resetValue</code> is provided, the reset value is always <code>0</code>. Otherwise,
+it will reset to the provided <code>resetValue</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic flop(Logic clk, Logic d, {Logic? en}) =&gt; FlipFlop(clk, d, en: en).q;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic flop(
+  Logic clk,
+  Logic d, {
+  Logic? en,
+  Logic? reset,
+  dynamic resetValue,
+}) =&gt;
+    FlipFlop(
+      clk,
+      d,
+      en: en,
+      reset: reset,
+      resetValue: resetValue,
+    ).q;</code></pre>
 </section>
 
 
