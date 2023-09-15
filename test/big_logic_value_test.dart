@@ -33,7 +33,7 @@ void main() {
         LogicValue.ofInt(0, 128));
   });
   group('values test', () {
-    for (final len in [63, 64, 65]) {
+    for (final len in [63, 64, 65, 66, 67]) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
       final bslv = LogicValue.ofInt(-0xFFFF, len); // 18446744073709486081
       final fslv = LogicValue.ofInt(-2, len); // 18446744073709551614
@@ -98,6 +98,46 @@ void main() {
         expect(fblv - sblv, LogicValue.ofBigInt(BigInt.from(-6), len));
 
         expect(fblv * sblv, LogicValue.ofBigInt(BigInt.from(-8), len));
+      });
+      test('division test len=$len', () {
+        final negsfour = LogicValue.ofInt(-4, len);
+        final negbfour = LogicValue.ofBigInt(BigInt.from(-4), len);
+        final two = LogicValue.ofBigInt(BigInt.from(2), len);
+        expect(negsfour / two, LogicValue.ofInt(-4, len) >>> 1);
+        expect(negbfour / two, LogicValue.ofBigInt(BigInt.from(-4), len) >>> 1);
+      });
+      test('modulo test len=$len', () {
+        final negsfive = LogicValue.ofInt(-5, len);
+        final negbfive = LogicValue.ofBigInt(BigInt.from(-5), len);
+        final two = LogicValue.ofBigInt(BigInt.from(2), len);
+        expect(negsfive % two, LogicValue.ofInt(1, len));
+        expect(negbfive % two, LogicValue.ofBigInt(BigInt.from(1), len));
+      });
+      test('clog test len=$len', () {
+        for (final l in [len - 5, len - 4, len - 3, len - 2]) {
+          final bignum = LogicValue.ofBigInt(BigInt.from(1) << l, len);
+          expect(bignum.clog2(), LogicValue.ofInt(l, len));
+          if (len < 64) {
+            final smallnum = LogicValue.ofInt(1 << l, len);
+            expect(smallnum.clog2(), LogicValue.ofInt(l, len));
+          }
+        }
+        for (final l in [len - 5, len - 4, len - 3]) {
+          final bignum = LogicValue.ofBigInt(BigInt.from(2) << l, len);
+          expect(bignum.clog2().toBigInt(), BigInt.from(l + 1));
+          if (len < 64) {
+            final smallnum = LogicValue.ofInt(2 << l, len);
+            expect(smallnum.clog2(), LogicValue.ofInt(l + 1, len));
+          }
+        }
+        for (final l in [len - 5, len - 4, len - 3]) {
+          final bignum = LogicValue.ofBigInt(BigInt.from(3) << l, len);
+          expect(bignum.clog2(), LogicValue.ofInt(l + 2, len));
+          if (len < 64) {
+            final smallnum = LogicValue.ofInt(3 << l, len);
+            expect(smallnum.clog2(), LogicValue.ofInt(l + 2, len));
+          }
+        }
       });
     }
   });
