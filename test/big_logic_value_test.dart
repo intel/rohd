@@ -114,6 +114,11 @@ void main() {
         expect(negbfive % two, LogicValue.ofBigInt(BigInt.from(1), len));
       });
       test('clog test len=$len', () {
+        final negnum = LogicValue.ofInt(-1, len);
+        expect(negnum.clog2(), LogicValue.ofInt(len, len));
+        for (final l in [1, 2, 3]) {
+          expect((negnum >>> l).clog2(), LogicValue.ofInt(len - l, len));
+        }
         for (final l in [len - 5, len - 4, len - 3, len - 2]) {
           final bignum = LogicValue.ofBigInt(BigInt.from(1) << l, len);
           expect(bignum.clog2(), LogicValue.ofInt(l, len));
