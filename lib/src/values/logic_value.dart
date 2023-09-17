@@ -18,7 +18,8 @@ typedef LogicValues = LogicValue;
 ///
 /// Each bit of [LogicValue] can be represented as a [LogicValue]
 /// of `0`, `1`, `x` (contention), or `z` (floating).
-/// LogicValue is unsigned
+///
+/// [LogicValue] is unsigned.
 @immutable
 abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in an int.
@@ -840,25 +841,21 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Addition operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
@@ -969,28 +966,24 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Less-than operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);

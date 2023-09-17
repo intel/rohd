@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_value_width_test.dart
+// Unit tests for width issues (64-bit boundary) in [LogicValue].
+//
+// 2023 September 17
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -13,6 +22,7 @@ void main() {
       ])
     ]);
   });
+
   test('bad compare', () {
     const i = 64;
     final input = Const(BigInt.from(1) << (i - 1), width: i);
@@ -26,12 +36,14 @@ void main() {
     final b = ~input.eq(0);
     expect(output.value, equals(b.value));
   });
+
   test('big value test', () {
     expect(
         LogicValue.ofBigInt(BigInt.zero, 128) +
             LogicValue.ofBigInt(BigInt.zero, 128),
         LogicValue.ofInt(0, 128));
   });
+
   group('values test', () {
     for (final len in [63, 64, 65, 66, 67]) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
@@ -58,6 +70,7 @@ void main() {
         expect(bslv > fslv, LogicValue.zero);
         expect(fslv > bslv, LogicValue.one);
       });
+
       test('big Int storage len=$len', () {
         expect(sblv < bblv, LogicValue.one);
         expect(bblv < sblv, LogicValue.zero);
@@ -74,6 +87,7 @@ void main() {
         expect(bblv > fblv, LogicValue.zero);
         expect(fblv > bblv, LogicValue.one);
       });
+
       test('big math len=$len', () {
         expect(sslv + fslv, LogicValue.ofInt(2, len));
         expect(sslv - fslv, LogicValue.ofInt(6, len));
@@ -99,6 +113,7 @@ void main() {
 
         expect(fblv * sblv, LogicValue.ofBigInt(BigInt.from(-8), len));
       });
+
       test('division test len=$len', () {
         final negsfour = LogicValue.ofInt(-4, len);
         final negbfour = LogicValue.ofBigInt(BigInt.from(-4), len);
@@ -106,6 +121,7 @@ void main() {
         expect(negsfour / two, LogicValue.ofInt(-4, len) >>> 1);
         expect(negbfour / two, LogicValue.ofBigInt(BigInt.from(-4), len) >>> 1);
       });
+
       test('modulo test len=$len', () {
         final negsfive = LogicValue.ofInt(-5, len);
         final negbfive = LogicValue.ofBigInt(BigInt.from(-5), len);
@@ -113,6 +129,7 @@ void main() {
         expect(negsfive % two, LogicValue.ofInt(1, len));
         expect(negbfive % two, LogicValue.ofBigInt(BigInt.from(1), len));
       });
+
       test('clog test len=$len', () {
         final negnum = LogicValue.ofInt(-1, len);
         expect(negnum.clog2(), LogicValue.ofInt(len, len));
