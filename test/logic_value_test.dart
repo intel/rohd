@@ -743,6 +743,17 @@ void main() {
       expect(() => LogicValue.filled(10, LogicValue.one) >> Logic(),
           throwsA(isA<UnsupportedTypeException>()));
     });
+
+    test('example large shifts', () {
+      expect((LogicValue.filled(64, LogicValue.one) >> 2).toInt(),
+          equals(-1 >> 2));
+      expect(
+          LogicValue.filled(65, LogicValue.one) >>> 10,
+          equals([
+            LogicValue.filled(10, LogicValue.zero),
+            LogicValue.filled(55, LogicValue.one)
+          ].swizzle()));
+    });
   });
 
   group('infer width', () {
