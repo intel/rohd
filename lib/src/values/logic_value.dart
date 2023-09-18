@@ -895,12 +895,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Division operation.
   ///
   // ignore: avoid_dynamic_calls
-  LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
+  LogicValue operator /(dynamic other) =>
+      _doMath(other, (a, b) => a ~/ b, isDivision: true);
 
   /// Modulo operation.
   ///
   // ignore: avoid_dynamic_calls
-  LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
+  LogicValue operator %(dynamic other) =>
+      _doMath(other, (a, b) => a % b, isDivision: true);
 
   /// Ceil of log base 2 operation.
   ///
@@ -944,7 +946,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// Handles width and bounds checks as well as proper conversion between
   /// different types of representation.
-  LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op) {
+  ///
+  /// If the math [isDivision], then 64-bit ([_INT_BITS]) operations have some
+  /// special consideration for two's complement math, so it will use an
+  /// unsigned [BigInt] for math.
+  LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op,
+      {bool isDivision = false}) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
       throw UnsupportedTypeException(other, [int, LogicValue, BigInt]);
     }
@@ -961,16 +968,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
-    if (width > _INT_BITS || (other is LogicValue && other.width > _INT_BITS)) {
+    final widthComparison = isDivision ? _INT_BITS - 1 : _INT_BITS;
+
+    if (width > widthComparison ||
+        (other is LogicValue && other.width > widthComparison)) {
       final a = toBigInt();
       final b = other is BigInt
           ? other
           : other is int
               ? BigInt.from(other).toUnsigned(_INT_BITS)
-              : other is LogicValue
-                  ? other.toBigInt()
-                  : throw Exception(
-                      'Unexpected big type: ${other.runtimeType}.');
+              : (other as LogicValue).toBigInt();
       return LogicValue.ofBigInt(op(a, b) as BigInt, width);
     } else {
       final a = toInt();
@@ -1078,10 +1085,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
           ? other
           : other is int
               ? BigInt.from(other).toUnsigned(_INT_BITS)
-              : other is LogicValue
-                  ? other.toBigInt()
-                  : throw Exception(
-                      'Unexpected big type: ${other.runtimeType}.');
+              : (other as LogicValue).toBigInt();
     } else {
       if (width < _INT_BITS) {
         a = toInt();

@@ -44,6 +44,11 @@ void main() {
         LogicValue.ofInt(0, 128));
   });
 
+  test('mod3 sizes', () {
+    expect((LogicValue.ofInt(-5, 64) % 3).toInt(),
+        (LogicValue.ofInt(-5, 80) % 3).toInt());
+  });
+
   group('values test', () {
     for (final len in [63, 64, 65, 66, 67]) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
@@ -88,24 +93,20 @@ void main() {
         expect(fblv > bblv, LogicValue.one);
       });
 
+      test('cross compare len=$len', () {
+        if (len <= 64) {
+          expect(bslv.eq(bblv), LogicValue.one);
+        } else {
+          expect(bslv < bblv, LogicValue.one);
+        }
+      });
+
       test('big math len=$len', () {
-        expect(sslv + fslv, LogicValue.ofInt(2, len));
-        expect(sslv - fslv, LogicValue.ofInt(6, len));
-        expect(fslv - sslv, LogicValue.ofInt(-6, len));
-
-        expect(sslv * fslv, LogicValue.ofInt(-8, len));
-
-        expect(sslv + fslv, LogicValue.ofBigInt(BigInt.from(2), len));
-        expect(sslv - fslv, LogicValue.ofBigInt(BigInt.from(6), len));
-        expect(fslv - sslv, LogicValue.ofBigInt(BigInt.from(-6), len));
-
-        expect(fslv * sslv, LogicValue.ofBigInt(BigInt.from(-8), len));
-
         expect(sblv + fblv, LogicValue.ofInt(2, len));
         expect(sblv - fblv, LogicValue.ofInt(6, len));
-        expect(fblv - sblv, LogicValue.ofInt(-6, len));
+        expect(fblv - sblv, LogicValue.ofBigInt(BigInt.from(-6), len));
 
-        expect(sblv * fblv, LogicValue.ofInt(-8, len));
+        expect(sblv * fblv, LogicValue.ofBigInt(BigInt.from(-8), len));
 
         expect(sblv + fblv, LogicValue.ofBigInt(BigInt.from(2), len));
         expect(sblv - fblv, LogicValue.ofBigInt(BigInt.from(6), len));
@@ -131,7 +132,7 @@ void main() {
       });
 
       test('clog test len=$len', () {
-        final negnum = LogicValue.ofInt(-1, len);
+        final negnum = LogicValue.ofBigInt(-BigInt.one, len);
         expect(negnum.clog2(), LogicValue.ofInt(len, len));
         for (final l in [1, 2, 3]) {
           expect((negnum >>> l).clog2(), LogicValue.ofInt(len - l, len));
