@@ -18,6 +18,8 @@ typedef LogicValues = LogicValue;
 ///
 /// Each bit of [LogicValue] can be represented as a [LogicValue]
 /// of `0`, `1`, `x` (contention), or `z` (floating).
+///
+/// [LogicValue] is unsigned.
 @immutable
 abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in an int.
@@ -877,25 +879,21 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Addition operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   // ignore: avoid_dynamic_calls
   LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
 
@@ -963,12 +961,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    if (width > _INT_BITS || (other is LogicValue && other.width > _INT_BITS)) {
       final a = toBigInt();
       final b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other)
+              ? BigInt.from(other).toUnsigned(_INT_BITS)
               : other is LogicValue
                   ? other.toBigInt()
                   : throw Exception(
@@ -1006,28 +1004,24 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Less-than operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
   ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
@@ -1078,19 +1072,30 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     dynamic a;
     dynamic b;
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    if (width > _INT_BITS || (other is LogicValue && other.width > _INT_BITS)) {
       a = toBigInt();
       b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other)
+              ? BigInt.from(other).toUnsigned(_INT_BITS)
               : other is LogicValue
                   ? other.toBigInt()
                   : throw Exception(
                       'Unexpected big type: ${other.runtimeType}.');
     } else {
-      a = toInt();
-      b = other is int ? other : (other as LogicValue).toInt();
+      if (width < _INT_BITS) {
+        a = toInt();
+        b = other is int ? other : (other as LogicValue).toInt();
+      } else {
+        // Here we now know: width == _INT_BITS
+        final ai = toInt();
+        final bi = other is int ? other : (other as LogicValue).toInt();
+        if ((ai < 0) || (bi < 0)) {
+          final abig = LogicValue.ofBigInt(BigInt.from(ai), _INT_BITS + 1);
+          final bbig = LogicValue.ofBigInt(BigInt.from(bi), _INT_BITS + 1);
+          return abig._doCompare(bbig, op);
+        }
+      }
     }
     return op(a, b) ? LogicValue.one : LogicValue.zero;
   }
