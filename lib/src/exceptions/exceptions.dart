@@ -9,3 +9,4 @@ export './module/module_exceptions.dart';
 export './name/name_exceptions.dart';
 export './sim_compare/sim_compare_exceptions.dart';
 export 'rohd_exception.dart';
+export 'unsupported_type_exception.dart';

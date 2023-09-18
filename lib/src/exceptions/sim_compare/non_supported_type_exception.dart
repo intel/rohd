@@ -18,7 +18,7 @@ class NonSupportedTypeException extends RohdException {
   /// with default error [message].
   ///
   /// Creates a [NonSupportedTypeException] with an optional error [message].
-  NonSupportedTypeException(String vector,
+  NonSupportedTypeException(dynamic vector,
       [String message = 'The runtimetype of expected vector is unsupported: '])
-      : super(message + vector.runtimeType.toString());
+      : super('$message $vector (${vector.runtimeType})');
 }

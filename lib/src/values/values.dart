@@ -3,6 +3,7 @@
 
 library;
 
+import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
