@@ -569,7 +569,7 @@ void main() {
         await gtm.build();
         final vectors = [
           Vector({
-            'a': BigInt.one << 200 | BigInt.one << 100,
+            'a': BigInt.one << 199 | BigInt.one << 100,
             'b': BigInt.one << 100
           }, {
             'a_lshift_const': 0,

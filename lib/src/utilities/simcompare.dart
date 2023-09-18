@@ -87,7 +87,11 @@ class Vector {
         }
         return arrAssigns.toString();
       } else {
-        return '$signalName = ${inputValues[signalName]};';
+        var assignmentValue = inputValues[signalName];
+        if (assignmentValue is BigInt) {
+          assignmentValue = LogicValue.of(assignmentValue, width: signal.width);
+        }
+        return '$signalName = $assignmentValue;';
       }
     }).join('\n');
 

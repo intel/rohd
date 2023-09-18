@@ -682,14 +682,21 @@ void main() {
       expect((LogicValue.ofInt(-45, 64) >> -12).toInt(), -1);
       expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> -1).toInt(), 0);
-      expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), true);
+      expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), false);
+      expect((LogicValue.ofBigInt(BigInt.from(-45), 128) >> -18).and().toBool(),
+          true);
 
       expect((LogicValue.ofInt(45, 32) >> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(-45, 64) >> BigInt.from(-4)).toInt(), -1);
       expect((LogicValue.ofInt(-45, 8) >> BigInt.from(-4)).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 128) >> BigInt.from(-4)).and().toBool(),
+          false);
       expect(
-          (LogicValue.ofInt(-45, 128) >> BigInt.from(-4)).and().toBool(), true);
+          (LogicValue.ofBigInt(BigInt.from(-45), 128) >> BigInt.from(-4))
+              .and()
+              .toBool(),
+          true);
       expect((LogicValue.ofInt(45, 80) >> (BigInt.one << 80)).toInt(), 0);
       expect((LogicValue.ofInt(-45, 8) >> (BigInt.one << 80)).toInt(), 0xff);
     });
