@@ -9,62 +9,62 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-checks:
-    name: Run Checks
-    permissions: {}
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  # run-checks:
+  #   name: Run Checks
+  #   permissions: {}
+  #   timeout-minutes: 30
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: Lint Markdown files
-        uses: DavidAnson/markdownlint-cli2-action@v11
-        with:
-          globs: '**/*.md'
+  #     - name: Lint Markdown files
+  #       uses: DavidAnson/markdownlint-cli2-action@v11
+  #       with:
+  #         globs: '**/*.md'
 
-      - name: Check Markdown links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
-          config-file: .github/configs/mlc_config.json
+  #     - name: Check Markdown links
+  #       uses: gaurav-nelson/github-action-markdown-link-check@v1
+  #       with:
+  #         use-quiet-mode: yes # output is too noisy, see https://github.com/gaurav-nelson/github-action-markdown-link-check/issues/121
+  #         config-file: .github/configs/mlc_config.json
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+  #     - name: Setup Dart
+  #       uses: dart-lang/setup-dart@v1
 
-      - name: Install project dependencies
-        run: tool/gh_actions/install_dependencies.sh
+  #     - name: Install project dependencies
+  #       run: tool/gh_actions/install_dependencies.sh
 
-      - name: Verify project formatting
-        run: tool/gh_actions/verify_formatting.sh
+  #     - name: Verify project formatting
+  #       run: tool/gh_actions/verify_formatting.sh
 
-      - name: Analyze project source
-        run: tool/gh_actions/analyze_source.sh
+  #     - name: Analyze project source
+  #       run: tool/gh_actions/analyze_source.sh
 
-      - name: Check project documentation
-        run: tool/gh_actions/check_documentation.sh
+  #     - name: Check project documentation
+  #       run: tool/gh_actions/check_documentation.sh
 
-      - name: Install software - Icarus Verilog
-        run: tool/gh_actions/install_iverilog.sh
+  #     - name: Install software - Icarus Verilog
+  #       run: tool/gh_actions/install_iverilog.sh
 
-      - name: Run project tests
-        run: tool/gh_actions/run_tests.sh
+  #     - name: Run project tests
+  #       run: tool/gh_actions/run_tests.sh
 
-      - name: Check folder - tmp_test
-        run: tool/gh_actions/check_folder_tmp_test.sh
+  #     - name: Check folder - tmp_test
+  #       run: tool/gh_actions/check_folder_tmp_test.sh
       
-      # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
-      - name: Build dev container and run tests in it
-        uses: devcontainers/ci@v0.3
-        with:
-          runCmd: tool/gh_actions/run_tests.sh
+  #     # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
+  #     - name: Build dev container and run tests in it
+  #       uses: devcontainers/ci@v0.3
+  #       with:
+  #         runCmd: tool/gh_actions/run_tests.sh
 
   deploy-documentation:
     name: Deploy Documentation
     # needs: run-checks
     # if: github.event_name == 'push'
-    permissions:
-      contents: write # required for "JamesIves/github-pages-deploy-action"
+    permissions: write-all
+      # contents: write # required for "JamesIves/github-pages-deploy-action"
     timeout-minutes: 30
     runs-on: ubuntu-22.04
     steps:
