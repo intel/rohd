@@ -878,19 +878,19 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue xor();
 
   /// Addition operation.
-  ///
-  // ignore: avoid_dynamic_calls
-  LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
+  LogicValue operator +(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
-  ///
-  // ignore: avoid_dynamic_calls
-  LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
+  LogicValue operator -(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
-  ///
-  // ignore: avoid_dynamic_calls
-  LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
+  LogicValue operator *(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a * b);
 
   /// Division operation.
   LogicValue operator /(dynamic other) => _doMath(
@@ -1014,25 +1014,21 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue pow(dynamic exponent) => _doMath(exponent, _powerOperation);
 
   /// Less-than operation.
-  ///
   LogicValue operator <(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
-  ///
   LogicValue operator >(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
-  ///
   LogicValue operator <=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
-  ///
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
