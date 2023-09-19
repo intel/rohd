@@ -31,7 +31,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Pipeline-class.html">Pipeline</a></li>
-    <li class="self-crumb">clk property</li>
+    <li class="self-crumb"><span class="deprecated">clk</span> property</li>
   </ol>
   <div class="self-name">clk</div>
   <form class="search navbar-right" role="search">
@@ -60,22 +60,36 @@
 <h1><span class="kind-property">clk</span> property 
 </h1></div>
 
-        <section class="multi-line-signature">
-          
-          <a href="../../rohd/Logic-class.html">Logic</a>
-          <span class="name ">clk</span>
-          <div class="features"><span class="feature">final</span></div>
 
-        </section>
         
-<section class="desc markdown">
-  <p>The clock whose positive edge triggers the flops in this pipeline.</p>
+<section id="getter">
+
+<section class="multi-line-signature">
+  
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.1.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Do not reference the clock from the `Pipeline`.&#39;)</li>
+    </ol>
+  </div>
+  <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
+  <span class="name deprecated">clk</span>
+  
+
 </section>
 
-        
+
+<section class="desc markdown">
+  <p>The clock whose positive edge triggers the flops in this pipeline when
+single-triggered. Otherwise, the first clock.</p>
+</section>
+
+
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final Logic clk;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Do not reference the clock from the `Pipeline`.&#39;)
+Logic get clk =&gt; _clks.first;</code></pre>
+</section>
+
 </section>
 
 
@@ -93,7 +107,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Pipeline-class.html">Pipeline</a></li>
-    <li class="self-crumb">clk property</li>
+    <li class="self-crumb"><span class="deprecated">clk</span> property</li>
 </ol>
 
 

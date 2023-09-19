@@ -88,6 +88,10 @@ specified reset value.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Sequential.multi(List&lt;Logic&gt; clks, super._conditionals,
     {super.reset, super.resetValues, super.name = &#39;sequential&#39;}) {
+  if (clks.isEmpty) {
+    throw IllegalConfigurationException(&#39;Must provide at least one clock.&#39;);
+  }
+
   for (var i = 0; i &lt; clks.length; i++) {
     final clk = clks[i];
     if (clk.width &gt; 1) {

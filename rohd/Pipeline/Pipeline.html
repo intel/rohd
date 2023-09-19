@@ -80,11 +80,11 @@ flop stages.</p>
 objects.  Each stage can be thought of as being the contents of a
 <a href="../../rohd/Combinational-class.html">Combinational</a> block.  Use the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> object to grab
 signals for a given pipe stage.  Flops are positive edge triggered
-based on <a href="../../rohd/Pipeline/clk.html">clk</a>.</p>
+based on <code>clk</code>.</p>
 <p>Signals to be pipelined can optionally be specified in the <code>signals</code>
 list.  Any signal referenced in a stage via the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a>
 will automatically be included in the entire pipeline.</p>
-<p>If a <a href="../../rohd/Pipeline/reset.html">reset</a> signal is provided, then it will be consumed as an
+<p>If a <code>reset</code> signal is provided, then it will be consumed as an
 active-high reset for every signal through the pipeline.  The default
 reset value is 0 for all signals, but that can be overridden by
 setting <code>resetValues</code> to the desired value.  The values specified

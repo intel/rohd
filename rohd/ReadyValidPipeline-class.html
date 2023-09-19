@@ -100,6 +100,12 @@
         <dd>
           Constructs a pipeline with Ready/Valid protocol at each stage.
         </dd>
+        <dt id="ReadyValidPipeline.multi" class="callable">
+          <span class="name"><a href="../rohd/ReadyValidPipeline/ReadyValidPipeline.multi.html">ReadyValidPipeline.multi</a></span><span class="signature">(<span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span><span class="parameter" id="multi-param-validPipeIn"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">validPipeIn</span>, </span><span class="parameter" id="multi-param-readyPipeOut"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">readyPipeOut</span>, </span><span class="parameter" id="multi-param-stages">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span><span class="parameter" id="multi-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span><span class="parameter" id="multi-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>}</span>)</span>
+        </dt>
+        <dd>
+          Creates a <a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a> with multiple triggers.
+        </dd>
     </dl>
   </section>
 
@@ -108,13 +114,14 @@
 
       <dl class="properties">
         <dt id="clk" class="property inherited">
-  <span class="name"><a href="../rohd/Pipeline/clk.html">clk</a></span>
+  <span class="name"><a class="deprecated" href="../rohd/Pipeline/clk.html">clk</a></span>
   <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
 
 </dt>
 <dd class="inherited">
-  The clock whose positive edge triggers the flops in this pipeline.
-  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+  The clock whose positive edge triggers the flops in this pipeline when
+single-triggered. Otherwise, the first clock.
+  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
 
 </dd>
 

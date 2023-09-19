@@ -73,7 +73,7 @@
 
     <dl class="constructor-summary-list">
         <dt id="State" class="callable">
-          <span class="name"><a href="../rohd/State/State.html">State</a></span><span class="signature">(<span class="parameter" id="-param-identifier"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">identifier</span>, </span><span class="parameter" id="-param-events">{<span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">StateIdentifier</span>&gt;</span></span> <span class="parameter-name">events</span>, </span><span class="parameter" id="-param-actions"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">actions</span>}</span>)</span>
+          <span class="name"><a href="../rohd/State/State.html">State</a></span><span class="signature">(<span class="parameter" id="-param-identifier"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">identifier</span>, </span><span class="parameter" id="-param-events">{<span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">StateIdentifier</span>&gt;</span></span> <span class="parameter-name">events</span>, </span><span class="parameter" id="-param-actions"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">actions</span>, </span><span class="parameter" id="-param-defaultNextState"><span class="type-annotation">StateIdentifier?</span> <span class="parameter-name">defaultNextState</span>, </span><span class="parameter" id="-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.unique</span>}</span>)</span>
         </dt>
         <dd>
           Represents a state named <a href="../rohd/State/identifier.html">identifier</a> with a definition of <a href="../rohd/State/events.html">events</a>
@@ -93,6 +93,28 @@ and <a href="../rohd/State/actions.html">actions</a> associated with that state.
 </dt>
 <dd>
   Actions to perform while the FSM is in this state.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="conditionalType" class="property">
+  <span class="name"><a href="../rohd/State/conditionalType.html">conditionalType</a></span>
+  <span class="signature">&#8594; <a href="../rohd/ConditionalType.html">ConditionalType</a></span> 
+
+</dt>
+<dd>
+  Used to control how different <a href="../rohd/State/events.html">events</a> should be prioritized and matched.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="defaultNextState" class="property">
+  <span class="name"><a href="../rohd/State/defaultNextState.html">defaultNextState</a></span>
+  <span class="signature">&#8594; StateIdentifier</span> 
+
+</dt>
+<dd>
+  The next state to transition to if non of the <a href="../rohd/State/events.html">events</a> hit.
   <div class="features"><span class="feature">final</span></div>
 
 </dd>

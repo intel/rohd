@@ -215,6 +215,14 @@ under certain conditions.
 in SystemVerilog.
 </dd>
 
+        <dt id="FiniteStateMachine">
+  <span class="name "><a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
+
+</dt>
+<dd>
+  Simple class for FSM <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a>.
+</dd>
+
         <dt id="FlipFlop">
   <span class="name "><a href="../rohd/FlipFlop-class.html">FlipFlop</a></span> 
 
@@ -501,14 +509,6 @@ representation.
 </dt>
 <dd>
   Simple class to initialize each state of the FSM.
-</dd>
-
-        <dt id="StateMachine">
-  <span class="name "><a href="../rohd/StateMachine-class.html">StateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
-
-</dt>
-<dd>
-  Simple class for FSM <a href="../rohd/StateMachine-class.html">StateMachine</a>.
 </dd>
 
         <dt id="Subtract">
@@ -864,9 +864,248 @@ large bit vectors and conversion between types.
 </dd>
 
 
+          
+  <dt id="StateMachine" class="">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/StateMachine.html">StateMachine</a></span>&lt;<wbr><span class="type-parameter">T</span>&gt;
+    = <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">T</span>&gt;</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Deprecated: use <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a> instead.
+  
+
+</dd>
+
+
       </dl>
     </section>
 
+    <section class="summary offset-anchor" id="exceptions">
+      <h2>Exceptions / Errors</h2>
+
+      <dl>
+        <dt id="EmptyReservedNameException">
+  <span class="name "><a href="../rohd/EmptyReservedNameException-class.html">EmptyReservedNameException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a reserved name is <code>null</code>.
+</dd>
+
+        <dt id="IllegalConfigurationException">
+  <span class="name "><a href="../rohd/IllegalConfigurationException-class.html">IllegalConfigurationException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when somethins is configured in an illegal way.
+</dd>
+
+        <dt id="InterfaceNameException">
+  <span class="name "><a href="../rohd/InterfaceNameException-class.html">InterfaceNameException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.1.2/dart-core/Exception-class.html">Exception</a> thrown when an interface has an invalid name.
+</dd>
+
+        <dt id="InterfaceTypeException">
+  <span class="name "><a href="../rohd/InterfaceTypeException-class.html">InterfaceTypeException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.1.2/dart-core/Exception-class.html">Exception</a> thrown when an interface has an issue with its type.
+</dd>
+
+        <dt id="InvalidConditionalException">
+  <span class="name "><a href="../rohd/InvalidConditionalException-class.html">InvalidConditionalException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when a <a href="../rohd/Conditional-class.html">Conditional</a> has been constructed in
+an invalid way.
+</dd>
+
+        <dt id="InvalidMultiplierException">
+  <span class="name "><a href="../rohd/InvalidMultiplierException-class.html">InvalidMultiplierException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> is replicated with an invalid (&lt;1)
+multiplier.
+</dd>
+
+        <dt id="InvalidPortNameException">
+  <span class="name "><a href="../rohd/InvalidPortNameException-class.html">InvalidPortNameException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a port or interface name is invalid.
+</dd>
+
+        <dt id="InvalidReservedNameException">
+  <span class="name "><a href="../rohd/InvalidReservedNameException-class.html">InvalidReservedNameException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a reserved name is invalid.
+</dd>
+
+        <dt id="InvalidTruncationException">
+  <span class="name "><a href="../rohd/InvalidTruncationException-class.html">InvalidTruncationException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when a <a href="../rohd/LogicValue-class.html">LogicValue</a> operation
+couldn't be performed due invalid data truncation.
+</dd>
+
+        <dt id="InvalidValueOperationException">
+  <span class="name "><a href="../rohd/InvalidValueOperationException-class.html">InvalidValueOperationException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when a given operation cannot be performed on
+invalid <a href="../rohd/LogicValue-class.html">LogicValue</a>
+</dd>
+
+        <dt id="LogicConstructionException">
+  <span class="name "><a href="../rohd/LogicConstructionException-class.html">LogicConstructionException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> is connecting to itself.
+</dd>
+
+        <dt id="LogicValueConstructionException">
+  <span class="name "><a href="../rohd/LogicValueConstructionException-class.html">LogicValueConstructionException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a <a href="../rohd/LogicValue-class.html">LogicValue</a> cannot be properly constructed.
+</dd>
+
+        <dt id="MappedSignalAlreadyAssignedException">
+  <span class="name "><a href="../rohd/MappedSignalAlreadyAssignedException-class.html">MappedSignalAlreadyAssignedException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when <a href="../rohd/Combinational/Combinational.ssa.html">Combinational.ssa</a> is attempting to
+deduce mappings for signals but fails since a signal would be connected
+multiple times.
+</dd>
+
+        <dt id="ModuleNotBuiltException">
+  <span class="name "><a href="../rohd/ModuleNotBuiltException-class.html">ModuleNotBuiltException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.1.2/dart-core/Exception-class.html">Exception</a> thrown when a <a href="../rohd/Module-class.html">Module</a> was used in a way that required it
+to be built first, but it was not yet built.
+</dd>
+
+        <dt id="NonSupportedTypeException">
+  <span class="name "><a href="../rohd/NonSupportedTypeException-class.html">NonSupportedTypeException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when <code>runtimeType</code> of expected vector
+output from <code>SimCompare</code> is invalid or unsupported.
+</dd>
+
+        <dt id="NullReservedNameException">
+  <span class="name "><a href="../rohd/NullReservedNameException-class.html">NullReservedNameException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a reserved name is <code>null</code>.
+</dd>
+
+        <dt id="PortWidthMismatchException">
+  <span class="name "><a href="../rohd/PortWidthMismatchException-class.html">PortWidthMismatchException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.1.2/dart-core/Exception-class.html">Exception</a> thrown when a port has the wrong width.
+</dd>
+
+        <dt id="PutException">
+  <span class="name "><a href="../rohd/PutException-class.html">PutException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> signal fails to <code>put</code>.
+</dd>
+
+        <dt id="RohdException">
+  <span class="name "><a href="../rohd/RohdException-class.html">RohdException</a></span> 
+
+</dt>
+<dd>
+  A base type of exception that ROHD-specific exceptions inherit from.
+</dd>
+
+        <dt id="SelfConnectingLogicException">
+  <span class="name "><a href="../rohd/SelfConnectingLogicException-class.html">SelfConnectingLogicException</a></span> 
+
+</dt>
+<dd>
+  An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> is connecting to itself.
+</dd>
+
+        <dt id="SignalRedrivenException">
+  <span class="name "><a href="../rohd/SignalRedrivenException-class.html">SignalRedrivenException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when a <a href="../rohd/Logic-class.html">Logic</a> signal is
+driven multiple times.
+</dd>
+
+        <dt id="SignalWidthMismatchException">
+  <span class="name "><a href="../rohd/SignalWidthMismatchException-class.html">SignalWidthMismatchException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.1.2/dart-core/Exception-class.html">Exception</a> thrown when a signal has the wrong width.
+</dd>
+
+        <dt id="UninitializedSignalException">
+  <span class="name "><a href="../rohd/UninitializedSignalException-class.html">UninitializedSignalException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when <a href="../rohd/Combinational/Combinational.ssa.html">Combinational.ssa</a> detects that an SSA
+signal is being used before it was initialized.
+</dd>
+
+        <dt id="UnsupportedTypeException">
+  <span class="name "><a href="../rohd/UnsupportedTypeException-class.html">UnsupportedTypeException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when an unsupported type is used.
+</dd>
+
+        <dt id="ValueWidthMismatchException">
+  <span class="name "><a href="../rohd/ValueWidthMismatchException-class.html">ValueWidthMismatchException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when <a href="../rohd/LogicValue-class.html">LogicValue</a>s of different width are found.
+</dd>
+
+        <dt id="WriteAfterReadException">
+  <span class="name "><a href="../rohd/WriteAfterReadException-class.html">WriteAfterReadException</a></span> 
+
+</dt>
+<dd>
+  An exception that is thrown when a "write after read" violation occurs.
+</dd>
+
+      </dl>
+    </section>
 
   </div> <!-- /.main-content -->
 
