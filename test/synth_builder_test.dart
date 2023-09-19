@@ -8,7 +8,6 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:test/test.dart';
 
 class TopModule extends Module {

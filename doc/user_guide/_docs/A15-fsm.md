@@ -6,7 +6,7 @@ last_modified_at: 2022-12-06
 toc: true
 ---
 
-ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that [`StateMachine`](https://intel.github.io/rohd/rohd/StateMachine-class.html) consumes the `clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of `states` of the FSM.  You can also use this abstraction to generate a FSM diagram using [`generateDiagram`](https://intel.github.io/rohd/rohd/StateMachine/generateDiagram.html).
+ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that [`FiniteStateMachine`](https://intel.github.io/rohd/rohd/FiniteStateMachine-class.html) consumes the `clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of `states` of the FSM.  You can also use this abstraction to generate a FSM diagram using [`generateDiagram`](https://intel.github.io/rohd/rohd/FiniteStateMachine/generateDiagram.html).
 
 ```dart
 class TrafficTestModule extends Module {
@@ -54,7 +54,7 @@ class TrafficTestModule extends Module {
         eastLight < LightColor.yellow(),
       ]),
     ];
-    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
+    FiniteStateMachine<LightStates>(clk, reset, LightStates.northFlowing, states);
   }
 }
 ```

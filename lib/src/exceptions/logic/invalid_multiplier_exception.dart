@@ -8,7 +8,6 @@
 // Author: Akshay Wankhede <akshay.wankhede@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that thrown when a [Logic] is replicated with an invalid (<1)
 /// multiplier.

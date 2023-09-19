@@ -48,11 +48,11 @@ enum LEDLight {
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
-  // A private variable with type StateMachine<OvenState> `_oven`.
+  // A private variable with type FiniteStateMachine<OvenState> `_oven`.
   //
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
-  late StateMachine<OvenState> _oven;
+  late FiniteStateMachine<OvenState> _oven;
 
   // We can expose an LED light output as a getter to retrieve it value.
   Logic get led => output('led');
@@ -175,12 +175,13 @@ class OvenModule extends Module {
           ])
     ];
 
-    // Assign the _oven StateMachine object to private variable declared.
-    _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
+    // Assign the _oven FiniteStateMachine object to private variable declared.
+    _oven =
+        FiniteStateMachine<OvenState>(clk, reset, OvenState.standby, states);
   }
 
-  // An ovenStateMachine that represent in getter.
-  StateMachine<OvenState> get ovenStateMachine => _oven;
+  // An oven FiniteStateMachine that represent in getter.
+  FiniteStateMachine<OvenState> get ovenStateMachine => _oven;
 }
 
 Future<void> main({bool noPrint = false}) async {

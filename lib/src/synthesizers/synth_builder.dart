@@ -9,7 +9,6 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A generic class which can convert a module into a generated output using

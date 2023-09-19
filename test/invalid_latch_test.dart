@@ -10,7 +10,6 @@
 // - https://github.com/intel/rohd/issues/285
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 

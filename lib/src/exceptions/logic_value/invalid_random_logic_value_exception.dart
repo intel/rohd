@@ -10,7 +10,6 @@
 
 import 'dart:math';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when the generation of the random [LogicValue]
 /// from [Random] results in errors or bugs.

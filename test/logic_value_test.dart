@@ -10,7 +10,6 @@
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
 import 'package:test/test.dart';
 

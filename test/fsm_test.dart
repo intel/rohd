@@ -41,7 +41,7 @@ class TestModule extends Module {
       ]),
     ];
 
-    StateMachine<MyStates>(clk, reset, MyStates.state1, states)
+    FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states)
         .generateDiagram(outputPath: _simpleFSMPath);
   }
 }
@@ -109,7 +109,8 @@ class TrafficTestModule extends Module {
       ]),
     ];
 
-    StateMachine<LightStates>(clk, reset, LightStates.northFlowing, states)
+    FiniteStateMachine<LightStates>(
+            clk, reset, LightStates.northFlowing, states)
         .generateDiagram(outputPath: _trafficFSMPath);
   }
 }
@@ -128,6 +129,39 @@ void main() {
     final sv = pipem.generateSynth();
 
     expect(sv, contains("b = 1'h0;"));
+  });
+
+  group('fsm validation', () {
+    test('duplicate state identifiers throws exception', () {
+      expect(
+          () =>
+              FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1, [
+                State(MyStates.state1, events: {}, actions: []),
+                State(MyStates.state2, events: {}, actions: []),
+                State(MyStates.state2, events: {}, actions: []),
+              ]),
+          throwsA(isA<IllegalConfigurationException>()));
+    });
+
+    test('missing reset state throws exception', () {
+      expect(
+          () =>
+              FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1, [
+                State(MyStates.state2, events: {}, actions: []),
+              ]),
+          throwsA(isA<IllegalConfigurationException>()));
+    });
+  });
+
+  test('state index', () {
+    expect(
+        FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1, [
+          State(MyStates.state4, events: {}, actions: []),
+          State(MyStates.state1, events: {}, actions: []),
+          State(MyStates.state3, events: {}, actions: []),
+          State(MyStates.state2, events: {}, actions: []),
+        ]).getStateIndex(MyStates.state2),
+        3);
   });
 
   group('simcompare', () {

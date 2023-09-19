@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An [Exception] thrown when a signal has the wrong width.
 class SignalWidthMismatchException extends RohdException {

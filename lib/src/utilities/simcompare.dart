@@ -14,7 +14,6 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
