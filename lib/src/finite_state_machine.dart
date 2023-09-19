@@ -52,8 +52,15 @@ class FiniteStateMachine<StateIdentifier> {
     return _stateValueLookup[_stateLookup[id]];
   }
 
-  /// The clock signal to the FSM.
-  final Logic clk;
+  /// The clock signal to the FSM (when only single-triggered). Otherwise, the
+  /// first clock.
+  ///
+  /// Deprecated: do not reference the clock from [FiniteStateMachine].
+  @Deprecated('Do not reference the clock from the `FiniteStateMachine`.')
+  Logic get clk => _clks.first;
+
+  /// The clock signals to the FSM.
+  final List<Logic> _clks;
 
   /// The reset signal to the FSM.
   final Logic reset;
@@ -79,12 +86,21 @@ class FiniteStateMachine<StateIdentifier> {
   /// Width of the state.
   final int _stateWidth;
 
-  //TODO: async reset (#406)
-
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
   /// transitions on positive [clk] edges.
-  FiniteStateMachine(this.clk, this.reset, this.resetState, this._states)
+  FiniteStateMachine(
+    Logic clk,
+    Logic reset,
+    StateIdentifier resetState,
+    List<State<StateIdentifier>> states,
+  ) : this.multi([clk], reset, resetState, states);
+
+  /// Creates an finite state machine for the specified list of [_states], with
+  /// an initial state of [resetState] (when synchronous [reset] is high) and
+  /// transitions on positive edges of any of [_clks].
+  FiniteStateMachine.multi(
+      this._clks, this.reset, this.resetState, this._states)
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
@@ -137,7 +153,7 @@ class FiniteStateMachine<StateIdentifier> {
           ])
     ]);
 
-    Sequential(clk, reset: reset, resetValues: {
+    Sequential.multi(_clks, reset: reset, resetValues: {
       currentState: _stateValueLookup[_stateLookup[resetState]]
     }, [
       currentState < nextState,
