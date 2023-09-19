@@ -61,7 +61,7 @@ jobs:
 
   deploy-documentation:
     name: Deploy Documentation
-    needs: run-checks
+    # needs: run-checks
     # if: github.event_name == 'push'
     permissions:
       contents: write # required for "JamesIves/github-pages-deploy-action"
