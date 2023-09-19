@@ -51,7 +51,7 @@ class TestModule extends Module {
 
 enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
 
-enum Direction {
+enum TrafficPresence {
   noTraffic(0),
   northTraffic(1),
   eastTraffic(2),
@@ -59,12 +59,14 @@ enum Direction {
 
   final int value;
 
-  const Direction(this.value);
+  const TrafficPresence(this.value);
 
   static Logic isEastActive(Logic dir) =>
-      dir.eq(Direction.eastTraffic.value) | dir.eq(Direction.both.value);
+      dir.eq(TrafficPresence.eastTraffic.value) |
+      dir.eq(TrafficPresence.both.value);
   static Logic isNorthActive(Logic dir) =>
-      dir.eq(Direction.northTraffic.value) | dir.eq(Direction.both.value);
+      dir.eq(TrafficPresence.northTraffic.value) |
+      dir.eq(TrafficPresence.both.value);
 }
 
 enum LightColor {
@@ -80,22 +82,20 @@ enum LightColor {
 class TrafficTestModule extends Module {
   TrafficTestModule(Logic traffic, Logic reset) {
     traffic = addInput('traffic', traffic, width: traffic.width);
-    final northLight = addOutput('northLight', width: traffic.width);
-    final eastLight = addOutput('eastLight', width: traffic.width);
-    final clk = SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
 
+    final northLight = addOutput('northLight', width: traffic.width);
+    final eastLight = addOutput('eastLight', width: traffic.width);
+
+    final clk = SimpleClockGenerator(10).clk;
+
     final states = <State<LightStates>>[
-      State(
-        LightStates.northFlowing,
-        events: {
-          Direction.isEastActive(traffic): LightStates.northSlowing,
-        },
-        actions: [
-          northLight < LightColor.green.value,
-          eastLight < LightColor.red.value,
-        ],
-      ),
+      State(LightStates.northFlowing, events: {
+        TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
+      }, actions: [
+        northLight < LightColor.green.value,
+        eastLight < LightColor.red.value,
+      ]),
       State(
         LightStates.northSlowing,
         events: {},
@@ -108,7 +108,7 @@ class TrafficTestModule extends Module {
       State(
         LightStates.eastFlowing,
         events: {
-          Direction.isNorthActive(traffic): LightStates.eastSlowing,
+          TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
         },
         actions: [
           northLight < LightColor.red.value,
@@ -127,8 +127,11 @@ class TrafficTestModule extends Module {
     ];
 
     FiniteStateMachine<LightStates>(
-            clk, reset, LightStates.northFlowing, states)
-        .generateDiagram(outputPath: _trafficFSMPath);
+      clk,
+      reset,
+      LightStates.northFlowing,
+      states,
+    ).generateDiagram(outputPath: _trafficFSMPath);
   }
 }
 
@@ -223,7 +226,7 @@ void main() {
           'eastLight': LightColor.red.value
         }),
         Vector({}, {}),
-        Vector({'traffic': Direction.eastTraffic.value}, {}),
+        Vector({'traffic': TrafficPresence.eastTraffic.value}, {}),
         Vector({}, {
           'northLight': LightColor.yellow.value,
           'eastLight': LightColor.red.value

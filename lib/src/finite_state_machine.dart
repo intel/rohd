@@ -7,12 +7,6 @@
 // 2022 April 22
 // Author: Shubham Kumar <shubham.kumar@intel.com>
 
-//TODO: PR tickets:
-// https://github.com/intel/rohd/issues/409
-// https://github.com/intel/rohd/issues/372
-// https://github.com/intel/rohd/issues/406
-// https://github.com/intel/rohd/issues/400
-
 import 'dart:io';
 import 'dart:math';
 
