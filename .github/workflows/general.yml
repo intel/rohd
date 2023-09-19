@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   run-checks:
@@ -61,7 +62,7 @@ jobs:
   deploy-documentation:
     name: Deploy Documentation
     needs: run-checks
-    if: github.event_name == 'push'
+    # if: github.event_name == 'push'
     permissions:
       contents: write # required for "JamesIves/github-pages-deploy-action"
     timeout-minutes: 30
