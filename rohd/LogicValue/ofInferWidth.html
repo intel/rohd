@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the ofString method from the LogicValue class, for the Dart programming language.">
-  <title>ofString method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the ofInferWidth method from the LogicValue class, for the Dart programming language.">
+  <title>ofInferWidth method - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">ofString static method</li>
+    <li class="self-crumb">ofInferWidth static method</li>
   </ol>
-  <div class="self-name">ofString</div>
+  <div class="self-name">ofInferWidth</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -57,14 +57,14 @@
       data-above-sidebar="rohd&#47;LogicValue-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-method">ofString</span> static method 
+<h1><span class="kind-method">ofInferWidth</span> static method 
 </h1></div>
 
     <section class="multi-line-signature">
       
 
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">ofString</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="ofString-param-stringRepresentation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">stringRepresentation</span></span></li>
+<span class="name ">ofInferWidth</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="ofInferWidth-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span></span></li>
 </ol>)
 
       
@@ -72,46 +72,40 @@
     </section>
     
 <section class="desc markdown">
-  <p>Converts a binary <a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a> representation of a <a href="../../rohd/LogicValue-class.html">LogicValue</a> into a
-<a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<p>The <code>stringRepresentation</code> should only contain bit values (e.g. no <code>0b</code>
-at the start). The order of the created <a href="../../rohd/LogicValue-class.html">LogicValue</a> will be such that
-the <code>i</code>th character in <code>stringRepresentation</code> corresponds to the
-<code>length - i - 1</code>th bit.  That is, the last character of
-<code>stringRepresentation</code> will be the 0th bit of the returned <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
-<pre class="language-dart"><code class="language-dart">var stringRepresentation = '1x0';
-var lv = LogicValue.ofString(stringRepresentation);
-print(lv); // This prints `3b'1x0`
-</code></pre>
+  <p>Creates a <a href="../../rohd/LogicValue-class.html">LogicValue</a> of <code>val</code> using <a href="../../rohd/LogicValue/of.html">of</a>, but attempts to infer the
+width that would fit <code>val</code> automatically.</p>
+<p>Only accepts <code>val</code>s of types <a href="https://api.dart.dev/stable/3.1.2/dart-core/int-class.html">int</a>, <a href="https://api.dart.dev/stable/3.1.2/dart-core/BigInt-class.html">BigInt</a>, and <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+<p>The width of negative numbers cannot be inferred and an exception will
+be thrown.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue ofString(String stringRepresentation) {
-  if (stringRepresentation.isEmpty) {
-    return const _FilledLogicValue(_LogicValueEnum.zero, 0);
-  }
-
-  if (stringRepresentation.contains(RegExp(&#39;[^01xz]&#39;))) {
-    throw LogicValueConstructionException(
-        &#39;Invalid characters found, must only contain 0, 1, x, and z.&#39;);
-  }
-
-  final valueString = _valueString(stringRepresentation);
-  final invalidString = _invalidString(stringRepresentation);
-  final width = stringRepresentation.length;
-
-  if (width &lt;= _INT_BITS) {
-    final value = _unsignedBinaryParse(valueString);
-    final invalid = _unsignedBinaryParse(invalidString);
-    return _smallLogicValueOrFilled(value, invalid, width);
+  <pre class="language-dart"><code class="language-dart">static LogicValue ofInferWidth(dynamic val) {
+  int width;
+  if (val is int) {
+    if (val &lt; 0) {
+      throw LogicValueConstructionException(
+          &#39;Cannot infer width of a negative int.&#39;);
+    } else {
+      width = val.bitLength;
+    }
+  } else if (val is BigInt) {
+    if (val.isNegative) {
+      throw LogicValueConstructionException(
+          &#39;Cannot infer width of a negative BigInt.&#39;);
+    } else {
+      width = val.bitLength;
+    }
+  } else if (val is LogicValue) {
+    width = val.width;
   } else {
-    final value = BigInt.parse(valueString, radix: 2);
-    final invalid = BigInt.parse(invalidString, radix: 2);
-    return _bigLogicValueOrFilled(value, invalid, width);
+    throw UnsupportedTypeException(val, [int, BigInt, LogicValue]);
   }
+
+  return LogicValue.of(val, width: width);
 }</code></pre>
 </section>
 
@@ -130,7 +124,7 @@ print(lv); // This prints `3b'1x0`
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">ofString static method</li>
+    <li class="self-crumb">ofInferWidth static method</li>
 </ol>
 
 

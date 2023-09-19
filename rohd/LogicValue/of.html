@@ -220,9 +220,8 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
   } else if (val == null) {
     throw LogicValueConstructionException(&#39;Cannot construct from `null`.&#39;);
   } else {
-    throw LogicValueConstructionException(&#39;Unrecognized value type &quot;$val&quot; - &#39;
-        &#39;Unknown type ${val.runtimeType}&#39;
-        &#39; cannot be converted to `LogicValue.&#39;);
+    throw UnsupportedTypeException(
+        val, [LogicValue, int, BigInt, bool, String, Iterable&lt;LogicValue&gt;]);
   }
 }</code></pre>
 </section>
