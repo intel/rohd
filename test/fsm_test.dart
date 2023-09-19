@@ -33,9 +33,12 @@ class TestModule extends Module {
       }, actions: [
         b < c,
       ]),
-      State<MyStates>(MyStates.state2, events: {}, actions: [
-        b < 1,
-      ]),
+      State<MyStates>(MyStates.state2,
+          conditionalType: ConditionalType.priority,
+          events: {},
+          actions: [
+            b < 1,
+          ]),
       State<MyStates>(MyStates.state3, events: {}, actions: [
         b < ~c,
       ]),
@@ -48,24 +51,30 @@ class TestModule extends Module {
 
 enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
 
-class Direction extends Const {
-  Direction._(int super.val) : super(width: 2);
-  Direction.noTraffic() : this._(bin('00'));
-  Direction.northTraffic() : this._(bin('01'));
-  Direction.eastTraffic() : this._(bin('10'));
-  Direction.both() : this._(bin('11'));
+enum Direction {
+  noTraffic(0),
+  northTraffic(1),
+  eastTraffic(2),
+  both(3);
+
+  final int value;
+
+  const Direction(this.value);
 
   static Logic isEastActive(Logic dir) =>
-      dir.eq(Direction.eastTraffic()) | dir.eq(Direction.both());
+      dir.eq(Direction.eastTraffic.value) | dir.eq(Direction.both.value);
   static Logic isNorthActive(Logic dir) =>
-      dir.eq(Direction.northTraffic()) | dir.eq(Direction.both());
+      dir.eq(Direction.northTraffic.value) | dir.eq(Direction.both.value);
 }
 
-class LightColor extends Const {
-  LightColor._(int super.val) : super(width: 2);
-  LightColor.green() : this._(bin('00'));
-  LightColor.yellow() : this._(bin('01'));
-  LightColor.red() : this._(bin('10'));
+enum LightColor {
+  green(0),
+  yellow(1),
+  red(2);
+
+  final int value;
+
+  const LightColor(this.value);
 }
 
 class TrafficTestModule extends Module {
@@ -76,38 +85,45 @@ class TrafficTestModule extends Module {
     final clk = SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
 
-    // var eastActive = traffic[1];
-    // traffic.eq(Direction.eastTraffic()) | traffic.eq(Direction.both());
-    // var northActive = traffic[0];
-    // traffic.eq(Direction.northTraffic()) | traffic.eq(Direction.both());
-
-    var states = [
-      State<LightStates>(LightStates.northFlowing, events: {
-        ~Direction.isEastActive(traffic): LightStates.northFlowing,
-        Direction.isEastActive(traffic): LightStates.northSlowing,
-      }, actions: [
-        northLight < LightColor.green(),
-        eastLight < LightColor.red(),
-      ]),
-      State<LightStates>(LightStates.northSlowing, events: {
-        Const(1): LightStates.eastFlowing,
-      }, actions: [
-        northLight < LightColor.yellow(),
-        eastLight < LightColor.red(),
-      ]),
-      State<LightStates>(LightStates.eastFlowing, events: {
-        ~Direction.isNorthActive(traffic): LightStates.eastFlowing,
-        Direction.isNorthActive(traffic): LightStates.eastSlowing,
-      }, actions: [
-        northLight < LightColor.red(),
-        eastLight < LightColor.green(),
-      ]),
-      State<LightStates>(LightStates.eastSlowing, events: {
-        Const(1): LightStates.northFlowing,
-      }, actions: [
-        northLight < LightColor.red(),
-        eastLight < LightColor.yellow(),
-      ]),
+    final states = <State<LightStates>>[
+      State(
+        LightStates.northFlowing,
+        events: {
+          Direction.isEastActive(traffic): LightStates.northSlowing,
+        },
+        actions: [
+          northLight < LightColor.green.value,
+          eastLight < LightColor.red.value,
+        ],
+      ),
+      State(
+        LightStates.northSlowing,
+        events: {},
+        defaultNextState: LightStates.eastFlowing,
+        actions: [
+          northLight < LightColor.yellow.value,
+          eastLight < LightColor.red.value,
+        ],
+      ),
+      State(
+        LightStates.eastFlowing,
+        events: {
+          Direction.isNorthActive(traffic): LightStates.eastSlowing,
+        },
+        actions: [
+          northLight < LightColor.red.value,
+          eastLight < LightColor.green.value,
+        ],
+      ),
+      State(
+        LightStates.eastSlowing,
+        events: {},
+        defaultNextState: LightStates.northFlowing,
+        actions: [
+          northLight < LightColor.red.value,
+          eastLight < LightColor.yellow.value,
+        ],
+      ),
     ];
 
     FiniteStateMachine<LightStates>(
@@ -130,6 +146,15 @@ void main() {
     final sv = pipem.generateSynth();
 
     expect(sv, contains("b = 1'h0;"));
+  });
+
+  test('conditional type is used', () async {
+    final pipem = TestModule(Logic(), Logic(), Logic());
+    await pipem.build();
+
+    final sv = pipem.generateSynth();
+
+    expect(sv, contains('priority case'));
   });
 
   group('fsm validation', () {
@@ -194,18 +219,18 @@ void main() {
         Vector({
           'reset': 0
         }, {
-          'northLight': LightColor.green().value,
-          'eastLight': LightColor.red().value
+          'northLight': LightColor.green.value,
+          'eastLight': LightColor.red.value
         }),
         Vector({}, {}),
-        Vector({'traffic': Direction.eastTraffic().value}, {}),
+        Vector({'traffic': Direction.eastTraffic.value}, {}),
         Vector({}, {
-          'northLight': LightColor.yellow().value,
-          'eastLight': LightColor.red().value
+          'northLight': LightColor.yellow.value,
+          'eastLight': LightColor.red.value
         }),
         Vector({}, {
-          'northLight': LightColor.red().value,
-          'eastLight': LightColor.green().value
+          'northLight': LightColor.red.value,
+          'eastLight': LightColor.green.value
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);

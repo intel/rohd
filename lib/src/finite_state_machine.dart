@@ -7,6 +7,12 @@
 // 2022 April 22
 // Author: Shubham Kumar <shubham.kumar@intel.com>
 
+//TODO: PR tickets:
+// https://github.com/intel/rohd/issues/409
+// https://github.com/intel/rohd/issues/372
+// https://github.com/intel/rohd/issues/406
+// https://github.com/intel/rohd/issues/400
+
 import 'dart:io';
 import 'dart:math';
 
@@ -73,22 +79,20 @@ class FiniteStateMachine<StateIdentifier> {
   /// Width of the state.
   final int _stateWidth;
 
-  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts
-  /// the reset state to transition to [resetState] along with the [List] of
-  /// [_states] of the FSM.
-  ///
-  /// If a [reset] signal is provided the FSM transitions to the [resetState]
-  /// on the next clock cycle.
+  //TODO: async reset (#406)
+
+  /// Creates an finite state machine for the specified list of [_states], with
+  /// an initial state of [resetState] (when synchronous [reset] is high) and
+  /// transitions on positive [clk] edges.
   FiniteStateMachine(this.clk, this.reset, this.resetState, this._states)
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
             Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
-    var stateCounter = 0;
-
     _validate();
 
+    var stateCounter = 0;
     for (final state in _states) {
       _stateLookup[state.identifier] = state;
       _stateValueLookup[state] = stateCounter++;
@@ -110,8 +114,10 @@ class FiniteStateMachine<StateIdentifier> {
                                           _stateLookup[entry.value]]
                                 ]))
                             .toList(growable: false),
-                        conditionalType: ConditionalType.unique,
-                        defaultItem: [nextState < currentState])
+                        conditionalType: state.conditionalType,
+                        defaultItem: [
+                          nextState < getStateIndex(state.defaultNextState),
+                        ])
                   ]))
               .toList(growable: false),
           conditionalType: ConditionalType.unique,
@@ -178,19 +184,44 @@ class State<StateIdentifier> {
 
   /// A map of the possible conditions that might be true and the next state
   /// that the FSM needs to transition to in each of those cases.
+  ///
+  /// If no key in [events] matches, then the state of the [FiniteStateMachine]
+  /// will stay the same.
+  ///
+  /// If using [ConditionalType.priority], this should be an ordered [Map].
   final Map<Logic, StateIdentifier> events;
 
   /// Actions to perform while the FSM is in this state.
   final List<Conditional> actions;
 
+  /// The next state to transition to if non of the [events] hit.
+  final StateIdentifier defaultNextState;
+
+  /// Used to control how different [events] should be prioritized and matched.
+  ///
+  /// For example, if [ConditionalType.priority] is selected, then the first
+  /// matching event in [events] will be executed.  If [ConditionalType.unique]
+  /// is selected, then there will be a guarantee that no two [events] match
+  /// at the same time.
+  final ConditionalType conditionalType;
+
   /// Represents a state named [identifier] with a definition of [events]
   /// and [actions] associated with that state.
-  State(this.identifier, {required this.events, required this.actions});
+  ///
+  /// If provided, the [defaultNextState] is the default next state if none
+  /// of the [events] match.
+  State(
+    this.identifier, {
+    required this.events,
+    required this.actions,
+    StateIdentifier? defaultNextState,
+    this.conditionalType = ConditionalType.unique,
+  }) : defaultNextState = defaultNextState ?? identifier;
 }
 
 /// A state diagram generator for FSM.
 ///
-/// Outputs to vcd format at [outputPath].
+/// Outputs to markdown format at [outputPath].
 class _MermaidStateDiagram {
   /// The diagram to be return as String.
   late StringBuffer _diagram;

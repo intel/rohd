@@ -6,6 +6,9 @@ last_modified_at: 2022-12-06
 toc: true
 ---
 
+# TODO: need to update all this doc!
+
+
 ROHD has a built-in syntax for handling FSMs in a simple & refactorable way.  The below example shows a 2 way Traffic light FSM.  Note that [`FiniteStateMachine`](https://intel.github.io/rohd/rohd/FiniteStateMachine-class.html) consumes the `clk` and `reset` signals. Also accepts the reset state to transition to `resetState` along with the `List` of `states` of the FSM.  You can also use this abstraction to generate a FSM diagram using [`generateDiagram`](https://intel.github.io/rohd/rohd/FiniteStateMachine/generateDiagram.html).
 
 ```dart
