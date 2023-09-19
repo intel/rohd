@@ -57,8 +57,9 @@ class UnaryGateTestModule extends Module {
 }
 
 class ShiftTestModule extends Module {
-  int constantInt;
-  ShiftTestModule(Logic a, Logic b, {this.constantInt = 3})
+  dynamic constant; // int or BigInt
+
+  ShiftTestModule(Logic a, Logic b, {this.constant = 3})
       : super(name: 'shifttestmodule') {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
@@ -71,7 +72,7 @@ class ShiftTestModule extends Module {
     final aLshiftConst = addOutput('a_lshift_const', width: a.width);
     final aArshiftConst = addOutput('a_arshift_const', width: a.width);
 
-    final c = Const(constantInt, width: b.width);
+    final c = Const(constant, width: b.width);
     aRshiftB <= a >>> b;
     aLshiftB <= a << b;
     aArshiftB <= a >> b;
@@ -424,84 +425,192 @@ void main() {
       expect(simResult, equals(true));
     });
 
-    test('lshift logic', () async {
-      final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010'), 'b': 0}, {'a_lshift_b': bin('010')}),
-        Vector({'a': bin('010'), 'b': 1}, {'a_lshift_b': bin('100')}),
-        Vector({'a': bin('010'), 'b': 2}, {'a_lshift_b': bin('000')}),
-        Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    });
+    group('shift', () {
+      test('lshift logic', () async {
+        final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010'), 'b': 0}, {'a_lshift_b': bin('010')}),
+          Vector({'a': bin('010'), 'b': 1}, {'a_lshift_b': bin('100')}),
+          Vector({'a': bin('010'), 'b': 2}, {'a_lshift_b': bin('000')}),
+          Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
 
-    test('rshift logic', () async {
-      final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010'), 'b': 0}, {'a_rshift_b': bin('010')}),
-        Vector({'a': bin('010'), 'b': 1}, {'a_rshift_b': bin('001')}),
-        Vector({'a': bin('010'), 'b': 2}, {'a_rshift_b': bin('000')}),
-        Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    });
+      test('rshift logic', () async {
+        final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010'), 'b': 0}, {'a_rshift_b': bin('010')}),
+          Vector({'a': bin('010'), 'b': 1}, {'a_rshift_b': bin('001')}),
+          Vector({'a': bin('010'), 'b': 2}, {'a_rshift_b': bin('000')}),
+          Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
 
-    test('arshift logic', () async {
-      final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010'), 'b': 0}, {'a_arshift_b': bin('010')}),
-        Vector({'a': bin('010'), 'b': 1}, {'a_arshift_b': bin('001')}),
-        Vector({'a': bin('010'), 'b': 2}, {'a_arshift_b': bin('000')}),
-        Vector({'a': bin('010'), 'b': 6}, {'a_arshift_b': bin('000')}),
-        Vector({'a': bin('110'), 'b': 0}, {'a_arshift_b': bin('110')}),
-        Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    });
+      test('arshift logic', () async {
+        final gtm = ShiftTestModule(Logic(width: 3), Logic(width: 8));
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010'), 'b': 0}, {'a_arshift_b': bin('010')}),
+          Vector({'a': bin('010'), 'b': 1}, {'a_arshift_b': bin('001')}),
+          Vector({'a': bin('010'), 'b': 2}, {'a_arshift_b': bin('000')}),
+          Vector({'a': bin('010'), 'b': 6}, {'a_arshift_b': bin('000')}),
+          Vector({'a': bin('110'), 'b': 0}, {'a_arshift_b': bin('110')}),
+          Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
 
-    test('lshift int', () async {
-      final gtm =
-          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    });
+      test('lshift int', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
 
-    test('rshift int', () async {
-      final gtm =
-          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
-    });
+      test('rshift int', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
 
-    test('arshift int', () async {
-      final gtm =
-          ShiftTestModule(Logic(width: 3), Logic(width: 8), constantInt: 1);
-      await gtm.build();
-      final vectors = [
-        Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
-      ];
-      await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      test('arshift int', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
+        await gtm.build();
+        final vectors = [
+          Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('large logic shifted by small bus', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 200), Logic(width: 60), constant: 70);
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 100,
+            'b': 70
+          }, {
+            'a_lshift_const': BigInt.one << 170,
+            'a_rshift_const': BigInt.one << 30,
+            'a_arshift_const': BigInt.one << 30,
+            'a_lshift_b': BigInt.one << 170,
+            'a_rshift_b': BigInt.one << 30,
+            'a_arshift_b': BigInt.one << 30,
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('large logic shifted by large bus', () async {
+        final gtm = ShiftTestModule(Logic(width: 200), Logic(width: 200),
+            constant: BigInt.from(70));
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 100,
+            'b': 70
+          }, {
+            'a_lshift_const': BigInt.one << 170,
+            'a_rshift_const': BigInt.one << 30,
+            'a_arshift_const': BigInt.one << 30,
+            'a_lshift_b': BigInt.one << 170,
+            'a_rshift_b': BigInt.one << 30,
+            'a_arshift_b': BigInt.one << 30,
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('small logic shifted by large bus', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 40), Logic(width: 200), constant: 10);
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 20,
+            'b': 10
+          }, {
+            'a_lshift_const': BigInt.one << 30,
+            'a_rshift_const': BigInt.one << 10,
+            'a_arshift_const': BigInt.one << 10,
+            'a_lshift_b': BigInt.one << 30,
+            'a_rshift_b': BigInt.one << 10,
+            'a_arshift_b': BigInt.one << 10,
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('large logic shifted by huge value on large bus', () async {
+        final gtm = ShiftTestModule(Logic(width: 200), Logic(width: 200),
+            constant: BigInt.one << 100);
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 199 | BigInt.one << 100,
+            'b': BigInt.one << 100
+          }, {
+            'a_lshift_const': 0,
+            'a_rshift_const': 0,
+            'a_arshift_const': LogicValue.filled(200, LogicValue.one),
+            'a_lshift_b': 0,
+            'a_rshift_b': 0,
+            'a_arshift_b': LogicValue.filled(200, LogicValue.one),
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('small logic shifted by huge value on large bus', () async {
+        final gtm = ShiftTestModule(Logic(width: 40), Logic(width: 200),
+            constant: BigInt.one << 100);
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 200 | BigInt.one << 100,
+            'b': BigInt.one << 100
+          }, {
+            'a_lshift_const': 0,
+            'a_rshift_const': 0,
+            'a_arshift_const': LogicValue.filled(40, LogicValue.one),
+            'a_lshift_b': 0,
+            'a_rshift_b': 0,
+            'a_arshift_b': LogicValue.filled(40, LogicValue.one),
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      // test plan:
+      // - large logic shifted by int
+      // - large logic shifted by (big) BigInt
+      // - large logic shifted by large logic
+      // - small logic shifted by large logic
+      // excessively large number (>64bits)
     });
 
     test('And2Gate single bit', () async {

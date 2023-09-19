@@ -351,7 +351,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
       : super(name: name) {
     final shiftAmountLogic = shiftAmount is Logic
         ? shiftAmount
-        : Const(shiftAmount, width: in_.width);
+        : Const(LogicValue.ofInferWidth(shiftAmount));
 
     _inName = Module.unpreferredName('in_${in_.name}');
     _shiftAmountName =

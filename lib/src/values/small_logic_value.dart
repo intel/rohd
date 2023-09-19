@@ -32,7 +32,7 @@ class _SmallLogicValue extends LogicValue {
   final int _invalid;
 
   int get _mask => _maskOfWidth(width);
-  static final Map<int, int> _masksOfWidth = {};
+  static final Map<int, int> _masksOfWidth = HashMap();
   static int _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
       _masksOfWidth[width] = (1 << width) - 1;
@@ -178,26 +178,34 @@ class _SmallLogicValue extends LogicValue {
   }
 
   @override
-  LogicValue _shiftLeft(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._smallLogicValueOrFilled(
-          (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
+  LogicValue _shiftLeft(int shamt) => LogicValue._smallLogicValueOrFilled(
+      (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
-  LogicValue _shiftRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._smallLogicValueOrFilled(
-          _value >> shamt, _invalid >> shamt, width);
+  LogicValue _shiftRight(int shamt) => LogicValue._smallLogicValueOrFilled(
+      _value >>> shamt, _invalid >>> shamt, width);
 
   @override
-  LogicValue _shiftArithmeticRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._smallLogicValueOrFilled(
-          ((_value | (this[width - 1] == LogicValue.one ? ~_mask : 0)) >>
-                  shamt) &
-              _mask,
-          _invalid >> shamt,
-          width);
+  LogicValue _shiftArithmeticRight(int shamt) {
+    final upperMostBit = this[-1];
+
+    var value =
+        ((_value | (upperMostBit == LogicValue.one ? ~_mask : 0)) >> shamt) &
+            _mask;
+
+    var invalid = _invalid >> shamt;
+
+    // if uppermost bit is invalid, then turn the shifted bits into X's
+    if (!upperMostBit.isValid) {
+      // for affected bits of value: zero out value
+      value &= _mask >>> shamt;
+
+      // for affected bits of invalid: make sure they are high
+      invalid |= ~_mask >> shamt;
+    }
+
+    return LogicValue._smallLogicValueOrFilled(value, invalid, width);
+  }
 
   @override
   BigInt get _bigIntInvalid =>
