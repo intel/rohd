@@ -25,7 +25,7 @@ In this chapter:
 
 In this chapter, we are going to learn how to use ROHD-VF, a verification framework that are built upon Rapid Open Hardware Development (ROHD) framework. ROHD-VF offers testbench in a way that are similar to UVM. For those who are unfamiliar with UVM, worry not as we will covered it piece by piece as we move along with this tutorial.
 
-## Testbench
+## Testbenches
 
 A testbench is a software used to interact with and test a device under test (DUT). ROHD-VF testbench are organized in a modular and extensible way using simple base classes which have specific roles. Below is a diagram of an example ROHD-VF testbench.
 
