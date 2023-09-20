@@ -8,7 +8,6 @@
 // Author: Sanchit Kumar <sanchit.dabgotra@gmail.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when a [LogicValue] operation
 /// couldn't be performed due invalid data truncation.

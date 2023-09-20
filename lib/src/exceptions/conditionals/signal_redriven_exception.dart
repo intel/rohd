@@ -9,7 +9,6 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when a [Logic] signal is
 /// driven multiple times.

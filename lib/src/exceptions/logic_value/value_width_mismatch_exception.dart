@@ -8,7 +8,6 @@
 // Author: Sanchit Kumar <sanchit.dabgotra@gmail.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when [LogicValue]s of different width are found.
 class ValueWidthMismatchException extends RohdException {

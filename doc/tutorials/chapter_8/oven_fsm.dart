@@ -12,11 +12,11 @@ enum OvenState { standby, cooking, paused, completed }
 
 // Define a class OvenModule that extends ROHD's abstract Module class.
 class OvenModule extends Module {
-  // A private variable with type StateMachine<OvenState> `_oven`.
+  // A private variable with type FiniteStateMachine<OvenState> `_oven`.
   //
   // Use `late` to indicate that the value will not be null
   // and will be assign in the later section.
-  late StateMachine<OvenState> _oven;
+  late FiniteStateMachine<OvenState> _oven;
 
   // A hashmap that represent button value
   final Map<String, int> btnVal = {
@@ -157,8 +157,9 @@ class OvenModule extends Module {
           ])
     ];
 
-    // Assign the _oven StateMachine object to private variable declared.
-    _oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
+    // Assign the _oven FiniteStateMachine object to private variable declared.
+    _oven =
+        FiniteStateMachine<OvenState>(clk, reset, OvenState.standby, states);
 
     // Generate a Mermaid FSM diagram and save as the name `oven_fsm.md`.
     // Note that the extension of the files is recommend as .md or .mmd.

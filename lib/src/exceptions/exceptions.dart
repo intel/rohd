@@ -8,5 +8,6 @@ export './logic_value/logic_value_exceptions.dart';
 export './module/module_exceptions.dart';
 export './name/name_exceptions.dart';
 export './sim_compare/sim_compare_exceptions.dart';
+export 'illegal_configuration_exception.dart';
 export 'rohd_exception.dart';
 export 'unsupported_type_exception.dart';

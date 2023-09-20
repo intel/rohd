@@ -62,15 +62,15 @@ class OvenModule extends Module {
 }
 ```
 
-In ROHD, we can use `StateMachine` API library. The `StateMachine` constructs a simple FSM, using the `clk` and `reset` signals. Also accepts the `reset` state to transition to `resetState` along with the List of _states of the FSM. Later, we will also need to create a List of `state` and send to the StateMachine.
+In ROHD, we can use `FiniteStateMachine` API library. The `FiniteStateMachine` constructs a simple FSM, using the `clk` and `reset` signals. Also accepts the `reset` state to transition to `resetState` along with the List of _states of the FSM. Later, we will also need to create a List of `state` and send to the `FiniteStateMachine`.
 
-Let start by intitialize a variable called `_oven` that is `StateMachine` with `StateIdentifier` as  `OvenState`.
+Let start by intitialize a variable called `_oven` that is `FiniteStateMachine` with `StateIdentifier` as  `OvenState`.
 
 Besides, we can use a simple hashmap to map over the button and LED value to integer.
 
 ```dart
 class OvenModule extends Module {
-  late StateMachine<OvenState> _oven;
+  late FiniteStateMachine<OvenState> _oven;
 
   // A hashmap that represent button value
   final Map<String, int> btnVal = {
@@ -99,7 +99,7 @@ Let also create an internal clock generator `clk` inside the module. This clk ge
 
 ```dart
 class OvenModule extends Module {
-  late StateMachine<OvenState> _oven;
+  late FiniteStateMachine<OvenState> _oven;
   Logic get led => output('led');
 
   OvenModule(): super(name: 'OvenModule') {
@@ -235,12 +235,12 @@ final states = [
 ];
 ```
 
-By now, you already have a list of `state` ready to be passed to the `StateMachine`. Let assign the the `state` to the StateMachine declared. Note that, we also passed `OvenState.standby` to the StateMachine to understand that is the State when reset signal is given.
+By now, you already have a list of `state` ready to be passed to the `FiniteStateMachine`. Let assign the the `state` to the `FiniteStateMachine` declared. Note that, we also passed `OvenState.standby` to the `FiniteStateMachine` to understand that is the State when reset signal is given.
 
 ROHD FSM abstraction come with state diagram generator using mermaid. We can create a markdown file using the function `generateDiagram()`. You can install mermaid extension in VSCode to preview the diagram.
 
 ```dart
-_oven = StateMachine<OvenState>(clk, reset, OvenState.standby, states);
+_oven = FiniteStateMachine<OvenState>(clk, reset, OvenState.standby, states);
 
 _oven.generateDiagram(outputPath: 'doc/tutorials/chapter_8/oven_fsm.md');
 ```

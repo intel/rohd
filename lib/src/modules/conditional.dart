@@ -16,7 +16,6 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -406,6 +405,10 @@ class Sequential extends _Always {
   /// specified reset value.
   Sequential.multi(List<Logic> clks, super._conditionals,
       {super.reset, super.resetValues, super.name = 'sequential'}) {
+    if (clks.isEmpty) {
+      throw IllegalConfigurationException('Must provide at least one clock.');
+    }
+
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {

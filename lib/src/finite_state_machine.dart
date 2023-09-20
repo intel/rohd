@@ -1,8 +1,8 @@
 // Copyright (C) 2022-2023 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// state_machine.dart
-// fsm generators
+// finite_state_machine.dart
+// Finite state machine generators
 //
 // 2022 April 22
 // Author: Shubham Kumar <shubham.kumar@intel.com>
@@ -13,12 +13,16 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 
-/// Simple class for FSM [StateMachine].
+/// Deprecated: use [FiniteStateMachine] instead.
+@Deprecated('Use FiniteStateMachine instead')
+typedef StateMachine<T> = FiniteStateMachine<T>;
+
+/// Simple class for FSM [FiniteStateMachine].
 ///
 /// Abstraction for representing Finite state machines (FSM).
 /// Contains the logic for performing the state transitions.
-class StateMachine<StateIdentifier> {
-  /// List containig objects of class [State].
+class FiniteStateMachine<StateIdentifier> {
+  /// List of all the [State]s in this machine.
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
 
@@ -30,8 +34,27 @@ class StateMachine<StateIdentifier> {
   /// _states as the value.
   final Map<State<StateIdentifier>, int> _stateValueLookup = {};
 
-  /// The clock signal to the FSM.
-  final Logic clk;
+  /// Provides the corresponding index held in state signals such as
+  /// [nextState] and [currentState] based on the provided [id].
+  ///
+  /// Returns null if the [id] does not have a defined state in the machine.
+  int? getStateIndex(StateIdentifier id) {
+    if (!_stateLookup.containsKey(id)) {
+      return null;
+    }
+
+    return _stateValueLookup[_stateLookup[id]];
+  }
+
+  /// The clock signal to the FSM (when only single-triggered). Otherwise, the
+  /// first clock.
+  ///
+  /// Deprecated: do not reference the clock from [FiniteStateMachine].
+  @Deprecated('Do not reference the clock from the `FiniteStateMachine`.')
+  Logic get clk => _clks.first;
+
+  /// The clock signals to the FSM.
+  final List<Logic> _clks;
 
   /// The reset signal to the FSM.
   final Logic reset;
@@ -40,30 +63,46 @@ class StateMachine<StateIdentifier> {
   final StateIdentifier resetState;
 
   /// The current state of the FSM.
+  ///
+  /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
+  /// bus.
   final Logic currentState;
 
   /// The next state of the FSM.
+  ///
+  /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
+  /// bus.
   final Logic nextState;
 
+  /// Returns a ceiling on the log of [x] base [base].
   static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
 
   /// Width of the state.
   final int _stateWidth;
 
-  /// Constructs a simple FSM, using the [clk] and [reset] signals. Also accepts
-  /// the reset state to transition to [resetState] along with the [List] of
-  /// [_states] of the FSM.
-  ///
-  /// If a [reset] signal is provided the FSM transitions to the [resetState]
-  /// on the next clock cycle.
-  StateMachine(this.clk, this.reset, this.resetState, this._states)
+  /// Creates an finite state machine for the specified list of [_states], with
+  /// an initial state of [resetState] (when synchronous [reset] is high) and
+  /// transitions on positive [clk] edges.
+  FiniteStateMachine(
+    Logic clk,
+    Logic reset,
+    StateIdentifier resetState,
+    List<State<StateIdentifier>> states,
+  ) : this.multi([clk], reset, resetState, states);
+
+  /// Creates an finite state machine for the specified list of [_states], with
+  /// an initial state of [resetState] (when synchronous [reset] is high) and
+  /// transitions on positive edges of any of [_clks].
+  FiniteStateMachine.multi(
+      this._clks, this.reset, this.resetState, this._states)
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
             Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
-    var stateCounter = 0;
+    _validate();
 
+    var stateCounter = 0;
     for (final state in _states) {
       _stateLookup[state.identifier] = state;
       _stateValueLookup[state] = stateCounter++;
@@ -85,8 +124,10 @@ class StateMachine<StateIdentifier> {
                                           _stateLookup[entry.value]]
                                 ]))
                             .toList(growable: false),
-                        conditionalType: ConditionalType.unique,
-                        defaultItem: [nextState < currentState])
+                        conditionalType: state.conditionalType,
+                        defaultItem: [
+                          nextState < getStateIndex(state.defaultNextState),
+                        ])
                   ]))
               .toList(growable: false),
           conditionalType: ConditionalType.unique,
@@ -106,13 +147,25 @@ class StateMachine<StateIdentifier> {
           ])
     ]);
 
-    Sequential(clk, [
-      If(
-        reset,
-        then: [currentState < _stateValueLookup[_stateLookup[resetState]]],
-        orElse: [currentState < nextState],
-      )
+    Sequential.multi(_clks, reset: reset, resetValues: {
+      currentState: _stateValueLookup[_stateLookup[resetState]]
+    }, [
+      currentState < nextState,
     ]);
+  }
+
+  /// Validates that the configuration of the [FiniteStateMachine] is legal.
+  void _validate() {
+    final identifiers = _states.map((e) => e.identifier);
+
+    if (identifiers.toSet().length != _states.length) {
+      throw IllegalConfigurationException('State identifiers must be unique.');
+    }
+
+    if (!identifiers.contains(resetState)) {
+      throw IllegalConfigurationException(
+          'Reset state $resetState must have a definition.');
+    }
   }
 
   /// Generate a FSM state diagram [_MermaidStateDiagram].
@@ -141,19 +194,44 @@ class State<StateIdentifier> {
 
   /// A map of the possible conditions that might be true and the next state
   /// that the FSM needs to transition to in each of those cases.
+  ///
+  /// If no key in [events] matches, then the state of the [FiniteStateMachine]
+  /// will stay the same.
+  ///
+  /// If using [ConditionalType.priority], this should be an ordered [Map].
   final Map<Logic, StateIdentifier> events;
 
   /// Actions to perform while the FSM is in this state.
   final List<Conditional> actions;
 
+  /// The next state to transition to if non of the [events] hit.
+  final StateIdentifier defaultNextState;
+
+  /// Used to control how different [events] should be prioritized and matched.
+  ///
+  /// For example, if [ConditionalType.priority] is selected, then the first
+  /// matching event in [events] will be executed.  If [ConditionalType.unique]
+  /// is selected, then there will be a guarantee that no two [events] match
+  /// at the same time.
+  final ConditionalType conditionalType;
+
   /// Represents a state named [identifier] with a definition of [events]
   /// and [actions] associated with that state.
-  State(this.identifier, {required this.events, required this.actions});
+  ///
+  /// If provided, the [defaultNextState] is the default next state if none
+  /// of the [events] match.
+  State(
+    this.identifier, {
+    required this.events,
+    required this.actions,
+    StateIdentifier? defaultNextState,
+    this.conditionalType = ConditionalType.unique,
+  }) : defaultNextState = defaultNextState ?? identifier;
 }
 
 /// A state diagram generator for FSM.
 ///
-/// Outputs to vcd format at [outputPath].
+/// Outputs to markdown format at [outputPath].
 class _MermaidStateDiagram {
   /// The diagram to be return as String.
   late StringBuffer _diagram;

@@ -5,7 +5,7 @@ import 'package:rohd/rohd.dart';
 enum ToyCapsuleState { idle, coinInserted, dispensing }
 
 class ToyCapsuleFSM extends Module {
-  late StateMachine<ToyCapsuleState> _state;
+  late FiniteStateMachine<ToyCapsuleState> _state;
 
   ToyCapsuleFSM(Logic clk, Logic reset, Logic btnDispense, Logic coin)
       : super(name: 'toy_capsule_fsm') {
@@ -33,10 +33,10 @@ class ToyCapsuleFSM extends Module {
       ]),
     ];
 
-    _state = StateMachine(clk, reset, ToyCapsuleState.idle, states);
+    _state = FiniteStateMachine(clk, reset, ToyCapsuleState.idle, states);
   }
 
-  StateMachine<ToyCapsuleState> get toyCapsuleStateMachine => _state;
+  FiniteStateMachine<ToyCapsuleState> get toyCapsuleStateMachine => _state;
   Logic get toyCapsule => output('toy_capsule');
 }
 

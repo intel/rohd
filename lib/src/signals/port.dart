@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/name/invalid_portname_exceptions.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// An extension of [Logic] which performs some additional validation for
