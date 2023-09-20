@@ -42,3 +42,7 @@ LogicArray(
 You can declare ports of `Module`s as being arrays (including with some dimensions "unpacked") using `addInputArray` and `addOutputArray`. Note that these do _not_ automatically do validation that the dimensions, element width, number of unpacked dimensions, etc. are equal between the port and the original signal. As long as the overall width matches, the assignment will be clean.
 
 Array ports in generated SystemVerilog will match dimensions (including unpacked) as specified when the port is created.
+
+## Elements of arrays
+
+To iterate through or access elements of a `LogicArray` (or bits of a simple `Logic`), use [`elements`](https://intel.github.io/rohd/rohd/Logic/elements.html).  Using the normal `[n]` accessors will return the `n`th bit regardless for `LogicArray` and `Logic` to maintain API consistency.

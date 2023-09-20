@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # check_folder_tmp_test.sh
@@ -8,7 +8,6 @@
 #
 # 2022 October 12
 # Author: Chykon
-#
 
 set -euo pipefail
 
