@@ -730,6 +730,7 @@ abstract class Conditional {
         toParse.add(toParse[i].srcConnection!);
       }
       if (toParse[i].isOutput) {
+        // ignore: invalid_use_of_protected_member
         toParse.addAll(toParse[i].parentModule!.inputs.values);
       }
       if (toParse[i] is _SsaLogic &&
