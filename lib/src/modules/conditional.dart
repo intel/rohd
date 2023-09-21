@@ -1411,12 +1411,7 @@ class If extends Conditional {
         break;
       } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
-        for (final receiver in receivers) {
-          receiverOutput(receiver).put(LogicValue.x);
-          if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-            drivenSignals.add(receiver);
-          }
-        }
+        _driveX(drivenSignals);
         break;
       }
       // if it's 0, then continue searching down the path
