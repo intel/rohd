@@ -10,8 +10,6 @@
 import 'dart:async';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/exceptions/sim_compare/sim_compare_exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -137,6 +135,28 @@ class CaseModule extends Module {
             e < 0,
           ],
           conditionalType: ConditionalType.priority)
+    ]);
+  }
+}
+
+class UniqueCase extends Module {
+  UniqueCase(Logic a, Logic b) : super(name: 'UniqueCase') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final c = addOutput('c');
+    final d = addOutput('d');
+    Combinational([
+      Case(
+          Const(1),
+          [
+            CaseItem(a, [c < 1, d < 0]),
+            CaseItem(b, [c < 1, d < 0]),
+          ],
+          defaultItem: [
+            c < 0,
+            d < 1,
+          ],
+          conditionalType: ConditionalType.unique),
     ]);
   }
 }
@@ -604,6 +624,18 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+    });
+
+    test('Unique case', () async {
+      final mod = UniqueCase(Logic(), Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 1}),
+        Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
+        Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
+        Vector({'a': 1, 'b': 1}, {'c': LogicValue.x, 'd': LogicValue.x}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
     });
 
     test('conditional ff', () async {

@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An [Exception] thrown when a signal has the wrong width.
 class SignalWidthMismatchException extends RohdException {
@@ -18,4 +17,18 @@ class SignalWidthMismatchException extends RohdException {
       : super('Signal ${signal.name} has the wrong width.'
             ' Expected $expectedWidth but found ${signal.width}.'
             ' $additionalMessage');
+
+  /// Constructs a new [Exception] for when a dynamic has a wrong width.
+  SignalWidthMismatchException.forDynamic(
+      dynamic val, int expectedWidth, int actualWidth,
+      {String additionalMessage = ''})
+      : super('Value $val has the wrong width.'
+            ' Expected $expectedWidth but found $actualWidth.'
+            ' $additionalMessage');
+
+  /// Constructs a new [Exception] for when a dynamic has no width or it could
+  /// not be inferred.
+  SignalWidthMismatchException.forNull(dynamic val)
+      : super('Could not infer width of input $val.'
+            ' Please provide a valid width.');
 }

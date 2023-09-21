@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// replication_test.dart
-/// Unit tests for extend and withSet operations
-///
-/// 2023 Jan 18
-/// Author: Akshay Wankhede <akshay.wankhede@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// replication_test.dart
+// Unit tests for extend and withSet operations
+//
+// 2023 Jan 18
+// Author: Akshay Wankhede <akshay.wankhede@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

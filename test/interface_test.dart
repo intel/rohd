@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// interface_test.dart
-/// Tests for Interface
-///
-/// 2021 November 30
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// interface_test.dart
+// Tests for Interface
+//
+// 2021 November 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
 
@@ -38,6 +37,16 @@ class UncleanPortInterface extends Interface<MyDirection> {
   }
 }
 
+class MaybePortInterface extends Interface<MyDirection> {
+  Logic? get p => tryPort('p');
+
+  MaybePortInterface({required bool includePort}) {
+    if (includePort) {
+      setPorts([Port('p')], {MyDirection.dir1});
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -56,5 +65,17 @@ void main() {
     expect(() async {
       UncleanPortInterface();
     }, throwsException);
+  });
+
+  group('maybe port', () {
+    test('tryPort, exists', () {
+      final intf = MaybePortInterface(includePort: true);
+      expect(intf.p, isNotNull);
+    });
+
+    test('tryPort, doesnt exist', () {
+      final intf = MaybePortInterface(includePort: false);
+      expect(intf.p, null);
+    });
   });
 }

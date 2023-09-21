@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// module.dart
-/// Definition for abstract module class.
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// module.dart
+// Definition for abstract module class.
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
 import 'dart:collection';
@@ -15,8 +14,6 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_exceptions.dart';
-import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -92,12 +89,18 @@ abstract class Module {
   /// Accesses the [Logic] associated with this [Module]s input port
   /// named [name].
   ///
-  /// Logic within this [Module] should consume this signal.
+  /// Only logic within this [Module] should consume this signal.
   @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
           'Input name "$name" not found as an input to this Module.');
+
+  /// Provides the [input] named [name] if it exists, otherwise `null`.
+  ///
+  /// Only logic within this [Module] should consume this signal.
+  @protected
+  Logic? tryInput(String name) => _inputs[name];
 
   /// Accesses the [Logic] associated with this [Module]s output port
   /// named [name].
@@ -108,6 +111,9 @@ abstract class Module {
       ? _outputs[name]!
       : throw Exception(
           'Output name "$name" not found as an output of this Module.');
+
+  /// Provides the [output] named [name] if it exists, otherwise `null`.
+  Logic? tryOutput(String name) => _outputs[name];
 
   /// Returns true iff [net] is the same [Logic] as the input port of this
   /// [Module] with the same name.

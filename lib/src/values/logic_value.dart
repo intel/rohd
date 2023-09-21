@@ -1,13 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic_values.dart
-/// Definitions for a set of logical values of any width
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
-part of values;
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_values.dart
+// Definitions for a set of logical values of any width
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
+
+part of 'values.dart';
 
 /// Deprecated: use [LogicValue] instead.
 @Deprecated('Use `LogicValue` instead.'
@@ -18,6 +18,8 @@ typedef LogicValues = LogicValue;
 ///
 /// Each bit of [LogicValue] can be represented as a [LogicValue]
 /// of `0`, `1`, `x` (contention), or `z` (floating).
+///
+/// [LogicValue] is unsigned.
 @immutable
 abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in an int.
@@ -65,7 +67,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// [width] must be greater than or equal to 0.
   static LogicValue ofInt(int value, int width) => width > _INT_BITS
-      ? _bigLogicValueOrFilled(BigInt.from(value), BigInt.zero, width)
+      ? _bigLogicValueOrFilled(
+          BigInt.from(value).toUnsigned(_INT_BITS), BigInt.zero, width)
       : _smallLogicValueOrFilled(value, 0, width);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width]
@@ -98,6 +101,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static LogicValue filled(int width, LogicValue fill) =>
       _FilledLogicValue(fill._enum, width);
 
+  /// Gets the [_LogicValueEnum] for single-bit [LogicValue]s.
   _LogicValueEnum get _enum {
     if (width != 1) {
       throw Exception(
@@ -114,7 +118,37 @@ abstract class LogicValue implements Comparable<LogicValue> {
                     : throw Exception('Failed to convert.');
   }
 
-  // complete test suite for LogicValue.of
+  /// Creates a [LogicValue] of [val] using [of], but attempts to infer the
+  /// width that would fit [val] automatically.
+  ///
+  /// Only accepts [val]s of types [int], [BigInt], and [LogicValue].
+  ///
+  /// The width of negative numbers cannot be inferred and an exception will
+  /// be thrown.
+  static LogicValue ofInferWidth(dynamic val) {
+    int width;
+    if (val is int) {
+      if (val < 0) {
+        throw LogicValueConstructionException(
+            'Cannot infer width of a negative int.');
+      } else {
+        width = val.bitLength;
+      }
+    } else if (val is BigInt) {
+      if (val.isNegative) {
+        throw LogicValueConstructionException(
+            'Cannot infer width of a negative BigInt.');
+      } else {
+        width = val.bitLength;
+      }
+    } else if (val is LogicValue) {
+      width = val.width;
+    } else {
+      throw UnsupportedTypeException(val, [int, BigInt, LogicValue]);
+    }
+
+    return LogicValue.of(val, width: width);
+  }
 
   /// Constructs a [LogicValue] from [val] which could be of a variety of types.
   ///
@@ -256,10 +290,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
           return LogicValue.ofIterable(val).zeroExtend(width);
         }
       }
+    } else if (val == null) {
+      throw LogicValueConstructionException('Cannot construct from `null`.');
     } else {
-      throw LogicValueConstructionException('Unrecognized value type "$val" - '
-          'Unknown type ${val.runtimeType}'
-          ' cannot be converted to `LogicValue.');
+      throw UnsupportedTypeException(
+          val, [LogicValue, int, BigInt, bool, String, Iterable<LogicValue>]);
     }
   }
 
@@ -409,6 +444,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static LogicValue ofString(String stringRepresentation) {
     if (stringRepresentation.isEmpty) {
       return const _FilledLogicValue(_LogicValueEnum.zero, 0);
+    }
+
+    if (stringRepresentation.contains(RegExp('[^01xz]'))) {
+      throw LogicValueConstructionException(
+          'Invalid characters found, must only contain 0, 1, x, and z.');
     }
 
     final valueString = _valueString(stringRepresentation);
@@ -758,7 +798,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Converts valid a [LogicValue] to an [int].
   ///
-  /// Throws an `Exception` if not [isValid] or the width doesn't fit in
+  /// Throws an `Exception` if not [isValid] or the value doesn't fit in
   /// an [int].
   int toInt();
 
@@ -838,33 +878,35 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue xor();
 
   /// Addition operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  // ignore: avoid_dynamic_calls
-  LogicValue operator +(dynamic other) => _doMath(other, (a, b) => a + b);
+  LogicValue operator +(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a + b);
 
   /// Subtraction operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  // ignore: avoid_dynamic_calls
-  LogicValue operator -(dynamic other) => _doMath(other, (a, b) => a - b);
+  LogicValue operator -(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a - b);
 
   /// Multiplication operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  // ignore: avoid_dynamic_calls
-  LogicValue operator *(dynamic other) => _doMath(other, (a, b) => a * b);
+  LogicValue operator *(dynamic other) =>
+      // ignore: avoid_dynamic_calls
+      _doMath(other, (a, b) => a * b);
 
   /// Division operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
-  // ignore: avoid_dynamic_calls
-  LogicValue operator /(dynamic other) => _doMath(other, (a, b) => a ~/ b);
+  LogicValue operator /(dynamic other) => _doMath(
+        other,
+        // ignore: avoid_dynamic_calls
+        (a, b) => a ~/ b,
+        isDivision: true,
+      );
 
   /// Modulo operation.
-  ///
-  // ignore: avoid_dynamic_calls
-  LogicValue operator %(dynamic other) => _doMath(other, (a, b) => a % b);
+  LogicValue operator %(dynamic other) => _doMath(
+        other,
+        // ignore: avoid_dynamic_calls
+        (a, b) => a % b,
+        isDivision: true,
+      );
 
   /// Ceil of log base 2 operation.
   ///
@@ -879,9 +921,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (!isValid) {
       return LogicValue.filled(width, LogicValue.x);
     }
-    if (this is BigInt ||
-        this is _BigLogicValue ||
-        (this is _FilledLogicValue && width >= _INT_BITS)) {
+    if (width > _INT_BITS) {
       final a = toBigInt();
       return LogicValue.ofBigInt(op(a, width) as BigInt, width);
     } else {
@@ -898,6 +938,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (a is int) {
       return a < 0 ? width : (a - 1).bitLength;
     }
+
     if (a is BigInt) {
       return a < BigInt.zero
           ? BigInt.from(width)
@@ -905,36 +946,42 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
   }
 
-  /// Executes mathematical operations between two [LogicValue]s
+  /// Executes mathematical operations between two [LogicValue]s.
   ///
   /// Handles width and bounds checks as well as proper conversion between
   /// different types of representation.
-  LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op) {
+  ///
+  /// If the math [isDivision], then 64-bit ([_INT_BITS]) operations have some
+  /// special consideration for two's complement math, so it will use an
+  /// unsigned [BigInt] for math.
+  LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op,
+      {bool isDivision = false}) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw Exception('Improper argument ${other.runtimeType}, should be int,'
-          ' LogicValue, or BigInt.');
+      throw UnsupportedTypeException(other, [int, LogicValue, BigInt]);
     }
+
     if (other is LogicValue && other.width != width) {
-      throw Exception('Widths  must match, but found "$this" and "$other".');
+      throw ValueWidthMismatchException(this, other);
     }
 
     if (!isValid) {
       return LogicValue.filled(width, LogicValue.x);
     }
+
     if (other is LogicValue && !other.isValid) {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    final widthComparison = isDivision ? _INT_BITS - 1 : _INT_BITS;
+
+    if (width > widthComparison ||
+        (other is LogicValue && other.width > widthComparison)) {
       final a = toBigInt();
       final b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other)
-              : other is LogicValue
-                  ? other.toBigInt()
-                  : throw Exception(
-                      'Unexpected big type: ${other.runtimeType}.');
+              ? BigInt.from(other).toUnsigned(_INT_BITS)
+              : (other as LogicValue).toBigInt();
       return LogicValue.ofBigInt(op(a, b) as BigInt, width);
     } else {
       final a = toInt();
@@ -967,34 +1014,26 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue pow(dynamic exponent) => _doMath(exponent, _powerOperation);
 
   /// Less-than operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a < b) as bool);
 
   /// Greater-than operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a > b) as bool);
 
   /// Less-than-or-equal operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator <=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a <= b) as bool);
 
   /// Greater-than-or-equal operation.
-  ///
-  /// WARNING: Signed math is not fully tested.
   LogicValue operator >=(dynamic other) =>
       // ignore: avoid_dynamic_calls
       _doCompare(other, (a, b) => (a >= b) as bool);
 
-  /// Power operation
+  /// Power operation.
   ///
   /// Both inputs [base] and [exponent] are either of type [int] or [BigInt].
   /// Returns [base] raise to the power [exponent] of same input type else
@@ -1018,17 +1057,17 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
   }
 
-  /// Executes comparison operations between two [LogicValue]s
+  /// Executes comparison operations between two [LogicValue]s.
   ///
   /// Handles width and bounds checks as well as proper conversion between
   /// different types of representation.
   LogicValue _doCompare(dynamic other, bool Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw Exception('Improper arguments ${other.runtimeType},'
-          ' should be int, LogicValue, or BigInt.');
+      throw UnsupportedTypeException(other, [int, LogicValue, BigInt]);
     }
+
     if (other is LogicValue && other.width != width) {
-      throw Exception('Widths must match, but found "$this" and "$other"');
+      throw ValueWidthMismatchException(this, other);
     }
 
     if (!isValid) {
@@ -1040,19 +1079,27 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     dynamic a;
     dynamic b;
-    if (this is _BigLogicValue || other is BigInt || other is _BigLogicValue) {
+    if (width > _INT_BITS || (other is LogicValue && other.width > _INT_BITS)) {
       a = toBigInt();
       b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other)
-              : other is LogicValue
-                  ? other.toBigInt()
-                  : throw Exception(
-                      'Unexpected big type: ${other.runtimeType}.');
+              ? BigInt.from(other).toUnsigned(_INT_BITS)
+              : (other as LogicValue).toBigInt();
     } else {
-      a = toInt();
-      b = other is int ? other : (other as LogicValue).toInt();
+      if (width < _INT_BITS) {
+        a = toInt();
+        b = other is int ? other : (other as LogicValue).toInt();
+      } else {
+        // Here we now know: width == _INT_BITS
+        final ai = toInt();
+        final bi = other is int ? other : (other as LogicValue).toInt();
+        if ((ai < 0) || (bi < 0)) {
+          final abig = LogicValue.ofBigInt(BigInt.from(ai), _INT_BITS + 1);
+          final bbig = LogicValue.ofBigInt(BigInt.from(bi), _INT_BITS + 1);
+          return abig._doCompare(bbig, op);
+        }
+      }
     }
     return op(a, b) ? LogicValue.one : LogicValue.zero;
   }
@@ -1067,30 +1114,80 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Logical right-shift operation.
   LogicValue operator >>>(dynamic shamt) => _shift(shamt, _ShiftType.right);
 
+  /// Performs a shift by a huge amount (more than [width]).
+  LogicValue _shiftHuge(_ShiftType direction) {
+    if (direction == _ShiftType.arithmeticRight &&
+        this[-1] != LogicValue.zero) {
+      return LogicValue.filled(
+          width, this[-1].isValid ? LogicValue.one : LogicValue.x);
+    } else {
+      return LogicValue.filled(width, LogicValue.zero);
+    }
+  }
+
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
       // ignore: avoid_returning_this
       return this;
     }
-    int shamtInt;
+
+    var shamtNum = shamt;
     if (shamt is LogicValue) {
       if (!shamt.isValid) {
         return LogicValue.filled(width, LogicValue.x);
       }
-      shamtInt = shamt.toInt();
-    } else if (shamt is int) {
-      shamtInt = shamt;
-    } else {
-      throw Exception('Cannot shift by type ${shamt.runtimeType}.');
+
+      if (shamt.width > _INT_BITS) {
+        shamtNum = shamt.toBigInt();
+      } else {
+        shamtNum = shamt.toInt();
+      }
     }
-    if (direction == _ShiftType.left) {
-      return _shiftLeft(shamtInt);
-    } else if (direction == _ShiftType.right) {
-      return _shiftRight(shamtInt);
+
+    int shamtInt;
+    if (shamtNum is int) {
+      shamtInt = shamtNum;
+    } else if (shamtNum is BigInt) {
+      if (shamtNum >= BigInt.from(width)) {
+        // if the shift amount is huge, we can still calculate it
+        return _shiftHuge(direction);
+      }
+
+      assert(
+          shamtNum <= BigInt.from(-1).toUnsigned(_INT_BITS),
+          'It should not be possible for the shift amount to be less '
+          'than the width, but more than fits in an int.');
+
+      assert(shamtNum.isValidInt,
+          'Should have returned already if it does not fit.');
+
+      shamtInt = shamtNum.toInt();
     } else {
-      // if(direction == ShiftType.ArithmeticRight) {
-      return _shiftArithmeticRight(shamtInt);
+      throw UnsupportedTypeException(shamt, [int, BigInt, LogicValue]);
+    }
+
+    if (shamtInt < 0) {
+      // since we're limited in width to 2^(_INT_BITS-1) (must be positive),
+      // we know that any negative shift amount must quality as "huge"
+      return _shiftHuge(direction);
+    }
+
+    if (shamtInt == 0) {
+      return this;
+    }
+
+    if (shamtInt >= width) {
+      return _shiftHuge(direction);
+    }
+
+    switch (direction) {
+      case _ShiftType.left:
+        return _shiftLeft(shamtInt);
+      case _ShiftType.right:
+        return _shiftRight(shamtInt);
+      case _ShiftType.arithmeticRight:
+        return _shiftArithmeticRight(shamtInt);
     }
   }
 
@@ -1269,4 +1366,18 @@ int _unsignedBinaryParse(String source) {
 }
 
 /// Enum for a [LogicValue]'s value.
-enum _LogicValueEnum { zero, one, x, z }
+enum _LogicValueEnum {
+  /// A value of 0.
+  zero,
+
+  /// A value of 1.
+  one,
+
+  /// A value of X (contention).
+  x,
+
+  /// A value of Z (floating).
+  z;
+
+  bool get isValid => this == zero || this == one;
+}

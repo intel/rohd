@@ -71,37 +71,40 @@
 
 ## Chapter 7: Sequential Logic
 
-- Shift Register
-- Example of Sequential
-- Simulator (Merged with tutorial 8)
-- Explanation of role of Simulator
-- Registering arbitrary events
-- Starting and running the simulator
-- Clock generator
-- Run a sequential logic module in the simulator
-- Non-synthesizable signal deposition (inject vs. put)
-- WaveDumper, and view waves
-- Interfaces <https://en.wikipedia.org/wiki/Serial_Peripheral_Interface>
+- [What is Sequential Logic?](./chapter_7/00_sequential_logic.md#what-is-sequential-logic)
+- [Sequential Logic in ROHD](./chapter_7/00_sequential_logic.md#sequential-logic-in-rohd)
+- [Shift Register](./chapter_7/00_sequential_logic.md#shift-register)
+- [ROHD Simulator](./chapter_7/00_sequential_logic.md#rohd-simulator)
+- [Unit Test in Sequential Logic](./chapter_7/00_sequential_logic.md#unit-test-in-sequential-logic)
+- [Wave Dumper](./chapter_7/00_sequential_logic.md#wave-dumper)
+- [Exercise](./chapter_7/00_sequential_logic.md#exercise)
 
 ## Chapter 8: Abstractions
 
-- Pipelines: Normally Delayed exists in between a big circuit, abstractions split the logic across multiple cycles and let us decide what logic do you want it to occur in each of the cycle.
-- Finite state machines
+- [ROHD Abstraction](./chapter_8/00_abstraction.md#rohd-abstraction)
+- [Interface](./chapter_8/01_interface.md)
+- [Finite State Machine](./chapter_8/02_finite_state_machine.md)
+- [Pipeline](./chapter_8/03_pipeline.md)
 
-## Chapter 9: ROHD-COSIM External SystemVerilog Modules (Coming Soon!)
+## Chapter 9: ROHD-VF
 
-- More functionality
-- Using and depending on other packages
-
-## Chapter 10: ROHD-VF (Coming Soon!)
-
-- Contributing to ROHD
-- Building your own package
-- ROHD-VF <https://colorlesscube.com/uvm-guide-for-beginners/chapter-1-the-dut/>
-- ROHD Cosim
+- [ROHD Verification Framework](./chapter_9/rohd_vf.md#rohd-verification-framework)
+- [Testbenches](./chapter_9/rohd_vf.md#testbenches)
+  - [Constructing Objects](./chapter_9/rohd_vf.md#constructing-objects)
+  - [Component's Phases](./chapter_9/rohd_vf.md#components-phases)
+  - [Component](./chapter_9/rohd_vf.md#component)
+  - [Stimulus](./chapter_9/rohd_vf.md#stimulus)
+  - [Logging](./chapter_9/rohd_vf.md#logging)
+- [Test a Counter module with ROHD-VF](./chapter_9/rohd_vf.md#test-a-counter-module-with-rohd-vf)
+  - [A. Define Counter DUT](./chapter_9/rohd_vf.md#a-define-counter-dut)
+  - [B. Define the Stimulus for Counter](./chapter_9/rohd_vf.md#b-define-the-stimulus-for-counter)
+  - [C. Counter Agent](./chapter_9/rohd_vf.md#c-counter-agent)
+  - [D. Counter Environment](./chapter_9/rohd_vf.md#d-counter-environment)
+  - [E. Counter Test](./chapter_9/rohd_vf.md#e-counter-test)
+  - [F. Create an Entry Point](./chapter_9/rohd_vf.md#f-create-an-entry-point)
 
 ----------------
-2023 February 13
+2023 August 22
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
 Copyright (C) 2021-2023 Intel Corporation  

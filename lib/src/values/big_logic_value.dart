@@ -1,14 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// big_logic_value.dart
-/// Definition for a logical value where all bits are the same value.
-///
-/// 2022 March 28
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// big_logic_value.dart
+// Definition for a logical value where all bits are the same value.
+//
+// 2022 March 28
+// Author: Max Korbel <max.korbel@intel.com>
 
-part of values;
+part of 'values.dart';
 
 /// Extends [BigInt] with utility functions that are useful for dealing with
 /// large bit vectors and conversion between types.
@@ -43,10 +42,11 @@ class _BigLogicValue extends LogicValue {
   late final BigInt _invalid;
 
   BigInt get _mask => _maskOfWidth(width);
-  static final Map<int, BigInt> _masksOfWidth = {};
+  static final Map<int, BigInt> _masksOfWidth = HashMap();
   static BigInt _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = (BigInt.one << width) - BigInt.one;
+      _masksOfWidth[width] =
+          ((BigInt.one << width) - BigInt.one).toUnsigned(width);
     }
     return _masksOfWidth[width]!;
   }
@@ -61,8 +61,8 @@ class _BigLogicValue extends LogicValue {
       : assert(width > LogicValue._INT_BITS,
             '_BigLogicValue should only be used for large values'),
         super._(width) {
-    _value = _mask & value;
-    _invalid = _mask & invalid;
+    _value = (_mask & value).toUnsigned(width);
+    _invalid = (_mask & invalid).toUnsigned(width);
 
     assert(
         allowInefficientRepresentation ||
@@ -121,15 +121,22 @@ class _BigLogicValue extends LogicValue {
   @override
   BigInt toBigInt() {
     if (_invalid.sign != 0) {
-      throw Exception('Cannot convert invalid LogicValue to BigInt: $this');
+      throw InvalidValueOperationException(this, 'toBigInt');
     }
     return _value;
   }
 
   @override
-  int toInt() =>
-      throw Exception('LogicValue width $width is too long to convert to int.'
+  int toInt() {
+    final bigInt = toBigInt();
+    if (bigInt.isValidInt) {
+      return bigInt.toIntUnsigned(LogicValue._INT_BITS);
+    } else {
+      throw InvalidTruncationException(
+          'LogicValue $this is too long to convert to int.'
           ' Use toBigInt() instead.');
+    }
+  }
 
   @override
   LogicValue operator ~() => LogicValue._bigLogicValueOrFilled(
@@ -197,28 +204,34 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  LogicValue _shiftLeft(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
+  LogicValue _shiftLeft(int shamt) => LogicValue._bigLogicValueOrFilled(
+      (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
-  LogicValue _shiftRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          _value >> shamt, _invalid >> shamt, width);
+  LogicValue _shiftRight(int shamt) => LogicValue._bigLogicValueOrFilled(
+      // we can just use >> because these are unsigned
+      _value >> shamt,
+      _invalid >> shamt,
+      width);
 
   @override
-  LogicValue _shiftArithmeticRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          (_value |
-                  (this[width - 1] == LogicValue.one
-                      ? ((_mask >> (width - shamt)) << (width - shamt))
-                      : BigInt.zero)) >>
-              shamt,
-          _invalid >> shamt,
-          width);
+  LogicValue _shiftArithmeticRight(int shamt) {
+    shamt;
+
+    var value = (_value.toSigned(width) >> shamt).toUnsigned(width);
+    var invalid = (_invalid.toSigned(width) >> shamt).toUnsigned(width);
+
+    // if uppermost bit is invalid, then turn the shifted bits into X's
+    if (!this[-1].isValid) {
+      // for affected bits of value: zero out value
+      value &= _mask >> shamt;
+
+      // for affected bits of invalid: make sure they are high
+      invalid |= ~_mask >> shamt;
+    }
+
+    return LogicValue._bigLogicValueOrFilled(value, invalid, width);
+  }
 
   @override
   BigInt get _bigIntInvalid => _invalid;

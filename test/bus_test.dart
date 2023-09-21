@@ -1,15 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus_test.dart
-/// Unit tests for bus-related operations
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// bus_test.dart
+// Unit tests for bus-related operations
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 

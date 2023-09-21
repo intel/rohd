@@ -11,7 +11,6 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 

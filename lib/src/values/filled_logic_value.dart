@@ -1,14 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// filled_logic_value.dart
-/// Definition for a logical value where all bits are the same value.
-///
-/// 2022 March 28
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// filled_logic_value.dart
+// Definition for a logical value where all bits are the same value.
+//
+// 2022 March 28
+// Author: Max Korbel <max.korbel@intel.com>
 
-part of values;
+part of 'values.dart';
 
 /// A [LogicValue] of any width where all bits are the same [LogicValue].
 class _FilledLogicValue extends LogicValue {
@@ -74,8 +73,7 @@ class _FilledLogicValue extends LogicValue {
   int get _hashCode => _value.hashCode;
 
   @override
-  bool get isValid =>
-      !(_value == _LogicValueEnum.x || _value == _LogicValueEnum.z);
+  bool get isValid => _value.isValid;
 
   @override
   bool get isFloating => _value == _LogicValueEnum.z;
@@ -87,21 +85,24 @@ class _FilledLogicValue extends LogicValue {
     } else if (_value == _LogicValueEnum.zero) {
       return BigInt.zero;
     }
-    throw Exception('Cannot convert invalid value "$_value" to BigInt.');
+    throw InvalidValueOperationException(this, 'toBigInt');
   }
 
   @override
   int toInt() {
-    if (width > LogicValue._INT_BITS) {
-      throw Exception('LogicValue width $width is too long to convert to int.'
-          ' Use toBigInt() instead.');
-    }
-    if (_value == _LogicValueEnum.one) {
-      return _SmallLogicValue._maskOfWidth(width);
-    } else if (_value == _LogicValueEnum.zero) {
+    if (_value == _LogicValueEnum.zero) {
       return 0;
+    } else if (!isValid) {
+      throw InvalidValueOperationException(this, 'toInt');
+    } else if (width > LogicValue._INT_BITS) {
+      throw InvalidTruncationException(
+          'LogicValue $this is too long to convert to int.'
+          ' Use toBigInt() instead.');
+    } else if (_value == _LogicValueEnum.one) {
+      return _SmallLogicValue._maskOfWidth(width);
     }
-    throw Exception('Cannot convert invalid value "$_value" to an int.');
+
+    throw InvalidValueOperationException(this, 'toInt');
   }
 
   @override
@@ -290,10 +291,6 @@ class _FilledLogicValue extends LogicValue {
       return this;
     }
 
-    if (shamt >= width) {
-      return _FilledLogicValue(_LogicValueEnum.zero, width);
-    }
-
     return [
       getRange(0, width - shamt),
       _FilledLogicValue(_LogicValueEnum.zero, shamt),
@@ -306,18 +303,19 @@ class _FilledLogicValue extends LogicValue {
       return this;
     }
 
-    if (shamt >= width) {
-      return _FilledLogicValue(_LogicValueEnum.zero, width);
-    }
-
     return [
       _FilledLogicValue(_LogicValueEnum.zero, shamt),
-      getRange(shamt, width),
+      _getRange(shamt, width),
     ].swizzle();
   }
 
   @override
-  LogicValue _shiftArithmeticRight(int shamt) => this;
+  LogicValue _shiftArithmeticRight(int shamt) => _value != _LogicValueEnum.z
+      ? this
+      : [
+          _FilledLogicValue(_LogicValueEnum.x, shamt),
+          _getRange(shamt, width),
+        ].swizzle();
 
   @override
   BigInt get _bigIntInvalid =>

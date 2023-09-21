@@ -1,13 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// tree_test.dart
-/// Testing a recursive tree of arbitrary two input operations,
-/// based on a Chisel example
-///
-/// 2021 May 20
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// tree_test.dart
+// Testing a recursive tree of arbitrary two input operations,
+// based on a Chisel example
+//
+// 2021 May 20
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -57,7 +57,7 @@ void main() {
 
       final vectors = [
         Vector({
-          for (var i in List<int>.generate(16, (index) => index)) 'seq$i': i
+          for (final i in List<int>.generate(16, (index) => index)) 'seq$i': i
         }, {
           'out': 15
         }),

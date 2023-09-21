@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// definition_name_test.dart
-/// Tests for definition names (including reserving them) of Modules.
-///
-/// 2022 March 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// definition_name_test.dart
+// Tests for definition names (including reserving them) of Modules.
+//
+// 2022 March 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_positional_boolean_parameters
 import 'package:rohd/rohd.dart';

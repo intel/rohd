@@ -1,17 +1,15 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// logic_value_test.dart
-/// Tests for LogicValue
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_value_test.dart
+// Tests for LogicValue
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
 import 'package:test/test.dart';
 
@@ -95,9 +93,23 @@ void main() {
       expect(
           <LogicValue>[].swizzle(), equals(LogicValue.ofBigInt(BigInt.two, 0)));
     });
+
     test('big unsigned int string', () {
       expect(LogicValue.ofString('1' * 64), equals(LogicValue.ofInt(-1, 64)));
     });
+
+    test('-1 int vs. 64 1s for big width', () {
+      expect(LogicValue.ofInt(-1, 100),
+          LogicValue.ofBigInt((BigInt.one << 64) - BigInt.one, 100));
+    });
+
+    test('invalid string ofString', () {
+      expect(() => LogicValue.ofString('-1'),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.ofString('a'),
+          throwsA(isA<LogicValueConstructionException>()));
+    });
+
     test('unary', () {
       expect(LogicValue.one.isValid, equals(true));
       expect(LogicValue.zero.isValid, equals(true));
@@ -354,6 +366,24 @@ void main() {
           equals(BigInt.parse('36893488147419103231')));
     });
 
+    group('large-width toInt', () {
+      test('big', () {
+        expect(LogicValue.ofInt(1234, 100).toInt(), 1234);
+        expect(() => LogicValue.ofBigInt(-BigInt.two, 100).toInt(),
+            throwsA(isA<InvalidTruncationException>()));
+        expect(() => LogicValue.ofString('x' * 10 + '0' * 90).toInt(),
+            throwsA(isA<InvalidValueOperationException>()));
+      });
+
+      test('filled', () {
+        expect(LogicValue.ofInt(0, 100).toInt(), 0);
+        expect(() => LogicValue.ofBigInt(-BigInt.one, 100).toInt(),
+            throwsA(isA<InvalidTruncationException>()));
+        expect(() => LogicValue.ofString('z' * 100).toInt(),
+            throwsA(isA<InvalidValueOperationException>()));
+      });
+    });
+
     test('properties+indexing', () {
       expect(
           // index - LSb
@@ -461,8 +491,10 @@ void main() {
           LogicValue.ofString('zzz1').isFloating,
           equals(false));
     });
+  });
 
-    test('shifts', () {
+  group('shifts', () {
+    test('basic', () {
       expect(
           // sll
           LogicValue.ofString('1111') << 2,
@@ -476,7 +508,283 @@ void main() {
           LogicValue.ofString('1111') >>> 2,
           equals(LogicValue.ofString('0011')));
     });
+
+    test('small int boundary shift right logical', () {
+      // at boundary
+      expect((LogicValue.ofInt(-5, 64) >>> 28).toInt(), 0xfffffffff);
+      expect(LogicValue.ofString('x' * 50 + '0' * 14) >>> 20,
+          LogicValue.ofString('0' * 20 + 'x' * 44));
+      expect(LogicValue.ofString('z' * 50 + '0' * 14) >>> 20,
+          LogicValue.ofString('0' * 20 + 'z' * 44));
+
+      // below boundary
+      expect((LogicValue.ofInt(-5, 60) >>> 28).toInt(), 0xffffffff);
+      expect(LogicValue.ofString('x' * 50 + '0' * 13) >>> 20,
+          LogicValue.ofString('0' * 20 + 'x' * 43));
+      expect(LogicValue.ofString('z' * 50 + '0' * 13) >>> 20,
+          LogicValue.ofString('0' * 20 + 'z' * 43));
+    });
+
+    test('small int boundary shift left logical', () {
+      // at boundary
+      expect((LogicValue.ofInt(-1, 64) << 20).toInt(), -1 << 20);
+      expect(LogicValue.ofString('0' * 14 + 'x' * 50) << 20,
+          LogicValue.ofString('x' * 44 + '0' * 20));
+      expect(LogicValue.ofString('0' * 14 + 'z' * 50) << 20,
+          LogicValue.ofString('z' * 44 + '0' * 20));
+
+      // below boundary
+      expect((LogicValue.ofInt(-1, 32) << 24).toInt(), 0xff000000);
+      expect(LogicValue.ofString('0' * 14 + 'x' * 49) << 20,
+          LogicValue.ofString('x' * 43 + '0' * 20));
+      expect(LogicValue.ofString('0' * 14 + 'z' * 49) << 20,
+          LogicValue.ofString('z' * 43 + '0' * 20));
+    });
+
+    test('small int boundary shift right arithmetic', () {
+      // at boundary
+      expect((LogicValue.ofInt(0xffff, 64) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, 64) >> 20).toInt(), -1);
+      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 20,
+          LogicValue.filled(64, LogicValue.x));
+      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 10,
+          LogicValue.ofString('x' * 60 + '0' * 4));
+      expect(LogicValue.ofString('z' * 50 + '0' * 14) >> 20,
+          LogicValue.ofString('x' * 20 + 'z' * 44));
+
+      // below boundary
+      expect((LogicValue.ofInt(0xffff, 63) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, 63) >> 20).toInt(), -1 >>> 1);
+      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 20,
+          LogicValue.filled(63, LogicValue.x));
+      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 10,
+          LogicValue.ofString('x' * 60 + '0' * 3));
+      expect(LogicValue.ofString('z' * 50 + '0' * 13) >> 20,
+          LogicValue.ofString('x' * 20 + 'z' * 43));
+    });
+
+    test('big shift right logical', () {
+      expect((LogicValue.ofInt(-5, 65) >>> 28).toInt(), 0xfffffffff);
+      expect(LogicValue.ofBigInt(-BigInt.two, 128) >>> 96,
+          LogicValue.ofInt(0xffffffff, 128));
+      expect(LogicValue.ofString('x' * 51 + '0' * 14) >>> 20,
+          LogicValue.ofString('0' * 20 + 'x' * 45));
+      expect(LogicValue.ofString('z' * 51 + '0' * 14) >>> 20,
+          LogicValue.ofString('0' * 20 + 'z' * 45));
+    });
+
+    test('big shift left logical', () {
+      expect((LogicValue.ofInt(-1, 65) << 20).toBigInt(),
+          (-BigInt.one).toUnsigned(65 - 20) << 20);
+      expect((LogicValue.ofBigInt(-BigInt.two, 128) << 20).toBigInt(),
+          (-BigInt.two).toUnsigned(128 - 20) << 20);
+      expect(LogicValue.ofString('0' * 15 + 'x' * 50) << 20,
+          LogicValue.ofString('x' * 45 + '0' * 20));
+      expect(LogicValue.ofString('0' * 15 + 'z' * 50) << 20,
+          LogicValue.ofString('z' * 45 + '0' * 20));
+    });
+
+    test('big shift right arithmetic', () {
+      expect((LogicValue.ofInt(0xffff, 65) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, 65) >> 20).toInt(), -5 >>> 20);
+      expect(LogicValue.ofBigInt(-BigInt.two, 128) >> 3,
+          LogicValue.ofBigInt(-BigInt.one, 128));
+      expect(LogicValue.ofString('x' * 51 + '0' * 14) >> 20,
+          LogicValue.filled(65, LogicValue.x));
+      expect(LogicValue.ofString('x' * 51 + '0' * 14) >> 10,
+          LogicValue.ofString('x' * 61 + '0' * 4));
+      expect(LogicValue.ofString('z' * 51 + '0' * 14) >> 20,
+          LogicValue.ofString('x' * 20 + 'z' * 45));
+    });
+
+    test('filled shift right logical', () {
+      for (var width = 62; width < 67; width++) {
+        expect(LogicValue.filled(width, LogicValue.one) >>> 20,
+            LogicValue.ofString('0' * 20 + '1' * (width - 20)));
+        expect(LogicValue.filled(width, LogicValue.zero) >>> 20,
+            LogicValue.ofString('0' * width));
+        expect(LogicValue.filled(width, LogicValue.x) >>> 20,
+            LogicValue.ofString('0' * 20 + 'x' * (width - 20)));
+        expect(LogicValue.filled(width, LogicValue.z) >>> 20,
+            LogicValue.ofString('0' * 20 + 'z' * (width - 20)));
+      }
+    });
+
+    test('filled shift left logical', () {
+      for (var width = 62; width < 67; width++) {
+        expect(LogicValue.filled(width, LogicValue.one) << 20,
+            LogicValue.ofString('1' * (width - 20) + '0' * 20));
+        expect(LogicValue.filled(width, LogicValue.zero) << 20,
+            LogicValue.ofString('0' * width));
+        expect(LogicValue.filled(width, LogicValue.x) << 20,
+            LogicValue.ofString('x' * (width - 20) + '0' * 20));
+        expect(LogicValue.filled(width, LogicValue.z) << 20,
+            LogicValue.ofString('z' * (width - 20) + '0' * 20));
+      }
+    });
+
+    test('filled shift right arithmetic', () {
+      for (var width = 62; width < 67; width++) {
+        expect(LogicValue.filled(width, LogicValue.one) >> 20,
+            LogicValue.ofString('1' * width));
+        expect(LogicValue.filled(width, LogicValue.zero) >> 20,
+            LogicValue.ofString('0' * width));
+        expect(LogicValue.filled(width, LogicValue.x) >> 20,
+            LogicValue.ofString('x' * width));
+        expect(LogicValue.filled(width, LogicValue.z) >> 20,
+            LogicValue.ofString('x' * 20 + 'z' * (width - 20)));
+      }
+    });
+
+    test('more than width', () {
+      expect(LogicValue.ofInt(10, 50) >> 50, LogicValue.ofInt(0, 50));
+      expect(LogicValue.ofInt(10, 64) >> 65, LogicValue.ofInt(0, 64));
+      expect(LogicValue.ofInt(10, 80) >> 100, LogicValue.ofInt(0, 80));
+      expect(
+          LogicValue.ofString('x' * 80) >> 100, LogicValue.ofString('x' * 80));
+      expect(
+          LogicValue.ofString('z' * 80) >> 100, LogicValue.ofString('x' * 80));
+    });
+
+    test('huge left', () {
+      expect((LogicValue.ofInt(45, 32) << -1).toInt(), 0);
+      expect((LogicValue.ofInt(45, 64) << -4).toInt(), 0);
+      expect((LogicValue.ofInt(45, 80) << -4).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 80) << -4).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) << -4).toInt(), 0);
+
+      expect((LogicValue.ofInt(45, 32) << BigInt.from(-1)).toInt(), 0);
+      expect((LogicValue.ofInt(45, 64) << BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(45, 80) << BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 80) << BigInt.from(-7)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) << BigInt.from(-9)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) << (BigInt.one << 80)).toInt(), 0);
+    });
+
+    test('huge right', () {
+      expect((LogicValue.ofInt(45, 32) >>> -4).toInt(), 0);
+      expect((LogicValue.ofInt(45, 64) >>> -4).toInt(), 0);
+      expect((LogicValue.ofInt(45, 80) >>> -4).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 80) >>> -4).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) >>> -4).toInt(), 0);
+
+      expect((LogicValue.ofInt(45, 32) >>> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(45, 64) >>> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(45, 80) >>> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 80) >>> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) >>> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-39, 60) >>> (BigInt.one << 80)).toInt(), 0);
+    });
+
+    test('huge right arithmetic', () {
+      expect((LogicValue.ofInt(45, 32) >> -1).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 64) >> -12).toInt(), -1);
+      expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
+      expect((LogicValue.ofInt(45, 80) >> -1).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), false);
+      expect((LogicValue.ofBigInt(BigInt.from(-45), 128) >> -18).and().toBool(),
+          true);
+
+      expect((LogicValue.ofInt(45, 32) >> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 64) >> BigInt.from(-4)).toInt(), -1);
+      expect((LogicValue.ofInt(-45, 8) >> BigInt.from(-4)).toInt(), 0xff);
+      expect((LogicValue.ofInt(45, 80) >> BigInt.from(-4)).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 128) >> BigInt.from(-4)).and().toBool(),
+          false);
+      expect(
+          (LogicValue.ofBigInt(BigInt.from(-45), 128) >> BigInt.from(-4))
+              .and()
+              .toBool(),
+          true);
+      expect((LogicValue.ofInt(45, 80) >> (BigInt.one << 80)).toInt(), 0);
+      expect((LogicValue.ofInt(-45, 8) >> (BigInt.one << 80)).toInt(), 0xff);
+    });
+
+    group('invalid values', () {
+      test('shift left', () {
+        expect(LogicValue.filled(10, LogicValue.x) << 3,
+            LogicValue.ofString('xxxxxxx000'));
+        expect(LogicValue.filled(10, LogicValue.x) << (BigInt.one << 80),
+            LogicValue.ofString('0000000000'));
+      });
+
+      test('shift right', () {
+        expect(LogicValue.filled(10, LogicValue.x) >>> 3,
+            LogicValue.ofString('000xxxxxxx'));
+        expect(LogicValue.filled(10, LogicValue.x) >>> (BigInt.one << 80),
+            LogicValue.ofString('0000000000'));
+      });
+
+      test('shift right arithmetic', () {
+        expect(LogicValue.filled(10, LogicValue.x) >> 3,
+            LogicValue.filled(10, LogicValue.x));
+        expect(LogicValue.filled(10, LogicValue.z) >> 3,
+            LogicValue.ofString('xxxzzzzzzz'));
+        expect(LogicValue.filled(10, LogicValue.x) >> (BigInt.one << 80),
+            LogicValue.filled(10, LogicValue.x));
+        expect(LogicValue.filled(10, LogicValue.z) >> (BigInt.one << 80),
+            LogicValue.filled(10, LogicValue.x));
+      });
+    });
+
+    test('shift by 0', () {
+      expect(LogicValue.filled(10, LogicValue.x) >> 0,
+          LogicValue.filled(10, LogicValue.x));
+    });
+
+    test('invalid shamt', () {
+      expect(
+          LogicValue.filled(10, LogicValue.one) >> LogicValue.ofString('0x10'),
+          LogicValue.filled(10, LogicValue.x));
+    });
+
+    test('unsupported shamt type', () {
+      expect(() => LogicValue.filled(10, LogicValue.one) >> Logic(),
+          throwsA(isA<UnsupportedTypeException>()));
+    });
+
+    test('example large shifts', () {
+      expect((LogicValue.filled(64, LogicValue.one) >> 2).toInt(),
+          equals(-1 >> 2));
+      expect(
+          LogicValue.filled(65, LogicValue.one) >>> 10,
+          equals([
+            LogicValue.filled(10, LogicValue.zero),
+            LogicValue.filled(55, LogicValue.one)
+          ].swizzle()));
+    });
   });
+
+  group('infer width', () {
+    test('int', () {
+      expect(LogicValue.ofInferWidth(45).width, 6);
+    });
+
+    test('bigint', () {
+      expect(
+          LogicValue.ofInferWidth((BigInt.one << 70) + BigInt.two).width, 71);
+    });
+
+    test('negative int', () {
+      expect(() => LogicValue.ofInferWidth(-345).width,
+          throwsA(isA<LogicValueConstructionException>()));
+    });
+
+    test('negative BigInt', () {
+      expect(() => LogicValue.ofInferWidth(-BigInt.one),
+          throwsA(isA<LogicValueConstructionException>()));
+    });
+
+    test('logicvalue', () {
+      expect(LogicValue.ofInferWidth(LogicValue.ofString('01010')).width, 5);
+    });
+
+    test('unsupported', () {
+      expect(() => LogicValue.ofInferWidth(Logic()).width,
+          throwsA(isA<UnsupportedTypeException>()));
+    });
+  });
+
   group('comparison operations', () {
     test('equalsWithDontCare', () {
       expect(

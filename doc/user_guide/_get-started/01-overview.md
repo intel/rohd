@@ -8,7 +8,7 @@ toc: true
 
 ## Describing Hardware in Dart with ROHD
 
-ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.  ROHD enables you to build and traverse a graph of connectivity between module objects using unrestricted software.
+ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
 
 Features of ROHD include:
 
@@ -21,6 +21,7 @@ Features of ROHD include:
 - Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform dumper** to .vcd file format
 - Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** for integration or downstream tool consumption
 - **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
+- Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components.
 - Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
 - Excellent, simple, fast **unit-testing** framework
 - **Less verbose** than alternatives (fewer lines of code)
@@ -45,20 +46,20 @@ Because it is designed with asynchronous requests in mind (i.e. sending a reques
 
 Dart can compile to native machine code, but also includes its own high-performance VM and a JIT compiler.  During development, you can use a feature called "hot reload" to change code while the program is actively executing.
 
-Dart has an excellent package manager called "pub" [https://pub.dev](https://pub.dev).  It is possible to host a private Dart Pub server for packages that shouldn't be shared broadly (e.g. Top-Secret IP).
+Dart has an excellent package manager called "pub" (<https://pub.dev>).  It is possible to host a private Dart Pub server for packages that shouldn't be shared broadly (e.g. Top-Secret IP).
 
 ### The Challenge of Justifying Trying a New Language
 
 [This StackOverflow answer](https://stackoverflow.com/questions/53007782/what-benefits-does-chisel-offer-over-classic-hardware-description-languages) about why it's worth trying Chisel (an alternative to ROHD) contains valuable insight into why it is difficult in general to justify a new language to someone who hasn't used it before:
 
-> Language *power* is notoriously difficult to objectively evaluate. Paul Graham describes this as the "Blub Paradox" in his ["Beating the Averages"](http://www.paulgraham.com/avg.html) essay. Graham's thesis is that an engineer proficient in a less powerful language cannot evaluate the utility of a more powerful language.
+> Language *power* is notoriously difficult to objectively evaluate. Paul Graham describes this as the "Blub Paradox" in his ["Beating the Averages" essay](http://www.paulgraham.com/avg.html). Graham's thesis is that an engineer proficient in a less powerful language cannot evaluate the utility of a more powerful language.
 
 If you're thinking "SystemVerilog is just fine, I don't need something new", it is worth reading either or both of the StackOverflow answer and the Paul Graham essay.
 
 ### More Information on Dart
 
-Try out Dart instantly from your browser here (it supports ROHD too!): [https://dartpad.dev/?null_safety=true](https://dartpad.dev/?null_safety=true)
+Try out Dart instantly from your browser here (it supports ROHD too!): <https://dartpad.dev/?null_safety=true>
 
-See some Dart language samples here: [https://dart.dev/samples](https://dart.dev/samples)
+See some Dart language samples here: <https://dart.dev/samples>
 
-For more information on Dart and tutorials, see [https://dart.dev/](https://dart.dev/) and [https://dart.dev/overview](https://dart.dev/overview)
+For more information on Dart and tutorials, see <https://dart.dev/> and <https://dart.dev/overview>

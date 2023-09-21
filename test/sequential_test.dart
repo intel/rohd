@@ -96,6 +96,35 @@ class ShorthandSeqModule extends Module {
   }
 }
 
+class SeqResetValTypes extends Module {
+  SeqResetValTypes(Logic reset, Logic i) : super(name: 'seqResetValTypes') {
+    reset = addInput('reset', reset);
+    i = addInput('i', i, width: 8);
+    final clk = SimpleClockGenerator(10).clk;
+
+    final a = addOutput('a', width: 8); // int
+    final b = addOutput('b', width: 8); // LogicValue
+    final c = addOutput('c', width: 8); // Logic
+    final d = addOutput('d', width: 8); // none
+
+    Sequential(
+      clk,
+      reset: reset,
+      resetValues: {
+        a: 7,
+        b: LogicValue.ofInt(12, 8),
+        c: i,
+      },
+      [
+        a < 8,
+        b < LogicValue.ofInt(13, 8),
+        c < i + 1,
+        d < 4,
+      ],
+    );
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -160,5 +189,23 @@ void main() {
       expect(testShorthand(useArrays: true, doubleResetError: true),
           throwsException);
     });
+  });
+
+  test('reset and value types', () async {
+    final dut = SeqResetValTypes(
+      Logic(),
+      Logic(width: 8),
+    );
+    await dut.build();
+
+    final vectors = [
+      Vector({'reset': 1, 'i': 17}, {}),
+      Vector({'reset': 1}, {'a': 7, 'b': 12, 'c': 17, 'd': 0}),
+      Vector({'reset': 0}, {'a': 7, 'b': 12, 'c': 17, 'd': 0}),
+      Vector({'reset': 0}, {'a': 8, 'b': 13, 'c': 18, 'd': 4}),
+    ];
+
+    await SimCompare.checkFunctionalVector(dut, vectors);
+    SimCompare.checkIverilogVector(dut, vectors);
   });
 }

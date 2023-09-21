@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # generate_coverage.sh
@@ -8,7 +8,6 @@
 #
 # 2022 May 5
 # Author: Max Korbel <max.korbel@intel.com>
-#
 
 ### WARNING ###
 # The "x" option outputs all script commands. This allows you to track
@@ -22,10 +21,10 @@ declare -r html_dir="${coverage_dir}/genhtml"
 
 # requires enabling "coverage":
 # > dart pub global activate coverage
-dart pub global run coverage:test_with_coverage --out=${coverage_dir}
+dart pub global run coverage:test_with_coverage --branch-coverage --out=${coverage_dir}
 
 # requires installing "lcov":
 # > sudo apt install lcov
-genhtml --output-directory=${html_dir} ${coverage_dir}/lcov.info
+genhtml --output-directory=${html_dir} --rc lcov_branch_coverage=1 ${coverage_dir}/lcov.info
 
 printf '\n%s\n\n' "Open ${html_dir}/index.html to review code coverage results."
