@@ -143,6 +143,16 @@ class CaseModule extends Module {
 
 enum SeqCondModuleType { caseNormal, caseZ, ifNormal }
 
+class ConditionalAssignModule extends Module {
+  ConditionalAssignModule(Logic a,): super(name: 'ConditionalAssignModule') {
+    a = addInput('a', a);
+    final c = addOutput('c');
+    Combinational([
+      c<a
+    ]);
+  }
+}
+
 class SeqCondModule extends Module {
   Logic get equal => output('equal');
   SeqCondModule(Logic clk, Logic a, {required SeqCondModuleType combType}) {
@@ -194,6 +204,20 @@ class IfBlockModule extends Module {
   }
 }
 
+class IffModule extends Module{
+    IffModule(Logic a, Logic b) : super(name:'Iffmodule'){
+      a = addInput('a', a);
+      b = addInput('b', b);
+      final c = addOutput('c');
+
+      Combinational([
+
+        
+      ])
+
+
+    }
+}
 class SingleIfBlockModule extends Module {
   SingleIfBlockModule(Logic a) : super(name: 'singleifblockmodule') {
     a = addInput('a', a);
@@ -536,6 +560,20 @@ void main() {
         Vector({'a': 0, 'b': 1}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 0}, {'c': 1, 'd': 0}),
         Vector({'a': 1, 'b': 1}, {'c': 0, 'd': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('Conditional assign module with invalid inputs', () async {
+      final mod = ConditionalAssignModule(Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'c': 1}),
+        Vector({'a': 0}, {'c': 0}),
+        Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);

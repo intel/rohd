@@ -1291,7 +1291,7 @@ class If extends Conditional {
       } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
         for (final receiver in receivers) {
-          receiverOutput(receiver).put(driverValue(iff.condition)[0]);
+          receiverOutput(receiver).put(LogicValue.x);
           if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
             drivenSignals.add(receiver);
           }
