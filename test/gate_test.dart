@@ -414,13 +414,25 @@ void main() {
     test('Mux bus', () async {
       final mod = MuxWrapper(Logic(), Logic(width: 8), Logic(width: 8));
       await mod.build();
-      final vectors = [
+      final vector1 = [
         Vector({'control': 1, 'd0': 12, 'd1': 15}, {'y': 15}),
         Vector({'control': 0, 'd0': 18, 'd1': 7}, {'y': 18}),
         Vector({'control': 0, 'd0': 3, 'd1': 6}, {'y': 3}),
+        Vector({'control': 0, 'd0': 10, 'd1': LogicValue.z}, {'y': 10}),
+        Vector({'control': 1, 'd0': LogicValue.z, 'd1': 6}, {'y': 6}),
       ];
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      final simResult = SimCompare.iverilogVector(mod, vectors);
+
+      final vector2 = [
+        Vector(
+            {'control': 1, 'd0': 6, 'd1': LogicValue.z}, {'y': LogicValue.x}),
+        Vector(
+            {'control': LogicValue.z, 'd0': 10, 'd1': 6}, {'y': LogicValue.x}),
+        Vector(
+            {'control': 0, 'd0': LogicValue.z, 'd1': 10}, {'y': LogicValue.x}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vector1 + vector2);
+      final simResult = SimCompare.iverilogVector(mod, vector1);
       expect(simResult, equals(true));
     });
 

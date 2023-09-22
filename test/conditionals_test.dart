@@ -163,6 +163,16 @@ class UniqueCase extends Module {
 
 enum SeqCondModuleType { caseNormal, caseZ, ifNormal }
 
+class ConditionalAssignModule extends Module {
+  ConditionalAssignModule(
+    Logic a,
+  ) : super(name: 'ConditionalAssignModule') {
+    a = addInput('a', a);
+    final c = addOutput('c');
+    Combinational([c < a]);
+  }
+}
+
 class SeqCondModule extends Module {
   Logic get equal => output('equal');
   SeqCondModule(Logic clk, Logic a, {required SeqCondModuleType combType}) {
@@ -210,6 +220,18 @@ class IfBlockModule extends Module {
         ElseIf(b & ~a, [c < 1, d < 0]),
         Else([c < 0, d < 1])
       ])
+    ]);
+  }
+}
+
+class IffModule extends Module {
+  IffModule(Logic a, Logic b) : super(name: 'Iffmodule') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final c = addOutput('c');
+
+    Combinational([
+      If(a, then: [c < b])
     ]);
   }
 }
@@ -537,6 +559,17 @@ void main() {
       expect(simResult, equals(true));
     });
 
+    test('if invalid ', () async {
+      final mod = IffModule(Logic(), Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1, 'b': 0}, {'c': 0}),
+        Vector({'a': LogicValue.z, 'b': 1}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.x, 'b': 0}, {'c': LogicValue.x}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+    });
+
     test('single iffblock comb', () async {
       final mod = SingleIfBlockModule(Logic());
       await mod.build();
@@ -560,6 +593,18 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
       expect(simResult, equals(true));
+    });
+
+    test('Conditional assign module with invalid inputs', () async {
+      final mod = ConditionalAssignModule(Logic());
+      await mod.build();
+      final vectors = [
+        Vector({'a': 1}, {'c': 1}),
+        Vector({'a': 0}, {'c': 0}),
+        Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
     });
 
     test('single elseifblock comb', () async {

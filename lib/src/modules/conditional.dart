@@ -856,7 +856,12 @@ class ConditionalAssign extends Conditional {
       guard(driver);
     }
 
-    _receiverOutput.put(driverValue(driver));
+    final currentValue = driverValue(driver);
+    if (!currentValue.isValid) {
+      _receiverOutput.put(LogicValue.x);
+    } else {
+      _receiverOutput.put(currentValue);
+    }
 
     if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
       drivenSignals.add(receiver);
@@ -1407,12 +1412,7 @@ class If extends Conditional {
         break;
       } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
-        for (final receiver in receivers) {
-          receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-          if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-            drivenSignals.add(receiver);
-          }
-        }
+        _driveX(drivenSignals);
         break;
       }
       // if it's 0, then continue searching down the path
