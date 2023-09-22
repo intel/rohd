@@ -48,12 +48,16 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     //non-custom needs more details
     final connections = <String>[];
+
+    // ignore: invalid_use_of_protected_member
     module.inputs.forEach((signalName, logic) {
       connections.add('.$signalName(${inputs[signalName]})');
     });
+
     module.outputs.forEach((signalName, logic) {
       connections.add('.$signalName(${outputs[signalName]})');
     });
+
     final connectionsStr = connections.join(',');
     var parameterString = '';
     if (parameters != null) {
@@ -346,6 +350,7 @@ class _SynthModuleDefinition {
 
   _SynthModuleDefinition(this.module) {
     _synthInstantiationNameUniquifier = Uniquifier(
+        // ignore: invalid_use_of_protected_member
         reservedNames: {...module.inputs.keys, ...module.outputs.keys});
 
     // start by traversing output signals
@@ -356,6 +361,7 @@ class _SynthModuleDefinition {
     }
 
     // make sure disconnected inputs are included
+    // ignore: invalid_use_of_protected_member
     for (final input in module.inputs.values) {
       inputs.add(_getSynthLogic(input, true)!);
     }
@@ -364,6 +370,7 @@ class _SynthModuleDefinition {
     for (final subModule in module.subModules) {
       _getSynthSubModuleInstantiation(subModule);
       logicsToTraverse
+        // ignore: invalid_use_of_protected_member
         ..addAll(subModule.inputs.values)
         ..addAll(subModule.outputs.values);
     }
@@ -412,6 +419,7 @@ class _SynthModuleDefinition {
             _getSynthSubModuleInstantiation(subModule);
         subModuleInstantiation.outputMapping[synthReceiver] = receiver;
 
+        // ignore: invalid_use_of_protected_member
         logicsToTraverse.addAll(subModule.inputs.values);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {

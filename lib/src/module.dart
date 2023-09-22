@@ -57,6 +57,7 @@ abstract class Module {
 
   /// A map from input port names to this [Module] to corresponding [Logic]
   /// signals.
+  @protected
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
   /// A map from output port names to this [Module] to corresponding [Logic]
