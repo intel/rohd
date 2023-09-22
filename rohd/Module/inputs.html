@@ -66,6 +66,11 @@
 
 <section class="multi-line-signature">
   
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://pub.dev/documentation/meta/1.10.0/meta/protected-constant.html">protected</a></li>
+    </ol>
+  </div>
   <span class="returntype"><a href="https://api.dart.dev/stable/3.1.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   <span class="name ">inputs</span>
   
@@ -81,7 +86,8 @@ signals.</p>
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Map&lt;String, Logic&gt; get inputs =&gt; UnmodifiableMapView&lt;String, Logic&gt;(_inputs);</code></pre>
+  <pre class="language-dart"><code class="language-dart">@protected
+Map&lt;String, Logic&gt; get inputs =&gt; UnmodifiableMapView&lt;String, Logic&gt;(_inputs);</code></pre>
 </section>
 
 </section>

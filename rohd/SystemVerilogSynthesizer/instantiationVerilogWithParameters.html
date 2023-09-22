@@ -111,12 +111,16 @@ outputs: <code>{ 'c' : 'sig_c' }</code></p>
 
   &#47;&#47;non-custom needs more details
   final connections = &lt;String&gt;[];
+
+  &#47;&#47; ignore: invalid_use_of_protected_member
   module.inputs.forEach((signalName, logic) {
     connections.add(&#39;.$signalName(${inputs[signalName]})&#39;);
   });
+
   module.outputs.forEach((signalName, logic) {
     connections.add(&#39;.$signalName(${outputs[signalName]})&#39;);
   });
+
   final connectionsStr = connections.join(&#39;,&#39;);
   var parameterString = &#39;&#39;;
   if (parameters != null) {
