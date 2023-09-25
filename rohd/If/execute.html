@@ -110,12 +110,7 @@ void execute(Set&lt;Logic&gt; drivenSignals, [void Function(Logic)? guard]) {
       break;
     } else if (driverValue(iff.condition) != LogicValue.zero) {
       &#47;&#47; x and z propagation
-      for (final receiver in receivers) {
-        receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
-        }
-      }
+      _driveX(drivenSignals);
       break;
     }
     &#47;&#47; if it&#39;s 0, then continue searching down the path
