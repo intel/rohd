@@ -51,7 +51,7 @@ class _BigLogicValue extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  /// Constructs a new [_SmallLogicValue], intended to hold values
+  /// Constructs a new [_BigLogicValue], intended to hold values
   /// with more than [_INT_BITS] bits.
   ///
   /// Set [allowInefficientRepresentation] to `true` to bypass
