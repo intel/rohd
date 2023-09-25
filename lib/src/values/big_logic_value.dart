@@ -17,7 +17,7 @@ extension BigLogicValueBigIntUtilities on BigInt {
   /// Always interprets the number as unsigned, and thus never clamps to fit.
   int toIntUnsigned(int width) {
     if (width > LogicValue._INT_BITS) {
-      throw Exception('Cannot convert to BigInt when width $width'
+      throw Exception('Cannot convert Int when width $width'
           ' is greater than ${LogicValue._INT_BITS}');
     } else if (width == LogicValue._INT_BITS) {
       // When width is 64, `BigInt.toInt()` will clamp values assuming that

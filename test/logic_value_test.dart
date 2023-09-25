@@ -1611,6 +1611,17 @@ void main() {
             expected[i]);
       }
     });
+
+    test('Unisigned BigInt Width Exception', () {
+      expect(
+          () => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
+    });
+
+    test('toInt width exception', () {
+      final val = LogicValue.ofInt(1, 100);
+      expect(val.toInt, throwsA(isA<Exception>()));
+    });
+
     test('unsigned values - int 8 bits', () {
       final a = LogicValue.ofInt(3, 8);
       final b = LogicValue.ofInt(0, 8);
