@@ -1,7 +1,50 @@
+## 0.5.0
 
-## Next
-
-- Breaking: Iterable instead of Map in Interface
+- Added `LogicArray` for N-dimensional packed and unpacked (and mixed) arrays. Added `LogicStructure` for grouping sets of related signals together in a convenient way (<https://github.com/intel/rohd/pull/375>).
+- Added a `ConditionalGroup` which can group a collection of other `Conditional`s into one `Conditional` object.
+- Breaking: some APIs which previously returned `ConditionalAssign` now return a `Conditional`, such as the `<` operator for `Logic`.
+- Updated `LogicValue.of` which now accepts a `dynamic` input and tries its best to build what you're looking for. Added `LogicValue.ofIterable` to replace the old `LogicValue.of`.
+- Added `previousValue` to `Logic` to make testbench and modelling easier for things like clock edge sampling.
+- Breaking: Modified the way `Combinational` sensitivities are implemented to improve performance and prevent some types of simulation/synthesis mismatch bugs. Added `Combinational.ssa` as a method to safely build procedural logic. `Combinational` will now throw fatal exceptions in cases of "write after read" violations. (<https://github.com/intel/rohd/pull/344>)
+- Deprecated `getReceivers`, `getDrivers`, and `getConditionals` in always blocks like `Combinational` and `Sequential` in favor of simpler and more efficient APIs `receivers`, `drivers`, and `conditionals`.
+- Breaking: shorthand notation APIs for `incr`, `decr`, `mulAssign`, and `divAssign` have been modified.
+- Replaced `IfBlock` with `If.block` (deprecated `IfBlock`).
+- Replaced `StateMachine` with `FiniteStateMachine` (deprecated `StateMachine`).
+- Added support for multi-trigger (e.g. async reset) to abstractions like `FiniteStateMachine` and `Pipeline`. Deprecated `clk` on `FiniteStateMachine` and `Pipeline`.
+- Added ability to generate an FSM diagram in mermaid from a `FiniteStateMachine`.
+- Added `PairInterface` to make it easier to build and use simple `Interface`s.
+- Breaking: `connectIO` in `Interface` now accepts `Iterable`s instead of only `Set`s.
+- Improved numerous `Exception`s throughout to provide more specific information about errors and make them easier to catch and handle.
+- Upgraded some operations to avoid generating unnecessary hardware and SystemVerilog when configured to leave a signal unchanged (e.g. `getRange`, `swizzle`, `slice`, etc.).
+- Added extension to generate randomized `LogicValue`s from a `Random`.
+- Added replication operations to `LogicValue` and `Logic`.
+- Added `equalsWithDontCare` to `LogicValue` for comparisons where invalid bits are "don't-care".
+- Improved timestamps in generated outputs to make timezones apparent.
+- Added the `flop` function to construct `FlipFlop`s in an easier way.
+- Added the `cases` function to construct simple `Case` statements in an easier way.
+- Added APIs for configuring reset and reset values in `Sequential` and flip flops.
+- Added APIs for adding an enable to flip flops.
+- Implemented a variety of performance enhancements for both build and simulation.
+- Added `tryInput` and `tryOutput` to `Module` and `tryPort` to `Interface` to more easily handle conditionally present ports by leveraging Dart's `null` safety by returning `null` if the port does not exist (instead of an exception).
+- Added `gt` and `gte` to `Logic` to make APIs more consistent.
+- Added `clog2` to `LogicValue`.
+- Added `neq` and `pow` to both `Logic` and `LogicValue`.
+- Made `LogicValue` implement `Comparable`, enabling things like sorting.
+- Enabled `WaveDumper` to recursively create necessary directories for specified output paths.
+- Fixed a bug where ports could be created with an empty string as the name (<https://github.com/intel/rohd/issues/281>).
+- Fixed a bug where generated SystemVerilog for arithmetic shift-right operations would sometimes be incorrect (<https://github.com/intel/rohd/issues/295>).
+- Fixed a bug where `SynthBuilder` would not flag an error when run on a `Module` that hadn't yet been built (<https://github.com/intel/rohd/issues/246>).
+- Disallowed signals from being connected directly to themselves in a combinational loop.
+- Fixed a bug where non-synthesizable deposits on undriven signals could affect the generated output SystemVerilog by inserting a non-floating constant (<https://github.com/intel/rohd/issues/254>).
+- Reinstated an accidentally removed exception for when signal width mismatch occurs (<https://github.com/intel/rohd/issues/311>).
+- Fixed a bug where indexing a constant value could generate invalid SystemVerilog.
+- Fixed a bug where constants and values that could be interpreted as negative 64-bit values would sometimes generate a `-` sign in output SystemVerilog.
+- Fixed bugs so `If`s that are illegally constructed throw an `Exception` (<https://github.com/intel/rohd/issues/382>).
+- Fixed a bug where `FiniteStateMachine` could create an inferred latch (<https://github.com/intel/rohd/pull/390>).
+- Fixed an issue where `Case` statements with multiple matches would throw an `Exception` instead of driving `x` on the output, which could cause spurious crashes during glitch simulation (<https://github.com/intel/rohd/issues/107>).
+- Fixed a number of bugs related to logical, shift, math, and comparison operations related to width and sign interpretation.
+- Fixed a bug where `Case` and `CaseZ` would not use the properly edge-sampled value in `Sequential` blocks (<https://github.com/intel/rohd/issues/348>).
+- Fixed bugs where logic that is driven by floating signals would sometimes drive `z` instead of `x` on outputs (<https://github.com/intel/rohd/issues/235>).
 
 ## 0.4.2
 
