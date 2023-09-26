@@ -30,6 +30,23 @@ class LogicWithInternalSignalModule extends Module {
   }
 }
 
+class ParentMod extends Module {
+  ParentMod(Logic clk, Logic a) {
+    clk = addInput('clk', clk);
+    addInput('a', a);
+
+    final otherA = Logic();
+    ChildMod(clk, otherA);
+  }
+}
+
+class ChildMod extends Module {
+  ChildMod(Logic clk, Logic a) {
+    addInput('clk', clk);
+    addInput('a', a);
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -78,5 +95,12 @@ void main() {
     await mod.build();
 
     expect(mod.generateSynth(), contains('shouldExist'));
+  });
+
+  test('unconnected port does not duplicate internal signal', () async {
+    final pMod = ParentMod(Logic(), Logic());
+    await pMod.build();
+    final sv = pMod.generateSynth();
+    expect(RegExp('logic a[,;\n]').allMatches(sv).length, 2);
   });
 }
