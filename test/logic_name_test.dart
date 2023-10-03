@@ -47,6 +47,33 @@ class ChildMod extends Module {
   }
 }
 
+class SensitiveNaming extends Module {
+  SensitiveNaming(Logic a) {
+    a = addInput('a', a);
+    final b = Logic(name: 'b');
+    final clk = Logic(name: 'myClock');
+    b <= a;
+    final c = Logic(name: 'c');
+    final d = Logic(name: 'd');
+    d <= c;
+    final e = addOutput('e');
+    e <= a & d;
+    c <= flop(clk, b);
+  }
+}
+
+class BusSubsetNaming extends Module {
+  BusSubsetNaming(Logic a) {
+    a = addInput('a', a, width: 32);
+    final b = Logic(name: 'b', width: 32);
+    b <= flop(Logic(name: 'clk'), a);
+    final c = Logic(name: 'c');
+    c <= b[3];
+    final d = addOutput('d');
+    d <= c;
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -102,5 +129,19 @@ void main() {
     await pMod.build();
     final sv = pMod.generateSynth();
     expect(RegExp('logic a[,;\n]').allMatches(sv).length, 2);
+  });
+
+  group('sensitive naming', () {
+    test('assigns and gates', () async {
+      final mod = SensitiveNaming(Logic(name: 'bad'));
+      await mod.build();
+      print(mod.generateSynth());
+    });
+
+    test('bus subset', () async {
+      final mod = BusSubsetNaming(Logic(name: 'bad', width: 32));
+      await mod.build();
+      print(mod.generateSynth());
+    });
   });
 }

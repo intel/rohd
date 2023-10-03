@@ -200,6 +200,52 @@ class Logic {
   /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isPort => isInput || isOutput;
 
+  // Characteristics of a signal name:
+  //  Can it be merged with another signal?
+  //  Is it a port?
+  //  Is it a signal that must keep it's name there?
+  //  Can it be uniquified?
+  //  Is it unprefferred (ideally not present in the output)?
+
+  // Mergeable
+  // Reserved
+  // Uniquifiable
+
+  // Types of signals
+  // - unnamed internal signals (prefer to remove)
+  // - unprefferred port names for inline verilog (better than unnamed)
+  // - port names on real modules (reserved)
+  // - named internal signals, uniquifiable (name can change, but prefer original)/
+  // - named internal signals, reserved (name cannot change, error)
+  // - named internal signals, mergeable (can be omitted from output for equivalent assignments/)
+
+  // Flags
+  // - Preference level
+  //   - prefer not present
+  //   - neutral
+  //   - prefer present
+  // - Must be present, uniquifiable
+  // - Must be present and reserved name
+
+  // Mergeable
+  // Uniquifiable
+  // Preference
+
+  // API
+  //  - reserved : bool
+  //  - name : String?
+  //  - preferred : bool?
+
+  // When picking names
+  // - First all the ports
+  // - Then all the reserved
+  // - Then uniquify
+  // - Then collapse
+  // - Then restore/re-uniquify
+
+  // Add flag to signals whether they can be merged with an expression
+  // like merge RULES: can merge, but can't with an expression
+
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
   /// The default value for [width] is 1.  The [name] should be synthesizable
