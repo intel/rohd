@@ -153,14 +153,16 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
         .map((sig) => 'input logic ${sig.definitionName()}')
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort();
     return declarations;
   }
 
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
         .map((sig) => 'output logic ${sig.definitionName()}')
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort();
     return declarations;
   }
 
@@ -171,6 +173,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         declarations.add('logic ${sig.definitionName()};');
       }
     }
+    declarations.sort();
     return declarations.join('\n');
   }
 
