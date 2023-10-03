@@ -31,21 +31,53 @@ class AlphabeticalModule extends Module {
   }
 }
 
+class AlphabeticalWidthsModule extends Module {
+  AlphabeticalWidthsModule() {
+    final l = addInput('l', Logic(width: 4), width: 4);
+    final a = addInput('a', Logic(width: 3), width: 3);
+    final w = addInput('w', Logic(width: 2), width: 2);
+
+    final o = Logic(name: 'o', width: 4);
+    final c = Logic(name: 'c', width: 3);
+    final y = Logic(name: 'y', width: 2);
+
+    c <= a & a;
+    o <= l | l;
+    y <= w ^ w;
+
+    addOutput('m', width: 4) <= o + o;
+    addOutput('x', width: 2) <= y + y;
+    addOutput('b', width: 3) <= c + c;
+  }
+}
+
 void main() {
+  void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
+    final expected =
+        signalNames.map((e) => RegExp(r'logic\s*\[?[:\d\s]*]?\s*' + e));
+    final indices = expected.map(sv.indexOf);
+    expect(indices.isSorted((a, b) => a.compareTo(b)), isTrue,
+        reason: 'Expected order $signalNames, but indices were $indices');
+  }
+
   test('input, output, and internal signals are sorted', () async {
     final mod = AlphabeticalModule();
     await mod.build();
     final sv = mod.generateSynth();
 
-    void checkSignalDeclarationOrder(List<String> signalNames) {
-      final expected = signalNames.map((e) => 'logic $e');
-      final indices = expected.map(sv.indexOf);
-      expect(indices.isSorted((a, b) => a.compareTo(b)), isTrue,
-          reason: 'Expected order $expected, but indices were $indices');
-    }
+    checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
+    checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+    checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
+  });
 
-    checkSignalDeclarationOrder(['a', 'l', 'w']);
-    checkSignalDeclarationOrder(['b', 'm', 'x']);
-    checkSignalDeclarationOrder(['c', 'o', 'y']);
+  test('input, output, and internal signals are sorted (different widths)',
+      () async {
+    final mod = AlphabeticalWidthsModule();
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
+    checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+    checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
   });
 }

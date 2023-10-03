@@ -7,6 +7,7 @@
 // 2021 August 26
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -152,28 +153,28 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
+        .sorted((a, b) => a.name.compareTo(b.name))
         .map((sig) => 'input logic ${sig.definitionName()}')
-        .toList(growable: false)
-      ..sort();
+        .toList(growable: false);
     return declarations;
   }
 
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
+        .sorted((a, b) => a.name.compareTo(b.name))
         .map((sig) => 'output logic ${sig.definitionName()}')
-        .toList(growable: false)
-      ..sort();
+        .toList(growable: false);
     return declarations;
   }
 
   String _verilogInternalNets() {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalNets) {
+    for (final sig in _synthModuleDefinition.internalNets
+        .sorted((a, b) => a.name.compareTo(b.name))) {
       if (sig.needsDeclaration) {
         declarations.add('logic ${sig.definitionName()};');
       }
     }
-    declarations.sort();
     return declarations.join('\n');
   }
 
