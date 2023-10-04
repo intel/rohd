@@ -51,11 +51,11 @@ class SystemVerilogSynthesizer extends Synthesizer {
     final connections = <String>[];
 
     // ignore: invalid_use_of_protected_member
-    module.inputs.forEach((signalName, logic) {
+    module.inputs.keys.sorted((a, b) => a.compareTo(b)).forEach((signalName) {
       connections.add('.$signalName(${inputs[signalName]})');
     });
 
-    module.outputs.forEach((signalName, logic) {
+    module.outputs.keys.sorted((a, b) => a.compareTo(b)).forEach((signalName) {
       connections.add('.$signalName(${outputs[signalName]})');
     });
 

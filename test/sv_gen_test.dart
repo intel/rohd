@@ -12,10 +12,10 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class AlphabeticalModule extends Module {
-  AlphabeticalModule() {
-    final l = addInput('l', Logic());
-    final a = addInput('a', Logic());
-    final w = addInput('w', Logic());
+  AlphabeticalModule(Logic l, Logic a, Logic w) {
+    l = addInput('l', l);
+    a = addInput('a', a);
+    w = addInput('w', w);
 
     final o = Logic(name: 'o');
     final c = Logic(name: 'c');
@@ -51,33 +51,70 @@ class AlphabeticalWidthsModule extends Module {
   }
 }
 
-void main() {
-  void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
-    final expected =
-        signalNames.map((e) => RegExp(r'logic\s*\[?[:\d\s]*]?\s*' + e));
-    final indices = expected.map(sv.indexOf);
-    expect(indices.isSorted((a, b) => a.compareTo(b)), isTrue,
-        reason: 'Expected order $signalNames, but indices were $indices');
+class AlphabeticalSubmodulePorts extends Module {
+  AlphabeticalSubmodulePorts() {
+    final l = addInput('l', Logic());
+    final a = addInput('a', Logic());
+    final w = addInput('w', Logic());
+
+    final am = AlphabeticalModule(l, a, w);
+
+    addOutput('m') <= am.output('m');
+    addOutput('x') <= am.output('x');
+    addOutput('b') <= am.output('b');
   }
+}
 
-  test('input, output, and internal signals are sorted', () async {
-    final mod = AlphabeticalModule();
-    await mod.build();
-    final sv = mod.generateSynth();
+void main() {
+  group('signal declaration order', () {
+    void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
+      final expected =
+          signalNames.map((e) => RegExp(r'logic\s*\[?[:\d\s]*]?\s*' + e));
+      final indices = expected.map(sv.indexOf);
+      expect(indices.isSorted((a, b) => a.compareTo(b)), isTrue,
+          reason: 'Expected order $signalNames, but indices were $indices');
+    }
 
-    checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-    checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
-    checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
+    test('input, output, and internal signals are sorted', () async {
+      final mod = AlphabeticalModule(Logic(), Logic(), Logic());
+      await mod.build();
+      final sv = mod.generateSynth();
+
+      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
+      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
+
+      checkSignalDeclarationOrder(
+          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+    });
+
+    test('input, output, and internal signals are sorted (different widths)',
+        () async {
+      final mod = AlphabeticalWidthsModule();
+      await mod.build();
+      final sv = mod.generateSynth();
+
+      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
+      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
+
+      checkSignalDeclarationOrder(
+          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+    });
   });
 
-  test('input, output, and internal signals are sorted (different widths)',
-      () async {
-    final mod = AlphabeticalWidthsModule();
+  test('submodule port connections input, output are sorted', () async {
+    void checkPortConnectionOrder(String sv, List<String> signalNames) {
+      final expected = signalNames.map((e) => '.$e($e)');
+      final indices = expected.map(sv.indexOf);
+      expect(indices.isSorted((a, b) => a.compareTo(b)), isTrue,
+          reason: 'Expected order $signalNames, but indices were $indices');
+    }
+
+    final mod = AlphabeticalSubmodulePorts();
     await mod.build();
     final sv = mod.generateSynth();
 
-    checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-    checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
-    checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
+    checkPortConnectionOrder(sv, ['a', 'l', 'w', 'b', 'm', 'x']);
   });
 }
