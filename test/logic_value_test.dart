@@ -33,7 +33,7 @@ void main() {
     test('and2', () {
       // test z & 1 == x, rest unchanged
       expect(lv('01xz') & lv('1111'), equals(lv('01xx')));
-      // Large filled test of * & 1
+      // La
       for (final v in allLv) {
         expect(large(v) & large(LogicValue.one),
             equals(large(v & LogicValue.one)));
@@ -108,6 +108,75 @@ void main() {
           throwsA(isA<LogicValueConstructionException>()));
       expect(() => LogicValue.ofString('a'),
           throwsA(isA<LogicValueConstructionException>()));
+    });
+
+    test('LogicValue Construction', () {
+      expect(LogicValue.of(1, fill: true, width: 2),
+          equals(LogicValue.filled(2, LogicValue.one)));
+      expect(LogicValue.of(BigInt.one, fill: true, width: 2),
+          equals(LogicValue.filled(2, LogicValue.one)));
+      expect(LogicValue.of(true, fill: true), equals(LogicValue.one));
+      expect(LogicValue.of('z'), equals(LogicValue.z));
+      expect(LogicValue.of('1', fill: true, width: 4),
+          equals(LogicValue.filled(4, LogicValue.one)));
+      expect(LogicValue.of('1111'), equals(LogicValue.ofString('1111')));
+      expect(
+          LogicValue.of('1111', width: 2), equals(LogicValue.ofString('11')));
+      expect(LogicValue.of('1111', width: 8),
+          equals(LogicValue.ofString('00001111')));
+      expect(LogicValue.of([LogicValue.zero], width: 4),
+          equals(LogicValue.filled(4, LogicValue.zero)));
+      expect(LogicValue.of([LogicValue.one, LogicValue.x]),
+          equals(LogicValue.ofIterable([LogicValue.one, LogicValue.x])));
+      expect(
+          LogicValue.of(
+              [LogicValue.one, LogicValue.x, LogicValue.ofString('1010')],
+              width: 1),
+          equals(LogicValue.one));
+      expect(
+          LogicValue.of(
+              [LogicValue.one, LogicValue.x, LogicValue.ofString('1010')],
+              width: 8),
+          equals(LogicValue.ofString('001010x1')));
+
+      LogicValue.filled(4, LogicValue.one);
+
+      // Exceptions
+      expect(() => LogicValue.filled(1, LogicValue.filled(5, LogicValue.one)),
+          throwsA(isA<Exception>()));
+      LogicValue.of(1, fill: true, width: 2);
+      expect(() => LogicValue.of(45),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(45, fill: true, width: 2),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(BigInt.from(1234567)),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(BigInt.from(1234567), fill: true, width: 2),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () => LogicValue.of(LogicValue.filled(2, LogicValue.zero),
+              fill: true, width: 4),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () =>
+              LogicValue.of(LogicValue.filled(2, LogicValue.zero), fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () =>
+              LogicValue.of(LogicValue.filled(1, LogicValue.zero), fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of('22', fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of('1', fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of([LogicValue.zero, LogicValue.one], fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of([LogicValue.zero], fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(null),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () => LogicValue.of(Null), throwsA(isA<UnsupportedTypeException>()));
     });
 
     test('unary', () {
@@ -246,6 +315,18 @@ void main() {
           // test length mismatch
           () => LogicValue.ofString('0') & LogicValue.ofString('01'),
           throwsA(isA<Exception>()));
+      expect(
+          // test for _SmallLogicValue case condition
+          LogicValue.filled(4, LogicValue.x) & LogicValue.ofInt(5, 4),
+          equals(LogicValue.ofString('0x0x')));
+      expect(
+          // test for _SmallLogicValue case condition
+          LogicValue.filled(4, LogicValue.x) | LogicValue.ofInt(5, 4),
+          equals(LogicValue.ofString('x1x1')));
+      expect(
+          // test for _BigLogicValue case condition
+          LogicValue.filled(65, LogicValue.x) & LogicValue.ofInt(55, 65),
+          equals(LogicValue.ofString('${'0' * 59}xx0xxx')));
     });
 
     test('or2', () {
@@ -261,13 +342,32 @@ void main() {
       expect(
           // test ofBigInt - success
           LogicValue.ofBigInt(BigInt.one, 65) |
-              LogicValue.ofBigInt(BigInt.zero, 65),
+              LogicValue.ofBigInt(BigInt.one, 65),
           equals(LogicValue.ofBigInt(BigInt.one, 65)));
       expect(
           // test ofBigInt
           LogicValue.ofBigInt(BigInt.one, 32) |
               LogicValue.ofBigInt(BigInt.zero, 32),
           equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test ofBigInt
+          LogicValue.of(BigInt.one, fill: true, width: 65) |
+              LogicValue.ofBigInt(BigInt.from(1), 65),
+          equals(LogicValue.filled(65, LogicValue.one)));
+      expect(
+          // test of filled
+          LogicValue.of('01xz', width: 65) |
+              LogicValue.of(BigInt.parse('1111'), width: 65),
+          equals(LogicValue.ofBigInt(BigInt.from(1111), 65)));
+      expect(
+          // test of filled - SmallLogicValue
+          LogicValue.of('zzzz', width: 4) | LogicValue.of('00zz', width: 4),
+          equals(LogicValue.filled(4, LogicValue.x)));
+      expect(
+          // test of filled - BigLogicValue
+          LogicValue.filled(65, LogicValue.z) |
+              LogicValue.of('1010', width: 65),
+          equals(LogicValue.ofString('${'x' * 59}xx1x1x')));
     });
 
     test('xor2', () {
@@ -281,6 +381,29 @@ void main() {
           LogicValue.ofIterable([LogicValue.one, LogicValue.zero]) ^
               LogicValue.ofIterable([LogicValue.one, LogicValue.zero]),
           equals(LogicValue.ofIterable([LogicValue.zero, LogicValue.zero])));
+      expect(
+          // test of filled SmallLogicValue - 0
+          LogicValue.filled(2, LogicValue.zero) ^ LogicValue.ofString('01'),
+          equals(LogicValue.ofString('01')));
+      expect(
+          // test of filled BigLogicValue - 0
+          LogicValue.filled(65, LogicValue.zero) ^
+              LogicValue.ofBigInt(BigInt.from(5), 65),
+          equals(LogicValue.ofBigInt(BigInt.from(5), 65)));
+      expect(
+          // test of filled SmallLogicValue - 1
+          LogicValue.filled(2, LogicValue.one) ^ LogicValue.ofString('01'),
+          equals(LogicValue.ofString('10')));
+      expect(
+          // test of filled BigLogicValue - 1
+          LogicValue.filled(65, LogicValue.one) ^
+              LogicValue.ofBigInt(BigInt.zero, 65),
+          equals(LogicValue.filled(65, LogicValue.one)));
+      expect(
+          // test of filled BigLogicValue - 1
+          LogicValue.filled(65, LogicValue.one) ^
+              LogicValue.ofString('${'1' * 61}0000'),
+          equals(LogicValue.of(BigInt.from(15), width: 65)));
     });
   });
 
@@ -1612,14 +1735,9 @@ void main() {
       }
     });
 
-    test('Unisigned BigInt Width Exception', () {
+    test('Unsigned BigInt Width Exception', () {
       expect(
           () => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
-    });
-
-    test('toInt width exception', () {
-      final val = LogicValue.ofInt(1, 100);
-      expect(val.toInt, throwsA(isA<Exception>()));
     });
 
     test('unsigned values - int 8 bits', () {
