@@ -75,7 +75,10 @@
         
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">late final Logic out = output(_outName);</code></pre>
+  <pre class="language-dart"><code class="language-dart">late final Logic out = _outputSvWidthExpansion
+    &#47;&#47; this is sub-optimal, but it&#39;s tricky to make special SV for it
+    ? BusSubset(output(_outName), 0, width - 1).subset
+    : output(_outName);</code></pre>
 </section>
 
 

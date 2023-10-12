@@ -109,6 +109,11 @@ LogicValue.ofString('0101').getRange(0, 7);
   final modifiedEndIndex =
       IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
 
+  &#47;&#47; if we&#39;re getting the whole thing, just return itself immediately
+  if (modifiedStartIndex == 0 &amp;&amp; modifiedEndIndex == width) {
+    return this;
+  }
+
   IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
   return _getRange(modifiedStartIndex, modifiedEndIndex);
