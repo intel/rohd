@@ -322,23 +322,15 @@ class Logic {
   Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator +(dynamic other) => Add(this, other).out;
 
   /// Subtraction.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator -(dynamic other) => Subtract(this, other).out;
 
   /// Multiplication.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator *(dynamic other) => Multiply(this, other).out;
 
   /// Division.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator /(dynamic other) => Divide(this, other).out;
 
   /// Modulo operation.

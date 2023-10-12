@@ -141,7 +141,10 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   late final Logic _in1 = input(_in1Name);
 
   /// The output of this gate.
-  late final Logic out = output(_outName);
+  late final Logic out = _outputSvWidthExpansion
+      // this is sub-optimal, but it's tricky to make special SV for it
+      ? BusSubset(output(_outName), 0, width - 1).subset
+      : output(_outName);
 
   /// The output of this gate.
   ///
@@ -155,6 +158,13 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// The `String` representing the operation to perform in generated code.
   final String _opStr;
 
+  /// The width of the inputs and outputs for this operation.
+  final int width;
+
+  /// If true, then the output generated SystemVerilog may have a larger width
+  /// than the inputs, which should be considered in generated verilog.
+  final bool _outputSvWidthExpansion;
+
   /// Constructs a two-input bitwise gate for an abitrary custom functional
   /// implementation.
   ///
@@ -163,22 +173,23 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// String between the two input signal names (e.g. if [_opStr] was "&",
   /// generated SystemVerilog may look like "a & b").
   _TwoInputBitwiseGate(this._op, this._opStr, Logic in0, dynamic in1,
-      {String name = 'gate2'})
-      : super(name: name) {
+      {String name = 'gate2', bool outputSvWidthExpansion = false})
+      : width = in0.width,
+        _outputSvWidthExpansion = outputSvWidthExpansion,
+        super(name: name) {
     if (in1 is Logic && in0.width != in1.width) {
-      throw Exception('Input widths must match,'
-          ' but found $in0 and $in1 with different widths.');
+      throw PortWidthMismatchException.equalWidth(in0, in1);
     }
 
-    final in1Logic = in1 is Logic ? in1 : Const(in1, width: in0.width);
+    final in1Logic = in1 is Logic ? in1 : Const(in1, width: width);
 
     _in0Name = Module.unpreferredName('in0_${in0.name}');
     _in1Name = Module.unpreferredName('in1_${in1Logic.name}');
     _outName = Module.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
 
-    addInput(_in0Name, in0, width: in0.width);
-    addInput(_in1Name, in1Logic, width: in1Logic.width);
-    addOutput(_outName, width: in0.width);
+    addInput(_in0Name, in0, width: width);
+    addInput(_in1Name, in1Logic, width: width);
+    addOutput(_outName, width: width + (_outputSvWidthExpansion ? 1 : 0));
 
     _setup();
   }
@@ -315,7 +326,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   late final String _inName;
 
   /// Name for the shift amount input port of this module.
-  late final String _shiftAmountName;
+  late String _shiftAmountName;
 
   /// Name for the output port of this module.
   late final String _outName;
@@ -338,6 +349,13 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// Whether or not this gate operates on a signed number.
   final bool signed;
 
+  /// The width of the output for this operation.
+  final int width;
+
+  /// If true, then the output generated SystemVerilog may have a larger width
+  /// than the inputs, which should be considered in generated verilog.
+  final bool _outputSvWidthExpansion;
+
   /// Constructs a two-input shift gate for an abitrary custom functional
   /// implementation.
   ///
@@ -346,21 +364,34 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// String between the two input signal names (e.g. if [_opStr] was ">>",
   /// generated SystemVerilog may look like "a >> b").
   _ShiftGate(this._op, this._opStr, Logic in_, dynamic shiftAmount,
-      {String name = 'gate2', this.signed = false})
-      : super(name: name) {
+      {String name = 'gate2',
+      this.signed = false,
+      bool outputSvWidthExpansion = false})
+      : width = in_.width,
+        _outputSvWidthExpansion = outputSvWidthExpansion,
+        super(name: name) {
     final shiftAmountLogic = shiftAmount is Logic
         ? shiftAmount
-        : Const(LogicValue.ofInferWidth(shiftAmount));
+        : Const(_outputSvWidthExpansion
+            ? LogicValue.of(shiftAmount, width: width)
+            : LogicValue.ofInferWidth(shiftAmount));
 
     _inName = Module.unpreferredName('in_${in_.name}');
-    _shiftAmountName =
-        Module.unpreferredName('shiftAmount_${shiftAmountLogic.name}');
+
+    _shiftAmountName = 'shiftAmount_${shiftAmountLogic.name}';
+    if (!_outputSvWidthExpansion) {
+      // if we have width expansion, then we want to avoid any constants as
+      // the shift amount since that gets complicated...
+      // so as a proxy for now, just always shove a shiftAmount here
+      _shiftAmountName = Module.unpreferredName(_shiftAmountName);
+    }
+
     _outName =
         Module.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
 
     addInput(_inName, in_, width: in_.width);
     addInput(_shiftAmountName, shiftAmountLogic, width: shiftAmountLogic.width);
-    addOutput(_outName, width: in_.width);
+    addOutput(_outName, width: width);
 
     _setup();
   }
@@ -437,7 +468,8 @@ class Add extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or [int].
   Add(Logic in0, dynamic in1, {String name = 'add'})
-      : super((a, b) => a + b, '+', in0, in1, name: name);
+      : super((a, b) => a + b, '+', in0, in1,
+            name: name, outputSvWidthExpansion: true);
 }
 
 /// A two-input subtraction module.
@@ -574,7 +606,8 @@ class ARShift extends _ShiftGate {
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
   LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
-      : super((a, shamt) => a << shamt, '<<', in_, shiftAmount, name: name);
+      : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
+            name: name, outputSvWidthExpansion: true);
 }
 
 /// Performs a multiplexer/ternary operation.

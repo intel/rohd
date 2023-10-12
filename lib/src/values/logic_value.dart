@@ -737,6 +737,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
     final modifiedEndIndex =
         IndexUtilities.wrapIndex(endIndex, width, allowWidth: true);
 
+    // if we're getting the whole thing, just return itself immediately
+    if (modifiedStartIndex == 0 && modifiedEndIndex == width) {
+      return this;
+    }
+
     IndexUtilities.validateRange(modifiedStartIndex, modifiedEndIndex);
 
     return _getRange(modifiedStartIndex, modifiedEndIndex);
