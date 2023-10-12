@@ -73,13 +73,32 @@ void main() {
     await Simulator.reset();
   });
 
+  test('sv expansion does slices', () async {
+    final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+    await gtm.build();
+
+    final sv = gtm.generateSynth();
+    final lines = sv.split('\n');
+
+    final bannedLines = [
+      // should never assign directly off a +
+      RegExp(r'plus.*\+'),
+
+      // should never assign directly off a <<
+      RegExp(r'sl.*\<<'),
+    ];
+
+    for (final bannedLine in bannedLines) {
+      expect(lines.where(bannedLine.hasMatch), isEmpty);
+    }
+  });
+
   group('simcompare', () {
     Future<void> runMathVectors(List<Vector> vectors) async {
       final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     }
 
     test('power', () async {
@@ -105,8 +124,6 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_plus_b': 2}),
         Vector({'a': 6, 'b': 7}, {'a_plus_b': 13}),
         Vector({'a': 6}, {'a_plus_const': 11}),
-        // Vector({'a': -6, 'b': 7}, {'a_plus_b': 1}),
-        // Vector({'a': -6, 'b': 2}, {'a_plus_b': -4}),
       ]);
     });
 
