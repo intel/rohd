@@ -80,16 +80,21 @@ void main() {
     final sv = gtm.generateSynth();
     final lines = sv.split('\n');
 
-    final bannedLines = [
-      // should never assign directly off a +
-      RegExp(r'plus.*\+'),
+    // should never assign directly off a +
+    expect(lines.where(RegExp(r'plus.*\+').hasMatch), isEmpty);
 
-      // should never assign directly off a <<
-      RegExp(r'sl.*\<<'),
-    ];
+    // ensure the width of intermediate signals appropriate for add
+    for (final line in lines) {
+      if (RegExp('logic.*a_add').hasMatch(line)) {
+        expect(line, contains('8:0'));
+      }
+    }
 
-    for (final bannedLine in bannedLines) {
-      expect(lines.where(bannedLine.hasMatch), isEmpty);
+    // ensure we never lshift by a constant directly
+    for (final line in lines) {
+      if (RegExp('assign.*a_lshift.*const.*=').hasMatch(line)) {
+        expect(line, contains('shiftAmount'));
+      }
     }
   });
 

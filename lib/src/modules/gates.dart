@@ -189,7 +189,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width);
+    addOutput(_outName, width: width + (_outputSvWidthExpansion ? 1 : 0));
 
     _setup();
   }
@@ -326,7 +326,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   late final String _inName;
 
   /// Name for the shift amount input port of this module.
-  late final String _shiftAmountName;
+  late String _shiftAmountName;
 
   /// Name for the output port of this module.
   late final String _outName;
@@ -338,10 +338,7 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   late final Logic _shiftAmount = input(_shiftAmountName);
 
   /// The output of this gate.
-  late final Logic out = _outputSvWidthExpansion
-      // this is sub-optimal, but it's tricky to make special SV for it
-      ? BusSubset(output(_outName), 0, width - 1).subset
-      : output(_outName);
+  late final Logic out = output(_outName);
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in_, LogicValue shiftAmount) _op;
@@ -375,11 +372,20 @@ class _ShiftGate extends Module with InlineSystemVerilog {
         super(name: name) {
     final shiftAmountLogic = shiftAmount is Logic
         ? shiftAmount
-        : Const(LogicValue.ofInferWidth(shiftAmount));
+        : Const(_outputSvWidthExpansion
+            ? LogicValue.of(shiftAmount, width: width)
+            : LogicValue.ofInferWidth(shiftAmount));
 
     _inName = Module.unpreferredName('in_${in_.name}');
-    _shiftAmountName =
-        Module.unpreferredName('shiftAmount_${shiftAmountLogic.name}');
+
+    _shiftAmountName = 'shiftAmount_${shiftAmountLogic.name}';
+    if (!_outputSvWidthExpansion) {
+      // if we have width expansion, then we want to avoid any constants as
+      // the shift amount since that gets complicated...
+      // so as a proxy for now, just always shove a shiftAmount here
+      _shiftAmountName = Module.unpreferredName(_shiftAmountName);
+    }
+
     _outName =
         Module.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
 
