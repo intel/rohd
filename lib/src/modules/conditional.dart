@@ -378,6 +378,11 @@ class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
+  /// When `false`, an [SignalRedrivenException] will be thrown during
+  /// simulation if the same signal is driven multiple times within this
+  /// [Sequential].
+  final bool allowMultipleAssignments;
+
   /// Constructs a [Sequential] single-triggered by [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
@@ -387,12 +392,21 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential(Logic clk, List<Conditional> conditionals,
-      {Logic? reset,
-      Map<Logic, dynamic>? resetValues,
-      String name = 'sequential'})
-      : this.multi([clk], conditionals,
-            name: name, reset: reset, resetValues: resetValues);
+  Sequential(
+    Logic clk,
+    List<Conditional> conditionals, {
+    Logic? reset,
+    Map<Logic, dynamic>? resetValues,
+    bool allowMultipleAssignments = true,
+    String name = 'sequential',
+  }) : this.multi(
+          [clk],
+          conditionals,
+          name: name,
+          reset: reset,
+          resetValues: resetValues,
+          allowMultipleAssignments: allowMultipleAssignments,
+        );
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
   ///
@@ -403,8 +417,14 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential.multi(List<Logic> clks, super._conditionals,
-      {super.reset, super.resetValues, super.name = 'sequential'}) {
+  Sequential.multi(
+    List<Logic> clks,
+    super._conditionals, {
+    super.reset,
+    super.resetValues,
+    super.name = 'sequential',
+    this.allowMultipleAssignments = true,
+  }) {
     if (clks.isEmpty) {
       throw IllegalConfigurationException('Must provide at least one clock.');
     }
@@ -547,12 +567,18 @@ class Sequential extends _Always {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      final allDrivenSignals = DuplicateDetectionSet<Logic>();
-      for (final element in conditionals) {
-        element.execute(allDrivenSignals, null);
-      }
-      if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(allDrivenSignals.duplicates);
+      if (allowMultipleAssignments) {
+        for (final element in conditionals) {
+          element.execute(null, null);
+        }
+      } else {
+        final allDrivenSignals = DuplicateDetectionSet<Logic>();
+        for (final element in conditionals) {
+          element.execute(allDrivenSignals, null);
+        }
+        if (allDrivenSignals.hasDuplicates) {
+          throw SignalRedrivenException(allDrivenSignals.duplicates);
+        }
       }
     }
 
@@ -642,7 +668,7 @@ abstract class Conditional {
   /// which consumes the current value of those drivers.  It is used to check
   /// that signals are not "written after read", for example.
   @protected
-  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard);
+  void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -752,10 +778,11 @@ abstract class Conditional {
       {required int context});
 
   /// Drives X to all receivers.
-  void _driveX(Set<Logic> drivenSignals) {
+  void _driveX(Set<Logic>? drivenSignals) {
     for (final receiver in receivers) {
       receiverOutput(receiver).put(LogicValue.x);
-      if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+      if (drivenSignals != null &&
+          (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
         drivenSignals.add(receiver);
       }
     }
@@ -794,7 +821,7 @@ class ConditionalGroup extends Conditional {
       [for (final conditional in conditionals) ...conditional.receivers];
 
   @override
-  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
+  void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard) {
     for (final conditional in conditionals) {
       conditional.execute(drivenSignals, guard);
     }
@@ -850,7 +877,7 @@ class ConditionalAssign extends Conditional {
   late final _receiverOutput = receiverOutput(receiver);
 
   @override
-  void execute(Set<Logic> drivenSignals,
+  void execute(Set<Logic>? drivenSignals,
       [void Function(Logic toGuard)? guard]) {
     if (guard != null) {
       guard(driver);
@@ -863,7 +890,8 @@ class ConditionalAssign extends Conditional {
       _receiverOutput.put(currentValue);
     }
 
-    if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+    if (drivenSignals != null &&
+        (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
       drivenSignals.add(receiver);
     }
   }
@@ -1053,7 +1081,7 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+  void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       guard(expression);
       for (final item in items) {
@@ -1397,7 +1425,7 @@ class If extends Conditional {
   }
 
   @override
-  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+  void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       for (final iff in iffs) {
         guard(iff.condition);

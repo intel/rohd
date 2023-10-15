@@ -7,6 +7,7 @@
 // 2021 August 26
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -50,11 +51,11 @@ class SystemVerilogSynthesizer extends Synthesizer {
     final connections = <String>[];
 
     // ignore: invalid_use_of_protected_member
-    module.inputs.forEach((signalName, logic) {
+    module.inputs.keys.sorted((a, b) => a.compareTo(b)).forEach((signalName) {
       connections.add('.$signalName(${inputs[signalName]})');
     });
 
-    module.outputs.forEach((signalName, logic) {
+    module.outputs.keys.sorted((a, b) => a.compareTo(b)).forEach((signalName) {
       connections.add('.$signalName(${outputs[signalName]})');
     });
 
@@ -152,6 +153,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
+        .sorted((a, b) => a.name.compareTo(b.name))
         .map((sig) => 'input logic ${sig.definitionName()}')
         .toList(growable: false);
     return declarations;
@@ -159,6 +161,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
+        .sorted((a, b) => a.name.compareTo(b.name))
         .map((sig) => 'output logic ${sig.definitionName()}')
         .toList(growable: false);
     return declarations;
@@ -166,7 +169,8 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   String _verilogInternalNets() {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalNets) {
+    for (final sig in _synthModuleDefinition.internalNets
+        .sorted((a, b) => a.name.compareTo(b.name))) {
       if (sig.needsDeclaration) {
         declarations.add('logic ${sig.definitionName()};');
       }

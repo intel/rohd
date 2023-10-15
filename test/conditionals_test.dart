@@ -391,7 +391,8 @@ class SingleElseModule extends Module {
 }
 
 class SignalRedrivenSequentialModule extends Module {
-  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d)
+  SignalRedrivenSequentialModule(Logic a, Logic b, Logic d,
+      {required bool allowRedrive})
       : super(name: 'ffmodule') {
     a = addInput('a', a);
     b = addInput('b', b);
@@ -400,13 +401,17 @@ class SignalRedrivenSequentialModule extends Module {
     d = addInput('d', d, width: d.width);
 
     final k = addOutput('k', width: 8);
-    Sequential(SimpleClockGenerator(10).clk, [
-      If(a, then: [
-        k < k,
-        q < k,
-        q < d,
-      ])
-    ]);
+    Sequential(
+      SimpleClockGenerator(10).clk,
+      [
+        If(a, then: [
+          k < k,
+          q < k,
+          q < d,
+        ])
+      ],
+      allowMultipleAssignments: allowRedrive,
+    );
   }
 }
 
@@ -419,10 +424,14 @@ class SignalRedrivenSequentialModuleWithX extends Module {
 
     final b = addOutput('b');
 
-    Sequential(SimpleClockGenerator(10).clk, [
-      If(a, then: [b < c]),
-      If(d, then: [b < c])
-    ]);
+    Sequential(
+      SimpleClockGenerator(10).clk,
+      [
+        If(a, then: [b < c]),
+        If(d, then: [b < c])
+      ],
+      allowMultipleAssignments: false,
+    );
   }
 }
 
@@ -712,9 +721,10 @@ void main() {
 
   test(
       'should return SignalRedrivenException when there are multiple drivers '
-      'for a flop.', () async {
-    final mod =
-        SignalRedrivenSequentialModule(Logic(), Logic(), Logic(width: 8));
+      'for a flop when redrive not allowed.', () async {
+    final mod = SignalRedrivenSequentialModule(
+        Logic(), Logic(), Logic(width: 8),
+        allowRedrive: false);
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
@@ -727,6 +737,21 @@ void main() {
     } on Exception catch (e) {
       expect(e.runtimeType, equals(SignalRedrivenException));
     }
+  });
+
+  test('should allow redrive when allowed', () async {
+    final mod = SignalRedrivenSequentialModule(
+        Logic(), Logic(), Logic(width: 8),
+        allowRedrive: true);
+    await mod.build();
+    final vectors = [
+      Vector({'a': 1, 'd': 1}, {}),
+      Vector({'a': 1, 'b': 0, 'd': 2}, {'q': 1}),
+      Vector({'a': 1, 'b': 0, 'd': 3}, {'q': 2}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test(
@@ -749,7 +774,7 @@ void main() {
 
   test(
       'should return SignalRedrivenException when driven with '
-      'x signals and valid signals.', () async {
+      'x signals and valid signals when redrive not allowed.', () async {
     final mod = SignalRedrivenSequentialModuleWithX(Logic(), Logic(), Logic());
     await mod.build();
     final vectors = [
