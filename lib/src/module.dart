@@ -18,6 +18,7 @@ import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 /// Represents a synthesizable hardware entity with clearly defined interface
 /// boundaries.
@@ -246,6 +247,12 @@ abstract class Module {
   /// before the [Module]s which contain them.
   @mustCallSuper
   Future<void> build() async {
+    if (ModuleTree.rootModule == null) {
+      /// set parent module
+      ModuleTree.rootModule = this;
+      ModuleTree.buildTree();
+    }
+
     if (hasBuilt) {
       throw Exception(
           'This Module has already been built, and can only be built once.');
