@@ -6,7 +6,7 @@ import 'package:rohd/rohd.dart';
 class InspectorService {
   /// register module_tree
   InspectorService() {
-    registerExtension('ext.module_tree', (method, parameters) async {
+    registerExtension('ext.rohd.module_tree', (method, parameters) async {
       final a = {
         'name': 'rohd',
         'num': 1,
@@ -30,14 +30,14 @@ class ModuleTree {
 
   /// A function to register tree and stuff.
   static void buildTree() {
-    // registerExtension('ext.module_tree', (method, parameters) async {
+    // registerExtension('ext.rohd.module_tree', (method, parameters) async {
     //   final rootNode = rootModule.toString();
     //   final jsonVal = json.encode(rootNode);
 
     //   return ServiceExtensionResponse.result(jsonVal);
     // });
 
-    registerExtension('ext.module_tree', (method, parameters) async {
+    registerExtension('ext.rohd.module_tree', (method, parameters) async {
       final a = {
         'name': 'rohd',
         'num': 1,

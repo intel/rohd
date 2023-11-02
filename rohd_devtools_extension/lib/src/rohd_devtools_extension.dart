@@ -70,9 +70,9 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
     //////////////////// Working Code //////////////////////////
     if (serviceManager.serviceExtensionManager
-        .isServiceExtensionAvailable('ext.module_tree')) {
+        .isServiceExtensionAvailable('ext.rohd.module_tree')) {
       final available = await serviceManager.serviceExtensionManager
-          .waitForServiceExtensionAvailable('ext.module_tree');
+          .waitForServiceExtensionAvailable('ext.rohd.module_tree');
       if (!available) {
         extensionManager.showNotification('service extension not available');
       }
@@ -81,12 +81,12 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     }
     print(serviceManager.isolateManager.mainIsolate.value!.id);
     final response = await serviceManager.service!.callServiceExtension(
-      'ext.module_tree',
+      'ext.rohd.module_tree',
       isolateId: serviceManager.isolateManager.mainIsolate.value!.id,
     );
     final json = response.json!;
     if (json['errorMessage'] != null) {
-      throw Exception('ext.module_tree -- ${json['errorMessage']}');
+      throw Exception('ext.rohd.module_tree -- ${json['errorMessage']}');
     }
     print('your json is: ');
     print(json);
