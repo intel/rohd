@@ -124,6 +124,8 @@ void main() {
     expect(mod.generateSynth(), contains('shouldExist'));
   });
 
+  //TODO
+
   test('unconnected port does not duplicate internal signal', () async {
     final pMod = ParentMod(Logic(), Logic());
     await pMod.build();

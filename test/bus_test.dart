@@ -409,7 +409,8 @@ void main() {
         Vector({'a': 0xba}, {'a_neg_shrunk3': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
+      final simResult =
+          SimCompare.iverilogVector(gtm, vectors, dontDeleteTmpFiles: true);
       expect(simResult, equals(true));
     });
 
@@ -558,8 +559,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
   });
 }

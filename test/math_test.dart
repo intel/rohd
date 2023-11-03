@@ -80,6 +80,8 @@ void main() {
     final sv = gtm.generateSynth();
     final lines = sv.split('\n');
 
+    print(sv);
+
     // should never assign directly off a +
     expect(lines.where(RegExp(r'plus.*\+').hasMatch), isEmpty);
 
@@ -92,7 +94,7 @@ void main() {
 
     // ensure we never lshift by a constant directly
     for (final line in lines) {
-      if (RegExp('assign.*a_lshift.*const.*=').hasMatch(line)) {
+      if (RegExp('assign.*a_sl_const.*=').hasMatch(line)) {
         expect(line, contains('shiftAmount'));
       }
     }

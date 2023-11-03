@@ -15,8 +15,14 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 ///
 /// Useful for [Interface] definitions.
 class Port extends Logic {
-  /// Constructs a [Logic] intended to be used for ports in an [Interface].
-  Port(String name, [int width = 1]) : super(name: name, width: width) {
+  /// Constructs a [Logic] intended to be used for ports of a [Module] or
+  /// in an [Interface].
+  Port(String name, [int width = 1])
+      : super(
+          name: name,
+          width: width,
+          namingConfiguration: LogicNaming.reserved,
+        ) {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);
     }

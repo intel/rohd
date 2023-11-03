@@ -10,6 +10,7 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
+import 'package:rohd/src/exceptions/exceptions.dart';
 
 /// An object that can provide uniquified names in an efficient way.
 ///
@@ -35,6 +36,9 @@ class Uniquifier {
   Uniquifier({Set<String>? reservedNames})
       : _reservedNames = reservedNames ?? {};
 
+  /// Returns `true` iff [name] is exactly available without uniquification.
+  bool isAvailable(String name) => !_reservedNames.contains(name);
+
   /// Provides a uniquified name that has never been returned by this
   /// [Uniquifier].
   ///
@@ -48,6 +52,14 @@ class Uniquifier {
   /// will be thrown.
   String getUniqueName(
       {String? initialName, bool reserved = false, String nullStarter = 'i'}) {
+    if (reserved) {
+      if (initialName == null) {
+        throw NullReservedNameException();
+      } else if (initialName.isEmpty) {
+        throw EmptyReservedNameException();
+      }
+    }
+
     final requestedName = initialName ?? nullStarter;
     var actualName = requestedName;
 
@@ -67,7 +79,7 @@ class Uniquifier {
     }
 
     if (reserved && initialName != actualName) {
-      throw Exception('Unable to acquire reserved name "$initialName".');
+      throw UnavailableReservedNameException(initialName!);
     }
 
     _takenNames.add(actualName);

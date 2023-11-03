@@ -63,12 +63,20 @@ class _PipeStage {
   /// Registers [newLogic] with this stage and creates appropriate inputs,
   /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
-    input[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_i', width: newLogic.width);
-    output[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_o', width: newLogic.width);
-    main[newLogic] =
-        Logic(name: '${newLogic.name}_stage$index', width: newLogic.width);
+    input[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_i',
+      width: newLogic.width,
+      namingConfiguration: LogicNaming.mergeable,
+    );
+    output[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_o',
+      width: newLogic.width,
+      namingConfiguration: LogicNaming.mergeable,
+    );
+    main[newLogic] = Logic(
+      name: '${newLogic.name}_stage$index',
+      width: newLogic.width,
+    );
   }
 }
 

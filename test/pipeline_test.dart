@@ -194,7 +194,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
     });
 
     test('rv pipeline notready', () async {

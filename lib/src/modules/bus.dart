@@ -32,6 +32,9 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// End index of the subset.
   final int endIndex;
 
+  @override
+  List<String> get expressionlessInputs => [_original];
+
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
@@ -57,6 +60,7 @@ class BusSubset extends Module with InlineSystemVerilog {
     // been in-lined
     _original = 'original_${bus.name}';
 
+    // TODO: how to guarantee this now, and how to test!?
     _subset =
         Module.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
@@ -92,12 +96,18 @@ class BusSubset extends Module with InlineSystemVerilog {
     }
   }
 
+  /// A regular expression that will have matches if an expression is included.
+  static final RegExp _expressionRegex = RegExp("[()']");
+
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 1) {
       throw Exception('BusSubset has exactly one input, but saw $inputs.');
     }
     final a = inputs[_original]!;
+
+    assert(!a.contains(_expressionRegex),
+        'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
     if (original.width == 1) {

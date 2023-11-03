@@ -80,12 +80,15 @@ void main() {
       await mod.build();
       final sv = mod.generateSynth();
 
-      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      // as instantiated
+      checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
+      checkSignalDeclarationOrder(sv, ['m', 'x', 'b']);
+
+      // alphabetized
       checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
 
       checkSignalDeclarationOrder(
-          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+          sv, ['l', 'a', 'w', 'm', 'x', 'b', 'c', 'o', 'y']);
     });
 
     test('input, output, and internal signals are sorted (different widths)',
@@ -94,16 +97,21 @@ void main() {
       await mod.build();
       final sv = mod.generateSynth();
 
-      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      // as instantiated
+      checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
+      checkSignalDeclarationOrder(sv, ['m', 'x', 'b']);
+
+      // alphabetized
       checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
 
       checkSignalDeclarationOrder(
-          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+          sv, ['l', 'a', 'w', 'm', 'x', 'b', 'c', 'o', 'y']);
     });
   });
 
-  test('submodule port connections input, output are sorted', () async {
+  test(
+      'submodule port connections input, '
+      'output are sorted by declaration order', () async {
     void checkPortConnectionOrder(String sv, List<String> signalNames) {
       final expected = signalNames.map((e) => '.$e($e)');
       final indices = expected.map(sv.indexOf);
@@ -115,6 +123,6 @@ void main() {
     await mod.build();
     final sv = mod.generateSynth();
 
-    checkPortConnectionOrder(sv, ['a', 'l', 'w', 'b', 'm', 'x']);
+    checkPortConnectionOrder(sv, ['l', 'a', 'w', 'm', 'x', 'b']);
   });
 }

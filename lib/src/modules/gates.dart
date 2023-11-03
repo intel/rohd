@@ -356,6 +356,11 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// than the inputs, which should be considered in generated verilog.
   final bool _outputSvWidthExpansion;
 
+  @override
+  List<String> get expressionlessInputs => [
+        if (_outputSvWidthExpansion) _shiftAmountName,
+      ];
+
   /// Constructs a two-input shift gate for an abitrary custom functional
   /// implementation.
   ///
@@ -460,6 +465,7 @@ class Power extends _TwoInputBitwiseGate {
   /// [in1] can be either a [Logic] or [int].
   Power(Logic in0, dynamic in1, {String name = 'power'})
       : super((a, b) => a.pow(b), '**', in0, in1, name: name);
+  //TODO: whats the output width of power?
 }
 
 /// A two-input addition module.
@@ -488,6 +494,10 @@ class Multiply extends _TwoInputBitwiseGate {
   /// [in1] can be either a [Logic] or [int].
   Multiply(Logic in0, dynamic in1, {String name = 'multiply'})
       : super((a, b) => a * b, '*', in0, in1, name: name);
+
+  //TODO: should this have outputSvWidthExpansion also??
+  // can we instead use a {} around things?
+  // https://stackoverflow.com/questions/37909010/verilog-signed-multiplication-multiplying-numbers-of-different-sizes
 }
 
 /// A two-input divison module.

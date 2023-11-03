@@ -32,6 +32,9 @@ class LogicStructure implements Logic {
   @override
   final String name;
 
+  @override
+  final LogicNaming namingConfiguration = LogicNaming.unnamed; //TODO
+
   /// An internal counter for encouraging unique naming of unnamed signals.
   static int _structIdx = 0;
 

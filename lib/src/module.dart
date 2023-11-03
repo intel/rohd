@@ -15,6 +15,7 @@ import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/name_validator.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -41,10 +42,10 @@ abstract class Module {
   final Set<Logic> _internalSignals = HashSet<Logic>();
 
   /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = HashMap<String, Logic>();
+  final Map<String, Logic> _inputs = {}; //TODO
 
   /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = HashMap<String, Logic>();
+  final Map<String, Logic> _outputs = {}; //TODO
 
   /// The parent [Module] of this [Module].
   ///
@@ -141,23 +142,6 @@ abstract class Module {
           '  Call build() before accessing this.');
   String _uniqueInstanceName;
 
-  /// Return string type definition name if validation passed
-  /// else throw exception.
-  ///
-  /// This validation method ensure that [name] is valid if
-  /// [reserveName] set to `true`.
-  static String? _nameValidation(String? name, bool reserveName) {
-    if (reserveName && name == null) {
-      throw NullReservedNameException();
-    } else if (reserveName && name!.isEmpty) {
-      throw EmptyReservedNameException();
-    } else if (reserveName && !Sanitizer.isSanitary(name!)) {
-      throw InvalidReservedNameException();
-    } else {
-      return name;
-    }
-  }
-
   /// If true, guarantees [uniqueInstanceName] matches [name] or else the
   /// [build] will fail.
   final bool reserveName;
@@ -192,9 +176,10 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
-        _definitionName =
-            _nameValidation(definitionName, reserveDefinitionName);
+      : _uniqueInstanceName =
+            NameValidator.validatedName(name, reserveName: reserveName) ?? name,
+        _definitionName = NameValidator.validatedName(definitionName,
+            reserveName: reserveDefinitionName);
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
@@ -286,6 +271,9 @@ abstract class Module {
     await module.build();
   }
 
+  //TODO: how to indicate that an SV inlineable module has a good vs. bad suggested name?
+  // maybe keep unpreferred around as a mechanism to sort mergeable names?
+
   /// A prefix to add to the beginning of any port name that is "unpreferred".
   static String get _unpreferredPrefix => '_';
 
@@ -299,12 +287,14 @@ abstract class Module {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
+  // @Deprecated('Use `Logic.namingConfiguration` instead.') //TODO
   @protected
   static String unpreferredName(String name) => _unpreferredPrefix + name;
 
   /// Returns true iff the signal name is "unpreferred".
   ///
   /// See documentation for [unpreferredName] for more details.
+  // @Deprecated('Use `Logic.namingConfiguration` instead.') //TODO
   static bool isUnpreferred(String name) => name.startsWith(_unpreferredPrefix);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
@@ -508,11 +498,11 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final inArr = LogicArray(dimensions, elementWidth,
-        name: name, numUnpackedDimensions: numUnpackedDimensions)
-      ..gets(x)
-      // ignore: invalid_use_of_protected_member
-      ..parentModule = this;
+    final inArr =
+        LogicArray.port(name, dimensions, elementWidth, numUnpackedDimensions)
+          ..gets(x)
+          // ignore: invalid_use_of_protected_member
+          ..parentModule = this;
 
     _inputs[name] = inArr;
 
@@ -550,10 +540,10 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final outArr = LogicArray(dimensions, elementWidth,
-        name: name, numUnpackedDimensions: numUnpackedDimensions)
-      // ignore: invalid_use_of_protected_member
-      ..parentModule = this;
+    final outArr =
+        LogicArray.port(name, dimensions, elementWidth, numUnpackedDimensions)
+          // ignore: invalid_use_of_protected_member
+          ..parentModule = this;
 
     _outputs[name] = outArr;
 

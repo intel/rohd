@@ -23,6 +23,7 @@ class CollapseTestModule extends Module {
     final e = addOutput('e');
     final f = addOutput('f');
 
+    //TODO: set naming config as mergeable?
     final x = Logic(name: 'x');
     final y = Logic(name: 'y');
     final z = Logic(name: 'z');
@@ -49,8 +50,7 @@ void main() {
       Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 0, 'e': 0, 'f': 0}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 
   test('collapse pretty', () async {
@@ -64,4 +64,6 @@ void main() {
     // make sure e=a&b&c is in there, to prove there was some inlining
     expect(synth.contains(RegExp('e.*=.*a.*&.*b.*&.*c')), equals(true));
   });
+
+  //TODO: test that we don't collapse non-single-use ones!
 }

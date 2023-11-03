@@ -25,6 +25,10 @@ class LogicArray extends LogicStructure {
   final int elementWidth;
 
   @override
+  LogicNaming get namingConfiguration =>
+      isArrayMember ? LogicNaming.reserved : LogicNaming.renameable; //TODO
+
+  @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
   /// The number of [dimensions] which should be treated as "unpacked", starting
@@ -71,7 +75,10 @@ class LogicArray extends LogicStructure {
       List.generate(
           dimensions.first,
           (index) => (dimensions.length == 1
-              ? Logic(width: elementWidth)
+              ? Logic(
+                  width: elementWidth,
+                  namingConfiguration: LogicNaming.renameable, //TODO
+                )
               : LogicArray(
                   nextDimensions!,
                   elementWidth,

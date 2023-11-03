@@ -10,6 +10,32 @@
 
 part of 'signals.dart';
 
+//  - reserved
+//  - un-mergeable (but renameable)
+//  - unpreferred (renameable and mergeable)
+//  - unnamed
+
+//// Configuration options for naming and renaming [Logic] signals.
+enum LogicNaming {
+  /// The signal will be present in generated output and the name will not be
+  /// changed.
+  ///
+  /// If this is not achievable, an [Exception] will be thrown.
+  reserved,
+
+  /// The signal will be present in generated output, but the signal may be
+  /// renamed for uniqueness. It will not be merged into any other signals.
+  renameable,
+
+  /// The signal may be merged with other equivalent signals in generated
+  /// outputs, and any of the names from the merged signals may be selected.
+  mergeable,
+
+  /// This signal has no given name and generated output will attempt to name
+  /// it as best as it can.
+  unnamed,
+}
+
 /// Represents a logical signal of any width which can change values.
 class Logic {
   /// An internal counter for encouraging unique naming of unnamed signals.
@@ -200,6 +226,7 @@ class Logic {
   /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isPort => isInput || isOutput;
 
+  //TODO
   // Characteristics of a signal name:
   //  Can it be merged with another signal?
   //  Is it a port?
@@ -239,24 +266,53 @@ class Logic {
   // When picking names
   // - First all the ports
   // - Then all the reserved
-  // - Then uniquify
-  // - Then collapse
-  // - Then restore/re-uniquify
+  // - Then collapse (collect references under one node)
+  // - Then uniquify non-reserved
 
   // Add flag to signals whether they can be merged with an expression
   // like merge RULES: can merge, but can't with an expression
+
+  /// When set, generation of outputs will require that this
+  // final bool reserveName;
+  // final bool mergeableName;
+
+  /// Controls the naming (and renaming) preferences of this signal in generated
+  /// outputs.
+  final LogicNaming namingConfiguration;
+
+  // priority:
+  //  - reserved
+  //  - un-mergeable (but renameable)
+  //  - unpreferred (renameable and mergeable)
+  //  - unnamed
+
+  //TODO: namingConfiguration and LogicNaming aren't great... pick something better
 
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
-  Logic({String? name, int width = 1})
-      : name = (name == null || name.isEmpty)
-            ? 's${_signalIdx++}'
-            : Sanitizer.sanitizeSV(name),
+  ///
+  /// //TODO: make the naming rules clear
+  Logic({
+    String? name,
+    int width = 1,
+    LogicNaming? namingConfiguration,
+  })  : namingConfiguration = namingConfiguration ??
+            ((name != null && name.isNotEmpty)
+                ? Module.isUnpreferred(name)
+                    ? LogicNaming.mergeable
+                    : LogicNaming.renameable
+                : LogicNaming.unnamed),
+        name = namingConfiguration == LogicNaming.reserved
+            ? NameValidator.validatedName(name, reserveName: true)!
+            : (name == null || name.isEmpty)
+                ? 's${_signalIdx++}'
+                : Sanitizer.sanitizeSV(name),
         _wire = _Wire(width: width) {
     if (width < 0) {
-      throw Exception('Logic width must be greater than or equal to 0.');
+      throw LogicConstructionException(
+          'Logic width must be greater than or equal to 0.');
     }
   }
 
