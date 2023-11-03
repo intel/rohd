@@ -25,8 +25,8 @@ class LogicArray extends LogicStructure {
   final int elementWidth;
 
   @override
-  LogicNaming get namingConfiguration =>
-      isArrayMember ? LogicNaming.reserved : LogicNaming.renameable; //TODO
+  Naming get naming =>
+      isArrayMember ? Naming.reserved : Naming.renameable; //TODO
 
   @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
@@ -77,7 +77,7 @@ class LogicArray extends LogicStructure {
           (index) => (dimensions.length == 1
               ? Logic(
                   width: elementWidth,
-                  namingConfiguration: LogicNaming.renameable, //TODO
+                  naming: Naming.renameable, //TODO
                 )
               : LogicArray(
                   nextDimensions!,

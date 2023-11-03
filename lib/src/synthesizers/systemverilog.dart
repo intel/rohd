@@ -382,11 +382,10 @@ class _SynthModuleDefinition {
 
         newSynth = _SynthLogic(
           logic,
-          namingConfigurationOverride:
-              (logic.isPort && logic.parentModule != module)
-                  // TODO: if this is a non-mergeable port, make it renameable?
-                  ? LogicNaming.mergeable
-                  : null,
+          namingOverride: (logic.isPort && logic.parentModule != module)
+              // TODO: if this is a non-mergeable port, make it renameable?
+              ? Naming.mergeable
+              : null,
           // synthLogicName,
           // renameable: !allowPortName,
           constNameDisallowed: disallowConstName,
@@ -422,8 +421,8 @@ class _SynthModuleDefinition {
     // find any named signals sitting around that don't do anything
     // this is not necessary for functionality, just nice naming inclusion
     logicsToTraverse.addAll(
-      module.internalSignals.where(
-          (element) => element.namingConfiguration != LogicNaming.unnamed),
+      module.internalSignals
+          .where((element) => element.naming != Naming.unnamed),
     );
 
     // make sure floating modules are included
@@ -802,7 +801,7 @@ class _SynthLogic {
 
   String? _name;
 
-  /// Set to `true` if a [LogicNaming.reserved] is in here.
+  /// Set to `true` if a [Naming.reserved] is in here.
   // bool _containsReserved;
   // bool _containsRenameable;
   // bool _containsConst;
@@ -846,8 +845,6 @@ class _SynthLogic {
   String _findName(Uniquifier uniquifier) {
     assert(!isFloatingConstant, 'Should not be using floating constants.');
 
-    //TODO: can we somehow identify preference on names from modules?
-
     // check for const
     if (_constLogic != null) {
       if (!_constNameDisallowed) {
@@ -871,23 +868,44 @@ class _SynthLogic {
       return uniquifier.getUniqueName(initialName: _renameableLogic!.name);
     }
 
-    // pick an available mergeable name, if one exists
-    final mergeableLogic = _mergeableLogics.firstWhereOrNull(
-      (logic) => uniquifier.isAvailable(logic.name),
-    );
-    if (mergeableLogic != null) {
-      return mergeableLogic.name;
+    // pick a preferred, available, mergeable name, if one exists
+    final unpreferredMergeableLogics = <Logic>[];
+    final uniquifiableMergeableLogics = <Logic>[];
+    for (final mergeableLogic in _mergeableLogics) {
+      if (Naming.isUnpreferred(mergeableLogic.name)) {
+        unpreferredMergeableLogics.add(mergeableLogic);
+      } else if (!uniquifier.isAvailable(mergeableLogic.name)) {
+        uniquifiableMergeableLogics.add(mergeableLogic);
+      } else {
+        return uniquifier.getUniqueName(initialName: mergeableLogic.name);
+      }
     }
 
-    // uniquify a mergeable name, if one exists
-    final uniquifiableMergeableLogic = _mergeableLogics.firstOrNull;
-    if (uniquifiableMergeableLogic != null) {
+    // uniquify a preferred, mergeable name, if one exists
+    if (uniquifiableMergeableLogics.isNotEmpty) {
       return uniquifier.getUniqueName(
-          initialName: uniquifiableMergeableLogic.name);
+          initialName: uniquifiableMergeableLogics.first.name);
     }
 
-    // pick anything (unnamed) and uniquify as necessary
-    return uniquifier.getUniqueName(initialName: _unnamedLogics.first.name);
+    // pick an available unpreferred mergeable name, if one exists, otherwise
+    // uniquify an unpreferred mergeable name
+    if (unpreferredMergeableLogics.isNotEmpty) {
+      return uniquifier.getUniqueName(
+          initialName: unpreferredMergeableLogics
+                  .firstWhereOrNull(
+                      (element) => uniquifier.isAvailable(element.name))
+                  ?.name ??
+              unpreferredMergeableLogics.first.name);
+    }
+
+    // pick anything (unnamed) and uniquify as necessary (considering preferred)
+    // no need to prefer an available one here, since it's all unnamed
+    return uniquifier.getUniqueName(
+        initialName: _unnamedLogics
+                .firstWhereOrNull(
+                    (element) => !Naming.isUnpreferred(element.name))
+                ?.name ??
+            _unnamedLogics.first.name);
   }
 
   /// If set, then this should never pick the constant as the name.
@@ -895,12 +913,10 @@ class _SynthLogic {
   bool _constNameDisallowed;
 
   _SynthLogic(Logic initialLogic,
-      {LogicNaming? namingConfigurationOverride,
-      bool constNameDisallowed = false})
+      {Naming? namingOverride, bool constNameDisallowed = false})
       : isArray = initialLogic is LogicArray,
         _constNameDisallowed = constNameDisallowed {
-    _addLogic(initialLogic,
-        namingConfigurationOverride: namingConfigurationOverride);
+    _addLogic(initialLogic, namingOverride: namingOverride);
   }
 
   /// Returns the [_SynthLogic] that should be *removed*.
@@ -959,23 +975,22 @@ class _SynthLogic {
 
   bool get needsDeclaration => !(isConstant && !_constNameDisallowed);
 
-  void _addLogic(Logic logic, {LogicNaming? namingConfigurationOverride}) {
-    final namingConfiguration =
-        namingConfigurationOverride ?? logic.namingConfiguration;
+  void _addLogic(Logic logic, {Naming? namingOverride}) {
+    final naming = namingOverride ?? logic.naming;
     if (logic is Const) {
       _constLogic = logic;
     } else {
-      switch (namingConfiguration) {
-        case LogicNaming.reserved:
+      switch (naming) {
+        case Naming.reserved:
           _reservedLogic = logic;
           break;
-        case LogicNaming.renameable:
+        case Naming.renameable:
           _renameableLogic = logic;
           break;
-        case LogicNaming.mergeable:
+        case Naming.mergeable:
           _mergeableLogics.add(logic);
           break;
-        case LogicNaming.unnamed:
+        case Naming.unnamed:
           _unnamedLogics.add(logic);
           break;
       }

@@ -11,7 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/index_utilities.dart';
-import 'package:rohd/src/utilities/name_validator.dart';
+import 'package:rohd/src/utilities/naming.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 

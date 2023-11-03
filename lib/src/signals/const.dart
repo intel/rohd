@@ -20,7 +20,7 @@ class Const extends Logic {
           name: Module.unpreferredName('const_$val'),
           width: val is LogicValue ? val.width : width ?? 1,
           // we don't care about maintaining this node unless necessary
-          namingConfiguration: LogicNaming.unnamed,
+          naming: Naming.unnamed,
         ) {
     put(val, fill: fill);
     _unassignable = true;

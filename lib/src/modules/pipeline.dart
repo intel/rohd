@@ -66,12 +66,12 @@ class _PipeStage {
     input[newLogic] = Logic(
       name: '${newLogic.name}_stage${index}_i',
       width: newLogic.width,
-      namingConfiguration: LogicNaming.mergeable,
+      naming: Naming.mergeable,
     );
     output[newLogic] = Logic(
       name: '${newLogic.name}_stage${index}_o',
       width: newLogic.width,
-      namingConfiguration: LogicNaming.mergeable,
+      naming: Naming.mergeable,
     );
     main[newLogic] = Logic(
       name: '${newLogic.name}_stage$index',

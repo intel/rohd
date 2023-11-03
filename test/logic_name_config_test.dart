@@ -38,7 +38,7 @@ void main() {
     final dut = FunctionGeneratedModule((in1, in2, out1) {
       final intermediate = Logic(
         name: 'intermediate',
-        namingConfiguration: LogicNaming.mergeable,
+        naming: Naming.mergeable,
       );
       intermediate <= in1;
       out1 <= intermediate;
@@ -46,7 +46,7 @@ void main() {
     await dut.build();
     final sv = dut.generateSynth();
 
-    // no intermeidate
+    // no intermediate
     expect(sv.contains('intermediate'), isFalse);
   });
 
@@ -63,10 +63,23 @@ void main() {
     expect('logic'.allMatches(sv).length, 3);
   });
 
+  test('unnamed is omitted even when named', () async {
+    final dut = FunctionGeneratedModule((in1, in2, out1) {
+      final intermediate = Logic(name: 'badname', naming: Naming.unnamed);
+      intermediate <= in1;
+      out1 <= intermediate;
+    });
+    await dut.build();
+    final sv = dut.generateSynth();
+
+    // just the ports
+    expect('logic'.allMatches(sv).length, 3);
+  });
+
   test('reserved name stays present', () async {
     final dut = FunctionGeneratedModule((in1, in2, out1) {
-      final intermediate = Logic(
-          name: 'intermediate_1', namingConfiguration: LogicNaming.reserved);
+      final intermediate =
+          Logic(name: 'intermediate_1', naming: Naming.reserved);
       intermediate <= in1;
 
       for (var i = 0; i < 6; i++) {
@@ -88,8 +101,7 @@ void main() {
   test('reserved and input with same name errors', () async {
     try {
       final dut = FunctionGeneratedModule((in1, in2, out1) {
-        final intermediate =
-            Logic(name: 'in1', namingConfiguration: LogicNaming.reserved);
+        final intermediate = Logic(name: 'in1', naming: Naming.reserved);
         intermediate <= in1;
 
         out1 <= intermediate;
@@ -105,8 +117,7 @@ void main() {
   test('reserved and output with same name errors', () async {
     try {
       final dut = FunctionGeneratedModule((in1, in2, out1) {
-        final intermediate =
-            Logic(name: 'out1', namingConfiguration: LogicNaming.reserved);
+        final intermediate = Logic(name: 'out1', naming: Naming.reserved);
         intermediate <= in1;
 
         out1 <= intermediate;
@@ -122,12 +133,12 @@ void main() {
   test('2x reserved name errors', () async {
     try {
       final dut = FunctionGeneratedModule((in1, in2, out1) {
-        final intermediate = Logic(
-            name: 'intermediate', namingConfiguration: LogicNaming.reserved);
+        final intermediate =
+            Logic(name: 'intermediate', naming: Naming.reserved);
         intermediate <= in1;
 
-        final intermediate2 = Logic(
-            name: 'intermediate', namingConfiguration: LogicNaming.reserved);
+        final intermediate2 =
+            Logic(name: 'intermediate', naming: Naming.reserved);
         intermediate2 <= in2;
 
         out1 <= intermediate | intermediate2;
@@ -142,12 +153,7 @@ void main() {
 }
 
 // TODO: testplan:
-// - reserved always stays
-//    - two reserved overlapping is an error
-//    - reserved overlap a port is an error
-// - renameable always stays, maybe renamed
-// - mergeable can go away
-// - unnamed goes away even if name is there
 // - unpreferred
 //    - gets lower priority when merging
 //    - automatically unpreferred if starts with _ (via function)
+// - preference vs. availability? coverage?

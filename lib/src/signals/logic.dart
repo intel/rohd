@@ -15,32 +15,8 @@ part of 'signals.dart';
 //  - unpreferred (renameable and mergeable)
 //  - unnamed
 
-//// Configuration options for naming and renaming [Logic] signals.
-enum LogicNaming {
-  /// The signal will be present in generated output and the name will not be
-  /// changed.
-  ///
-  /// If this is not achievable, an [Exception] will be thrown.
-  reserved,
-
-  /// The signal will be present in generated output, but the signal may be
-  /// renamed for uniqueness. It will not be merged into any other signals.
-  renameable,
-
-  /// The signal may be merged with other equivalent signals in generated
-  /// outputs, and any of the names from the merged signals may be selected.
-  mergeable,
-
-  /// This signal has no given name and generated output will attempt to name
-  /// it as best as it can.
-  unnamed,
-}
-
 /// Represents a logical signal of any width which can change values.
 class Logic {
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _signalIdx = 0;
-
   // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
@@ -278,15 +254,13 @@ class Logic {
 
   /// Controls the naming (and renaming) preferences of this signal in generated
   /// outputs.
-  final LogicNaming namingConfiguration;
+  final Naming naming;
 
   // priority:
   //  - reserved
   //  - un-mergeable (but renameable)
   //  - unpreferred (renameable and mergeable)
   //  - unnamed
-
-  //TODO: namingConfiguration and LogicNaming aren't great... pick something better
 
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
@@ -297,17 +271,17 @@ class Logic {
   Logic({
     String? name,
     int width = 1,
-    LogicNaming? namingConfiguration,
-  })  : namingConfiguration = namingConfiguration ??
+    Naming? naming,
+  })  : naming = naming ??
             ((name != null && name.isNotEmpty)
-                ? Module.isUnpreferred(name)
-                    ? LogicNaming.mergeable
-                    : LogicNaming.renameable
-                : LogicNaming.unnamed),
-        name = namingConfiguration == LogicNaming.reserved
-            ? NameValidator.validatedName(name, reserveName: true)!
+                ? Naming.isUnpreferred(name)
+                    ? Naming.mergeable
+                    : Naming.renameable
+                : Naming.unnamed),
+        name = naming == Naming.reserved
+            ? Naming.validatedName(name, reserveName: true)!
             : (name == null || name.isEmpty)
-                ? 's${_signalIdx++}'
+                ? Naming.unpreferredName('s')
                 : Sanitizer.sanitizeSV(name),
         _wire = _Wire(width: width) {
     if (width < 0) {

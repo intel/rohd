@@ -15,7 +15,7 @@ import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
-import 'package:rohd/src/utilities/name_validator.dart';
+import 'package:rohd/src/utilities/naming.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -177,8 +177,8 @@ abstract class Module {
       String? definitionName,
       this.reserveDefinitionName = false})
       : _uniqueInstanceName =
-            NameValidator.validatedName(name, reserveName: reserveName) ?? name,
-        _definitionName = NameValidator.validatedName(definitionName,
+            Naming.validatedName(name, reserveName: reserveName) ?? name,
+        _definitionName = Naming.validatedName(definitionName,
             reserveName: reserveDefinitionName);
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
@@ -274,9 +274,6 @@ abstract class Module {
   //TODO: how to indicate that an SV inlineable module has a good vs. bad suggested name?
   // maybe keep unpreferred around as a mechanism to sort mergeable names?
 
-  /// A prefix to add to the beginning of any port name that is "unpreferred".
-  static String get _unpreferredPrefix => '_';
-
   /// Makes a signal name "unpreferred" when considering between multiple
   /// possible signal names.
   ///
@@ -287,15 +284,15 @@ abstract class Module {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
-  // @Deprecated('Use `Logic.namingConfiguration` instead.') //TODO
+  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
   @protected
-  static String unpreferredName(String name) => _unpreferredPrefix + name;
+  static String unpreferredName(String name) => Naming.unpreferredName(name);
 
   /// Returns true iff the signal name is "unpreferred".
   ///
   /// See documentation for [unpreferredName] for more details.
-  // @Deprecated('Use `Logic.namingConfiguration` instead.') //TODO
-  static bool isUnpreferred(String name) => name.startsWith(_unpreferredPrefix);
+  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
+  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
