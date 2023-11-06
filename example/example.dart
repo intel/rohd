@@ -76,6 +76,11 @@ Future<void> main({bool noPrint = false}) async {
 
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
+
+  // while (true) {
+  //   await Future.delayed(Duration(seconds: 1));
+  // }
+
   final systemVerilogCode = counter.generateSynth();
   if (!noPrint) {
     print(systemVerilogCode);

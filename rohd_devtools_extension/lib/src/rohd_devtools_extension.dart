@@ -3,11 +3,16 @@
 // found in the LICENSE file.
 
 // import 'package:devtools_app/devtools_app.dart';
-import 'package:vm_service/vm_service.dart';
 import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
+import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
-import 'package:rohd/rohd.dart' as rohd show InspectorService, ModuleTree;
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// import 'package:rohd/rohd.dart' as rohd show InspectorService, ModuleTree;
+import 'package:vm_service/vm_service.dart';
+import 'eval.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -66,48 +71,74 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   }
 
   Future<void> testCode() async {
+    final rohdEval = EvalOnDartLibrary(
+      'package:rohd/rohd.dart',
+      serviceManager.service!,
+      serviceManager: serviceManager,
+    );
+
+    final isAlive = Disposable();
+    final treeInstance =
+        await rohdEval.evalInstance('ModuleTree.rootModule', isAlive: isAlive);
+
+    print(treeInstance);
+  }
+
+  Future<void> testCodeServiceExtension() async {
     // From Kenzii discord, https://github.com/flutter/devtools/blob/master/packages/devtools_app/lib/src/shared/diagnostics/inspector_service.dart#L1367-L1371
 
     //////////////////// Working Code //////////////////////////
-    if (serviceManager.serviceExtensionManager
-        .isServiceExtensionAvailable('ext.rohd.module_tree')) {
-      final available = await serviceManager.serviceExtensionManager
-          .waitForServiceExtensionAvailable('ext.rohd.module_tree');
-      if (!available) {
-        extensionManager.showNotification('service extension not available');
-      }
-    } else {
-      extensionManager.showNotification('cannot find service extension.');
-    }
-    print(serviceManager.isolateManager.mainIsolate.value!.id);
-    final response = await serviceManager.service!.callServiceExtension(
-      'ext.rohd.module_tree',
-      isolateId: serviceManager.isolateManager.mainIsolate.value!.id,
-    );
-    final json = response.json!;
-    if (json['errorMessage'] != null) {
-      throw Exception('ext.rohd.module_tree -- ${json['errorMessage']}');
-    }
-    print('your json is: ');
-    print(json);
-    extensionManager.showNotification('$json');
-    ///////////////////////////////////////////////////////////
-
-    // Try to communicate with vm?
-    // https://github.com/dart-lang/sdk/blob/main/runtime/vm/service/service.md
-    // print(await serviceManager.service!.getVersion());
-
-    // // 1. get isloateId
-    // final isolateId = serviceManager.isolateManager.selectedIsolate.value!.id;
-    // final scriptId;
-
-    // // 2. set breakpoint
-    // serviceManager.service!.addBreakpoint(
-    //   isolateId.toString(),
+    // if (serviceManager.serviceExtensionManager
+    //     .isServiceExtensionAvailable('ext.rohd.module_tree')) {
+    //   final available = await serviceManager.serviceExtensionManager
+    //       .waitForServiceExtensionAvailable('ext.rohd.module_tree');
+    //   if (!available) {
+    //     extensionManager.showNotification('service extension not available');
+    //   }
+    // } else {
+    //   extensionManager.showNotification('cannot find service extension.');
+    // }
+    // print(serviceManager.isolateManager.mainIsolate.value!.id);
+    // final response = await serviceManager.service!.callServiceExtension(
+    //   'ext.rohd.module_tree',
+    //   isolateId: serviceManager.isolateManager.mainIsolate.value!.id,
     // );
-    // print(isolateId);
+    // final json = response.json!;
+    // if (json['errorMessage'] != null) {
+    //   throw Exception('ext.rohd.module_tree -- ${json['errorMessage']}');
+    // }
+    // print('your json is: ');
+    // print(json);
+    // extensionManager.showNotification('$json');
 
-    // print('extension module json = $json');
+    print('running test code for service extension.');
+
+    const kServiceExtensionName = 'ext.rohd.module_tree';
+    final service = serviceManager.service!;
+    final vm = await service.getVM();
+
+    // Iterate over all isolates in the process.
+    for (final isolateRef in vm.isolates!) {
+      final isolate = await service.getIsolate(isolateRef.id!);
+      if (isolate.extensionRPCs!.contains(kServiceExtensionName)) {
+        print(
+            'Service extension $kServiceExtensionName is registered on ${isolate.name}');
+        print(
+            'Service extension of ROHD is registered on isolate ID: ${isolate.id!}');
+        try {
+          // Invoke the extension on each isolate with the service extension registered.
+          final response = await service.callServiceExtension(
+            kServiceExtensionName,
+            isolateId: isolate.id!,
+          );
+          print('Result from ${isolate.name}: ${response.json}');
+          extensionManager.showNotification('${response.json}');
+        } catch (e) {
+          print('Failed to invoke extension on ${isolate.name}: $e');
+        }
+      }
+    }
+    //////////////////////////////////////////////////////////
   }
 
   @override
