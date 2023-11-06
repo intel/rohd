@@ -21,7 +21,6 @@ class Port extends Logic {
       : super(
           name: name,
           width: width,
-          naming: Naming.reserved,
         ) {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);

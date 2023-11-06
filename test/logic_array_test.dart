@@ -831,8 +831,6 @@ void main() {
         // make sure the 4th one is there (since we expect 4)
         expect(mod.generateSynth(),
             contains('SimpleLAPassthrough  unnamed_module_2'));
-
-        print(mod.generateSynth());
       });
 
       test('3d unpacked', () async {

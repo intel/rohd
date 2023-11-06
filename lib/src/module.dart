@@ -442,12 +442,11 @@ abstract class Module {
 
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
-    if (!Sanitizer.isSanitary(name)) {
-      throw InvalidPortNameException(name);
-    }
+    Naming.validatedName(name, reserveName: true);
 
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
-      throw Exception('Already defined a port with name "$name".');
+      throw UnavailableReservedNameException.withMessage(
+          'Already defined a port with name "$name".');
     }
   }
 
@@ -467,7 +466,7 @@ abstract class Module {
       x = x.packed;
     }
 
-    final inPort = Port(name, width)
+    final inPort = Logic(name: name, width: width, naming: Naming.reserved)
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -495,11 +494,16 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final inArr =
-        LogicArray.port(name, dimensions, elementWidth, numUnpackedDimensions)
-          ..gets(x)
-          // ignore: invalid_use_of_protected_member
-          ..parentModule = this;
+    final inArr = LogicArray(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
 
     _inputs[name] = inArr;
 
@@ -514,7 +518,7 @@ abstract class Module {
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
 
-    final outPort = Port(name, width)
+    final outPort = Logic(name: name, width: width, naming: Naming.reserved)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 
@@ -537,10 +541,15 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final outArr =
-        LogicArray.port(name, dimensions, elementWidth, numUnpackedDimensions)
-          // ignore: invalid_use_of_protected_member
-          ..parentModule = this;
+    final outArr = LogicArray(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
 
     _outputs[name] = outArr;
 

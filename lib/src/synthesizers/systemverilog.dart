@@ -57,11 +57,11 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     // ignore: invalid_use_of_protected_member
     for (final signalName in module.inputs.keys) {
-      connections.add('.$signalName(${inputs[signalName]})');
+      connections.add('.$signalName(${inputs[signalName]!})');
     }
 
     for (final signalName in module.outputs.keys) {
-      connections.add('.$signalName(${outputs[signalName]})');
+      connections.add('.$signalName(${outputs[signalName]!})');
     }
 
     final connectionsStr = connections.join(',');
@@ -472,9 +472,10 @@ class _SynthModuleDefinition {
           receiver.isOutput && (receiver.parentModule?.parent == module);
       if (receiverIsSubModuleOutput) {
         final subModule = receiver.parentModule!;
-        // final subModuleInstantiation =
-        //     _getSynthSubModuleInstantiation(subModule);
-        // subModuleInstantiation.outputMapping[synthReceiver] = receiver; //TODO!
+        final subModuleInstantiation =
+            _getSynthSubModuleInstantiation(subModule);
+        subModuleInstantiation.outputMapping[receiver.name] =
+            synthReceiver; //TODO!
 
         // ignore: invalid_use_of_protected_member
         logicsToTraverse.addAll(subModule.inputs.values);
@@ -499,14 +500,14 @@ class _SynthModuleDefinition {
         // assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }
 
-      // final receiverIsSubModuleInput =
-      //     receiver.isInput && (receiver.parentModule?.parent == module);
-      // if (receiverIsSubModuleInput) {
-      //   final subModule = receiver.parentModule!;
-      //   final subModuleInstantiation =
-      //       _getSynthSubModuleInstantiation(subModule);
-      //   subModuleInstantiation.inputMapping[synthReceiver] = receiver;
-      // }
+      final receiverIsSubModuleInput =
+          receiver.isInput && (receiver.parentModule?.parent == module);
+      if (receiverIsSubModuleInput) {
+        final subModule = receiver.parentModule!;
+        final subModuleInstantiation =
+            _getSynthSubModuleInstantiation(subModule);
+        subModuleInstantiation.inputMapping[receiver.name] = synthReceiver;
+      }
     }
 
     _collapseAssignments();
@@ -518,18 +519,41 @@ class _SynthModuleDefinition {
     _pickSignalNames();
   }
 
+  //TODO: can we use that list of non-expression inputs to filter out outputs from inlining?
+
   void _assignSubmodulePortMapping() {
     for (final submoduleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
-      for (final input in submoduleInstantiation.module.inputs.values) {
-        final synthInput = logicToSynthMap[input.srcConnection]!;
-        submoduleInstantiation.inputMapping[input.name] = synthInput;
+      for (final inputName in submoduleInstantiation.module.inputs.keys) {
+        final orig = submoduleInstantiation.inputMapping[inputName]!;
+        submoduleInstantiation.inputMapping[inputName] =
+            orig.replacement ?? orig;
       }
 
-      for (final output in submoduleInstantiation.module.outputs.values) {
-        final synthOutput = logicToSynthMap[output]!;
-        submoduleInstantiation.outputMapping[output.name] = synthOutput;
+      for (final outputName in submoduleInstantiation.module.outputs.keys) {
+        final orig = submoduleInstantiation.outputMapping[outputName]!;
+        submoduleInstantiation.outputMapping[outputName] =
+            orig.replacement ?? orig;
       }
+
+      // for (final input in submoduleInstantiation.module.inputs.values) {
+      //   if (input is! LogicArray) {
+      //     //TODO: is this right?
+      //     final synthInput = logicToSynthMap[input.srcConnection]!;
+      //     submoduleInstantiation.inputMapping[input.name] = synthInput;
+      //   }
+      //   // final synthInput = logicToSynthMap[input is LogicArray
+      //   //     // for arrays, we can just look at any srcConnection since they
+      //   //     // should all be the same for an input.. NO // TODO
+      //   //     ? input.srcConnections.first.parentStructure
+      //   //     : input.srcConnection]!;
+      //   // submoduleInstantiation.inputMapping[input.name] = synthInput;
+      // }
+
+      // for (final output in submoduleInstantiation.module.outputs.values) {
+      //   final synthOutput = logicToSynthMap[output]!;
+      //   submoduleInstantiation.outputMapping[output.name] = synthOutput;
+      // }
     }
   }
 
@@ -748,6 +772,9 @@ class _SynthModuleDefinition {
         ..addAll(reducedAssignments);
     }
 
+    //TODO: do we really need to update it every time like this or can we do
+    // one update sweep at the end?
+
     // update the look-up table post-merge
     logicToSynthMap.clear();
     for (final synthLogic in [...inputs, ...outputs, ...internalNets]) {
@@ -762,8 +789,8 @@ class _SynthLogicArrayElement extends _SynthLogic {
   /// The [_SynthLogic] tracking the name of the direct parent array.
   final _SynthLogic parentArray;
 
-  // @override
-  // bool get _needsDeclaration => false;
+  @override
+  bool get needsDeclaration => false;
 
   @override
   String get name => '${parentArray.name}[${logic.arrayIndex!}]';
@@ -787,6 +814,17 @@ class _SynthLogic {
         ..._mergeableLogics,
         ..._unnamedLogics,
       ]);
+
+  /// If this was merged and is now replaced by another, then this is non-null
+  /// and points to it.
+  _SynthLogic? _replacement;
+
+  set replacement(_SynthLogic? newReplacement) {
+    _replacement?.replacement = newReplacement;
+    _replacement = newReplacement;
+  }
+
+  _SynthLogic? get replacement => _replacement?.replacement ?? _replacement;
 
   bool get isReserved => _reservedLogic != null;
 
@@ -964,6 +1002,10 @@ class _SynthLogic {
     // the rest, take them all
     _mergeableLogics.addAll(other._mergeableLogics);
     _unnamedLogics.addAll(other._unnamedLogics);
+
+    // keep track that it was replaced by this
+
+    other.replacement = this;
   }
 
   /// Assignments should be eliminated rather than assign to `z`, so this

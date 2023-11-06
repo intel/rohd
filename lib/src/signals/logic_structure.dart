@@ -35,16 +35,11 @@ class LogicStructure implements Logic {
   @override
   final Naming naming = Naming.unnamed; //TODO
 
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _structIdx = 0;
-
   /// Creates a new [LogicStructure] with [elements] as elements.
   ///
   /// None of the [elements] can already be members of another [LogicStructure].
   LogicStructure(Iterable<Logic> elements, {String? name})
-      : name = (name == null || name.isEmpty)
-            ? 'st${_structIdx++}'
-            : Sanitizer.sanitizeSV(name) {
+      : name = Naming.chooseName(name, null, nullStarter: 'st') {
     _elements
       ..addAll(elements)
       ..forEach((element) {
@@ -292,9 +287,7 @@ class LogicStructure implements Logic {
   LogicValue? get previousValue => packed.previousValue;
 
   @override
-  late final int width = elements.isEmpty
-      ? 0
-      : elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
+  late final int width = elements.map((e) => e.width).sum;
 
   @override
   Logic withSet(int startIndex, Logic update) {

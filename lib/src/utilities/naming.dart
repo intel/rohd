@@ -67,4 +67,24 @@ enum Naming {
   ///
   /// See documentation for [unpreferredName] for more details.
   static bool isUnpreferred(String name) => name.startsWith(_unpreferredPrefix);
+
+  /// Picks a [Naming] based on an initial [name] and [naming].
+  static Naming chooseNaming(String? name, Naming? naming) =>
+      naming ??
+      ((name != null && name.isNotEmpty)
+          ? Naming.isUnpreferred(name)
+              ? Naming.mergeable
+              : Naming.renameable
+          : Naming.unnamed);
+
+  /// Picks a [String] name based on an initial [name] and [naming].
+  ///
+  /// If [name] is null, the name will be based on [nullStarter].
+  static String chooseName(String? name, Naming? naming,
+          {String nullStarter = 's'}) =>
+      naming == Naming.reserved
+          ? Naming.validatedName(name, reserveName: true)!
+          : (name == null || name.isEmpty)
+              ? Naming.unpreferredName(nullStarter)
+              : Sanitizer.sanitizeSV(name);
 }

@@ -156,4 +156,4 @@ void main() {
 // - unpreferred
 //    - gets lower priority when merging
 //    - automatically unpreferred if starts with _ (via function)
-// - preference vs. availability? coverage?
+// - preference vs. availability? coverage? full priority with randomness?

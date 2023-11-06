@@ -256,12 +256,6 @@ class Logic {
   /// outputs.
   final Naming naming;
 
-  // priority:
-  //  - reserved
-  //  - un-mergeable (but renameable)
-  //  - unpreferred (renameable and mergeable)
-  //  - unnamed
-
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
   /// The default value for [width] is 1.  The [name] should be synthesizable
@@ -272,17 +266,8 @@ class Logic {
     String? name,
     int width = 1,
     Naming? naming,
-  })  : naming = naming ??
-            ((name != null && name.isNotEmpty)
-                ? Naming.isUnpreferred(name)
-                    ? Naming.mergeable
-                    : Naming.renameable
-                : Naming.unnamed),
-        name = naming == Naming.reserved
-            ? Naming.validatedName(name, reserveName: true)!
-            : (name == null || name.isEmpty)
-                ? Naming.unpreferredName('s')
-                : Sanitizer.sanitizeSV(name),
+  })  : naming = Naming.chooseNaming(name, naming),
+        name = Naming.chooseName(name, naming),
         _wire = _Wire(width: width) {
     if (width < 0) {
       throw LogicConstructionException(
