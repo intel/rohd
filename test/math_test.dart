@@ -80,8 +80,6 @@ void main() {
     final sv = gtm.generateSynth();
     final lines = sv.split('\n');
 
-    print(sv);
-
     // should never assign directly off a +
     expect(lines.where(RegExp(r'plus.*\+').hasMatch), isEmpty);
 

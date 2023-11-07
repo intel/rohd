@@ -96,7 +96,7 @@ void main() {
   test('GIVEN logic name is null THEN expected to see autogeneration of name',
       () async {
     final bus = Logic();
-    expect(bus.name, equals('s0'));
+    expect(bus.name, equals('_s'));
   });
 
   test(
@@ -111,7 +111,7 @@ void main() {
         () async {
       expect(() async {
         LogicTestModule('');
-      }, throwsA((dynamic e) => e is InvalidPortNameException));
+      }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });
   });
 
