@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 // import 'package:devtools_app/devtools_app.dart';
+import 'dart:async';
+
 import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
@@ -13,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:rohd/rohd.dart' as rohd show InspectorService, ModuleTree;
 import 'package:vm_service/vm_service.dart';
 import 'eval.dart';
+// import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -37,9 +40,13 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   String? message;
 
+  late final EvalOnDartLibrary fooControllerEval;
+  late final Disposable evalDisposable;
+
   @override
   void initState() {
     super.initState();
+    unawaited(_initEval());
 
     // TODO(Quek): Init the inspector service
     // rohd.InspectorService();
@@ -57,6 +64,24 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
+  @override
+  void dispose() {
+    fooControllerEval.dispose();
+    evalDisposable.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initEval() async {
+    await serviceManager.onServiceAvailable;
+    fooControllerEval = EvalOnDartLibrary(
+      // 'package:rohd/src/diagnostics/inspector_service.dart',
+      'package:rohd/src/diagnostics/old_service.dart',
+      serviceManager.service!,
+      serviceManager: serviceManager,
+    );
+    evalDisposable = Disposable();
+  }
+
   void _incrementCounter() {
     setState(() {
       testCode();
@@ -71,17 +96,13 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   }
 
   Future<void> testCode() async {
-    final rohdEval = EvalOnDartLibrary(
-      'package:rohd/rohd.dart',
-      serviceManager.service!,
-      serviceManager: serviceManager,
-    );
-
     final isAlive = Disposable();
-    final treeInstance =
-        await rohdEval.evalInstance('ModuleTree.rootModule', isAlive: isAlive);
+    final Instance treeInstance = await fooControllerEval.evalInstance(
+        'ModuleTree.instance.instanceRootModule!.name',
+        isAlive: isAlive);
 
-    print(treeInstance);
+    final thingsList = treeInstance.valueAsString;
+    print(thingsList);
   }
 
   Future<void> testCodeServiceExtension() async {

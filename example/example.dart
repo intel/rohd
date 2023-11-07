@@ -13,6 +13,7 @@
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/diagnostics/old_service.dart';
 
 // Define a class Counter that extends ROHD's abstract Module class.
 class Counter extends Module {
@@ -80,6 +81,8 @@ Future<void> main({bool noPrint = false}) async {
   // while (true) {
   //   await Future.delayed(Duration(seconds: 1));
   // }
+
+  print(ModuleTree.instance.instanceRootModule);
 
   final systemVerilogCode = counter.generateSynth();
   if (!noPrint) {
