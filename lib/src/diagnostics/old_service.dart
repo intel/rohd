@@ -40,6 +40,22 @@ class ModuleTree {
   static Module? rootModule;
   Module? get instanceRootModule => ModuleTree.rootModule;
 
+  ///
+  String get stringMod {
+    final a = {
+      'name': 'rohd',
+      'num': 1,
+      'nested': {
+        'a': 'n_a',
+        '1': 1,
+      }
+    };
+
+    final jsonVal = json.encode(a);
+
+    return jsonVal;
+  }
+
   /// A function to register tree and stuff.
   static void buildTree() {
     registerExtension('ext.rohd.module_tree', (method, parameters) async {
@@ -56,5 +72,7 @@ class ModuleTree {
 
       return ServiceExtensionResponse.result(jsonVal);
     });
+
+    void processNode() {}
   }
 }

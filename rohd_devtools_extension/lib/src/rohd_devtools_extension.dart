@@ -4,7 +4,7 @@
 
 // import 'package:devtools_app/devtools_app.dart';
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// import 'package:rohd/rohd.dart' as rohd show InspectorService, ModuleTree;
+import 'package:rohd/rohd.dart' as rohd show Module;
 import 'package:vm_service/vm_service.dart';
 import 'eval.dart';
 // import 'package:rohd/src/diagnostics/inspector_service.dart';
@@ -42,6 +42,10 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   late final EvalOnDartLibrary fooControllerEval;
   late final Disposable evalDisposable;
+
+  static const _defaultEvalResponseText = '--';
+
+  var evalResponseText = _defaultEvalResponseText;
 
   @override
   void initState() {
@@ -97,12 +101,14 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   Future<void> testCode() async {
     final isAlive = Disposable();
-    final Instance treeInstance = await fooControllerEval.evalInstance(
-        'ModuleTree.instance.instanceRootModule!.name',
-        isAlive: isAlive);
+    final treeInstance = await fooControllerEval
+        .evalInstance('ModuleTree.instance.stringMod', isAlive: isAlive);
 
-    final thingsList = treeInstance.valueAsString;
-    print(thingsList);
+    final thingsListString =
+        treeInstance.valueAsString ?? _defaultEvalResponseText;
+    final thingsListJSON = json.decode(thingsListString);
+
+    print(thingsListJSON['nested']);
   }
 
   Future<void> testCodeServiceExtension() async {

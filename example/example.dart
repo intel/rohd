@@ -82,7 +82,7 @@ Future<void> main({bool noPrint = false}) async {
   //   await Future.delayed(Duration(seconds: 1));
   // }
 
-  print(ModuleTree.instance.instanceRootModule);
+  print(ModuleTree.instance.stringMod);
 
   final systemVerilogCode = counter.generateSynth();
   if (!noPrint) {
