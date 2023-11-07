@@ -135,15 +135,19 @@ void main() {
 
   group('sensitive naming', () {
     test('assigns and gates', () async {
-      final mod = SensitiveNaming(Logic(name: 'bad'));
+      final mod = SensitiveNaming(Logic());
       await mod.build();
-      print(mod.generateSynth());
+      final sv = mod.generateSynth();
+      expect(sv, contains('e = a & d'));
+      expect(sv, contains('b = a'));
+      expect(sv, contains('d = c'));
     });
 
     test('bus subset', () async {
-      final mod = BusSubsetNaming(Logic(name: 'bad', width: 32));
+      final mod = BusSubsetNaming(Logic(width: 32));
       await mod.build();
-      print(mod.generateSynth());
+      final sv = mod.generateSynth();
+      expect(sv, contains('c = b[3]'));
     });
   });
 }

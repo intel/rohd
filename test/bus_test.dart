@@ -171,6 +171,7 @@ void main() {
       final gtm = BusTestModule(a, Logic(width: 8));
       final out = gtm.aBar;
       await gtm.build();
+
       a.put(0xff);
       expect(out.value.toInt(), equals(0));
       a.put(0);

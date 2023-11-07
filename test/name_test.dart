@@ -45,7 +45,10 @@ class RenameableModule extends Module {
     Logic inputPort, {
     this.outputPortName = 'outputPort',
     String internalSignalName = 'internalSignal',
+    String reservedInternalSignalName = 'reservedInternalSignal',
     String internalModuleInstanceName = 'internalModuleInstanceName',
+    String reservedInternalModuleInstanceName =
+        'reservedInternalModuleInstanceName',
     String internalModuleDefinitionName = 'internalModuleDefinitionName',
     super.definitionName = 'moduleDefinitionName',
     super.name = 'moduleInstanceName',
@@ -55,7 +58,10 @@ class RenameableModule extends Module {
     inputPort = addInput(inputPort.name, inputPort);
     final outputPort = addOutput(outputPortName);
 
+    // TODO: add reserved, renameable, mergeable internal signals?
+
     final internalSignal = Logic(name: internalSignalName);
+    final reservedInternalSignal = Logic(name: reservedInternalSignalName);
 
     Combinational([internalSignal < ~inputPort]);
     Combinational([outputPort < internalSignal]);
@@ -67,6 +73,14 @@ class RenameableModule extends Module {
       name: internalModuleInstanceName,
       definitionName: internalModuleDefinitionName,
     );
+
+    SpeciallyNamedModule(
+      ~reservedInternalSignal,
+      true,
+      true,
+      name: reservedInternalModuleInstanceName,
+      definitionName: internalModuleDefinitionName,
+    );
   }
 }
 
@@ -74,7 +88,9 @@ enum NameType {
   inputPort,
   outputPort,
   internalSignal,
+  reservedInternalSignal,
   internalModuleInstance,
+  reservedInternalModuleInstance,
   internalModuleDefinition,
   topDefinitionName,
   topName
@@ -105,7 +121,10 @@ void main() {
           Logic(name: names[NameType.inputPort]),
           outputPortName: names[NameType.outputPort]!,
           internalSignalName: names[NameType.internalSignal]!,
+          reservedInternalSignalName: names[NameType.reservedInternalSignal]!,
           internalModuleInstanceName: names[NameType.internalModuleInstance]!,
+          reservedInternalModuleInstanceName:
+              names[NameType.reservedInternalModuleInstance]!,
           internalModuleDefinitionName:
               names[NameType.internalModuleDefinition]!,
           definitionName: names[NameType.topDefinitionName],
@@ -119,28 +138,43 @@ void main() {
         final nameTypes = [nameType1, nameType2];
 
         // skip ones that actually *should* cause a failure
-        final skips = [
-          [NameType.internalModuleDefinition, NameType.topDefinitionName],
-          [NameType.inputPort, NameType.outputPort]
+        final shouldConflict = [
+          {
+            NameType.internalModuleDefinition,
+            NameType.topDefinitionName,
+          },
+          {
+            NameType.inputPort,
+            NameType.outputPort,
+            NameType.reservedInternalSignal,
+            NameType.reservedInternalModuleInstance,
+          },
         ];
 
-        var doSkip = false;
-        for (final skip in skips) {
-          if (nameTypes.contains(skip[0]) && nameTypes.contains(skip[1])) {
-            doSkip = true;
+        var expectFail = false;
+        for (final conflictSet in shouldConflict) {
+          if (nameTypes.where(conflictSet.contains).length == 2) {
+            expectFail = true;
             break;
           }
         }
-        if (doSkip) {
-          continue;
-        }
 
         test('${nameType1.name} == ${nameType2.name}', () async {
-          final testMap = Map.fromEntries(List.generate(NameType.values.length,
-              (k) => MapEntry(NameType.values[k], 'uniqueName$k')));
-          testMap[nameType1] = 'conflictingName';
-          testMap[nameType2] = testMap[nameType1]!;
-          await runTestGen(testMap);
+          try {
+            final testMap = Map.fromEntries(List.generate(
+                NameType.values.length,
+                (k) => MapEntry(NameType.values[k], 'uniqueName$k')));
+            testMap[nameType1] = 'conflictingName';
+            testMap[nameType2] = testMap[nameType1]!;
+            await runTestGen(testMap);
+            if (expectFail) {
+              fail('Expected to fail!');
+            }
+          } on Exception catch (_) {
+            if (!expectFail) {
+              fail('Expected to pass!');
+            }
+          }
         });
       }
     }

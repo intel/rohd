@@ -65,6 +65,23 @@ class AlphabeticalSubmodulePorts extends Module {
   }
 }
 
+class TopWithExpressions extends Module {
+  TopWithExpressions(Logic a, Logic b) {
+    a = addInput('a', a);
+    b = addInput('b', b, width: 5);
+
+    addOutput('o') <= SubForExpressions(a | b[2]).o;
+  }
+}
+
+class SubForExpressions extends Module {
+  Logic get o => output('o');
+  SubForExpressions(Logic a) {
+    a = addInput('a', a);
+    addOutput('o') <= a;
+  }
+}
+
 void main() {
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
@@ -124,5 +141,14 @@ void main() {
     final sv = mod.generateSynth();
 
     checkPortConnectionOrder(sv, ['l', 'a', 'w', 'm', 'x', 'b']);
+  });
+
+  test('expressions in sub-module declaration', () async {
+    final mod = TopWithExpressions(Logic(), Logic(width: 5));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('.a((a | (b[2])))'));
   });
 }

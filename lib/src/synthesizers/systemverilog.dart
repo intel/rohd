@@ -248,7 +248,22 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 /// Represents an instantiation of a module within another module.
 class _SynthSubModuleInstantiation {
   final Module module;
-  final String name;
+
+  String? _name;
+
+  /// Must call [pickName] before this is accessible.
+  String get name => _name!;
+
+  void pickName(Uniquifier uniquifier) {
+    assert(_name == null, 'Should only pick a name once.');
+
+    _name = uniquifier.getUniqueName(
+      initialName: module.uniqueInstanceName,
+      reserved: module.reserveName,
+      nullStarter: 'm',
+    );
+  }
+
   // final Map<_SynthLogic, Logic> inputMapping = {};
   // final Map<_SynthLogic, Logic> outputMapping = {};
   final Map<String, _SynthLogic> inputMapping = {};
@@ -257,11 +272,11 @@ class _SynthSubModuleInstantiation {
   bool get needsDeclaration => _needsDeclaration;
   late final Map<_SynthLogic, _SynthSubModuleInstantiation>
       _synthLogicToInlineableSynthSubmoduleMap;
-  _SynthSubModuleInstantiation(this.module, this.name);
+  _SynthSubModuleInstantiation(this.module);
 
   @override
   String toString() =>
-      "_SynthSubModuleInstantiation '$name', module name:'${module.name}'";
+      "_SynthSubModuleInstantiation ${_name == null ? 'null' : '"$name"'}, module name:'${module.name}'";
 
   void clearDeclaration() {
     _needsDeclaration = false;
@@ -322,10 +337,7 @@ class _SynthModuleDefinition {
     if (moduleToSubModuleInstantiationMap.containsKey(m)) {
       return moduleToSubModuleInstantiationMap[m]!;
     } else {
-      final newSSMI = _SynthSubModuleInstantiation(
-          m,
-          _getUniqueSynthSubModuleInstantiationName(
-              m.uniqueInstanceName, m.reserveName));
+      final newSSMI = _SynthSubModuleInstantiation(m);
       moduleToSubModuleInstantiationMap[m] = newSSMI;
       return newSSMI;
     }
@@ -516,7 +528,7 @@ class _SynthModuleDefinition {
 
     _collapseChainableModules();
 
-    _pickSignalNames();
+    _pickNames();
   }
 
   //TODO: can we use that list of non-expression inputs to filter out outputs from inlining?
@@ -557,7 +569,7 @@ class _SynthModuleDefinition {
     }
   }
 
-  void _pickSignalNames() {
+  void _pickNames() {
     // first ports get priority
     for (final input in inputs) {
       input.pickName(_synthInstantiationNameUniquifier); //, preReserved: true);
@@ -567,20 +579,35 @@ class _SynthModuleDefinition {
           .pickName(_synthInstantiationNameUniquifier); //, preReserved: true);
     }
 
-    //TODO: eliminate internalNets that are replaced by inline!
+    // pick names of *reserved* submodule instances
+
+    // pick names of submodules
+    final nonReservedSubmodules = <_SynthSubModuleInstantiation>[];
+    for (final submodule in moduleToSubModuleInstantiationMap.values) {
+      if (submodule.module.reserveName) {
+        submodule.pickName(_synthInstantiationNameUniquifier);
+      } else {
+        nonReservedSubmodules.add(submodule);
+      }
+    }
 
     // then *reserved* internal signals get priority
-    final nonReserved = <_SynthLogic>[];
+    final nonReservedSignals = <_SynthLogic>[];
     for (final signal in internalNets) {
       if (signal.isReserved) {
         signal.pickName(_synthInstantiationNameUniquifier);
       } else {
-        nonReserved.add(signal);
+        nonReservedSignals.add(signal);
       }
     }
 
+    // then submodule instances
+    for (final submodule in nonReservedSubmodules) {
+      submodule.pickName(_synthInstantiationNameUniquifier);
+    }
+
     // then the rest of the internal signals
-    for (final signal in nonReserved) {
+    for (final signal in nonReservedSignals) {
       signal.pickName(_synthInstantiationNameUniquifier);
     }
   }
@@ -645,8 +672,6 @@ class _SynthModuleDefinition {
         inlineableSubmoduleInstantiations.where((submoduleInstantiation) =>
             singleUseSignals // inlineable modules have 1 output
                 .contains(submoduleInstantiation.outputMapping.values.first));
-
-    // TODO: can subModule instantiations have expressions in ports?? they should i think
 
     // keep track of who is using it so we can not violate any rules
     // final inlineUsagesOfSingleUseSignals =
