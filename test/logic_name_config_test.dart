@@ -7,6 +7,9 @@
 // 2023 November 3
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -150,7 +153,85 @@ void main() {
       expect(e, isA<UnavailableReservedNameException>());
     }
   });
+
+  test('unpreferred signals get lower priority when merging', () async {
+    final dut = FunctionGeneratedModule((in1, in2, out1) {
+      final intermediatePre = Logic(
+          name: Naming.unpreferredName('badname_pre'),
+          naming: Naming.mergeable);
+      final intermediate = Logic(name: 'goodname', naming: Naming.mergeable);
+      final intermediatePost = Logic(
+          name: Naming.unpreferredName('badname_post'),
+          naming: Naming.mergeable);
+      intermediatePre <= flop(in2, ~in1);
+      intermediate <= intermediatePre;
+      intermediatePost <= intermediate;
+      out1 <= ~intermediatePost;
+    });
+    await dut.build();
+    final sv = dut.generateSynth();
+
+    expect(sv, contains('goodname'));
+  });
+
+  test('priority amongst different types of signals', () async {
+    List<Logic> priorityList() => [
+          Logic(name: 'unnamed', naming: Naming.unnamed),
+          Logic(name: 'mergeable', naming: Naming.mergeable),
+          Logic(
+              name: Naming.unpreferredName('unpreferredRenameable'),
+              naming: Naming.renameable),
+          Logic(name: 'renameable', naming: Naming.renameable),
+          Logic(name: 'reserved', naming: Naming.reserved),
+        ];
+
+    List<List<int>> allPermutations(List<int> initial) {
+      final perms = <List<int>>[];
+      for (var i = 0; i < initial.length; i++) {
+        final first = initial[i];
+        final remaining =
+            initial.whereNotIndexed((index, element) => index == i).toList();
+        final subPerms = allPermutations(remaining);
+        for (final p in subPerms) {
+          perms.add([first, ...p]);
+        }
+        perms.add([first]);
+      }
+      return perms;
+    }
+
+    final indexPermutations =
+        allPermutations(List.generate(priorityList().length, (index) => index));
+
+    for (final indexPermutation in indexPermutations) {
+      var l = priorityList();
+
+      final expectedName = l
+          .lastWhereIndexedOrNull(
+              (index, element) => indexPermutation.contains(index))!
+          .name;
+
+      l = indexPermutation.map((i) => l[i]).toList();
+
+      final dut = FunctionGeneratedModule((in1, in2, out1) {
+        var prev = flop(in2, ~in1);
+        for (final s in l) {
+          s <= prev;
+          prev = s;
+        }
+        out1 <= ~prev;
+      });
+      await dut.build();
+      final sv = dut.generateSynth();
+
+      expect(sv, contains(expectedName),
+          reason: 'Amongst ${l.map((e) => e.name).toList()},'
+              ' should have had present $expectedName');
+    }
+  });
 }
+
+//TODO: test that signal flying at the end gets declared if reserved
 
 // TODO: testplan:
 // - unpreferred

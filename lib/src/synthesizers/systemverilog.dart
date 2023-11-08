@@ -739,11 +739,11 @@ class _SynthModuleDefinition {
         if (mergedAway != null) {
           final kept = mergedAway == dst ? src : dst;
 
-          // update all other assignments with the new one
-          for (final otherAssignment in assignments) {
-            // it's ok to replace it on the current one too, for clarity/debug
-            otherAssignment.notifyReplace(mergedAway, kept);
-          }
+          // // update all other assignments with the new one
+          // for (final otherAssignment in assignments) {
+          //   // it's ok to replace it on the current one too, for clarity/debug
+          //   otherAssignment.notifyReplace(mergedAway, kept);
+          // }
 
           final foundInternal = internalNets.remove(mergedAway);
           if (!foundInternal) {
@@ -1195,35 +1195,26 @@ class _SynthLogic {
 }
 
 class _SynthAssignment {
-  _SynthLogic get dst => _dst;
   _SynthLogic _dst;
-  _SynthLogic get src => _src;
+  _SynthLogic get dst {
+    if (_dst.replacement != null) {
+      _dst = _dst.replacement!;
+      assert(_dst.replacement == null, 'should not be a chain...');
+    }
+    return _dst;
+  }
+
   _SynthLogic _src;
+  _SynthLogic get src {
+    if (_src.replacement != null) {
+      _src = _src.replacement!;
+      assert(_src.replacement == null, 'should not be a chain...');
+    }
+    return _src;
+  }
 
   _SynthAssignment(this._src, this._dst);
 
   @override
   String toString() => '$dst <= $src';
-
-  void notifyReplace(_SynthLogic oldSynthLogic, _SynthLogic newSynthLogic) {
-    if (_dst == oldSynthLogic) {
-      _dst = newSynthLogic;
-    }
-
-    if (_src == oldSynthLogic) {
-      _src = newSynthLogic;
-    }
-  }
-
-  // String srcName() {
-  //   if (_src is int) {
-  //     return _src.toString();
-  //   } else if (_src is LogicValue) {
-  //     return (_src as LogicValue).toString();
-  //   } else if (_src is _SynthLogic) {
-  //     return (_src as _SynthLogic).name;
-  //   } else {
-  //     throw Exception("Don't know how to synthesize value: $_src");
-  //   }
-  // }
 }
