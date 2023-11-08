@@ -15,7 +15,6 @@ import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
-import 'package:rohd/src/utilities/naming.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';

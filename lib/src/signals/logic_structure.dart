@@ -33,7 +33,7 @@ class LogicStructure implements Logic {
   final String name;
 
   @override
-  final Naming naming = Naming.unnamed; //TODO
+  Naming get naming => Naming.unnamed; //TODO
 
   /// Creates a new [LogicStructure] with [elements] as elements.
   ///

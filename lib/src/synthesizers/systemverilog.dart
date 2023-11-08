@@ -7,8 +7,6 @@
 // 2021 August 26
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:collection';
-
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -276,7 +274,8 @@ class _SynthSubModuleInstantiation {
 
   @override
   String toString() =>
-      "_SynthSubModuleInstantiation ${_name == null ? 'null' : '"$name"'}, module name:'${module.name}'";
+      "_SynthSubModuleInstantiation ${_name == null ? 'null' : '"$name"'}, "
+      "module name:'${module.name}'";
 
   void clearDeclaration() {
     _needsDeclaration = false;
@@ -358,10 +357,10 @@ class _SynthModuleDefinition {
   //       initialName: initialName, reserved: portName);
   // }
 
-  String _getUniqueSynthSubModuleInstantiationName(
-          String? initialName, bool reserved) =>
-      _synthInstantiationNameUniquifier.getUniqueName(
-          initialName: initialName, nullStarter: 'm', reserved: reserved);
+  // String _getUniqueSynthSubModuleInstantiationName(
+  //         String? initialName, bool reserved) =>
+  //     _synthInstantiationNameUniquifier.getUniqueName(
+  //         initialName: initialName, nullStarter: 'm', reserved: reserved);
 
   _SynthLogic? _getSynthLogic(
     Logic? logic,
@@ -536,6 +535,7 @@ class _SynthModuleDefinition {
   void _assignSubmodulePortMapping() {
     for (final submoduleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
+      // ignore: invalid_use_of_protected_member
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
         submoduleInstantiation.inputMapping[inputName] =

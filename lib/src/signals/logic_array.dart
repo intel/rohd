@@ -108,7 +108,7 @@ class LogicArray extends LogicStructure {
     required this.dimensions,
     required this.elementWidth,
     required this.numUnpackedDimensions,
-    String? name,
+    required String? name,
     required Naming? naming,
   })  : naming = Naming.chooseNaming(name, naming),
         super(name: Naming.chooseName(name, naming, nullStarter: 'a'));
