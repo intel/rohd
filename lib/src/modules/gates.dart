@@ -27,8 +27,8 @@ class NotGate extends Module with InlineSystemVerilog {
   ///
   /// You can optionally set [name] to name this [Module].
   NotGate(Logic in_, {super.name = 'not'}) {
-    _inName = Module.unpreferredName(in_.name);
-    _outName = Module.unpreferredName('${in_.name}_b');
+    _inName = Naming.unpreferredName(in_.name);
+    _outName = Naming.unpreferredName('${in_.name}_b');
     addInput(_inName, in_, width: in_.width);
     addOutput(_outName, width: in_.width);
     _setup();
@@ -90,8 +90,8 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   /// SystemVerilog may look like "&a").
   _OneInputUnaryGate(this._op, this._opStr, Logic in_, {String name = 'ugate'})
       : super(name: name) {
-    _inName = Module.unpreferredName(in_.name);
-    _outName = Module.unpreferredName('${name}_${in_.name}');
+    _inName = Naming.unpreferredName(in_.name);
+    _outName = Naming.unpreferredName('${name}_${in_.name}');
     addInput(_inName, in_, width: in_.width);
     addOutput(_outName);
     _setup();
@@ -183,9 +183,9 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     final in1Logic = in1 is Logic ? in1 : Const(in1, width: width);
 
-    _in0Name = Module.unpreferredName('in0_${in0.name}');
-    _in1Name = Module.unpreferredName('in1_${in1Logic.name}');
-    _outName = Module.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
+    _in0Name = Naming.unpreferredName('in0_${in0.name}');
+    _in1Name = Naming.unpreferredName('in1_${in1Logic.name}');
+    _outName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
@@ -279,9 +279,9 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
     final in1Logic = in1 is Logic ? in1 : Const(in1, width: in0.width);
 
-    _in0Name = Module.unpreferredName('in0_${in0.name}');
-    _in1Name = Module.unpreferredName('in1_${in1Logic.name}');
-    _outName = Module.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
+    _in0Name = Naming.unpreferredName('in0_${in0.name}');
+    _in1Name = Naming.unpreferredName('in1_${in1Logic.name}');
+    _outName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
 
     addInput(_in0Name, in0, width: in0.width);
     addInput(_in1Name, in1Logic, width: in1Logic.width);
@@ -381,18 +381,13 @@ class _ShiftGate extends Module with InlineSystemVerilog {
             ? LogicValue.of(shiftAmount, width: width)
             : LogicValue.ofInferWidth(shiftAmount));
 
-    _inName = Module.unpreferredName('in_${in_.name}');
+    _inName = Naming.unpreferredName('in_${in_.name}');
 
-    _shiftAmountName = 'shiftAmount_${shiftAmountLogic.name}';
-    if (!_outputSvWidthExpansion) {
-      // if we have width expansion, then we want to avoid any constants as
-      // the shift amount since that gets complicated...
-      // so as a proxy for now, just always shove a shiftAmount here
-      _shiftAmountName = Module.unpreferredName(_shiftAmountName);
-    }
+    _shiftAmountName =
+        Naming.unpreferredName('shiftAmount_${shiftAmountLogic.name}');
 
     _outName =
-        Module.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
+        Naming.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
 
     addInput(_inName, in_, width: in_.width);
     addInput(_shiftAmountName, shiftAmountLogic, width: shiftAmountLogic.width);
@@ -673,10 +668,10 @@ class Mux extends Module with InlineSystemVerilog {
       throw PortWidthMismatchException.equalWidth(d0, d1);
     }
 
-    _controlName = Module.unpreferredName('control_${control.name}');
-    _d0Name = Module.unpreferredName('d0_${d0.name}');
-    _d1Name = Module.unpreferredName('d1_${d1.name}');
-    _outName = Module.unpreferredName('out');
+    _controlName = Naming.unpreferredName('control_${control.name}');
+    _d0Name = Naming.unpreferredName('d0_${d0.name}');
+    _d1Name = Naming.unpreferredName('d1_${d1.name}');
+    _outName = Naming.unpreferredName('out');
 
     addInput(_controlName, control);
     addInput(_d0Name, d0, width: d0.width);
@@ -751,9 +746,9 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// SystemVerilog.
   IndexGate(Logic original, Logic index) : super() {
     _originalName = 'original_${original.name}';
-    _indexName = Module.unpreferredName('index_${index.name}');
+    _indexName = Naming.unpreferredName('index_${index.name}');
     _selectionName =
-        Module.unpreferredName('${original.name}_indexby_${index.name}');
+        Naming.unpreferredName('${original.name}_indexby_${index.name}');
 
     addInput(_originalName, original, width: original.width);
     addInput(_indexName, index, width: index.width);
@@ -827,8 +822,8 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   /// thrown, otherwise.
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
   ReplicationOp(Logic original, this._multiplier)
-      : _inputName = Module.unpreferredName('input_${original.name}'),
-        _outputName = Module.unpreferredName('output_${original.name}') {
+      : _inputName = Naming.unpreferredName(original.name),
+        _outputName = Naming.unpreferredName('replicated_${original.name}') {
     final newWidth = original.width * _multiplier;
     if (newWidth < 1) {
       throw InvalidMultiplierException(newWidth);

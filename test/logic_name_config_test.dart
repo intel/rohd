@@ -229,12 +229,16 @@ void main() {
               ' should have had present $expectedName');
     }
   });
+
+  test('non-mergeable name sticks around when not needed', () async {
+    final dut = FunctionGeneratedModule((in1, in2, out1) {
+      final intermediate = Logic(name: 'intermediate');
+      out1 <= in1 | in2;
+      intermediate <= in1;
+    });
+    await dut.build();
+    final sv = dut.generateSynth();
+
+    expect(sv, contains('intermediate'));
+  });
 }
-
-//TODO: test that signal flying at the end gets declared if reserved
-
-// TODO: testplan:
-// - unpreferred
-//    - gets lower priority when merging
-//    - automatically unpreferred if starts with _ (via function)
-// - preference vs. availability? coverage? full priority with randomness?

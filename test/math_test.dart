@@ -73,7 +73,7 @@ void main() {
     await Simulator.reset();
   });
 
-  test('sv expansion does slices', () async {
+  test('sv expansion handles lint issues', () async {
     final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
     await gtm.build();
 

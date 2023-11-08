@@ -62,7 +62,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 
     // TODO: how to guarantee this now, and how to test!?
     _subset =
-        Module.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
+        Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
     addInput(_original, bus, width: bus.width);
     final newWidth = (endIndex - startIndex).abs() + 1;
@@ -137,7 +137,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
 /// use this [Module].
 class Swizzle extends Module with InlineSystemVerilog {
-  final String _out = Module.unpreferredName('swizzled');
+  final String _out = Naming.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.
   late final Logic out = output(_out);
@@ -150,7 +150,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     var outputWidth = 0;
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
-      final inputName = Module.unpreferredName('in${idx++}');
+      final inputName = Naming.unpreferredName('in${idx++}');
       _swizzleInputs.add(
         addInput(inputName, signal, width: signal.width),
       );
