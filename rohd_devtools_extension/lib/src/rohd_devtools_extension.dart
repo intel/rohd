@@ -78,8 +78,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   Future<void> _initEval() async {
     await serviceManager.onServiceAvailable;
     fooControllerEval = EvalOnDartLibrary(
-      // 'package:rohd/src/diagnostics/inspector_service.dart',
-      'package:rohd/src/diagnostics/old_service.dart',
+      'package:rohd/src/diagnostics/inspector_service.dart',
       serviceManager.service!,
       serviceManager: serviceManager,
     );
@@ -102,13 +101,13 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   Future<void> testCode() async {
     final isAlive = Disposable();
     final treeInstance = await fooControllerEval
-        .evalInstance('ModuleTree.instance.stringMod', isAlive: isAlive);
+        .evalInstance('ModuleTree.instance.hierarchyJSON', isAlive: isAlive);
 
     final thingsListString =
         treeInstance.valueAsString ?? _defaultEvalResponseText;
     final thingsListJSON = json.decode(thingsListString);
 
-    print(thingsListJSON['nested']);
+    print(thingsListJSON);
   }
 
   Future<void> testCodeServiceExtension() async {
