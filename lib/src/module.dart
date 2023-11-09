@@ -274,7 +274,7 @@ abstract class Module {
     _hasBuilt = true;
 
     // Send the hierarchy String
-    // ModuleTree.hierarchyString = hierarchyString();
+    ModuleTree.hierarchyString = buildModuleTreeJsonSchema(this);
   }
 
   /// Adds a [Module] to this as a subModule.

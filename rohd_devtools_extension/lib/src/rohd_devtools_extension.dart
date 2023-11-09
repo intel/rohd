@@ -107,7 +107,20 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
         treeInstance.valueAsString ?? _defaultEvalResponseText;
     final thingsListJSON = json.decode(thingsListString);
 
-    print(thingsListJSON);
+    print(thingsListJSON['name']);
+    extensionManager.postMessageToDevTools(
+      DevToolsExtensionEvent(
+        DevToolsExtensionEventType.unknown,
+        data: {'root': thingsListJSON['name']},
+      ),
+    );
+
+    extensionManager.showBannerMessage(
+      key: 'ROHD Hierarchy',
+      type: 'warning',
+      message: thingsListString,
+      extensionName: 'rohd',
+    );
   }
 
   Future<void> testCodeServiceExtension() async {

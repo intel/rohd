@@ -22,5 +22,5 @@ class ModuleTree {
   // Module? get instanceRootModule => ModuleTree.rootModule;
 
   static String hierarchyString = '';
-  String get hierarchyJSON => json.encode(hierarchyString);
+  String get hierarchyJSON => hierarchyString;
 }
