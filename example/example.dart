@@ -13,7 +13,26 @@
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/diagnostics/old_service.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
+
+class childA extends Module {
+  childA(Logic reset, {super.name = 'childA'}) {
+    reset = addInput('reset', reset);
+    final childANested = ChildANested(reset);
+  }
+}
+
+class ChildANested extends Module {
+  ChildANested(Logic reset, {super.name = 'childANested'}) {
+    reset = addInput('reset', reset);
+  }
+}
+
+class childB extends Module {
+  childB(Logic reset, {super.name = 'childB'}) {
+    reset = addInput('reset', reset);
+  }
+}
 
 // Define a class Counter that extends ROHD's abstract Module class.
 class Counter extends Module {
@@ -37,6 +56,9 @@ class Counter extends Module {
 
     // A local signal named 'nextVal'.
     final nextVal = Logic(name: 'nextVal', width: width);
+
+    final subA = childA(reset);
+    final subB = childB(reset);
 
     // Assignment statement of nextVal to be val+1
     // ('<=' is the assignment operator).
@@ -75,6 +97,18 @@ Future<void> main({bool noPrint = false}) async {
   // to build it.
   await counter.build();
 
+  // 1. Get the top / root level of the hierarchy, also make it a list
+  // final List<Module> hier = counter.hierarchy().toList();
+
+  // 2. Iterate through the submodule
+
+  final json = counter.buildModuleTreeJsonSchema(counter);
+  print(json);
+  // for (var i = 0; i < hier.length; i++) {
+  //   final modCurr = hier[i];
+  //   print(modCurr.name);
+  // }
+
   // Let's see what this module looks like as SystemVerilog, so we can pass it
   // to other tools.
 
@@ -82,12 +116,12 @@ Future<void> main({bool noPrint = false}) async {
   //   await Future.delayed(Duration(seconds: 1));
   // }
 
-  print(ModuleTree.instance.stringMod);
+  // print(ModuleTree.instance.hierarchyJSON);
 
   final systemVerilogCode = counter.generateSynth();
-  if (!noPrint) {
-    print(systemVerilogCode);
-  }
+  // if (!noPrint) {
+  //   print(systemVerilogCode);
+  // }
 
   // Now let's try simulating!
 
