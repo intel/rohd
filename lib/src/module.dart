@@ -590,8 +590,8 @@ abstract class Module {
   Map<String, dynamic> toJson({bool skipCustomModules = true}) {
     final json = {
       'name': name,
-      'inputs': inputs.map((key, value) => MapEntry(key, value.toString())),
-      'outputs': outputs.map((key, value) => MapEntry(key, value.toString())),
+      'inputs': inputs.map((key, value) => MapEntry(key, value.toJSON())),
+      'outputs': outputs.map((key, value) => MapEntry(key, value.toJSON())),
     };
 
     final isCustomModule = this is CustomSystemVerilog;

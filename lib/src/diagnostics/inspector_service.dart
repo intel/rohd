@@ -17,10 +17,6 @@ class ModuleTree {
   static ModuleTree get instance => _instance;
   static final _instance = ModuleTree._();
 
-  /// Top level Module
-  // static Module? rootModule;
-  // Module? get instanceRootModule => ModuleTree.rootModule;
-
   static String hierarchyString = '';
   String get hierarchyJSON => hierarchyString;
 }

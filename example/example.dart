@@ -102,8 +102,8 @@ Future<void> main({bool noPrint = false}) async {
 
   // 2. Iterate through the submodule
 
-  // final json = counter.buildModuleTreeJsonSchema(counter);
-  // print(json);
+  final json = counter.buildModuleTreeJsonSchema(counter);
+  print(json);
 
   print(ModuleTree.instance.hierarchyJSON);
   // for (var i = 0; i < hier.length; i++) {
