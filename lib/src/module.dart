@@ -19,7 +19,6 @@ import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
-import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 /// Represents a synthesizable hardware entity with clearly defined interface
 /// boundaries.
