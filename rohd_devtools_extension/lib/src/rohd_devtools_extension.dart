@@ -10,13 +10,6 @@ import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:rohd/rohd.dart' as rohd show Module;
-import 'package:vm_service/vm_service.dart';
-import 'eval.dart';
-// import 'package:rohd/src/diagnostics/inspector_service.dart';
-
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
 
@@ -52,9 +45,6 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     super.initState();
     unawaited(_initEval());
 
-    // TODO(Quek): Init the inspector service
-    // rohd.InspectorService();
-
     // Example of the devtools extension registering a custom handler.
     extensionManager.registerEventHandler(
       DevToolsExtensionEventType.themeUpdate,
@@ -87,7 +77,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   void _incrementCounter() {
     setState(() {
-      testCode();
+      evalModuleTree();
       counter++;
     });
     extensionManager.postMessageToDevTools(
@@ -98,16 +88,15 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  Future<void> testCode() async {
-    final isAlive = Disposable();
-    final treeInstance = await fooControllerEval
-        .evalInstance('ModuleTree.instance.hierarchyJSON', isAlive: isAlive);
+  Future<void> evalModuleTree() async {
+    final treeInstance = await fooControllerEval.evalInstance(
+        'ModuleTree.instance.hierarchyJSON',
+        isAlive: evalDisposable);
 
     final thingsListString =
         treeInstance.valueAsString ?? _defaultEvalResponseText;
     final thingsListJSON = json.decode(thingsListString);
 
-    print(thingsListJSON['name']);
     extensionManager.postMessageToDevTools(
       DevToolsExtensionEvent(
         DevToolsExtensionEventType.unknown,
@@ -121,63 +110,6 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
       message: thingsListString,
       extensionName: 'rohd',
     );
-  }
-
-  Future<void> testCodeServiceExtension() async {
-    // From Kenzii discord, https://github.com/flutter/devtools/blob/master/packages/devtools_app/lib/src/shared/diagnostics/inspector_service.dart#L1367-L1371
-
-    //////////////////// Working Code //////////////////////////
-    // if (serviceManager.serviceExtensionManager
-    //     .isServiceExtensionAvailable('ext.rohd.module_tree')) {
-    //   final available = await serviceManager.serviceExtensionManager
-    //       .waitForServiceExtensionAvailable('ext.rohd.module_tree');
-    //   if (!available) {
-    //     extensionManager.showNotification('service extension not available');
-    //   }
-    // } else {
-    //   extensionManager.showNotification('cannot find service extension.');
-    // }
-    // print(serviceManager.isolateManager.mainIsolate.value!.id);
-    // final response = await serviceManager.service!.callServiceExtension(
-    //   'ext.rohd.module_tree',
-    //   isolateId: serviceManager.isolateManager.mainIsolate.value!.id,
-    // );
-    // final json = response.json!;
-    // if (json['errorMessage'] != null) {
-    //   throw Exception('ext.rohd.module_tree -- ${json['errorMessage']}');
-    // }
-    // print('your json is: ');
-    // print(json);
-    // extensionManager.showNotification('$json');
-
-    print('running test code for service extension.');
-
-    const kServiceExtensionName = 'ext.rohd.module_tree';
-    final service = serviceManager.service!;
-    final vm = await service.getVM();
-
-    // Iterate over all isolates in the process.
-    for (final isolateRef in vm.isolates!) {
-      final isolate = await service.getIsolate(isolateRef.id!);
-      if (isolate.extensionRPCs!.contains(kServiceExtensionName)) {
-        print(
-            'Service extension $kServiceExtensionName is registered on ${isolate.name}');
-        print(
-            'Service extension of ROHD is registered on isolate ID: ${isolate.id!}');
-        try {
-          // Invoke the extension on each isolate with the service extension registered.
-          final response = await service.callServiceExtension(
-            kServiceExtensionName,
-            isolateId: isolate.id!,
-          );
-          print('Result from ${isolate.name}: ${response.json}');
-          extensionManager.showNotification('${response.json}');
-        } catch (e) {
-          print('Failed to invoke extension on ${isolate.name}: $e');
-        }
-      }
-    }
-    //////////////////////////////////////////////////////////
   }
 
   @override
@@ -200,7 +132,8 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
             const SizedBox(height: 48.0),
             Text('Received theme update from DevTools: $message'),
             ElevatedButton(
-                onPressed: () => testCode(), child: const Text('Quek Btn')),
+                onPressed: () => evalModuleTree(),
+                child: const Text('Quek Btn')),
             const SizedBox(height: 48.0),
             ElevatedButton(
               onPressed: () => extensionManager

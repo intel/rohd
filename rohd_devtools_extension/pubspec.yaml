@@ -18,7 +18,6 @@ dependencies:
   # devtools_shared: ^6.0.0
   devtools_extensions: ^0.0.6
   devtools_app_shared: ^0.0.4
-  flutter_riverpod: 2.0.0-dev.9
   vm_service: ^11.9.0
 
 dev_dependencies:

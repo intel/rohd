@@ -22,6 +22,7 @@ class ModuleTree {
   ///
   /// This getter allows access to the `_hierarchyString` string.
   ///
-  /// Returns: string representing hierarchical structure of modules in JSON format.
+  /// Returns: string representing hierarchical structure of modules in JSON
+  /// format.
   String get hierarchyJSON => hierarchyString;
 }

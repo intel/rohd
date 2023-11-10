@@ -34,7 +34,6 @@ class Logic {
   int get width => _wire.width;
 
   /// The current active value of this signal.
-  /// TODO(quek): Add this to output
   LogicValue get value => _wire._currentValue;
 
   /// The current active value of this signal if it has width 1, as
