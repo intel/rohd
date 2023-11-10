@@ -38,11 +38,11 @@ class LogicStructure implements Logic {
   /// the object's properties into a JSON string. The output string will
   /// contain keys such as `name`, `width`, and `value`.
   @override
-  String toJSON() => json.encode({
+  Map<String, dynamic> toMap() => {
         'name': name,
         'width': width,
         'value': value.toString(),
-      });
+      };
 
   /// An internal counter for encouraging unique naming of unnamed signals.
   static int _structIdx = 0;
