@@ -2,8 +2,6 @@
 
 This Visual Studio Code extension provides commonly used ROHD framework snippets, facilitating usage of auto-complete features.
 
-![VSCode ROHD Completion](images/vscode_rohd.gif)
-
 ## What's ROHD
 
 ROHD (pronounced as "road") is a framework for describing and verifying hardware using the Dart programming language. For more information about ROHD, please visit [https://intel.github.io/rohd-website/](https://intel.github.io/rohd-website).
