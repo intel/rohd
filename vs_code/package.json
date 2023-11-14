@@ -23,14 +23,6 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "rohd.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "rohd.create_module",
-        "title": "ROHD: Create a new module"
-      }
     ],
     "snippets": [
       {
