@@ -2,7 +2,7 @@
   "name": "rohd",
   "displayName": "ROHD",
   "description": "ROHD extension for vscode",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ROHD",
   "license": "BSD-3-Clause",
   "repository": {
