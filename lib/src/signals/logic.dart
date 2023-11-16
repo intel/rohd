@@ -701,4 +701,24 @@ class Logic {
     }
     return isLogicIn;
   }
+
+  /// c <= a.selectIndex(b); // order matches closer to array indexing, but requires extension on `List<Logic>`
+  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
+    final c = Logic(name: 'selectFrom', width: busList.first.width);
+
+    Combinational(
+      [
+        Case(
+            this,
+            [
+              for (var i = 0; i < busList.length; i++)
+                CaseItem(Const(i, width: width), [c < busList[i]])
+            ],
+            conditionalType: ConditionalType.unique,
+            defaultItem: [c < (defaultValue ?? 0)])
+      ],
+    );
+
+    return c;
+  }
 }
