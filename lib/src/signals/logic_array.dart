@@ -118,24 +118,4 @@ class LogicArray extends LogicStructure {
     return LogicArray(dimensions, elementWidth,
         numUnpackedDimensions: numUnpackedDimensions, name: name);
   }
-
-  @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
-    final c = Logic(name: 'selectFrom', width: busList.first.width);
-
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [c < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [c < (defaultValue ?? 0)])
-      ],
-    );
-
-    return c;
-  }
 }

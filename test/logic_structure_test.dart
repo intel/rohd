@@ -24,26 +24,6 @@ class MyStruct extends LogicStructure {
 
   @override
   LogicStructure clone({String? name}) => MyStruct();
-
-  @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
-    final c = Logic(name: 'selectFrom', width: busList.first.width);
-
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [c < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [c < (defaultValue ?? 0)])
-      ],
-    );
-
-    return c;
-  }
 }
 
 class MyFancyStruct extends LogicStructure {
@@ -59,26 +39,6 @@ class MyFancyStruct extends LogicStructure {
 
   MyFancyStruct._(this.arr, this.bus, this.subStruct)
       : super([arr, bus, subStruct], name: 'myFancyStruct');
-
-  @override
-  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
-    final c = Logic(name: 'selectFrom', width: busList.first.width);
-
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [c < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [c < (defaultValue ?? 0)])
-      ],
-    );
-
-    return c;
-  }
 }
 
 class StructPortModule extends Module {

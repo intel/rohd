@@ -519,4 +519,8 @@ class LogicStructure implements Logic {
   void _updateWire(_Wire newWire) {
     throw UnsupportedError('Delegated to elements');
   }
+
+  @override
+  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
+      packed.selectFrom(busList, defaultValue: defaultValue);
 }
