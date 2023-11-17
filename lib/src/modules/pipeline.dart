@@ -76,6 +76,7 @@ class _PipeStage {
     main[newLogic] = Logic(
       name: '${newLogic.name}_stage$index',
       width: newLogic.width,
+      naming: Naming.mergeable,
     );
   }
 }
@@ -360,17 +361,17 @@ class ReadyValidPipeline extends Pipeline {
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
-          stalls: List.generate(
-              stages.length, (index) => Logic(name: 'stall_$index')),
+          stalls: List.generate(stages.length,
+              (index) => Logic(name: 'stall_$index', naming: Naming.mergeable)),
         ) {
     final valid = validPipeIn;
 
     final stalls = _stages.map((stage) => stage.stall).toList()
       ..removeLast(); // garbage value at the end
 
-    final readys =
-        List.generate(stages.length, (index) => Logic(name: 'ready_$index'))
-          ..add(readyPipeOut);
+    final readys = List.generate(stages.length,
+        (index) => Logic(name: 'ready_$index', naming: Naming.mergeable))
+      ..add(readyPipeOut);
 
     for (var i = 0; i < stalls.length; i++) {
       readys[i] <= ~get(valid, i + 1) | readys[i + 1];
