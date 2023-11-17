@@ -48,7 +48,7 @@ enum SimulatorPhase {
 /// - [SimulatorPhase.outOfTick]  (phase): Not during an active simulator tick.
 ///
 /// Functional behavior modelling subscribes to [Simulator] events and/or queries the [SimulatorPhase].
-class Simulator {
+abstract class Simulator {
   /// The current time in the [Simulator].
   static int get time => _currentTimestamp;
   static int _currentTimestamp = 0;

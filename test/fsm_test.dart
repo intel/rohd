@@ -237,9 +237,8 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
 
-      expect(simResult, equals(true));
       verifyMermaidStateDiagram(_trafficFSMPath);
     });
   });

@@ -171,6 +171,7 @@ void main() {
       final gtm = BusTestModule(a, Logic(width: 8));
       final out = gtm.aBar;
       await gtm.build();
+
       a.put(0xff);
       expect(out.value.toInt(), equals(0));
       a.put(0);
@@ -558,8 +559,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
   });
 }
