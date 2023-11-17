@@ -58,8 +58,6 @@ class RenameableModule extends Module {
     inputPort = addInput(inputPort.name, inputPort);
     final outputPort = addOutput(outputPortName);
 
-    // TODO: add reserved, renameable, mergeable internal signals?
-
     final internalSignal = Logic(name: internalSignalName);
     final reservedInternalSignal = Logic(name: reservedInternalSignalName);
 

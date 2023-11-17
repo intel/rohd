@@ -55,12 +55,7 @@ class BusSubset extends Module with InlineSystemVerilog {
           ' than ${bus.width}');
     }
 
-    // original name can't be unpreferred because you cannot do a bit slice
-    // on expressions in SystemVerilog, and other expressions could have
-    // been in-lined
-    _original = 'original_${bus.name}';
-
-    // TODO: how to guarantee this now, and how to test!?
+    _original = Naming.unpreferredName('original_${bus.name}');
     _subset =
         Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 

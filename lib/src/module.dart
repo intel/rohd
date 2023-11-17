@@ -41,10 +41,10 @@ abstract class Module {
   final Set<Logic> _internalSignals = HashSet<Logic>();
 
   /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = {}; //TODO
+  final Map<String, Logic> _inputs = {};
 
   /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = {}; //TODO
+  final Map<String, Logic> _outputs = {};
 
   /// The parent [Module] of this [Module].
   ///
@@ -269,9 +269,6 @@ abstract class Module {
     module._parent = this;
     await module.build();
   }
-
-  //TODO: how to indicate that an SV inlineable module has a good vs. bad suggested name?
-  // maybe keep unpreferred around as a mechanism to sort mergeable names?
 
   /// Makes a signal name "unpreferred" when considering between multiple
   /// possible signal names.

@@ -202,56 +202,6 @@ class Logic {
   /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isPort => isInput || isOutput;
 
-  //TODO
-  // Characteristics of a signal name:
-  //  Can it be merged with another signal?
-  //  Is it a port?
-  //  Is it a signal that must keep it's name there?
-  //  Can it be uniquified?
-  //  Is it unprefferred (ideally not present in the output)?
-
-  // Mergeable
-  // Reserved
-  // Uniquifiable
-
-  // Types of signals
-  // - unnamed internal signals (prefer to remove)
-  // - unprefferred port names for inline verilog (better than unnamed)
-  // - port names on real modules (reserved)
-  // - named internal signals, uniquifiable (name can change, but prefer original)/
-  // - named internal signals, reserved (name cannot change, error)
-  // - named internal signals, mergeable (can be omitted from output for equivalent assignments/)
-
-  // Flags
-  // - Preference level
-  //   - prefer not present
-  //   - neutral
-  //   - prefer present
-  // - Must be present, uniquifiable
-  // - Must be present and reserved name
-
-  // Mergeable
-  // Uniquifiable
-  // Preference
-
-  // API
-  //  - reserved : bool
-  //  - name : String?
-  //  - preferred : bool?
-
-  // When picking names
-  // - First all the ports
-  // - Then all the reserved
-  // - Then collapse (collect references under one node)
-  // - Then uniquify non-reserved
-
-  // Add flag to signals whether they can be merged with an expression
-  // like merge RULES: can merge, but can't with an expression
-
-  /// When set, generation of outputs will require that this
-  // final bool reserveName;
-  // final bool mergeableName;
-
   /// Controls the naming (and renaming) preferences of this signal in generated
   /// outputs.
   final Naming naming;
@@ -261,7 +211,8 @@ class Logic {
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
   ///
-  /// //TODO: make the naming rules clear
+  /// The [naming] and [name], if unspecified, are chosen based on the rules
+  /// in [Naming.chooseNaming] and [Naming.chooseName], respectively.
   Logic({
     String? name,
     int width = 1,

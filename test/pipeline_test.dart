@@ -6,7 +6,6 @@
 //
 // 2021 October 11
 // Author: Max Korbel <max.korbel@intel.com>
-//
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -194,7 +193,7 @@ void main() {
             {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(pipem, vectors);
     });
 
     test('rv pipeline notready', () async {

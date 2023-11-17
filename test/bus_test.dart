@@ -410,8 +410,7 @@ void main() {
         Vector({'a': 0xba}, {'a_neg_shrunk3': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, vectors, dontDeleteTmpFiles: true);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 

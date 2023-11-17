@@ -237,7 +237,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
+      SimCompare.checkIverilogVector(pipem, vectors);
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });

@@ -76,7 +76,7 @@ class LogicArray extends LogicStructure {
           (index) => (dimensions.length == 1
               ? Logic(
                   width: elementWidth,
-                  naming: Naming.renameable, //TODO
+                  naming: Naming.renameable,
                 )
               : LogicArray(
                   nextDimensions!,

@@ -141,7 +141,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   late final Logic _in1 = input(_in1Name);
 
   /// The output of this gate.
-  late final Logic out = _outputSvWidthExpansion
+  late final Logic out = _outputSvWidthExpansion != 0
       // this is sub-optimal, but it's tricky to make special SV for it
       ? BusSubset(output(_outName), 0, width - 1).subset
       : output(_outName);
@@ -161,9 +161,13 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// The width of the inputs and outputs for this operation.
   final int width;
 
-  /// If true, then the output generated SystemVerilog may have a larger width
-  /// than the inputs, which should be considered in generated verilog.
-  final bool _outputSvWidthExpansion;
+  /// If non-zero, then the output generated SystemVerilog may have a larger
+  /// width than the inputs, which should be considered in generated verilog.
+  final int _outputSvWidthExpansion;
+
+  /// If true, it will wrap the expression in `{}` to try to force the
+  /// expression to behave as a self-determined width.
+  final bool _makeSelfDetermined;
 
   /// Constructs a two-input bitwise gate for an abitrary custom functional
   /// implementation.
@@ -173,9 +177,13 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// String between the two input signal names (e.g. if [_opStr] was "&",
   /// generated SystemVerilog may look like "a & b").
   _TwoInputBitwiseGate(this._op, this._opStr, Logic in0, dynamic in1,
-      {String name = 'gate2', bool outputSvWidthExpansion = false})
+      {String name = 'gate2',
+      int outputSvWidthExpansion = 0,
+      bool makeSelfDetermined = false})
       : width = in0.width,
+        assert(!outputSvWidthExpansion.isNegative, 'Should not be negative.'),
         _outputSvWidthExpansion = outputSvWidthExpansion,
+        _makeSelfDetermined = makeSelfDetermined,
         super(name: name) {
     if (in1 is Logic && in0.width != in1.width) {
       throw PortWidthMismatchException.equalWidth(in0, in1);
@@ -189,7 +197,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width + (_outputSvWidthExpansion ? 1 : 0));
+    addOutput(_outName, width: width + _outputSvWidthExpansion);
 
     _setup();
   }
@@ -224,7 +232,11 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
     }
     final in0 = inputs[_in0Name]!;
     final in1 = inputs[_in1Name]!;
-    return '$in0 $_opStr $in1';
+    var sv = '$in0 $_opStr $in1';
+    if (_makeSelfDetermined) {
+      sv = '{$sv}';
+    }
+    return sv;
   }
 }
 
@@ -459,8 +471,8 @@ class Power extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or [int].
   Power(Logic in0, dynamic in1, {String name = 'power'})
-      : super((a, b) => a.pow(b), '**', in0, in1, name: name);
-  //TODO: whats the output width of power?
+      : super((a, b) => a.pow(b), '**', in0, in1,
+            name: name, makeSelfDetermined: true);
 }
 
 /// A two-input addition module.
@@ -470,7 +482,7 @@ class Add extends _TwoInputBitwiseGate {
   /// [in1] can be either a [Logic] or [int].
   Add(Logic in0, dynamic in1, {String name = 'add'})
       : super((a, b) => a + b, '+', in0, in1,
-            name: name, outputSvWidthExpansion: true);
+            name: name, outputSvWidthExpansion: 1);
 }
 
 /// A two-input subtraction module.
@@ -488,11 +500,8 @@ class Multiply extends _TwoInputBitwiseGate {
   ///
   /// [in1] can be either a [Logic] or [int].
   Multiply(Logic in0, dynamic in1, {String name = 'multiply'})
-      : super((a, b) => a * b, '*', in0, in1, name: name);
-
-  //TODO: should this have outputSvWidthExpansion also??
-  // can we instead use a {} around things?
-  // https://stackoverflow.com/questions/37909010/verilog-signed-multiplication-multiplying-numbers-of-different-sizes
+      : super((a, b) => a * b, '*', in0, in1,
+            name: name, makeSelfDetermined: true);
 }
 
 /// A two-input divison module.

@@ -14,7 +14,8 @@ class UnavailableReservedNameException extends RohdException {
   /// Constructs an error indicating that the reserved [name] could not be
   /// acquired.
   UnavailableReservedNameException(String name)
-      : this.withMessage('Unable to acquire reserved name "$name"');
+      : this.withMessage('Unable to use reserved name "$name" '
+            'because something else already has this name.');
 
   /// Constructs an error indicating that the reserved `name` could not be
   /// acquired with a [message] explaining why.

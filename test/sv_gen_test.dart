@@ -82,6 +82,17 @@ class SubForExpressions extends Module {
   }
 }
 
+class ModuleWithFloatingSignals extends Module {
+  ModuleWithFloatingSignals() {
+    final a = addInput('apple', Logic());
+    addOutput('orange');
+
+    final s = Logic(name: 'squash', naming: Naming.reserved);
+
+    Logic(name: 'xylophone') <= a | s;
+  }
+}
+
 void main() {
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
@@ -150,5 +161,16 @@ void main() {
     final sv = mod.generateSynth();
 
     expect(sv, contains('.a((a | (b[2])))'));
+  });
+
+  test('no floating assignments', () async {
+    final mod = ModuleWithFloatingSignals();
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    // only expect 1 assignment to xylophone
+    expect('assign'.allMatches(sv).length, 1);
+    expect('assign xylophone'.allMatches(sv).length, 1);
   });
 }
