@@ -1384,5 +1384,6 @@ enum _LogicValueEnum {
   /// A value of Z (floating).
   z;
 
+  /// Indicates whether this is a valid value ([zero] or [one], not [x] or [z]).
   bool get isValid => this == zero || this == one;
 }

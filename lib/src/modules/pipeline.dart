@@ -63,12 +63,21 @@ class _PipeStage {
   /// Registers [newLogic] with this stage and creates appropriate inputs,
   /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
-    input[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_i', width: newLogic.width);
-    output[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_o', width: newLogic.width);
-    main[newLogic] =
-        Logic(name: '${newLogic.name}_stage$index', width: newLogic.width);
+    input[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_i',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
+    output[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_o',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
+    main[newLogic] = Logic(
+      name: '${newLogic.name}_stage$index',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
   }
 }
 
@@ -352,17 +361,17 @@ class ReadyValidPipeline extends Pipeline {
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
-          stalls: List.generate(
-              stages.length, (index) => Logic(name: 'stall_$index')),
+          stalls: List.generate(stages.length,
+              (index) => Logic(name: 'stall_$index', naming: Naming.mergeable)),
         ) {
     final valid = validPipeIn;
 
     final stalls = _stages.map((stage) => stage.stall).toList()
       ..removeLast(); // garbage value at the end
 
-    final readys =
-        List.generate(stages.length, (index) => Logic(name: 'ready_$index'))
-          ..add(readyPipeOut);
+    final readys = List.generate(stages.length,
+        (index) => Logic(name: 'ready_$index', naming: Naming.mergeable))
+      ..add(readyPipeOut);
 
     for (var i = 0; i < stalls.length; i++) {
       readys[i] <= ~get(valid, i + 1) | readys[i + 1];

@@ -30,6 +30,50 @@ class LogicWithInternalSignalModule extends Module {
   }
 }
 
+class ParentMod extends Module {
+  ParentMod(Logic clk, Logic a) {
+    clk = addInput('clk', clk);
+    addInput('a', a);
+
+    final otherA = Logic();
+    ChildMod(clk, otherA);
+  }
+}
+
+class ChildMod extends Module {
+  ChildMod(Logic clk, Logic a) {
+    addInput('clk', clk);
+    addInput('a', a);
+  }
+}
+
+class SensitiveNaming extends Module {
+  SensitiveNaming(Logic a) {
+    a = addInput('a', a);
+    final b = Logic(name: 'b');
+    final clk = Logic(name: 'myClock');
+    b <= a;
+    final c = Logic(name: 'c');
+    final d = Logic(name: 'd');
+    d <= c;
+    final e = addOutput('e');
+    e <= a & d;
+    c <= flop(clk, b);
+  }
+}
+
+class BusSubsetNaming extends Module {
+  BusSubsetNaming(Logic a) {
+    a = addInput('a', a, width: 32);
+    final b = Logic(name: 'b', width: 32);
+    b <= flop(Logic(name: 'clk'), a);
+    final c = Logic(name: 'c');
+    c <= b[3];
+    final d = addOutput('d');
+    d <= c;
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -52,7 +96,7 @@ void main() {
   test('GIVEN logic name is null THEN expected to see autogeneration of name',
       () async {
     final bus = Logic();
-    expect(bus.name, equals('s0'));
+    expect(bus.name, equals('_s'));
   });
 
   test(
@@ -67,7 +111,7 @@ void main() {
         () async {
       expect(() async {
         LogicTestModule('');
-      }, throwsA((dynamic e) => e is InvalidPortNameException));
+      }, throwsA((dynamic e) => e is EmptyReservedNameException));
     });
   });
 
@@ -78,5 +122,30 @@ void main() {
     await mod.build();
 
     expect(mod.generateSynth(), contains('shouldExist'));
+  });
+
+  test('unconnected port does not duplicate internal signal', () async {
+    final pMod = ParentMod(Logic(), Logic());
+    await pMod.build();
+    final sv = pMod.generateSynth();
+    expect(RegExp('logic a[,;\n]').allMatches(sv).length, 2);
+  });
+
+  group('sensitive naming', () {
+    test('assigns and gates', () async {
+      final mod = SensitiveNaming(Logic());
+      await mod.build();
+      final sv = mod.generateSynth();
+      expect(sv, contains('e = a & d'));
+      expect(sv, contains('b = a'));
+      expect(sv, contains('d = c'));
+    });
+
+    test('bus subset', () async {
+      final mod = BusSubsetNaming(Logic(width: 32));
+      await mod.build();
+      final sv = mod.generateSynth();
+      expect(sv, contains('c = b[3]'));
+    });
   });
 }

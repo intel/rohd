@@ -65,6 +65,34 @@ class AlphabeticalSubmodulePorts extends Module {
   }
 }
 
+class TopWithExpressions extends Module {
+  TopWithExpressions(Logic a, Logic b) {
+    a = addInput('a', a);
+    b = addInput('b', b, width: 5);
+
+    addOutput('o') <= SubForExpressions(a | b[2]).o;
+  }
+}
+
+class SubForExpressions extends Module {
+  Logic get o => output('o');
+  SubForExpressions(Logic a) {
+    a = addInput('a', a);
+    addOutput('o') <= a;
+  }
+}
+
+class ModuleWithFloatingSignals extends Module {
+  ModuleWithFloatingSignals() {
+    final a = addInput('apple', Logic());
+    addOutput('orange');
+
+    final s = Logic(name: 'squash', naming: Naming.reserved);
+
+    Logic(name: 'xylophone') <= a | s;
+  }
+}
+
 void main() {
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
@@ -80,12 +108,15 @@ void main() {
       await mod.build();
       final sv = mod.generateSynth();
 
-      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      // as instantiated
+      checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
+      checkSignalDeclarationOrder(sv, ['m', 'x', 'b']);
+
+      // alphabetized
       checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
 
       checkSignalDeclarationOrder(
-          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+          sv, ['l', 'a', 'w', 'm', 'x', 'b', 'c', 'o', 'y']);
     });
 
     test('input, output, and internal signals are sorted (different widths)',
@@ -94,16 +125,21 @@ void main() {
       await mod.build();
       final sv = mod.generateSynth();
 
-      checkSignalDeclarationOrder(sv, ['a', 'l', 'w']);
-      checkSignalDeclarationOrder(sv, ['b', 'm', 'x']);
+      // as instantiated
+      checkSignalDeclarationOrder(sv, ['l', 'a', 'w']);
+      checkSignalDeclarationOrder(sv, ['m', 'x', 'b']);
+
+      // alphabetized
       checkSignalDeclarationOrder(sv, ['c', 'o', 'y']);
 
       checkSignalDeclarationOrder(
-          sv, ['a', 'l', 'w', 'b', 'm', 'x', 'c', 'o', 'y']);
+          sv, ['l', 'a', 'w', 'm', 'x', 'b', 'c', 'o', 'y']);
     });
   });
 
-  test('submodule port connections input, output are sorted', () async {
+  test(
+      'submodule port connections input, '
+      'output are sorted by declaration order', () async {
     void checkPortConnectionOrder(String sv, List<String> signalNames) {
       final expected = signalNames.map((e) => '.$e($e)');
       final indices = expected.map(sv.indexOf);
@@ -115,6 +151,26 @@ void main() {
     await mod.build();
     final sv = mod.generateSynth();
 
-    checkPortConnectionOrder(sv, ['a', 'l', 'w', 'b', 'm', 'x']);
+    checkPortConnectionOrder(sv, ['l', 'a', 'w', 'm', 'x', 'b']);
+  });
+
+  test('expressions in sub-module declaration', () async {
+    final mod = TopWithExpressions(Logic(), Logic(width: 5));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('.a((a | (b[2])))'));
+  });
+
+  test('no floating assignments', () async {
+    final mod = ModuleWithFloatingSignals();
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    // only expect 1 assignment to xylophone
+    expect('assign'.allMatches(sv).length, 1);
+    expect('assign xylophone'.allMatches(sv).length, 1);
   });
 }

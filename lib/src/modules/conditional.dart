@@ -112,7 +112,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
       for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
           final inputName = _portUniquifier.getUniqueName(
-              initialName: Module.unpreferredName(
+              initialName: Naming.unpreferredName(
                   Sanitizer.sanitizeSV('in${idx}_${driver.name}')));
           addInput(inputName, driver, width: driver.width);
           _assignedDriverToInputMap[driver] = input(inputName);
@@ -122,7 +122,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
       for (final receiver in conditional.receivers) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
           final outputName = _portUniquifier.getUniqueName(
-              initialName: Module.unpreferredName(
+              initialName: Naming.unpreferredName(
                   Sanitizer.sanitizeSV('out${idx}_${receiver.name}')));
           addOutput(outputName, width: receiver.width);
           _assignedReceiverToOutputMap[receiver] = output(outputName);
@@ -437,7 +437,7 @@ class Sequential extends _Always {
       _clks.add(addInput(
           _portUniquifier.getUniqueName(
               initialName: Sanitizer.sanitizeSV(
-                  Module.unpreferredName('clk${i}_${clk.name}'))),
+                  Naming.unpreferredName('clk${i}_${clk.name}'))),
           clk));
       _preTickClkValues.add(null);
     }
@@ -1612,22 +1612,22 @@ Logic flop(
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
   /// Name for the enable input of this flop
-  final String _enName = Module.unpreferredName('en');
+  final String _enName = Naming.unpreferredName('en');
 
   /// Name for the clk of this flop.
-  final String _clkName = Module.unpreferredName('clk');
+  final String _clkName = Naming.unpreferredName('clk');
 
   /// Name for the input of this flop.
-  final String _dName = Module.unpreferredName('d');
+  final String _dName = Naming.unpreferredName('d');
 
   /// Name for the output of this flop.
-  final String _qName = Module.unpreferredName('q');
+  final String _qName = Naming.unpreferredName('q');
 
   /// Name for the reset of this flop.
-  final String _resetName = Module.unpreferredName('reset');
+  final String _resetName = Naming.unpreferredName('reset');
 
   /// Name for the reset value of this flop.
-  final String _resetValueName = Module.unpreferredName('resetValue');
+  final String _resetValueName = Naming.unpreferredName('resetValue');
 
   /// The clock, posedge triggered.
   late final Logic _clk = input(_clkName);
