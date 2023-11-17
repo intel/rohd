@@ -30,8 +30,6 @@ The `generateSynth` function will return a `String` with the SystemVerilog `modu
 
 ## Controlling naming
 
-TODO: signals, ports, module names, definition names, reserved, Naming
-
 ### Modules
 
 Port names are always maintained exactly in generated SystemVerilog, so they must always be unique and sanitary (valid) SystemVerilog.
@@ -55,3 +53,7 @@ Internal signals, unlike ports, don't need to always have the same exact name as
 ### Unpreferred names
 
 The `Naming.unpreferredName` function will modify a signal name to indicate to downstream flows that the name is preferably omitted from the output, but preferable to an unnamed signal. This is generally most useful for things like output ports of `InlineSystemVerilog` modules.
+
+## More advanced generation
+
+Under the hood of `generateSynth`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments.  This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc.
