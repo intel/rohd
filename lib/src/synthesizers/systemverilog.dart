@@ -140,7 +140,9 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   /// A cached copy of the generated contents of the module
   late final String _moduleContentsString;
 
+  /// The main [_SynthModuleDefinition] for this.
   final _SynthModuleDefinition _synthModuleDefinition;
+
   _SystemVerilogSynthesisResult(
       Module module, Map<Module, String> moduleToInstanceTypeMap)
       : _synthModuleDefinition = _SynthModuleDefinition(module),
@@ -162,6 +164,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   @override
   String toFileContents() => _toVerilog(moduleToInstanceTypeMap);
 
+  /// Representation of all input port declarations in generated SV.
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
         .map((sig) => 'input logic ${sig.definitionName()}')
@@ -169,6 +172,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     return declarations;
   }
 
+  /// Representation of all output port declarations in generated SV.
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
         .map((sig) => 'output logic ${sig.definitionName()}')
@@ -176,6 +180,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     return declarations;
   }
 
+  /// Representation of all internal net declarations in generated SV.
   String _verilogInternalNets() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalNets
@@ -187,6 +192,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     return declarations.join('\n');
   }
 
+  /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
@@ -196,6 +202,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     return assignmentLines.join('\n');
   }
 
+  /// Representation of all sub-module instantiations in generated SV.
   String _verilogSubModuleInstantiations(
       Map<Module, String> moduleToInstanceTypeMap) {
     final subModuleLines = <String>[];
@@ -217,6 +224,8 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     return subModuleLines.join('\n');
   }
 
+  /// The contents of this module converted to SystemVerilog without module
+  /// declaration, ports, etc.
   String _verilogModuleContents(Map<Module, String> moduleToInstanceTypeMap) =>
       [
         _verilogInternalNets(),
@@ -224,11 +233,13 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         _verilogSubModuleInstantiations(moduleToInstanceTypeMap),
       ].where((element) => element.isNotEmpty).join('\n');
 
+  /// The representation of all port declarations.
   String _verilogPorts() => [
         ..._verilogInputs(),
         ..._verilogOutputs(),
       ].join(',\n');
 
+  /// The full SV representation of this module.
   String _toVerilog(Map<Module, String> moduleToInstanceTypeMap) {
     final verilogModuleName = moduleToInstanceTypeMap[module];
     return [
@@ -243,13 +254,16 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
 /// Represents an instantiation of a module within another module.
 class _SynthSubModuleInstantiation {
+  /// The module represented.
   final Module module;
 
+  /// The name of this instance.
   String? _name;
 
   /// Must call [pickName] before this is accessible.
   String get name => _name!;
 
+  /// Selects a name for this module instance. Must be called exactly once.
   void pickName(Uniquifier uniquifier) {
     assert(_name == null, 'Should only pick a name once.');
 
@@ -260,14 +274,27 @@ class _SynthSubModuleInstantiation {
     );
   }
 
-  // final Map<_SynthLogic, Logic> inputMapping = {};
-  // final Map<_SynthLogic, Logic> outputMapping = {};
+  /// A mapping of input port name to [_SynthLogic].
   final Map<String, _SynthLogic> inputMapping = {};
+
+  /// A mapping of output port name to [_SynthLogic].
   final Map<String, _SynthLogic> outputMapping = {};
-  bool _needsDeclaration = true;
+
+  /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
+  bool _needsDeclaration = true;
+
+  /// Removes the need for this module to be declared (via [needsDeclaration]).
+  void clearDeclaration() {
+    _needsDeclaration = false;
+  }
+
+  /// Mapping from [_SynthLogic]s which are outputs of inlineable SV to those
+  /// inlineable modules.
   late final Map<_SynthLogic, _SynthSubModuleInstantiation>
       _synthLogicToInlineableSynthSubmoduleMap;
+
+  /// Creates an instantiation for [module].
   _SynthSubModuleInstantiation(this.module);
 
   @override
@@ -275,10 +302,8 @@ class _SynthSubModuleInstantiation {
       "_SynthSubModuleInstantiation ${_name == null ? 'null' : '"$name"'}, "
       "module name:'${module.name}'";
 
-  void clearDeclaration() {
-    _needsDeclaration = false;
-  }
-
+  /// Provides a mapping from input ports of this module to a string that can
+  /// be fed into that port, which may include inline SV modules as well.
   Map<String, String> _moduleInputsMap() =>
       inputMapping.map((name, synthLogic) => MapEntry(
           name,
@@ -286,9 +311,13 @@ class _SynthSubModuleInstantiation {
                   ?.inlineVerilog() ??
               synthLogic.name));
 
+  /// Provides the inline SV representation for this module.
+  ///
+  /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() =>
       '(${(module as InlineSystemVerilog).inlineVerilog(_moduleInputsMap())})';
 
+  /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
     if (!needsDeclaration) {
       return null;
@@ -307,6 +336,7 @@ class _SynthSubModuleInstantiation {
 
 /// Represents the definition of a module.
 class _SynthModuleDefinition {
+  /// The [Module] being defined.
   final Module module;
 
   final List<_SynthAssignment> assignments = [];
@@ -318,18 +348,26 @@ class _SynthModuleDefinition {
 
   /// All the input ports.
   ///
-  /// This will *never* have any mergeable items init.
+  /// This will *never* have any mergeable items in it.
   final Set<_SynthLogic> inputs = {};
 
-  /// ALl the output ports.
+  /// All the output ports.
   ///
-  /// This will *never* have any mergeable items init.
+  /// This will *never* have any mergeable items in it.
   final Set<_SynthLogic> outputs = {};
 
+  /// A mapping from original [Logic]s to the [_SynthLogic]s that represent
+  /// them.
   final Map<Logic, _SynthLogic> logicToSynthMap = {};
 
+  /// A mapping from the original [Module]s to the
+  /// [_SynthSubModuleInstantiation]s that represent them.
   final Map<Module, _SynthSubModuleInstantiation>
       moduleToSubModuleInstantiationMap = {};
+
+  /// Either accesses a previously created [_SynthSubModuleInstantiation]
+  /// corresponding to [m], or else creates a new one and adds it to the
+  /// [moduleToSubModuleInstantiationMap].
   _SynthSubModuleInstantiation _getSynthSubModuleInstantiation(Module m) {
     if (moduleToSubModuleInstantiationMap.containsKey(m)) {
       return moduleToSubModuleInstantiationMap[m]!;
@@ -347,22 +385,10 @@ class _SynthModuleDefinition {
   /// and module instances.
   final Uniquifier _synthInstantiationNameUniquifier;
 
-  // String _getUniqueSynthLogicName(String? initialName, bool portName) {
-  //   if (portName && initialName == null) {
-  //     throw Exception('Port name cannot be null.');
-  //   }
-  //   return _synthInstantiationNameUniquifier.getUniqueName(
-  //       initialName: initialName, reserved: portName);
-  // }
-
-  // String _getUniqueSynthSubModuleInstantiationName(
-  //         String? initialName, bool reserved) =>
-  //     _synthInstantiationNameUniquifier.getUniqueName(
-  //         initialName: initialName, nullStarter: 'm', reserved: reserved);
-
+  /// Either accesses a previously created [_SynthLogic] corresponding to
+  /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
   _SynthLogic? _getSynthLogic(
     Logic? logic,
-    //  bool allowPortName
   ) {
     if (logic == null) {
       return null;
@@ -375,7 +401,6 @@ class _SynthModuleDefinition {
         final parentArraySynthLogic =
             // ignore: unnecessary_null_checks
             _getSynthLogic(logic.parentStructure!);
-        // , allowPortName);
 
         newSynth = _SynthLogicArrayElement(logic, parentArraySynthLogic!);
       } else {
@@ -399,6 +424,7 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// Creates a new definition representation for this [module].
   _SynthModuleDefinition(this.module)
       : _synthInstantiationNameUniquifier = Uniquifier(
           reservedNames: {
@@ -440,6 +466,7 @@ class _SynthModuleDefinition {
 
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
+
       if (receiver is LogicArray) {
         logicsToTraverse.addAll(receiver.elements);
       }
@@ -456,8 +483,6 @@ class _SynthModuleDefinition {
           module.isInput(receiver) && !receiver.isArrayMember;
       final receiverIsModuleOutput =
           module.isOutput(receiver) && !receiver.isArrayMember;
-      // final driverIsModuleInput = driver != null && module.isInput(driver);
-      // final driverIsModuleOutput = driver != null && module.isOutput(driver);
 
       final synthReceiver = _getSynthLogic(receiver)!;
       final synthDriver = _getSynthLogic(driver);
@@ -486,8 +511,6 @@ class _SynthModuleDefinition {
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver!, synthReceiver));
         }
-        // } else if (receiverIsConstant && receiver.value.isValid) {
-        //   assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       } else if (receiverIsConstant && !receiver.value.isFloating) {
         // this is a const that is valid, *partially* invalid (e.g. 0b1z1x0),
         // or anything that's not *entirely* floating (since those we can leave
@@ -497,8 +520,6 @@ class _SynthModuleDefinition {
         final newReceiverConst = _getSynthLogic(Const(receiver.value))!;
         internalNets.add(newReceiverConst);
         assignments.add(_SynthAssignment(newReceiverConst, synthReceiver));
-
-        // assignments.add(_SynthAssignment(receiver.value, synthReceiver));
       }
 
       final receiverIsSubModuleInput =
@@ -511,15 +532,15 @@ class _SynthModuleDefinition {
       }
     }
 
+    // The order of these is important!
     _collapseAssignments();
-
     _assignSubmodulePortMapping();
-
     _collapseChainableModules();
-
     _pickNames();
   }
 
+  /// Updates all sub-module instantiations with information about which
+  /// [_SynthLogic] should be used for their ports.
   void _assignSubmodulePortMapping() {
     for (final submoduleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
@@ -538,6 +559,7 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// Picks names of signals and sub-modules.
   void _pickNames() {
     // first ports get priority
     for (final input in inputs) {
@@ -549,8 +571,6 @@ class _SynthModuleDefinition {
     }
 
     // pick names of *reserved* submodule instances
-
-    // pick names of submodules
     final nonReservedSubmodules = <_SynthSubModuleInstantiation>[];
     for (final submodule in moduleToSubModuleInstantiationMap.values) {
       if (submodule.module.reserveName) {
@@ -581,6 +601,7 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// Collapses chainable, inlineable modules.
   void _collapseChainableModules() {
     // collapse multiple lines of in-line assignments into one where they are
     // unnamed one-liners
@@ -673,6 +694,7 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// Collapses assignments that don't need to remain present.
   void _collapseAssignments() {
     // there might be more assign statements than necessary, so let's ditch them
     var prevAssignmentCount = 0;
@@ -729,6 +751,10 @@ class _SynthModuleDefinition {
   }
 }
 
+/// Represents an element of a [LogicArray].
+///
+/// Does not fully override or properly implement all characteristics of
+/// [_SynthLogic], so this should be used cautiously.
 class _SynthLogicArrayElement extends _SynthLogic {
   /// The [_SynthLogic] tracking the name of the direct parent array.
   final _SynthLogic parentArray;
@@ -739,8 +765,10 @@ class _SynthLogicArrayElement extends _SynthLogic {
   @override
   String get name => '${parentArray.name}[${logic.arrayIndex!}]';
 
+  /// The element of the [parentArray].
   final Logic logic;
 
+  /// Creates an instance of an element of a [LogicArray].
   _SynthLogicArrayElement(this.logic, this.parentArray)
       : assert(logic.isArrayMember,
             'Should only be used for elements in a LogicArray'),
@@ -749,8 +777,7 @@ class _SynthLogicArrayElement extends _SynthLogic {
 
 /// Represents a logic signal in the generated code within a module.
 class _SynthLogic {
-  // final Logic logic;
-
+  /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
         if (_reservedLogic != null) _reservedLogic!,
         if (_constLogic != null) _constLogic!,
@@ -761,24 +788,46 @@ class _SynthLogic {
 
   /// If this was merged and is now replaced by another, then this is non-null
   /// and points to it.
-  _SynthLogic? _replacement;
-
+  _SynthLogic? get replacement => _replacement?.replacement ?? _replacement;
   set replacement(_SynthLogic? newReplacement) {
     _replacement?.replacement = newReplacement;
     _replacement = newReplacement;
   }
 
-  _SynthLogic? get replacement => _replacement?.replacement ?? _replacement;
+  _SynthLogic? _replacement;
 
+  /// Indicates that this has a reserved name.
   bool get isReserved => _reservedLogic != null;
 
+  /// The [Logic] whose name is reserved, if there is one.
   Logic? _reservedLogic;
-  Const? _constLogic;
+
+  /// The [Logic] whose name is renameable, if there is one.
   Logic? _renameableLogic;
+
+  /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
+
+  /// [Logic]s that are unnamed.
   final Set<Logic> _unnamedLogics = {};
 
-  String? _name;
+  /// The [Logic] whose value represents a constant, if there is one.
+  Const? _constLogic;
+
+  /// Assignments should be eliminated rather than assign to `z`, so this
+  /// indicates if this [_SynthLogic] is actually pointing to a [Const] that
+  /// is floating.
+  bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
+
+  /// Whether this represents a constant.
+  bool get isConstant => _constLogic != null;
+
+  /// If set, then this should never pick the constant as the name.
+  bool get constNameDisallowed => _constNameDisallowed;
+  bool _constNameDisallowed;
+
+  /// Whether this signal should be declared.
+  bool get needsDeclaration => !(isConstant && !_constNameDisallowed);
 
   /// Two [_SynthLogic]s that are not [mergeable] cannot be merged with each
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements
@@ -789,15 +838,22 @@ class _SynthLogic {
   /// True only if this represents a [LogicArray].
   final bool isArray;
 
+  /// The chosen name of this.
+  ///
   /// Must call [pickName] before this is accessible.
   String get name => _name!;
+  String? _name;
 
+  /// Picks a [name].
+  ///
+  /// Must be called exactly once.
   void pickName(Uniquifier uniquifier) {
     assert(_name == null, 'Should only pick a name once.');
 
     _name = _findName(uniquifier);
   }
 
+  /// Finds the best name from the collection of [Logic]s.
   String _findName(Uniquifier uniquifier) {
     assert(!isFloatingConstant, 'Should not be using floating constants.');
 
@@ -864,10 +920,8 @@ class _SynthLogic {
             _unnamedLogics.first.name);
   }
 
-  /// If set, then this should never pick the constant as the name.
-  bool get constNameDisallowed => _constNameDisallowed;
-  bool _constNameDisallowed;
-
+  /// Creates an instance to represent [initialLogic] and any that merge
+  /// into it.
   _SynthLogic(Logic initialLogic,
       {Naming? namingOverride, bool constNameDisallowed = false})
       : isArray = initialLogic is LogicArray,
@@ -896,6 +950,7 @@ class _SynthLogic {
     }
   }
 
+  /// Indicates whether two constants can be merged.
   static bool _constantsMergeable(_SynthLogic a, _SynthLogic b) =>
       a.isConstant &&
       b.isConstant &&
@@ -903,12 +958,12 @@ class _SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
+  /// Merges [other] to be represented by `this` instead, and updates the
+  /// [other] that it has been replaced.
   void adopt(_SynthLogic other) {
     assert(other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
-
-    // other._logics.forEach(_addLogic);
 
     _constNameDisallowed |= other._constNameDisallowed;
 
@@ -922,19 +977,10 @@ class _SynthLogic {
     _unnamedLogics.addAll(other._unnamedLogics);
 
     // keep track that it was replaced by this
-
     other.replacement = this;
   }
 
-  /// Assignments should be eliminated rather than assign to `z`, so this
-  /// indicates if this [_SynthLogic] is actually pointing to a [Const] that
-  /// is floating.
-  bool get isFloatingConstant => _constLogic?.value.isFloating ?? false;
-
-  bool get isConstant => _constLogic != null;
-
-  bool get needsDeclaration => !(isConstant && !_constNameDisallowed);
-
+  /// Adds a new [logic] to be represented by this.
   void _addLogic(Logic logic, {Naming? namingOverride}) {
     final naming = namingOverride ?? logic.naming;
     if (logic is Const) {
@@ -961,6 +1007,7 @@ class _SynthLogic {
   String toString() => '${_name == null ? 'null' : '"$name"'}, '
       'logics contained: ${logics.map((e) => e.name).toList()}';
 
+  /// Provides a definition for a range in SV from a width.
   static String _widthToRangeDef(int width, {bool forceRange = false}) {
     if (width > 1 || forceRange) {
       return '[${width - 1}:0]';
@@ -1010,8 +1057,13 @@ class _SynthLogic {
   }
 }
 
+/// Represents an assignment between two signals.
 class _SynthAssignment {
   _SynthLogic _dst;
+
+  /// The destination being driven by this assignment.
+  ///
+  /// Ensures it's always using the most up-to-date version.
   _SynthLogic get dst {
     if (_dst.replacement != null) {
       _dst = _dst.replacement!;
@@ -1021,6 +1073,10 @@ class _SynthAssignment {
   }
 
   _SynthLogic _src;
+
+  /// The source driving in this assignment.
+  ///
+  /// Ensures it's always using the most up-to-date version.
   _SynthLogic get src {
     if (_src.replacement != null) {
       _src = _src.replacement!;
@@ -1029,6 +1085,7 @@ class _SynthAssignment {
     return _src;
   }
 
+  /// Constructs a representation of an assignment.
   _SynthAssignment(this._src, this._dst);
 
   @override
