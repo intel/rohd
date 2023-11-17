@@ -16,7 +16,6 @@ class Const extends Logic {
   /// [val] should be processable by [LogicValue.of].
   Const(dynamic val, {int? width, bool fill = false})
       : super(
-          // ignore: invalid_use_of_protected_member
           name: 'const_$val',
           width: val is LogicValue ? val.width : width ?? 1,
           // we don't care about maintaining this node unless necessary

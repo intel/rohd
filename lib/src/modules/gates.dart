@@ -143,7 +143,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   late final Logic out = _outputSvWidthExpansion != 0
       // this is sub-optimal, but it's tricky to make special SV for it
-      ? BusSubset(output(_outName), 0, width - 1).subset
+      ? BusSubset(output(_outName), 0, width - _outputSvWidthExpansion).subset
       : output(_outName);
 
   /// The output of this gate.

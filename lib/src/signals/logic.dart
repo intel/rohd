@@ -10,11 +10,6 @@
 
 part of 'signals.dart';
 
-//  - reserved
-//  - un-mergeable (but renameable)
-//  - unpreferred (renameable and mergeable)
-//  - unnamed
-
 /// Represents a logical signal of any width which can change values.
 class Logic {
   // A special quiet flag to prevent `<=` and `<` where inappropriate

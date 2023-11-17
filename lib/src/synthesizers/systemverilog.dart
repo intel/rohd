@@ -563,11 +563,10 @@ class _SynthModuleDefinition {
   void _pickNames() {
     // first ports get priority
     for (final input in inputs) {
-      input.pickName(_synthInstantiationNameUniquifier); //, preReserved: true);
+      input.pickName(_synthInstantiationNameUniquifier);
     }
     for (final output in outputs) {
-      output
-          .pickName(_synthInstantiationNameUniquifier); //, preReserved: true);
+      output.pickName(_synthInstantiationNameUniquifier);
     }
 
     // pick names of *reserved* submodule instances
@@ -772,7 +771,7 @@ class _SynthLogicArrayElement extends _SynthLogic {
   _SynthLogicArrayElement(this.logic, this.parentArray)
       : assert(logic.isArrayMember,
             'Should only be used for elements in a LogicArray'),
-        super(logic); //, '**ARRAY_ELEMENT**', renameable: false);
+        super(logic);
 }
 
 /// Represents a logic signal in the generated code within a module.

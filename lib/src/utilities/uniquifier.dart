@@ -10,7 +10,7 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
+import 'package:rohd/rohd.dart';
 
 /// An object that can provide uniquified names in an efficient way.
 ///
