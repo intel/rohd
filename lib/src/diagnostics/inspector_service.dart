@@ -1,3 +1,5 @@
+import 'package:rohd/rohd.dart';
+
 /// `ModuleTree` implements the Singleton design pattern
 /// to ensure there is only one instance of it during runtime.
 ///
@@ -13,10 +15,8 @@ class ModuleTree {
   static ModuleTree get instance => _instance;
   static final _instance = ModuleTree._();
 
-  /// Stores a string representation of the module hierarchy.
-  ///
-  /// The hierarchy is specified in JSON format.
-  static String hierarchyString = '';
+  /// Stores the root Module instance.
+  static Module? rootModuleInstance;
 
   /// Returns the `hierarchyString` as JSON.
   ///
@@ -24,5 +24,6 @@ class ModuleTree {
   ///
   /// Returns: string representing hierarchical structure of modules in JSON
   /// format.
-  String get hierarchyJSON => hierarchyString;
+  String get hierarchyJSON =>
+      rootModuleInstance?.buildModuleTreeJsonSchema(rootModuleInstance!) ?? '';
 }
