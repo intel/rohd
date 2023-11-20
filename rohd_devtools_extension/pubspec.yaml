@@ -19,12 +19,13 @@ dependencies:
   devtools_extensions: ^0.0.6
   devtools_app_shared: ^0.0.4
   vm_service: ^11.9.0
+  flutter_simple_treeview: ^3.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
-
+  
 flutter:
   uses-material-design: true
 
