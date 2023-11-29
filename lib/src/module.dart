@@ -38,7 +38,7 @@ abstract class Module {
   /// An internal list of internal-signals.
   ///
   /// Used for waveform dump efficiency.
-  final Set<Logic> _internalSignals = HashSet<Logic>();
+  final Set<Logic> _internalSignals = {};
 
   /// An internal list of inputs to this [Module].
   final Map<String, Logic> _inputs = {};

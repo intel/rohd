@@ -40,7 +40,11 @@ abstract class SynthesisResult {
 
   @override
   bool operator ==(Object other) =>
-      other is SynthesisResult && matchesImplementation(other);
+      other is SynthesisResult &&
+      matchesImplementation(other) &&
+      // if they are both reserved defs but different def names, not equal
+      !((module.reserveDefinitionName && other.module.reserveDefinitionName) &&
+          module.definitionName != other.module.definitionName);
 
   @override
   int get hashCode => matchHashCode;
