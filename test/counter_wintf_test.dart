@@ -106,6 +106,7 @@ void main() {
       await moduleTest(mod);
     });
   });
+
   test('resetFlipflop from root w/o resetVal', () async {
     final mod = Counter(CounterInterface(8), useBuiltInSequentialReset: true);
     await moduleTest(mod);
@@ -132,5 +133,13 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+  });
+
+  test('interface ports dont get doubled up', () async {
+    final mod = Counter(CounterInterface(8));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(!sv.contains('en_0'), true);
   });
 }

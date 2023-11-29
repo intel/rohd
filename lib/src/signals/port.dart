@@ -21,6 +21,10 @@ class Port extends Logic {
       : super(
           name: name,
           width: width,
+
+          // make port names mergeable so we don't duplicate the ports
+          // when calling connectIO
+          naming: Naming.mergeable,
         ) {
     if (!Sanitizer.isSanitary(name)) {
       throw InvalidPortNameException(name);
