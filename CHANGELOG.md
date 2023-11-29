@@ -1,3 +1,10 @@
+## 0.5.1
+
+- Fixed bugs and improved controllability around naming of internal signals and collapsing of inlineable functionality, leading to significantly more readable generated SystemVerilog (<https://github.com/intel/rohd/pull/439>).
+- Fixed a bug where identical module definitions with different reserved definition names would merge incorrectly in generated outputs(<https://github.com/intel/rohd/issues/345>).
+- Improved organization of port and internal signal declarations in generated outputs.
+- Fixed bugs where generated SystemVerilog could flag lint issues due to unsafe truncation of signals in cases like `+` and `<<` (<https://github.com/intel/rohd/pull/423>).
+
 ## 0.5.0
 
 - Added `LogicArray` for N-dimensional packed and unpacked (and mixed) arrays. Added `LogicStructure` for grouping sets of related signals together in a convenient way (<https://github.com/intel/rohd/pull/375>).
