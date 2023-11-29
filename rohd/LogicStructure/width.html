@@ -64,10 +64,10 @@
           
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.1.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.2.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-          <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>
+          <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>
           <span class="name ">width</span>
           <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
@@ -81,9 +81,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-late final int width = elements.isEmpty
-    ? 0
-    : elements.map((e) =&gt; e.width).reduce((w1, w2) =&gt; w1 + w2);</code></pre>
+late final int width = elements.map((e) =&gt; e.width).sum;</code></pre>
 </section>
 
 
@@ -106,6 +104,7 @@ late final int width = elements.isEmpty
 
 
     <h5>LogicStructure class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

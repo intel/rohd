@@ -31,7 +31,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Module-class.html">Module</a></li>
-    <li class="self-crumb">isUnpreferred static method</li>
+    <li class="self-crumb"><span class="deprecated">isUnpreferred</span> static method</li>
   </ol>
   <div class="self-name">isUnpreferred</div>
   <form class="search navbar-right" role="search">
@@ -62,9 +62,14 @@
 
     <section class="multi-line-signature">
       
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.2.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `Naming.isUnpreferred` or `Logic.naming` instead.&#39;)</li>
+    </ol>
+  </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
-<span class="name ">isUnpreferred</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isUnpreferred-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
+<span class="name deprecated">isUnpreferred</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isUnpreferred-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
 </ol>)
 
       
@@ -73,14 +78,15 @@
     
 <section class="desc markdown">
   <p>Returns true iff the signal name is "unpreferred".</p>
-<p>See documentation for <a href="../../rohd/Module/unpreferredName.html">unpreferredName</a> for more details.</p>
+<p>See documentation for <a class="deprecated" href="../../rohd/Module/unpreferredName.html">unpreferredName</a> for more details.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static bool isUnpreferred(String name) =&gt; name.startsWith(_unpreferredPrefix);</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `Naming.isUnpreferred` or `Logic.naming` instead.&#39;)
+static bool isUnpreferred(String name) =&gt; Naming.isUnpreferred(name);</code></pre>
 </section>
 
 
@@ -98,11 +104,12 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Module-class.html">Module</a></li>
-    <li class="self-crumb">isUnpreferred static method</li>
+    <li class="self-crumb"><span class="deprecated">isUnpreferred</span> static method</li>
 </ol>
 
 
     <h5>Module class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

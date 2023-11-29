@@ -98,7 +98,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.<
 
     <dl class="constructor-summary-list">
         <dt id="LogicStructure" class="callable">
-          <span class="name"><a href="../rohd/LogicStructure/LogicStructure.html">LogicStructure</a></span><span class="signature">(<span class="parameter" id="-param-elements"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">elements</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>}</span>)</span>
+          <span class="name"><a href="../rohd/LogicStructure/LogicStructure.html">LogicStructure</a></span><span class="signature">(<span class="parameter" id="-param-elements"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">elements</span>, </span><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>}</span>)</span>
         </dt>
         <dd>
           Creates a new <a href="../rohd/LogicStructure-class.html">LogicStructure</a> with <code>elements</code> as elements.
@@ -112,13 +112,13 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.<
       <dl class="properties">
         <dt id="arrayIndex" class="property">
   <span class="name"><a href="../rohd/LogicStructure/arrayIndex.html">arrayIndex</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>?</span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>?</span> 
 
 </dt>
 <dd>
   If this is a part of a <a href="../rohd/LogicArray-class.html">LogicArray</a>, the index within that array.
 Othwerise, returns <code>null</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -130,36 +130,36 @@ Othwerise, returns <code>null</code>.
 <dd>
   The current active value of this signal if it has width 1, as
 a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="changed" class="property">
   <span class="name"><a href="../rohd/LogicStructure/changed.html">changed</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  A <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="dstConnections" class="property">
   <span class="name"><a href="../rohd/LogicStructure/dstConnections.html">dstConnections</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.1.3/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
+  An <a href="https://api.dart.dev/stable/3.2.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
   <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
         <dt id="elements" class="property">
   <span class="name"><a href="../rohd/LogicStructure/elements.html">elements</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -176,68 +176,68 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 <dd>
   A stream of <code>LogicValueChanged</code> events for every time the signal
 transitions at any time during a <a href="../rohd/Simulator-class.html">Simulator</a> tick.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd class="inherited">
   The hash code for this object.
-  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
 
         <dt id="isArrayMember" class="property">
   <span class="name"><a href="../rohd/LogicStructure/isArrayMember.html">isArrayMember</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   True if this is a member of a <a href="../rohd/LogicArray-class.html">LogicArray</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="isInput" class="property">
   <span class="name"><a href="../rohd/LogicStructure/isInput.html">isInput</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   Returns true iff this signal is an input of its parent <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="isOutput" class="property">
   <span class="name"><a href="../rohd/LogicStructure/isOutput.html">isOutput</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   Returns true iff this signal is an output of its parent <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="isPort" class="property">
   <span class="name"><a href="../rohd/LogicStructure/isPort.html">isPort</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> 
 
 </dt>
 <dd>
   Returns true iff this signal is an input or output of its parent <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="leafElements" class="property">
   <span class="name"><a href="../rohd/LogicStructure/leafElements.html">leafElements</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -249,7 +249,7 @@ structure provided in index order.
 
         <dt id="name" class="property">
   <span class="name"><a href="../rohd/LogicStructure/name.html">name</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> 
 
 </dt>
 <dd>
@@ -258,52 +258,64 @@ structure provided in index order.
 
 </dd>
 
-        <dt id="negedge" class="property">
-  <span class="name"><a href="../rohd/LogicStructure/negedge.html">negedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+        <dt id="naming" class="property">
+  <span class="name"><a href="../rohd/LogicStructure/naming.html">naming</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Naming.html">Naming</a></span> 
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  Controls the naming (and renaming) preferences of this signal in generated
+outputs.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="negedge" class="property">
+  <span class="name"><a href="../rohd/LogicStructure/negedge.html">negedge</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+
+</dt>
+<dd>
+  A <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
 from <code>1</code> to <code>0</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="nextChanged" class="property">
   <span class="name"><a href="../rohd/LogicStructure/nextChanged.html">nextChanged</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
   Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
 value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="nextNegedge" class="property">
   <span class="name"><a href="../rohd/LogicStructure/nextNegedge.html">nextNegedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
   Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
 value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>1</code> to <code>0</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="nextPosedge" class="property">
   <span class="name"><a href="../rohd/LogicStructure/nextPosedge.html">nextPosedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
   Triggers at most once, the next time that this <a href="../rohd/Logic-class.html">Logic</a> changes
 value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick from <code>0</code> to <code>1</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -325,7 +337,7 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 </dt>
 <dd>
   The <a href="../rohd/Module-class.html">Module</a> that this <a href="../rohd/Logic-class.html">Logic</a> exists within.
-  <div class="features"><span class="feature">read / write</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">getter/setter pair</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -337,20 +349,20 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 <dd>
   If this is a part of a <a href="../rohd/LogicStructure-class.html">LogicStructure</a>, the structure which this is
 a part of.  Otherwise, <code>null</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="posedge" class="property">
   <span class="name"><a href="../rohd/LogicStructure/posedge.html">posedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.1.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  A <a href="https://api.dart.dev/stable/3.2.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
 from <code>0</code> to <code>1</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -363,7 +375,7 @@ from <code>0</code> to <code>1</code>.
   The <a href="../rohd/LogicStructure/value.html">value</a> of this signal before the most recent <a href="../rohd/Simulator/tick.html">Simulator.tick</a> had
 completed. It will be <code>null</code> before the first tick after this signal is
 created.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -374,18 +386,18 @@ created.
 </dt>
 <dd>
   Returns a version of this <a href="../rohd/Logic-class.html">Logic</a> with the bit order reversed.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/Type-class.html">Type</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/Type-class.html">Type</a></span> 
 
 </dt>
 <dd class="inherited">
   A representation of the runtime type of the object.
-  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
 
@@ -397,19 +409,19 @@ created.
 <dd>
   A <a href="../rohd/LogicStructure-class.html">LogicStructure</a> never has a direct source driving it, only its
 <a href="../rohd/LogicStructure/elements.html">elements</a> do, so always returns <code>null</code>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="structureName" class="property">
   <span class="name"><a href="../rohd/LogicStructure/structureName.html">structureName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> 
 
 </dt>
 <dd>
   Returns the name relative to the <a href="../rohd/LogicStructure/parentStructure.html">parentStructure</a>-defined hierarchy, if
 one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name.html">name</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
@@ -420,35 +432,35 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 </dt>
 <dd>
   The current active value of this signal.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="valueBigInt" class="property">
   <span class="name"><a href="../rohd/LogicStructure/valueBigInt.html">valueBigInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/BigInt-class.html">BigInt</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/BigInt-class.html">BigInt</a></span> 
 
 </dt>
 <dd>
-  The current valid active value of this signal as a <a href="https://api.dart.dev/stable/3.1.3/dart-core/BigInt-class.html">BigInt</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  The current valid active value of this signal as a <a href="https://api.dart.dev/stable/3.2.2/dart-core/BigInt-class.html">BigInt</a>.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="valueInt" class="property">
   <span class="name"><a href="../rohd/LogicStructure/valueInt.html">valueInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
-  The current valid active value of this signal as an <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>.
-  <div class="features"><span class="feature">read-only</span><span class="feature">override</span></div>
+  The current valid active value of this signal as an <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>.
+  <div class="features"><span class="feature">no setter</span><span class="feature">override</span></div>
 
 </dd>
 
         <dt id="width" class="property">
   <span class="name"><a href="../rohd/LogicStructure/width.html">width</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd>
@@ -480,7 +492,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 </dd>
 
         <dt id="clone" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/clone.html">clone</a></span><span class="signature">(<wbr><span class="parameter" id="clone-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>}</span>)
+  <span class="name"><a href="../rohd/LogicStructure/clone.html">clone</a></span><span class="signature">(<wbr><span class="parameter" id="clone-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicStructure-class.html">LogicStructure</a></span>
   </span>
   
@@ -532,7 +544,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 </dd>
 
         <dt id="getRange" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
+  <span class="name"><a href="../rohd/LogicStructure/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -586,7 +598,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 
         <dt id="hasValidValue" class="callable">
   <span class="name deprecated"><a class="deprecated" href="../rohd/LogicStructure/hasValidValue.html">hasValidValue</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -611,7 +623,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 </dd>
 
         <dt id="inject" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="inject-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/LogicStructure/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="inject-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -625,7 +637,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 
         <dt id="isFloating" class="callable">
   <span class="name deprecated"><a class="deprecated" href="../rohd/LogicStructure/isFloating.html">isFloating</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -637,7 +649,7 @@ one exists.  Otherwise, this is the same as <a href="../rohd/LogicStructure/name
 </dd>
 
         <dt id="isIn" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/isIn.html">isIn</a></span><span class="signature">(<wbr><span class="parameter" id="isIn-param-list"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a></span> <span class="parameter-name">list</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/isIn.html">isIn</a></span><span class="signature">(<wbr><span class="parameter" id="isIn-param-list"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a></span> <span class="parameter-name">list</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -717,7 +729,7 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -756,7 +768,7 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="put" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="put-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/LogicStructure/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="put-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -770,7 +782,7 @@ for <a href="../rohd/LogicStructure/changed.html">changed</a> in this <a href=".
 </dd>
 
         <dt id="replicate" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/replicate.html">replicate</a></span><span class="signature">(<wbr><span class="parameter" id="replicate-param-multiplier"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">multiplier</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/replicate.html">replicate</a></span><span class="signature">(<wbr><span class="parameter" id="replicate-param-multiplier"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">multiplier</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -786,7 +798,7 @@ thrown, otherwise.
 </dd>
 
         <dt id="signExtend" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -802,7 +814,7 @@ and extends with that.
 </dd>
 
         <dt id="slice" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -816,8 +828,8 @@ both inclusive.
 </dd>
 
         <dt id="toString" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -829,7 +841,7 @@ both inclusive.
 </dd>
 
         <dt id="withSet" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">update</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">update</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -857,7 +869,7 @@ of their original value.
 </dd>
 
         <dt id="zeroExtend" class="callable">
-  <span class="name"><a href="../rohd/LogicStructure/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/LogicStructure/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -996,8 +1008,8 @@ as the most significant bits.
 </dd>
 
         <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -1136,7 +1148,7 @@ as the most significant bits.
 </ol>
 
 
-    <!--<h5>rohd library</h5>-->
+    <h5>rohd library</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div>
 

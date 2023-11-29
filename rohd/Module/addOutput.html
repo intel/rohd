@@ -69,8 +69,8 @@
   </div>
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">addOutput</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="addOutput-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span></li>
+<span class="name ">addOutput</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addOutput-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span></li>
 </ol>)
 
       
@@ -91,7 +91,7 @@ can be driven.</p>
 Logic addOutput(String name, {int width = 1}) {
   _checkForSafePortName(name);
 
-  final outPort = Port(name, width)
+  final outPort = Logic(name: name, width: width, naming: Naming.reserved)
     &#47;&#47; ignore: invalid_use_of_protected_member
     ..parentModule = this;
 
@@ -121,6 +121,7 @@ Logic addOutput(String name, {int width = 1}) {
 
 
     <h5>Module class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

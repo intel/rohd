@@ -77,7 +77,7 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
   <dt>Inheritance</dt>
   <dd>
     <ul class="gt-separated dark clazz-relationships">
-      <li><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object-class.html">Object</a></li>
+      <li><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object-class.html">Object</a></li>
         <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
       <li>Case</li>
     </ul>
@@ -104,7 +104,7 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
 
     <dl class="constructor-summary-list">
         <dt id="Case" class="callable">
-          <span class="name"><a href="../rohd/Case/Case.html">Case</a></span><span class="signature">(<span class="parameter" id="-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="-param-items"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="-param-defaultItem">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>}</span>)</span>
+          <span class="name"><a href="../rohd/Case/Case.html">Case</a></span><span class="signature">(<span class="parameter" id="-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="-param-items"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> <span class="parameter-name">items</span>, </span><span class="parameter" id="-param-defaultItem">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">defaultItem</span>, </span><span class="parameter" id="-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>}</span>)</span>
         </dt>
         <dd>
           Whenever an item in <a href="../rohd/Case/items.html">items</a> matches <a href="../rohd/Case/expression.html">expression</a>, it will be executed.
@@ -118,18 +118,18 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
       <dl class="properties">
         <dt id="caseType" class="property">
   <span class="name"><a href="../rohd/Case/caseType.html">caseType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> 
 
 </dt>
 <dd>
   Returns the SystemVerilog keyword to represent this case block.
-  <div class="features"><span class="feature">read-only</span></div>
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
         <dt id="conditionals" class="property">
   <span class="name"><a href="../rohd/Case/conditionals.html">conditionals</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -153,18 +153,18 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
 
         <dt id="defaultItem" class="property">
   <span class="name"><a href="../rohd/Case/defaultItem.html">defaultItem</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> 
 
 </dt>
 <dd>
   The default to execute when there was no match with any other <a href="../rohd/CaseItem-class.html">CaseItem</a>s.
-  <div class="features"><span class="feature">read-only</span></div>
+  <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
         <dt id="drivers" class="property">
   <span class="name"><a href="../rohd/Case/drivers.html">drivers</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -185,19 +185,19 @@ modify behavior in ways similar to what is available in SystemVerilog.</p>
 </dd>
 
         <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> 
 
 </dt>
 <dd class="inherited">
   The hash code for this object.
-  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
 
         <dt id="items" class="property">
   <span class="name"><a href="../rohd/Case/items.html">items</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/CaseItem-class.html">CaseItem</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -209,7 +209,7 @@ to <a href="../rohd/Case/expression.html">expression</a>.
 
         <dt id="receivers" class="property">
   <span class="name"><a href="../rohd/Case/receivers.html">receivers</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
 
 </dt>
 <dd>
@@ -220,13 +220,13 @@ receivers.
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/Type-class.html">Type</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/Type-class.html">Type</a></span> 
 
 </dt>
 <dd class="inherited">
   A representation of the runtime type of the object.
-  <div class="features"><span class="feature">read-only</span><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
 
@@ -267,7 +267,7 @@ associated with <code>driver</code>.
 </dd>
 
         <dt id="execute" class="callable">
-  <span class="name"><a href="../rohd/Case/execute.html">execute</a></span><span class="signature">(<wbr><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, </span><span class="parameter" id="execute-param-guard">[<span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?]</span>)
+  <span class="name"><a href="../rohd/Case/execute.html">execute</a></span><span class="signature">(<wbr><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, </span><span class="parameter" id="execute-param-guard">[<span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?]</span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -283,7 +283,7 @@ during execution.
 
         <dt id="getConditionals" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getConditionals.html">getConditionals</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
   </span>
   
 
@@ -297,7 +297,7 @@ during execution.
 
         <dt id="getDrivers" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getDrivers.html">getDrivers</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -310,7 +310,7 @@ during execution.
 
         <dt id="getReceivers" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getReceivers.html">getReceivers</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -324,7 +324,7 @@ receivers.
 
         <dt id="isMatch" class="callable">
   <span class="name"><a href="../rohd/Case/isMatch.html">isMatch</a></span><span class="signature">(<wbr><span class="parameter" id="isMatch-param-value"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">value</span>, </span><span class="parameter" id="isMatch-param-expressionValue"><span class="type-annotation"><a href="../rohd/LogicValue-class.html">LogicValue</a></span> <span class="parameter-name">expressionValue</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -336,7 +336,7 @@ receivers.
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -362,8 +362,8 @@ receivers.
 </dd>
 
         <dt id="toString" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -375,14 +375,14 @@ receivers.
 </dd>
 
         <dt id="verilogContents" class="callable">
-  <span class="name"><a href="../rohd/Case/verilogContents.html">verilogContents</a></span><span class="signature">(<wbr><span class="parameter" id="verilogContents-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span>, </span><span class="parameter" id="verilogContents-param-inputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-outputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-assignOperator"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">assignOperator</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="../rohd/Case/verilogContents.html">verilogContents</a></span><span class="signature">(<wbr><span class="parameter" id="verilogContents-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span>, </span><span class="parameter" id="verilogContents-param-inputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-outputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-assignOperator"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">assignOperator</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns a <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a> of SystemVerilog to be used in generated output.
+  Returns a <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a> of SystemVerilog to be used in generated output.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -396,8 +396,8 @@ receivers.
     <h2>Operators</h2>
     <dl class="callables">
         <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -432,7 +432,7 @@ receivers.
 </ol>
 
 
-    <!--<h5>rohd library</h5>-->
+    <h5>rohd library</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div>
 

@@ -62,8 +62,9 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Logic</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span></li>
+      <span class="name ">Logic</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
+<li><span class="parameter" id="-param-naming"><span class="type-annotation"><a href="../../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span>}</span></li>
 </ol>)
     </section>
 
@@ -72,6 +73,8 @@
   <p>Constructs a new <a href="../../rohd/Logic-class.html">Logic</a> named <code>name</code> with <code>width</code> bits.</p>
 <p>The default value for <code>width</code> is 1.  The <code>name</code> should be synthesizable
 to the desired output (e.g. SystemVerilog).</p>
+<p>The <code>naming</code> and <code>name</code>, if unspecified, are chosen based on the rules
+in <a href="../../rohd/Naming/chooseNaming.html">Naming.chooseNaming</a> and <a href="../../rohd/Naming/chooseName.html">Naming.chooseName</a>, respectively.</p>
 </section>
 
 
@@ -101,6 +104,7 @@ to the desired output (e.g. SystemVerilog).</p>
 
 
     <h5>Logic class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

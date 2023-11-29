@@ -69,11 +69,11 @@
   </div>
 
 <span class="returntype"><a href="../../rohd/LogicArray-class.html">LogicArray</a></span>
-<span class="name ">addInputArray</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addInputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<span class="name ">addInputArray</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addInputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
 <li><span class="parameter" id="addInputArray-param-x"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">x</span>, </span></li>
-<li><span class="parameter" id="addInputArray-param-dimensions">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span></li>
-<li><span class="parameter" id="addInputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span></li>
-<li><span class="parameter" id="addInputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>}</span></li>
+<li><span class="parameter" id="addInputArray-param-dimensions">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span></li>
+<li><span class="parameter" id="addInputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span></li>
+<li><span class="parameter" id="addInputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>}</span></li>
 </ol>)
 
       
@@ -103,8 +103,13 @@ LogicArray addInputArray(
 }) {
   _checkForSafePortName(name);
 
-  final inArr = LogicArray(dimensions, elementWidth,
-      name: name, numUnpackedDimensions: numUnpackedDimensions)
+  final inArr = LogicArray(
+    name: name,
+    dimensions,
+    elementWidth,
+    numUnpackedDimensions: numUnpackedDimensions,
+    naming: Naming.reserved,
+  )
     ..gets(x)
     &#47;&#47; ignore: invalid_use_of_protected_member
     ..parentModule = this;
@@ -135,6 +140,7 @@ LogicArray addInputArray(
 
 
     <h5>Module class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

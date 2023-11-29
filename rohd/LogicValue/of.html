@@ -65,8 +65,8 @@
 
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
 <span class="name ">of</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="of-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span></li>
-<li><span class="parameter" id="of-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
-<li><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>}</span></li>
+<li><span class="parameter" id="of-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="of-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>}</span></li>
 </ol>)
 
       
@@ -75,20 +75,20 @@
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from <code>val</code> which could be of a variety of types.</p>
-<p>Supported types include <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a>, <a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a>, <a href="https://api.dart.dev/stable/3.1.3/dart-core/int-class.html">int</a>, <a href="https://api.dart.dev/stable/3.1.3/dart-core/BigInt-class.html">BigInt</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
-and <a href="https://api.dart.dev/stable/3.1.3/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>.</p>
+<p>Supported types include <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a>, <a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a>, <a href="https://api.dart.dev/stable/3.2.2/dart-core/int-class.html">int</a>, <a href="https://api.dart.dev/stable/3.2.2/dart-core/BigInt-class.html">BigInt</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
+and <a href="https://api.dart.dev/stable/3.2.2/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>.</p>
 <p>If <code>fill</code> is set, then all bits of the returned value will be set to
 <code>val</code>. If the <code>val</code> is not representable as a single bit of information,
-then setting <code>fill</code> will throw an <a href="https://api.dart.dev/stable/3.1.3/dart-core/Exception-class.html">Exception</a>.</p>
-<p>If the <code>width</code> can be inferred from the type (e.g. <a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
-<a href="https://api.dart.dev/stable/3.1.3/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>), then <code>width</code> does not need to be provided.
+then setting <code>fill</code> will throw an <a href="https://api.dart.dev/stable/3.2.2/dart-core/Exception-class.html">Exception</a>.</p>
+<p>If the <code>width</code> can be inferred from the type (e.g. <a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
+<a href="https://api.dart.dev/stable/3.2.2/dart-core/Iterable-class.html">Iterable&lt;LogicValue&gt;</a>), then <code>width</code> does not need to be provided.
 If <code>width</code> is provided and does not match an inferred width, then <code>width</code>
 is used.
 If a <code>width</code> cannot be inferred, then it is required, or else it will
-throw an <a href="https://api.dart.dev/stable/3.1.3/dart-core/Exception-class.html">Exception</a>.
+throw an <a href="https://api.dart.dev/stable/3.2.2/dart-core/Exception-class.html">Exception</a>.
 If <code>val</code> does not fit in a specified <code>width</code>, then the returned value will
 be truncated.
-<a href="https://api.dart.dev/stable/3.1.3/dart-core/bool-class.html">bool</a>s will infer a default width of <code>1</code>, but it can be overridden.
+<a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a>s will infer a default width of <code>1</code>, but it can be overridden.
 Invalid 1-bit <code>val</code>s will always be <code>fill</code>ed even if <code>fill</code> is <code>false</code>,
 but will default to a width of 1 unless <code>width</code> is specified.</p>
 </section>
@@ -246,6 +246,7 @@ but will default to a width of 1 unless <code>width</code> is specified.</p>
 
 
     <h5>LogicValue class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

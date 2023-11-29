@@ -75,9 +75,9 @@
         
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">late final Logic out = _outputSvWidthExpansion
+  <pre class="language-dart"><code class="language-dart">late final Logic out = _outputSvWidthExpansion != 0
     &#47;&#47; this is sub-optimal, but it&#39;s tricky to make special SV for it
-    ? BusSubset(output(_outName), 0, width - 1).subset
+    ? BusSubset(output(_outName), 0, width - _outputSvWidthExpansion).subset
     : output(_outName);</code></pre>
 </section>
 
@@ -101,6 +101,7 @@
 
 
     <h5>Multiply class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

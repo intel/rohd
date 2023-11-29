@@ -64,12 +64,12 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.1.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.2.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>
-<span class="name ">inlineVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.1.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.1.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>
+<span class="name ">inlineVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">inherited</span></div>
@@ -97,7 +97,11 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   }
   final in0 = inputs[_in0Name]!;
   final in1 = inputs[_in1Name]!;
-  return &#39;$in0 $_opStr $in1&#39;;
+  var sv = &#39;$in0 $_opStr $in1&#39;;
+  if (_makeSelfDetermined) {
+    sv = &#39;{$sv}&#39;;
+  }
+  return sv;
 }</code></pre>
 </section>
 
@@ -121,6 +125,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
 
 
     <h5>Divide class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
