@@ -1,66 +1,119 @@
 // Copyright (C) 2021-2023 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// multimodule4_test.dart
-// Unit tests for a hierarchy of multiple modules and multiple instantiation
-// (another type)
+// example.dart
+// A very basic example of a counter module.
 //
-// 2021 June 30
+// 2021 September 17
 // Author: Max Korbel <max.korbel@intel.com>
 
+// Though we usually avoid them, for this example,
+// allow `print` messages (disable lint):
+// ignore_for_file: avoid_print
+
+// Import the ROHD package.
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/modules/passthrough.dart';
-import 'package:test/test.dart';
 
-// mostly all inputs
-class InnerModule2 extends Module {
-  Logic get z => output('z');
-  InnerModule2() : super(name: 'innermodule2') {
-    addOutput('z');
-    z <= Const(1);
+// Define a class Counter that extends ROHD's abstract Module class.
+class Counter extends Module {
+  // For convenience, map interesting outputs to short variable names for
+  // consumers of this module.
+  Logic get val => output('val');
+
+  // This counter supports any width, determined at run-time.
+  final int width;
+
+  Counter(Logic en, Logic reset, Logic clk,
+      {this.width = 8, super.name = 'counter'}) {
+    // Register inputs and outputs of the module in the constructor.
+    // Module logic must consume registered inputs and output to registered
+    // outputs.
+    en = addInput('en', en);
+    reset = addInput('reset', reset);
+    clk = addInput('clk', clk);
+
+    final val = addOutput('val', width: width);
+
+    // A local signal named 'nextVal'.
+    final nextVal = Logic(name: 'nextVal', width: width);
+
+    // Assignment statement of nextVal to be val+1
+    // ('<=' is the assignment operator).
+    nextVal <= val + 1;
+
+    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on
+    // the positive edge of clk.
+    Sequential(clk, [
+      // `If` is a conditional if statement, like `if` in SystemVerilog
+      // always blocks.
+      If(reset, then: [
+        // The '<' operator is a conditional assignment.
+        val < 0
+      ], orElse: [
+        If(en, then: [val < nextVal])
+      ])
+    ]);
   }
 }
 
-class InnerModule1 extends Module {
-  InnerModule1(Logic y) : super(name: 'innermodule1') {
-    y = addInput('y', y);
-    final m = Logic();
-    m <= Passthrough(InnerModule2().z).out | y;
-  }
-}
+// Let's simulate with this counter a little, generate a waveform, and take a
+// look at generated SystemVerilog.
+Future<void> main({bool noPrint = false}) async {
+  // Define some local signals.
+  final en = Logic(name: 'en');
+  final reset = Logic(name: 'reset');
 
-class TopModule extends Module {
-  TopModule(Logic x) : super(name: 'topmod') {
-    x = addInput('x', x);
-    InnerModule1(x);
-  }
-}
+  // Generate a simple clock. This will run along by itself as
+  // the Simulator goes.
+  final clk = SimpleClockGenerator(10).clk;
 
-void main() {
-  tearDown(() async {
-    await Simulator.reset();
+  // Build a counter.
+  final counter = Counter(en, reset, clk);
+
+  // Before we can simulate or generate code with the counter, we need
+  // to build it.
+  await counter.build();
+
+  // Let's see what this module looks like as SystemVerilog, so we can pass it
+  // to other tools.
+  final systemVerilogCode = counter.generateSynth();
+  if (!noPrint) {
+    print(systemVerilogCode);
+  }
+
+  // Now let's try simulating!
+
+  // Let's start off with a disabled counter and asserting reset.
+  en.inject(0);
+  reset.inject(1);
+
+  // Attach a waveform dumper so we can see what happens.
+  if (!noPrint) {
+    WaveDumper(counter);
+  }
+
+  // Drop reset at time 25.
+  Simulator.registerAction(25, () => reset.put(0));
+
+  // Raise enable at time 45.
+  Simulator.registerAction(45, () => en.put(1));
+
+  // Print a message when we're done with the simulation!
+  Simulator.registerAction(100, () {
+    if (!noPrint) {
+      print('Simulation completed!');
+    }
   });
 
-  test('multimodules4', () async {
-    final ftm = TopModule(Logic());
-    await ftm.build();
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(100);
 
-    // find a module with 'z' output 2 levels deep
-    // assert(
-    //     ftm.subModules
-    //         .where((pIn1) => pIn1.subModules
-    //             .where((pIn2) => pIn2.outputs.containsKey('z'))
-    //             .isNotEmpty)
-    //         .isNotEmpty,
-    //     'Should find a z two levels deep');
+  // Kick off the simulation.
+  await Simulator.run();
 
-    final synth = ftm.generateSynth();
-
-    // "z = 1" means it correctly traversed down from inputs
-    // assert(synth.contains('z = 1'),
-    //     'Should correctly traverse from inputs to z=1');
-
-    // print(ftm.hierarchy());
-    // File('tmp4.sv').writeAsStringSync(synth);
-  });
+  // We can take a look at the waves now.
+  if (!noPrint) {
+    print('To view waves, check out waves.vcd with a waveform viewer'
+        ' (e.g. `gtkwave waves.vcd`).');
+  }
 }
