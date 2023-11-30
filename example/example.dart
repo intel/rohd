@@ -14,6 +14,88 @@
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
+class TopModule extends Module {
+  TopModule(Logic x) : super(name: 'topmod') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app$i', Logic()));
+
+    InModule1(x);
+  }
+}
+
+class InModule1 extends Module {
+  InModule1(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app2$i', Logic()));
+
+    InModule2(x);
+  }
+}
+
+class InModule2 extends Module {
+  InModule2(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app2$i', Logic()));
+    InModule3(x);
+  }
+}
+
+class InModule3 extends Module {
+  InModule3(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app3$i', Logic()));
+    InModule4(x);
+  }
+}
+
+class InModule4 extends Module {
+  InModule4(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule5(x);
+  }
+}
+
+class InModule5 extends Module {
+  InModule5(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule6(x);
+  }
+}
+
+class InModule6 extends Module {
+  InModule6(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule7(x);
+  }
+}
+
+class InModule7 extends Module {
+  InModule7(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule8(x);
+  }
+}
+
+class InModule8 extends Module {
+  InModule8(Logic x) : super(name: 'x') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+  }
+}
+
 // Define a class Counter that extends ROHD's abstract Module class.
 class Counter extends Module {
   // For convenience, map interesting outputs to short variable names for
@@ -37,6 +119,8 @@ class Counter extends Module {
     // A local signal named 'nextVal'.
     final nextVal = Logic(name: 'nextVal', width: width);
 
+    TopModule(en);
+
     // Assignment statement of nextVal to be val+1
     // ('<=' is the assignment operator).
     nextVal <= val + 1;
@@ -58,7 +142,7 @@ class Counter extends Module {
 
 // Let's simulate with this counter a little, generate a waveform, and take a
 // look at generated SystemVerilog.
-Future<void> main({bool noPrint = false}) async {
+Future<void> main({bool noPrint = true}) async {
   // Define some local signals.
   final en = Logic(name: 'en');
   final reset = Logic(name: 'reset');
@@ -96,7 +180,9 @@ Future<void> main({bool noPrint = false}) async {
   Simulator.registerAction(25, () => reset.put(0));
 
   // Raise enable at time 45.
-  Simulator.registerAction(45, () => en.put(1));
+  Simulator.registerAction(45, () {
+    en.put(1);
+  });
 
   // Print a message when we're done with the simulation!
   Simulator.registerAction(100, () {
