@@ -854,8 +854,6 @@ class _SynthLogic {
 
   /// Finds the best name from the collection of [Logic]s.
   String _findName(Uniquifier uniquifier) {
-    assert(!isFloatingConstant, 'Should not be using floating constants.');
-
     // check for const
     if (_constLogic != null) {
       if (!_constNameDisallowed) {
