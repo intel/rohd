@@ -33,7 +33,7 @@ void main() {
     test('and2', () {
       // test z & 1 == x, rest unchanged
       expect(lv('01xz') & lv('1111'), equals(lv('01xx')));
-      // La
+      // Large filled test of * & 1
       for (final v in allLv) {
         expect(large(v) & large(LogicValue.one),
             equals(large(v & LogicValue.one)));
