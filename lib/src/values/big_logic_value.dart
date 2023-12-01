@@ -17,7 +17,7 @@ extension BigLogicValueBigIntUtilities on BigInt {
   /// Always interprets the number as unsigned, and thus never clamps to fit.
   int toIntUnsigned(int width) {
     if (width > LogicValue._INT_BITS) {
-      throw Exception('Cannot convert to BigInt when width $width'
+      throw Exception('Cannot convert Int when width $width'
           ' is greater than ${LogicValue._INT_BITS}');
     } else if (width == LogicValue._INT_BITS) {
       // When width is 64, `BigInt.toInt()` will clamp values assuming that
@@ -51,7 +51,7 @@ class _BigLogicValue extends LogicValue {
     return _masksOfWidth[width]!;
   }
 
-  /// Constructs a new [_SmallLogicValue], intended to hold values
+  /// Constructs a new [_BigLogicValue], intended to hold values
   /// with more than [_INT_BITS] bits.
   ///
   /// Set [allowInefficientRepresentation] to `true` to bypass
@@ -83,7 +83,7 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  int get _hashCode => _value.hashCode ^ _invalid.hashCode;
+  int get _hashCode => _value.hashCode ^ _invalid.hashCode ^ width.hashCode;
 
   @override
   LogicValue _getIndex(int index) {
@@ -144,9 +144,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _and2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherZero =
         (~_value & ~_invalid) | (~other._value & ~other._invalid);
@@ -156,9 +155,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _or2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
     return LogicValue._bigLogicValueOrFilled(
@@ -167,9 +165,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _xor2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     return LogicValue._bigLogicValueOrFilled(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);

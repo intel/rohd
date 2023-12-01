@@ -73,7 +73,7 @@ class _SmallLogicValue extends LogicValue {
   }
 
   @override
-  int get _hashCode => _value.hashCode ^ _invalid.hashCode;
+  int get _hashCode => _value.hashCode ^ _invalid.hashCode ^ width.hashCode;
 
   @override
   LogicValue _getIndex(int index) {
@@ -118,9 +118,8 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   LogicValue _and2(LogicValue other) {
-    if (other is! _SmallLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _SmallLogicValue, 'Will always be a _SmallLogicValue');
+    other as _SmallLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherZero =
         (~_value & ~_invalid) | (~other._value & ~other._invalid);
@@ -130,9 +129,8 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   LogicValue _or2(LogicValue other) {
-    if (other is! _SmallLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _SmallLogicValue, 'Will always be a _SmallLogicValue');
+    other as _SmallLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
     return LogicValue._smallLogicValueOrFilled(
@@ -141,9 +139,8 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   LogicValue _xor2(LogicValue other) {
-    if (other is! _SmallLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _SmallLogicValue, 'Will always be a _SmallLogicValue');
+    other as _SmallLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     return LogicValue._smallLogicValueOrFilled(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);

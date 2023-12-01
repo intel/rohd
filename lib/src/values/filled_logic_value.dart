@@ -70,7 +70,7 @@ class _FilledLogicValue extends LogicValue {
   LogicValue get reversed => this;
 
   @override
-  int get _hashCode => _value.hashCode;
+  int get _hashCode => _value.hashCode ^ width.hashCode;
 
   @override
   bool get isValid => _value.isValid;
