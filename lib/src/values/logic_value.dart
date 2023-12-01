@@ -863,6 +863,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
     return op(this, other);
   }
 
+  LogicValue abs() {
+    if (width == 0) {
+      return this;
+    }
+    if (!this[-1].isValid) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
+    return this[-1] == LogicValue.one
+        ? ~this + LogicValue.ofInt(1, width)
+        : this;
+  }
+
   /// Unary AND operation.
   ///
   /// Returns `1` iff all bits are `1`.

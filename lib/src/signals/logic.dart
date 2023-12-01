@@ -633,7 +633,15 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns a new [Logic] with width [newWidth] where new bits added are sign
+  ///This function calculate the value of a signal or value
+  Logic abs() {
+    if (width == 0) {
+      return this;
+    }
+    return mux(this[-1], ~this + 1, this);
+  }
+
+  /// Returns a new [Logic] wi}th width [newWidth] where new bits added are sign
   /// bits as the most significant bits.  The sign is determined using two's
   /// complement, so it takes the most significant bit of the original signal
   /// and extends with that.

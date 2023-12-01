@@ -455,6 +455,9 @@ class LogicStructure implements Logic {
   Logic get reversed => packed.reversed;
 
   @override
+  Logic abs() => packed.abs();
+
+  @override
   Logic signExtend(int newWidth) => packed.signExtend(newWidth);
 
   @override
@@ -515,4 +518,5 @@ class LogicStructure implements Logic {
   void _updateWire(_Wire newWire) {
     throw UnsupportedError('Delegated to elements');
   }
+
 }
