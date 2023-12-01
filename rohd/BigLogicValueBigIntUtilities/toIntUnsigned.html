@@ -82,7 +82,7 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">int toIntUnsigned(int width) {
   if (width &gt; LogicValue._INT_BITS) {
-    throw Exception(&#39;Cannot convert to BigInt when width $width&#39;
+    throw Exception(&#39;Cannot convert Int when width $width&#39;
         &#39; is greater than ${LogicValue._INT_BITS}&#39;);
   } else if (width == LogicValue._INT_BITS) {
     &#47;&#47; When width is 64, `BigInt.toInt()` will clamp values assuming that
