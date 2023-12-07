@@ -3,7 +3,6 @@
 //
 // selection.dart
 // Definition for selecting a Logic from List<Logic> by a given index.
-
 //
 // 2023 November 14
 // Author: Rahul Gautham Putcha <rahul.gautham.putcha@intel.com>
