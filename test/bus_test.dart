@@ -18,13 +18,23 @@ class SelectTestModule extends Module {
   Logic get selectIndexValue => output('selectIndexValue');
   Logic get selectFromValue => output('selectFromValue');
 
-  SelectTestModule(Logic a1, Logic a2, Logic a3, Logic b)
+  SelectTestModule(Logic a1, Logic a2, Logic a3, Logic b, {Logic? defaultValue})
       : super(name: 'selecttestmodule') {
     a1 = addInput('a1', a1, width: a1.width);
     a2 = addInput('a2', a2, width: a2.width);
     a3 = addInput('a3', a3, width: a3.width);
     b = addInput('b', b, width: b.width);
 
+    if (defaultValue != null) {
+      defaultValue =
+          addInput('defaultValue', defaultValue, width: defaultValue.width);
+      selectFromWithDefaultValue(a1, a2, a3, b, defaultValue);
+    } else {
+      selectWithoutDefaultValue(a1, a2, a3, b);
+    }
+  }
+
+  void selectWithoutDefaultValue(Logic a1, Logic a2, Logic a3, Logic b) {
     final selectIndexValue = addOutput('selectIndexValue', width: a1.width);
     final selectFromValue = addOutput('selectFromValue', width: a1.width);
 
@@ -36,6 +46,17 @@ class SelectTestModule extends Module {
 
     selectIndexValue <= logicList.selectIndex(b);
     selectFromValue <= b.selectFrom(logicList);
+  }
+
+  void selectFromWithDefaultValue(
+      Logic a1, Logic a2, Logic a3, Logic b, Logic defaultValue) {
+    final selectFromValue = addOutput('selectFromValue', width: a1.width);
+    if (a1.width != a2.width || a1.width != a3.width) {
+      throw Exception('a1, a2 and a3 must be same width.');
+    }
+
+    final logicList = <Logic>[a1, a2, a3];
+    selectFromValue <= b.selectFrom(logicList, defaultValue: defaultValue);
   }
 }
 
@@ -601,6 +622,20 @@ void main() {
             {'selectIndexValue': 1, 'selectFromValue': 1}),
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 2},
             {'selectIndexValue': 3, 'selectFromValue': 3})
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('selectFrom with Index', () async {
+      final gtm = SelectTestModule(Logic(width: 8), Logic(width: 8),
+          Logic(width: 8), Logic(width: (log(8) / log(2)).ceil()),
+          defaultValue: Logic(width: 8));
+      await gtm.build();
+      final vectors = [
+        Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 4, 'defaultValue': 5},
+            {'selectFromValue': 5}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
