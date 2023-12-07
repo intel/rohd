@@ -803,43 +803,56 @@ abstract class Conditional {
   /// Caching across all signals found may yield an even better benefit, but
   /// would be expensive to store and is also challenging to implement since
   /// recursion can't be used for arbitrarily large graphs due to stack limits.
-  static final Map<Logic, List<Logic>> _signalToPotentialSsaSpotsMap = {};
+  static final Map<Logic, List<_SsaLogic>> _signalToPotentialSsaSpotsMap = {};
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
     final toParse = TraverseableCollection<Logic>()..add(driver);
     final foundSsaLogics = <_SsaLogic>{};
-    final foundFutureSearchSpots = <Logic>{};
+    final foundFutureSearchSpots = <_SsaLogic>{};
 
     for (var i = 0; i < toParse.length; i++) {
-      if (toParse[i] is _SsaLogic &&
-          (toParse[i] as _SsaLogic)._context == context) {
-        foundSsaLogics.add(toParse[i] as _SsaLogic);
+      final tpi = toParse[i];
+
+      if (tpi is _SsaLogic && tpi._context == context) {
+        foundSsaLogics.add(tpi);
       }
 
-      if ((toParse[i].srcConnection == null &&
-              !(toParse[i].isOutput &&
-                  toParse[i].parentModule! is CustomSystemVerilog)) ||
-          (toParse[i] is _SsaLogic &&
-              (toParse[i] as _SsaLogic)._context != context)) {
-        foundFutureSearchSpots.add(toParse[i]);
+      // if ((tpi.srcConnection == null &&
+      //         tpi is! Const &&
+      //         !(tpi.isOutput && tpi.parentModule! is CustomSystemVerilog)) ||
+      //     (tpi is _SsaLogic && tpi._context != context)) {
+      if (tpi is _SsaLogic && tpi._context != context) {
+        foundFutureSearchSpots.add(tpi);
       }
 
-      if (_signalToPotentialSsaSpotsMap.containsKey(toParse[i])) {
+      if (_signalToPotentialSsaSpotsMap.containsKey(tpi)) {
+        final skipList = _signalToPotentialSsaSpotsMap[tpi]!
+          ..removeWhere((element) => element.srcConnection != null);
+
         // already cached, skip ahead!
-        toParse.addAll(_signalToPotentialSsaSpotsMap[toParse[i]]!);
+        toParse.addAll(skipList);
       } else {
-        if (toParse[i].srcConnection != null) {
-          toParse.add(toParse[i].srcConnection!);
+        if (tpi.srcConnection != null) {
+          toParse.add(tpi.srcConnection!);
         }
-        if (toParse[i].isOutput) {
-          toParse.addAll(toParse[i].parentModule!.inputs.values);
+        if (tpi.isOutput && tpi.parentModule! is CustomSystemVerilog) {
+          //TODO: is it safe to only do this for custom? i think so?
+
+          // ignore: invalid_use_of_protected_member
+          toParse.addAll(tpi.parentModule!.inputs.values
+              // filter out ones that definitely won't matter
+              .where((element) =>
+                  _signalToPotentialSsaSpotsMap[element.srcConnection]
+                      ?.isNotEmpty ??
+                  true));
         }
       }
     }
 
-    _signalToPotentialSsaSpotsMap[driver] =
-        foundFutureSearchSpots.toList(growable: false);
+    //TODO: should we search the opposite direction? down from SSA out?
+
+    _signalToPotentialSsaSpotsMap[driver] = foundFutureSearchSpots.toList();
 
     return foundSsaLogics.toList(growable: false);
   }
