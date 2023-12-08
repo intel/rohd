@@ -277,6 +277,9 @@ class Combinational extends _Always {
 
     _processSsa(conditionals, context: context);
 
+    // no need to keep any of this old info around anymore
+    _signalToSsaDrivers.clear();
+
     return Combinational(conditionals, name: name);
   }
 
