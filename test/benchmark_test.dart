@@ -14,34 +14,41 @@ import '../benchmark/comb_guard_fanout_benchmark.dart';
 import '../benchmark/logic_value_of_benchmark.dart';
 import '../benchmark/many_seq_and_comb_benchmark.dart';
 import '../benchmark/pipeline_benchmark.dart';
+import '../benchmark/ssa_driver_search_benchmark.dart';
 import '../benchmark/wave_dump_benchmark.dart';
 
 void main() {
-  test('pipeline benchmark', () async {
-    await PipelineBenchmark().measure();
-  });
+  group('benchmark', () {
+    test('pipeline', () async {
+      await PipelineBenchmark().measure();
+    });
 
-  test('logic value of benchmark', () {
-    LogicValueOfBenchmark().measure();
-  });
+    test('logic value of', () {
+      LogicValueOfBenchmark().measure();
+    });
 
-  test('byte enable benchmark', () {
-    ByteEnableBenchmark().measure();
-  });
+    test('byte enable', () {
+      ByteEnableBenchmark().measure();
+    });
 
-  test('waveform benchmark', () async {
-    await WaveDumpBenchmark().measure();
-  });
+    test('waveform', () async {
+      await WaveDumpBenchmark().measure();
+    });
 
-  group('many seq and comb benchmark', () {
-    for (final connectionType in ManySeqAndCombCombConnectionType.values) {
-      test(connectionType.name, () async {
-        await ManySeqAndCombBenchmark(connectionType).measure();
-      });
-    }
-  });
+    group('many seq and comb', () {
+      for (final connectionType in ManySeqAndCombCombConnectionType.values) {
+        test(connectionType.name, () async {
+          await ManySeqAndCombBenchmark(connectionType).measure();
+        });
+      }
+    });
 
-  test('comb guard fanout benchmark', () async {
-    await CombGuardFanoutBenchmark().measure();
+    test('comb guard fanout', () async {
+      await CombGuardFanoutBenchmark().measure();
+    });
+
+    test('ssa driver search', () {
+      SsaDriverSearchBenchmark().measure();
+    });
   });
 }

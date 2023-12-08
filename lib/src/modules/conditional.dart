@@ -292,8 +292,6 @@ class Combinational extends _Always {
     for (var i = 0; i < toParse.length; i++) {
       final tpi = toParse[i];
 
-      assert(tpi is! _SsaLogic); //TODO: is this right?
-
       _signalToSsaDrivers.putIfAbsent(tpi, () => <_SsaLogic>{}).add(ssaDriver);
 
       if (tpi.isInput && tpi.parentModule! is CustomSystemVerilog) {
@@ -304,42 +302,9 @@ class Combinational extends _Always {
     }
   }
 
-  // static void _findSsaSpotsFrom(Logic driver) {
-  //   final toParse = TraverseableCollection<Logic>()..add(driver);
-  //   final foundSpots = <Logic>{};
-  //   for (var i = 0; i < toParse.length; i++) {
-  //     if ((toParse[i].srcConnection == null &&
-  //             !(toParse[i].isOutput &&
-  //                 toParse[i].parentModule! is CustomSystemVerilog)) ||
-  //         toParse[i] is _SsaLogic) {
-  //       foundSpots.add(toParse[i]);
-  //     }
-
-  //     if (_signalToPotentialSsaSpotsMap.containsKey(toParse[i])) {
-  //       // already cached, skip ahead!
-  //       toParse.addAll(_signalToPotentialSsaSpotsMap[toParse[i]]!);
-  //     } else {
-  //       if (toParse[i].srcConnection != null) {
-  //         toParse.add(toParse[i].srcConnection!);
-  //       }
-  //       if (toParse[i].isOutput) {
-  //         toParse.addAll(toParse[i].parentModule!.inputs.values);
-  //       }
-  //     }
-  //   }
-
-  //   _signalToPotentialSsaSpotsMap[driver] = foundSpots.toList(growable: false);
-  // }
-
   /// Executes the remapping for all the [conditionals] recursively.
   static void _processSsa(List<Conditional> conditionals,
       {required int context}) {
-    //TODO: benchmark and make faster, this takes too long!
-    // keep some memoization here?
-    // per Logic traversed, keep track of which *unconnected* Logic's are upstream of it (or connected to SSA!)
-    // but is there any need to do so for all signals or only *drivers* of this Combinational?
-    // can omit CustomSystemVerilog outputs from "undriven" because they dont matter
-
     var mappings = <Logic, Logic>{};
     for (final conditional in conditionals) {
       mappings = conditional._processSsa(mappings, context: context);
@@ -813,77 +778,17 @@ abstract class Conditional {
     }
   }
 
-  /// A mapping to memoize potential locations from drivers of
-  /// [Combinational.ssa]s where [_SsaLogic]s may be found.
-  ///
-  /// This is useful because much of the time, an SSA [Conditional] may depend
-  /// on prior [Conditional]s in the same [Combinational]. In addition, the
-  /// [Pipeline] abstractions chain together many instances of
-  /// [Combinational.ssa]s, causing a multiplicative effect on the number of
-  /// times the entire graph must be searched (by both number of piped
-  /// signals and number of stages). This cache existing across all instances
-  /// (being `static`) helps especially in the [Pipeline] case.
-  ///
-  /// Caching across all signals found may yield an even better benefit, but
-  /// would be expensive to store and is also challenging to implement since
-  /// recursion can't be used for arbitrarily large graphs due to stack limits.
-  // static final Map<Logic, List<_SsaLogic>> _signalToPotentialSsaSpotsMap = {};
-
   /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    // final toParse = TraverseableCollection<Logic>()..add(driver);
-    // final foundSsaLogics = <_SsaLogic>{};
-    // final foundFutureSearchSpots = <_SsaLogic>{};
-
-    final tpi = driver;
-
     // for (var i = 0; i < toParse.length; i++) {
     //   final tpi = toParse[i];
 
-    if (tpi is _SsaLogic && tpi._context == context) {
-      // foundSsaLogics.add(tpi);
-      return [tpi];
+    if (driver is _SsaLogic && driver._context == context) {
+      return [driver];
     }
-    // else if (tpi is _SsaLogic && tpi._context != context) {
-    //   foundFutureSearchSpots.add(tpi);
-    // }
-    else if (Combinational._signalToSsaDrivers.containsKey(tpi)) {
-      // foundSsaLogics.addAll(Combinational._signalToSsaDrivers[tpi]!
-      //     .where((ssa) => ssa._context == context));
-      return Combinational._signalToSsaDrivers[tpi]!
-          .where((ssa) => ssa._context == context)
-          .toList();
-    }
-    // else if (_signalToPotentialSsaSpotsMap.containsKey(tpi)) {
-    //   final skipList = _signalToPotentialSsaSpotsMap[tpi]!
-    //     ..removeWhere((element) => element.srcConnection != null);
 
-    //   // already cached, skip ahead!
-    //   toParse.addAll(skipList);
-    // } else {
-    //   if (tpi.srcConnection != null) {
-    //     toParse.add(tpi.srcConnection!);
-    //   }
-    //   if (tpi.isOutput && tpi.parentModule! is CustomSystemVerilog) {
-    //     //TODO: is it safe to only do this for custom? i think so?
-
-    //     // ignore: invalid_use_of_protected_member
-    //     toParse.addAll(tpi.parentModule!.inputs.values
-    //         // filter out ones that definitely won't matter
-    //         .where((element) =>
-    //             _signalToPotentialSsaSpotsMap[element.srcConnection]
-    //                 ?.isNotEmpty ??
-    //             true));
-    //   }
-    // }
-    // }
-
-    //TODO: should we search the opposite direction? down from SSA out?
-
-    // _signalToPotentialSsaSpotsMap[driver] = foundFutureSearchSpots.toList();
-
-    // return foundSsaLogics.toList(growable: false);
-    return const [];
+    // no need to check for context on this map since it clears each time
+    return Combinational._signalToSsaDrivers[driver]?.toList() ?? const [];
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
