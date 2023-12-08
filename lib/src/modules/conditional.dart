@@ -284,6 +284,9 @@ class Combinational extends _Always {
   }
 
   /// A map from [_SsaLogic]s to signals that they drive.
+  ///
+  /// This only stores information temporarily during construction of a
+  /// [Combinational.ssa] and clears afterwards.
   static final Map<Logic, Set<_SsaLogic>> _signalToSsaDrivers = {};
 
   static void _updateSsaDriverMap(_SsaLogic ssaDriver) {
