@@ -114,8 +114,7 @@ void main() {
         List<Logic>.generate(numWrPorts, (index) => Logic(width: 16)),
       );
       await ftm.build();
-      // File('tmp.sv').writeAsStringSync(ftm.generateSynth())
-      // WaveDumper(ftm);
+
       final vectors = [
         Vector({'lrst': 0}, {}),
         Vector({'lrst': 1}, {}),

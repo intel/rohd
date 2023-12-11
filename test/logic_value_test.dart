@@ -7,6 +7,9 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+//TODO: split this test into js and non-js compatible sections
+@TestOn('vm')
+
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';

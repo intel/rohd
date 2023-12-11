@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
@@ -242,6 +243,11 @@ abstract class SimCompare {
     bool maskKnownWarnings = true,
     bool buildOnly = false,
   }) {
+    if (kIsWeb) {
+      // if running in web mode, then we can't run icarus verilog
+      return true;
+    }
+
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 

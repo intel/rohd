@@ -340,4 +340,7 @@ class _FilledLogicValue extends LogicValue {
       (_value == _LogicValueEnum.one || _value == _LogicValueEnum.z)
           ? _SmallLogicValue._maskOfWidth(width)
           : 0;
+
+  @override
+  bool get isZero => _value == _LogicValueEnum.zero;
 }

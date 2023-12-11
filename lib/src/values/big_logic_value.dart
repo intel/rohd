@@ -241,4 +241,7 @@ class _BigLogicValue extends LogicValue {
 
   @override
   int get _intValue => _value.toIntUnsigned(width);
+
+  @override
+  late final bool isZero = _value == BigInt.zero && _invalid == BigInt.zero;
 }

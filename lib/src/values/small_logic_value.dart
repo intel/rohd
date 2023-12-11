@@ -48,15 +48,17 @@ class _SmallLogicValue extends LogicValue {
   const _SmallLogicValue(int value, int invalid, super.width,
       {bool allowInefficientRepresentation = false})
       : assert(width <= LogicValue._INT_BITS,
-            '_SmallLogicValue should have low number of bits'),
-        assert(width != 0, '_SmallLogicValue should have at least one bit'),
+            '_SmallLogicValue should have low number of bits ($width found)'),
+        assert(width != 0,
+            '_SmallLogicValue should have at least one bit ($width found)'),
         assert(
             allowInefficientRepresentation ||
                 !(((value & (1 << width) - 1) == (1 << width) - 1 ||
                         (value & (1 << width) - 1) == 0) &&
                     ((invalid & (1 << width) - 1) == (1 << width) - 1 ||
                         (invalid & (1 << width) - 1) == 0)),
-            'Should not be expressable as filled'),
+            'Should not be expressable as filled: '
+            '(value: $value, invalid: $invalid)'),
         _value = ((1 << width) - 1) & value,
         _invalid = ((1 << width) - 1) & invalid,
         super._();
@@ -217,4 +219,7 @@ class _SmallLogicValue extends LogicValue {
 
   @override
   int get _intValue => _value;
+
+  @override
+  bool get isZero => _value == 0 && _invalid == 0;
 }

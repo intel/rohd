@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 enum MyStates { state1, state2, state3, state4 }
@@ -44,8 +45,12 @@ class TestModule extends Module {
       ]),
     ];
 
-    FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states)
-        .generateDiagram(outputPath: _simpleFSMPath);
+    final fsm =
+        FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states);
+
+    if (!kIsWeb) {
+      fsm.generateDiagram(outputPath: _simpleFSMPath);
+    }
   }
 }
 
@@ -140,7 +145,11 @@ void main() {
     await Simulator.reset();
   });
 
-  setUpAll(() => Directory(_tmpDir).createSync(recursive: true));
+  setUpAll(() {
+    if (!kIsWeb) {
+      Directory(_tmpDir).createSync(recursive: true);
+    }
+  });
 
   test('zero-out receivers in default case', () async {
     final pipem = TestModule(Logic(), Logic(), Logic());
@@ -245,6 +254,10 @@ void main() {
 }
 
 void verifyMermaidStateDiagram(String filePath) {
+  if (kIsWeb) {
+    return;
+  }
+
   // check if the diagram exist
   final file = File(filePath);
   final existDiagram = file.existsSync();

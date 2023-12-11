@@ -7,6 +7,9 @@
 // 2021 November 4
 // Author: Max Korbel <max.korbel@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:async';
 import 'dart:io';
 

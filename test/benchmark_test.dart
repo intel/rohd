@@ -7,6 +7,7 @@
 // 2022 September 28
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 import '../benchmark/byte_enable_benchmark.dart';
@@ -29,9 +30,11 @@ void main() {
     ByteEnableBenchmark().measure();
   });
 
-  test('waveform benchmark', () async {
-    await WaveDumpBenchmark().measure();
-  });
+  if (!kIsWeb) {
+    test('waveform benchmark', () async {
+      await WaveDumpBenchmark().measure();
+    });
+  }
 
   group('many seq and comb benchmark', () {
     for (final connectionType in ManySeqAndCombCombConnectionType.values) {

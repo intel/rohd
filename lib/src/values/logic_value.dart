@@ -24,7 +24,7 @@ typedef LogicValues = LogicValue;
 abstract class LogicValue implements Comparable<LogicValue> {
   /// The number of bits in an int.
   // ignore: constant_identifier_names
-  static const int _INT_BITS = 64;
+  static const int _INT_BITS = kIsWeb ? 32 : 64;
 
   /// Logical value of `0`.
   static const LogicValue zero = _FilledLogicValue(_LogicValueEnum.zero, 1);
@@ -973,6 +973,13 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return LogicValue.filled(width, LogicValue.x);
     }
 
+    if (isDivision &&
+        (other == 0 ||
+            other == BigInt.zero ||
+            (other is LogicValue && other.isZero))) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
+
     if (other is LogicValue && !other.isValid) {
       return LogicValue.filled(other.width, LogicValue.x);
     }
@@ -994,6 +1001,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return LogicValue.ofInt(op(a, b) as int, width);
     }
   }
+
+  /// Returns true if this value is `0`.
+  bool get isZero;
 
   /// Equal-to operation.
   ///
