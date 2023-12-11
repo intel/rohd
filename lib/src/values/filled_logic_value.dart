@@ -94,7 +94,7 @@ class _FilledLogicValue extends LogicValue {
       return 0;
     } else if (!isValid) {
       throw InvalidValueOperationException(this, 'toInt');
-    } else if (width > LogicValue._INT_BITS) {
+    } else if (width > INT_BITS) {
       throw InvalidTruncationException(
           'LogicValue $this is too long to convert to int.'
           ' Use toBigInt() instead.');

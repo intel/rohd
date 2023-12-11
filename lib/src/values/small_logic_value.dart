@@ -35,32 +35,34 @@ class _SmallLogicValue extends LogicValue {
   static final Map<int, int> _masksOfWidth = HashMap();
   static int _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = (1 << width) - 1;
+      _masksOfWidth[width] = oneSllBy(width) - 1;
     }
     return _masksOfWidth[width]!;
   }
 
   /// Constructs a new [_SmallLogicValue], intended to hold values
-  /// between 1 and [_INT_BITS] bits, inclusive.
+  /// between 1 and [INT_BITS] bits, inclusive.
   ///
   /// Set [allowInefficientRepresentation] to `true` to bypass
   /// inefficient representation assertions.
   const _SmallLogicValue(int value, int invalid, super.width,
       {bool allowInefficientRepresentation = false})
-      : assert(width <= LogicValue._INT_BITS,
+      : assert(width <= INT_BITS,
             '_SmallLogicValue should have low number of bits ($width found)'),
         assert(width != 0,
             '_SmallLogicValue should have at least one bit ($width found)'),
         assert(
             allowInefficientRepresentation ||
-                !(((value & (1 << width) - 1) == (1 << width) - 1 ||
-                        (value & (1 << width) - 1) == 0) &&
-                    ((invalid & (1 << width) - 1) == (1 << width) - 1 ||
-                        (invalid & (1 << width) - 1) == 0)),
+                !(((value & ((1 << width - 1) * 2) - 1) ==
+                            ((1 << width - 1) * 2) - 1 ||
+                        (value & ((1 << width - 1) * 2) - 1) == 0) &&
+                    ((invalid & ((1 << width - 1) * 2) - 1) ==
+                            ((1 << width - 1) * 2) - 1 ||
+                        (invalid & ((1 << width - 1) * 2) - 1) == 0)),
             'Should not be expressable as filled: '
             '(value: $value, invalid: $invalid)'),
-        _value = ((1 << width) - 1) & value,
-        _invalid = ((1 << width) - 1) & invalid,
+        _value = (((1 << width - 1) * 2) - 1) & value,
+        _invalid = (((1 << width - 1) * 2) - 1) & invalid,
         super._();
 
   @override
@@ -188,11 +190,15 @@ class _SmallLogicValue extends LogicValue {
   LogicValue _shiftArithmeticRight(int shamt) {
     final upperMostBit = this[-1];
 
-    var value =
-        ((_value | (upperMostBit == LogicValue.one ? ~_mask : 0)) >> shamt) &
-            _mask;
+    // bits affected by the sign
+    final upperMask = ~_maskOfWidth(width - shamt);
 
-    var invalid = _invalid >> shamt;
+    var value = _value >>> shamt;
+    if (upperMostBit == LogicValue.one) {
+      value |= upperMask;
+    }
+
+    var invalid = _invalid >>> shamt;
 
     // if uppermost bit is invalid, then turn the shifted bits into X's
     if (!upperMostBit.isValid) {
@@ -200,7 +206,7 @@ class _SmallLogicValue extends LogicValue {
       value &= _mask >>> shamt;
 
       // for affected bits of invalid: make sure they are high
-      invalid |= ~_mask >> shamt;
+      invalid |= upperMask;
     }
 
     return LogicValue._smallLogicValueOrFilled(value, invalid, width);

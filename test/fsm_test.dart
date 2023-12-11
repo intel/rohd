@@ -131,12 +131,16 @@ class TrafficTestModule extends Module {
       ),
     ];
 
-    FiniteStateMachine<LightStates>(
+    final fsm = FiniteStateMachine<LightStates>(
       clk,
       reset,
       LightStates.northFlowing,
       states,
-    ).generateDiagram(outputPath: _trafficFSMPath);
+    );
+
+    if (!kIsWeb) {
+      fsm.generateDiagram(outputPath: _trafficFSMPath);
+    }
   }
 }
 

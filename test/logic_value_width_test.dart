@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -50,7 +51,7 @@ void main() {
   });
 
   group('values test', () {
-    for (final len in [63, 64, 65, 66, 67]) {
+    for (var len = INT_BITS - 2; len <= INT_BITS + 2; len++) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
       final bslv = LogicValue.ofInt(-0xFFFF, len); // 18446744073709486081
       final fslv = LogicValue.ofInt(-2, len); // 18446744073709551614
@@ -141,7 +142,7 @@ void main() {
           final bignum = LogicValue.ofBigInt(BigInt.from(1) << l, len);
           expect(bignum.clog2(), LogicValue.ofInt(l, len));
           if (len < 64) {
-            final smallnum = LogicValue.ofInt(1 << l, len);
+            final smallnum = LogicValue.ofInt(oneSllBy(l), len);
             expect(smallnum.clog2(), LogicValue.ofInt(l, len));
           }
         }

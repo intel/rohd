@@ -22,10 +22,6 @@ typedef LogicValues = LogicValue;
 /// [LogicValue] is unsigned.
 @immutable
 abstract class LogicValue implements Comparable<LogicValue> {
-  /// The number of bits in an int.
-  // ignore: constant_identifier_names
-  static const int _INT_BITS = kIsWeb ? 32 : 64;
-
   /// Logical value of `0`.
   static const LogicValue zero = _FilledLogicValue(_LogicValueEnum.zero, 1);
 
@@ -66,9 +62,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// of bits.
   ///
   /// [width] must be greater than or equal to 0.
-  static LogicValue ofInt(int value, int width) => width > _INT_BITS
+  static LogicValue ofInt(int value, int width) => width > INT_BITS
       ? _bigLogicValueOrFilled(
-          BigInt.from(value).toUnsigned(_INT_BITS), BigInt.zero, width)
+          BigInt.from(value).toUnsigned(INT_BITS), BigInt.zero, width)
       : _smallLogicValueOrFilled(value, 0, width);
 
   /// Converts `int` [value] to a valid [LogicValue] with [width]
@@ -82,7 +78,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// number of bits.
   ///
   /// [width] must be greater than or equal to 0.
-  static LogicValue ofBigInt(BigInt value, int width) => width > _INT_BITS
+  static LogicValue ofBigInt(BigInt value, int width) => width > INT_BITS
       ? _bigLogicValueOrFilled(value, BigInt.zero, width)
       : _smallLogicValueOrFilled(value.toIntUnsigned(width), 0, width);
 
@@ -320,12 +316,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
     // shifting BigInt's is expensive
     for (final lv in it) {
       final lvPlusSmall = lv.width + smallBuffer.width;
-      if (lvPlusSmall <= _INT_BITS) {
+      if (lvPlusSmall <= INT_BITS) {
         smallBuffer = lv._concatenate(smallBuffer);
       } else {
         // only put 64-bit chunks onto `fullResult`, rest onto `smallBuffer`
         final upperBound =
-            _INT_BITS * (lvPlusSmall ~/ _INT_BITS) - smallBuffer.width;
+            INT_BITS * (lvPlusSmall ~/ INT_BITS) - smallBuffer.width;
         fullResult = lv
             .getRange(0, upperBound)
             ._concatenate(smallBuffer)
@@ -333,7 +329,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
         smallBuffer = lv.getRange(upperBound, lv.width);
       }
 
-      assert(smallBuffer.width <= _INT_BITS,
+      assert(smallBuffer.width <= INT_BITS,
           'Keep smallBuffer small to meet invariants and efficiency');
     }
 
@@ -360,7 +356,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
         other[0] == this[0]) {
       // can keep it filled
       return _FilledLogicValue(other._value, newWidth);
-    } else if (newWidth > LogicValue._INT_BITS) {
+    } else if (newWidth > INT_BITS) {
       // BigInt's only
       return _BigLogicValue(_bigIntValue << other.width | other._bigIntValue,
           _bigIntInvalid << other.width | other._bigIntInvalid, newWidth);
@@ -455,7 +451,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     final invalidString = _invalidString(stringRepresentation);
     final width = stringRepresentation.length;
 
-    if (width <= _INT_BITS) {
+    if (width <= INT_BITS) {
       final value = _unsignedBinaryParse(valueString);
       final invalid = _unsignedBinaryParse(invalidString);
       return _smallLogicValueOrFilled(value, invalid, width);
@@ -469,10 +465,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
   /// [value], [invalid], and [width].
   ///
-  /// Only use if [width] > [_INT_BITS].
+  /// Only use if [width] > [INT_BITS].
   static LogicValue _bigLogicValueOrFilled(
       BigInt value, BigInt invalid, int width) {
-    assert(width > _INT_BITS, 'Should only be used for big values');
+    assert(width > INT_BITS, 'Should only be used for big values');
 
     return _filledIfPossible(
           _bigIntIs1s(value, width),
@@ -487,10 +483,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Returns either a [_BigLogicValue] or a [_FilledLogicValue] based on
   /// [value], [invalid], and [width].
   ///
-  /// Only use if [width] <= [_INT_BITS].
+  /// Only use if [width] <= [INT_BITS].
   static LogicValue _smallLogicValueOrFilled(
       int value, int invalid, int width) {
-    assert(width <= _INT_BITS, 'Should only be used for small values');
+    assert(width <= INT_BITS, 'Should only be used for small values');
 
     return _filledIfPossible(
           _intIs1s(value, width),
@@ -591,8 +587,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   @override
   String toString({bool includeWidth = true}) {
     if (isValid && includeWidth) {
-      // for ==_INT_BITS, still use BigInt so we don't get negatives
-      final hexValue = width >= _INT_BITS
+      // for ==INT_BITS, still use BigInt so we don't get negatives
+      final hexValue = width >= INT_BITS
           ? toBigInt().toUnsigned(width).toRadixString(16)
           : toInt().toRadixString(16);
       return "$width'h$hexValue";
@@ -630,7 +626,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       throw ValueWidthMismatchException(this, other);
     }
 
-    if (width > _INT_BITS || other.width > _INT_BITS) {
+    if (width > INT_BITS || other.width > INT_BITS) {
       final a = toBigInt();
       final b = other.toBigInt();
       final valueZero = BigInt.zero;
@@ -926,7 +922,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (!isValid) {
       return LogicValue.filled(width, LogicValue.x);
     }
-    if (width > _INT_BITS) {
+    if (width > INT_BITS) {
       final a = toBigInt();
       return LogicValue.ofBigInt(op(a, width) as BigInt, width);
     } else {
@@ -956,7 +952,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Handles width and bounds checks as well as proper conversion between
   /// different types of representation.
   ///
-  /// If the math [isDivision], then 64-bit ([_INT_BITS]) operations have some
+  /// If the math [isDivision], then 64-bit ([INT_BITS]) operations have some
   /// special consideration for two's complement math, so it will use an
   /// unsigned [BigInt] for math.
   LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op,
@@ -984,7 +980,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return LogicValue.filled(other.width, LogicValue.x);
     }
 
-    final widthComparison = isDivision ? _INT_BITS - 1 : _INT_BITS;
+    final widthComparison = isDivision ? INT_BITS - 1 : INT_BITS;
 
     if (width > widthComparison ||
         (other is LogicValue && other.width > widthComparison)) {
@@ -992,7 +988,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       final b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other).toUnsigned(_INT_BITS)
+              ? BigInt.from(other).toUnsigned(INT_BITS)
               : (other as LogicValue).toBigInt();
       return LogicValue.ofBigInt(op(a, b) as BigInt, width);
     } else {
@@ -1065,7 +1061,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       } else if (!exponent.isValidInt) {
         throw InvalidTruncationException(
             "BigInt (${exponent.bitLength} bits) won't fit in "
-            'int ($_INT_BITS bits)');
+            'int ($INT_BITS bits)');
       } else {
         return base.pow(exponent.toInt());
       }
@@ -1094,24 +1090,24 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
     dynamic a;
     dynamic b;
-    if (width > _INT_BITS || (other is LogicValue && other.width > _INT_BITS)) {
+    if (width > INT_BITS || (other is LogicValue && other.width > INT_BITS)) {
       a = toBigInt();
       b = other is BigInt
           ? other
           : other is int
-              ? BigInt.from(other).toUnsigned(_INT_BITS)
+              ? BigInt.from(other).toUnsigned(INT_BITS)
               : (other as LogicValue).toBigInt();
     } else {
-      if (width < _INT_BITS) {
+      if (width < INT_BITS) {
         a = toInt();
         b = other is int ? other : (other as LogicValue).toInt();
       } else {
-        // Here we now know: width == _INT_BITS
+        // Here we now know: width == INT_BITS
         final ai = toInt();
         final bi = other is int ? other : (other as LogicValue).toInt();
         if ((ai < 0) || (bi < 0)) {
-          final abig = LogicValue.ofBigInt(BigInt.from(ai), _INT_BITS + 1);
-          final bbig = LogicValue.ofBigInt(BigInt.from(bi), _INT_BITS + 1);
+          final abig = LogicValue.ofBigInt(BigInt.from(ai), INT_BITS + 1);
+          final bbig = LogicValue.ofBigInt(BigInt.from(bi), INT_BITS + 1);
           return abig._doCompare(bbig, op);
         }
       }
@@ -1153,7 +1149,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
         return LogicValue.filled(width, LogicValue.x);
       }
 
-      if (shamt.width > _INT_BITS) {
+      if (shamt.width > INT_BITS) {
         shamtNum = shamt.toBigInt();
       } else {
         shamtNum = shamt.toInt();
@@ -1170,7 +1166,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       }
 
       assert(
-          shamtNum <= BigInt.from(-1).toUnsigned(_INT_BITS),
+          shamtNum <= BigInt.from(-1).toUnsigned(INT_BITS),
           'It should not be possible for the shift amount to be less '
           'than the width, but more than fits in an int.');
 
@@ -1183,7 +1179,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
 
     if (shamtInt < 0) {
-      // since we're limited in width to 2^(_INT_BITS-1) (must be positive),
+      // since we're limited in width to 2^(INT_BITS-1) (must be positive),
       // we know that any negative shift amount must quality as "huge"
       return _shiftHuge(direction);
     }

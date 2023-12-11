@@ -16,10 +16,10 @@ extension BigLogicValueBigIntUtilities on BigInt {
   ///
   /// Always interprets the number as unsigned, and thus never clamps to fit.
   int toIntUnsigned(int width) {
-    if (width > LogicValue._INT_BITS) {
+    if (width > INT_BITS) {
       throw Exception('Cannot convert Int when width $width'
-          ' is greater than ${LogicValue._INT_BITS}');
-    } else if (width == LogicValue._INT_BITS) {
+          ' is greater than $INT_BITS');
+    } else if (width == INT_BITS) {
       // When width is 64, `BigInt.toInt()` will clamp values assuming that
       // it's a signed number.  To avoid that, if the width is 64, then do the
       // conversion in two 32-bit chunks and bitwise-or them together.
@@ -52,13 +52,13 @@ class _BigLogicValue extends LogicValue {
   }
 
   /// Constructs a new [_BigLogicValue], intended to hold values
-  /// with more than [_INT_BITS] bits.
+  /// with more than [INT_BITS] bits.
   ///
   /// Set [allowInefficientRepresentation] to `true` to bypass
   /// inefficient representation assertions.
   _BigLogicValue(BigInt value, BigInt invalid, int width,
       {bool allowInefficientRepresentation = false})
-      : assert(width > LogicValue._INT_BITS,
+      : assert(width > INT_BITS,
             '_BigLogicValue should only be used for large values'),
         super._(width) {
     _value = (_mask & value).toUnsigned(width);
@@ -95,7 +95,7 @@ class _BigLogicValue extends LogicValue {
   @override
   LogicValue _getRange(int start, int end) {
     final newWidth = end - start;
-    if (newWidth > LogicValue._INT_BITS) {
+    if (newWidth > INT_BITS) {
       return LogicValue._bigLogicValueOrFilled(
           (_value >> start) & _maskOfWidth(newWidth),
           (_invalid >> start) & _maskOfWidth(newWidth),
@@ -130,7 +130,7 @@ class _BigLogicValue extends LogicValue {
   int toInt() {
     final bigInt = toBigInt();
     if (bigInt.isValidInt) {
-      return bigInt.toIntUnsigned(LogicValue._INT_BITS);
+      return bigInt.toIntUnsigned(INT_BITS);
     } else {
       throw InvalidTruncationException(
           'LogicValue $this is too long to convert to int.'

@@ -7,13 +7,11 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-//TODO: split this test into js and non-js compatible sections
-@TestOn('vm')
-
 import 'dart:math';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -22,6 +20,15 @@ const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
 // shorten some names to make tests read better
 const lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
+
+int repeatedInt(int value, int width, int times) {
+  var result = 0;
+  for (var i = 0; i < times; i++) {
+    result <<= width;
+    result |= value;
+  }
+  return result;
+}
 
 void main() {
   test('bin with underscores', () {
@@ -98,12 +105,13 @@ void main() {
     });
 
     test('big unsigned int string', () {
-      expect(LogicValue.ofString('1' * 64), equals(LogicValue.ofInt(-1, 64)));
+      expect(LogicValue.ofString('1' * INT_BITS),
+          equals(LogicValue.ofInt(-1, INT_BITS)));
     });
 
     test('-1 int vs. 64 1s for big width', () {
       expect(LogicValue.ofInt(-1, 100),
-          LogicValue.ofBigInt((BigInt.one << 64) - BigInt.one, 100));
+          LogicValue.ofBigInt((BigInt.one << INT_BITS) - BigInt.one, 100));
     });
 
     test('invalid string ofString', () {
@@ -417,6 +425,8 @@ void main() {
   });
 
   group('LogicValue toString', () {
+    const intBitsMinus4 = INT_BITS - 4;
+
     test('1 bit', () {
       expect(LogicValue.one.toString(), "1'h1");
     });
@@ -426,20 +436,22 @@ void main() {
     });
 
     test('<64-bit positive', () {
-      expect(LogicValue.ofInt(0x1234, 60).toString(), "60'h1234");
+      expect(LogicValue.ofInt(0x1234, intBitsMinus4).toString(),
+          "$intBitsMinus4'h1234");
     });
 
     test('<64-bit negative', () {
-      expect(LogicValue.ofInt(-1, 60).toString(), "60'hfffffffffffffff");
+      expect(LogicValue.ofInt(-1, intBitsMinus4).toString(),
+          "$intBitsMinus4'h${'f' * (intBitsMinus4 ~/ 4)}");
     });
 
     test('64-bit positive', () {
-      expect(LogicValue.ofInt(0x1234, 64).toString(), "64'h1234");
+      expect(LogicValue.ofInt(0x1234, INT_BITS).toString(), "$INT_BITS'h1234");
     });
 
     test('64-bit negative', () {
-      expect(LogicValue.ofInt(0xfaaaaaaa00000005, 64).toString(),
-          "64'hfaaaaaaa00000005");
+      expect(LogicValue.ofInt(-11, INT_BITS).toString(),
+          "$INT_BITS'h${'f' * (INT_BITS ~/ 4 - 1)}5");
     });
 
     test('>64-bit positive', () {
@@ -636,57 +648,76 @@ void main() {
     });
 
     test('small int boundary shift right logical', () {
+      const lower = 14;
+      const upper = INT_BITS - lower;
+      const shamt = 20;
+      const remainder = INT_BITS - shamt;
+
       // at boundary
-      expect((LogicValue.ofInt(-5, 64) >>> 28).toInt(), 0xfffffffff);
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >>> 20,
-          LogicValue.ofString('0' * 20 + 'x' * 44));
-      expect(LogicValue.ofString('z' * 50 + '0' * 14) >>> 20,
-          LogicValue.ofString('0' * 20 + 'z' * 44));
+      expect((LogicValue.ofInt(-5, INT_BITS) >>> 24).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 24) ~/ 4));
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'x' * remainder));
+      expect(LogicValue.ofString('z' * upper + '0' * lower) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'z' * remainder));
 
       // below boundary
-      expect((LogicValue.ofInt(-5, 60) >>> 28).toInt(), 0xffffffff);
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >>> 20,
-          LogicValue.ofString('0' * 20 + 'x' * 43));
-      expect(LogicValue.ofString('z' * 50 + '0' * 13) >>> 20,
-          LogicValue.ofString('0' * 20 + 'z' * 43));
+      expect((LogicValue.ofInt(-5, INT_BITS - 4) >>> 24).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 4 - 24) ~/ 4));
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'x' * (remainder - 1)));
+      expect(LogicValue.ofString('z' * 50 + '0' * (lower - 1)) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'z' * (remainder - 1)));
     });
 
     test('small int boundary shift left logical', () {
+      const upper = 14;
+      const lower = INT_BITS - upper;
+      const shamt = 20;
+      const remainder = INT_BITS - shamt;
+
       // at boundary
-      expect((LogicValue.ofInt(-1, 64) << 20).toInt(), -1 << 20);
-      expect(LogicValue.ofString('0' * 14 + 'x' * 50) << 20,
-          LogicValue.ofString('x' * 44 + '0' * 20));
-      expect(LogicValue.ofString('0' * 14 + 'z' * 50) << 20,
-          LogicValue.ofString('z' * 44 + '0' * 20));
+      expect((LogicValue.ofInt(-1, INT_BITS) << shamt).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - shamt) ~/ 4) << shamt);
+      expect(LogicValue.ofString('0' * upper + 'x' * lower) << shamt,
+          LogicValue.ofString('x' * remainder + '0' * shamt));
+      expect(LogicValue.ofString('0' * upper + 'z' * lower) << shamt,
+          LogicValue.ofString('z' * remainder + '0' * shamt));
 
       // below boundary
-      expect((LogicValue.ofInt(-1, 32) << 24).toInt(), 0xff000000);
-      expect(LogicValue.ofString('0' * 14 + 'x' * 49) << 20,
-          LogicValue.ofString('x' * 43 + '0' * 20));
-      expect(LogicValue.ofString('0' * 14 + 'z' * 49) << 20,
-          LogicValue.ofString('z' * 43 + '0' * 20));
+      expect((LogicValue.ofInt(-1, 28) << 24).toInt(), 0xf000000);
+      expect(LogicValue.ofString('0' * upper + 'x' * (lower - 1)) << shamt,
+          LogicValue.ofString('x' * (remainder - 1) + '0' * shamt));
+      expect(LogicValue.ofString('0' * upper + 'z' * (lower - 1)) << shamt,
+          LogicValue.ofString('z' * (remainder - 1) + '0' * shamt));
     });
 
     test('small int boundary shift right arithmetic', () {
+      const lower = 14;
+      const upper = INT_BITS - lower;
+      const shamt1 = 20;
+      const shamt2 = 10;
+      const remainder = INT_BITS - shamt1;
+
       // at boundary
-      expect((LogicValue.ofInt(0xffff, 64) >> 8).toInt(), 0xff);
-      expect((LogicValue.ofInt(-5, 64) >> 20).toInt(), -1);
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 20,
-          LogicValue.filled(64, LogicValue.x));
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 10,
-          LogicValue.ofString('x' * 60 + '0' * 4));
-      expect(LogicValue.ofString('z' * 50 + '0' * 14) >> 20,
-          LogicValue.ofString('x' * 20 + 'z' * 44));
+      expect((LogicValue.ofInt(0xffff, INT_BITS) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt(), -1);
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt1,
+          LogicValue.filled(INT_BITS, LogicValue.x));
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt2,
+          LogicValue.ofString('x' * (upper + shamt2) + '0' * 4));
+      expect(LogicValue.ofString('z' * upper + '0' * lower) >> shamt1,
+          LogicValue.ofString('x' * shamt1 + 'z' * remainder));
 
       // below boundary
-      expect((LogicValue.ofInt(0xffff, 63) >> 8).toInt(), 0xff);
-      expect((LogicValue.ofInt(-5, 63) >> 20).toInt(), -1 >>> 1);
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 20,
-          LogicValue.filled(63, LogicValue.x));
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 10,
-          LogicValue.ofString('x' * 60 + '0' * 3));
-      expect(LogicValue.ofString('z' * 50 + '0' * 13) >> 20,
-          LogicValue.ofString('x' * 20 + 'z' * 43));
+      expect((LogicValue.ofInt(0xffff, INT_BITS - 1) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, INT_BITS - 1) >> shamt1).toInt(), -1 >>> 1);
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >> shamt1,
+          LogicValue.filled(INT_BITS - 1, LogicValue.x));
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >> shamt2,
+          LogicValue.ofString('x' * (upper + shamt2) + '0' * 3));
+      expect(LogicValue.ofString('z' * upper + '0' * (lower - 1)) >> shamt1,
+          LogicValue.ofString('x' * shamt1 + 'z' * (remainder - 1)));
     });
 
     test('big shift right logical', () {
@@ -763,6 +794,7 @@ void main() {
     });
 
     test('more than width', () {
+      expect(LogicValue.ofInt(10, 25) >> 25, LogicValue.ofInt(0, 25));
       expect(LogicValue.ofInt(10, 50) >> 50, LogicValue.ofInt(0, 50));
       expect(LogicValue.ofInt(10, 64) >> 65, LogicValue.ofInt(0, 64));
       expect(LogicValue.ofInt(10, 80) >> 100, LogicValue.ofInt(0, 80));
@@ -773,12 +805,14 @@ void main() {
     });
 
     test('huge left', () {
+      expect((LogicValue.ofInt(45, 20) << -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) << -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) << -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) << -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 80) << -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 60) << -4).toInt(), 0);
 
+      expect((LogicValue.ofInt(45, 20) << BigInt.from(-1)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) << BigInt.from(-1)).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) << BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) << BigInt.from(-4)).toInt(), 0);
@@ -788,12 +822,14 @@ void main() {
     });
 
     test('huge right', () {
+      expect((LogicValue.ofInt(45, 20) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 80) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 60) >>> -4).toInt(), 0);
 
+      expect((LogicValue.ofInt(45, 20) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) >>> BigInt.from(-4)).toInt(), 0);
@@ -1154,8 +1190,8 @@ void main() {
           );
       expect(
           // mod-by-0
-          () => LogicValue.ofString('0100') % LogicValue.ofString('0000'),
-          throwsA(isA<Exception>()));
+          LogicValue.ofString('0100') % LogicValue.ofString('0000'),
+          equals(LogicValue.ofString('xxxx')));
       expect(
           // % num by num
           LogicValue.ofString('0100') % LogicValue.ofString('0100'),
@@ -1180,8 +1216,8 @@ void main() {
           );
       expect(
           // div-by-0
-          () => LogicValue.ofString('0100') / LogicValue.ofString('0000'),
-          throwsA(isA<Exception>()));
+          LogicValue.ofString('0100') / LogicValue.ofString('0000'),
+          equals(LogicValue.ofString('xxxx')));
       expect(
           // * overflow
           LogicValue.ofString('0100') * LogicValue.ofString('0100'),
@@ -1468,18 +1504,22 @@ void main() {
         BigInt.parse('f' * 16 + 'f0' * 8, radix: 16),
         128,
       );
-      final smaller = extraWide.getRange(0, 64);
-      expect(smaller.toInt(), equals(0xf0f0f0f0f0f0f0f0));
+      final smaller = extraWide.getRange(0, INT_BITS);
+
+      expect(smaller.toInt(), equals(repeatedInt(0xf0, 8, INT_BITS ~/ 8)));
     });
+
     test(
         '64-bit BigInts larger than max pos int value constructing'
         ' a LogicValue is correct', () {
       final bigInt64Lv =
-          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), 64);
-      expect(bigInt64Lv.toInt(), equals(0xfafafafafafafafa));
+          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), INT_BITS);
+
+      expect(bigInt64Lv.toInt(), equals(repeatedInt(0xfa, 8, INT_BITS ~/ 8)));
     });
+
     test('64-bit binary negatives are converted properly with bin', () {
-      expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+      expect(bin('1110' * 16), equals(repeatedInt(0xe, 4, INT_BITS ~/ 4)));
     });
   });
 
@@ -1498,6 +1538,7 @@ void main() {
         expect(lv.hashCode, equals(lvEnum.hashCode));
       }
     });
+
     test('zero-width', () {
       expect(LogicValue.filled(0, LogicValue.one),
           equals(LogicValue.filled(0, LogicValue.zero)));
@@ -1686,6 +1727,7 @@ void main() {
       }
     });
   });
+
   group('Comparable LogicValue', () {
     test('positive - int', () {
       final a = LogicValue.ofInt(3, 8);
@@ -1711,15 +1753,16 @@ void main() {
         expect(values[i].toInt(), expected[i]);
       }
     });
+
     test('unsigned values - int 64 bits', () {
-      final a = LogicValue.ofInt(3, 64);
-      final b = LogicValue.ofInt(0, 64);
-      final c = LogicValue.ofInt(1, 64);
-      final d = LogicValue.ofInt(2, 64);
-      final e = LogicValue.ofInt(23, 64);
-      final f = LogicValue.ofInt(-127, 64);
-      final g = LogicValue.ofInt(-128, 64);
-      final h = LogicValue.ofInt(-1, 64);
+      final a = LogicValue.ofInt(3, INT_BITS);
+      final b = LogicValue.ofInt(0, INT_BITS);
+      final c = LogicValue.ofInt(1, INT_BITS);
+      final d = LogicValue.ofInt(2, INT_BITS);
+      final e = LogicValue.ofInt(23, INT_BITS);
+      final f = LogicValue.ofInt(-127, INT_BITS);
+      final g = LogicValue.ofInt(-128, INT_BITS);
+      final h = LogicValue.ofInt(-1, INT_BITS);
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
@@ -1770,15 +1813,19 @@ void main() {
             expected[i]);
       }
     });
-    test('unsigned  BigInt & int ', () {
-      final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
-      final b = LogicValue.ofBigInt(BigInt.zero, 64);
-      final c = LogicValue.ofBigInt(BigInt.from(-1), 64);
-      final d = LogicValue.ofBigInt(BigInt.one, 64);
-      final e = LogicValue.ofInt(-4611686018427387903, 64);
-      final f = LogicValue.ofInt(-9223372036854775808, 64);
-      final g = LogicValue.ofInt(-9223372036854775807, 64);
-      final h = LogicValue.ofInt(-1, 64);
+
+    test('unsigned BigInt & int', () {
+      final a = LogicValue.ofBigInt(BigInt.parse('3'), INT_BITS);
+      final b = LogicValue.ofBigInt(BigInt.zero, INT_BITS);
+      final c = LogicValue.ofBigInt(BigInt.from(-1), INT_BITS);
+      final d = LogicValue.ofBigInt(BigInt.one, INT_BITS);
+      final e = LogicValue.ofBigInt(
+          BigInt.parse('-0x3${'f' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final f = LogicValue.ofBigInt(
+          BigInt.parse('-0x8${'0' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final g = LogicValue.ofBigInt(
+          BigInt.parse('-0x7${'f' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final h = LogicValue.ofInt(-1, INT_BITS);
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
@@ -1795,6 +1842,7 @@ void main() {
             expected[i]);
       }
     });
+
     test('unsigned BigInt', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 128);
       final b = LogicValue.ofBigInt(BigInt.zero, 128);
@@ -1822,6 +1870,7 @@ void main() {
         expect(values[i].toBigInt().toUnsigned(values[i].width), expected[i]);
       }
     });
+
     test('Exceptions', () {
       final a64 = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final a128 = LogicValue.ofBigInt(BigInt.parse('3'), 128);
@@ -1830,8 +1879,8 @@ void main() {
       final d64 = LogicValue.ofBigInt(BigInt.one, 64);
       final e64 = LogicValue.ofInt(23, 64);
       final e8 = LogicValue.ofInt(23, 8);
-      final f64 = LogicValue.ofInt(-9223372036854775808, 64);
-      final g64 = LogicValue.ofInt(-9223372036854775807, 64);
+      final f64 = LogicValue.ofInt(-3, 64);
+      final g64 = LogicValue.ofInt(-2, 64);
       final h64 = LogicValue.ofInt(-1, 64);
       final invalidLogicX = LogicValue.filled(8, LogicValue.x);
       final invalidLogicZ = LogicValue.filled(8, LogicValue.z);
