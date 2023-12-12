@@ -869,6 +869,16 @@ void main() {
       expect((LogicValue.ofInt(-45, 8) >> (BigInt.one << 80)).toInt(), 0xff);
     });
 
+    test('huge right arithmetic example temporary', () {
+      //TODO name or use this test?
+      for (var i = 0; i < 100; i++) {
+        expect(
+            LogicValue.ofBigInt(BigInt.one << 200 | BigInt.one << 100, i) >>
+                (BigInt.one << 100),
+            LogicValue.filled(i, LogicValue.zero));
+      }
+    });
+
     group('invalid values', () {
       test('shift left', () {
         expect(LogicValue.filled(10, LogicValue.x) << 3,
@@ -1808,11 +1818,6 @@ void main() {
       }
     });
 
-    test('Unsigned BigInt Width Exception', () {
-      expect(
-          () => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
-    });
-
     test('unsigned values - int 8 bits', () {
       final a = LogicValue.ofInt(3, 8);
       final b = LogicValue.ofInt(0, 8);
@@ -1933,5 +1938,27 @@ void main() {
       expect(<LogicValue>[e8, invalidLogicZ].sort,
           throwsA(isA<InvalidValueOperationException>()));
     });
+  });
+
+  test('BigInt toIntUnsigned extension', () {
+    expect(BigInt.parse('0xf${'0' * 30}').toIntUnsigned(INT_BITS), 0);
+    expect(BigInt.parse('0xf${'0' * 30}').toIntUnsigned(INT_BITS - 1), 0);
+
+    expect(BigInt.parse('0x1f${'0' * 30}').toIntUnsigned(INT_BITS), 0);
+    expect(BigInt.parse('0x1f${'0' * 30}').toIntUnsigned(INT_BITS - 1), 0);
+
+    expect(BigInt.parse('0x${'5' * 30}').toIntUnsigned(INT_BITS),
+        repeatedInt(0x5, 4, INT_BITS ~/ 4));
+    expect(BigInt.parse('0x${'5' * 30}').toIntUnsigned(INT_BITS - 1),
+        repeatedInt(0x5, 4, INT_BITS ~/ 4));
+
+    expect(BigInt.parse('0x${'a' * 30}').toIntUnsigned(INT_BITS),
+        repeatedInt(0xa, 4, INT_BITS ~/ 4));
+    expect(BigInt.parse('0x${'a' * 30}').toIntUnsigned(INT_BITS - 4),
+        repeatedInt(0xa, 4, INT_BITS ~/ 4 - 1));
+  });
+
+  test('BigInt toIntUnsigned Width Exception', () {
+    expect(() => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
   });
 }

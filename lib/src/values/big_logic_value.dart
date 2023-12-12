@@ -19,7 +19,9 @@ extension BigLogicValueBigIntUtilities on BigInt {
     if (width > INT_BITS) {
       throw Exception('Cannot convert Int when width $width'
           ' is greater than $INT_BITS');
-    } else if (width == INT_BITS) {
+    } else if (width == INT_BITS && INT_BITS > 32) {
+      assert(!kIsWeb, 'This code is not set up to work with JS.');
+
       // When width is 64, `BigInt.toInt()` will clamp values assuming that
       // it's a signed number.  To avoid that, if the width is 64, then do the
       // conversion in two 32-bit chunks and bitwise-or them together.
@@ -28,7 +30,9 @@ extension BigLogicValueBigIntUtilities on BigInt {
       return (this & mask).toInt() |
           (((this >> maskWidth) & mask).toInt() << maskWidth);
     } else {
-      return toInt();
+      return (this & _BigLogicValue._maskOfWidth(width))
+          .toInt()
+          .toSigned(INT_BITS);
     }
   }
 }
