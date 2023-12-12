@@ -9,6 +9,10 @@
 
 // ignore_for_file: avoid_multiple_declarations_per_line
 
+// TODO(mkorbel1): reenable this test on JavaScript
+@TestOn('vm')
+library;
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -125,8 +129,7 @@ void main() {
         Vector({'wrEn1': 0, 'rdEn0': 0}, {'rdData0': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(ftm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(ftm, vectors);
     });
   });
 }

@@ -7,6 +7,8 @@
 // 2023 December 8
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 
 /// Borrowed from Flutter's implementation to determine whether Dart is
@@ -29,21 +31,8 @@ const int INT_BITS = kIsWeb ? 32 : 64;
 /// In JavaScript, the shift amount is `&`ed with `0x1f`, so `1 << 32 == 0`.
 int oneSllBy(int shamt) {
   if (kIsWeb) {
-    if (shamt > 64 || shamt < 0) {
-      return 0;
-    } else if (shamt & 0x1f != shamt) {
-      var result = 1 << 0x1f;
-      var remainingToShift = shamt - 0x1f;
-
-      while (remainingToShift > 0) {
-        result *= 2;
-        remainingToShift--;
-      }
-
-      return result;
-    } else {
-      return 1 << shamt;
-    }
+    assert(shamt <= 52, 'Loss of precision in JavaScript beyond 53 bits.');
+    return pow(2, shamt) as int;
   } else {
     return 1 << shamt;
   }

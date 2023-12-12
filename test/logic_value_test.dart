@@ -1961,4 +1961,13 @@ void main() {
   test('BigInt toIntUnsigned Width Exception', () {
     expect(() => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
   });
+
+  test('one shift left by', () {
+    expect(oneSllBy(0), 1);
+    expect(oneSllBy(1), 2);
+    expect(oneSllBy(2), 4);
+    expect(oneSllBy(31), 0x80000000);
+    expect(oneSllBy(32), 0x100000000);
+    expect(oneSllBy(52), 0x10000000000000);
+  });
 }

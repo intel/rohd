@@ -71,9 +71,11 @@ class _SmallLogicValue extends LogicValue {
     if (other is _FilledLogicValue) {
       return other == this;
     }
+
     if (other is! _SmallLogicValue) {
       return false;
     }
+
     return _value == other._value && _invalid == other._invalid;
   }
 

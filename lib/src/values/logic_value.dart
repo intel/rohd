@@ -544,9 +544,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
     if (other is! LogicValue) {
       return false;
     }
+
     if (other.width != width) {
       return false;
     }
+
     return _equals(other);
   }
 
