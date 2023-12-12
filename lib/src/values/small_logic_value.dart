@@ -35,7 +35,8 @@ class _SmallLogicValue extends LogicValue {
   static final Map<int, int> _masksOfWidth = HashMap();
   static int _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = (oneSllBy(width) - 1).toUnsigned(width);
+      _masksOfWidth[width] =
+          (oneSllBy(width) - 1).toUnsigned(width).toSigned(INT_BITS);
     }
     return _masksOfWidth[width]!;
   }
@@ -113,7 +114,7 @@ class _SmallLogicValue extends LogicValue {
     if (_invalid != 0) {
       throw Exception('Cannot convert invalid LogicValue to int: $this');
     }
-    return _value;
+    return _value.toSigned(INT_BITS);
   }
 
   @override

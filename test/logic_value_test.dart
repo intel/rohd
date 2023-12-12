@@ -27,7 +27,7 @@ int repeatedInt(int value, int width, int times) {
     result <<= width;
     result |= value;
   }
-  return result;
+  return result.toSigned(INT_BITS);
 }
 
 void main() {
@@ -677,8 +677,10 @@ void main() {
       const remainder = INT_BITS - shamt;
 
       // at boundary
-      expect((LogicValue.ofInt(-1, INT_BITS) << shamt).toInt(),
-          repeatedInt(0xf, 4, (INT_BITS - shamt) ~/ 4) << shamt);
+      expect(
+          (LogicValue.ofInt(-1, INT_BITS) << shamt).toInt(),
+          (repeatedInt(0xf, 4, (INT_BITS - shamt) ~/ 4) << shamt)
+              .toSigned(INT_BITS));
       expect(LogicValue.ofString('0' * upper + 'x' * lower) << shamt,
           LogicValue.ofString('x' * remainder + '0' * shamt));
       expect(LogicValue.ofString('0' * upper + 'z' * lower) << shamt,
@@ -701,9 +703,7 @@ void main() {
 
       // at boundary
       expect((LogicValue.ofInt(0xffff, INT_BITS) >> 8).toInt(), 0xff);
-      expect(
-          (LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt().toSigned(INT_BITS),
-          -1);
+      expect((LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt(), -1);
       expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt1,
           LogicValue.filled(INT_BITS, LogicValue.x));
       expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt2,
@@ -843,9 +843,7 @@ void main() {
 
     test('huge right arithmetic', () {
       expect((LogicValue.ofInt(45, 32) >> -1).toInt(), 0);
-      expect(
-          (LogicValue.ofInt(-45, INT_BITS) >> -12).toInt().toSigned(INT_BITS),
-          -1);
+      expect((LogicValue.ofInt(-45, INT_BITS) >> -12).toInt(), -1);
       expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), false);
@@ -916,7 +914,7 @@ void main() {
 
     test('example large shifts', () {
       expect((LogicValue.filled(INT_BITS, LogicValue.one) >> 2).toInt(),
-          equals(-1 >> 2));
+          (-1 >> 2).toSigned(INT_BITS));
       expect(
           LogicValue.filled(65, LogicValue.one) >>> 10,
           equals([
@@ -1528,8 +1526,7 @@ void main() {
     });
 
     test('64-bit binary negatives are converted properly with bin', () {
-      expect(bin('1110' * (INT_BITS ~/ 4)),
-          equals(repeatedInt(0xe, 4, INT_BITS ~/ 4)));
+      expect(bin('1110' * (INT_BITS ~/ 4)), repeatedInt(0xe, 4, INT_BITS ~/ 4));
     });
   });
 
@@ -1558,6 +1555,10 @@ void main() {
   });
   group('Utility operations', () {
     test('clog2 operation', () {
+      expect(LogicValue.ofInt(15, INT_BITS).clog2().toInt(), 4);
+      expect(LogicValue.ofInt(16, INT_BITS).clog2().toInt(), 4);
+      expect(LogicValue.ofInt(17, INT_BITS).clog2().toInt(), 5);
+
       expect(
           // int
           LogicValue.ofInt(0, 8).clog2(),
@@ -1644,6 +1645,22 @@ void main() {
           BigInt.from(128));
       expect(LogicValue.ofBigInt(BigInt.from(-1), 128).clog2().toBigInt(),
           BigInt.from(128));
+    });
+
+    test('clog2 with 1 then 0s', () {
+      expect(LogicValue.ofInt(1, INT_BITS).clog2().toInt(), 0);
+      expect(
+          LogicValue.ofInt(bin('1${'0' * (INT_BITS - 1)}'), INT_BITS)
+              .clog2()
+              .toInt(),
+          INT_BITS - 1);
+
+      for (var i = 0; i < INT_BITS; i++) {
+        expect(LogicValue.ofInt(oneSllBy(i), i + 1).clog2().toInt(), i);
+      }
+      for (var i = INT_BITS; i < 3 * INT_BITS; i++) {
+        expect(LogicValue.ofBigInt(BigInt.one << i, i + 1).clog2().toInt(), i);
+      }
     });
   });
 
@@ -1847,10 +1864,18 @@ void main() {
 
       values.sort();
       expected.sort();
+
       for (var i = 0; i < values.length; i++) {
         expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
             expected[i]);
       }
+    });
+
+    test('compare interpretable neg int-width numbers', () {
+      final allfs = LogicValue.ofInt(0xffffffff, 32);
+      final an8and0s = LogicValue.ofInt(0x80000000, 32);
+
+      expect(allfs > an8and0s, LogicValue.one);
     });
 
     test('unsigned BigInt', () {

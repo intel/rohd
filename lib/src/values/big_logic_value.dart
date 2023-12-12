@@ -130,7 +130,7 @@ class _BigLogicValue extends LogicValue {
   int toInt() {
     final bigInt = toBigInt();
     if (bigInt.isValidInt) {
-      return bigInt.toIntUnsigned(INT_BITS);
+      return bigInt.toIntUnsigned(INT_BITS).toSigned(INT_BITS);
     } else {
       throw InvalidTruncationException(
           'LogicValue $this is too long to convert to int.'

@@ -408,8 +408,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Returns true if bits in [x] are all 1
   static bool _intIs1s(int x, int width) =>
-      x & _SmallLogicValue._maskOfWidth(width) ==
-      _SmallLogicValue._maskOfWidth(width);
+      (x ^ _SmallLogicValue._maskOfWidth(width)) &
+          _SmallLogicValue._maskOfWidth(width) ==
+      0;
 
   /// Returns a [String] representing the `_value` to be used by implementations
   /// relying on `_value` and `_invalid`.
@@ -937,12 +938,19 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Returns ceil of log base 2 of [a]  having same type as of input [a].
   static dynamic _clog2(dynamic a, int width) {
     if (a is int) {
-      return a < 0 ? width : (a - 1).bitLength;
+      return a < 0
+          ? (a << 1 == 0) // handle b100000... of INT_BITS width
+              ? width - 1
+              : width
+          : (a - 1).bitLength;
     }
 
     if (a is BigInt) {
+      assert(a >= BigInt.zero, 'Expected only positive BigInt here');
       return a < BigInt.zero
-          ? BigInt.from(width)
+          ? (a << 1 == BigInt.zero)
+              ? BigInt.from(width - 1)
+              : BigInt.from(width)
           : BigInt.from((a - BigInt.one).bitLength);
     }
   }
@@ -1105,13 +1113,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
         // Here we now know: width == INT_BITS
         final ai = toInt();
         final bi = other is int ? other : (other as LogicValue).toInt();
+
         if ((ai < 0) || (bi < 0)) {
           final abig = LogicValue.ofBigInt(BigInt.from(ai), INT_BITS + 1);
           final bbig = LogicValue.ofBigInt(BigInt.from(bi), INT_BITS + 1);
           return abig._doCompare(bbig, op);
         }
+
+        a = ai;
+        b = bi;
       }
     }
+
     return op(a, b) ? LogicValue.one : LogicValue.zero;
   }
 
@@ -1376,9 +1389,11 @@ int bin(String s) => _unsignedBinaryParse(s.replaceAll('_', ''));
 int _unsignedBinaryParse(String source) {
   final val = int.tryParse(source, radix: 2);
   if (val != null) {
-    return val;
+    return val.toSigned(INT_BITS);
   } else {
-    return BigInt.parse(source, radix: 2).toIntUnsigned(source.length);
+    return BigInt.parse(source, radix: 2)
+        .toIntUnsigned(source.length)
+        .toSigned(INT_BITS);
   }
 }
 

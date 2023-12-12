@@ -19,3 +19,6 @@ tool/gh_actions/install_dependencies.sh
 
 # Install Icarus Verilog.
 tool/gh_actions/install_iverilog.sh
+
+# Install Node
+# TODO
