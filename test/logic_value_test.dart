@@ -666,7 +666,7 @@ void main() {
           repeatedInt(0xf, 4, (INT_BITS - 4 - 24) ~/ 4));
       expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >>> shamt,
           LogicValue.ofString('0' * shamt + 'x' * (remainder - 1)));
-      expect(LogicValue.ofString('z' * 50 + '0' * (lower - 1)) >>> shamt,
+      expect(LogicValue.ofString('z' * upper + '0' * (lower - 1)) >>> shamt,
           LogicValue.ofString('0' * shamt + 'z' * (remainder - 1)));
     });
 
@@ -701,7 +701,9 @@ void main() {
 
       // at boundary
       expect((LogicValue.ofInt(0xffff, INT_BITS) >> 8).toInt(), 0xff);
-      expect((LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt(), -1);
+      expect(
+          (LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt().toSigned(INT_BITS),
+          -1);
       expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt1,
           LogicValue.filled(INT_BITS, LogicValue.x));
       expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt2,
@@ -721,7 +723,8 @@ void main() {
     });
 
     test('big shift right logical', () {
-      expect((LogicValue.ofInt(-5, 65) >>> 28).toInt(), 0xfffffffff);
+      expect((LogicValue.ofInt(-5, INT_BITS + 1) >>> 28).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 28) ~/ 4));
       expect(LogicValue.ofBigInt(-BigInt.two, 128) >>> 96,
           LogicValue.ofInt(0xffffffff, 128));
       expect(LogicValue.ofString('x' * 51 + '0' * 14) >>> 20,
@@ -731,8 +734,8 @@ void main() {
     });
 
     test('big shift left logical', () {
-      expect((LogicValue.ofInt(-1, 65) << 20).toBigInt(),
-          (-BigInt.one).toUnsigned(65 - 20) << 20);
+      expect((LogicValue.ofInt(-1, INT_BITS + 1) << 20).toBigInt(),
+          (-BigInt.one).toUnsigned(INT_BITS + 1 - 20) << 20);
       expect((LogicValue.ofBigInt(-BigInt.two, 128) << 20).toBigInt(),
           (-BigInt.two).toUnsigned(128 - 20) << 20);
       expect(LogicValue.ofString('0' * 15 + 'x' * 50) << 20,
