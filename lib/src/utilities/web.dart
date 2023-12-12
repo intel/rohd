@@ -29,17 +29,16 @@ const int INT_BITS = kIsWeb ? 32 : 64;
 /// In JavaScript, the shift amount is `&`ed with `0x1f`, so `1 << 32 == 0`.
 int oneSllBy(int shamt) {
   if (kIsWeb) {
-    if (shamt > 64) {
+    if (shamt > 64 || shamt < 0) {
       return 0;
     } else if (shamt & 0x1f != shamt) {
-      var result = 1;
-      var remainingToShift = shamt;
-      while (remainingToShift > 0x1f) {
-        result <<= 0x1f;
-        remainingToShift -= 0x1f;
+      var result = 1 << 0x1f;
+      var remainingToShift = shamt - 0x1f;
+
+      while (remainingToShift > 0) {
+        result *= 2;
+        remainingToShift--;
       }
-      // ignore: join_return_with_assignment
-      result <<= remainingToShift;
 
       return result;
     } else {

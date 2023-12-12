@@ -840,7 +840,9 @@ void main() {
 
     test('huge right arithmetic', () {
       expect((LogicValue.ofInt(45, 32) >> -1).toInt(), 0);
-      expect((LogicValue.ofInt(-45, 64) >> -12).toInt(), -1);
+      expect(
+          (LogicValue.ofInt(-45, INT_BITS) >> -12).toInt().toSigned(INT_BITS),
+          -1);
       expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), false);
@@ -848,7 +850,11 @@ void main() {
           true);
 
       expect((LogicValue.ofInt(45, 32) >> BigInt.from(-4)).toInt(), 0);
-      expect((LogicValue.ofInt(-45, 64) >> BigInt.from(-4)).toInt(), -1);
+      expect(
+          (LogicValue.ofInt(-45, INT_BITS) >> BigInt.from(-4))
+              .toInt()
+              .toSigned(INT_BITS),
+          -1);
       expect((LogicValue.ofInt(-45, 8) >> BigInt.from(-4)).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(-45, 128) >> BigInt.from(-4)).and().toBool(),
@@ -906,7 +912,7 @@ void main() {
     });
 
     test('example large shifts', () {
-      expect((LogicValue.filled(64, LogicValue.one) >> 2).toInt(),
+      expect((LogicValue.filled(INT_BITS, LogicValue.one) >> 2).toInt(),
           equals(-1 >> 2));
       expect(
           LogicValue.filled(65, LogicValue.one) >>> 10,
@@ -1519,7 +1525,8 @@ void main() {
     });
 
     test('64-bit binary negatives are converted properly with bin', () {
-      expect(bin('1110' * 16), equals(repeatedInt(0xe, 4, INT_BITS ~/ 4)));
+      expect(bin('1110' * (INT_BITS ~/ 4)),
+          equals(repeatedInt(0xe, 4, INT_BITS ~/ 4)));
     });
   });
 
@@ -1574,8 +1581,8 @@ void main() {
           equals(LogicValue.ofInt(5, 64)));
       expect(
           // int
-          LogicValue.ofInt(-1 >>> 1, 64).clog2(),
-          equals(LogicValue.ofInt(63, 64)));
+          LogicValue.ofInt(-1 >>> 1, INT_BITS).clog2(),
+          equals(LogicValue.ofInt(INT_BITS - 1, INT_BITS)));
       expect(
           //  BigInt
           LogicValue.ofBigInt(BigInt.zero, 128).clog2(),
@@ -1607,9 +1614,9 @@ void main() {
       expect(LogicValue.ofInt(-128, 8).clog2().toInt(), 7);
       expect(LogicValue.ofInt(-127, 8).clog2().toInt(), 8);
 
-      expect(LogicValue.ofInt(-128, 64).clog2().toInt(), 64);
-      expect(LogicValue.ofInt(-127, 64).clog2().toInt(), 64);
-      expect(LogicValue.ofInt(-1, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-128, INT_BITS).clog2().toInt(), INT_BITS);
+      expect(LogicValue.ofInt(-127, INT_BITS).clog2().toInt(), INT_BITS);
+      expect(LogicValue.ofInt(-1, INT_BITS).clog2().toInt(), INT_BITS);
 
       expect(LogicValue.ofInt(-32768, 16).clog2().toInt(), 15);
       expect(LogicValue.ofInt(-32767, 16).clog2().toInt(), 16);
@@ -1692,7 +1699,7 @@ void main() {
         ' having different width and max constraint.', () {
       const maxValInt = 8888;
 
-      for (var i = 1; i <= 64; i++) {
+      for (var i = 1; i <= INT_BITS; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMaxInt = Random(5).nextLogicValue(width: i, max: maxValInt);
         final lvMaxBigInt = Random(5)
@@ -1715,7 +1722,7 @@ void main() {
           LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
       const maxInt = 30;
 
-      for (var i = 65; i <= 500; i++) {
+      for (var i = INT_BITS + 1; i <= 500; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
 

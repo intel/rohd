@@ -140,7 +140,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val is LogicValue) {
       width = val.width;
     } else {
-      throw UnsupportedTypeException(val, [int, BigInt, LogicValue]);
+      throw UnsupportedTypeException(val, const [int, BigInt, LogicValue]);
     }
 
     return LogicValue.of(val, width: width);
@@ -289,8 +289,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     } else if (val == null) {
       throw LogicValueConstructionException('Cannot construct from `null`.');
     } else {
-      throw UnsupportedTypeException(
-          val, [LogicValue, int, BigInt, bool, String, Iterable<LogicValue>]);
+      throw UnsupportedTypeException(val,
+          const [LogicValue, int, BigInt, bool, String, Iterable<LogicValue>]);
     }
   }
 
@@ -958,7 +958,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue _doMath(dynamic other, dynamic Function(dynamic a, dynamic b) op,
       {bool isDivision = false}) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw UnsupportedTypeException(other, [int, LogicValue, BigInt]);
+      throw UnsupportedTypeException(other, const [int, LogicValue, BigInt]);
     }
 
     if (other is LogicValue && other.width != width) {
@@ -1074,7 +1074,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// different types of representation.
   LogicValue _doCompare(dynamic other, bool Function(dynamic a, dynamic b) op) {
     if (!(other is int || other is LogicValue || other is BigInt)) {
-      throw UnsupportedTypeException(other, [int, LogicValue, BigInt]);
+      throw UnsupportedTypeException(other, const [int, LogicValue, BigInt]);
     }
 
     if (other is LogicValue && other.width != width) {
@@ -1116,13 +1116,19 @@ abstract class LogicValue implements Comparable<LogicValue> {
   }
 
   /// Arithmetic right-shift operation.
+  ///
+  /// Shifted in bits will match the sign (upper-most bit).
   LogicValue operator >>(dynamic shamt) =>
       _shift(shamt, _ShiftType.arithmeticRight);
 
   /// Logical left-shift operation.
+  ///
+  /// Shifted in bits are all 0.
   LogicValue operator <<(dynamic shamt) => _shift(shamt, _ShiftType.left);
 
   /// Logical right-shift operation.
+  ///
+  /// Shifted in bits are all 0.
   LogicValue operator >>>(dynamic shamt) => _shift(shamt, _ShiftType.right);
 
   /// Performs a shift by a huge amount (more than [width]).
@@ -1175,7 +1181,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
       shamtInt = shamtNum.toInt();
     } else {
-      throw UnsupportedTypeException(shamt, [int, BigInt, LogicValue]);
+      throw UnsupportedTypeException(shamt, const [int, BigInt, LogicValue]);
     }
 
     if (shamtInt < 0) {

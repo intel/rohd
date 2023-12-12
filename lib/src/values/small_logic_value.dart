@@ -35,7 +35,7 @@ class _SmallLogicValue extends LogicValue {
   static final Map<int, int> _masksOfWidth = HashMap();
   static int _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = oneSllBy(width) - 1;
+      _masksOfWidth[width] = (oneSllBy(width) - 1).toUnsigned(width);
     }
     return _masksOfWidth[width]!;
   }
