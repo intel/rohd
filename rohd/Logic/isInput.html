@@ -60,31 +60,26 @@
 <h1><span class="kind-property">isInput</span> property 
 </h1></div>
 
+        <section class="multi-line-signature">
+          
+          <a href="https://api.dart.dev/stable/3.2.3/dart-core/bool-class.html">bool</a>
+          <span class="name ">isInput</span>
+          <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
+        </section>
         
-<section id="getter">
-
-<section class="multi-line-signature">
-  
-  <span class="returntype"><a href="https://api.dart.dev/stable/3.2.2/dart-core/bool-class.html">bool</a></span>
-  <span class="name ">isInput</span>
-  
-
-</section>
-
-
 <section class="desc markdown">
   <p>Returns true iff this signal is an input of its parent <a href="../../rohd/Module-class.html">Module</a>.</p>
 <p>Note: <a href="../../rohd/Logic/parentModule.html">parentModule</a> is not populated until after its parent <a href="../../rohd/Module-class.html">Module</a>,
 if it exists, has been built. If no parent <a href="../../rohd/Module-class.html">Module</a> exists, returns false.</p>
 </section>
 
-
+        
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool get isInput =&gt; parentModule?.isInput(this) ?? false;</code></pre>
-</section>
-
+  <pre class="language-dart"><code class="language-dart">late final bool isInput =
+    &#47;&#47; this can be cached because parentModule is set at port creation
+    parentModule?.isInput(this) ?? false;</code></pre>
 </section>
 
 

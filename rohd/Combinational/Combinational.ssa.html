@@ -62,12 +62,12 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Combinational.ssa</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="ssa-param-construct"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">construct</span>(<ol class="parameter-list"><li><span class="parameter" id="param-s"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<ol class="parameter-list"><li><span class="parameter" id="param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
+      <span class="name ">Combinational.ssa</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="ssa-param-construct"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">construct</span>(<ol class="parameter-list"><li><span class="parameter" id="param-s"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<ol class="parameter-list"><li><span class="parameter" id="param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
 </ol>
 )</span></li>
 </ol>
 ), </span></li>
-<li><span class="parameter" id="ssa-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;combinational_ssa&#39;</span>}</span></li>
+<li><span class="parameter" id="ssa-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;combinational_ssa&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -124,11 +124,22 @@ that it will not be noticeable.</p>
     {String name = &#39;combinational_ssa&#39;}) {
   final context = _ssaContextCounter++;
 
-  Logic getSsa(Logic ref) =&gt; _SsaLogic(ref, context);
+  final ssas = &lt;_SsaLogic&gt;[];
+
+  Logic getSsa(Logic ref) {
+    final newSsa = _SsaLogic(ref, context);
+    ssas.add(newSsa);
+    return newSsa;
+  }
 
   final conditionals = construct(getSsa);
 
+  ssas.forEach(_updateSsaDriverMap);
+
   _processSsa(conditionals, context: context);
+
+  &#47;&#47; no need to keep any of this old info around anymore
+  _signalToSsaDrivers.clear();
 
   return Combinational(conditionals, name: name);
 }</code></pre>
