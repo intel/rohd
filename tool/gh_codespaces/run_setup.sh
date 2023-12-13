@@ -21,4 +21,4 @@ tool/gh_actions/install_dependencies.sh
 tool/gh_actions/install_iverilog.sh
 
 # Install Node
-# TODO
+tool/gh_actions/install_node.sh
