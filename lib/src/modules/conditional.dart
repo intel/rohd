@@ -263,13 +263,48 @@ class Combinational extends _Always {
       {String name = 'combinational_ssa'}) {
     final context = _ssaContextCounter++;
 
-    Logic getSsa(Logic ref) => _SsaLogic(ref, context);
+    final ssas = <_SsaLogic>[];
+
+    Logic getSsa(Logic ref) {
+      final newSsa = _SsaLogic(ref, context);
+      ssas.add(newSsa);
+      return newSsa;
+    }
 
     final conditionals = construct(getSsa);
 
+    ssas.forEach(_updateSsaDriverMap);
+
     _processSsa(conditionals, context: context);
 
+    // no need to keep any of this old info around anymore
+    _signalToSsaDrivers.clear();
+
     return Combinational(conditionals, name: name);
+  }
+
+  /// A map from [_SsaLogic]s to signals that they drive.
+  ///
+  /// This only stores information temporarily during construction of a
+  /// [Combinational.ssa] and clears afterwards.
+  static final Map<Logic, Set<_SsaLogic>> _signalToSsaDrivers = {};
+
+  /// Tags each downstream [Logic] from [ssaDriver] as such in
+  /// [_signalToSsaDrivers].
+  static void _updateSsaDriverMap(_SsaLogic ssaDriver) {
+    final toParse = TraverseableCollection<Logic>()
+      ..addAll(ssaDriver.dstConnections);
+    for (var i = 0; i < toParse.length; i++) {
+      final tpi = toParse[i];
+
+      _signalToSsaDrivers.putIfAbsent(tpi, () => <_SsaLogic>{}).add(ssaDriver);
+
+      if (tpi.isInput && tpi.parentModule! is CustomSystemVerilog) {
+        toParse.addAll(tpi.parentModule!.outputs.values);
+      } else {
+        toParse.addAll(tpi.dstConnections);
+      }
+    }
   }
 
   /// Executes the remapping for all the [conditionals] recursively.
@@ -749,23 +784,12 @@ abstract class Conditional {
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    final toParse = TraverseableCollection<Logic>()..add(driver);
-    final foundSsaLogics = <_SsaLogic>{};
-    for (var i = 0; i < toParse.length; i++) {
-      if (toParse[i].srcConnection != null) {
-        toParse.add(toParse[i].srcConnection!);
-      }
-      if (toParse[i].isOutput) {
-        // ignore: invalid_use_of_protected_member
-        toParse.addAll(toParse[i].parentModule!.inputs.values);
-      }
-      if (toParse[i] is _SsaLogic &&
-          (toParse[i] as _SsaLogic)._context == context) {
-        foundSsaLogics.add(toParse[i] as _SsaLogic);
-      }
+    if (driver is _SsaLogic && driver._context == context) {
+      return [driver];
     }
 
-    return foundSsaLogics.toList(growable: false);
+    // no need to check for context on this map since it clears each time
+    return Combinational._signalToSsaDrivers[driver]?.toList() ?? const [];
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
