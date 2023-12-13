@@ -842,6 +842,7 @@ void main() {
     });
 
     test('huge right arithmetic', () {
+      expect((LogicValue.ofInt(45, 20) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(-45, INT_BITS) >> -12).toInt(), -1);
       expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
@@ -850,6 +851,7 @@ void main() {
       expect((LogicValue.ofBigInt(BigInt.from(-45), 128) >> -18).and().toBool(),
           true);
 
+      expect((LogicValue.ofInt(45, 20) >> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >> BigInt.from(-4)).toInt(), 0);
       expect(
           (LogicValue.ofInt(-45, INT_BITS) >> BigInt.from(-4))
