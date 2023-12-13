@@ -1,6 +1,14 @@
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// ssa_driver_search_benchmark.dart
+// Benchmarking for searching for SSA drivers.
+//
+// 2023 December
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/module.dart';
 
 class LotsOfLogic extends Module {
   Logic get c => output('c');
