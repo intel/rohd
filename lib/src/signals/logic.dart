@@ -183,13 +183,17 @@ class Logic {
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isInput => parentModule?.isInput(this) ?? false;
+  late final bool isInput =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isOutput => parentModule?.isOutput(this) ?? false;
+  late final bool isOutput =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isOutput(this) ?? false;
 
   /// Returns true iff this signal is an input or output of its parent [Module].
   ///
