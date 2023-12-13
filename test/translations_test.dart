@@ -9,7 +9,9 @@
 
 // ignore_for_file: avoid_multiple_declarations_per_line
 
-// TODO(mkorbel1): reenable this test on JavaScript
+// TODO(mkorbel1): reenable this test on JavaScript pending dart sdk issue,
+//  https://github.com/dart-lang/sdk/issues/54329.
+
 @TestOn('vm')
 library;
 

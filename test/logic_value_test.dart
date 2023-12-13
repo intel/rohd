@@ -869,8 +869,7 @@ void main() {
       expect((LogicValue.ofInt(-45, 8) >> (BigInt.one << 80)).toInt(), 0xff);
     });
 
-    test('huge right arithmetic example temporary', () {
-      //TODO name or use this test?
+    test('huge right arithmetic zero', () {
       for (var i = 0; i < 100; i++) {
         expect(
             LogicValue.ofBigInt(BigInt.one << 200 | BigInt.one << 100, i) >>
