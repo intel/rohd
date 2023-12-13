@@ -1969,4 +1969,15 @@ void main() {
     expect(oneSllBy(32), 0x100000000);
     expect(oneSllBy(52), 0x10000000000000);
   });
+
+  test('precision adjustment handled for all widths', () {
+    for (var i = 1; i < 100; i++) {
+      expect(
+          LogicValue.of('${'1' * i}0'),
+          [
+            LogicValue.ofBigInt(BigInt.parse('1' * i, radix: 2), i),
+            LogicValue.zero
+          ].swizzle());
+    }
+  });
 }
