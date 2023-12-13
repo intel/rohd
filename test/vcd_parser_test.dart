@@ -7,6 +7,9 @@
 // 2023 February 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';

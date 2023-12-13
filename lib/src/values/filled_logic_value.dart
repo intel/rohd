@@ -94,7 +94,7 @@ class _FilledLogicValue extends LogicValue {
       return 0;
     } else if (!isValid) {
       throw InvalidValueOperationException(this, 'toInt');
-    } else if (width > LogicValue._INT_BITS) {
+    } else if (width > INT_BITS) {
       throw InvalidTruncationException(
           'LogicValue $this is too long to convert to int.'
           ' Use toBigInt() instead.');
@@ -340,4 +340,7 @@ class _FilledLogicValue extends LogicValue {
       (_value == _LogicValueEnum.one || _value == _LogicValueEnum.z)
           ? _SmallLogicValue._maskOfWidth(width)
           : 0;
+
+  @override
+  bool get isZero => _value == _LogicValueEnum.zero;
 }
