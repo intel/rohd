@@ -289,6 +289,8 @@ class Combinational extends _Always {
   /// [Combinational.ssa] and clears afterwards.
   static final Map<Logic, Set<_SsaLogic>> _signalToSsaDrivers = {};
 
+  /// Tags each downstream [Logic] from [ssaDriver] as such in
+  /// [_signalToSsaDrivers].
   static void _updateSsaDriverMap(_SsaLogic ssaDriver) {
     final toParse = TraverseableCollection<Logic>()
       ..addAll(ssaDriver.dstConnections);
@@ -757,7 +759,6 @@ abstract class Conditional {
   static void _connectSsaDriverFromMappings(
       Logic driver, Map<Logic, Logic> mappings,
       {required int context}) {
-    // print(driver);
     final ssaDrivers = Conditional._findSsaDriversFrom(driver, context);
 
     // take all the "current" names for these signals
@@ -783,9 +784,6 @@ abstract class Conditional {
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    // for (var i = 0; i < toParse.length; i++) {
-    //   final tpi = toParse[i];
-
     if (driver is _SsaLogic && driver._context == context) {
       return [driver];
     }
