@@ -7,9 +7,60 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
+
+class SelectTestModule extends Module {
+  Logic get selectIndexValue => output('selectIndexValue');
+  Logic get selectFromValue => output('selectFromValue');
+
+  SelectTestModule(Logic a1, Logic a2, Logic a3, Logic b, {Logic? defaultValue})
+      : super(name: 'selecttestmodule') {
+    a1 = addInput('a1', a1, width: a1.width);
+    a2 = addInput('a2', a2, width: a2.width);
+    a3 = addInput('a3', a3, width: a3.width);
+    b = addInput('b', b, width: b.width);
+
+    if (defaultValue != null) {
+      defaultValue =
+          addInput('defaultValue', defaultValue, width: defaultValue.width);
+      selectWithDefaultValue(a1, a2, a3, b, defaultValue);
+    } else {
+      selectWithoutDefaultValue(a1, a2, a3, b);
+    }
+  }
+
+  void selectWithoutDefaultValue(Logic a1, Logic a2, Logic a3, Logic b) {
+    final selectIndexValue = addOutput('selectIndexValue', width: a1.width);
+    final selectFromValue = addOutput('selectFromValue', width: a1.width);
+
+    if (a1.width != a2.width || a1.width != a3.width) {
+      throw Exception('a1, a2 and a3 must be same width.');
+    }
+
+    final logicList = <Logic>[a1, a2, a3];
+
+    selectIndexValue <= logicList.selectIndex(b);
+    selectFromValue <= b.selectFrom(logicList);
+  }
+
+  void selectWithDefaultValue(
+      Logic a1, Logic a2, Logic a3, Logic b, Logic defaultValue) {
+    final selectFromValue = addOutput('selectFromValue', width: a1.width);
+    final selectIndexValue = addOutput('selectIndexValue', width: a1.width);
+
+    if (a1.width != a2.width || a1.width != a3.width) {
+      throw Exception('a1, a2 and a3 must be same width.');
+    }
+
+    final logicList = <Logic>[a1, a2, a3];
+    selectFromValue <= b.selectFrom(logicList, defaultValue: defaultValue);
+    selectIndexValue <= logicList.selectIndex(b, defaultValue: defaultValue);
+  }
+}
 
 class BusTestModule extends Module {
   // --- Getters ---
@@ -560,6 +611,37 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
+    });
+
+    test('selectFrom and selectIndex', () async {
+      final gtm = SelectTestModule(Logic(width: 8), Logic(width: 8),
+          Logic(width: 8), Logic(width: (log(8) / log(2)).ceil()));
+      await gtm.build();
+      final vectors = [
+        Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 1},
+            {'selectIndexValue': 2, 'selectFromValue': 2}),
+        Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 0},
+            {'selectIndexValue': 1, 'selectFromValue': 1}),
+        Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 2},
+            {'selectIndexValue': 3, 'selectFromValue': 3})
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('selectFrom with default Value', () async {
+      final gtm = SelectTestModule(Logic(width: 8), Logic(width: 8),
+          Logic(width: 8), Logic(width: (log(8) / log(2)).ceil()),
+          defaultValue: Logic(width: 8));
+      await gtm.build();
+      final vectors = [
+        Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 4, 'defaultValue': 5},
+            {'selectFromValue': 5, 'selectIndexValue': 5}),
+      ];
+      await SimCompare.checkFunctionalVector(gtm, vectors);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
+      expect(simResult, equals(true));
     });
   });
 }

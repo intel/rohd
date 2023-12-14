@@ -6,7 +6,8 @@
 // simulator, as well as basic operations on them
 //
 // 2021 August 2
-// Author: Max Korbel <max.korbel@intel.com>
+// Author: Max Korbel <max.korbel@intel.com>,
+//         Rahul Gautham Putcha <rahul.gautham.putcha@intel.com>
 
 part of 'signals.dart';
 
@@ -711,5 +712,43 @@ class Logic {
       isLogicIn |= eq(y);
     }
     return isLogicIn;
+  }
+
+  /// Performs a [Logic] `index` based selection on an [List] of [Logic]
+  /// named [busList].
+  ///
+  /// Using the [Logic] `index` on which [selectFrom] is performed on and
+  /// a [List] of [Logic] named [busList] for `index` based selection, we can
+  /// select any valid element of type [Logic] within the `logicList` using
+  /// the `index` of [Logic] type.
+  ///
+  /// Alternatively we can approach this with `busList.selectIndex(index)`
+  ///
+  /// Example:
+  /// ```
+  /// // ordering matches closer to array indexing with `0` index-based.
+  /// selected <= index.selectFrom(busList);
+  /// ```
+  ///
+  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
+    final selected = Logic(
+        name: 'selectFrom',
+        width: busList.first.width,
+        naming: Naming.mergeable);
+
+    Combinational(
+      [
+        Case(
+            this,
+            [
+              for (var i = 0; i < busList.length; i++)
+                CaseItem(Const(i, width: width), [selected < busList[i]])
+            ],
+            conditionalType: ConditionalType.unique,
+            defaultItem: [selected < (defaultValue ?? 0)])
+      ],
+    );
+
+    return selected;
   }
 }

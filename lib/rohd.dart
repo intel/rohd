@@ -7,6 +7,7 @@ export 'src/finite_state_machine.dart';
 export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
 export 'src/modules/modules.dart';
+export 'src/selection.dart';
 export 'src/signals/signals.dart';
 export 'src/simulator.dart';
 export 'src/swizzle.dart';
