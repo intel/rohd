@@ -23,6 +23,7 @@ Currently, this extension follows the conventions in ROHD [v0.5.1](https://githu
 | CaseZ | `caseZ` or `CaseZ` | Builds a 'CASEZ' conditional block for use within sequential or combinational contexts |
 | Simulation | `sim` or `Simulator` or `simulation` | Templates a signal Simulation |
 | Finite State Machine  | `fsm` or `FSM` | Creates a Finite State Machine template example for simplified FSM usage |
+| ROHD-VF Testbench | `vf` | Creates a ROHD-VF template |
 
 ## Reporting Issues
 
