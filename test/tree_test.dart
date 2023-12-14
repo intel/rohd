@@ -53,7 +53,6 @@ void main() {
           List<Logic>.generate(16, (index) => Logic(width: 8)),
           (a, b) => mux(a > b, a, b));
       await mod.build();
-      // File('tmp_tree.sv').writeAsStringSync(mod.generateSynth());
 
       final vectors = [
         Vector({

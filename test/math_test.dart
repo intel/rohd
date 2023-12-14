@@ -73,7 +73,7 @@ void main() {
     await Simulator.reset();
   });
 
-  test('sv expansion does slices', () async {
+  test('sv expansion handles lint issues', () async {
     final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
     await gtm.build();
 
@@ -92,7 +92,7 @@ void main() {
 
     // ensure we never lshift by a constant directly
     for (final line in lines) {
-      if (RegExp('assign.*a_lshift.*const.*=').hasMatch(line)) {
+      if (RegExp('assign.*a_sl_const.*=').hasMatch(line)) {
         expect(line, contains('shiftAmount'));
       }
     }

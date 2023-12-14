@@ -352,8 +352,7 @@ void main() {
         Vector({'a': 0}, {'a_bar': 1}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
 
     test('unary and', () async {
@@ -606,22 +605,36 @@ void main() {
           }, {
             'a_lshift_const': 0,
             'a_rshift_const': 0,
-            'a_arshift_const': LogicValue.filled(40, LogicValue.one),
+            'a_arshift_const': LogicValue.filled(40, LogicValue.zero),
             'a_lshift_b': 0,
             'a_rshift_b': 0,
-            'a_arshift_b': LogicValue.filled(40, LogicValue.one),
+            'a_arshift_b': LogicValue.filled(40, LogicValue.zero),
           }),
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
       });
 
-      // test plan:
-      // - large logic shifted by int
-      // - large logic shifted by (big) BigInt
-      // - large logic shifted by large logic
-      // - small logic shifted by large logic
-      // excessively large number (>64bits)
+      test('very small logic shifted by huge value on large bus', () async {
+        final gtm = ShiftTestModule(Logic(width: 20), Logic(width: 200),
+            constant: BigInt.one << 100);
+        await gtm.build();
+        final vectors = [
+          Vector({
+            'a': BigInt.one << 200 | BigInt.one << 100,
+            'b': BigInt.one << 100
+          }, {
+            'a_lshift_const': 0,
+            'a_rshift_const': 0,
+            'a_arshift_const': LogicValue.filled(20, LogicValue.zero),
+            'a_lshift_b': 0,
+            'a_rshift_b': 0,
+            'a_arshift_b': LogicValue.filled(20, LogicValue.zero),
+          }),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
     });
 
     test('And2Gate single bit', () async {

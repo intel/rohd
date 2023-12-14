@@ -16,7 +16,7 @@ A `LogicValue` represents a multi-bit (including 0-bit and 1-bit) 4-value (`1`, 
 
 The `Module` is the fundamental building block of hardware designs in ROHD. They have clearly defined inputs and outputs, and all logic contained within the module should connect either/both from inputs and to outputs. The ROHD framework will determine at `build()` time which logic sits within which `Module`. Any functional operation, whether a simple gate or a large module, is implemented as a `Module`.
 
-Every `Module` defines its own functionality. This could be through composition of other `Module`s, or through custom functional definition. For a custom functionality to be convertable to an output (e.g. SystemVerilog), it has to explicitly define how to convert it (via `CustomVerilog` or `InlineVerilog`). Any time the input of a custom functionality `Module` toggles, the outputs should correspondingly change, if necessary.
+Every `Module` defines its own functionality. This could be through composition of other `Module`s, or through custom functional definition. For a custom functionality to be convertable to an output (e.g. SystemVerilog), it has to explicitly define how to convert it (via `CustomVerilog` or `InlineSystemVerilog`). Any time the input of a custom functionality `Module` toggles, the outputs should correspondingly change, if necessary.
 
 ### Simulator
 
