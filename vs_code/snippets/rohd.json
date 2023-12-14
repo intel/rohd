@@ -44,7 +44,7 @@
     "ROHD: Conditional Assign": {
         "prefix": ["assign"],
         "body": [
-            "${1:srcLogic} < ${2:destLogic};"
+            "${1:srcLogic} < ${2:destLogic},"
         ],
         "description": "Assignment Operator < which used in Sequential and Combinational conditional Operator."
     },
