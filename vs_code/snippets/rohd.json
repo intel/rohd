@@ -214,7 +214,7 @@
         "description": "An abstraction of the FSM build in ROHD. The API doc for state can be found at https://intel.github.io/rohd/rohd/State-class.html."
     },
      "ROHD Testbench": {
-        "prefix": "vf",
+        "prefix": ["vf", "tb", "testbench"],
         "body": [
             "import 'dart:async';",
             "import 'dart:collection';",
