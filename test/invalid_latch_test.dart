@@ -17,16 +17,14 @@ import 'package:test/test.dart';
 class _Nand2Gate extends Module {
   /// Calculates the NAND of `in0` and `in1`.
   _Nand2Gate(Logic in0, Logic in1) {
-    in0 = addInput(in0.name, in0);
-    in1 = addInput(in1.name, in1);
+    in0 = addInput('in0', in0);
+    in1 = addInput('in1', in1);
 
-    _out.gets(NotGate(And2Gate(in0, in1).out).out);
+    addOutput('o').gets(NotGate(And2Gate(in0, in1).out).out);
   }
 
   /// The output of this gate.
-  Logic get out => output(_out.name);
-
-  late final _out = addOutput(Logic().name);
+  Logic get out => output('o');
 }
 
 enum _DLatchCombType { assignments, oneComb, manyCombs }

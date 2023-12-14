@@ -59,8 +59,5 @@ void main() {
     // "z = 1" means it correctly traversed down from inputs
     assert(synth.contains('z = 1'),
         'Should correctly traverse from inputs to z=1');
-
-    // print(ftm.hierarchy());
-    // File('tmp4.sv').writeAsStringSync(synth);
   });
 }
