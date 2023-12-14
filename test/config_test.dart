@@ -67,4 +67,13 @@ void main() async {
 
     deleteTemporaryDump(dumpName);
   });
+
+  test('should update the vscode readme version', () async {
+    const version = Config.version;
+
+    final file = File('vs_code/README.md');
+    final contents = await file.readAsString();
+
+    expect(contents.contains(version), true);
+  });
 }
