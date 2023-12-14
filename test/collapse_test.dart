@@ -1,12 +1,12 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// collapse_test.dart
-/// Unit tests for collapsing systemverilog to a smaller representation
-///
-/// 2021 July 14
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// collapse_test.dart
+// Unit tests for collapsing systemverilog to a smaller representation
+//
+// 2021 July 14
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -25,7 +25,7 @@ class CollapseTestModule extends Module {
 
     final x = Logic(name: 'x');
     final y = Logic(name: 'y');
-    final z = Logic(name: 'z');
+    final z = Logic(name: 'z', naming: Naming.mergeable);
     c <= a & b;
     d <= a & b;
     x <= a;
@@ -33,6 +33,8 @@ class CollapseTestModule extends Module {
     e <= a & b & c & x & y;
     z <= b & y;
     f <= a & z;
+
+    Logic(name: 'internal') <= ~z;
   }
 }
 
@@ -49,8 +51,7 @@ void main() {
       Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 0, 'e': 0, 'f': 0}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    final simResult = SimCompare.iverilogVector(mod, vectors);
-    expect(simResult, equals(true));
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test('collapse pretty', () async {
@@ -58,10 +59,9 @@ void main() {
     await mod.build();
     final synth = mod.generateSynth();
 
-    // File('tmp.sv').writeAsStringSync(synth);
-    // print(synth);
-
     // make sure e=a&b&c is in there, to prove there was some inlining
-    expect(synth.contains(RegExp('e.*=.*a.*&.*b.*&.*c')), equals(true));
+    expect(synth, contains(RegExp('e.*=.*a.*&.*b.*&.*c')));
+
+    expect(synth, contains(RegExp('internal.*=.*~z')));
   });
 }

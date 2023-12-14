@@ -1,14 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// random_logic_value.dart
-/// Random Logic Value generation extension.
-///
-/// 2023 May 18
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// random_logic_value.dart
+// Random Logic Value generation extension.
+//
+// 2023 May 18
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-part of values;
+part of 'values.dart';
 
 /// Allows random generation of [LogicValue] for [BigInt] and [int].
 extension RandLogicValue on math.Random {
@@ -17,7 +16,8 @@ extension RandLogicValue on math.Random {
   BigInt _nextBigInt({required int numBits}) {
     var result = BigInt.zero;
     for (var i = 0; i < numBits; i += 32) {
-      result = (result << 32) | BigInt.from(nextInt(1 << 32));
+      // BigInt is safe with it, though
+      result = (result << 32) | BigInt.from(nextInt(oneSllBy(32)));
     }
     return result & ((BigInt.one << numBits) - BigInt.one);
   }
@@ -68,13 +68,12 @@ extension RandLogicValue on math.Random {
 
       return LogicValue.ofString(bitString.toString());
     } else {
-      if (width <= LogicValue._INT_BITS) {
+      if (width <= INT_BITS) {
         final ranNum = width <= 32
-            ? LogicValue.ofInt(nextInt(1 << width), width)
+            ? LogicValue.ofInt(nextInt(oneSllBy(width)), width)
             : LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
 
-        if (max == null ||
-            (max is BigInt && max.bitLength > LogicValue._INT_BITS)) {
+        if (max == null || (max is BigInt && max.bitLength > INT_BITS)) {
           return ranNum;
         } else {
           return LogicValue.ofInt(

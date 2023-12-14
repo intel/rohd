@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus_range_swizzling.dart
-/// Demonstrated the use of bus range and swizzling.
-///
-/// 2023 February 14
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// bus_range_swizzling.dart
+// Demonstrated the use of bus range and swizzling.
+//
+// 2023 February 14
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 // ignore_for_file: avoid_print, unused_local_variable
 

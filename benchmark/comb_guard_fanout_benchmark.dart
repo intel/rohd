@@ -48,11 +48,6 @@ class CombGuardFanoutBenchmark extends AsyncBenchmarkBase {
   CombGuardFanoutBenchmark({this.numPuts = 100})
       : super('CombGuardFanoutBenchmark');
 
-  @override
-  Future<void> teardown() async {
-    await Simulator.reset();
-  }
-
   CombGuardFanout? mod;
   final Logic a = Logic(width: 8);
 

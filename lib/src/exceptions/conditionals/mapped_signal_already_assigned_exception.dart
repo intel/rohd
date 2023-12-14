@@ -9,7 +9,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when [Combinational.ssa] is attempting to
 /// deduce mappings for signals but fails since a signal would be connected

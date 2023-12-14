@@ -11,8 +11,8 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 class SimpleLAPassthrough extends Module {
@@ -569,9 +569,10 @@ void main() {
       final rand = Random(1234);
       final values = List.generate(
           10,
-          (index) => LogicValue.ofInt(rand.nextInt(1 << randWidth), randWidth)
-              .replicate(mod.laOut.width ~/ randWidth + 1)
-              .getRange(0, mod.laOut.width));
+          (index) =>
+              LogicValue.ofInt(rand.nextInt(oneSllBy(randWidth)), randWidth)
+                  .replicate(mod.laOut.width ~/ randWidth + 1)
+                  .getRange(0, mod.laOut.width));
 
       final vectors = [
         for (final value in values) Vector({'laIn': value}, {'laOut': value})

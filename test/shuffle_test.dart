@@ -1,12 +1,11 @@
-/// SPDX-License-Identifier: BSD-3-Clause
-/// Copyright (C) 2022-2023 Intel Corporation
-///
-/// shuffle_test.dart
-/// Tests related to shuffled bits
-///
-/// 2022 December 21
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// shuffle_test.dart
+// Tests related to shuffled bits
+//
+// 2022 December 21
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/passthrough.dart';

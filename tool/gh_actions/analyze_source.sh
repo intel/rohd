@@ -8,7 +8,6 @@
 #
 # 2022 October 9
 # Author: Chykon
-#
 
 set -euo pipefail
 

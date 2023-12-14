@@ -1,12 +1,11 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// d_assignment_operator.dart
-/// Demo how to the assignment operator work.
-///
-/// 2023 February 20
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// d_assignment_operator.dart
+// Demo how to the assignment operator work.
+//
+// 2023 February 20
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 // ignore_for_file: avoid_print, unused_local_variable
 

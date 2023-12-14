@@ -1,12 +1,11 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus.dart
-/// Definition for modules related to bus operations
-///
-/// 2021 August 2
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// bus.dart
+// Definition for modules related to bus operations
+//
+// 2021 August 2
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 
@@ -33,6 +32,9 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// End index of the subset.
   final int endIndex;
 
+  @override
+  List<String> get expressionlessInputs => [_original];
+
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
@@ -53,13 +55,9 @@ class BusSubset extends Module with InlineSystemVerilog {
           ' than ${bus.width}');
     }
 
-    // original name can't be unpreferred because you cannot do a bit slice
-    // on expressions in SystemVerilog, and other expressions could have
-    // been in-lined
-    _original = 'original_${bus.name}';
-
+    _original = Naming.unpreferredName('original_${bus.name}');
     _subset =
-        Module.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
+        Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
     addInput(_original, bus, width: bus.width);
     final newWidth = (endIndex - startIndex).abs() + 1;
@@ -93,12 +91,18 @@ class BusSubset extends Module with InlineSystemVerilog {
     }
   }
 
+  /// A regular expression that will have matches if an expression is included.
+  static final RegExp _expressionRegex = RegExp("[()']");
+
   @override
   String inlineVerilog(Map<String, String> inputs) {
     if (inputs.length != 1) {
       throw Exception('BusSubset has exactly one input, but saw $inputs.');
     }
     final a = inputs[_original]!;
+
+    assert(!a.contains(_expressionRegex),
+        'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
     if (original.width == 1) {
@@ -128,7 +132,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
 /// use this [Module].
 class Swizzle extends Module with InlineSystemVerilog {
-  final String _out = Module.unpreferredName('swizzled');
+  final String _out = Naming.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.
   late final Logic out = output(_out);
@@ -141,7 +145,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     var outputWidth = 0;
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
-      final inputName = Module.unpreferredName('in${idx++}');
+      final inputName = Naming.unpreferredName('in${idx++}');
       _swizzleInputs.add(
         addInput(inputName, signal, width: signal.width),
       );

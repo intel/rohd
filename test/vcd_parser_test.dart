@@ -1,12 +1,14 @@
-/// Copyright (C) 2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// vcd_parser_test.dart
-/// Tests for the VcdParser
-///
-/// 2023 February 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// vcd_parser_test.dart
+// Tests for the VcdParser
+//
+// 2023 February 7
+// Author: Max Korbel <max.korbel@intel.com>
+
+@TestOn('vm')
+library;
 
 import 'dart:io';
 

@@ -1,16 +1,14 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// synth_builder.dart
-/// Definition for something that builds synthesis of a module hierarchy
-///
-/// 2021 August 26
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_builder.dart
+// Definition for something that builds synthesis of a module hierarchy
+//
+// 2021 August 26
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_not_built_exception.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A generic class which can convert a module into a generated output using

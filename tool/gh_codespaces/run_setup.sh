@@ -8,7 +8,6 @@
 #
 # 2023 February 5
 # Author: Chykon
-#
 
 set -euo pipefail
 
@@ -20,3 +19,6 @@ tool/gh_actions/install_dependencies.sh
 
 # Install Icarus Verilog.
 tool/gh_actions/install_iverilog.sh
+
+# Install Node
+tool/gh_actions/install_node.sh

@@ -1,17 +1,17 @@
-/// Copyright (C) 2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// version_hash_dumper_test.dart
-/// Tests to verify if ROHD configuration being output to
-/// the generation of system verilog.
-///
-/// 2022 December 1
-/// Author: Yao Jing Quek <yao.jing.quek@intel.com>
-///
+// Copyright (C) 2022-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// version_hash_dumper_test.dart
+// Tests to verify if ROHD configuration being output to
+// the generation of system verilog.
+//
+// 2022 December 1
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 import 'wave_dumper_test.dart';
@@ -29,14 +29,16 @@ class SimpleModule extends Module {
 }
 
 void main() async {
-  test(
-      'should return true if rohd version is similar'
-      ' in both pubspec.yaml and config class.', () async {
-    final yamlText = File('./pubspec.yaml').readAsStringSync();
-    final yaml = loadYaml(yamlText) as Map;
+  if (!kIsWeb) {
+    test(
+        'should return true if rohd version is similar'
+        ' in both pubspec.yaml and config class.', () async {
+      final yamlText = File('./pubspec.yaml').readAsStringSync();
+      final yaml = loadYaml(yamlText) as Map;
 
-    expect(Config.version, equals(yaml['version']));
-  });
+      expect(Config.version, equals(yaml['version']));
+    });
+  }
 
   test('should contains ROHD version number when sv is generated.', () async {
     const version = Config.version;
@@ -49,31 +51,25 @@ void main() async {
     expect(sv, contains(version));
   });
 
-  test('should contains ROHD version number when wavedumper is generated.',
-      () async {
-    const version = Config.version;
+  if (!kIsWeb) {
+    test('should contains ROHD version number when wavedumper is generated.',
+        () async {
+      const version = Config.version;
 
-    final mod = SimpleModule(Logic(), Logic());
-    await mod.build();
+      final mod = SimpleModule(Logic(), Logic());
+      await mod.build();
 
-    const dumpName = 'simplemodule';
+      const dumpName = 'simplemodule';
 
-    createTemporaryDump(mod, dumpName);
+      createTemporaryDump(mod, dumpName);
 
-    await Simulator.run();
+      await Simulator.run();
 
-    final vcdContents = await File(temporaryDumpPath(dumpName)).readAsString();
-    expect(vcdContents, contains(version));
+      final vcdContents =
+          await File(temporaryDumpPath(dumpName)).readAsString();
+      expect(vcdContents, contains(version));
 
-    deleteTemporaryDump(dumpName);
-  });
-
-  test('should update the vscode readme version', () async {
-    const version = Config.version;
-
-    final file = File('vs_code/README.md');
-    final contents = await file.readAsString();
-
-    expect(contents.contains(version), true);
-  });
+      deleteTemporaryDump(dumpName);
+    });
+  }
 }

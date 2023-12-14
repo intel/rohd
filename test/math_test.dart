@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// math_test.dart
-/// Unit tests for math-related operations
-///
-/// 2021 May 21
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// math_test.dart
+// Unit tests for math-related operations
+//
+// 2021 May 21
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -74,13 +73,37 @@ void main() {
     await Simulator.reset();
   });
 
+  test('sv expansion handles lint issues', () async {
+    final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
+    await gtm.build();
+
+    final sv = gtm.generateSynth();
+    final lines = sv.split('\n');
+
+    // should never assign directly off a +
+    expect(lines.where(RegExp(r'plus.*\+').hasMatch), isEmpty);
+
+    // ensure the width of intermediate signals appropriate for add
+    for (final line in lines) {
+      if (RegExp('logic.*a_add').hasMatch(line)) {
+        expect(line, contains('8:0'));
+      }
+    }
+
+    // ensure we never lshift by a constant directly
+    for (final line in lines) {
+      if (RegExp('assign.*a_sl_const.*=').hasMatch(line)) {
+        expect(line, contains('shiftAmount'));
+      }
+    }
+  });
+
   group('simcompare', () {
     Future<void> runMathVectors(List<Vector> vectors) async {
       final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     }
 
     test('power', () async {
@@ -106,8 +129,6 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'a_plus_b': 2}),
         Vector({'a': 6, 'b': 7}, {'a_plus_b': 13}),
         Vector({'a': 6}, {'a_plus_const': 11}),
-        // Vector({'a': -6, 'b': 7}, {'a_plus_b': 1}),
-        // Vector({'a': -6, 'b': 2}, {'a_plus_b': -4}),
       ]);
     });
 

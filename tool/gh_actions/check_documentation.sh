@@ -8,7 +8,6 @@
 #
 # 2022 October 9
 # Author: Chykon
-#
 
 set -euo pipefail
 
@@ -18,7 +17,9 @@ set -euo pipefail
 #   https://github.com/dart-lang/dartdoc/issues/2907
 #   https://github.com/dart-lang/dartdoc/issues/1959
 
-output=$(dart doc --validate-links 2>&1 | tee)
+# Disabling --validate-links due to https://github.com/dart-lang/dartdoc/issues/3584
+# output=$(dart doc --validate-links 2>&1 | tee)
+output=$(dart doc 2>&1 | tee)
 
 # In case of problems, the searched substring will not be found.
 if echo "${output}" | grep --silent 'no issues found'; then

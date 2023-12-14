@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -220,11 +219,15 @@ class SsaNested extends SsaTestModule {
     final x = addOutput('x', width: 8);
     Combinational.ssa((s) => [
           s(x) < SsaModAssignsOnly(a).x + 1,
+          s(x) < SsaModAssignsOnly(s(x)).x + 1,
         ]);
   }
 
   @override
-  int model(int a) => SsaModAssignsOnly(Logic(width: 8)).model(a) + 1;
+  int model(int a) =>
+      SsaModAssignsOnly(Logic(width: 8))
+          .model(SsaModAssignsOnly(Logic(width: 8)).model(a) + 1) +
+      1;
 }
 
 class SsaMultiDep extends SsaTestModule {
@@ -366,14 +369,14 @@ void main() {
     ];
 
     // make sure we don't have any inferred latches (X's)
-    for (final signal in mod.signals) {
-      signal.changed.listen((event) {
-        expect(event.newValue.isValid, isTrue);
-      });
-    }
     Simulator.registerAction(15, () {
       for (final signal in mod.signals) {
         expect(signal.value.isValid, isTrue);
+      }
+      for (final signal in mod.signals) {
+        signal.changed.listen((event) {
+          expect(event.newValue.isValid, isTrue);
+        });
       }
     });
 
@@ -399,6 +402,11 @@ void main() {
     Simulator.registerAction(15, () {
       for (final signal in mod.signals) {
         expect(signal.value.isValid, isTrue);
+      }
+      for (final signal in mod.signals) {
+        signal.changed.listen((event) {
+          expect(event.newValue.isValid, isTrue);
+        });
       }
     });
 

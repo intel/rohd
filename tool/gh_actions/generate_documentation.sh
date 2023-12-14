@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022-2023 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # generate_documentation.sh
@@ -8,14 +8,16 @@
 #
 # 2022 October 10
 # Author: Chykon
-#
 
 set -euo pipefail
 
 # See script "check_documentation.sh" for a note on processing "dart doc" output.
 
 # The documentation will be placed in the "doc/api" folder.
-output=$(dart doc --validate-links 2>&1 | tee)
+
+# Disabling --validate-links due to https://github.com/dart-lang/dartdoc/issues/3584
+# output=$(dart doc --validate-links 2>&1 | tee)
+output=$(dart doc 2>&1 | tee)
 
 echo "${output}"
 

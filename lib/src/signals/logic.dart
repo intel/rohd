@@ -8,13 +8,10 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-part of signals;
+part of 'signals.dart';
 
 /// Represents a logical signal of any width which can change values.
 class Logic {
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _signalIdx = 0;
-
   // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
@@ -186,13 +183,17 @@ class Logic {
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isInput => parentModule?.isInput(this) ?? false;
+  late final bool isInput =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
   ///
   /// Note: [parentModule] is not populated until after its parent [Module],
   /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isOutput => parentModule?.isOutput(this) ?? false;
+  late final bool isOutput =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isOutput(this) ?? false;
 
   /// Returns true iff this signal is an input or output of its parent [Module].
   ///
@@ -200,17 +201,27 @@ class Logic {
   /// if it exists, has been built. If no parent [Module] exists, returns false.
   bool get isPort => isInput || isOutput;
 
+  /// Controls the naming (and renaming) preferences of this signal in generated
+  /// outputs.
+  final Naming naming;
+
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
   /// The default value for [width] is 1.  The [name] should be synthesizable
   /// to the desired output (e.g. SystemVerilog).
-  Logic({String? name, int width = 1})
-      : name = (name == null || name.isEmpty)
-            ? 's${_signalIdx++}'
-            : Sanitizer.sanitizeSV(name),
+  ///
+  /// The [naming] and [name], if unspecified, are chosen based on the rules
+  /// in [Naming.chooseNaming] and [Naming.chooseName], respectively.
+  Logic({
+    String? name,
+    int width = 1,
+    Naming? naming,
+  })  : naming = Naming.chooseNaming(name, naming),
+        name = Naming.chooseName(name, naming),
         _wire = _Wire(width: width) {
     if (width < 0) {
-      throw Exception('Logic width must be greater than or equal to 0.');
+      throw LogicConstructionException(
+          'Logic width must be greater than or equal to 0.');
     }
   }
 
@@ -322,23 +333,15 @@ class Logic {
   Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator +(dynamic other) => Add(this, other).out;
 
   /// Subtraction.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator -(dynamic other) => Subtract(this, other).out;
 
   /// Multiplication.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator *(dynamic other) => Multiply(this, other).out;
 
   /// Division.
-  ///
-  /// WARNING: Signed math is not fully tested.
   Logic operator /(dynamic other) => Divide(this, other).out;
 
   /// Modulo operation.

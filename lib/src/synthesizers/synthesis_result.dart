@@ -1,12 +1,11 @@
-/// Copyright (C) 2021 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// synthesis_result.dart
-/// Generic definition for the result of synthesizing a Module.
-///
-/// 2021 August 26
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synthesis_result.dart
+// Generic definition for the result of synthesizing a Module.
+//
+// 2021 August 26
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -41,7 +40,11 @@ abstract class SynthesisResult {
 
   @override
   bool operator ==(Object other) =>
-      other is SynthesisResult && matchesImplementation(other);
+      other is SynthesisResult &&
+      matchesImplementation(other) &&
+      // if they are both reserved defs but different def names, not equal
+      !((module.reserveDefinitionName && other.module.reserveDefinitionName) &&
+          module.definitionName != other.module.definitionName);
 
   @override
   int get hashCode => matchHashCode;

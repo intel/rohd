@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// module.dart
-/// Definition for abstract module class.
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// module.dart
+// Definition for abstract module class.
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
 import 'dart:collection';
@@ -15,8 +14,6 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/module/module_exceptions.dart';
-import 'package:rohd/src/exceptions/name/name_exceptions.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -41,13 +38,13 @@ abstract class Module {
   /// An internal list of internal-signals.
   ///
   /// Used for waveform dump efficiency.
-  final Set<Logic> _internalSignals = HashSet<Logic>();
+  final Set<Logic> _internalSignals = {};
 
   /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = HashMap<String, Logic>();
+  final Map<String, Logic> _inputs = {};
 
   /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = HashMap<String, Logic>();
+  final Map<String, Logic> _outputs = {};
 
   /// The parent [Module] of this [Module].
   ///
@@ -60,6 +57,7 @@ abstract class Module {
 
   /// A map from input port names to this [Module] to corresponding [Logic]
   /// signals.
+  @protected
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
   /// A map from output port names to this [Module] to corresponding [Logic]
@@ -92,12 +90,18 @@ abstract class Module {
   /// Accesses the [Logic] associated with this [Module]s input port
   /// named [name].
   ///
-  /// Logic within this [Module] should consume this signal.
+  /// Only logic within this [Module] should consume this signal.
   @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw Exception(
           'Input name "$name" not found as an input to this Module.');
+
+  /// Provides the [input] named [name] if it exists, otherwise `null`.
+  ///
+  /// Only logic within this [Module] should consume this signal.
+  @protected
+  Logic? tryInput(String name) => _inputs[name];
 
   /// Accesses the [Logic] associated with this [Module]s output port
   /// named [name].
@@ -108,6 +112,9 @@ abstract class Module {
       ? _outputs[name]!
       : throw Exception(
           'Output name "$name" not found as an output of this Module.');
+
+  /// Provides the [output] named [name] if it exists, otherwise `null`.
+  Logic? tryOutput(String name) => _outputs[name];
 
   /// Returns true iff [net] is the same [Logic] as the input port of this
   /// [Module] with the same name.
@@ -133,23 +140,6 @@ abstract class Module {
           'Module must be built to access uniquified name.'
           '  Call build() before accessing this.');
   String _uniqueInstanceName;
-
-  /// Return string type definition name if validation passed
-  /// else throw exception.
-  ///
-  /// This validation method ensure that [name] is valid if
-  /// [reserveName] set to `true`.
-  static String? _nameValidation(String? name, bool reserveName) {
-    if (reserveName && name == null) {
-      throw NullReservedNameException();
-    } else if (reserveName && name!.isEmpty) {
-      throw EmptyReservedNameException();
-    } else if (reserveName && !Sanitizer.isSanitary(name!)) {
-      throw InvalidReservedNameException();
-    } else {
-      return name;
-    }
-  }
 
   /// If true, guarantees [uniqueInstanceName] matches [name] or else the
   /// [build] will fail.
@@ -185,9 +175,10 @@ abstract class Module {
       this.reserveName = false,
       String? definitionName,
       this.reserveDefinitionName = false})
-      : _uniqueInstanceName = _nameValidation(name, reserveName) ?? name,
-        _definitionName =
-            _nameValidation(definitionName, reserveDefinitionName);
+      : _uniqueInstanceName =
+            Naming.validatedName(name, reserveName: reserveName) ?? name,
+        _definitionName = Naming.validatedName(definitionName,
+            reserveName: reserveDefinitionName);
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
@@ -279,9 +270,6 @@ abstract class Module {
     await module.build();
   }
 
-  /// A prefix to add to the beginning of any port name that is "unpreferred".
-  static String get _unpreferredPrefix => '_';
-
   /// Makes a signal name "unpreferred" when considering between multiple
   /// possible signal names.
   ///
@@ -292,13 +280,15 @@ abstract class Module {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
+  @Deprecated('Use `Naming.unpreferredName` or `Logic.naming` instead.')
   @protected
-  static String unpreferredName(String name) => _unpreferredPrefix + name;
+  static String unpreferredName(String name) => Naming.unpreferredName(name);
 
   /// Returns true iff the signal name is "unpreferred".
   ///
   /// See documentation for [unpreferredName] for more details.
-  static bool isUnpreferred(String name) => name.startsWith(_unpreferredPrefix);
+  @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
+  static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
@@ -448,12 +438,11 @@ abstract class Module {
 
   /// Checks whether a port name is safe to add (e.g. no duplicates).
   void _checkForSafePortName(String name) {
-    if (!Sanitizer.isSanitary(name)) {
-      throw InvalidPortNameException(name);
-    }
+    Naming.validatedName(name, reserveName: true);
 
     if (outputs.containsKey(name) || inputs.containsKey(name)) {
-      throw Exception('Already defined a port with name "$name".');
+      throw UnavailableReservedNameException.withMessage(
+          'Already defined a port with name "$name".');
     }
   }
 
@@ -473,7 +462,7 @@ abstract class Module {
       x = x.packed;
     }
 
-    final inPort = Port(name, width)
+    final inPort = Logic(name: name, width: width, naming: Naming.reserved)
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -501,8 +490,13 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final inArr = LogicArray(dimensions, elementWidth,
-        name: name, numUnpackedDimensions: numUnpackedDimensions)
+    final inArr = LogicArray(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
       ..gets(x)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
@@ -520,7 +514,7 @@ abstract class Module {
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
 
-    final outPort = Port(name, width)
+    final outPort = Logic(name: name, width: width, naming: Naming.reserved)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 
@@ -543,8 +537,13 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final outArr = LogicArray(dimensions, elementWidth,
-        name: name, numUnpackedDimensions: numUnpackedDimensions)
+    final outArr = LogicArray(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 

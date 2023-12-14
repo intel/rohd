@@ -63,19 +63,33 @@ class _PipeStage {
   /// Registers [newLogic] with this stage and creates appropriate inputs,
   /// outputs, and internal signals for the stage.
   void _addLogic(Logic newLogic, int index) {
-    input[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_i', width: newLogic.width);
-    output[newLogic] =
-        Logic(name: '${newLogic.name}_stage${index}_o', width: newLogic.width);
-    main[newLogic] =
-        Logic(name: '${newLogic.name}_stage$index', width: newLogic.width);
+    input[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_i',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
+    output[newLogic] = Logic(
+      name: '${newLogic.name}_stage${index}_o',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
+    main[newLogic] = Logic(
+      name: '${newLogic.name}_stage$index',
+      width: newLogic.width,
+      naming: Naming.mergeable,
+    );
   }
 }
 
 /// A simple pipeline, separating arbitrary combinational logic by flop stages.
 class Pipeline {
-  /// The clock whose positive edge triggers the flops in this pipeline.
-  final Logic clk;
+  /// The clock whose positive edge triggers the flops in this pipeline when
+  /// single-triggered. Otherwise, the first clock.
+  @Deprecated('Do not reference the clock from the `Pipeline`.')
+  Logic get clk => _clks.first;
+
+  /// The clocks whose positive edges trigger the flops in this pipeline.
+  final List<Logic> _clks;
 
   /// An optional reset signal for all pipelined signals.
   final Logic? reset;
@@ -112,7 +126,21 @@ class Pipeline {
   /// Each stage can be stalled independently using [stalls], where every index
   ///  of [stalls] corresponds to the index of the stage to be stalled.  When
   /// a stage's stall is asserted, the output of that stage will not change.
-  Pipeline(this.clk,
+  Pipeline(Logic clk,
+      {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+      List<Logic?>? stalls,
+      List<Logic> signals = const [],
+      Map<Logic, Const> resetValues = const {},
+      Logic? reset})
+      : this.multi([clk],
+            stages: stages,
+            stalls: stalls,
+            signals: signals,
+            resetValues: resetValues,
+            reset: reset);
+
+  /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
+  Pipeline.multi(this._clks,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
       List<Logic?>? stalls,
       List<Logic> signals = const [],
@@ -225,7 +253,7 @@ class Pipeline {
         ])
       ];
     }
-    Sequential(clk, ffAssignsWithStall, name: 'ff_${newLogic.name}');
+    Sequential.multi(_clks, ffAssignsWithStall, name: 'ff_${newLogic.name}');
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].
@@ -304,27 +332,46 @@ class ReadyValidPipeline extends Pipeline {
   /// If contents are pushed in when the pipeline is not ready, they
   /// will be dropped.
   ReadyValidPipeline(
-    super.clk,
+    Logic clk,
+    Logic validPipeIn,
+    Logic readyPipeOut, {
+    List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
+    Map<Logic, Const> resetValues = const {},
+    List<Logic> signals = const [],
+    Logic? reset,
+  }) : this.multi(
+          [clk],
+          validPipeIn,
+          readyPipeOut,
+          stages: stages,
+          resetValues: resetValues,
+          signals: signals,
+          reset: reset,
+        );
+
+  /// Creates a [ReadyValidPipeline] with multiple triggers.
+  ReadyValidPipeline.multi(
+    super._clks,
     this.validPipeIn,
     this.readyPipeOut, {
     List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
     super.resetValues,
     List<Logic> signals = const [],
     super.reset,
-  }) : super(
+  }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
-          stalls: List.generate(
-              stages.length, (index) => Logic(name: 'stall_$index')),
+          stalls: List.generate(stages.length,
+              (index) => Logic(name: 'stall_$index', naming: Naming.mergeable)),
         ) {
     final valid = validPipeIn;
 
     final stalls = _stages.map((stage) => stage.stall).toList()
       ..removeLast(); // garbage value at the end
 
-    final readys =
-        List.generate(stages.length, (index) => Logic(name: 'ready_$index'))
-          ..add(readyPipeOut);
+    final readys = List.generate(stages.length,
+        (index) => Logic(name: 'ready_$index', naming: Naming.mergeable))
+      ..add(readyPipeOut);
 
     for (var i = 0; i < stalls.length; i++) {
       readys[i] <= ~get(valid, i + 1) | readys[i + 1];

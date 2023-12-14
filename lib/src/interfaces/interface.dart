@@ -48,6 +48,9 @@ class Interface<TagType> {
       ? _ports[name]!
       : throw Exception('Port name "$name" not found on this interface.');
 
+  /// Provides the [port] named [name] if it exists, otherwise `null`.
+  Logic? tryPort(String name) => _ports[name];
+
   /// Connects [module]'s inputs and outputs up to [srcInterface] and this
   /// [Interface].
   ///

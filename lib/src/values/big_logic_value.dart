@@ -1,14 +1,13 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// big_logic_value.dart
-/// Definition for a logical value where all bits are the same value.
-///
-/// 2022 March 28
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// big_logic_value.dart
+// Definition for a logical value where all bits are the same value.
+//
+// 2022 March 28
+// Author: Max Korbel <max.korbel@intel.com>
 
-part of values;
+part of 'values.dart';
 
 /// Extends [BigInt] with utility functions that are useful for dealing with
 /// large bit vectors and conversion between types.
@@ -17,10 +16,12 @@ extension BigLogicValueBigIntUtilities on BigInt {
   ///
   /// Always interprets the number as unsigned, and thus never clamps to fit.
   int toIntUnsigned(int width) {
-    if (width > LogicValue._INT_BITS) {
-      throw Exception('Cannot convert to BigInt when width $width'
-          ' is greater than ${LogicValue._INT_BITS}');
-    } else if (width == LogicValue._INT_BITS) {
+    if (width > INT_BITS) {
+      throw Exception('Cannot convert Int when width $width'
+          ' is greater than $INT_BITS');
+    } else if (width == INT_BITS && INT_BITS > 32) {
+      assert(!kIsWeb, 'This code is not set up to work with JS.');
+
       // When width is 64, `BigInt.toInt()` will clamp values assuming that
       // it's a signed number.  To avoid that, if the width is 64, then do the
       // conversion in two 32-bit chunks and bitwise-or them together.
@@ -29,7 +30,9 @@ extension BigLogicValueBigIntUtilities on BigInt {
       return (this & mask).toInt() |
           (((this >> maskWidth) & mask).toInt() << maskWidth);
     } else {
-      return toInt();
+      return (this & _BigLogicValue._maskOfWidth(width))
+          .toInt()
+          .toSigned(INT_BITS);
     }
   }
 }
@@ -43,26 +46,27 @@ class _BigLogicValue extends LogicValue {
   late final BigInt _invalid;
 
   BigInt get _mask => _maskOfWidth(width);
-  static final Map<int, BigInt> _masksOfWidth = {};
+  static final Map<int, BigInt> _masksOfWidth = HashMap();
   static BigInt _maskOfWidth(int width) {
     if (!_masksOfWidth.containsKey(width)) {
-      _masksOfWidth[width] = (BigInt.one << width) - BigInt.one;
+      _masksOfWidth[width] =
+          ((BigInt.one << width) - BigInt.one).toUnsigned(width);
     }
     return _masksOfWidth[width]!;
   }
 
-  /// Constructs a new [_SmallLogicValue], intended to hold values
-  /// with more than [_INT_BITS] bits.
+  /// Constructs a new [_BigLogicValue], intended to hold values
+  /// with more than [INT_BITS] bits.
   ///
   /// Set [allowInefficientRepresentation] to `true` to bypass
   /// inefficient representation assertions.
   _BigLogicValue(BigInt value, BigInt invalid, int width,
       {bool allowInefficientRepresentation = false})
-      : assert(width > LogicValue._INT_BITS,
+      : assert(width > INT_BITS,
             '_BigLogicValue should only be used for large values'),
         super._(width) {
-    _value = _mask & value;
-    _invalid = _mask & invalid;
+    _value = (_mask & value).toUnsigned(width);
+    _invalid = (_mask & invalid).toUnsigned(width);
 
     assert(
         allowInefficientRepresentation ||
@@ -83,7 +87,7 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  int get _hashCode => _value.hashCode ^ _invalid.hashCode;
+  int get _hashCode => _value.hashCode ^ _invalid.hashCode ^ width.hashCode;
 
   @override
   LogicValue _getIndex(int index) {
@@ -95,7 +99,7 @@ class _BigLogicValue extends LogicValue {
   @override
   LogicValue _getRange(int start, int end) {
     final newWidth = end - start;
-    if (newWidth > LogicValue._INT_BITS) {
+    if (newWidth > INT_BITS) {
       return LogicValue._bigLogicValueOrFilled(
           (_value >> start) & _maskOfWidth(newWidth),
           (_invalid >> start) & _maskOfWidth(newWidth),
@@ -121,15 +125,22 @@ class _BigLogicValue extends LogicValue {
   @override
   BigInt toBigInt() {
     if (_invalid.sign != 0) {
-      throw Exception('Cannot convert invalid LogicValue to BigInt: $this');
+      throw InvalidValueOperationException(this, 'toBigInt');
     }
     return _value;
   }
 
   @override
-  int toInt() =>
-      throw Exception('LogicValue width $width is too long to convert to int.'
+  int toInt() {
+    final bigInt = toBigInt();
+    if (bigInt.isValidInt) {
+      return bigInt.toIntUnsigned(INT_BITS).toSigned(INT_BITS);
+    } else {
+      throw InvalidTruncationException(
+          'LogicValue $this is too long to convert to int.'
           ' Use toBigInt() instead.');
+    }
+  }
 
   @override
   LogicValue operator ~() => LogicValue._bigLogicValueOrFilled(
@@ -137,9 +148,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _and2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherZero =
         (~_value & ~_invalid) | (~other._value & ~other._invalid);
@@ -149,9 +159,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _or2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     final eitherOne = (_value & ~_invalid) | (other._value & ~other._invalid);
     return LogicValue._bigLogicValueOrFilled(
@@ -160,9 +169,8 @@ class _BigLogicValue extends LogicValue {
 
   @override
   LogicValue _xor2(LogicValue other) {
-    if (other is! _BigLogicValue) {
-      throw Exception('Cannot handle type ${other.runtimeType} here.');
-    }
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
     final eitherInvalid = _invalid | other._invalid;
     return LogicValue._bigLogicValueOrFilled(
         (_value ^ other._value) & ~eitherInvalid, eitherInvalid, width);
@@ -197,28 +205,34 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
-  LogicValue _shiftLeft(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
+  LogicValue _shiftLeft(int shamt) => LogicValue._bigLogicValueOrFilled(
+      (_value << shamt) & _mask, (_invalid << shamt) & _mask, width);
 
   @override
-  LogicValue _shiftRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          _value >> shamt, _invalid >> shamt, width);
+  LogicValue _shiftRight(int shamt) => LogicValue._bigLogicValueOrFilled(
+      // we can just use >> because these are unsigned
+      _value >> shamt,
+      _invalid >> shamt,
+      width);
 
   @override
-  LogicValue _shiftArithmeticRight(int shamt) => !isValid
-      ? _FilledLogicValue(_LogicValueEnum.x, width)
-      : LogicValue._bigLogicValueOrFilled(
-          (_value |
-                  (this[width - 1] == LogicValue.one
-                      ? ((_mask >> (width - shamt)) << (width - shamt))
-                      : BigInt.zero)) >>
-              shamt,
-          _invalid >> shamt,
-          width);
+  LogicValue _shiftArithmeticRight(int shamt) {
+    shamt;
+
+    var value = (_value.toSigned(width) >> shamt).toUnsigned(width);
+    var invalid = (_invalid.toSigned(width) >> shamt).toUnsigned(width);
+
+    // if uppermost bit is invalid, then turn the shifted bits into X's
+    if (!this[-1].isValid) {
+      // for affected bits of value: zero out value
+      value &= _mask >> shamt;
+
+      // for affected bits of invalid: make sure they are high
+      invalid |= ~_mask >> shamt;
+    }
+
+    return LogicValue._bigLogicValueOrFilled(value, invalid, width);
+  }
 
   @override
   BigInt get _bigIntInvalid => _invalid;
@@ -231,4 +245,7 @@ class _BigLogicValue extends LogicValue {
 
   @override
   int get _intValue => _value.toIntUnsigned(width);
+
+  @override
+  late final bool isZero = _value == BigInt.zero && _invalid == BigInt.zero;
 }

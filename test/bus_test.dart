@@ -1,15 +1,13 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// bus_test.dart
-/// Unit tests for bus-related operations
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// bus_test.dart
+// Unit tests for bus-related operations
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
@@ -173,6 +171,7 @@ void main() {
       final gtm = BusTestModule(a, Logic(width: 8));
       final out = gtm.aBar;
       await gtm.build();
+
       a.put(0xff);
       expect(out.value.toInt(), equals(0));
       a.put(0);
@@ -560,8 +559,7 @@ void main() {
         Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult = SimCompare.iverilogVector(gtm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(gtm, vectors);
     });
   });
 }

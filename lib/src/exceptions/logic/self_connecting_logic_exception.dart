@@ -9,7 +9,6 @@
 // Author: Sanchit Kumar <sanchit.dabgotra@gmail.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that thrown when a [Logic] is connecting to itself.
 class SelfConnectingLogicException extends RohdException {

@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// counter_wintf_test.dart
-/// Unit tests for a basic counter with an interface
-///
-/// 2021 May 25
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// counter_wintf_test.dart
+// Unit tests for a basic counter with an interface
+//
+// 2021 May 25
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -107,6 +106,7 @@ void main() {
       await moduleTest(mod);
     });
   });
+
   test('resetFlipflop from root w/o resetVal', () async {
     final mod = Counter(CounterInterface(8), useBuiltInSequentialReset: true);
     await moduleTest(mod);
@@ -133,5 +133,13 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     final simResult = SimCompare.iverilogVector(mod, vectors);
     expect(simResult, equals(true));
+  });
+
+  test('interface ports dont get doubled up', () async {
+    final mod = Counter(CounterInterface(8));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(!sv.contains('en_0'), true);
   });
 }

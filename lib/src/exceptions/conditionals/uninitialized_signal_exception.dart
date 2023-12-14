@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that is thrown when [Combinational.ssa] detects that an SSA
 /// signal is being used before it was initialized.

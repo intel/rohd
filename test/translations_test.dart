@@ -1,14 +1,19 @@
-/// Copyright (C) 2021-2023 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// translations_test.dart
-/// Unit tests looking at redoing some real implementations in a better way
-///
-/// 2021 May 20
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// translations_test.dart
+// Unit tests looking at redoing some real implementations in a better way
+//
+// 2021 May 20
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
+
+// TODO(mkorbel1): reenable this test on JavaScript pending dart sdk issue,
+//  https://github.com/dart-lang/sdk/issues/54329.
+
+@TestOn('vm')
+library;
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -115,8 +120,7 @@ void main() {
         List<Logic>.generate(numWrPorts, (index) => Logic(width: 16)),
       );
       await ftm.build();
-      // File('tmp.sv').writeAsStringSync(ftm.generateSynth())
-      // WaveDumper(ftm);
+
       final vectors = [
         Vector({'lrst': 0}, {}),
         Vector({'lrst': 1}, {}),
@@ -127,8 +131,7 @@ void main() {
         Vector({'wrEn1': 0, 'rdEn0': 0}, {'rdData0': 0xf}),
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
-      final simResult = SimCompare.iverilogVector(ftm, vectors);
-      expect(simResult, equals(true));
+      SimCompare.checkIverilogVector(ftm, vectors);
     });
   });
 }

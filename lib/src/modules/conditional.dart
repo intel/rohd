@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
-// Definitions of conditionallly executed hardware constructs (if/else statements, always_comb, always_ff, etc.)
+// Definitions of conditionallly executed hardware constructs
+// (if/else statements, always_comb, always_ff, etc.)
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
@@ -15,8 +16,6 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/exceptions/conditionals/conditional_exceptions.dart';
-import 'package:rohd/src/exceptions/module/port_width_mismatch_exception.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -113,7 +112,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
       for (final driver in conditional.drivers) {
         if (!_assignedDriverToInputMap.containsKey(driver)) {
           final inputName = _portUniquifier.getUniqueName(
-              initialName: Module.unpreferredName(
+              initialName: Naming.unpreferredName(
                   Sanitizer.sanitizeSV('in${idx}_${driver.name}')));
           addInput(inputName, driver, width: driver.width);
           _assignedDriverToInputMap[driver] = input(inputName);
@@ -123,7 +122,7 @@ abstract class _Always extends Module with CustomSystemVerilog {
       for (final receiver in conditional.receivers) {
         if (!_assignedReceiverToOutputMap.containsKey(receiver)) {
           final outputName = _portUniquifier.getUniqueName(
-              initialName: Module.unpreferredName(
+              initialName: Naming.unpreferredName(
                   Sanitizer.sanitizeSV('out${idx}_${receiver.name}')));
           addOutput(outputName, width: receiver.width);
           _assignedReceiverToOutputMap[receiver] = output(outputName);
@@ -198,7 +197,7 @@ class Combinational extends _Always {
   /// If any "write after read" occurs, then a [WriteAfterReadException] will
   /// be thrown since it could lead to a mismatch between simulation and
   /// synthesis.  See [Combinational.ssa] for more details.
-  Combinational(super.conditionals, {super.name = 'combinational'}) {
+  Combinational(super._conditionals, {super.name = 'combinational'}) {
     _execute(); // for initial values
     for (final driver in _assignedDriverToInputMap.keys) {
       driver.glitch.listen((args) {
@@ -264,13 +263,48 @@ class Combinational extends _Always {
       {String name = 'combinational_ssa'}) {
     final context = _ssaContextCounter++;
 
-    Logic getSsa(Logic ref) => _SsaLogic(ref, context);
+    final ssas = <_SsaLogic>[];
+
+    Logic getSsa(Logic ref) {
+      final newSsa = _SsaLogic(ref, context);
+      ssas.add(newSsa);
+      return newSsa;
+    }
 
     final conditionals = construct(getSsa);
 
+    ssas.forEach(_updateSsaDriverMap);
+
     _processSsa(conditionals, context: context);
 
+    // no need to keep any of this old info around anymore
+    _signalToSsaDrivers.clear();
+
     return Combinational(conditionals, name: name);
+  }
+
+  /// A map from [_SsaLogic]s to signals that they drive.
+  ///
+  /// This only stores information temporarily during construction of a
+  /// [Combinational.ssa] and clears afterwards.
+  static final Map<Logic, Set<_SsaLogic>> _signalToSsaDrivers = {};
+
+  /// Tags each downstream [Logic] from [ssaDriver] as such in
+  /// [_signalToSsaDrivers].
+  static void _updateSsaDriverMap(_SsaLogic ssaDriver) {
+    final toParse = TraverseableCollection<Logic>()
+      ..addAll(ssaDriver.dstConnections);
+    for (var i = 0; i < toParse.length; i++) {
+      final tpi = toParse[i];
+
+      _signalToSsaDrivers.putIfAbsent(tpi, () => <_SsaLogic>{}).add(ssaDriver);
+
+      if (tpi.isInput && tpi.parentModule! is CustomSystemVerilog) {
+        toParse.addAll(tpi.parentModule!.outputs.values);
+      } else {
+        toParse.addAll(tpi.dstConnections);
+      }
+    }
   }
 
   /// Executes the remapping for all the [conditionals] recursively.
@@ -379,6 +413,11 @@ class Sequential extends _Always {
   /// The input clocks used in this block.
   final List<Logic> _clks = [];
 
+  /// When `false`, an [SignalRedrivenException] will be thrown during
+  /// simulation if the same signal is driven multiple times within this
+  /// [Sequential].
+  final bool allowMultipleAssignments;
+
   /// Constructs a [Sequential] single-triggered by [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
@@ -388,12 +427,21 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential(Logic clk, List<Conditional> conditionals,
-      {Logic? reset,
-      Map<Logic, dynamic>? resetValues,
-      String name = 'sequential'})
-      : this.multi([clk], conditionals,
-            name: name, reset: reset, resetValues: resetValues);
+  Sequential(
+    Logic clk,
+    List<Conditional> conditionals, {
+    Logic? reset,
+    Map<Logic, dynamic>? resetValues,
+    bool allowMultipleAssignments = true,
+    String name = 'sequential',
+  }) : this.multi(
+          [clk],
+          conditionals,
+          name: name,
+          reset: reset,
+          resetValues: resetValues,
+          allowMultipleAssignments: allowMultipleAssignments,
+        );
 
   /// Constructs a [Sequential] multi-triggered by any of [clks].
   ///
@@ -404,8 +452,18 @@ class Sequential extends _Always {
   /// that value instead upon reset. If a signal is in `resetValues` but not
   /// driven by any other [Conditional] in this block, it will be driven to the
   /// specified reset value.
-  Sequential.multi(List<Logic> clks, super.conditionals,
-      {super.reset, super.resetValues, super.name = 'sequential'}) {
+  Sequential.multi(
+    List<Logic> clks,
+    super._conditionals, {
+    super.reset,
+    super.resetValues,
+    super.name = 'sequential',
+    this.allowMultipleAssignments = true,
+  }) {
+    if (clks.isEmpty) {
+      throw IllegalConfigurationException('Must provide at least one clock.');
+    }
+
     for (var i = 0; i < clks.length; i++) {
       final clk = clks[i];
       if (clk.width > 1) {
@@ -414,7 +472,7 @@ class Sequential extends _Always {
       _clks.add(addInput(
           _portUniquifier.getUniqueName(
               initialName: Sanitizer.sanitizeSV(
-                  Module.unpreferredName('clk${i}_${clk.name}'))),
+                  Naming.unpreferredName('clk${i}_${clk.name}'))),
           clk));
       _preTickClkValues.add(null);
     }
@@ -544,12 +602,18 @@ class Sequential extends _Always {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyClkPosedge) {
-      final allDrivenSignals = DuplicateDetectionSet<Logic>();
-      for (final element in conditionals) {
-        element.execute(allDrivenSignals, null);
-      }
-      if (allDrivenSignals.hasDuplicates) {
-        throw SignalRedrivenException(allDrivenSignals.duplicates);
+      if (allowMultipleAssignments) {
+        for (final element in conditionals) {
+          element.execute(null, null);
+        }
+      } else {
+        final allDrivenSignals = DuplicateDetectionSet<Logic>();
+        for (final element in conditionals) {
+          element.execute(allDrivenSignals, null);
+        }
+        if (allDrivenSignals.hasDuplicates) {
+          throw SignalRedrivenException(allDrivenSignals.duplicates);
+        }
       }
     }
 
@@ -639,7 +703,7 @@ abstract class Conditional {
   /// which consumes the current value of those drivers.  It is used to check
   /// that signals are not "written after read", for example.
   @protected
-  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard);
+  void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard);
 
   /// Lists *all* receivers, recursively including all sub-[Conditional]s
   /// receivers.
@@ -720,22 +784,12 @@ abstract class Conditional {
 
   /// Searches for SSA nodes from a source [driver] which match the [context].
   static List<_SsaLogic> _findSsaDriversFrom(Logic driver, int context) {
-    final toParse = TraverseableCollection<Logic>()..add(driver);
-    final foundSsaLogics = <_SsaLogic>{};
-    for (var i = 0; i < toParse.length; i++) {
-      if (toParse[i].srcConnection != null) {
-        toParse.add(toParse[i].srcConnection!);
-      }
-      if (toParse[i].isOutput) {
-        toParse.addAll(toParse[i].parentModule!.inputs.values);
-      }
-      if (toParse[i] is _SsaLogic &&
-          (toParse[i] as _SsaLogic)._context == context) {
-        foundSsaLogics.add(toParse[i] as _SsaLogic);
-      }
+    if (driver is _SsaLogic && driver._context == context) {
+      return [driver];
     }
 
-    return foundSsaLogics.toList(growable: false);
+    // no need to check for context on this map since it clears each time
+    return Combinational._signalToSsaDrivers[driver]?.toList() ?? const [];
   }
 
   /// Given existing [currentMappings], connects [drivers] and [receivers]
@@ -746,6 +800,17 @@ abstract class Conditional {
   /// This is used for [Combinational.ssa].
   Map<Logic, Logic> _processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
+
+  /// Drives X to all receivers.
+  void _driveX(Set<Logic>? drivenSignals) {
+    for (final receiver in receivers) {
+      receiverOutput(receiver).put(LogicValue.x);
+      if (drivenSignals != null &&
+          (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
+        drivenSignals.add(receiver);
+      }
+    }
+  }
 }
 
 /// Represents a group of [Conditional]s to be executed.
@@ -780,7 +845,7 @@ class ConditionalGroup extends Conditional {
       [for (final conditional in conditionals) ...conditional.receivers];
 
   @override
-  void execute(Set<Logic> drivenSignals, void Function(Logic toGuard)? guard) {
+  void execute(Set<Logic>? drivenSignals, void Function(Logic toGuard)? guard) {
     for (final conditional in conditionals) {
       conditional.execute(drivenSignals, guard);
     }
@@ -836,15 +901,21 @@ class ConditionalAssign extends Conditional {
   late final _receiverOutput = receiverOutput(receiver);
 
   @override
-  void execute(Set<Logic> drivenSignals,
+  void execute(Set<Logic>? drivenSignals,
       [void Function(Logic toGuard)? guard]) {
     if (guard != null) {
       guard(driver);
     }
 
-    _receiverOutput.put(driverValue(driver));
+    final currentValue = driverValue(driver);
+    if (!currentValue.isValid) {
+      _receiverOutput.put(LogicValue.x);
+    } else {
+      _receiverOutput.put(currentValue);
+    }
 
-    if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
+    if (drivenSignals != null &&
+        (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
       drivenSignals.add(receiver);
     }
   }
@@ -912,6 +983,79 @@ enum ConditionalType {
   priority
 }
 
+/// Shorthand for a [Case] inside a [Conditional] block.
+///
+/// It is used to assign a signal based on a condition with multiple cases to
+/// consider. For e.g., this can be used instead of a nested [mux].
+///
+/// The result is of type [Logic] and it is determined by conditionaly matching
+/// the expression with the values of each item in conditions. If width of the
+/// input is not provided, then the width of  the result is inferred from the
+/// width of the entries.
+Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
+    {int? width,
+    ConditionalType conditionalType = ConditionalType.none,
+    dynamic defaultValue}) {
+  for (final conditionValue in [
+    ...conditions.values,
+    if (defaultValue != null) defaultValue
+  ]) {
+    int? inferredWidth;
+
+    if (conditionValue is Logic) {
+      inferredWidth = conditionValue.width;
+    } else if (conditionValue is LogicValue) {
+      inferredWidth = conditionValue.width;
+    }
+
+    if (width != inferredWidth && width != null && inferredWidth != null) {
+      throw SignalWidthMismatchException.forDynamic(
+          conditionValue, width, inferredWidth);
+    }
+
+    width ??= inferredWidth;
+  }
+
+  if (width == null) {
+    throw SignalWidthMismatchException.forNull(conditions);
+  }
+
+  for (final condition in conditions.entries) {
+    if (condition.key is Logic) {
+      if (expression.width != (condition.key as Logic).width) {
+        throw SignalWidthMismatchException.forDynamic(
+            condition.key, expression.width, (condition.key as Logic).width);
+      }
+    }
+
+    if (condition.key is LogicValue) {
+      if (expression.width != (condition.key as LogicValue).width) {
+        throw SignalWidthMismatchException.forDynamic(condition.key,
+            expression.width, (condition.key as LogicValue).width);
+      }
+    }
+  }
+
+  final result = Logic(name: 'result', width: width);
+
+  Combinational([
+    Case(
+        expression,
+        [
+          for (final condition in conditions.entries)
+            CaseItem(
+                condition.key is Logic
+                    ? condition.key as Logic
+                    : Const(condition.key, width: expression.width),
+                [result < condition.value])
+        ],
+        conditionalType: conditionalType,
+        defaultItem: defaultValue != null ? [result < defaultValue] : null)
+  ]);
+
+  return result;
+}
+
 /// A block of [CaseItem]s where only the one with a matching [CaseItem.value]
 /// is executed.
 ///
@@ -961,7 +1105,7 @@ class Case extends Conditional {
   String get caseType => 'case';
 
   @override
-  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+  void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       guard(expression);
       for (final item in items) {
@@ -971,12 +1115,7 @@ class Case extends Conditional {
 
     if (!expression.value.isValid) {
       // if expression has X or Z, then propogate X's!
-      for (final receiver in receivers) {
-        receiverOutput(receiver).put(LogicValue.x);
-        if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-          drivenSignals.add(receiver);
-        }
-      }
+      _driveX(drivenSignals);
       return;
     }
 
@@ -989,9 +1128,8 @@ class Case extends Conditional {
           conditional.execute(drivenSignals, guard);
         }
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
-          throw Exception('Unique case statement had multiple matching cases.'
-              ' Original: "$foundMatch".'
-              ' Duplicate: "$item".');
+          _driveX(drivenSignals);
+          return;
         }
 
         foundMatch = item;
@@ -1010,8 +1148,8 @@ class Case extends Conditional {
     } else if (foundMatch == null &&
         (conditionalType == ConditionalType.unique ||
             conditionalType == ConditionalType.priority)) {
-      throw Exception('$conditionalType case statement had no matching case,'
-          ' and type was $conditionalType.');
+      _driveX(drivenSignals);
+      return;
     }
   }
 
@@ -1311,7 +1449,7 @@ class If extends Conditional {
   }
 
   @override
-  void execute(Set<Logic> drivenSignals, [void Function(Logic)? guard]) {
+  void execute(Set<Logic>? drivenSignals, [void Function(Logic)? guard]) {
     if (guard != null) {
       for (final iff in iffs) {
         guard(iff.condition);
@@ -1326,12 +1464,7 @@ class If extends Conditional {
         break;
       } else if (driverValue(iff.condition) != LogicValue.zero) {
         // x and z propagation
-        for (final receiver in receivers) {
-          receiverOutput(receiver).put(driverValue(iff.condition)[0]);
-          if (!drivenSignals.contains(receiver) || receiver.value.isValid) {
-            drivenSignals.add(receiver);
-          }
-        }
+        _driveX(drivenSignals);
         break;
       }
       // if it's 0, then continue searching down the path
@@ -1476,25 +1609,49 @@ ${padding}end ''');
 
 /// Constructs a positive edge triggered flip flop on [clk].
 ///
-/// It returns [FlipFlop.q]. When optional [en] is provided, an additional
-/// input will be created for flop. If optional [en] is high or not provided,
-/// output will vary as per input[d]. For low [en], output remains frozen
-/// irrespective of input [d]
-Logic flop(Logic clk, Logic d, {Logic? en}) => FlipFlop(clk, d, en: en).q;
+/// It returns [FlipFlop.q].
+///
+/// When the optional [en] is provided, an additional input will be created for
+/// flop. If optional [en] is high or not provided, output will vary as per
+/// input[d]. For low [en], output remains frozen irrespective of input [d].
+///
+/// When the optional [reset] is provided, the flop will be reset (active-high).
+/// If no [resetValue] is provided, the reset value is always `0`. Otherwise,
+/// it will reset to the provided [resetValue].
+Logic flop(
+  Logic clk,
+  Logic d, {
+  Logic? en,
+  Logic? reset,
+  dynamic resetValue,
+}) =>
+    FlipFlop(
+      clk,
+      d,
+      en: en,
+      reset: reset,
+      resetValue: resetValue,
+    ).q;
 
 /// Represents a single flip-flop with no reset.
 class FlipFlop extends Module with CustomSystemVerilog {
   /// Name for the enable input of this flop
-  late final String _enName;
+  final String _enName = Naming.unpreferredName('en');
 
   /// Name for the clk of this flop.
-  late final String _clkName;
+  final String _clkName = Naming.unpreferredName('clk');
 
   /// Name for the input of this flop.
-  late final String _dName;
+  final String _dName = Naming.unpreferredName('d');
 
   /// Name for the output of this flop.
-  late final String _qName;
+  final String _qName = Naming.unpreferredName('q');
+
+  /// Name for the reset of this flop.
+  final String _resetName = Naming.unpreferredName('reset');
+
+  /// Name for the reset value of this flop.
+  final String _resetValueName = Naming.unpreferredName('resetValue');
 
   /// The clock, posedge triggered.
   late final Logic _clk = input(_clkName);
@@ -1504,7 +1661,10 @@ class FlipFlop extends Module with CustomSystemVerilog {
   /// If enable is  high or enable is not provided then flop output will vary
   /// on the basis of clock [_clk] and input [_d]. If enable is low, then
   /// output of the flop remains frozen irrespective of the input [_d].
-  late final Logic _en = input(_enName);
+  late final Logic? _en = tryInput(_enName);
+
+  /// Optional reset input to the flop.
+  late final Logic? _reset = tryInput(_resetName);
 
   /// The input to the flop.
   late final Logic _d = input(_dName);
@@ -1512,77 +1672,114 @@ class FlipFlop extends Module with CustomSystemVerilog {
   /// The output of the flop.
   late final Logic q = output(_qName);
 
-  /// To track if optional enable is provided or not.
-  late final bool _isEnableProvided;
+  /// The reset value for this flop, if it was a port.
+  Logic? _resetValuePort;
+
+  /// The reset value for this flop, if it was a constant.
+  ///
+  /// Only initialized if a constant value is provided.
+  late LogicValue _resetValueConst;
 
   /// Constructs a flip flop which is positive edge triggered on [clk].
   ///
   /// When optional [en] is provided, an additional input will be created for
   /// flop. If optional [en] is high or not provided, output will vary as per
   /// input[d]. For low [en], output remains frozen irrespective of input [d]
-  FlipFlop(Logic clk, Logic d, {Logic? en, super.name = 'flipflop'}) {
+  ///
+  /// When the optional [reset] is provided, the flop will be reset active-high.
+  /// If no [resetValue] is provided, the reset value is always `0`. Otherwise,
+  /// it will reset to the provided [resetValue]. The type of [resetValue] must
+  /// be a valid driver of a [ConditionalAssign] (e.g. [Logic], [LogicValue],
+  /// [int], etc.).
+  FlipFlop(
+    Logic clk,
+    Logic d, {
+    Logic? en,
+    Logic? reset,
+    dynamic resetValue,
+    super.name = 'flipflop',
+  }) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
     }
-
-    _clkName = Module.unpreferredName('clk');
-    _dName = Module.unpreferredName('d');
-    _qName = Module.unpreferredName('q');
 
     addInput(_clkName, clk);
     addInput(_dName, d, width: d.width);
     addOutput(_qName, width: d.width);
 
     if (en != null) {
-      if (en.width != 1) {
-        throw PortWidthMismatchException(en, 1);
-      }
-      _enName = Module.unpreferredName('en');
       addInput(_enName, en);
-      _isEnableProvided = true;
-
-      _setupWithEnable();
-    } else {
-      _isEnableProvided = false;
-
-      _setup();
     }
+
+    if (reset != null) {
+      addInput(_resetName, reset);
+
+      if (resetValue != null && resetValue is Logic) {
+        _resetValuePort = addInput(_resetValueName, resetValue, width: d.width);
+      } else {
+        _resetValueConst = LogicValue.of(resetValue ?? 0, width: d.width);
+      }
+    }
+
+    _setup();
   }
 
   /// Performs setup for custom functional behavior.
   void _setup() {
-    Sequential(_clk, [q < _d]);
-  }
+    var contents = [q < _d];
 
-  /// Performs setup for custom functional behavior with enable
-  void _setupWithEnable() {
-    Sequential(_clk, [
-      If(_en, then: [q < _d])
-    ]);
+    if (_en != null) {
+      contents = [If(_en!, then: contents)];
+    }
+
+    Sequential(
+      _clk,
+      contents,
+      reset: _reset,
+      resetValues:
+          _reset != null ? {q: _resetValuePort ?? _resetValueConst} : null,
+    );
   }
 
   @override
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs) {
-    if (_isEnableProvided) {
-      if (inputs.length != 3 || outputs.length != 1) {
-        throw Exception('FlipFlop has exactly three inputs and one output.');
-      }
-    } else {
-      if (inputs.length != 2 || outputs.length != 1) {
-        throw Exception('FlipFlop has exactly two inputs and one output.');
-      }
+    var expectedInputs = 2;
+    if (_en != null) {
+      expectedInputs++;
+    }
+    if (_reset != null) {
+      expectedInputs++;
+    }
+    if (_resetValuePort != null) {
+      expectedInputs++;
+    }
+
+    if (inputs.length != expectedInputs || outputs.length != 1) {
+      throw Exception(
+          'FlipFlop has exactly $expectedInputs inputs and one output.');
     }
 
     final clk = inputs[_clkName]!;
     final d = inputs[_dName]!;
     final q = outputs[_qName]!;
 
-    if (_isEnableProvided) {
-      final en = inputs[_enName]!;
-      return 'always_ff @(posedge $clk) if($en) $q <= $d;  // $instanceName';
-    } else {
-      return 'always_ff @(posedge $clk) $q <= $d;  // $instanceName';
+    final svBuffer = StringBuffer('always_ff @(posedge $clk) ');
+
+    if (_reset != null) {
+      final resetValueString = _resetValuePort != null
+          ? inputs[_resetValueName]!
+          : _resetValueConst.toString();
+      svBuffer
+          .write('if(${inputs[_resetName]}) $q <= $resetValueString; else ');
     }
+
+    if (_en != null) {
+      svBuffer.write('if(${inputs[_enName]!}) ');
+    }
+
+    svBuffer.write('$q <= $d;  // $instanceName');
+
+    return svBuffer.toString();
   }
 }

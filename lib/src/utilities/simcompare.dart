@@ -1,12 +1,11 @@
-/// Copyright (C) 2021-2022 Intel Corporation
-/// SPDX-License-Identifier: BSD-3-Clause
-///
-/// simcompare.dart
-/// Helper functionality for unit testing (sv testbench generation, iverilog simulation, vectors, checking/comparison, etc.)
-///
-/// 2021 May 7
-/// Author: Max Korbel <max.korbel@intel.com>
-///
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// simcompare.dart
+// Helper functionality for unit testing (sv testbench generation, iverilog simulation, vectors, checking/comparison, etc.)
+//
+// 2021 May 7
+// Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_print
 
@@ -15,7 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/exceptions/exceptions.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 /// Represents a single test case to check in a single clock cycle.
@@ -48,15 +47,22 @@ class Vector {
   /// the [inputValues].
   static String _errorCheckString(String sigName, dynamic expected,
       LogicValue expectedVal, String inputValues) {
-    final expectedHexStr = expected is int
-        ? '0x${expected.toRadixString(16)}'
-        : expected.toString();
-    final expectedValStr = expectedVal.toString();
-
-    if (expected is! int && expected is! LogicValue) {
-      throw Exception(
-          'Support for ${expected.runtimeType} is not supported (yet?).');
+    if (expected is! int && expected is! LogicValue && expected is! BigInt) {
+      throw NonSupportedTypeException(expected);
     }
+
+    String expectedHexStr;
+    if (expected is int) {
+      expectedHexStr =
+          BigInt.from(expected).toUnsigned(expectedVal.width).toRadixString(16);
+    } else if (expected is BigInt) {
+      expectedHexStr = expected.toUnsigned(expectedVal.width).toRadixString(16);
+    } else {
+      expectedHexStr = expected.toString();
+    }
+    expectedHexStr = '0x$expectedHexStr';
+
+    final expectedValStr = expectedVal.toString();
 
     return 'if($sigName !== $expectedValStr) '
         '\$error(\$sformatf("Expected $sigName=$expectedHexStr,'
@@ -81,7 +87,9 @@ class Vector {
         }
         return arrAssigns.toString();
       } else {
-        return '$signalName = ${inputValues[signalName]};';
+        final signalVal =
+            LogicValue.of(inputValues[signalName], width: signal.width);
+        return '$signalName = $signalVal;';
       }
     }).join('\n');
 
@@ -152,7 +160,12 @@ abstract class SimCompare {
                   ' expected $o to be $value, but it was ${o.value}.';
               if (value is int) {
                 expect(o.value.isValid, isTrue, reason: errorReason);
-                expect(o.value.toInt(), equals(value), reason: errorReason);
+                expect(o.value.toBigInt(),
+                    equals(BigInt.from(value).toUnsigned(o.width)),
+                    reason: errorReason);
+              } else if (value is BigInt) {
+                expect(o.value.isValid, isTrue, reason: errorReason);
+                expect(o.value.toBigInt(), equals(value), reason: errorReason);
               } else if (value is LogicValue) {
                 if (o.width > 1 &&
                     (value == LogicValue.x || value == LogicValue.z)) {
@@ -163,7 +176,7 @@ abstract class SimCompare {
                   expect(o.value, equals(value), reason: errorReason);
                 }
               } else {
-                throw NonSupportedTypeException(value.runtimeType.toString());
+                throw NonSupportedTypeException(value);
               }
             }
           }).catchError(
@@ -230,6 +243,11 @@ abstract class SimCompare {
     bool maskKnownWarnings = true,
     bool buildOnly = false,
   }) {
+    if (kIsWeb) {
+      // if running in web mode, then we can't run icarus verilog
+      return true;
+    }
+
     String signalDeclaration(String signalName) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
