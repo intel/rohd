@@ -18,7 +18,7 @@
 		"prefix": ["seq", "sequential", "Seq", "Sequential"],
 		"body": [
 			"Sequential(clk, [",
-            "\t// Assignment Here",
+            "\t// Conditional Assignment Here",
             "\t// e.g a0 < a1",
 			"]);"
 		],
@@ -28,7 +28,7 @@
 		"prefix": ["comb", "combinational", "Comb", "Combinational"],
 		"body": [
 			"Combinational([",
-            "\t// Assignment Here",
+            "\t// Conditional Assignment Here",
             "\t// e.g a0 < a1",
             "]);"
 		],
