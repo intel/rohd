@@ -24,8 +24,9 @@ extension IndexedLogic on List<Logic> {
   /// ```
   /// // ordering matches closer to array indexing with `0` index-based.
   /// List<Logic> logicList = [/* Add your Logic elements here */];
-  /// selected <= index.selectIndex(logicList);
+  /// selected <= logicList.selectIndex(index);
   /// ```
   ///
-  Logic selectIndex(Logic index) => index.selectFrom(this);
+  Logic selectIndex(Logic index, {Logic? defaultValue}) =>
+      index.selectFrom(this, defaultValue: defaultValue);
 }

@@ -716,7 +716,7 @@ class Logic {
   /// Example:
   /// ```
   /// // ordering matches closer to array indexing with `0` index-based.
-  /// selected <= index.selectIndex(busList);
+  /// selected <= index.selectFrom(busList);
   /// ```
   ///
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
