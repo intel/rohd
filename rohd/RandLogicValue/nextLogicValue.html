@@ -125,13 +125,12 @@ else an exception will be thrown.</p>
 
     return LogicValue.ofString(bitString.toString());
   } else {
-    if (width &lt;= LogicValue._INT_BITS) {
+    if (width &lt;= INT_BITS) {
       final ranNum = width &lt;= 32
-          ? LogicValue.ofInt(nextInt(1 &lt;&lt; width), width)
+          ? LogicValue.ofInt(nextInt(oneSllBy(width)), width)
           : LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
 
-      if (max == null ||
-          (max is BigInt &amp;&amp; max.bitLength &gt; LogicValue._INT_BITS)) {
+      if (max == null || (max is BigInt &amp;&amp; max.bitLength &gt; INT_BITS)) {
         return ranNum;
       } else {
         return LogicValue.ofInt(

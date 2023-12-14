@@ -106,7 +106,7 @@ int compareTo(Object other) {
     throw ValueWidthMismatchException(this, other);
   }
 
-  if (width &gt; _INT_BITS || other.width &gt; _INT_BITS) {
+  if (width &gt; INT_BITS || other.width &gt; INT_BITS) {
     final a = toBigInt();
     final b = other.toBigInt();
     final valueZero = BigInt.zero;

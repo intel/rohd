@@ -97,12 +97,12 @@ print(lv); // This prints `6'b01xzx0`
   &#47;&#47; shifting BigInt&#39;s is expensive
   for (final lv in it) {
     final lvPlusSmall = lv.width + smallBuffer.width;
-    if (lvPlusSmall &lt;= _INT_BITS) {
+    if (lvPlusSmall &lt;= INT_BITS) {
       smallBuffer = lv._concatenate(smallBuffer);
     } else {
       &#47;&#47; only put 64-bit chunks onto `fullResult`, rest onto `smallBuffer`
       final upperBound =
-          _INT_BITS * (lvPlusSmall ~&#47; _INT_BITS) - smallBuffer.width;
+          INT_BITS * (lvPlusSmall ~&#47; INT_BITS) - smallBuffer.width;
       fullResult = lv
           .getRange(0, upperBound)
           ._concatenate(smallBuffer)
@@ -110,7 +110,7 @@ print(lv); // This prints `6'b01xzx0`
       smallBuffer = lv.getRange(upperBound, lv.width);
     }
 
-    assert(smallBuffer.width &lt;= _INT_BITS,
+    assert(smallBuffer.width &lt;= INT_BITS,
         &#39;Keep smallBuffer small to meet invariants and efficiency&#39;);
   }
 

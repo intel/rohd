@@ -89,9 +89,11 @@ bool operator ==(Object other) {
   if (other is! LogicValue) {
     return false;
   }
+
   if (other.width != width) {
     return false;
   }
+
   return _equals(other);
 }</code></pre>
 </section>

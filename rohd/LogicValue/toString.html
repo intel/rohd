@@ -95,8 +95,8 @@ print(lv); // This prints `3b'1x0`
   <pre class="language-dart"><code class="language-dart">@override
 String toString({bool includeWidth = true}) {
   if (isValid &amp;&amp; includeWidth) {
-    &#47;&#47; for ==_INT_BITS, still use BigInt so we don&#39;t get negatives
-    final hexValue = width &gt;= _INT_BITS
+    &#47;&#47; for ==INT_BITS, still use BigInt so we don&#39;t get negatives
+    final hexValue = width &gt;= INT_BITS
         ? toBigInt().toUnsigned(width).toRadixString(16)
         : toInt().toRadixString(16);
     return &quot;$width&#39;h$hexValue&quot;;

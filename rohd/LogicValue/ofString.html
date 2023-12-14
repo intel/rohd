@@ -103,7 +103,7 @@ print(lv); // This prints `3b'1x0`
   final invalidString = _invalidString(stringRepresentation);
   final width = stringRepresentation.length;
 
-  if (width &lt;= _INT_BITS) {
+  if (width &lt;= INT_BITS) {
     final value = _unsignedBinaryParse(valueString);
     final invalid = _unsignedBinaryParse(invalidString);
     return _smallLogicValueOrFilled(value, invalid, width);
