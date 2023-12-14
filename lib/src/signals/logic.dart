@@ -731,7 +731,10 @@ class Logic {
   /// ```
   ///
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
-    final selected = Logic(name: 'selectFrom', width: busList.first.width);
+    final selected = Logic(
+        name: 'selectFrom',
+        width: busList.first.width,
+        naming: Naming.mergeable);
 
     Combinational(
       [
