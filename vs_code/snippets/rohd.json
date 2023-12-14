@@ -6,6 +6,9 @@
 			"\t$1(Logic ${2:a}) {",
 			"\t// Add to Input Port",
 			"\t$2 = addInput('$2', $2);",
+            "\tfinal $3 = addOutput('${3:b}');",
+            "\t// Example Logic of assign a to b",
+            "\tb <= a;",
 			"\t}",
 			"}"
 		],
@@ -15,6 +18,8 @@
 		"prefix": ["seq", "sequential", "Seq", "Sequential"],
 		"body": [
 			"Sequential(clk, [",
+            "\t// Assignment Here",
+            "\t// e.g a0 < a1",
 			"]);"
 		],
 		"description": "ROHD: Create Sequential Logic."
@@ -23,7 +28,7 @@
 		"prefix": ["comb", "combinational", "Comb", "Combinational"],
 		"body": [
 			"Combinational([",
-            "\t//Assignment Here",
+            "\t// Assignment Here",
             "\t// e.g a0 < a1",
             "]);"
 		],
