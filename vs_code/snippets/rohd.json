@@ -211,7 +211,7 @@
             "\t}",
             "}"
         ],
-        "description": "An abstraction of the FSM build in ROHD. The API doc for state can be found at https://intel.github.io/rohd/rohd/State-class.html."
+        "description": "An abstraction of the FSM build in ROHD. The API doc for state can be found at https://intel.github.io/rohd/rohd/FiniteStateMachine-class.html."
     },
      "ROHD Testbench": {
         "prefix": ["vf", "tb", "testbench"],
