@@ -1,17 +1,13 @@
-// Copyright 2023 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// import 'package:devtools_app/devtools_app.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-import 'package:rohd_devtools_extension/src/tree_structure/models/tree_module.dart';
-import 'package:rohd_devtools_extension/src/tree_structure/widgets/rohd_appbar.dart';
-import '../widgets/widgets.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_services.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_services.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/details_navbar.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/rohd_appbar.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -37,12 +33,23 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   late final EvalOnDartLibrary rohdControllerEval;
   late final Disposable evalDisposable;
 
+  // services
+  late final TreeService treeService;
+  late final SignalService signalService;
+
   static const _defaultEvalResponseText = '--';
 
   var evalResponseText = _defaultEvalResponseText;
 
   late Future<TreeModule> futureModuleTree;
   late TreeModule? selectedModule = null;
+
+  @override
+  void dispose() {
+    rohdControllerEval.dispose();
+    evalDisposable.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -53,68 +60,30 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
       serviceManager.service!,
       serviceManager: serviceManager,
     );
-    evalDisposable = Disposable();
-    futureModuleTree = evalModuleTree();
-  }
 
-  @override
-  void dispose() {
-    rohdControllerEval.dispose();
-    evalDisposable.dispose();
-    super.dispose();
+    evalDisposable = Disposable();
+
+    treeService = TreeService(rohdControllerEval, evalDisposable);
+    signalService = SignalService();
+
+    futureModuleTree = treeService.evalModuleTree();
   }
 
   Future<void> _initEval() async {
     await serviceManager.onServiceAvailable;
   }
 
-  Map<String, dynamic> filterSignals(
-      Map<String, dynamic> signals, String searchTerm) {
-    Map<String, dynamic> filtered = {};
-
-    signals.forEach((key, value) {
-      if (key.toLowerCase().contains(searchTerm.toLowerCase())) {
-        filtered[key] = value;
-      }
-    });
-
-    return filtered;
-  }
-
   void refreshModuleTree() {
-    setState(() {
-      futureModuleTree = rohdControllerEval
-          .evalInstance('ModuleTree.instance.hierarchyJSON',
-              isAlive: evalDisposable)
-          .then((treeInstance) => TreeModule.fromJson(
-              jsonDecode(treeInstance.valueAsString ?? "{}")));
+    setState(() async {
+      // Use treeService to refresh the module tree.
+      futureModuleTree = treeService.refreshModuleTree();
     });
-  }
-
-  Future<TreeModule> evalModuleTree() async {
-    final treeInstance = await rohdControllerEval.evalInstance(
-        'ModuleTree.instance.hierarchyJSON',
-        isAlive: evalDisposable);
-
-    return TreeModule.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
-  }
-
-  bool _isNodeOrDescendentMatching(TreeModule module) {
-    if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
-      return true;
-    }
-
-    for (TreeModule childModule in module.subModules) {
-      if (_isNodeOrDescendentMatching(childModule)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   TreeNode? buildNode(TreeModule module) {
     // If there's a search term, ensure that either this node or a descendant node matches it.
-    if (treeSearchTerm != null && !_isNodeOrDescendentMatching(module)) {
+    if (treeSearchTerm != null &&
+        !treeService.isNodeOrDescendentMatching(module, treeSearchTerm)) {
       return null;
     }
 
@@ -176,19 +145,22 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     return FutureBuilder<TreeModule>(
       future: futureModuleTree,
       builder: (BuildContext context, AsyncSnapshot<TreeModule> snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          } else {
+        switch (snapshot.connectionState) {
+          case ConnectionState.waiting:
+            return Center(child: CircularProgressIndicator());
+          case ConnectionState.done:
             List<TreeNode> nodes = [];
-            var root = buildNode(snapshot.data!);
-            if (root != null) {
-              nodes.add(root);
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else {
+              var root = buildNode(snapshot.data!);
+              if (root != null) {
+                nodes.add(root);
+              }
+              return TreeView(nodes: nodes);
             }
-            return TreeView(nodes: nodes);
-          }
-        } else {
-          return const CircularProgressIndicator();
+          default:
+            return Container();
         }
       },
     );
@@ -289,67 +261,9 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  List<TableRow> generateSignalsRow(TreeModule module) {
-    List<TableRow> rows = [];
-
-    // Filter signals
-    var inputSignals = filterSignals(module.inputs, inputSearchTerm ?? '');
-    var outputSignals = filterSignals(module.outputs, outputSearchTerm ?? '');
-
-    // Add Inputs
-    for (var entry in inputSignals.entries) {
-      rows.add(TableRow(children: <Widget>[
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(entry.key),
-          ),
-        ),
-        const SizedBox(
-          height: 32,
-          child: Center(
-            child: Text('Input'),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text('${(entry.value as Map)['value']}'),
-          ),
-        ),
-      ]));
-    }
-
-    // Add Outputs
-    for (var entry in outputSignals.entries) {
-      rows.add(TableRow(children: <Widget>[
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(entry.key), // Signal Name
-          ),
-        ),
-        const SizedBox(
-          height: 32,
-          child: Center(
-            child: Text('Output'), // Signal Direction
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text('${(entry.value as Map)['value']}'), // Signal Value
-          ),
-        ),
-      ]));
-    }
-
-    return rows;
-  }
-
   Widget _detailCardWidgets(TreeModule? module) {
     if (module == null) {
-      return const Text('No module selected');
+      return Center(child: Text('No module selected'));
     }
 
     return Container(
@@ -405,10 +319,10 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
                       height: 32,
                       child: Center(
                         child: Text(
-                          'Signal Name',
+                          'Name',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 15,
                           ),
                         ),
                       ),
@@ -417,10 +331,10 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
                       height: 32,
                       child: Center(
                         child: Text(
-                          'Signal Direction',
+                          'Direction',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 15,
                           ),
                         ),
                       ),
@@ -429,45 +343,38 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
                       height: 32,
                       child: Center(
                         child: Text(
-                          'Signal Value',
+                          'Value',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Width',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                ...generateSignalsRow(module),
+                ...signalService.generateSignalsRow(
+                  module,
+                  inputSearchTerm,
+                  outputSearchTerm,
+                ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget renderIO(Map<String, dynamic> ioModule) {
-    return Column(
-      children: ioModule.entries
-          .map<Widget>(
-            (entry) => Text('${entry.key}: ${(entry.value as Map)['value']}'),
-          )
-          .toList(),
-    );
-  }
-
-  Widget buildSubModules(TreeModule module) {
-    if (module.subModules.isEmpty) {
-      return const SizedBox.shrink(); // Return empty box if no submodules.
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: module.subModules.map<Widget>((subModule) {
-        return Text('Submodule Name: ${subModule.name}');
-      }).toList(),
     );
   }
 }

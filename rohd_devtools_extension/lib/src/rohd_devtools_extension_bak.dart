@@ -5,10 +5,13 @@
 // import 'package:devtools_app/devtools_app.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/details_navbar.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/rohd_appbar.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -29,149 +32,442 @@ class RohdExtensionHomePage extends StatefulWidget {
 }
 
 class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
-  int counter = 0;
+  String? message, inputSearchTerm, outputSearchTerm, treeSearchTerm;
 
-  String? message;
-
-  late final EvalOnDartLibrary fooControllerEval;
+  late final EvalOnDartLibrary rohdControllerEval;
   late final Disposable evalDisposable;
 
   static const _defaultEvalResponseText = '--';
 
   var evalResponseText = _defaultEvalResponseText;
 
+  late Future<TreeModule> futureModuleTree;
+  late TreeModule? selectedModule = null;
+
   @override
   void initState() {
     super.initState();
-    unawaited(_initEval());
-
-    // Example of the devtools extension registering a custom handler.
-    extensionManager.registerEventHandler(
-      DevToolsExtensionEventType.themeUpdate,
-      (event) {
-        final themeUpdateValue =
-            event.data?[ExtensionEventParameters.theme] as String?;
-        setState(() {
-          message = themeUpdateValue;
-        });
-      },
+    _initEval();
+    rohdControllerEval = EvalOnDartLibrary(
+      'package:rohd/src/diagnostics/inspector_service.dart',
+      serviceManager.service!,
+      serviceManager: serviceManager,
     );
+    evalDisposable = Disposable();
+    futureModuleTree = evalModuleTree();
   }
 
   @override
   void dispose() {
-    fooControllerEval.dispose();
+    rohdControllerEval.dispose();
     evalDisposable.dispose();
     super.dispose();
   }
 
   Future<void> _initEval() async {
     await serviceManager.onServiceAvailable;
-    fooControllerEval = EvalOnDartLibrary(
-      'package:rohd/src/diagnostics/inspector_service.dart',
-      serviceManager.service!,
-      serviceManager: serviceManager,
-    );
-    evalDisposable = Disposable();
   }
 
-  void _incrementCounter() {
-    setState(() {
-      evalModuleTree();
-      counter++;
+  Map<String, dynamic> filterSignals(
+      Map<String, dynamic> signals, String searchTerm) {
+    Map<String, dynamic> filtered = {};
+
+    signals.forEach((key, value) {
+      if (key.toLowerCase().contains(searchTerm.toLowerCase())) {
+        filtered[key] = value;
+      }
     });
-    extensionManager.postMessageToDevTools(
-      DevToolsExtensionEvent(
-        DevToolsExtensionEventType.unknown,
-        data: {'increment_count': counter},
-      ),
-    );
+
+    return filtered;
   }
 
-  Future<void> evalModuleTree() async {
-    final treeInstance = await fooControllerEval.evalInstance(
+  void refreshModuleTree() {
+    setState(() {
+      futureModuleTree = rohdControllerEval
+          .evalInstance('ModuleTree.instance.hierarchyJSON',
+              isAlive: evalDisposable)
+          .then((treeInstance) => TreeModule.fromJson(
+              jsonDecode(treeInstance.valueAsString ?? "{}")));
+    });
+  }
+
+  Future<TreeModule> evalModuleTree() async {
+    final treeInstance = await rohdControllerEval.evalInstance(
         'ModuleTree.instance.hierarchyJSON',
         isAlive: evalDisposable);
 
-    final thingsListString =
-        treeInstance.valueAsString ?? _defaultEvalResponseText;
-    final thingsListJSON = json.decode(thingsListString);
+    return TreeModule.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
+  }
 
-    extensionManager.postMessageToDevTools(
-      DevToolsExtensionEvent(
-        DevToolsExtensionEventType.unknown,
-        data: {'root': thingsListJSON['name']},
+  bool _isNodeOrDescendentMatching(TreeModule module) {
+    if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
+      return true;
+    }
+
+    for (TreeModule childModule in module.subModules) {
+      if (_isNodeOrDescendentMatching(childModule)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  TreeNode? buildNode(TreeModule module) {
+    // If there's a search term, ensure that either this node or a descendant node matches it.
+    if (treeSearchTerm != null && !_isNodeOrDescendentMatching(module)) {
+      return null;
+    }
+
+    // Build children recursively
+    List<TreeNode> childrenNodes = buildChildrenNodes(module);
+
+    return TreeNode(
+      content: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedModule = module;
+            });
+          },
+          child: getNodeContent(module),
+        ),
       ),
+      children: childrenNodes,
     );
+  }
 
-    extensionManager.showBannerMessage(
-      key: 'ROHD Hierarchy',
-      type: 'warning',
-      message: thingsListString,
-      extensionName: 'rohd',
+  Widget getNodeContent(TreeModule module) {
+    return Row(
+      children: [
+        const Icon(Icons.memory),
+        const SizedBox(width: 2.0),
+        Text(module.name),
+      ],
+    );
+  }
+
+  List<TreeNode> buildChildrenNodes(TreeModule treeModule) {
+    List<TreeNode?> childrenNodes = [];
+    List<dynamic> subModules = treeModule.subModules;
+    if (subModules.isNotEmpty) {
+      for (var module in subModules) {
+        TreeNode? node = buildNode(module);
+        if (node != null) {
+          childrenNodes.add(node);
+        }
+      }
+    }
+    return childrenNodes
+        .where((node) => node != null)
+        .toList()
+        .cast<TreeNode>();
+  }
+
+  TreeNode? buildTreeFromModule(TreeModule node) {
+    return buildNode(node);
+  }
+
+  String getSignals(String moduleName) {
+    return '';
+  }
+
+  Widget genModuleTree() {
+    return FutureBuilder<TreeModule>(
+      future: futureModuleTree,
+      builder: (BuildContext context, AsyncSnapshot<TreeModule> snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            List<TreeNode> nodes = [];
+            var root = buildNode(snapshot.data!);
+            if (root != null) {
+              nodes.add(root);
+            }
+            return TreeView(nodes: nodes);
+          }
+        } else {
+          return const CircularProgressIndicator();
+        }
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('ROHD DevTools Extension'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('You have pushed the button $counter times'),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _incrementCounter,
-              child: const Text('Increment and post count to DevTools'),
-            ),
-            const SizedBox(height: 48.0),
-            Text('Received theme update from DevTools: $message'),
-            ElevatedButton(
-                onPressed: () => evalModuleTree(),
-                child: const Text('Quek Btn')),
-            const SizedBox(height: 48.0),
-            ElevatedButton(
-              onPressed: () => extensionManager
-                  .showNotification('Yay, DevTools Extensions!'),
-              child: const Text('Show DevTools notification'),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () => extensionManager.showBannerMessage(
-                key: 'example_message_single_dismiss',
-                type: 'warning',
-                message: 'Warning: with great power, comes great '
-                    'responsibility. I\'m not going to tell you twice.\n'
-                    '(This message can only be shown once)',
-                extensionName: 'rohd',
+      appBar: const RohdAppBar(),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          children: [
+            SizedBox(
+              width: screenSize.width / 3,
+              height: screenSize.width / 2.6,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_tree),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Text('Module Tree'),
+                          Expanded(
+                              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              SizedBox(
+                                width: 200,
+                                child: TextField(
+                                  onChanged: (value) {
+                                    setState(() {
+                                      treeSearchTerm = value;
+                                    });
+                                  },
+                                  decoration: const InputDecoration(
+                                    labelText: "Search Tree",
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.refresh),
+                                onPressed: () => refreshModuleTree(),
+                              ),
+                            ],
+                          )),
+                        ],
+                      ),
+                    ),
+
+                    // Module Tree render here
+                    Container(
+                      height: screenSize.width / 3,
+                      width: screenSize.width / 3,
+                      alignment: Alignment.topLeft,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: genModuleTree(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: const Text(
-                'Show DevTools warning (ignore if already dismissed)',
-              ),
             ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () => extensionManager.showBannerMessage(
-                key: 'example_message_multi_dismiss',
-                type: 'warning',
-                message: 'Warning: with great power, comes great '
-                    'responsibility. I\'ll keep reminding you if you '
-                    'forget.\n(This message can be shown multiple times)',
-                extensionName: 'rohd',
-                ignoreIfAlreadyDismissed: false,
-              ),
-              child: const Text(
-                'Show DevTools warning (can show again after dismiss)',
+            const SizedBox(
+              width: 20,
+            ),
+            SizedBox(
+              width: screenSize.width / 3,
+              height: screenSize.width / 2.6,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const DetailsNavBar(),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20, right: 20),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: _detailCardWidgets(selectedModule),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  List<TableRow> generateSignalsRow(TreeModule module) {
+    List<TableRow> rows = [];
+
+    // Filter signals
+    var inputSignals = filterSignals(module.inputs, inputSearchTerm ?? '');
+    var outputSignals = filterSignals(module.outputs, outputSearchTerm ?? '');
+
+    // Add Inputs
+    for (var entry in inputSignals.entries) {
+      rows.add(TableRow(children: <Widget>[
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text(entry.key),
+          ),
+        ),
+        const SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('Input'),
+          ),
+        ),
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('${(entry.value as Map)['value']}'),
+          ),
+        ),
+      ]));
+    }
+
+    // Add Outputs
+    for (var entry in outputSignals.entries) {
+      rows.add(TableRow(children: <Widget>[
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text(entry.key), // Signal Name
+          ),
+        ),
+        const SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('Output'), // Signal Direction
+          ),
+        ),
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('${(entry.value as Map)['value']}'), // Signal Value
+          ),
+        ),
+      ]));
+    }
+
+    return rows;
+  }
+
+  Widget _detailCardWidgets(TreeModule? module) {
+    if (module == null) {
+      return const Text('No module selected');
+    }
+
+    return Container(
+      height: MediaQuery.of(context).size.height / 1.4,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          inputSearchTerm = value;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: "Search Input Signals",
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          outputSearchTerm = value;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: "Search Output Signals",
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Table(
+              border: TableBorder.all(),
+              columnWidths: const <int, TableColumnWidth>{
+                0: FlexColumnWidth(),
+                1: FlexColumnWidth(),
+                2: FlexColumnWidth(),
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: <TableRow>[
+                const TableRow(
+                  children: <Widget>[
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Name',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Direction',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Value',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                ...generateSignalsRow(module),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget renderIO(Map<String, dynamic> ioModule) {
+    return Column(
+      children: ioModule.entries
+          .map<Widget>(
+            (entry) => Text('${entry.key}: ${(entry.value as Map)['value']}'),
+          )
+          .toList(),
+    );
+  }
+
+  Widget buildSubModules(TreeModule module) {
+    if (module.subModules.isEmpty) {
+      return const SizedBox.shrink(); // Return empty box if no submodules.
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: module.subModules.map<Widget>((subModule) {
+        return Text('Submodule Name: ${subModule.name}');
+      }).toList(),
     );
   }
 }
