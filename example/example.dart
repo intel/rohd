@@ -25,7 +25,7 @@ class TopModule extends Module {
 }
 
 class InModule1 extends Module {
-  InModule1(Logic x) : super(name: 'x') {
+  InModule1(Logic x) : super(name: 'mod1') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app2$i', Logic()));
@@ -35,7 +35,7 @@ class InModule1 extends Module {
 }
 
 class InModule2 extends Module {
-  InModule2(Logic x) : super(name: 'x') {
+  InModule2(Logic x) : super(name: 'mod2') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app2$i', Logic()));
@@ -44,7 +44,7 @@ class InModule2 extends Module {
 }
 
 class InModule3 extends Module {
-  InModule3(Logic x) : super(name: 'x') {
+  InModule3(Logic x) : super(name: 'mod3') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app3$i', Logic()));
@@ -53,7 +53,7 @@ class InModule3 extends Module {
 }
 
 class InModule4 extends Module {
-  InModule4(Logic x) : super(name: 'x') {
+  InModule4(Logic x) : super(name: 'mod4') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
@@ -62,16 +62,17 @@ class InModule4 extends Module {
 }
 
 class InModule5 extends Module {
-  InModule5(Logic x) : super(name: 'x') {
+  InModule5(Logic x) : super(name: 'mod5') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
     InModule6(x);
+    InModule7(x);
   }
 }
 
 class InModule6 extends Module {
-  InModule6(Logic x) : super(name: 'x') {
+  InModule6(Logic x) : super(name: 'mod6') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
@@ -80,7 +81,7 @@ class InModule6 extends Module {
 }
 
 class InModule7 extends Module {
-  InModule7(Logic x) : super(name: 'x') {
+  InModule7(Logic x) : super(name: 'mod7') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
@@ -89,7 +90,7 @@ class InModule7 extends Module {
 }
 
 class InModule8 extends Module {
-  InModule8(Logic x) : super(name: 'x') {
+  InModule8(Logic x) : super(name: 'mod8') {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
@@ -177,7 +178,9 @@ Future<void> main({bool noPrint = true}) async {
   }
 
   // Drop reset at time 25.
-  Simulator.registerAction(25, () => reset.put(0));
+  Simulator.registerAction(25, () {
+    reset.put(0);
+  });
 
   // Raise enable at time 45.
   Simulator.registerAction(45, () {

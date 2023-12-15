@@ -5,11 +5,12 @@
 // import 'package:devtools_app/devtools_app.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:devtools_extensions/api.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:rohd_devtools_extension/src/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/tree_structure/widgets/rohd_appbar.dart';
 import '../widgets/widgets.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
@@ -31,7 +32,7 @@ class RohdExtensionHomePage extends StatefulWidget {
 }
 
 class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
-  String? message;
+  String? message, inputSearchTerm, outputSearchTerm, treeSearchTerm;
 
   late final EvalOnDartLibrary rohdControllerEval;
   late final Disposable evalDisposable;
@@ -40,8 +41,8 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   var evalResponseText = _defaultEvalResponseText;
 
-  // Add a Future variable to hold the tree data
-  late Future<String> futureModuleTree;
+  late Future<TreeModule> futureModuleTree;
+  late TreeModule? selectedModule = null;
 
   @override
   void initState() {
@@ -53,8 +54,6 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
       serviceManager: serviceManager,
     );
     evalDisposable = Disposable();
-
-    // initialized the state of the module tree
     futureModuleTree = evalModuleTree();
   }
 
@@ -69,106 +68,123 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     await serviceManager.onServiceAvailable;
   }
 
-  // Update evalModuleTree to be a state changing function.
+  Map<String, dynamic> filterSignals(
+      Map<String, dynamic> signals, String searchTerm) {
+    Map<String, dynamic> filtered = {};
+
+    signals.forEach((key, value) {
+      if (key.toLowerCase().contains(searchTerm.toLowerCase())) {
+        filtered[key] = value;
+      }
+    });
+
+    return filtered;
+  }
+
   void refreshModuleTree() {
     setState(() {
       futureModuleTree = rohdControllerEval
           .evalInstance('ModuleTree.instance.hierarchyJSON',
               isAlive: evalDisposable)
-          .then((treeInstance) =>
-              treeInstance.valueAsString ?? _defaultEvalResponseText);
+          .then((treeInstance) => TreeModule.fromJson(
+              jsonDecode(treeInstance.valueAsString ?? "{}")));
     });
   }
 
-  Future<String> evalModuleTree() async {
+  Future<TreeModule> evalModuleTree() async {
     final treeInstance = await rohdControllerEval.evalInstance(
         'ModuleTree.instance.hierarchyJSON',
         isAlive: evalDisposable);
 
-    return treeInstance.valueAsString ?? _defaultEvalResponseText;
+    return TreeModule.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
   }
 
-  TreeNode buildTreeFromJson(Map node) {
-    TreeNode treeNode;
-
-    String nodeName = '${node['name']}';
-    List<TreeNode> children = [];
-
-    Map inputs = node['inputs'];
-    if (inputs.isNotEmpty) {
-      for (var key in inputs.keys) {
-        String inputContentText = "$key : ${inputs[key]['value']}";
-        children.add(
-          TreeNode(
-            content: Row(children: <Widget>[
-              Icon(
-                Icons.east,
-                color: Colors.blue.shade600,
-              ),
-              const SizedBox(
-                width: 2,
-              ),
-              Text(inputContentText),
-            ]),
-          ),
-        );
-      }
+  bool _isNodeOrDescendentMatching(TreeModule module) {
+    if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
+      return true;
     }
 
-    Map outputs = node['outputs'];
-    if (outputs.isNotEmpty) {
-      for (var key in outputs.keys) {
-        String outputContentText = "$key : ${outputs[key]['value']}";
-        children.add(
-          TreeNode(
-            content: Row(children: <Widget>[
-              Icon(
-                Icons.west,
-                color: Colors.green.shade600,
-              ),
-              const SizedBox(
-                width: 2,
-              ),
-              Text(outputContentText),
-            ]),
-          ),
-        );
+    for (TreeModule childModule in module.subModules) {
+      if (_isNodeOrDescendentMatching(childModule)) {
+        return true;
       }
     }
+    return false;
+  }
 
-    treeNode = TreeNode(
-      content: Row(
-        children: [
-          const Icon(Icons.memory),
-          const SizedBox(width: 2.0),
-          Text(nodeName),
-        ],
+  TreeNode? buildNode(TreeModule module) {
+    // If there's a search term, ensure that either this node or a descendant node matches it.
+    if (treeSearchTerm != null && !_isNodeOrDescendentMatching(module)) {
+      return null;
+    }
+
+    // Build children recursively
+    List<TreeNode> childrenNodes = buildChildrenNodes(module);
+
+    return TreeNode(
+      content: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedModule = module;
+            });
+          },
+          child: getNodeContent(module),
+        ),
       ),
-      children: children,
+      children: childrenNodes,
     );
+  }
 
-    List<dynamic> subModules = node['subModules'];
+  Widget getNodeContent(TreeModule module) {
+    return Row(
+      children: [
+        const Icon(Icons.memory),
+        const SizedBox(width: 2.0),
+        Text(module.name),
+      ],
+    );
+  }
+
+  List<TreeNode> buildChildrenNodes(TreeModule treeModule) {
+    List<TreeNode?> childrenNodes = [];
+    List<dynamic> subModules = treeModule.subModules;
     if (subModules.isNotEmpty) {
       for (var module in subModules) {
-        treeNode.children!.add(buildTreeFromJson(module));
+        TreeNode? node = buildNode(module);
+        if (node != null) {
+          childrenNodes.add(node);
+        }
       }
     }
+    return childrenNodes
+        .where((node) => node != null)
+        .toList()
+        .cast<TreeNode>();
+  }
 
-    return treeNode;
+  TreeNode? buildTreeFromModule(TreeModule node) {
+    return buildNode(node);
+  }
+
+  String getSignals(String moduleName) {
+    return '';
   }
 
   Widget genModuleTree() {
-    return FutureBuilder<String>(
+    return FutureBuilder<TreeModule>(
       future: futureModuleTree,
-      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<TreeModule> snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else {
-            Map jsonData = json.decode(snapshot.data!);
             List<TreeNode> nodes = [];
-            var root = buildTreeFromJson(jsonData);
-            nodes.add(root);
+            var root = buildNode(snapshot.data!);
+            if (root != null) {
+              nodes.add(root);
+            }
             return TreeView(nodes: nodes);
           }
         } else {
@@ -182,104 +198,276 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary,
-        title: const Text('ROHD DevTools Extension'),
-      ),
-      body: Center(
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: screenSize.width / 3,
-                        height: screenSize.width / 2.6,
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
+      appBar: const RohdAppBar(),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: Row(
+          children: [
+            SizedBox(
+              width: screenSize.width / 3,
+              height: screenSize.width / 2.6,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_tree),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Text('Module Tree'),
+                          Expanded(
+                              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.account_tree),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Text('Module Tree'),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(Icons.search),
-                                            onPressed: () {},
-                                          ),
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          IconButton(
-                                            icon: Icon(Icons.refresh),
-                                            onPressed: () =>
-                                                refreshModuleTree(),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ],
+                              SizedBox(
+                                width: 200,
+                                child: TextField(
+                                  onChanged: (value) {
+                                    setState(() {
+                                      treeSearchTerm = value;
+                                    });
+                                  },
+                                  decoration: const InputDecoration(
+                                    labelText: "Search Tree",
+                                  ),
                                 ),
                               ),
-
-                              // Module Tree render here
-                              Container(
-                                height: screenSize.width / 3,
-                                width: screenSize.width / 3,
-                                alignment: Alignment.topLeft,
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.vertical,
-                                  child: genModuleTree(),
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.refresh),
+                                onPressed: () => refreshModuleTree(),
                               ),
                             ],
-                          ),
-                        ),
+                          )),
+                        ],
                       ),
+                    ),
 
-                      const SizedBox(
-                        width: 20,
+                    // Module Tree render here
+                    Container(
+                      height: screenSize.width / 3,
+                      width: screenSize.width / 3,
+                      alignment: Alignment.topLeft,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: genModuleTree(),
                       ),
-
-                      // Here is the container for Widget Tree Details, Waveform, Schematic
-                      SizedBox(
-                        width: screenSize.width / 3,
-                        height: screenSize.width / 2.6,
-                        child: const Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            children: [
-                              DetailsNavBar(),
-                              ButtonBar(
-                                alignment: MainAxisAlignment.start,
-                                children: [],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            )
+              ),
+            ),
+            const SizedBox(
+              width: 20,
+            ),
+            SizedBox(
+              width: screenSize.width / 3,
+              height: screenSize.width / 2.6,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const DetailsNavBar(),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20, right: 20),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: _detailCardWidgets(selectedModule),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  List<TableRow> generateSignalsRow(TreeModule module) {
+    List<TableRow> rows = [];
+
+    // Filter signals
+    var inputSignals = filterSignals(module.inputs, inputSearchTerm ?? '');
+    var outputSignals = filterSignals(module.outputs, outputSearchTerm ?? '');
+
+    // Add Inputs
+    for (var entry in inputSignals.entries) {
+      rows.add(TableRow(children: <Widget>[
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text(entry.key),
+          ),
+        ),
+        const SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('Input'),
+          ),
+        ),
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('${(entry.value as Map)['value']}'),
+          ),
+        ),
+      ]));
+    }
+
+    // Add Outputs
+    for (var entry in outputSignals.entries) {
+      rows.add(TableRow(children: <Widget>[
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text(entry.key), // Signal Name
+          ),
+        ),
+        const SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('Output'), // Signal Direction
+          ),
+        ),
+        SizedBox(
+          height: 32,
+          child: Center(
+            child: Text('${(entry.value as Map)['value']}'), // Signal Value
+          ),
+        ),
+      ]));
+    }
+
+    return rows;
+  }
+
+  Widget _detailCardWidgets(TreeModule? module) {
+    if (module == null) {
+      return const Text('No module selected');
+    }
+
+    return Container(
+      height: MediaQuery.of(context).size.height / 1.4,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          inputSearchTerm = value;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: "Search Input Signals",
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          outputSearchTerm = value;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        labelText: "Search Output Signals",
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Table(
+              border: TableBorder.all(),
+              columnWidths: const <int, TableColumnWidth>{
+                0: FlexColumnWidth(),
+                1: FlexColumnWidth(),
+                2: FlexColumnWidth(),
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: <TableRow>[
+                const TableRow(
+                  children: <Widget>[
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Name',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Direction',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          'Signal Value',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                ...generateSignalsRow(module),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget renderIO(Map<String, dynamic> ioModule) {
+    return Column(
+      children: ioModule.entries
+          .map<Widget>(
+            (entry) => Text('${entry.key}: ${(entry.value as Map)['value']}'),
+          )
+          .toList(),
+    );
+  }
+
+  Widget buildSubModules(TreeModule module) {
+    if (module.subModules.isEmpty) {
+      return const SizedBox.shrink(); // Return empty box if no submodules.
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: module.subModules.map<Widget>((subModule) {
+        return Text('Submodule Name: ${subModule.name}');
+      }).toList(),
     );
   }
 }
