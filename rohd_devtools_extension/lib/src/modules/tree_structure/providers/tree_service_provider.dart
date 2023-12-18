@@ -1,9 +1,17 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import '../services/tree_services.dart';
+import 'package:devtools_extensions/devtools_extensions.dart';
+import 'package:devtools_app_shared/service.dart';
 
 part 'tree_service_provider.g.dart';
 
 @riverpod
-TreeModule? selectedModule(SelectedModuleRef ref) {
-  return null;
+TreeService treeService(TreeServiceRef ref) {
+  final rohdControllerEval = EvalOnDartLibrary(
+    'package:rohd/src/diagnostics/inspector_service.dart',
+    serviceManager.service!,
+    serviceManager: serviceManager,
+  );
+  final evalDisposable = Disposable();
+  return TreeService(rohdControllerEval, evalDisposable);
 }

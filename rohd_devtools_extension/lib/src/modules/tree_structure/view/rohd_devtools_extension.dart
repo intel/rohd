@@ -2,12 +2,17 @@ import 'dart:async';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/selected_module_provider.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_services.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_services.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/details_navbar.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/rohd_appbar.dart';
+
+import '../providers/signal_service_provider.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -20,14 +25,15 @@ class RohdDevToolsExtension extends StatelessWidget {
   }
 }
 
-class RohdExtensionHomePage extends StatefulWidget {
+class RohdExtensionHomePage extends ConsumerStatefulWidget {
   const RohdExtensionHomePage({super.key});
 
   @override
-  State<RohdExtensionHomePage> createState() => _RohdExtensionHomePageState();
+  ConsumerState<RohdExtensionHomePage> createState() =>
+      _RohdExtensionHomePageState();
 }
 
-class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
+class _RohdExtensionHomePageState extends ConsumerState<RohdExtensionHomePage> {
   String? message, inputSearchTerm, outputSearchTerm, treeSearchTerm;
 
   late final EvalOnDartLibrary rohdControllerEval;
@@ -42,7 +48,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   var evalResponseText = _defaultEvalResponseText;
 
   late Future<TreeModule> futureModuleTree;
-  late TreeModule? selectedModule = null;
+  // late TreeModule? selectedModule = null;
 
   @override
   void dispose() {
@@ -63,8 +69,8 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
     evalDisposable = Disposable();
 
-    treeService = TreeService(rohdControllerEval, evalDisposable);
-    signalService = SignalService();
+    treeService = ref.read(treeServiceProvider);
+    signalService = ref.read(signalServiceProvider);
 
     futureModuleTree = treeService.evalModuleTree();
   }
@@ -95,9 +101,10 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () {
-            setState(() {
-              selectedModule = module;
-            });
+            // setState(() {
+            //   selectedModule = module;
+            // });
+            ref.read(selectedModuleProvider.notifier).setModule(module);
           },
           child: getNodeContent(module),
         ),
@@ -168,6 +175,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedModule = ref.watch(selectedModuleProvider);
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: const RohdAppBar(),
