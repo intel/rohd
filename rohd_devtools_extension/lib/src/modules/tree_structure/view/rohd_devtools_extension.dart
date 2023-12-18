@@ -174,8 +174,6 @@ class _RohdExtensionHomePageState extends ConsumerState<RohdExtensionHomePage> {
                         scrollDirection: Axis.vertical,
                         child: DetailCard(
                           module: selectedModule,
-                          inputSearchTerm: inputSearchTerm,
-                          outputSearchTerm: outputSearchTerm,
                           signalService: signalService,
                         ),
                       ),

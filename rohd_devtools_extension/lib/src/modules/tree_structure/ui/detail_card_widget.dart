@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_service.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/custom_text_field.dart';
 
-class DetailCard extends StatelessWidget {
+class DetailCard extends StatefulWidget {
   final TreeModel? module;
-  final String? inputSearchTerm;
-  final String? outputSearchTerm;
   final SignalService signalService;
 
   const DetailCard({
     Key? key,
     this.module,
-    this.inputSearchTerm,
-    this.outputSearchTerm,
     required this.signalService,
   }) : super(key: key);
+
+  @override
+  _DetailCardState createState() => _DetailCardState();
+}
+
+class _DetailCardState extends State<DetailCard> {
+  String? inputSearchTerm;
+  String? outputSearchTerm;
 
   Widget buildTableHeader({required String text}) {
     return SizedBox(
@@ -33,7 +38,7 @@ class DetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (module == null) {
+    if (widget.module == null) {
       return const Padding(
         padding: EdgeInsets.only(top: 20.0),
         child: Center(child: Text('No module selected')),
@@ -48,7 +53,30 @@ class DetailCard extends StatelessWidget {
         scrollDirection: Axis.vertical,
         child: Column(
           children: [
-            // Search fields here
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  DetailsCardTableTextField(
+                    labelText: 'Search Input Signals',
+                    onChanged: (value) {
+                      setState(() {
+                        inputSearchTerm = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  DetailsCardTableTextField(
+                    labelText: 'Search Output Signals',
+                    onChanged: (value) {
+                      setState(() {
+                        outputSearchTerm = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
             Table(
               border: TableBorder.all(),
               columnWidths: const <int, TableColumnWidth>{
@@ -64,8 +92,8 @@ class DetailCard extends StatelessWidget {
                     (index) => buildTableHeader(text: tableHeaders[index]),
                   ),
                 ),
-                ...signalService.generateSignalsRow(
-                  module!,
+                ...widget.signalService.generateSignalsRow(
+                  widget.module!,
                   inputSearchTerm,
                   outputSearchTerm,
                 ),
