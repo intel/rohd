@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../services/tree_services.dart';
+import '../services/tree_service.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 

@@ -10,20 +10,20 @@ class TreeService {
 
   TreeService(this.rohdControllerEval, this.evalDisposable);
 
-  Future<TreeModule> evalModuleTree() async {
+  Future<TreeModel> evalModuleTree() async {
     final treeInstance = await rohdControllerEval.evalInstance(
         'ModuleTree.instance.hierarchyJSON',
         isAlive: evalDisposable);
 
-    return TreeModule.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
+    return TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
   }
 
-  bool isNodeOrDescendentMatching(TreeModule module, String? treeSearchTerm) {
+  bool isNodeOrDescendentMatching(TreeModel module, String? treeSearchTerm) {
     if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
       return true;
     }
 
-    for (TreeModule childModule in module.subModules) {
+    for (TreeModel childModule in module.subModules) {
       if (isNodeOrDescendentMatching(childModule, treeSearchTerm)) {
         return true;
       }
@@ -31,11 +31,11 @@ class TreeService {
     return false;
   }
 
-  Future<TreeModule> refreshModuleTree() {
+  Future<TreeModel> refreshModuleTree() {
     return rohdControllerEval
         .evalInstance('ModuleTree.instance.hierarchyJSON',
             isAlive: evalDisposable)
-        .then((treeInstance) => TreeModule.fromJson(
-            jsonDecode(treeInstance.valueAsString ?? "{}")));
+        .then((treeInstance) =>
+            TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? "{}")));
   }
 }

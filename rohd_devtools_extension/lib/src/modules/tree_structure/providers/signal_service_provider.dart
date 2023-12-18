@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../services/signal_services.dart';
+import '../services/signal_service.dart';
 
 part 'signal_service_provider.g.dart';
 

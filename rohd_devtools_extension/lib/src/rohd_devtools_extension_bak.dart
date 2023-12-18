@@ -41,8 +41,8 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
 
   var evalResponseText = _defaultEvalResponseText;
 
-  late Future<TreeModule> futureModuleTree;
-  late TreeModule? selectedModule = null;
+  late Future<TreeModel> futureModuleTree;
+  late TreeModel? selectedModule = null;
 
   @override
   void initState() {
@@ -86,25 +86,25 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
       futureModuleTree = rohdControllerEval
           .evalInstance('ModuleTree.instance.hierarchyJSON',
               isAlive: evalDisposable)
-          .then((treeInstance) => TreeModule.fromJson(
+          .then((treeInstance) => TreeModel.fromJson(
               jsonDecode(treeInstance.valueAsString ?? "{}")));
     });
   }
 
-  Future<TreeModule> evalModuleTree() async {
+  Future<TreeModel> evalModuleTree() async {
     final treeInstance = await rohdControllerEval.evalInstance(
         'ModuleTree.instance.hierarchyJSON',
         isAlive: evalDisposable);
 
-    return TreeModule.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
+    return TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
   }
 
-  bool _isNodeOrDescendentMatching(TreeModule module) {
+  bool _isNodeOrDescendentMatching(TreeModel module) {
     if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
       return true;
     }
 
-    for (TreeModule childModule in module.subModules) {
+    for (TreeModel childModule in module.subModules) {
       if (_isNodeOrDescendentMatching(childModule)) {
         return true;
       }
@@ -112,7 +112,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     return false;
   }
 
-  TreeNode? buildNode(TreeModule module) {
+  TreeNode? buildNode(TreeModel module) {
     // If there's a search term, ensure that either this node or a descendant node matches it.
     if (treeSearchTerm != null && !_isNodeOrDescendentMatching(module)) {
       return null;
@@ -137,7 +137,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  Widget getNodeContent(TreeModule module) {
+  Widget getNodeContent(TreeModel module) {
     return Row(
       children: [
         const Icon(Icons.memory),
@@ -147,7 +147,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  List<TreeNode> buildChildrenNodes(TreeModule treeModule) {
+  List<TreeNode> buildChildrenNodes(TreeModel treeModule) {
     List<TreeNode?> childrenNodes = [];
     List<dynamic> subModules = treeModule.subModules;
     if (subModules.isNotEmpty) {
@@ -164,7 +164,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
         .cast<TreeNode>();
   }
 
-  TreeNode? buildTreeFromModule(TreeModule node) {
+  TreeNode? buildTreeFromModule(TreeModel node) {
     return buildNode(node);
   }
 
@@ -173,9 +173,9 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
   }
 
   Widget genModuleTree() {
-    return FutureBuilder<TreeModule>(
+    return FutureBuilder<TreeModel>(
       future: futureModuleTree,
-      builder: (BuildContext context, AsyncSnapshot<TreeModule> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<TreeModel> snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
@@ -289,7 +289,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  List<TableRow> generateSignalsRow(TreeModule module) {
+  List<TableRow> generateSignalsRow(TreeModel module) {
     List<TableRow> rows = [];
 
     // Filter signals
@@ -347,7 +347,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     return rows;
   }
 
-  Widget _detailCardWidgets(TreeModule? module) {
+  Widget _detailCardWidgets(TreeModel? module) {
     if (module == null) {
       return const Text('No module selected');
     }
@@ -458,7 +458,7 @@ class _RohdExtensionHomePageState extends State<RohdExtensionHomePage> {
     );
   }
 
-  Widget buildSubModules(TreeModule module) {
+  Widget buildSubModules(TreeModel module) {
     if (module.subModules.isEmpty) {
       return const SizedBox.shrink(); // Return empty box if no submodules.
     }

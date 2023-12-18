@@ -1,26 +1,26 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'selected_module_provider.dart';
+part of 'tree_search_term_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$selectedModuleHash() => r'e0ed37cd7c1242eb49cbb7388e6a16268160b308';
+String _$treeSearchTermHash() => r'd5bf9bc63ecc11638c896e8610ca67650ccea5c2';
 
-/// See also [SelectedModule].
-@ProviderFor(SelectedModule)
-final selectedModuleProvider =
-    AutoDisposeNotifierProvider<SelectedModule, TreeModel?>.internal(
-  SelectedModule.new,
-  name: r'selectedModuleProvider',
+/// See also [TreeSearchTerm].
+@ProviderFor(TreeSearchTerm)
+final treeSearchTermProvider =
+    AutoDisposeNotifierProvider<TreeSearchTerm, String?>.internal(
+  TreeSearchTerm.new,
+  name: r'treeSearchTermProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$selectedModuleHash,
+      : _$treeSearchTermHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$SelectedModule = AutoDisposeNotifier<TreeModel?>;
+typedef _$TreeSearchTerm = AutoDisposeNotifier<String?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

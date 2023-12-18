@@ -1,23 +1,23 @@
-class TreeModule {
+class TreeModel {
   final String name;
   final Map<String, dynamic> inputs;
   final Map<String, dynamic> outputs;
-  final List<TreeModule> subModules;
+  final List<TreeModel> subModules;
 
-  TreeModule({
+  TreeModel({
     required this.name,
     required this.inputs,
     required this.outputs,
     required this.subModules,
   });
 
-  factory TreeModule.fromJson(Map<String, dynamic> json) {
-    return TreeModule(
+  factory TreeModel.fromJson(Map<String, dynamic> json) {
+    return TreeModel(
       name: json['name'],
       inputs: Map<String, dynamic>.from(json['inputs']),
       outputs: Map<String, dynamic>.from(json['outputs']),
       subModules: (json["subModules"] as List)
-          .map((subModule) => TreeModule.fromJson(subModule))
+          .map((subModule) => TreeModel.fromJson(subModule))
           .toList(),
     );
   }

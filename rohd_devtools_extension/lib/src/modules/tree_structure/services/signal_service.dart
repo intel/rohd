@@ -16,7 +16,7 @@ class SignalService {
   }
 
   List<TableRow> generateSignalsRow(
-      TreeModule module, String? inputSearchTerm, String? outputSearchTerm) {
+      TreeModel module, String? inputSearchTerm, String? outputSearchTerm) {
     List<TableRow> rows = [];
 
     // Filter signals

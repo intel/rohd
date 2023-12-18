@@ -1,16 +1,16 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
 
-part 'selected_module_provider.g.dart';
+part 'tree_search_term_provider.g.dart';
 
 @riverpod
-class SelectedModule extends _$SelectedModule {
+class TreeSearchTerm extends _$TreeSearchTerm {
   @override
-  TreeModel? build() {
+  String? build() {
     return null;
   }
 
-  void setModule(TreeModel module) {
-    state = module;
+  void setTerm(String term) {
+    state = term;
   }
 }
