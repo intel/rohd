@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 
 class SignalService {
   Map<String, dynamic> filterSignals(
@@ -30,46 +31,55 @@ class SignalService {
         outputSelected ? filterSignals(module.outputs, searchTerm ?? '') : {};
 
     // Add Inputs
-    for (var entry in inputSignals.entries) {
-      rows.add(_generateSignalRow(
-          entry.key, 'Input', entry.value as Map<String, dynamic>));
+    for (var inputSignal in inputSignals.entries) {
+      SignalModel signal = SignalModel.fromMap({
+        'key': inputSignal.key,
+        'direction': 'Input',
+        'value': inputSignal.value['value'],
+        'width': inputSignal.value['width'],
+      });
+      rows.add(_generateSignalRow(signal));
     }
 
     // Add Outputs
-    for (var entry in outputSignals.entries) {
-      rows.add(_generateSignalRow(
-          entry.key, 'Output', entry.value as Map<String, dynamic>));
+    for (var outputSignal in outputSignals.entries) {
+      SignalModel signal = SignalModel.fromMap({
+        'key': outputSignal.key,
+        'direction': 'Output',
+        'value': outputSignal.value['value'],
+        'width': outputSignal.value['width'],
+      });
+      rows.add(_generateSignalRow(signal));
     }
 
     return rows;
   }
 
-  TableRow _generateSignalRow(
-      String key, String direction, Map<String, dynamic> value) {
+  TableRow _generateSignalRow(SignalModel signal) {
     return TableRow(
       children: <Widget>[
         SizedBox(
           height: 32,
           child: Center(
-            child: Text(key),
+            child: Text(signal.key),
           ),
         ),
         SizedBox(
           height: 32,
           child: Center(
-            child: Text(direction),
+            child: Text(signal.direction),
           ),
         ),
         SizedBox(
           height: 32,
           child: Center(
-            child: Text('${value['value']}'),
+            child: Text(signal.value),
           ),
         ),
         SizedBox(
           height: 32,
           child: Center(
-            child: Text('${value['width']}'),
+            child: Text(signal.width),
           ),
         ),
       ],

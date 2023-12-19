@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_search_term_provider.dart';
