@@ -8,7 +8,7 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
 class ModuleTreeWidget extends ConsumerWidget {
-  late Future<TreeModel> futureModuleTree;
+  late AsyncValue<TreeModel> futureModuleTree;
 
   ModuleTreeWidget({super.key, required this.futureModuleTree});
 
@@ -16,7 +16,7 @@ class ModuleTreeWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return genModuleTree(
       ref: ref,
-      futureModuleTree: futureModuleTree,
+      moduleTreeAsyncValue: futureModuleTree,
     );
   }
 
@@ -37,9 +37,6 @@ class ModuleTreeWidget extends ConsumerWidget {
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () {
-            // setState(() {
-            //   selectedModule = module;
-            // });
             ref.read(selectedModuleProvider.notifier).setModule(module);
           },
           child: getNodeContent(module),
@@ -82,30 +79,22 @@ class ModuleTreeWidget extends ConsumerWidget {
   }
 
   Widget genModuleTree({
-    required Future<TreeModel> futureModuleTree,
+    required AsyncValue<TreeModel> moduleTreeAsyncValue,
     required WidgetRef ref,
   }) {
-    return FutureBuilder<TreeModel>(
-      future: futureModuleTree,
-      builder: (BuildContext context, AsyncSnapshot<TreeModel> snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.waiting:
-            return Center(child: CircularProgressIndicator());
-          case ConnectionState.done:
-            List<TreeNode> nodes = [];
-            if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else {
-              var root = buildNode(snapshot.data!, ref: ref);
-              if (root != null) {
-                nodes.add(root);
-              }
-              return TreeView(nodes: nodes);
-            }
-          default:
-            return Container();
+    return moduleTreeAsyncValue.when(
+      data: (TreeModel data) {
+        var root = buildNode(data, ref: ref);
+        if (root != null) {
+          return TreeView(nodes: [root]);
+        } else {
+          return Text('No data');
         }
       },
+      error: (error, stackTrace) => Text('Error: $error'),
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
