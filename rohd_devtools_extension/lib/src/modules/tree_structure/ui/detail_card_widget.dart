@@ -14,12 +14,18 @@ class DetailCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DetailCardState createState() => _DetailCardState();
+  DetailCardState createState() => DetailCardState();
 }
 
-class _DetailCardState extends State<DetailCard> {
-  String? inputSearchTerm;
-  String? outputSearchTerm;
+class DetailCardState extends State<DetailCard> {
+  String? searchTerm;
+  ValueNotifier<bool> inputSelected = ValueNotifier<bool>(true);
+  ValueNotifier<bool> outputSelected = ValueNotifier<bool>(true);
+  ValueNotifier<int> notifier = ValueNotifier<int>(0);
+
+  void toggleNotifier() {
+    notifier.value++;
+  }
 
   Widget buildTableHeader({required String text}) {
     return SizedBox(
@@ -33,6 +39,54 @@ class _DetailCardState extends State<DetailCard> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Filter Signals'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  CheckboxListTile(
+                    title: const Text('Input'),
+                    value: inputSelected.value,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        inputSelected.value = value!;
+                      });
+                      toggleNotifier();
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Output'),
+                    value: outputSelected.value,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        outputSelected.value = value!;
+                      });
+                      toggleNotifier();
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Apply'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -58,46 +112,48 @@ class _DetailCardState extends State<DetailCard> {
               child: Row(
                 children: [
                   DetailsCardTableTextField(
-                    labelText: 'Search Input Signals',
+                    labelText: 'Search Signals',
                     onChanged: (value) {
                       setState(() {
-                        inputSearchTerm = value;
+                        searchTerm = value;
                       });
+                      toggleNotifier();
                     },
                   ),
-                  const SizedBox(width: 10),
-                  DetailsCardTableTextField(
-                    labelText: 'Search Output Signals',
-                    onChanged: (value) {
-                      setState(() {
-                        outputSearchTerm = value;
-                      });
-                    },
+                  IconButton(
+                    icon: Icon(Icons.filter_list),
+                    onPressed: _showFilterDialog,
                   ),
                 ],
               ),
             ),
-            Table(
-              border: TableBorder.all(),
-              columnWidths: const <int, TableColumnWidth>{
-                0: FlexColumnWidth(),
-                1: FlexColumnWidth(),
-                2: FlexColumnWidth(),
+            ValueListenableBuilder(
+              valueListenable: notifier,
+              builder: (context, _, __) {
+                return Table(
+                  border: TableBorder.all(),
+                  columnWidths: const <int, TableColumnWidth>{
+                    0: FlexColumnWidth(),
+                    1: FlexColumnWidth(),
+                    2: FlexColumnWidth(),
+                  },
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  children: <TableRow>[
+                    TableRow(
+                      children: List<Widget>.generate(
+                        tableHeaders.length,
+                        (index) => buildTableHeader(text: tableHeaders[index]),
+                      ),
+                    ),
+                    ...widget.signalService.generateSignalsRow(
+                      widget.module!,
+                      searchTerm,
+                      inputSelected.value,
+                      outputSelected.value,
+                    ),
+                  ],
+                );
               },
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              children: <TableRow>[
-                TableRow(
-                  children: List<Widget>.generate(
-                    tableHeaders.length,
-                    (index) => buildTableHeader(text: tableHeaders[index]),
-                  ),
-                ),
-                ...widget.signalService.generateSignalsRow(
-                  widget.module!,
-                  inputSearchTerm,
-                  outputSearchTerm,
-                ),
-              ],
             ),
           ],
         ),

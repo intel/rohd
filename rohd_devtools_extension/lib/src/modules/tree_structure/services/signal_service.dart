@@ -16,12 +16,18 @@ class SignalService {
   }
 
   List<TableRow> generateSignalsRow(
-      TreeModel module, String? inputSearchTerm, String? outputSearchTerm) {
+    TreeModel module,
+    String? searchTerm,
+    bool inputSelected,
+    bool outputSelected,
+  ) {
     List<TableRow> rows = [];
 
     // Filter signals
-    var inputSignals = filterSignals(module.inputs, inputSearchTerm ?? '');
-    var outputSignals = filterSignals(module.outputs, outputSearchTerm ?? '');
+    var inputSignals =
+        inputSelected ? filterSignals(module.inputs, searchTerm ?? '') : {};
+    var outputSignals =
+        outputSelected ? filterSignals(module.outputs, searchTerm ?? '') : {};
 
     // Add Inputs
     for (var entry in inputSignals.entries) {
