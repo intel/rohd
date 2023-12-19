@@ -8,9 +8,9 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
 class ModuleTreeWidget extends ConsumerWidget {
-  late AsyncValue<TreeModel> futureModuleTree;
+  final AsyncValue<TreeModel> futureModuleTree;
 
-  ModuleTreeWidget({super.key, required this.futureModuleTree});
+  const ModuleTreeWidget({super.key, required this.futureModuleTree});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
