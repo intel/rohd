@@ -4,12 +4,12 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_m
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_search_term_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/detail_card_widget.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/details_navbar.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_widget.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_details_card.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_details_navbar.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_card.dart';
 
-class TreePageBody extends StatelessWidget {
-  const TreePageBody({
+class TreeStructurePage extends StatelessWidget {
+  const TreeStructurePage({
     super.key,
     required this.screenSize,
     required this.ref,
@@ -28,6 +28,7 @@ class TreePageBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
         children: [
+          // Module Tree render here (Left Section)
           SizedBox(
             width: screenSize.width / 3,
             height: screenSize.width / 2.6,
@@ -72,15 +73,13 @@ class TreePageBody extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Module Tree render here
                   Container(
                     height: screenSize.width / 3,
                     width: screenSize.width / 3,
                     alignment: Alignment.topLeft,
                     child: SingleChildScrollView(
                         scrollDirection: Axis.vertical,
-                        child: ModuleTreeWidget(
+                        child: ModuleTreeCard(
                           futureModuleTree: futureModuleTree,
                         )),
                   ),
@@ -91,6 +90,8 @@ class TreePageBody extends StatelessWidget {
           const SizedBox(
             width: 20,
           ),
+
+          // Signal Table Right Section Module
           SizedBox(
             width: screenSize.width / 3,
             height: screenSize.width / 2.6,
@@ -99,12 +100,12 @@ class TreePageBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const DetailsNavBar(),
+                  const ModuleTreeDetailsNavbar(),
                   Padding(
                     padding: const EdgeInsets.only(left: 20, right: 20),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.vertical,
-                      child: DetailCard(
+                      child: SignalDetailsCard(
                         module: selectedModule,
                         signalService: ref.watch(signalServiceProvider),
                       ),

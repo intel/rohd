@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/selected_module_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/rohd_appbar.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/tree_page_body.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/devtool_appbar.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/view/tree_structure_page.dart';
 
 class RohdDevToolsExtension extends StatelessWidget {
   const RohdDevToolsExtension({super.key});
@@ -51,12 +51,13 @@ class _RohdExtensionHomePageState extends ConsumerState<RohdExtensionHomePage> {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const RohdAppBar(),
-      body: TreePageBody(
-          screenSize: screenSize,
-          ref: ref,
-          futureModuleTree: futureModuleTree,
-          selectedModule: selectedModule),
+      appBar: const DevtoolAppBar(),
+      body: TreeStructurePage(
+        screenSize: screenSize,
+        ref: ref,
+        futureModuleTree: futureModuleTree,
+        selectedModule: selectedModule,
+      ),
     );
   }
 }

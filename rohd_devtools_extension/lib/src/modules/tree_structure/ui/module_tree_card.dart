@@ -7,10 +7,10 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
-class ModuleTreeWidget extends ConsumerWidget {
+class ModuleTreeCard extends ConsumerWidget {
   final AsyncValue<TreeModel> futureModuleTree;
 
-  const ModuleTreeWidget({super.key, required this.futureModuleTree});
+  const ModuleTreeCard({super.key, required this.futureModuleTree});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -88,7 +88,7 @@ class ModuleTreeWidget extends ConsumerWidget {
         if (root != null) {
           return TreeView(nodes: [root]);
         } else {
-          return Text('No data');
+          return const Text('No data');
         }
       },
       error: (error, stackTrace) => Text('Error: $error'),

@@ -2,7 +2,7 @@ class SignalModel {
   final String key;
   final String direction;
   final String value;
-  final String width;
+  final int width;
 
   SignalModel({
     required this.key,
@@ -16,7 +16,7 @@ class SignalModel {
       key: map['key'] as String,
       direction: map['direction'] as String,
       value: map['value'] as String,
-      width: map['width'] as String,
+      width: map['width'] as int,
     );
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class DetailsNavBar extends StatelessWidget {
-  const DetailsNavBar({
+class ModuleTreeDetailsNavbar extends StatelessWidget {
+  const ModuleTreeDetailsNavbar({
     super.key,
   });
 

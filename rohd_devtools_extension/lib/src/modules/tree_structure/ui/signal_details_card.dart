@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_service.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/custom_text_field.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_table_text_field.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_table.dart';
 
-class DetailCard extends StatefulWidget {
+class SignalDetailsCard extends StatefulWidget {
   final TreeModel? module;
   final SignalService signalService;
 
-  const DetailCard({
+  const SignalDetailsCard({
     Key? key,
     this.module,
     required this.signalService,
   }) : super(key: key);
 
   @override
-  DetailCardState createState() => DetailCardState();
+  SignalDetailsCardState createState() => SignalDetailsCardState();
 }
 
-class DetailCardState extends State<DetailCard> {
+class SignalDetailsCardState extends State<SignalDetailsCard> {
   String? searchTerm;
   ValueNotifier<bool> inputSelected = ValueNotifier<bool>(true);
   ValueNotifier<bool> outputSelected = ValueNotifier<bool>(true);
@@ -27,21 +28,6 @@ class DetailCardState extends State<DetailCard> {
     notifier.value++;
   }
 
-  Widget buildTableHeader({required String text}) {
-    return SizedBox(
-      height: 32,
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -49,7 +35,7 @@ class DetailCardState extends State<DetailCard> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
-              title: Text('Filter Signals'),
+              title: const Text('Filter Signals'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -75,14 +61,6 @@ class DetailCardState extends State<DetailCard> {
                   ),
                 ],
               ),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('Apply'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
             );
           },
         );
@@ -99,8 +77,6 @@ class DetailCardState extends State<DetailCard> {
       );
     }
 
-    final tableHeaders = ['Name', 'Direction', 'Value', 'Width'];
-
     return SizedBox(
       height: MediaQuery.of(context).size.height / 1.4,
       child: SingleChildScrollView(
@@ -111,7 +87,7 @@ class DetailCardState extends State<DetailCard> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  DetailsCardTableTextField(
+                  SignalTableTextField(
                     labelText: 'Search Signals',
                     onChanged: (value) {
                       setState(() {
@@ -121,7 +97,7 @@ class DetailCardState extends State<DetailCard> {
                     },
                   ),
                   IconButton(
-                    icon: Icon(Icons.filter_list),
+                    icon: const Icon(Icons.filter_list),
                     onPressed: _showFilterDialog,
                   ),
                 ],
@@ -130,28 +106,11 @@ class DetailCardState extends State<DetailCard> {
             ValueListenableBuilder(
               valueListenable: notifier,
               builder: (context, _, __) {
-                return Table(
-                  border: TableBorder.all(),
-                  columnWidths: const <int, TableColumnWidth>{
-                    0: FlexColumnWidth(),
-                    1: FlexColumnWidth(),
-                    2: FlexColumnWidth(),
-                  },
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  children: <TableRow>[
-                    TableRow(
-                      children: List<Widget>.generate(
-                        tableHeaders.length,
-                        (index) => buildTableHeader(text: tableHeaders[index]),
-                      ),
-                    ),
-                    ...widget.signalService.generateSignalsRow(
-                      widget.module!,
-                      searchTerm,
-                      inputSelected.value,
-                      outputSelected.value,
-                    ),
-                  ],
+                return SignalTable(
+                  selectedModule: widget.module!,
+                  searchTerm: searchTerm,
+                  inputSelectedVal: inputSelected.value,
+                  outputSelectedVal: outputSelected.value,
                 );
               },
             ),

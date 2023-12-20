@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class RohdAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const RohdAppBar({
+class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const DevtoolAppBar({
     super.key,
   });
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class DetailsCardTableTextField extends StatelessWidget {
+class SignalTableTextField extends StatelessWidget {
   final String labelText;
   final ValueChanged<String> onChanged;
 
-  const DetailsCardTableTextField({
+  const SignalTableTextField({
     super.key,
     required this.labelText,
     required this.onChanged,
