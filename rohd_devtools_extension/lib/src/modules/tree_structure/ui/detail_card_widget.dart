@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_service.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/custom_text_field.dart';
 

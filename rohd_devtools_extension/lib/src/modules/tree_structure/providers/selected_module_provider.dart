@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 
 part 'selected_module_provider.g.dart';
 

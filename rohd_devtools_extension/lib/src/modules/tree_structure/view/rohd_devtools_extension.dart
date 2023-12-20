@@ -2,7 +2,7 @@ import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/selected_module_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/rohd_appbar.dart';

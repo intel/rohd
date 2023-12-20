@@ -1,6 +1,6 @@
 import 'package:devtools_app_shared/service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_module.dart';
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
