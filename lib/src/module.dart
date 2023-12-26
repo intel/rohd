@@ -94,7 +94,7 @@ abstract class Module {
   @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
-      : throw Exception(
+      : throw PortDoesNotExistException(
           'Input name "$name" not found as an input to this Module.');
 
   /// Provides the [input] named [name] if it exists, otherwise `null`.
@@ -110,7 +110,7 @@ abstract class Module {
   /// to consume this within this [Module] as well.
   Logic output(String name) => _outputs.containsKey(name)
       ? _outputs[name]!
-      : throw Exception(
+      : throw PortDoesNotExistException(
           'Output name "$name" not found as an output of this Module.');
 
   /// Provides the [output] named [name] if it exists, otherwise `null`.

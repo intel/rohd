@@ -83,7 +83,7 @@ class SimplerExampleSsa extends Module {
     a = addInput('a', a, width: 8);
     addOutput('b', width: 8);
 
-    final inner = Logic(name: 'inner', width: 8);
+    final inner = Logic(name: 'inner', width: 8, naming: Naming.mergeable);
 
     Combinational.ssa((s) => [
           s(inner) < 0xf,

@@ -98,10 +98,14 @@ class Pipeline {
   late final List<_PipeStage> _stages;
 
   /// Returns the number of stages in this pipeline.
-  int get _numStages => _stages.length;
+  int get stageCount => _stages.length;
 
   /// A map of reset values for every signal.
   late final Map<Logic, dynamic> _resetValues;
+
+  /// Tracks whether this [Pipeline] is done being constructed to conditionally
+  /// run safety checks on API calls.
+  bool _constructionComplete = false;
 
   /// Constructs a simple pipeline, separating arbitrary combinational logic by
   /// flop stages.
@@ -112,6 +116,12 @@ class Pipeline {
   /// [Combinational] block.  Use the [PipelineStageInfo] object to grab
   /// signals for a given pipe stage.  Flops are positive edge triggered
   /// based on [clk].
+  ///
+  /// Then `i`th element of [stages] defines the combinational logic driving a
+  /// flop of index `i`. That is, the first entry in [stages] drives the
+  /// first set of flops, so logic defined in the first stage combinationally
+  /// consumes inputs to the [Pipeline]. The output of the [Pipeline] is
+  /// driven by flops driven by the last entry of [stages].
   ///
   /// Signals to be pipelined can optionally be specified in the [signals]
   /// list.  Any signal referenced in a stage via the [PipelineStageInfo]
@@ -124,7 +134,7 @@ class Pipeline {
   /// in [resetValues] should be a type acceptable to [Logic]'s `put` function.
   ///
   /// Each stage can be stalled independently using [stalls], where every index
-  ///  of [stalls] corresponds to the index of the stage to be stalled.  When
+  /// of [stalls] corresponds to the index of the stage to be stalled.  When
   /// a stage's stall is asserted, the output of that stage will not change.
   Pipeline(Logic clk,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
@@ -149,7 +159,7 @@ class Pipeline {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
-    if (_numStages == 0) {
+    if (stageCount == 0) {
       return;
     }
 
@@ -159,21 +169,24 @@ class Pipeline {
 
     signals.forEach(_add);
 
-    for (var stageIndex = 0; stageIndex < _numStages; stageIndex++) {
+    for (var stageIndex = 0; stageIndex < stageCount; stageIndex++) {
       Combinational.ssa((ssa) {
         // keep track of the previously registered logics:
         final prevRegisteredLogics = _registeredLogics.toSet();
 
         // build the conditionals first so that we populate _registeredLogics
-        final stageConditionals = _stages[stageIndex]
-            .operation(PipelineStageInfo._(this, stageIndex, ssa));
+        final stageConditionals = _stages[stageIndex].operation(
+          PipelineStageInfo._(this, stageIndex, ssa),
+        );
 
         // if any new logics were registered, add some extra assignments
         // to make up the gap since it didn't get included in prior generations
         for (final l in _registeredLogics) {
           if (!prevRegisteredLogics.contains(l)) {
             for (var i = 0; i < stageIndex; i++) {
-              _o(l, i) <= _i(l, i);
+              // make sure to hook up in-to-out through main for .get's
+              get(l, i) <= _i(l, i);
+              _o(l, i) <= get(l, i);
             }
           }
         }
@@ -190,16 +203,18 @@ class Pipeline {
         _o(l, stageIndex) <= get(l, stageIndex);
       }
     }
+
+    _constructionComplete = true;
   }
 
   /// Sets up the stall signals across [_stages].
   void _setStalls(List<Logic?>? stalls) {
     if (stalls != null) {
-      if (stalls.length != _numStages - 1) {
+      if (stalls.length != stageCount - 1) {
         throw Exception('Stall list length (${stalls.length}) must match '
-            'number of stages (${_numStages - 1}).');
+            'number of stages (${stageCount - 1}).');
       }
-      for (var i = 0; i < _numStages - 1; i++) {
+      for (var i = 0; i < stageCount - 1; i++) {
         final stall = stalls[i];
         if (stall == null) {
           continue;
@@ -230,7 +245,7 @@ class Pipeline {
     }
 
     var ffAssignsWithStall =
-        List<Conditional>.generate(_numStages - 1, (index) {
+        List<Conditional>.generate(stageCount - 1, (index) {
       final stall = _stages[index].stall;
       final ffAssign = ffAssigns[index] as ConditionalAssign;
       final driver = stall != null
@@ -288,7 +303,12 @@ class Pipeline {
   /// at a specific stage of the pipeline.
   Logic get(Logic logic, [int? stageIndex]) {
     if (!_isRegistered(logic)) {
-      _add(logic);
+      if (_constructionComplete) {
+        throw PortDoesNotExistException(
+            'Signal $logic was not piped through this Pipeline.');
+      } else {
+        _add(logic);
+      }
     }
 
     stageIndex ??= _stages.length - 1;
