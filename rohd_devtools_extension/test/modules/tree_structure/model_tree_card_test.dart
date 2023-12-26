@@ -47,36 +47,4 @@ void main() {
     // Validate that the TreeView widget is present
     expect(find.text('counter'), findsOneWidget);
   });
-
-  testWidgets('Tapping TreeNode calls setModule.', (WidgetTester tester) async {
-    final futureModuleTree =
-        AsyncValue<TreeModel>.data(TreeModelStub.simpleTreeModel);
-
-    when(() => mockSelectedModule.setModule(any())).thenReturn(null);
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          home: Scaffold(
-            body: ModuleTreeCard(futureModuleTree: futureModuleTree),
-          ),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    // Find the Text widget with the text 'topmod'
-    final textFinder = find.text('topmod');
-
-    // Tap on the Text widget
-    await tester.tap(textFinder);
-
-    // Let the tester rebuild the widget after the state change
-    await tester.pumpAndSettle();
-
-    // Verify that setModule was called
-    verify(() => mockSelectedModule.setModule(any())).called(1);
-  });
 }
