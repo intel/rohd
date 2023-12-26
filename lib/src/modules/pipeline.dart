@@ -98,6 +98,11 @@ class Pipeline {
   late final List<_PipeStage> _stages;
 
   /// Returns the number of stages in this pipeline.
+  ///
+  /// Note that this will be one greater than the number of elements in `stages`
+  /// during construction, as well as one greater than the number of flop
+  /// stages. This represents the count of chunks of combinational logic
+  /// separated by flops.
   int get stageCount => _stages.length;
 
   /// A map of reset values for every signal.
@@ -298,9 +303,12 @@ class Pipeline {
   /// Gets the pipelined version of [logic].  By default [stageIndex] is the
   /// last stage (the output of the pipeline).
   ///
-  /// If the signal is not already a part of this [Pipeline], the signal will be
-  /// added to the [Pipeline].  Use [stageIndex] to select the value of [logic]
-  /// at a specific stage of the pipeline.
+  /// During construction, if the signal is not already a part of this
+  /// [Pipeline], the signal will be added to the [Pipeline]. After
+  /// construction, only signals registered during construction can be accessed.
+  ///
+  /// Use [stageIndex] to select the value of [logic] at a specific stage of the
+  /// pipeline. The [stageIndex] must be less than [stageCount].
   Logic get(Logic logic, [int? stageIndex]) {
     if (!_isRegistered(logic)) {
       if (_constructionComplete) {
