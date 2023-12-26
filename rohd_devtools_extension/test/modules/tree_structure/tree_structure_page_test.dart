@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_card.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_details_navbar.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_details_card.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/view/tree_structure_page.dart';
 
