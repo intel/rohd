@@ -7,20 +7,29 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
-class ModuleTreeCard extends ConsumerWidget {
+class ModuleTreeCard extends ConsumerStatefulWidget {
   final AsyncValue<TreeModel> futureModuleTree;
-
-  const ModuleTreeCard({super.key, required this.futureModuleTree});
+  const ModuleTreeCard({
+    super.key,
+    required this.futureModuleTree,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConsumerStatefulWidget> createState() => _ModuleTreeCardState();
+}
+
+class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
+  _ModuleTreeCardState();
+
+  @override
+  Widget build(BuildContext context) {
     return genModuleTree(
-      ref: ref,
-      moduleTreeAsyncValue: futureModuleTree,
+      moduleTreeAsyncValue: widget.futureModuleTree,
     );
+    ;
   }
 
-  TreeNode? buildNode(TreeModel module, {required WidgetRef ref}) {
+  TreeNode? buildNode(TreeModel module) {
     final TreeService treeService = ref.read(treeServiceProvider);
     final treeSearchTerm = ref.watch(treeSearchTermProvider);
     // If there's a search term, ensure that either this node or a descendant node matches it.
@@ -30,7 +39,7 @@ class ModuleTreeCard extends ConsumerWidget {
     }
 
     // Build children recursively
-    List<TreeNode> childrenNodes = buildChildrenNodes(module, ref: ref);
+    List<TreeNode> childrenNodes = buildChildrenNodes(module);
 
     return TreeNode(
       content: MouseRegion(
@@ -56,13 +65,14 @@ class ModuleTreeCard extends ConsumerWidget {
     );
   }
 
-  List<TreeNode> buildChildrenNodes(TreeModel treeModule,
-      {required WidgetRef ref}) {
+  List<TreeNode> buildChildrenNodes(
+    TreeModel treeModule,
+  ) {
     List<TreeNode?> childrenNodes = [];
     List<dynamic> subModules = treeModule.subModules;
     if (subModules.isNotEmpty) {
       for (var module in subModules) {
-        TreeNode? node = buildNode(module, ref: ref);
+        TreeNode? node = buildNode(module);
         if (node != null) {
           childrenNodes.add(node);
         }
@@ -74,17 +84,16 @@ class ModuleTreeCard extends ConsumerWidget {
         .cast<TreeNode>();
   }
 
-  TreeNode? buildTreeFromModule(TreeModel node, {required WidgetRef ref}) {
-    return buildNode(node, ref: ref);
+  TreeNode? buildTreeFromModule(TreeModel node) {
+    return buildNode(node);
   }
 
   Widget genModuleTree({
     required AsyncValue<TreeModel> moduleTreeAsyncValue,
-    required WidgetRef ref,
   }) {
     return moduleTreeAsyncValue.when(
       data: (TreeModel data) {
-        var root = buildNode(data, ref: ref);
+        var root = buildNode(data);
         if (root != null) {
           return TreeView(nodes: [root]);
         } else {

@@ -8,26 +8,26 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/sel
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/devtool_appbar.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/view/tree_structure_page.dart';
 
-class RohdDevToolsExtension extends StatelessWidget {
-  const RohdDevToolsExtension({super.key});
+class RohdDevToolsModule extends StatelessWidget {
+  const RohdDevToolsModule({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const DevToolsExtension(
-      child: RohdExtensionHomePage(),
+      child: RohdExtensionModule(),
     );
   }
 }
 
-class RohdExtensionHomePage extends ConsumerStatefulWidget {
-  const RohdExtensionHomePage({super.key});
+class RohdExtensionModule extends ConsumerStatefulWidget {
+  const RohdExtensionModule({super.key});
 
   @override
-  ConsumerState<RohdExtensionHomePage> createState() =>
-      _RohdExtensionHomePageState();
+  ConsumerState<RohdExtensionModule> createState() =>
+      _RohdExtensionModuleState();
 }
 
-class _RohdExtensionHomePageState extends ConsumerState<RohdExtensionHomePage> {
+class _RohdExtensionModuleState extends ConsumerState<RohdExtensionModule> {
   late final EvalOnDartLibrary rohdControllerEval;
 
   late AsyncValue<TreeModel> futureModuleTree;
@@ -54,7 +54,6 @@ class _RohdExtensionHomePageState extends ConsumerState<RohdExtensionHomePage> {
       appBar: const DevtoolAppBar(),
       body: TreeStructurePage(
         screenSize: screenSize,
-        ref: ref,
         futureModuleTree: futureModuleTree,
         selectedModule: selectedModule,
       ),
