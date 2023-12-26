@@ -164,10 +164,6 @@ class Pipeline {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
-    if (stageCount == 0) {
-      return;
-    }
-
     _resetValues = Map.from(resetValues);
 
     _setStalls(stalls);
