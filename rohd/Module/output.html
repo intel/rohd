@@ -64,7 +64,7 @@
       
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">output</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="output-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
+<span class="name ">output</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="output-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
 </ol>)
 
       
@@ -84,7 +84,7 @@ to consume this within this <a href="../../rohd/Module-class.html">Module</a> as
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic output(String name) =&gt; _outputs.containsKey(name)
     ? _outputs[name]!
-    : throw Exception(
+    : throw PortDoesNotExistException(
         &#39;Output name &quot;$name&quot; not found as an output of this Module.&#39;);</code></pre>
 </section>
 

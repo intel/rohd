@@ -62,11 +62,11 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Pipeline.multi</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
-<li><span class="parameter" id="multi-param-stages">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="multi-param-stalls"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a>?</span>&gt;</span>?</span> <span class="parameter-name">stalls</span>, </span></li>
-<li><span class="parameter" id="multi-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="multi-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span></li>
+      <span class="name ">Pipeline.multi</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
+<li><span class="parameter" id="multi-param-stages">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.2.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="multi-param-stalls"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a>?</span>&gt;</span>?</span> <span class="parameter-name">stalls</span>, </span></li>
+<li><span class="parameter" id="multi-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="multi-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span></li>
 <li><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>}</span></li>
 </ol>)
     </section>
@@ -89,31 +89,30 @@
   _stages = stages.map(_PipeStage.new).toList();
   _stages.add(_PipeStage((p) =&gt; [])); &#47;&#47; output stage
 
-  if (_numStages == 0) {
-    return;
-  }
-
   _resetValues = Map.from(resetValues);
 
   _setStalls(stalls);
 
   signals.forEach(_add);
 
-  for (var stageIndex = 0; stageIndex &lt; _numStages; stageIndex++) {
+  for (var stageIndex = 0; stageIndex &lt; stageCount; stageIndex++) {
     Combinational.ssa((ssa) {
       &#47;&#47; keep track of the previously registered logics:
       final prevRegisteredLogics = _registeredLogics.toSet();
 
       &#47;&#47; build the conditionals first so that we populate _registeredLogics
-      final stageConditionals = _stages[stageIndex]
-          .operation(PipelineStageInfo._(this, stageIndex, ssa));
+      final stageConditionals = _stages[stageIndex].operation(
+        PipelineStageInfo._(this, stageIndex, ssa),
+      );
 
       &#47;&#47; if any new logics were registered, add some extra assignments
       &#47;&#47; to make up the gap since it didn&#39;t get included in prior generations
       for (final l in _registeredLogics) {
         if (!prevRegisteredLogics.contains(l)) {
           for (var i = 0; i &lt; stageIndex; i++) {
-            _o(l, i) &lt;= _i(l, i);
+            &#47;&#47; make sure to hook up in-to-out through main for .get&#39;s
+            get(l, i) &lt;= _i(l, i);
+            _o(l, i) &lt;= get(l, i);
           }
         }
       }
@@ -130,6 +129,8 @@
       _o(l, stageIndex) &lt;= get(l, stageIndex);
     }
   }
+
+  _constructionComplete = true;
 }</code></pre>
 </section>
 

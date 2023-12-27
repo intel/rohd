@@ -65,7 +65,7 @@
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
 <span class="name ">get</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="get-param-logic"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">logic</span>, </span></li>
-<li><span class="parameter" id="get-param-stageIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stageIndex</span>]</span></li>
+<li><span class="parameter" id="get-param-stageIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.4/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">stageIndex</span>]</span></li>
 </ol>)
 
       
@@ -75,9 +75,11 @@
 <section class="desc markdown">
   <p>Gets the pipelined version of <code>logic</code>.  By default <code>stageIndex</code> is the
 last stage (the output of the pipeline).</p>
-<p>If the signal is not already a part of this <a href="../../rohd/Pipeline-class.html">Pipeline</a>, the signal will be
-added to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>.  Use <code>stageIndex</code> to select the value of <code>logic</code>
-at a specific stage of the pipeline.</p>
+<p>During construction, if the signal is not already a part of this
+<a href="../../rohd/Pipeline-class.html">Pipeline</a>, the signal will be added to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>. After
+construction, only signals registered during construction can be accessed.</p>
+<p>Use <code>stageIndex</code> to select the value of <code>logic</code> at a specific stage of the
+pipeline. The <code>stageIndex</code> must be less than <a href="../../rohd/Pipeline/stageCount.html">stageCount</a>.</p>
 </section>
 
 
@@ -86,7 +88,12 @@ at a specific stage of the pipeline.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic get(Logic logic, [int? stageIndex]) {
   if (!_isRegistered(logic)) {
-    _add(logic);
+    if (_constructionComplete) {
+      throw PortDoesNotExistException(
+          &#39;Signal $logic was not piped through this Pipeline.&#39;);
+    } else {
+      _add(logic);
+    }
   }
 
   stageIndex ??= _stages.length - 1;
