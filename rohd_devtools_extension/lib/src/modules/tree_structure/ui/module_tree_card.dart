@@ -26,7 +26,6 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
     return genModuleTree(
       moduleTreeAsyncValue: widget.futureModuleTree,
     );
-    ;
   }
 
   TreeNode? buildNode(TreeModel module) {
@@ -95,7 +94,10 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
       data: (TreeModel data) {
         var root = buildNode(data);
         if (root != null) {
-          return TreeView(nodes: [root]);
+          return Align(
+            alignment: Alignment.topLeft,
+            child: TreeView(nodes: [root]),
+          );
         } else {
           return const Text('No data');
         }

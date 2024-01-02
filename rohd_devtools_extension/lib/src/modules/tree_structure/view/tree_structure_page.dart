@@ -30,21 +30,20 @@ class TreeStructurePage extends ConsumerWidget {
           children: [
             // Module Tree render here (Left Section)
             SizedBox(
-              width: screenSize.width / 3,
+              width: screenSize.width / 2,
               height: screenSize.width / 2.6,
               child: Card(
                 clipBehavior: Clip.antiAlias,
                 child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(10),
                         child: Row(
                           children: [
                             const Icon(Icons.account_tree),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             const Text('Module Tree'),
                             Expanded(
                                 child: Row(
@@ -74,10 +73,10 @@ class TreeStructurePage extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Container(
-                        height: screenSize.width / 3,
+                      SizedBox(
+                        height: screenSize.width / 2,
                         width: screenSize.width / 3,
-                        alignment: Alignment.topLeft,
+                        // TODO: Why this child keep center?
                         child: SingleChildScrollView(
                             scrollDirection: Axis.vertical,
                             child: ModuleTreeCard(
