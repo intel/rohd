@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
@@ -9,7 +11,7 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_card.dart';
 
 class TreeStructurePage extends ConsumerWidget {
-  const TreeStructurePage({
+  TreeStructurePage({
     super.key,
     required this.screenSize,
     required this.futureModuleTree,
@@ -19,6 +21,8 @@ class TreeStructurePage extends ConsumerWidget {
   final Size screenSize;
   final AsyncValue<TreeModel> futureModuleTree;
   final TreeModel? selectedModule;
+  final ScrollController _horizontal = ScrollController();
+  final ScrollController _vertical = ScrollController();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,23 +34,23 @@ class TreeStructurePage extends ConsumerWidget {
           children: [
             // Module Tree render here (Left Section)
             SizedBox(
-              width: screenSize.width / 2,
+              width: screenSize.width / 3,
               height: screenSize.width / 2.6,
               child: Card(
                 clipBehavior: Clip.antiAlias,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.account_tree),
-                            const SizedBox(width: 10),
-                            const Text('Module Tree'),
-                            Expanded(
-                                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      // Menu Bar
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_tree),
+                          const SizedBox(width: 10),
+                          const Text('Module Tree'),
+                          Expanded(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 SizedBox(
@@ -69,25 +73,30 @@ class TreeStructurePage extends ConsumerWidget {
                                       .refreshModuleTree(),
                                 ),
                               ],
-                            )),
-                          ],
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(
-                        height: screenSize.width / 2,
-                        width: screenSize.width / 3,
-                        // TODO: Why this child keep center?
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _vertical,
                         child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
+                          controller: _horizontal,
+                          scrollDirection: Axis.horizontal,
+                          child: Expanded(
                             child: ModuleTreeCard(
                               futureModuleTree: futureModuleTree,
-                            )),
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
+
             const SizedBox(
               width: 20,
             ),

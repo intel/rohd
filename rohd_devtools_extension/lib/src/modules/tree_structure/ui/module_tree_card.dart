@@ -94,10 +94,7 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
       data: (TreeModel data) {
         var root = buildNode(data);
         if (root != null) {
-          return Align(
-            alignment: Alignment.topLeft,
-            child: TreeView(nodes: [root]),
-          );
+          return TreeView(nodes: [root]);
         } else {
           return const Text('No data');
         }
