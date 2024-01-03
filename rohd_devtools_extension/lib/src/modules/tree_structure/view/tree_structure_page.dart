@@ -42,7 +42,7 @@ class TreeStructurePage extends ConsumerWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(10),
-                      // Menu Bar
+                      // Module Tree Menu Bar
                       child: Row(
                         children: [
                           const Icon(Icons.account_tree),
@@ -77,6 +77,7 @@ class TreeStructurePage extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    // expand the available column
                     Expanded(
                       child: Scrollbar(
                         thumbVisibility: true,
@@ -84,16 +85,22 @@ class TreeStructurePage extends ConsumerWidget {
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
                           controller: _vertical,
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            controller: _horizontal,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              controller: _horizontal,
-                              child: ModuleTreeCard(
-                                futureModuleTree: futureModuleTree,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Scrollbar(
+                                  thumbVisibility: true,
+                                  controller: _horizontal,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    controller: _horizontal,
+                                    child: ModuleTreeCard(
+                                      futureModuleTree: futureModuleTree,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
