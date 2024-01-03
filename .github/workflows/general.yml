@@ -84,3 +84,27 @@ jobs:
         with:
           folder: doc/api
           branch: docs
+
+  build-devtool:
+    name: Build Devtools
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: master
+          version: 3.18.0-18.0.pre.31
+
+      - name: Run Flutter Test
+        run: tool/gh_actions/devtool/run_devtool_test.sh
+
+      - name: Build Static Web
+        run: tool/gh_actions/devtool/build_web.sh
+
+
