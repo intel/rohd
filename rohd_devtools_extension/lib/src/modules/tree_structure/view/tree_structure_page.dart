@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
@@ -21,6 +19,7 @@ class TreeStructurePage extends ConsumerWidget {
   final Size screenSize;
   final AsyncValue<TreeModel> futureModuleTree;
   final TreeModel? selectedModule;
+
   final ScrollController _horizontal = ScrollController();
   final ScrollController _vertical = ScrollController();
 
@@ -34,7 +33,7 @@ class TreeStructurePage extends ConsumerWidget {
           children: [
             // Module Tree render here (Left Section)
             SizedBox(
-              width: screenSize.width / 3,
+              width: screenSize.width / 2,
               height: screenSize.width / 2.6,
               child: Card(
                 clipBehavior: Clip.antiAlias,
@@ -79,14 +78,21 @@ class TreeStructurePage extends ConsumerWidget {
                       ),
                     ),
                     Expanded(
-                      child: SingleChildScrollView(
+                      child: Scrollbar(
+                        thumbVisibility: true,
                         controller: _vertical,
                         child: SingleChildScrollView(
-                          controller: _horizontal,
-                          scrollDirection: Axis.horizontal,
-                          child: Expanded(
-                            child: ModuleTreeCard(
-                              futureModuleTree: futureModuleTree,
+                          scrollDirection: Axis.vertical,
+                          controller: _vertical,
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            controller: _horizontal,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              controller: _horizontal,
+                              child: ModuleTreeCard(
+                                futureModuleTree: futureModuleTree,
+                              ),
                             ),
                           ),
                         ),
@@ -103,7 +109,7 @@ class TreeStructurePage extends ConsumerWidget {
 
             // Signal Table Right Section Module
             SizedBox(
-              width: screenSize.width / 3,
+              width: screenSize.width / 2,
               height: screenSize.width / 2.6,
               child: Card(
                 clipBehavior: Clip.antiAlias,
