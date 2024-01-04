@@ -54,6 +54,28 @@ class TestModule extends Module {
   }
 }
 
+class DefaultStateFsmMod extends Module {
+  late final FiniteStateMachine _fsm;
+  DefaultStateFsmMod(Logic reset) {
+    reset = addInput('reset', reset);
+    final clk = SimpleClockGenerator(10).clk;
+    final b = addOutput('b', width: 8);
+
+    _fsm = FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, [
+      State(
+        MyStates.state1,
+        events: {Const(0): MyStates.state2},
+        actions: [b < 1],
+        defaultNextState: MyStates.state3,
+      ),
+      State(MyStates.state2, events: {}, actions: [b < 2]),
+      State(MyStates.state3,
+          events: {}, actions: [b < 3], defaultNextState: MyStates.state4),
+      State(MyStates.state4, events: {}, actions: [b < 4]),
+    ]);
+  }
+}
+
 enum LightStates { northFlowing, northSlowing, eastFlowing, eastSlowing }
 
 enum TrafficPresence {
@@ -224,6 +246,35 @@ void main() {
       expect(simResult, equals(true));
 
       verifyMermaidStateDiagram(_simpleFSMPath);
+    });
+
+    test('default next state fsm', () async {
+      final pipem = DefaultStateFsmMod(Logic());
+
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 1}, {}),
+        Vector({'reset': 0}, {'b': 1}),
+        Vector({'reset': 0}, {'b': 3}),
+        Vector({'reset': 0}, {'b': 4}),
+        Vector({'reset': 0}, {'b': 4}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+
+      const fsmPath = '$_tmpDir/default_next_state_fsm.md';
+      pipem._fsm.generateDiagram(outputPath: fsmPath);
+
+      if (!kIsWeb) {
+        final mermaid = File(fsmPath).readAsStringSync();
+        expect(mermaid, contains('state2'));
+        expect(mermaid, contains('state3'));
+        expect(mermaid, contains('state4'));
+        expect(mermaid, contains('(default)'));
+      }
+
+      verifyMermaidStateDiagram(fsmPath);
     });
 
     test('traffic light fsm', () async {
