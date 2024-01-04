@@ -167,7 +167,5 @@ void main() async {
 
     Simulator.setMaxSimTime(100);
     await Simulator.run();
-
-    Simulator.endSimulation();
   });
 }
