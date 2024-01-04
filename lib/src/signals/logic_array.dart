@@ -127,4 +127,14 @@ class LogicArray extends LogicStructure {
     return LogicArray(dimensions, elementWidth,
         numUnpackedDimensions: numUnpackedDimensions, name: name);
   }
+
+  /// add doc later
+  void assignSubset(List<Logic> updatedSubset, int start) {
+    // TO-DO: optimize with dart: zip, reduce,
+
+    // get the end from start+updatedSubset.addr to updatedSubset.length ...
+    for (var i = 0; i < updatedSubset.length; i++) {
+      elements[start + i] <= updatedSubset[i];
+    }
+  }
 }
