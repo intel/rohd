@@ -63,7 +63,7 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype">void</span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">endSimulation</span>(<wbr>)
 
       
@@ -73,14 +73,19 @@
 <section class="desc markdown">
   <p>Halts the simulation.  Allows the current <a href="../../rohd/Simulator/tick.html">tick</a> to finish, if there
 is one.</p>
+<p>The <a href="https://api.dart.dev/stable/3.2.4/dart-async/Future-class.html">Future</a> returned is equivalent to <a href="../../rohd/Simulator/simulationEnded.html">simulationEnded</a> and completes
+once the simulation has actually ended.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void endSimulation() {
+  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; endSimulation() async {
   _simulationEndRequested = true;
+
+  &#47;&#47; wait for the simulation to actually end
+  await simulationEnded;
 }</code></pre>
 </section>
 
