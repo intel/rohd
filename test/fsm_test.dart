@@ -55,7 +55,7 @@ class TestModule extends Module {
 }
 
 class DefaultStateFsmMod extends Module {
-  late final FiniteStateMachine _fsm;
+  late final FiniteStateMachine<MyStates> _fsm;
   DefaultStateFsmMod(Logic reset) {
     reset = addInput('reset', reset);
     final clk = SimpleClockGenerator(10).clk;
