@@ -88,8 +88,19 @@ If you are using vscode, you can download the mermaid extension.</p>
 
   for (final state in _states) {
     for (final entry in state.events.entries) {
-      figure.addTransitions(state.identifier.toString(),
-          entry.value.toString(), entry.key.name);
+      figure.addTransitions(
+        state.identifier.toString(),
+        entry.value.toString(),
+        entry.key.name,
+      );
+    }
+
+    if (state.defaultNextState != state.identifier) {
+      figure.addTransitions(
+        state.identifier.toString(),
+        state.defaultNextState.toString(),
+        &#39;(default)&#39;,
+      );
     }
   }
   figure.writeToFile();
