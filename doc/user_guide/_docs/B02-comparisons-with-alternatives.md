@@ -2,7 +2,7 @@
 title: "Comparison with Alternatives"
 permalink: /docs/comparison-with-alternatives/
 excerpt: "Comparison with Alternatives"
-last_modified_at: 2023-6-19
+last_modified_at: 2024-01-04
 toc: true
 ---
 
