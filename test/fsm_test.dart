@@ -263,18 +263,18 @@ void main() {
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
 
-      const fsmPath = '$_tmpDir/default_next_state_fsm.md';
-      pipem._fsm.generateDiagram(outputPath: fsmPath);
-
       if (!kIsWeb) {
+        const fsmPath = '$_tmpDir/default_next_state_fsm.md';
+        pipem._fsm.generateDiagram(outputPath: fsmPath);
+
         final mermaid = File(fsmPath).readAsStringSync();
         expect(mermaid, contains('state2'));
         expect(mermaid, contains('state3'));
         expect(mermaid, contains('state4'));
         expect(mermaid, contains('(default)'));
-      }
 
-      verifyMermaidStateDiagram(fsmPath);
+        verifyMermaidStateDiagram(fsmPath);
+      }
     });
 
     test('traffic light fsm', () async {
