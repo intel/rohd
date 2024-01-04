@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // exercise_1_d_flip_flop.dart
@@ -80,6 +80,6 @@ Future<void> main() async {
     printFlop('Third tick, end simulation.');
     expect(dff.q.value.toInt(), equals(0));
 
-    Simulator.endSimulation();
+    await Simulator.simulationEnded;
   });
 }
