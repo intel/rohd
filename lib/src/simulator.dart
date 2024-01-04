@@ -270,8 +270,14 @@ abstract class Simulator {
 
   /// Halts the simulation.  Allows the current [tick] to finish, if there
   /// is one.
-  static void endSimulation() {
+  ///
+  /// The [Future] returned is equivalent to [simulationEnded] and completes
+  /// once the simulation has actually ended.
+  static Future<void> endSimulation() async {
     _simulationEndRequested = true;
+
+    // wait for the simulation to actually end
+    await simulationEnded;
   }
 
   /// Collects an [exception] and associated [stackTrace] triggered

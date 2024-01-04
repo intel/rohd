@@ -80,6 +80,17 @@ void main() {
     expect(endOfSimActionExecuted, isTrue);
   });
 
+  test('simulator end simulation waits for simulation to end', () async {
+    final signal = Logic()..put(0);
+    Simulator.setMaxSimTime(1000);
+    Simulator.registerAction(100, () => signal.inject(1));
+    unawaited(Simulator.run());
+    await signal.nextPosedge;
+    await Simulator.endSimulation();
+    expect(Simulator.simulationHasEnded, isTrue);
+    expect(Simulator.time, 100);
+  });
+
   test('simulator waits for async registered actions to complete', () async {
     var registeredActionExecuted = false;
     Simulator.registerAction(100, () => true);
