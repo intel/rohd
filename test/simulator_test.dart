@@ -43,7 +43,8 @@ void main() {
     const haltTime = 650;
     Simulator.registerAction(100, () => farEnough = true);
     Simulator.registerAction(1000, () => tooFar = true);
-    Simulator.registerAction(haltTime, Simulator.endSimulation);
+    Simulator.registerAction(
+        haltTime, () => unawaited(Simulator.endSimulation()));
     await Simulator.run();
     expect(Simulator.time, equals(haltTime));
     expect(tooFar, equals(false));
@@ -51,7 +52,7 @@ void main() {
   });
 
   test('simulator reset waits for simulation to complete', () async {
-    Simulator.registerAction(100, Simulator.endSimulation);
+    Simulator.registerAction(100, () => unawaited(Simulator.endSimulation()));
     Simulator.registerAction(100, () {
       unawaited(Simulator.reset());
     });
