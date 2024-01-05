@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// signal_table_text_field.dart
+// UI for signal table text field.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:flutter/material.dart';
 
 class SignalTableTextField extends StatelessWidget {

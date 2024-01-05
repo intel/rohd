@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// tree_services.dart
+// Services for tree logic.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:convert';
 
 import 'package:devtools_app_shared/service.dart';

@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// signal_details_card.dart
+// UI for signal details card.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:flutter/material.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_service.dart';

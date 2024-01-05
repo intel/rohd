@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// signal_model.dart
+// Model of the signal to be tabulate on the detail table.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 class SignalModel {
   final String key;
   final String direction;

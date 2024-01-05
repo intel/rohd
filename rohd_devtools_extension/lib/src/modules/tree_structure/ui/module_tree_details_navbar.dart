@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// module_tree_details_navbar.dart
+// UI for module tree details card navrbar.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:flutter/material.dart';
 
 class ModuleTreeDetailsNavbar extends StatelessWidget {

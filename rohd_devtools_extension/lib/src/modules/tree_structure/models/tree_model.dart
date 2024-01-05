@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// tree_model.dart
+// Model of the module tree hierarchy.
+//
+// 2024 January 5
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 class TreeModel {
   final String name;
   final Map<String, dynamic> inputs;
