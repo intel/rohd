@@ -94,6 +94,69 @@ class InModule8 extends Module {
     x = addInput('x', x);
 
     List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule9(x);
+  }
+}
+
+class InModule9 extends Module {
+  InModule9(Logic x) : super(name: 'mod9') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule10(x);
+  }
+}
+
+class InModule10 extends Module {
+  InModule10(Logic x) : super(name: 'mod10') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule11(x);
+  }
+}
+
+class InModule11 extends Module {
+  InModule11(Logic x) : super(name: 'mod11') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule12(x);
+  }
+}
+
+class InModule12 extends Module {
+  InModule12(Logic x) : super(name: 'mod12') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule13(x);
+  }
+}
+
+class InModule13 extends Module {
+  InModule13(Logic x) : super(name: 'mod13') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule14(x);
+  }
+}
+
+class InModule14 extends Module {
+  InModule14(Logic x) : super(name: 'mod14') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
+    InModule15(x);
+  }
+}
+
+class InModule15 extends Module {
+  InModule15(Logic x) : super(name: 'mod15') {
+    x = addInput('x', x);
+
+    List.generate(20, (i) => addInput('app4$i', Logic()));
   }
 }
 
