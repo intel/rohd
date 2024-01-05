@@ -12,3 +12,6 @@
 set -euo pipefail
 
 dart test
+
+# run tests in JS
+dart test --platform node

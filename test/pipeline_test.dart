@@ -6,7 +6,6 @@
 //
 // 2021 October 11
 // Author: Max Korbel <max.korbel@intel.com>
-//
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -27,6 +26,25 @@ class SimplePipelineModule extends Module {
   }
 }
 
+class SimplePipelineModuleStages extends Module {
+  SimplePipelineModuleStages(Logic a) : super(name: 'simple_pipeline_module') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final pipeline = Pipeline(clk, stages: [
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 1],
+    ]);
+    b <= pipeline.get(a);
+
+    for (var i = 0; i < pipeline.stageCount; i++) {
+      addOutput('a$i', width: a.width) <= pipeline.get(a, i);
+    }
+  }
+}
+
 class SimplePipelineModuleLateAdd extends Module {
   SimplePipelineModuleLateAdd(Logic a)
       : super(name: 'simple_pipeline_module_late_add') {
@@ -43,6 +61,73 @@ class SimplePipelineModuleLateAdd extends Module {
       (p) => [p.get(a) < p.get(a) + 1],
     ]);
     b <= pipeline.get(a);
+  }
+}
+
+class EmptyPipe extends Module {
+  Logic get b => output('b');
+  EmptyPipe(Logic a) : super(name: 'pipeline_uninit') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final pipeline = Pipeline(clk, signals: [
+      a,
+    ], stages: [
+      for (var i = 0; i < 5; i++) (p) => [],
+    ]);
+
+    b <= pipeline.get(a);
+  }
+}
+
+class PipelineInitDirect extends Module {
+  Logic get b => output('b');
+  PipelineInitDirect(Logic a) : super(name: 'pipeline_uninit') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final c = Logic(width: a.width, name: 'c');
+
+    final pipeline = Pipeline(clk, stages: [
+      (p) => [c < a],
+      (p) => [],
+      (p) => [],
+      (p) => [p.get(c) < p.get(c) + 1],
+      (p) => [p.get(c) < p.get(c) + 1],
+      (p) => [p.get(c) < p.get(c) + 1],
+    ]);
+
+    b <=
+        List.generate(pipeline.stageCount, (index) => pipeline.get(c, index))
+            .reduce((a, b) => a | b);
+  }
+}
+
+class PipelineInitWithGet extends Module {
+  Logic get b => output('b');
+  PipelineInitWithGet(Logic a) : super(name: 'pipeline_uninit') {
+    final clk = SimpleClockGenerator(10).clk;
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final c = Logic(width: a.width, name: 'c');
+
+    final pipeline = Pipeline(clk, stages: [
+      (p) => [
+            p.get(c) < a,
+          ],
+      (p) => [],
+      (p) => [],
+      (p) => [p.get(c) < p.get(c) + 1],
+      (p) => [p.get(c) < p.get(c) + 1],
+      (p) => [p.get(c) < p.get(c) + 1],
+    ]);
+
+    b <=
+        List.generate(pipeline.stageCount, (index) => pipeline.get(c, index))
+            .reduce((a, b) => a | b);
   }
 }
 
@@ -130,6 +215,64 @@ void main() {
       SimCompare.checkIverilogVector(pipem, vectors);
     });
 
+    test('simple pipeline with intermediate gets', () async {
+      final pipem = SimplePipelineModuleStages(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {'a0': 2}),
+        Vector({'a': 2}, {'a0': 3, 'a1': 3}),
+        Vector({'a': 3}, {'a0': 4, 'a1': 4, 'a2': 4}),
+        Vector({'a': 4}, {'a0': 5, 'a1': 5, 'a2': 5, 'b': 4}),
+        Vector({'a': 5}, {'a0': 6, 'a1': 6, 'a2': 6, 'a3': 5, 'b': 5}),
+        Vector({'a': 6}, {'b': 6}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('getting out of range on pipeline is error', () {
+      final x = Logic();
+      expect(
+          () => Pipeline(Logic(), signals: [
+                x
+              ], stages: [
+                (p) => [],
+                (p) => [],
+              ]).get(x, 3),
+          throwsRangeError);
+    });
+
+    test('getting unregisterd signal on pipeline is error', () {
+      expect(
+          () => Pipeline(Logic(), signals: [
+                Logic()
+              ], stages: [
+                (p) => [],
+                (p) => [],
+              ]).get(Logic()),
+          throwsA(isA<PortDoesNotExistException>()));
+    });
+
+    test('empty pipeline', () async {
+      final pipem = EmptyPipe(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 5}, {}),
+        Vector({'a': 6}, {'b': 1}),
+        Vector({'a': 7}, {'b': 2}),
+        Vector({'a': 8}, {'b': 3}),
+        Vector({'a': 9}, {'b': 4}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
     test('multiuse pipeline', () async {
       final pipem =
           PipelineWithMultiUseModule(Logic(width: 8), Logic(width: 8));
@@ -162,6 +305,44 @@ void main() {
         Vector({'a': 4}, {'b': 7}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('pipeline initialized via get', () async {
+      final pipem = PipelineInitWithGet(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+
+      expect(pipem.b.value.isValid, isTrue);
+
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('pipeline initialized directly instead of via get', () async {
+      final pipem = PipelineInitDirect(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 4}, {}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+
+      expect(pipem.b.value.isValid, isTrue);
+
       SimCompare.checkIverilogVector(pipem, vectors);
     });
 

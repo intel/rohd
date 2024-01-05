@@ -32,28 +32,14 @@ class LogicStructure implements Logic {
   @override
   final String name;
 
-  /// Converts the current object instance into a JSON string.
-  ///
-  /// This function uses Dart's built-in `json.encode()` method to convert
-  /// the object's properties into a JSON string. The output string will
-  /// contain keys such as `name`, `width`, and `value`.
   @override
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'width': width,
-        'value': value.toString(),
-      };
-
-  /// An internal counter for encouraging unique naming of unnamed signals.
-  static int _structIdx = 0;
+  Naming get naming => Naming.unnamed;
 
   /// Creates a new [LogicStructure] with [elements] as elements.
   ///
   /// None of the [elements] can already be members of another [LogicStructure].
   LogicStructure(Iterable<Logic> elements, {String? name})
-      : name = (name == null || name.isEmpty)
-            ? 'st${_structIdx++}'
-            : Sanitizer.sanitizeSV(name) {
+      : name = Naming.chooseName(name, null, nullStarter: 'st') {
     _elements
       ..addAll(elements)
       ..forEach((element) {
@@ -301,9 +287,7 @@ class LogicStructure implements Logic {
   LogicValue? get previousValue => packed.previousValue;
 
   @override
-  late final int width = elements.isEmpty
-      ? 0
-      : elements.map((e) => e.width).reduce((w1, w2) => w1 + w2);
+  late final int width = elements.map((e) => e.width).sum;
 
   @override
   Logic withSet(int startIndex, Logic update) {
@@ -531,4 +515,8 @@ class LogicStructure implements Logic {
   void _updateWire(_Wire newWire) {
     throw UnsupportedError('Delegated to elements');
   }
+
+  @override
+  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
+      packed.selectFrom(busList, defaultValue: defaultValue);
 }

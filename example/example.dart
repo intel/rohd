@@ -11,154 +11,11 @@
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
+// Import necessary dart pacakges for this file.
+import 'dart:async';
+
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
-
-class TopModule extends Module {
-  TopModule(Logic x) : super(name: 'topmod') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app$i', Logic()));
-
-    InModule1(x);
-  }
-}
-
-class InModule1 extends Module {
-  InModule1(Logic x) : super(name: 'mod1') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app2$i', Logic()));
-
-    InModule2(x);
-  }
-}
-
-class InModule2 extends Module {
-  InModule2(Logic x) : super(name: 'mod2') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app2$i', Logic()));
-    InModule3(x);
-  }
-}
-
-class InModule3 extends Module {
-  InModule3(Logic x) : super(name: 'mod3') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app3$i', Logic()));
-    InModule4(x);
-  }
-}
-
-class InModule4 extends Module {
-  InModule4(Logic x) : super(name: 'mod4') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule5(x);
-  }
-}
-
-class InModule5 extends Module {
-  InModule5(Logic x) : super(name: 'mod5') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule6(x);
-    InModule7(x);
-  }
-}
-
-class InModule6 extends Module {
-  InModule6(Logic x) : super(name: 'mod6') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule7(x);
-  }
-}
-
-class InModule7 extends Module {
-  InModule7(Logic x) : super(name: 'mod7') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule8(x);
-  }
-}
-
-class InModule8 extends Module {
-  InModule8(Logic x) : super(name: 'mod8') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule9(x);
-  }
-}
-
-class InModule9 extends Module {
-  InModule9(Logic x) : super(name: 'mod9') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule10(x);
-  }
-}
-
-class InModule10 extends Module {
-  InModule10(Logic x) : super(name: 'mod10') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule11(x);
-  }
-}
-
-class InModule11 extends Module {
-  InModule11(Logic x) : super(name: 'mod11') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule12(x);
-  }
-}
-
-class InModule12 extends Module {
-  InModule12(Logic x) : super(name: 'mod12') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule13(x);
-  }
-}
-
-class InModule13 extends Module {
-  InModule13(Logic x) : super(name: 'mod13') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule14(x);
-  }
-}
-
-class InModule14 extends Module {
-  InModule14(Logic x) : super(name: 'mod14') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-    InModule15(x);
-  }
-}
-
-class InModule15 extends Module {
-  InModule15(Logic x) : super(name: 'mod15') {
-    x = addInput('x', x);
-
-    List.generate(20, (i) => addInput('app4$i', Logic()));
-  }
-}
 
 // Define a class Counter that extends ROHD's abstract Module class.
 class Counter extends Module {
@@ -177,36 +34,16 @@ class Counter extends Module {
     en = addInput('en', en);
     reset = addInput('reset', reset);
     clk = addInput('clk', clk);
+    addOutput('val', width: width);
 
-    final val = addOutput('val', width: width);
-
-    // A local signal named 'nextVal'.
-    final nextVal = Logic(name: 'nextVal', width: width);
-
-    TopModule(en);
-
-    // Assignment statement of nextVal to be val+1
-    // ('<=' is the assignment operator).
-    nextVal <= val + 1;
-
-    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on
-    // the positive edge of clk.
-    Sequential(clk, [
-      // `If` is a conditional if statement, like `if` in SystemVerilog
-      // always blocks.
-      If(reset, then: [
-        // The '<' operator is a conditional assignment.
-        val < 0
-      ], orElse: [
-        If(en, then: [val < nextVal])
-      ])
-    ]);
+    // We can use the `flop` function to automate creation of a `Sequential`.
+    val <= flop(clk, reset: reset, en: en, val + 1);
   }
 }
 
 // Let's simulate with this counter a little, generate a waveform, and take a
 // look at generated SystemVerilog.
-Future<void> main({bool noPrint = true}) async {
+Future<void> main({bool noPrint = false}) async {
   // Define some local signals.
   final en = Logic(name: 'en');
   final reset = Logic(name: 'reset');
@@ -231,37 +68,50 @@ Future<void> main({bool noPrint = true}) async {
 
   // Now let's try simulating!
 
-  // Let's start off with a disabled counter and asserting reset.
-  en.inject(0);
-  reset.inject(1);
-
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
     WaveDumper(counter);
   }
 
-  // Drop reset at time 25.
-  Simulator.registerAction(25, () {
-    reset.put(0);
-  });
+  // Let's also print a message every time the value on the counter changes,
+  // just for this example to make it easier to see before we look at waves.
+  if (!noPrint) {
+    counter.val.changed
+        .listen((e) => print('@${Simulator.time}: Value changed: $e'));
+  }
 
-  // Raise enable at time 45.
-  Simulator.registerAction(45, () {
-    en.put(1);
-  });
+  // Start off with a disabled counter and asserting reset at the start.
+  en.inject(0);
+  reset.inject(1);
 
-  // Print a message when we're done with the simulation!
+  // Ahead of time, register to drop reset at time 27.
+  Simulator.registerAction(27, () => reset.put(0));
+
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(100);
+
+  // Print a message when we're done with the simulation, too!
   Simulator.registerAction(100, () {
     if (!noPrint) {
       print('Simulation completed!');
     }
   });
 
-  // Set a maximum time for the simulation so it doesn't keep running forever.
-  Simulator.setMaxSimTime(100);
+  // Kick off the simulator (but don't await it)!
+  if (!noPrint) {
+    print('Starting simulation...');
+  }
+  unawaited(Simulator.run());
 
-  // Kick off the simulation.
-  await Simulator.run();
+  // Let's wait for reset, then a few clock cycles, then enable the counter.
+  await reset.nextNegedge;
+  for (var i = 0; i < 3; i++) {
+    await clk.nextPosedge;
+  }
+  en.inject(1);
+
+  // Wait here until the simulation has completed (due to maximum time).
+  await Simulator.simulationEnded;
 
   // We can take a look at the waves now.
   if (!noPrint) {

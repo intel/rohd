@@ -42,7 +42,7 @@ The [ROHD Forum](https://intel.github.io/rohd-website/forum/rohd-forum/) is a pe
 
 You must have [Dart](https://dart.dev/) installed on your system to use ROHD. You can find detailed instructions for how to install Dart here: <https://dart.dev/get-dart>
 
-To run the complete ROHD test suite for development, you need to install [Icarus Verilog](http://iverilog.icarus.com/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
+To run the complete ROHD test suite for development, you need to install [Icarus Verilog](https://steveicarus.github.io/iverilog/). It is used to compare SystemVerilog functionality with the ROHD simulator functionality. Installation instructions are available here: <https://iverilog.fandom.com/wiki/Installation_Guide>
 
 ### Setup Recommendations
 

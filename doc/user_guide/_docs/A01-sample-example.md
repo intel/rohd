@@ -2,7 +2,7 @@
 title: "ROHD Example"
 permalink: /docs/sample-example/
 excerpt: "Sample example of using ROHD."
-last_modified_at: 2022-12-21
+last_modified_at: 2024-01-04
 toc: true
 ---
 
@@ -16,43 +16,27 @@ To get a quick feel for what ROHD looks like, below is an example of what a simp
 // Import the ROHD package
 import 'package:rohd/rohd.dart';
 
-// Define a class Counter that extends ROHD's abstract Module class
+// Define a class Counter that extends ROHD's abstract Module class.
 class Counter extends Module {
-
-  // For convenience, map interesting outputs to 
-  // short variable names for consumers of this module
+  // For convenience, map interesting outputs to short variable names for
+  // consumers of this module.
   Logic get val => output('val');
 
-  // This counter supports any width, determined at run-time
+  // This counter supports any width, determined at run-time.
   final int width;
-  Counter(Logic en, Logic reset, Logic clk, {this.width=8, String name='counter'}) 
-      : super(name: name) {
+
+  Counter(Logic en, Logic reset, Logic clk,
+      {this.width = 8, super.name = 'counter'}) {
     // Register inputs and outputs of the module in the constructor.
-    // Module logic must consume registered inputs and output to registered outputs.
-    en    = addInput('en', en);
+    // Module logic must consume registered inputs and output to registered
+    // outputs.
+    en = addInput('en', en);
     reset = addInput('reset', reset);
-    clk   = addInput('clk', clk);
+    clk = addInput('clk', clk);
+    addOutput('val', width: width);
 
-    var val = addOutput('val', width: width);
-
-    // A local signal named 'nextVal'
-    var nextVal = Logic(name: 'nextVal', width: width);
-    
-    // Assignment statement of nextVal to be val+1 (<= is the assignment operator)
-    nextVal <= val + 1;
-
-    // `Sequential` is like SystemVerilog's always_ff, 
-    // in this case trigger on the positive edge of clk
-    Sequential(clk, [
-      // `If` is a conditional if statement, 
-      // like `if` in SystemVerilog always blocks
-      If(reset, then:[
-        // the '<' operator is a conditional assignment
-        val < 0
-      ], orElse: [If(en, then: [
-        val < nextVal
-      ])])
-    ]);
+    // We can use the `flop` function to automate creation of a `Sequential`.
+    val <= flop(clk, reset: reset, en: en, val + 1);
   }
 }
 

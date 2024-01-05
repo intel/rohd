@@ -219,11 +219,15 @@ class SsaNested extends SsaTestModule {
     final x = addOutput('x', width: 8);
     Combinational.ssa((s) => [
           s(x) < SsaModAssignsOnly(a).x + 1,
+          s(x) < SsaModAssignsOnly(s(x)).x + 1,
         ]);
   }
 
   @override
-  int model(int a) => SsaModAssignsOnly(Logic(width: 8)).model(a) + 1;
+  int model(int a) =>
+      SsaModAssignsOnly(Logic(width: 8))
+          .model(SsaModAssignsOnly(Logic(width: 8)).model(a) + 1) +
+      1;
 }
 
 class SsaMultiDep extends SsaTestModule {

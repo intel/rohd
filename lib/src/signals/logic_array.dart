@@ -25,6 +25,9 @@ class LogicArray extends LogicStructure {
   final int elementWidth;
 
   @override
+  final Naming naming;
+
+  @override
   String toString() => 'LogicArray($dimensions, $elementWidth): $name';
 
   /// The number of [dimensions] which should be treated as "unpacked", starting
@@ -45,7 +48,7 @@ class LogicArray extends LogicStructure {
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
   factory LogicArray(List<int> dimensions, int elementWidth,
-      {String? name, int numUnpackedDimensions = 0}) {
+      {String? name, int numUnpackedDimensions = 0, Naming? naming}) {
     if (dimensions.isEmpty) {
       throw LogicConstructionException(
           'Arrays must have at least 1 dimension.');
@@ -71,7 +74,10 @@ class LogicArray extends LogicStructure {
       List.generate(
           dimensions.first,
           (index) => (dimensions.length == 1
-              ? Logic(width: elementWidth)
+              ? Logic(
+                  width: elementWidth,
+                  naming: Naming.renameable,
+                )
               : LogicArray(
                   nextDimensions!,
                   elementWidth,
@@ -84,6 +90,7 @@ class LogicArray extends LogicStructure {
       elementWidth: elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       name: name,
+      naming: naming,
     );
   }
 
@@ -101,8 +108,10 @@ class LogicArray extends LogicStructure {
     required this.dimensions,
     required this.elementWidth,
     required this.numUnpackedDimensions,
-    required super.name,
-  });
+    required String? name,
+    required Naming? naming,
+  })  : naming = Naming.chooseNaming(name, naming),
+        super(name: Naming.chooseName(name, naming, nullStarter: 'a'));
 
   /// Constructs a new [LogicArray] with a more convenient constructor signature
   /// for when many ports in an interface are declared together.  Also performs
