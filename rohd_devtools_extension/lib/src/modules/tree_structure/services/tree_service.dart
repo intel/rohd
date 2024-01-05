@@ -1,4 +1,3 @@
-// Will contain logic related to tree operations
 import 'dart:convert';
 
 import 'package:devtools_app_shared/service.dart';

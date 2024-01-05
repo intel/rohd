@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/modules/rohd_devtools_module.dart';
 
 void main() {
-  runApp(ProviderScope(
+  runApp(const ProviderScope(
     child: RohdDevToolsModule(),
   ));
 }
