@@ -7,7 +7,6 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/roh
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/selected_module_provider.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/devtool_appbar.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/view/tree_structure_page.dart';
-import 'package:rohd_devtools_extension/src/modules/waveform_viewer/view/waveform_viewer_page.dart';
 
 class RohdDevToolsModule extends StatelessWidget {
   const RohdDevToolsModule({super.key});
