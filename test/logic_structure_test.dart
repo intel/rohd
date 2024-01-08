@@ -7,6 +7,8 @@
 // 2023 May 5
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -70,9 +72,79 @@ class FancyStructInverter extends Module {
   }
 }
 
+class StructModuleWithInstrumentation extends Module {
+  StructModuleWithInstrumentation(Logic a) {
+    a = addInput('a', a, width: 2);
+
+    MyStruct()
+      ..gets(a)
+      ..value
+      ..previousValue
+      ..width
+      ..srcConnection
+      ..dstConnections
+      ..parentModule
+      ..parentStructure
+      ..naming
+      ..arrayIndex
+      ..isArrayMember
+      ..leafElements
+      ..isInput
+      ..isOutput
+      ..changed
+      ..glitch
+      ..nextChanged
+      // ignore: deprecated_member_use_from_same_package
+      ..hasValidValue()
+      // ignore: deprecated_member_use_from_same_package
+      ..isFloating()
+      // ignore: deprecated_member_use_from_same_package
+      ..valueBigInt
+      // ignore: deprecated_member_use_from_same_package
+      ..valueInt;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('late previousValue', () async {
+    final s = MyStruct();
+    final clk = SimpleClockGenerator(10).clk;
+    Simulator.setMaxSimTime(200);
+
+    var i = 0;
+    clk.posedge.listen((_) => s.inject(i++));
+
+    unawaited(Simulator.run());
+
+    await clk.nextPosedge;
+    await clk.nextPosedge;
+    await clk.nextPosedge;
+
+    expect(s.previousValue, isNotNull);
+    expect(s.previousValue!.toInt(), 1);
+
+    s.packed;
+    await clk.nextPosedge;
+    await clk.nextPosedge;
+    expect(s.packed.previousValue, s.previousValue);
+    await clk.nextPosedge;
+    expect(s.packed.previousValue, s.previousValue);
+
+    await Simulator.endSimulation();
+  });
+
+  test('instrumentation on struct does not make hardware', () async {
+    final mod = StructModuleWithInstrumentation(Const(0, width: 2));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv.contains('swizzle'), isFalse,
+        reason: 'Should not pack from instrumentation!');
   });
 
   group('LogicStructure construction', () {
