@@ -8,6 +8,7 @@ analyzer:
     strict-raw-types: true
   exclude:
     - doc/tutorials/chapter_9/rohd_vf_example
+    - rohd_devtools_extension
 
 # keep up to date, matching https://dart-lang.github.io/linter/lints/options/options.html
 # some lints are not yet available, so disabled and marked with [not currently recognized]
