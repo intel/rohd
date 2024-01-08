@@ -53,12 +53,11 @@ class _RohdExtensionModuleState extends ConsumerState<RohdExtensionModule> {
 
     return Scaffold(
       appBar: const DevtoolAppBar(),
-      // body: TreeStructurePage(
-      //   screenSize: screenSize,
-      //   futureModuleTree: futureModuleTree,
-      //   selectedModule: selectedModule,
-      // ),
-      body: WaveformView(),
+      body: TreeStructurePage(
+        screenSize: screenSize,
+        futureModuleTree: futureModuleTree,
+        selectedModule: selectedModule,
+      ),
     );
   }
 }
