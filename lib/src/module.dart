@@ -9,7 +9,6 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -570,49 +569,6 @@ abstract class Module {
     }
     return hier.toString();
   }
-
-  /// Convert the [Module] object and its sub-modules into a JSON
-  /// representation.
-  ///
-  /// Returns a JSON map representing the [Module] and its properties.
-  ///
-  /// If [skipCustomModules] is set to `true` (default), sub-modules that are
-  /// instances of [CustomSystemVerilog] will be excluded from the JSON schema.
-  Map<String, dynamic> toJson({bool skipCustomModules = true}) {
-    final json = {
-      'name': name,
-      'inputs': inputs.map((key, value) => MapEntry(key, value.toMap())),
-      'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
-    };
-
-    final isCustomModule = this is CustomSystemVerilog;
-
-    if (!isCustomModule || !skipCustomModules) {
-      json['subModules'] = subModules
-          .where(
-              (module) => !(module is CustomSystemVerilog && skipCustomModules))
-          .map((module) => module.toJson(skipCustomModules: skipCustomModules))
-          .toList();
-    }
-
-    return json;
-  }
-
-  /// Generates a JSON schema representing a tree structure of the [Module]
-  /// object and its sub-modules.
-  ///
-  /// The [module] parameter is the root [Module] object for which the JSON
-  /// schema is generated.
-  ///
-  /// By default, sub-modules that are instances of [CustomSystemVerilog] will
-  /// be excluded from the schema.
-  /// Pass [skipCustomModules] as `false` to include them in the schema.
-  ///
-  /// Returns a JSON string representing the schema of the [Module] object
-  /// and its sub-modules.
-  String buildModuleTreeJsonSchema(Module module,
-          {bool skipCustomModules = true}) =>
-      jsonEncode(toJson(skipCustomModules: skipCustomModules));
 
   /// Returns a synthesized version of this [Module].
   ///
