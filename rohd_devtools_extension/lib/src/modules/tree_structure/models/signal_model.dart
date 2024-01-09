@@ -8,13 +8,13 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 class SignalModel {
-  final String key;
+  final String name;
   final String direction;
   final String value;
   final int width;
 
   SignalModel({
-    required this.key,
+    required this.name,
     required this.direction,
     required this.value,
     required this.width,
@@ -22,7 +22,7 @@ class SignalModel {
 
   factory SignalModel.fromMap(Map<String, dynamic> map) {
     return SignalModel(
-      key: map['key'] as String,
+      name: map['key'] as String,
       direction: map['direction'] as String,
       value: map['value'] as String,
       width: map['width'] as int,
@@ -31,7 +31,7 @@ class SignalModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'key': key,
+      'key': name,
       'direction': direction,
       'value': value,
       'width': width,

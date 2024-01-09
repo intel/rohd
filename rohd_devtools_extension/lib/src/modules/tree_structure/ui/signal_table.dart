@@ -109,7 +109,7 @@ class SignalTable extends ConsumerWidget {
         SizedBox(
           height: 32,
           child: Center(
-            child: Text(signal.key),
+            child: Text(signal.name),
           ),
         ),
         SizedBox(
