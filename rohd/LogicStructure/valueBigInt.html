@@ -31,7 +31,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">valueBigInt property</li>
+    <li class="self-crumb"><span class="deprecated">valueBigInt</span> property</li>
   </ol>
   <div class="self-name">valueBigInt</div>
   <form class="search navbar-right" role="search">
@@ -68,11 +68,12 @@
   
   <div>
     <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `value` instead.&#39; &#39;  Check `width` separately to confirm single-bit.&#39;)</li>
         <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
   <span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-core/BigInt-class.html">BigInt</a></span>
-  <span class="name ">valueBigInt</span>
+  <span class="name deprecated">valueBigInt</span>
   <div class="features"><span class="feature">override</span></div>
 
 </section>
@@ -86,9 +87,10 @@
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-&#47;&#47; ignore: deprecated_member_use_from_same_package
-BigInt get valueBigInt =&gt; packed.valueBigInt;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `value` instead.&#39;
+    &#39;  Check `width` separately to confirm single-bit.&#39;)
+@override
+BigInt get valueBigInt =&gt; value.toBigInt();</code></pre>
 </section>
 
 </section>
@@ -108,7 +110,7 @@ BigInt get valueBigInt =&gt; packed.valueBigInt;</code></pre>
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">valueBigInt property</li>
+    <li class="self-crumb"><span class="deprecated">valueBigInt</span> property</li>
 </ol>
 
 

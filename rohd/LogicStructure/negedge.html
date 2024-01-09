@@ -89,6 +89,7 @@ from <code>1</code> to <code>0</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
+&#47;&#47; Can rely on `packed` here because it must be 1 bit.
 Stream&lt;LogicValueChanged&gt; get negedge =&gt; packed.negedge;</code></pre>
 </section>
 

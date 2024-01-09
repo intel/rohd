@@ -86,7 +86,8 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-LogicValue get value =&gt; packed.value;</code></pre>
+LogicValue get value =&gt;
+    elements.map((e) =&gt; e.value).toList(growable: false).rswizzle();</code></pre>
 </section>
 
 </section>

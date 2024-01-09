@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the nextPosedge property from the LogicStructure class, for the Dart programming language.">
-  <title>nextPosedge property - LogicStructure class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the resetRequested property from the Simulator class, for the Dart programming language.">
+  <title>resetRequested property - Simulator class - rohd library - Dart API</title>
 
 
   
@@ -30,10 +30,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">nextPosedge property</li>
+    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
+    <li class="self-crumb">resetRequested property</li>
   </ol>
-  <div class="self-name">nextPosedge</div>
+  <div class="self-name">resetRequested</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -54,10 +54,10 @@
   <div
       id="dartdoc-main-content"
       class="main-content"
-      data-above-sidebar="rohd&#47;LogicStructure-class-sidebar.html"
+      data-above-sidebar="rohd&#47;Simulator-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-property">nextPosedge</span> property 
+<h1><span class="kind-property">resetRequested</span> property 
 </h1></div>
 
 
@@ -66,30 +66,22 @@
 
 <section class="multi-line-signature">
   
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/override-constant.html">override</a></li>
-    </ol>
-  </div>
-  <span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
-  <span class="name ">nextPosedge</span>
-  <div class="features"><span class="feature">override</span></div>
+  <span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+  <span class="name ">resetRequested</span>
+  
 
 </section>
 
 
 <section class="desc markdown">
-  <p>Triggers at most once, the next time that this <a href="../../rohd/Logic-class.html">Logic</a> changes
-value at the end of a <a href="../../rohd/Simulator-class.html">Simulator</a> tick from <code>0</code> to <code>1</code>.</p>
-<p>Throws an exception if <a href="../../rohd/LogicStructure/width.html">width</a> is not <code>1</code>.</p>
+  <p>Completes when <a href="../../rohd/Simulator/reset.html">reset</a> is called after the <a href="../../rohd/Simulator-class.html">Simulator</a> has completed any
+actions it needs to perform to prepare for the next simulation.</p>
 </section>
 
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-&#47;&#47; Can rely on `packed` here because it must be 1 bit.
-Future&lt;LogicValueChanged&gt; get nextPosedge =&gt; packed.nextPosedge;</code></pre>
+  <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; get resetRequested =&gt; _resetCompleter.future;</code></pre>
 </section>
 
 </section>
@@ -108,12 +100,12 @@ Future&lt;LogicValueChanged&gt; get nextPosedge =&gt; packed.nextPosedge;</code>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">nextPosedge property</li>
+    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
+    <li class="self-crumb">resetRequested property</li>
 </ol>
 
 
-    <h5>LogicStructure class</h5>
+    <h5>Simulator class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 

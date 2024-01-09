@@ -113,6 +113,13 @@
   _pendingTimestamps.clear();
   _phase = SimulatorPhase.outOfTick;
   _injectedActions.clear();
+
+  &#47;&#47; make sure we&#39;ve already passed the new completer so that listeners can
+  &#47;&#47; get the latest
+  final oldResetCompleter = _resetCompleter;
+  _resetCompleter = Completer();
+  oldResetCompleter.complete();
+  await oldResetCompleter.future;
 }</code></pre>
 </section>
 

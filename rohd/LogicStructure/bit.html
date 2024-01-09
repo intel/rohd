@@ -91,6 +91,7 @@ a <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
   <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `value` instead.&#39;
     &#39;  Check `width` separately to confirm single-bit.&#39;)
 @override
+&#47;&#47; Can rely on `packed` here because it must be 1 bit.
 LogicValue get bit =&gt; packed.bit;</code></pre>
 </section>
 

@@ -60,36 +60,29 @@
 <h1><span class="kind-property">changed</span> property 
 </h1></div>
 
-
-        
-<section id="getter">
-
-<section class="multi-line-signature">
-  
+        <section class="multi-line-signature">
+          
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-  <span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
-  <span class="name ">changed</span>
-  <div class="features"><span class="feature">override</span></div>
+          <a href="https://api.dart.dev/stable/3.2.4/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span>
+          <span class="name ">changed</span>
+          <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
-</section>
-
-
+        </section>
+        
 <section class="desc markdown">
   <p>A <a href="https://api.dart.dev/stable/3.2.4/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../../rohd/Logic-class.html">Logic</a> has changed.</p>
 </section>
 
-
+        
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Stream&lt;LogicValueChanged&gt; get changed =&gt; packed.changed;</code></pre>
-</section>
-
+late final Stream&lt;LogicValueChanged&gt; changed = _internalPacked.changed;</code></pre>
 </section>
 
 

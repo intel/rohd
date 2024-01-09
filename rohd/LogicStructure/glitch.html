@@ -60,37 +60,31 @@
 <h1><span class="kind-property">glitch</span> property 
 </h1></div>
 
-
-        
-<section id="getter">
-
-<section class="multi-line-signature">
-  
+        <section class="multi-line-signature">
+          
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-  <span class="returntype">SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
-  <span class="name ">glitch</span>
-  <div class="features"><span class="feature">override</span></div>
+          SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span>
+          <span class="name ">glitch</span>
+          <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
-</section>
-
-
+        </section>
+        
 <section class="desc markdown">
   <p>A stream of <code>LogicValueChanged</code> events for every time the signal
 transitions at any time during a <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
 <p>This event can occur more than once per edge, or even if there is no edge.</p>
 </section>
 
-
+        
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-SynchronousEmitter&lt;LogicValueChanged&gt; get glitch =&gt; packed.glitch;</code></pre>
-</section>
-
+late final SynchronousEmitter&lt;LogicValueChanged&gt; glitch =
+    _internalPacked.glitch;</code></pre>
 </section>
 
 

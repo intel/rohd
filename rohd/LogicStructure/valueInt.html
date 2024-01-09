@@ -31,7 +31,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">valueInt property</li>
+    <li class="self-crumb"><span class="deprecated">valueInt</span> property</li>
   </ol>
   <div class="self-name">valueInt</div>
   <form class="search navbar-right" role="search">
@@ -68,11 +68,12 @@
   
   <div>
     <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use value.toInt() instead.&#39;)</li>
         <li>@<a href="https://api.dart.dev/stable/3.2.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
   <span class="returntype"><a href="https://api.dart.dev/stable/3.2.4/dart-core/int-class.html">int</a></span>
-  <span class="name ">valueInt</span>
+  <span class="name deprecated">valueInt</span>
   <div class="features"><span class="feature">override</span></div>
 
 </section>
@@ -87,9 +88,9 @@ as an <a href="https://api.dart.dev/stable/3.2.4/dart-core/int-class.html">int</
 
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-&#47;&#47; ignore: deprecated_member_use_from_same_package
-int get valueInt =&gt; packed.valueInt;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use value.toInt() instead.&#39;)
+@override
+int get valueInt =&gt; value.toInt();</code></pre>
 </section>
 
 </section>
@@ -109,7 +110,7 @@ int get valueInt =&gt; packed.valueInt;</code></pre>
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
-    <li class="self-crumb">valueInt property</li>
+    <li class="self-crumb"><span class="deprecated">valueInt</span> property</li>
 </ol>
 
 
