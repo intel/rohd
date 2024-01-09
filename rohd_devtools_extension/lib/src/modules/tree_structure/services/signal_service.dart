@@ -14,9 +14,9 @@ class SignalService {
   ) {
     Map<String, dynamic> filtered = {};
 
-    signals.forEach((key, value) {
-      if (key.toLowerCase().contains(searchTerm.toLowerCase())) {
-        filtered[key] = value;
+    signals.forEach((name, value) {
+      if (name.toLowerCase().contains(searchTerm.toLowerCase())) {
+        filtered[name] = value;
       }
     });
 

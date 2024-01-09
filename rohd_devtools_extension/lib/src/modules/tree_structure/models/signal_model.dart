@@ -22,7 +22,7 @@ class SignalModel {
 
   factory SignalModel.fromMap(Map<String, dynamic> map) {
     return SignalModel(
-      name: map['key'] as String,
+      name: map['name'] as String,
       direction: map['direction'] as String,
       value: map['value'] as String,
       width: map['width'] as int,
@@ -31,7 +31,7 @@ class SignalModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'key': name,
+      'name': name,
       'direction': direction,
       'value': value,
       'width': width,
