@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// tree_structure_page_test.dart
+// The tests for tree structure page functionality.
+//
+// 2024 January 9
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 @TestOn('browser')
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

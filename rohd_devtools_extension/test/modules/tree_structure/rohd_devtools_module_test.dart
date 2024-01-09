@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// rohd_devtools_module_test.dart
+// the tests for rohd devtools module.
+//
+// 2024 January 9
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 @TestOn('browser')
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';

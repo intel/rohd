@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// model_tree_card_test.dart
+// The tests for model tree card functionality.
+//
+// 2024 January 9
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
