@@ -23,8 +23,8 @@ class TreeModel {
   factory TreeModel.fromJson(Map<String, dynamic> json) {
     return TreeModel(
       name: json['name'],
-      inputs: Map<String, dynamic>.from(json['inputs']),
-      outputs: Map<String, dynamic>.from(json['outputs']),
+      inputs: Map<String, List<String>>.from(json['inputs']),
+      outputs: Map<String, List<String>>.from(json['outputs']),
       subModules: (json["subModules"] as List)
           .map((subModule) => TreeModel.fromJson(subModule))
           .toList(),
