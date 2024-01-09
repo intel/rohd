@@ -1,7 +1,20 @@
 import 'dart:convert';
 import 'package:rohd/rohd.dart';
 
-extension _ModuleDevToolsUtils on Module {
+extension _LogicDevToolUtils on Logic {
+  /// Converts the current object instance into a JSON string.
+  ///
+  /// This function uses Dart's built-in `json.encode()` method to convert
+  /// the object's properties into a JSON string. The output string will
+  /// contain keys such as `name`, `width`, and `value`.
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'width': width,
+        'value': value.toString(),
+      };
+}
+
+extension _ModuleDevToolUtils on Module {
   /// Convert the [Module] object and its sub-modules into a JSON
   /// representation.
   ///

@@ -69,36 +69,24 @@ class _SignalTableState extends ConsumerState<SignalTable> {
     List<TableRow> rows = [];
 
     // Filter signals
-    var inputSignals = inputSelected
+    List<SignalModel> inputSignals = inputSelected
         ? ref
             .read(signalServiceProvider)
             .filterSignals(module.inputs, searchTerm ?? '')
-        : {};
-    var outputSignals = outputSelected
+        : [];
+    List<SignalModel> outputSignals = outputSelected
         ? ref
             .read(signalServiceProvider)
             .filterSignals(module.outputs, searchTerm ?? '')
-        : {};
+        : [];
 
-    // Add Inputs
-    for (var inputSignal in inputSignals.entries) {
-      SignalModel signal = SignalModel.fromMap({
-        'name': inputSignal.key,
-        'direction': 'Input',
-        'value': inputSignal.value['value'],
-        'width': inputSignal.value['width'],
-      });
+    // Add input from signal model list to row
+    for (var signal in inputSignals) {
       rows.add(_generateSignalRow(signal));
     }
 
-    // Add Outputs
-    for (var outputSignal in outputSignals.entries) {
-      SignalModel signal = SignalModel.fromMap({
-        'name': outputSignal.key,
-        'direction': 'Output',
-        'value': outputSignal.value['value'],
-        'width': outputSignal.value['width'],
-      });
+    // Add output from signal model list to row
+    for (var signal in outputSignals) {
       rows.add(_generateSignalRow(signal));
     }
 

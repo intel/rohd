@@ -35,18 +35,6 @@ class LogicStructure implements Logic {
   @override
   Naming get naming => Naming.unnamed;
 
-  /// Converts the current object instance into a JSON string.
-  ///
-  /// This function uses Dart's built-in `json.encode()` method to convert
-  /// the object's properties into a JSON string. The output string will
-  /// contain keys such as `name`, `width`, and `value`.
-  @override
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'width': width,
-        'value': value.toString(),
-      };
-
   /// Creates a new [LogicStructure] with [elements] as elements.
   ///
   /// None of the [elements] can already be members of another [LogicStructure].

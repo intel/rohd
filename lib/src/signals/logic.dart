@@ -229,17 +229,6 @@ class Logic {
   @override
   String toString() => 'Logic($width): $name';
 
-  /// Converts the current object instance into a JSON string.
-  ///
-  /// This function uses Dart's built-in `json.encode()` method to convert
-  /// the object's properties into a JSON string. The output string will
-  /// contain keys such as `name`, `width`, and `value`.
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'width': width,
-        'value': value.toString(),
-      };
-
   /// Throws an exception if this [Logic] cannot be connected to another signal.
   void _assertConnectable(Logic other) {
     if (_srcConnection != null) {

@@ -7,10 +7,12 @@
 // 2024 January 5
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
+
 class TreeModel {
   final String name;
-  final Map<String, dynamic> inputs;
-  final Map<String, dynamic> outputs;
+  final List<SignalModel> inputs;
+  final List<SignalModel> outputs;
   final List<TreeModel> subModules;
 
   TreeModel({
@@ -21,10 +23,34 @@ class TreeModel {
   });
 
   factory TreeModel.fromJson(Map<String, dynamic> json) {
+    List<SignalModel> inputSignalsList = [];
+    List<SignalModel> outputSignalsList = [];
+
+    for (var inputSignal in json['inputs'].entries) {
+      SignalModel signal = SignalModel.fromMap({
+        'name': inputSignal.key,
+        'direction': 'Input',
+        'value': inputSignal.value['value'],
+        'width': inputSignal.value['width'],
+      });
+      inputSignalsList.add(signal);
+    }
+
+    for (var outputSignal in json['outputs'].entries) {
+      SignalModel signal = SignalModel.fromMap({
+        'name': outputSignal.key,
+        'direction': 'Input',
+        'value': outputSignal.value['value'],
+        'width': outputSignal.value['width'],
+      });
+
+      outputSignalsList.add(signal);
+    }
+
     return TreeModel(
       name: json['name'],
-      inputs: Map<String, List<String>>.from(json['inputs']),
-      outputs: Map<String, List<String>>.from(json['outputs']),
+      inputs: inputSignalsList,
+      outputs: outputSignalsList,
       subModules: (json["subModules"] as List)
           .map((subModule) => TreeModel.fromJson(subModule))
           .toList(),

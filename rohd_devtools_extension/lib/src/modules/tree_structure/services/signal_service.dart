@@ -7,19 +7,21 @@
 // 2024 January 5
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
+import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
+
 class SignalService {
-  Map<String, dynamic> filterSignals(
-    Map<String, dynamic> signals,
+  List<SignalModel> filterSignals(
+    List<SignalModel> signals,
     String searchTerm,
   ) {
-    Map<String, dynamic> filtered = {};
+    List<SignalModel> filteredSignals = [];
 
-    signals.forEach((name, value) {
-      if (name.toLowerCase().contains(searchTerm.toLowerCase())) {
-        filtered[name] = value;
+    for (var signal in signals) {
+      if (signal.name.toLowerCase().contains(searchTerm.toLowerCase())) {
+        filteredSignals.add(signal);
       }
-    });
+    }
 
-    return filtered;
+    return filteredSignals;
   }
 }

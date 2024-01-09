@@ -39,7 +39,8 @@ void main() {
           home: TreeStructurePage(
             screenSize: const Size(2225, 1000),
             futureModuleTree: AsyncValue.data(
-                TreeModelStub.simpleTreeModel), // Provide a mock tree model
+              TreeModelStub.simpleTreeModel,
+            ), // Provide a mock tree model
             selectedModule: null,
           ),
         ),
