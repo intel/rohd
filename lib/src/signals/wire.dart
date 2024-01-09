@@ -55,11 +55,26 @@ class _Wire {
       // them! saves performance!
       _changedBeingWatched = true;
 
-      _postTickSubscription ??= Simulator.postTick.listen((event) {
-        if (value != _preTickValue && _preTickValue != null) {
-          _changedController.add(LogicValueChanged(value, _preTickValue!));
-        }
-      });
+      StreamSubscription<void> subscribe() {
+        unawaited(Simulator.resetRequested.then((_) async {
+          final oldPostTickSubscription = _postTickSubscription;
+
+          _postTickSubscription = subscribe();
+
+          unawaited(oldPostTickSubscription?.cancel());
+        }));
+
+        return Simulator.postTick.listen((event) {
+          if (value != _preTickValue && _preTickValue != null) {
+            _changedController.add(LogicValueChanged(value, _preTickValue!));
+          }
+        });
+      }
+
+      assert(_postTickSubscription == null,
+          'Should not be creating a new subscription if one exists.');
+
+      _postTickSubscription = subscribe();
     }
     return _changedController.stream;
   }
@@ -68,9 +83,22 @@ class _Wire {
   ///
   /// If one already exists, it will not create a new one.
   void _setupPreTickListener() {
-    _preTickSubscription ??= Simulator.preTick.listen((event) {
+    _preTickSubscription = Simulator.preTick.listen((event) {
       _preTickValue = value;
     });
+
+    unawaited(Simulator.resetRequested.then((_) async {
+      assert(_preTickSubscription != null,
+          'Should not be null if we are setting up a new one.');
+
+      _preTickValue = value;
+
+      final oldPreTickSubscription = _preTickSubscription;
+
+      _setupPreTickListener();
+
+      unawaited(oldPreTickSubscription?.cancel());
+    }));
   }
 
   /// The [value] of this signal before the most recent [Simulator.tick] had

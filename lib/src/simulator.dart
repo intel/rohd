@@ -89,24 +89,28 @@ abstract class Simulator {
 
   /// Emits an event before any other actions take place on the tick.
   static Stream<void> get preTick => _preTickController.stream;
+  static StreamController<void> _preTickController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event at the start of actions within a tick.
   static Stream<void> get startTick => _startTickController.stream;
+  static StreamController<void> _startTickController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event when most events are complete, and clocks are stable.
   static Stream<void> get clkStable => _clkStableController.stream;
+  static StreamController<void> _clkStableController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event after all events are completed.
   static Stream<void> get postTick => _postTickController.stream;
-
-  static StreamController<void> _preTickController =
-      StreamController.broadcast(sync: true);
-  static StreamController<void> _startTickController =
-      StreamController.broadcast(sync: true);
-  static StreamController<void> _clkStableController =
-      StreamController.broadcast(sync: true);
   static StreamController<void> _postTickController =
       StreamController.broadcast(sync: true);
+
+  /// Completes when [reset] is called after the [Simulator] has completed any
+  /// actions it needs to perform to prepare for the next simulation.
+  static Future<void> get resetRequested => _resetCompleter.future;
+  static Completer<void> _resetCompleter = Completer<void>();
 
   /// Completes when the simulation has completed.
   static Future<void> get simulationEnded => _simulationEndedCompleter.future;
@@ -156,6 +160,13 @@ abstract class Simulator {
     _pendingTimestamps.clear();
     _phase = SimulatorPhase.outOfTick;
     _injectedActions.clear();
+
+    // make sure we've already passed the new completer so that listeners can
+    // get the latest
+    final oldResetCompleter = _resetCompleter;
+    _resetCompleter = Completer();
+    oldResetCompleter.complete();
+    await oldResetCompleter.future;
   }
 
   /// Sets a time, after which, the [Simulator] will halt processing of new
