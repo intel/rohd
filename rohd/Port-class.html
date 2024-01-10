@@ -454,6 +454,20 @@ one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">na
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
+        <dt id="abs" class="callable inherited">
+  <span class="name"><a href="../rohd/Logic/abs.html">abs</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Calculates the absolute value of a signal, assuming that the
+number is a two's complement.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="and" class="callable inherited">
   <span class="name"><a href="../rohd/Logic/and.html">and</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
@@ -782,7 +796,7 @@ named <code>busList</code>.
 
 </dt>
 <dd class="inherited">
-  Returns a new <a href="../rohd/Logic-class.html">Logic</a> with width <code>newWidth</code> where new bits added are sign
+  Returns a new <a href="../rohd/Logic-class.html">Logic</a> width width <code>newWidth</code> where new bits added are sign
 bits as the most significant bits.  The sign is determined using two's
 complement, so it takes the most significant bit of the original signal
 and extends with that.
