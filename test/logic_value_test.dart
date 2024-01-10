@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_value_test.dart
@@ -1163,6 +1163,24 @@ void main() {
           equals(LogicValue.filled(4, LogicValue.x)));
     });
 
+    test('absolute', () {
+      expect(
+          // test of positive value
+          LogicValue.ofInt(2, 32).abs(),
+          equals(LogicValue.ofInt(2, 32)));
+      expect(
+          // test of negative value
+          LogicValue.ofInt(-7, 32).abs(),
+          equals(LogicValue.ofInt(7, 32)));
+      expect(
+          // test of zero width
+          LogicValue.filled(0, LogicValue.zero).abs(),
+          equals(LogicValue.filled(0, LogicValue.zero)));
+      expect(
+          //test string
+          LogicValue.ofString('000010').abs(),
+          equals(LogicValue.ofString('000010')));
+    });
     test('addsub', () {
       expect(
           // + normal

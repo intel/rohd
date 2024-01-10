@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure.dart
@@ -482,6 +482,9 @@ class LogicStructure implements Logic {
 
   @override
   Logic get reversed => packed.reversed;
+
+  @override
+  Logic abs() => packed.abs();
 
   @override
   Logic signExtend(int newWidth) => packed.signExtend(newWidth);

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic.dart
@@ -638,7 +638,16 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns a new [Logic] with width [newWidth] where new bits added are sign
+  /// Calculates the absolute value of a signal, assuming that the
+  /// number is a two's complement.
+  Logic abs() {
+    if (width == 0) {
+      return this;
+    }
+    return mux(this[-1], ~this + 1, this);
+  }
+
+  /// Returns a new [Logic] width width [newWidth] where new bits added are sign
   /// bits as the most significant bits.  The sign is determined using two's
   /// complement, so it takes the most significant bit of the original signal
   /// and extends with that.
