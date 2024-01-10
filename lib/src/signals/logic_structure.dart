@@ -281,10 +281,12 @@ class LogicStructure implements Logic {
   Logic? get srcConnection => null;
 
   @override
-  LogicValue get value => packed.value;
+  LogicValue get value =>
+      elements.map((e) => e.value).toList(growable: false).rswizzle();
 
   @override
-  LogicValue? get previousValue => packed.previousValue;
+  LogicValue? get previousValue =>
+      elements.map((e) => e.value).toList(growable: false).rswizzle();
 
   @override
   late final int width = elements.map((e) => e.width).sum;
@@ -396,10 +398,32 @@ class LogicStructure implements Logic {
   @Deprecated('Use `value` instead.'
       '  Check `width` separately to confirm single-bit.')
   @override
+  // Can rely on `packed` here because it must be 1 bit.
   LogicValue get bit => packed.bit;
 
   @override
-  Stream<LogicValueChanged> get changed => packed.changed;
+  late final Stream<LogicValueChanged> changed = _internalPacked.changed;
+
+  /// An internal version of [packed] for instrumentation operations on this
+  /// [LogicStructure].
+  late final _internalPacked = _generateInternalPacked();
+
+  /// Generates and subscribes to be stored lazily into [_internalPacked].
+  Logic _generateInternalPacked() {
+    final internalPacked = Logic(width: width)..put(value);
+
+    void updateInternalPacked() {
+      internalPacked.put(value);
+    }
+
+    for (final element in elements) {
+      element.glitch.listen((args) {
+        updateInternalPacked();
+      });
+    }
+
+    return internalPacked;
+  }
 
   @override
   Logic eq(dynamic other) => packed.eq(other);
@@ -408,7 +432,8 @@ class LogicStructure implements Logic {
   Logic neq(dynamic other) => packed.neq(other);
 
   @override
-  SynchronousEmitter<LogicValueChanged> get glitch => packed.glitch;
+  late final SynchronousEmitter<LogicValueChanged> glitch =
+      _internalPacked.glitch;
 
   @override
   Logic gt(dynamic other) => packed.gt(other);
@@ -424,28 +449,32 @@ class LogicStructure implements Logic {
 
   @Deprecated('Use value.isValid instead.')
   @override
-  bool hasValidValue() => packed.hasValidValue();
+  bool hasValidValue() => value.isValid;
 
   @Deprecated('Use value.isFloating instead.')
   @override
-  bool isFloating() => packed.isFloating();
+  bool isFloating() => value.isFloating;
 
   @override
   Logic isIn(List<dynamic> list) => packed.isIn(list);
 
   @override
+  // Can rely on `packed` here because it must be 1 bit.
   Stream<LogicValueChanged> get negedge => packed.negedge;
 
   @override
+  // Can rely on `packed` here because it must be 1 bit.
   Stream<LogicValueChanged> get posedge => packed.posedge;
 
   @override
-  Future<LogicValueChanged> get nextChanged => packed.nextChanged;
+  Future<LogicValueChanged> get nextChanged => changed.first;
 
   @override
+  // Can rely on `packed` here because it must be 1 bit.
   Future<LogicValueChanged> get nextNegedge => packed.nextNegedge;
 
   @override
+  // Can rely on `packed` here because it must be 1 bit.
   Future<LogicValueChanged> get nextPosedge => packed.nextPosedge;
 
   @override
@@ -463,13 +492,14 @@ class LogicStructure implements Logic {
   @override
   Logic zeroExtend(int newWidth) => packed.zeroExtend(newWidth);
 
+  @Deprecated('Use `value` instead.'
+      '  Check `width` separately to confirm single-bit.')
   @override
-  // ignore: deprecated_member_use_from_same_package
-  BigInt get valueBigInt => packed.valueBigInt;
+  BigInt get valueBigInt => value.toBigInt();
 
+  @Deprecated('Use value.toInt() instead.')
   @override
-  // ignore: deprecated_member_use_from_same_package
-  int get valueInt => packed.valueInt;
+  int get valueInt => value.toInt();
 
   @override
   Logic? get _srcConnection => throw UnsupportedError('Delegated to elements');
@@ -519,4 +549,7 @@ class LogicStructure implements Logic {
     throw UnsupportedError('Delegated to elements');
   }
 
+  @override
+  Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
+      packed.selectFrom(busList, defaultValue: defaultValue);
 }

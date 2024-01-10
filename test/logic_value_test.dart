@@ -11,6 +11,7 @@ import 'dart:math';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_exception.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
@@ -19,6 +20,15 @@ const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
 // shorten some names to make tests read better
 const lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
+
+int repeatedInt(int value, int width, int times) {
+  var result = 0;
+  for (var i = 0; i < times; i++) {
+    result <<= width;
+    result |= value;
+  }
+  return result.toSigned(INT_BITS);
+}
 
 void main() {
   test('bin with underscores', () {
@@ -95,12 +105,13 @@ void main() {
     });
 
     test('big unsigned int string', () {
-      expect(LogicValue.ofString('1' * 64), equals(LogicValue.ofInt(-1, 64)));
+      expect(LogicValue.ofString('1' * INT_BITS),
+          equals(LogicValue.ofInt(-1, INT_BITS)));
     });
 
     test('-1 int vs. 64 1s for big width', () {
       expect(LogicValue.ofInt(-1, 100),
-          LogicValue.ofBigInt((BigInt.one << 64) - BigInt.one, 100));
+          LogicValue.ofBigInt((BigInt.one << INT_BITS) - BigInt.one, 100));
     });
 
     test('invalid string ofString', () {
@@ -108,6 +119,75 @@ void main() {
           throwsA(isA<LogicValueConstructionException>()));
       expect(() => LogicValue.ofString('a'),
           throwsA(isA<LogicValueConstructionException>()));
+    });
+
+    test('LogicValue Construction', () {
+      expect(LogicValue.of(1, fill: true, width: 2),
+          equals(LogicValue.filled(2, LogicValue.one)));
+      expect(LogicValue.of(BigInt.one, fill: true, width: 2),
+          equals(LogicValue.filled(2, LogicValue.one)));
+      expect(LogicValue.of(true, fill: true), equals(LogicValue.one));
+      expect(LogicValue.of('z'), equals(LogicValue.z));
+      expect(LogicValue.of('1', fill: true, width: 4),
+          equals(LogicValue.filled(4, LogicValue.one)));
+      expect(LogicValue.of('1111'), equals(LogicValue.ofString('1111')));
+      expect(
+          LogicValue.of('1111', width: 2), equals(LogicValue.ofString('11')));
+      expect(LogicValue.of('1111', width: 8),
+          equals(LogicValue.ofString('00001111')));
+      expect(LogicValue.of([LogicValue.zero], width: 4),
+          equals(LogicValue.filled(4, LogicValue.zero)));
+      expect(LogicValue.of([LogicValue.one, LogicValue.x]),
+          equals(LogicValue.ofIterable([LogicValue.one, LogicValue.x])));
+      expect(
+          LogicValue.of(
+              [LogicValue.one, LogicValue.x, LogicValue.ofString('1010')],
+              width: 1),
+          equals(LogicValue.one));
+      expect(
+          LogicValue.of(
+              [LogicValue.one, LogicValue.x, LogicValue.ofString('1010')],
+              width: 8),
+          equals(LogicValue.ofString('001010x1')));
+
+      LogicValue.filled(4, LogicValue.one);
+
+      // Exceptions
+      expect(() => LogicValue.filled(1, LogicValue.filled(5, LogicValue.one)),
+          throwsA(isA<Exception>()));
+      LogicValue.of(1, fill: true, width: 2);
+      expect(() => LogicValue.of(45),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(45, fill: true, width: 2),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(BigInt.from(1234567)),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(BigInt.from(1234567), fill: true, width: 2),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () => LogicValue.of(LogicValue.filled(2, LogicValue.zero),
+              fill: true, width: 4),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () =>
+              LogicValue.of(LogicValue.filled(2, LogicValue.zero), fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () =>
+              LogicValue.of(LogicValue.filled(1, LogicValue.zero), fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of('22', fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of('1', fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of([LogicValue.zero, LogicValue.one], fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of([LogicValue.zero], fill: true),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(() => LogicValue.of(null),
+          throwsA(isA<LogicValueConstructionException>()));
+      expect(
+          () => LogicValue.of(Null), throwsA(isA<UnsupportedTypeException>()));
     });
 
     test('unary', () {
@@ -246,6 +326,18 @@ void main() {
           // test length mismatch
           () => LogicValue.ofString('0') & LogicValue.ofString('01'),
           throwsA(isA<Exception>()));
+      expect(
+          // test for _SmallLogicValue case condition
+          LogicValue.filled(4, LogicValue.x) & LogicValue.ofInt(5, 4),
+          equals(LogicValue.ofString('0x0x')));
+      expect(
+          // test for _SmallLogicValue case condition
+          LogicValue.filled(4, LogicValue.x) | LogicValue.ofInt(5, 4),
+          equals(LogicValue.ofString('x1x1')));
+      expect(
+          // test for _BigLogicValue case condition
+          LogicValue.filled(65, LogicValue.x) & LogicValue.ofInt(55, 65),
+          equals(LogicValue.ofString('${'0' * 59}xx0xxx')));
     });
 
     test('or2', () {
@@ -261,13 +353,32 @@ void main() {
       expect(
           // test ofBigInt - success
           LogicValue.ofBigInt(BigInt.one, 65) |
-              LogicValue.ofBigInt(BigInt.zero, 65),
+              LogicValue.ofBigInt(BigInt.one, 65),
           equals(LogicValue.ofBigInt(BigInt.one, 65)));
       expect(
           // test ofBigInt
           LogicValue.ofBigInt(BigInt.one, 32) |
               LogicValue.ofBigInt(BigInt.zero, 32),
           equals(LogicValue.ofInt(1, 32)));
+      expect(
+          // test ofBigInt
+          LogicValue.of(BigInt.one, fill: true, width: 65) |
+              LogicValue.ofBigInt(BigInt.from(1), 65),
+          equals(LogicValue.filled(65, LogicValue.one)));
+      expect(
+          // test of filled
+          LogicValue.of('01xz', width: 65) |
+              LogicValue.of(BigInt.parse('1111'), width: 65),
+          equals(LogicValue.ofBigInt(BigInt.from(1111), 65)));
+      expect(
+          // test of filled - SmallLogicValue
+          LogicValue.of('zzzz', width: 4) | LogicValue.of('00zz', width: 4),
+          equals(LogicValue.filled(4, LogicValue.x)));
+      expect(
+          // test of filled - BigLogicValue
+          LogicValue.filled(65, LogicValue.z) |
+              LogicValue.of('1010', width: 65),
+          equals(LogicValue.ofString('${'x' * 59}xx1x1x')));
     });
 
     test('xor2', () {
@@ -281,6 +392,29 @@ void main() {
           LogicValue.ofIterable([LogicValue.one, LogicValue.zero]) ^
               LogicValue.ofIterable([LogicValue.one, LogicValue.zero]),
           equals(LogicValue.ofIterable([LogicValue.zero, LogicValue.zero])));
+      expect(
+          // test of filled SmallLogicValue - 0
+          LogicValue.filled(2, LogicValue.zero) ^ LogicValue.ofString('01'),
+          equals(LogicValue.ofString('01')));
+      expect(
+          // test of filled BigLogicValue - 0
+          LogicValue.filled(65, LogicValue.zero) ^
+              LogicValue.ofBigInt(BigInt.from(5), 65),
+          equals(LogicValue.ofBigInt(BigInt.from(5), 65)));
+      expect(
+          // test of filled SmallLogicValue - 1
+          LogicValue.filled(2, LogicValue.one) ^ LogicValue.ofString('01'),
+          equals(LogicValue.ofString('10')));
+      expect(
+          // test of filled BigLogicValue - 1
+          LogicValue.filled(65, LogicValue.one) ^
+              LogicValue.ofBigInt(BigInt.zero, 65),
+          equals(LogicValue.filled(65, LogicValue.one)));
+      expect(
+          // test of filled BigLogicValue - 1
+          LogicValue.filled(65, LogicValue.one) ^
+              LogicValue.ofString('${'1' * 61}0000'),
+          equals(LogicValue.of(BigInt.from(15), width: 65)));
     });
   });
 
@@ -291,6 +425,8 @@ void main() {
   });
 
   group('LogicValue toString', () {
+    const intBitsMinus4 = INT_BITS - 4;
+
     test('1 bit', () {
       expect(LogicValue.one.toString(), "1'h1");
     });
@@ -300,20 +436,22 @@ void main() {
     });
 
     test('<64-bit positive', () {
-      expect(LogicValue.ofInt(0x1234, 60).toString(), "60'h1234");
+      expect(LogicValue.ofInt(0x1234, intBitsMinus4).toString(),
+          "$intBitsMinus4'h1234");
     });
 
     test('<64-bit negative', () {
-      expect(LogicValue.ofInt(-1, 60).toString(), "60'hfffffffffffffff");
+      expect(LogicValue.ofInt(-1, intBitsMinus4).toString(),
+          "$intBitsMinus4'h${'f' * (intBitsMinus4 ~/ 4)}");
     });
 
     test('64-bit positive', () {
-      expect(LogicValue.ofInt(0x1234, 64).toString(), "64'h1234");
+      expect(LogicValue.ofInt(0x1234, INT_BITS).toString(), "$INT_BITS'h1234");
     });
 
     test('64-bit negative', () {
-      expect(LogicValue.ofInt(0xfaaaaaaa00000005, 64).toString(),
-          "64'hfaaaaaaa00000005");
+      expect(LogicValue.ofInt(-11, INT_BITS).toString(),
+          "$INT_BITS'h${'f' * (INT_BITS ~/ 4 - 1)}5");
     });
 
     test('>64-bit positive', () {
@@ -510,61 +648,83 @@ void main() {
     });
 
     test('small int boundary shift right logical', () {
+      const lower = 14;
+      const upper = INT_BITS - lower;
+      const shamt = 20;
+      const remainder = INT_BITS - shamt;
+
       // at boundary
-      expect((LogicValue.ofInt(-5, 64) >>> 28).toInt(), 0xfffffffff);
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >>> 20,
-          LogicValue.ofString('0' * 20 + 'x' * 44));
-      expect(LogicValue.ofString('z' * 50 + '0' * 14) >>> 20,
-          LogicValue.ofString('0' * 20 + 'z' * 44));
+      expect((LogicValue.ofInt(-5, INT_BITS) >>> 24).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 24) ~/ 4));
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'x' * remainder));
+      expect(LogicValue.ofString('z' * upper + '0' * lower) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'z' * remainder));
 
       // below boundary
-      expect((LogicValue.ofInt(-5, 60) >>> 28).toInt(), 0xffffffff);
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >>> 20,
-          LogicValue.ofString('0' * 20 + 'x' * 43));
-      expect(LogicValue.ofString('z' * 50 + '0' * 13) >>> 20,
-          LogicValue.ofString('0' * 20 + 'z' * 43));
+      expect((LogicValue.ofInt(-5, INT_BITS - 4) >>> 24).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 4 - 24) ~/ 4));
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'x' * (remainder - 1)));
+      expect(LogicValue.ofString('z' * upper + '0' * (lower - 1)) >>> shamt,
+          LogicValue.ofString('0' * shamt + 'z' * (remainder - 1)));
     });
 
     test('small int boundary shift left logical', () {
+      const upper = 14;
+      const lower = INT_BITS - upper;
+      const shamt = 20;
+      const remainder = INT_BITS - shamt;
+
       // at boundary
-      expect((LogicValue.ofInt(-1, 64) << 20).toInt(), -1 << 20);
-      expect(LogicValue.ofString('0' * 14 + 'x' * 50) << 20,
-          LogicValue.ofString('x' * 44 + '0' * 20));
-      expect(LogicValue.ofString('0' * 14 + 'z' * 50) << 20,
-          LogicValue.ofString('z' * 44 + '0' * 20));
+      expect(
+          (LogicValue.ofInt(-1, INT_BITS) << shamt).toInt(),
+          (repeatedInt(0xf, 4, (INT_BITS - shamt) ~/ 4) << shamt)
+              .toSigned(INT_BITS));
+      expect(LogicValue.ofString('0' * upper + 'x' * lower) << shamt,
+          LogicValue.ofString('x' * remainder + '0' * shamt));
+      expect(LogicValue.ofString('0' * upper + 'z' * lower) << shamt,
+          LogicValue.ofString('z' * remainder + '0' * shamt));
 
       // below boundary
-      expect((LogicValue.ofInt(-1, 32) << 24).toInt(), 0xff000000);
-      expect(LogicValue.ofString('0' * 14 + 'x' * 49) << 20,
-          LogicValue.ofString('x' * 43 + '0' * 20));
-      expect(LogicValue.ofString('0' * 14 + 'z' * 49) << 20,
-          LogicValue.ofString('z' * 43 + '0' * 20));
+      expect((LogicValue.ofInt(-1, 28) << 24).toInt(), 0xf000000);
+      expect(LogicValue.ofString('0' * upper + 'x' * (lower - 1)) << shamt,
+          LogicValue.ofString('x' * (remainder - 1) + '0' * shamt));
+      expect(LogicValue.ofString('0' * upper + 'z' * (lower - 1)) << shamt,
+          LogicValue.ofString('z' * (remainder - 1) + '0' * shamt));
     });
 
     test('small int boundary shift right arithmetic', () {
+      const lower = 14;
+      const upper = INT_BITS - lower;
+      const shamt1 = 20;
+      const shamt2 = 10;
+      const remainder = INT_BITS - shamt1;
+
       // at boundary
-      expect((LogicValue.ofInt(0xffff, 64) >> 8).toInt(), 0xff);
-      expect((LogicValue.ofInt(-5, 64) >> 20).toInt(), -1);
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 20,
-          LogicValue.filled(64, LogicValue.x));
-      expect(LogicValue.ofString('x' * 50 + '0' * 14) >> 10,
-          LogicValue.ofString('x' * 60 + '0' * 4));
-      expect(LogicValue.ofString('z' * 50 + '0' * 14) >> 20,
-          LogicValue.ofString('x' * 20 + 'z' * 44));
+      expect((LogicValue.ofInt(0xffff, INT_BITS) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, INT_BITS) >> shamt1).toInt(), -1);
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt1,
+          LogicValue.filled(INT_BITS, LogicValue.x));
+      expect(LogicValue.ofString('x' * upper + '0' * lower) >> shamt2,
+          LogicValue.ofString('x' * (upper + shamt2) + '0' * 4));
+      expect(LogicValue.ofString('z' * upper + '0' * lower) >> shamt1,
+          LogicValue.ofString('x' * shamt1 + 'z' * remainder));
 
       // below boundary
-      expect((LogicValue.ofInt(0xffff, 63) >> 8).toInt(), 0xff);
-      expect((LogicValue.ofInt(-5, 63) >> 20).toInt(), -1 >>> 1);
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 20,
-          LogicValue.filled(63, LogicValue.x));
-      expect(LogicValue.ofString('x' * 50 + '0' * 13) >> 10,
-          LogicValue.ofString('x' * 60 + '0' * 3));
-      expect(LogicValue.ofString('z' * 50 + '0' * 13) >> 20,
-          LogicValue.ofString('x' * 20 + 'z' * 43));
+      expect((LogicValue.ofInt(0xffff, INT_BITS - 1) >> 8).toInt(), 0xff);
+      expect((LogicValue.ofInt(-5, INT_BITS - 1) >> shamt1).toInt(), -1 >>> 1);
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >> shamt1,
+          LogicValue.filled(INT_BITS - 1, LogicValue.x));
+      expect(LogicValue.ofString('x' * upper + '0' * (lower - 1)) >> shamt2,
+          LogicValue.ofString('x' * (upper + shamt2) + '0' * 3));
+      expect(LogicValue.ofString('z' * upper + '0' * (lower - 1)) >> shamt1,
+          LogicValue.ofString('x' * shamt1 + 'z' * (remainder - 1)));
     });
 
     test('big shift right logical', () {
-      expect((LogicValue.ofInt(-5, 65) >>> 28).toInt(), 0xfffffffff);
+      expect((LogicValue.ofInt(-5, INT_BITS + 1) >>> 28).toInt(),
+          repeatedInt(0xf, 4, (INT_BITS - 28) ~/ 4));
       expect(LogicValue.ofBigInt(-BigInt.two, 128) >>> 96,
           LogicValue.ofInt(0xffffffff, 128));
       expect(LogicValue.ofString('x' * 51 + '0' * 14) >>> 20,
@@ -574,8 +734,8 @@ void main() {
     });
 
     test('big shift left logical', () {
-      expect((LogicValue.ofInt(-1, 65) << 20).toBigInt(),
-          (-BigInt.one).toUnsigned(65 - 20) << 20);
+      expect((LogicValue.ofInt(-1, INT_BITS + 1) << 20).toBigInt(),
+          (-BigInt.one).toUnsigned(INT_BITS + 1 - 20) << 20);
       expect((LogicValue.ofBigInt(-BigInt.two, 128) << 20).toBigInt(),
           (-BigInt.two).toUnsigned(128 - 20) << 20);
       expect(LogicValue.ofString('0' * 15 + 'x' * 50) << 20,
@@ -637,6 +797,7 @@ void main() {
     });
 
     test('more than width', () {
+      expect(LogicValue.ofInt(10, 25) >> 25, LogicValue.ofInt(0, 25));
       expect(LogicValue.ofInt(10, 50) >> 50, LogicValue.ofInt(0, 50));
       expect(LogicValue.ofInt(10, 64) >> 65, LogicValue.ofInt(0, 64));
       expect(LogicValue.ofInt(10, 80) >> 100, LogicValue.ofInt(0, 80));
@@ -647,12 +808,14 @@ void main() {
     });
 
     test('huge left', () {
+      expect((LogicValue.ofInt(45, 20) << -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) << -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) << -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) << -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 80) << -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 60) << -4).toInt(), 0);
 
+      expect((LogicValue.ofInt(45, 20) << BigInt.from(-1)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) << BigInt.from(-1)).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) << BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) << BigInt.from(-4)).toInt(), 0);
@@ -662,12 +825,14 @@ void main() {
     });
 
     test('huge right', () {
+      expect((LogicValue.ofInt(45, 20) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 80) >>> -4).toInt(), 0);
       expect((LogicValue.ofInt(-39, 60) >>> -4).toInt(), 0);
 
+      expect((LogicValue.ofInt(45, 20) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 64) >>> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 80) >>> BigInt.from(-4)).toInt(), 0);
@@ -677,16 +842,22 @@ void main() {
     });
 
     test('huge right arithmetic', () {
+      expect((LogicValue.ofInt(45, 20) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >> -1).toInt(), 0);
-      expect((LogicValue.ofInt(-45, 64) >> -12).toInt(), -1);
+      expect((LogicValue.ofInt(-45, INT_BITS) >> -12).toInt(), -1);
       expect((LogicValue.ofInt(-45, 8) >> -18).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> -1).toInt(), 0);
       expect((LogicValue.ofInt(-45, 128) >> -18).and().toBool(), false);
       expect((LogicValue.ofBigInt(BigInt.from(-45), 128) >> -18).and().toBool(),
           true);
 
+      expect((LogicValue.ofInt(45, 20) >> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(45, 32) >> BigInt.from(-4)).toInt(), 0);
-      expect((LogicValue.ofInt(-45, 64) >> BigInt.from(-4)).toInt(), -1);
+      expect(
+          (LogicValue.ofInt(-45, INT_BITS) >> BigInt.from(-4))
+              .toInt()
+              .toSigned(INT_BITS),
+          -1);
       expect((LogicValue.ofInt(-45, 8) >> BigInt.from(-4)).toInt(), 0xff);
       expect((LogicValue.ofInt(45, 80) >> BigInt.from(-4)).toInt(), 0);
       expect((LogicValue.ofInt(-45, 128) >> BigInt.from(-4)).and().toBool(),
@@ -698,6 +869,15 @@ void main() {
           true);
       expect((LogicValue.ofInt(45, 80) >> (BigInt.one << 80)).toInt(), 0);
       expect((LogicValue.ofInt(-45, 8) >> (BigInt.one << 80)).toInt(), 0xff);
+    });
+
+    test('huge right arithmetic zero', () {
+      for (var i = 0; i < 100; i++) {
+        expect(
+            LogicValue.ofBigInt(BigInt.one << 200 | BigInt.one << 100, i) >>
+                (BigInt.one << 100),
+            LogicValue.filled(i, LogicValue.zero));
+      }
     });
 
     group('invalid values', () {
@@ -744,8 +924,8 @@ void main() {
     });
 
     test('example large shifts', () {
-      expect((LogicValue.filled(64, LogicValue.one) >> 2).toInt(),
-          equals(-1 >> 2));
+      expect((LogicValue.filled(INT_BITS, LogicValue.one) >> 2).toInt(),
+          (-1 >> 2).toSigned(INT_BITS));
       expect(
           LogicValue.filled(65, LogicValue.one) >>> 10,
           equals([
@@ -1046,8 +1226,8 @@ void main() {
           );
       expect(
           // mod-by-0
-          () => LogicValue.ofString('0100') % LogicValue.ofString('0000'),
-          throwsA(isA<Exception>()));
+          LogicValue.ofString('0100') % LogicValue.ofString('0000'),
+          equals(LogicValue.ofString('xxxx')));
       expect(
           // % num by num
           LogicValue.ofString('0100') % LogicValue.ofString('0100'),
@@ -1072,8 +1252,8 @@ void main() {
           );
       expect(
           // div-by-0
-          () => LogicValue.ofString('0100') / LogicValue.ofString('0000'),
-          throwsA(isA<Exception>()));
+          LogicValue.ofString('0100') / LogicValue.ofString('0000'),
+          equals(LogicValue.ofString('xxxx')));
       expect(
           // * overflow
           LogicValue.ofString('0100') * LogicValue.ofString('0100'),
@@ -1360,18 +1540,22 @@ void main() {
         BigInt.parse('f' * 16 + 'f0' * 8, radix: 16),
         128,
       );
-      final smaller = extraWide.getRange(0, 64);
-      expect(smaller.toInt(), equals(0xf0f0f0f0f0f0f0f0));
+      final smaller = extraWide.getRange(0, INT_BITS);
+
+      expect(smaller.toInt(), equals(repeatedInt(0xf0, 8, INT_BITS ~/ 8)));
     });
+
     test(
         '64-bit BigInts larger than max pos int value constructing'
         ' a LogicValue is correct', () {
       final bigInt64Lv =
-          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), 64);
-      expect(bigInt64Lv.toInt(), equals(0xfafafafafafafafa));
+          LogicValue.ofBigInt(BigInt.parse('fa' * 8, radix: 16), INT_BITS);
+
+      expect(bigInt64Lv.toInt(), equals(repeatedInt(0xfa, 8, INT_BITS ~/ 8)));
     });
+
     test('64-bit binary negatives are converted properly with bin', () {
-      expect(bin('1110' * 16), equals(0xeeeeeeeeeeeeeeee));
+      expect(bin('1110' * (INT_BITS ~/ 4)), repeatedInt(0xe, 4, INT_BITS ~/ 4));
     });
   });
 
@@ -1390,6 +1574,7 @@ void main() {
         expect(lv.hashCode, equals(lvEnum.hashCode));
       }
     });
+
     test('zero-width', () {
       expect(LogicValue.filled(0, LogicValue.one),
           equals(LogicValue.filled(0, LogicValue.zero)));
@@ -1399,6 +1584,10 @@ void main() {
   });
   group('Utility operations', () {
     test('clog2 operation', () {
+      expect(LogicValue.ofInt(15, INT_BITS).clog2().toInt(), 4);
+      expect(LogicValue.ofInt(16, INT_BITS).clog2().toInt(), 4);
+      expect(LogicValue.ofInt(17, INT_BITS).clog2().toInt(), 5);
+
       expect(
           // int
           LogicValue.ofInt(0, 8).clog2(),
@@ -1425,8 +1614,8 @@ void main() {
           equals(LogicValue.ofInt(5, 64)));
       expect(
           // int
-          LogicValue.ofInt(-1 >>> 1, 64).clog2(),
-          equals(LogicValue.ofInt(63, 64)));
+          LogicValue.ofInt(-1 >>> 1, INT_BITS).clog2(),
+          equals(LogicValue.ofInt(INT_BITS - 1, INT_BITS)));
       expect(
           //  BigInt
           LogicValue.ofBigInt(BigInt.zero, 128).clog2(),
@@ -1458,9 +1647,9 @@ void main() {
       expect(LogicValue.ofInt(-128, 8).clog2().toInt(), 7);
       expect(LogicValue.ofInt(-127, 8).clog2().toInt(), 8);
 
-      expect(LogicValue.ofInt(-128, 64).clog2().toInt(), 64);
-      expect(LogicValue.ofInt(-127, 64).clog2().toInt(), 64);
-      expect(LogicValue.ofInt(-1, 64).clog2().toInt(), 64);
+      expect(LogicValue.ofInt(-128, INT_BITS).clog2().toInt(), INT_BITS);
+      expect(LogicValue.ofInt(-127, INT_BITS).clog2().toInt(), INT_BITS);
+      expect(LogicValue.ofInt(-1, INT_BITS).clog2().toInt(), INT_BITS);
 
       expect(LogicValue.ofInt(-32768, 16).clog2().toInt(), 15);
       expect(LogicValue.ofInt(-32767, 16).clog2().toInt(), 16);
@@ -1485,6 +1674,22 @@ void main() {
           BigInt.from(128));
       expect(LogicValue.ofBigInt(BigInt.from(-1), 128).clog2().toBigInt(),
           BigInt.from(128));
+    });
+
+    test('clog2 with 1 then 0s', () {
+      expect(LogicValue.ofInt(1, INT_BITS).clog2().toInt(), 0);
+      expect(
+          LogicValue.ofInt(bin('1${'0' * (INT_BITS - 1)}'), INT_BITS)
+              .clog2()
+              .toInt(),
+          INT_BITS - 1);
+
+      for (var i = 0; i < INT_BITS; i++) {
+        expect(LogicValue.ofInt(oneSllBy(i), i + 1).clog2().toInt(), i);
+      }
+      for (var i = INT_BITS; i < 3 * INT_BITS; i++) {
+        expect(LogicValue.ofBigInt(BigInt.one << i, i + 1).clog2().toInt(), i);
+      }
     });
   });
 
@@ -1543,7 +1748,7 @@ void main() {
         ' having different width and max constraint.', () {
       const maxValInt = 8888;
 
-      for (var i = 1; i <= 64; i++) {
+      for (var i = 1; i <= INT_BITS; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMaxInt = Random(5).nextLogicValue(width: i, max: maxValInt);
         final lvMaxBigInt = Random(5)
@@ -1566,7 +1771,7 @@ void main() {
           LogicValue.ofBigInt(maxValBigInt, maxValBigInt.bitLength);
       const maxInt = 30;
 
-      for (var i = 65; i <= 500; i++) {
+      for (var i = INT_BITS + 1; i <= 500; i++) {
         final lvRand = Random(5).nextLogicValue(width: i);
         final lvRandMax = Random(5).nextLogicValue(width: i, max: maxValBigInt);
 
@@ -1578,6 +1783,7 @@ void main() {
       }
     });
   });
+
   group('Comparable LogicValue', () {
     test('positive - int', () {
       final a = LogicValue.ofInt(3, 8);
@@ -1603,15 +1809,16 @@ void main() {
         expect(values[i].toInt(), expected[i]);
       }
     });
+
     test('unsigned values - int 64 bits', () {
-      final a = LogicValue.ofInt(3, 64);
-      final b = LogicValue.ofInt(0, 64);
-      final c = LogicValue.ofInt(1, 64);
-      final d = LogicValue.ofInt(2, 64);
-      final e = LogicValue.ofInt(23, 64);
-      final f = LogicValue.ofInt(-127, 64);
-      final g = LogicValue.ofInt(-128, 64);
-      final h = LogicValue.ofInt(-1, 64);
+      final a = LogicValue.ofInt(3, INT_BITS);
+      final b = LogicValue.ofInt(0, INT_BITS);
+      final c = LogicValue.ofInt(1, INT_BITS);
+      final d = LogicValue.ofInt(2, INT_BITS);
+      final e = LogicValue.ofInt(23, INT_BITS);
+      final f = LogicValue.ofInt(-127, INT_BITS);
+      final g = LogicValue.ofInt(-128, INT_BITS);
+      final h = LogicValue.ofInt(-1, INT_BITS);
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
@@ -1629,6 +1836,7 @@ void main() {
             expected[i]);
       }
     });
+
     test('unsigned values - int 8 bits', () {
       final a = LogicValue.ofInt(3, 8);
       final b = LogicValue.ofInt(0, 8);
@@ -1656,15 +1864,19 @@ void main() {
             expected[i]);
       }
     });
-    test('unsigned  BigInt & int ', () {
-      final a = LogicValue.ofBigInt(BigInt.parse('3'), 64);
-      final b = LogicValue.ofBigInt(BigInt.zero, 64);
-      final c = LogicValue.ofBigInt(BigInt.from(-1), 64);
-      final d = LogicValue.ofBigInt(BigInt.one, 64);
-      final e = LogicValue.ofInt(-4611686018427387903, 64);
-      final f = LogicValue.ofInt(-9223372036854775808, 64);
-      final g = LogicValue.ofInt(-9223372036854775807, 64);
-      final h = LogicValue.ofInt(-1, 64);
+
+    test('unsigned BigInt & int', () {
+      final a = LogicValue.ofBigInt(BigInt.parse('3'), INT_BITS);
+      final b = LogicValue.ofBigInt(BigInt.zero, INT_BITS);
+      final c = LogicValue.ofBigInt(BigInt.from(-1), INT_BITS);
+      final d = LogicValue.ofBigInt(BigInt.one, INT_BITS);
+      final e = LogicValue.ofBigInt(
+          BigInt.parse('-0x3${'f' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final f = LogicValue.ofBigInt(
+          BigInt.parse('-0x8${'0' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final g = LogicValue.ofBigInt(
+          BigInt.parse('-0x7${'f' * (INT_BITS ~/ 4 - 1)}'), INT_BITS);
+      final h = LogicValue.ofInt(-1, INT_BITS);
 
       final values = <LogicValue>[a, b, c, d, e, f, g, h];
 
@@ -1676,11 +1888,20 @@ void main() {
 
       values.sort();
       expected.sort();
+
       for (var i = 0; i < values.length; i++) {
         expect(BigInt.from(values[i].toInt()).toUnsigned(values[i].width),
             expected[i]);
       }
     });
+
+    test('compare interpretable neg int-width numbers', () {
+      final allfs = LogicValue.ofInt(0xffffffff, 32);
+      final an8and0s = LogicValue.ofInt(0x80000000, 32);
+
+      expect(allfs > an8and0s, LogicValue.one);
+    });
+
     test('unsigned BigInt', () {
       final a = LogicValue.ofBigInt(BigInt.parse('3'), 128);
       final b = LogicValue.ofBigInt(BigInt.zero, 128);
@@ -1708,6 +1929,7 @@ void main() {
         expect(values[i].toBigInt().toUnsigned(values[i].width), expected[i]);
       }
     });
+
     test('Exceptions', () {
       final a64 = LogicValue.ofBigInt(BigInt.parse('3'), 64);
       final a128 = LogicValue.ofBigInt(BigInt.parse('3'), 128);
@@ -1716,8 +1938,8 @@ void main() {
       final d64 = LogicValue.ofBigInt(BigInt.one, 64);
       final e64 = LogicValue.ofInt(23, 64);
       final e8 = LogicValue.ofInt(23, 8);
-      final f64 = LogicValue.ofInt(-9223372036854775808, 64);
-      final g64 = LogicValue.ofInt(-9223372036854775807, 64);
+      final f64 = LogicValue.ofInt(-3, 64);
+      final g64 = LogicValue.ofInt(-2, 64);
       final h64 = LogicValue.ofInt(-1, 64);
       final invalidLogicX = LogicValue.filled(8, LogicValue.x);
       final invalidLogicZ = LogicValue.filled(8, LogicValue.z);
@@ -1735,5 +1957,47 @@ void main() {
       expect(<LogicValue>[e8, invalidLogicZ].sort,
           throwsA(isA<InvalidValueOperationException>()));
     });
+  });
+
+  test('BigInt toIntUnsigned extension', () {
+    expect(BigInt.parse('0xf${'0' * 30}').toIntUnsigned(INT_BITS), 0);
+    expect(BigInt.parse('0xf${'0' * 30}').toIntUnsigned(INT_BITS - 1), 0);
+
+    expect(BigInt.parse('0x1f${'0' * 30}').toIntUnsigned(INT_BITS), 0);
+    expect(BigInt.parse('0x1f${'0' * 30}').toIntUnsigned(INT_BITS - 1), 0);
+
+    expect(BigInt.parse('0x${'5' * 30}').toIntUnsigned(INT_BITS),
+        repeatedInt(0x5, 4, INT_BITS ~/ 4));
+    expect(BigInt.parse('0x${'5' * 30}').toIntUnsigned(INT_BITS - 1),
+        repeatedInt(0x5, 4, INT_BITS ~/ 4));
+
+    expect(BigInt.parse('0x${'a' * 30}').toIntUnsigned(INT_BITS),
+        repeatedInt(0xa, 4, INT_BITS ~/ 4));
+    expect(BigInt.parse('0x${'a' * 30}').toIntUnsigned(INT_BITS - 4),
+        repeatedInt(0xa, 4, INT_BITS ~/ 4 - 1));
+  });
+
+  test('BigInt toIntUnsigned Width Exception', () {
+    expect(() => BigInt.from(1).toIntUnsigned(100), throwsA(isA<Exception>()));
+  });
+
+  test('one shift left by', () {
+    expect(oneSllBy(0), 1);
+    expect(oneSllBy(1), 2);
+    expect(oneSllBy(2), 4);
+    expect(oneSllBy(31), 0x80000000);
+    expect(oneSllBy(32), 0x100000000);
+    expect(oneSllBy(52), 0x10000000000000);
+  });
+
+  test('precision adjustment handled for all widths', () {
+    for (var i = 1; i < 100; i++) {
+      expect(
+          LogicValue.of('${'1' * i}0'),
+          [
+            LogicValue.ofBigInt(BigInt.parse('1' * i, radix: 2), i),
+            LogicValue.zero
+          ].swizzle());
+    }
   });
 }

@@ -39,6 +39,79 @@ void main() {
     expect(numChangesDetected, equals(1));
   });
 
+  group('across simulator reset', () {
+    Future<void> testAcrossSimulatorResets(Logic a) async {
+      var numChangesDetected = 0;
+
+      a.changed.listen((event) {
+        numChangesDetected++;
+        expect(event.newValue, event.previousValue + 1);
+      });
+
+      a.glitch.listen((args) {});
+
+      Simulator.registerAction(10, () => a.put(1));
+
+      await Simulator.run();
+
+      expect(numChangesDetected, 1);
+
+      await Simulator.reset();
+
+      expect(a.value.toInt(), 1);
+
+      // should *not* trigger a change, didn't change!
+      Simulator.registerAction(20, () => a.put(1));
+
+      await Simulator.run();
+
+      expect(numChangesDetected, 1);
+
+      await Simulator.reset();
+
+      expect(a.value.toInt(), 1);
+
+      // *should* trigger a change
+      Simulator.registerAction(30, () => a.put(2));
+      Simulator.registerAction(40, () => a.put(3));
+
+      await Simulator.run();
+
+      expect(a.value.toInt(), 3);
+
+      expect(numChangesDetected, 3);
+    }
+
+    test('normal logic', () async {
+      final a = Logic(width: 8)..put(0);
+
+      await testAcrossSimulatorResets(a);
+    });
+
+    test('logic structure', () async {
+      final a = LogicStructure([Logic(), Logic()])..put(0);
+
+      await testAcrossSimulatorResets(a);
+    });
+  });
+
+  test('changed does not trigger first time if no change', () async {
+    final a = Logic()..put(1);
+
+    var numChangesDetected = 0;
+
+    a.changed.listen((event) {
+      numChangesDetected++;
+    });
+
+    Simulator.registerAction(10, () => a.put(1));
+    Simulator.registerAction(20, () => a.put(1));
+
+    await Simulator.run();
+
+    expect(numChangesDetected, 0);
+  });
+
   test('clk edge counter', () async {
     final clk = SimpleClockGenerator(10).clk;
     final b = Logic();

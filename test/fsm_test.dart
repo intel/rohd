@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // fsm_test.dart
@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 enum MyStates { state1, state2, state3, state4 }
@@ -44,8 +45,34 @@ class TestModule extends Module {
       ]),
     ];
 
-    FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states)
-        .generateDiagram(outputPath: _simpleFSMPath);
+    final fsm =
+        FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states);
+
+    if (!kIsWeb) {
+      fsm.generateDiagram(outputPath: _simpleFSMPath);
+    }
+  }
+}
+
+class DefaultStateFsmMod extends Module {
+  late final FiniteStateMachine<MyStates> _fsm;
+  DefaultStateFsmMod(Logic reset) {
+    reset = addInput('reset', reset);
+    final clk = SimpleClockGenerator(10).clk;
+    final b = addOutput('b', width: 8);
+
+    _fsm = FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, [
+      State(
+        MyStates.state1,
+        events: {Const(0): MyStates.state2},
+        actions: [b < 1],
+        defaultNextState: MyStates.state3,
+      ),
+      State(MyStates.state2, events: {}, actions: [b < 2]),
+      State(MyStates.state3,
+          events: {}, actions: [b < 3], defaultNextState: MyStates.state4),
+      State(MyStates.state4, events: {}, actions: [b < 4]),
+    ]);
   }
 }
 
@@ -126,12 +153,16 @@ class TrafficTestModule extends Module {
       ),
     ];
 
-    FiniteStateMachine<LightStates>(
+    final fsm = FiniteStateMachine<LightStates>(
       clk,
       reset,
       LightStates.northFlowing,
       states,
-    ).generateDiagram(outputPath: _trafficFSMPath);
+    );
+
+    if (!kIsWeb) {
+      fsm.generateDiagram(outputPath: _trafficFSMPath);
+    }
   }
 }
 
@@ -140,7 +171,11 @@ void main() {
     await Simulator.reset();
   });
 
-  setUpAll(() => Directory(_tmpDir).createSync(recursive: true));
+  setUpAll(() {
+    if (!kIsWeb) {
+      Directory(_tmpDir).createSync(recursive: true);
+    }
+  });
 
   test('zero-out receivers in default case', () async {
     final pipem = TestModule(Logic(), Logic(), Logic());
@@ -213,6 +248,35 @@ void main() {
       verifyMermaidStateDiagram(_simpleFSMPath);
     });
 
+    test('default next state fsm', () async {
+      final pipem = DefaultStateFsmMod(Logic());
+
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 1}, {}),
+        Vector({'reset': 0}, {'b': 1}),
+        Vector({'reset': 0}, {'b': 3}),
+        Vector({'reset': 0}, {'b': 4}),
+        Vector({'reset': 0}, {'b': 4}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+
+      if (!kIsWeb) {
+        const fsmPath = '$_tmpDir/default_next_state_fsm.md';
+        pipem._fsm.generateDiagram(outputPath: fsmPath);
+
+        final mermaid = File(fsmPath).readAsStringSync();
+        expect(mermaid, contains('state2'));
+        expect(mermaid, contains('state3'));
+        expect(mermaid, contains('state4'));
+        expect(mermaid, contains('(default)'));
+
+        verifyMermaidStateDiagram(fsmPath);
+      }
+    });
+
     test('traffic light fsm', () async {
       final pipem = TrafficTestModule(Logic(width: 2), Logic());
       await pipem.build();
@@ -245,6 +309,10 @@ void main() {
 }
 
 void verifyMermaidStateDiagram(String filePath) {
+  if (kIsWeb) {
+    return;
+  }
+
   // check if the diagram exist
   final file = File(filePath);
   final existDiagram = file.existsSync();

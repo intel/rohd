@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -49,8 +50,13 @@ void main() {
         (LogicValue.ofInt(-5, 80) % 3).toInt());
   });
 
+  test('compare two positive int-width numbers', () {
+    expect(LogicValue.ofInt(6, INT_BITS) < LogicValue.ofInt(7, INT_BITS),
+        LogicValue.one);
+  });
+
   group('values test', () {
-    for (final len in [63, 64, 65, 66, 67]) {
+    for (var len = INT_BITS - 2; len <= INT_BITS + 4; len++) {
       final sslv = LogicValue.ofInt(4, len); // small Int hold Big
       final bslv = LogicValue.ofInt(-0xFFFF, len); // 18446744073709486081
       final fslv = LogicValue.ofInt(-2, len); // 18446744073709551614
@@ -94,7 +100,7 @@ void main() {
       });
 
       test('cross compare len=$len', () {
-        if (len <= 64) {
+        if (len <= INT_BITS) {
           expect(bslv.eq(bblv), LogicValue.one);
         } else {
           expect(bslv < bblv, LogicValue.one);
@@ -140,15 +146,15 @@ void main() {
         for (final l in [len - 5, len - 4, len - 3, len - 2]) {
           final bignum = LogicValue.ofBigInt(BigInt.from(1) << l, len);
           expect(bignum.clog2(), LogicValue.ofInt(l, len));
-          if (len < 64) {
-            final smallnum = LogicValue.ofInt(1 << l, len);
+          if (len < INT_BITS) {
+            final smallnum = LogicValue.ofInt(oneSllBy(l), len);
             expect(smallnum.clog2(), LogicValue.ofInt(l, len));
           }
         }
         for (final l in [len - 5, len - 4, len - 3]) {
           final bignum = LogicValue.ofBigInt(BigInt.from(2) << l, len);
           expect(bignum.clog2().toBigInt(), BigInt.from(l + 1));
-          if (len < 64) {
+          if (len < INT_BITS) {
             final smallnum = LogicValue.ofInt(2 << l, len);
             expect(smallnum.clog2(), LogicValue.ofInt(l + 1, len));
           }
@@ -156,7 +162,7 @@ void main() {
         for (final l in [len - 5, len - 4, len - 3]) {
           final bignum = LogicValue.ofBigInt(BigInt.from(3) << l, len);
           expect(bignum.clog2(), LogicValue.ofInt(l + 2, len));
-          if (len < 64) {
+          if (len < INT_BITS) {
             final smallnum = LogicValue.ofInt(3 << l, len);
             expect(smallnum.clog2(), LogicValue.ofInt(l + 2, len));
           }

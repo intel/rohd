@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simulator_test.dart
@@ -43,7 +43,8 @@ void main() {
     const haltTime = 650;
     Simulator.registerAction(100, () => farEnough = true);
     Simulator.registerAction(1000, () => tooFar = true);
-    Simulator.registerAction(haltTime, Simulator.endSimulation);
+    Simulator.registerAction(
+        haltTime, () => unawaited(Simulator.endSimulation()));
     await Simulator.run();
     expect(Simulator.time, equals(haltTime));
     expect(tooFar, equals(false));
@@ -51,7 +52,7 @@ void main() {
   });
 
   test('simulator reset waits for simulation to complete', () async {
-    Simulator.registerAction(100, Simulator.endSimulation);
+    Simulator.registerAction(100, () => unawaited(Simulator.endSimulation()));
     Simulator.registerAction(100, () {
       unawaited(Simulator.reset());
     });
@@ -78,6 +79,17 @@ void main() {
     });
     await Simulator.run();
     expect(endOfSimActionExecuted, isTrue);
+  });
+
+  test('simulator end simulation waits for simulation to end', () async {
+    final signal = Logic()..put(0);
+    Simulator.setMaxSimTime(1000);
+    Simulator.registerAction(100, () => signal.inject(1));
+    unawaited(Simulator.run());
+    await signal.nextPosedge;
+    await Simulator.endSimulation();
+    expect(Simulator.simulationHasEnded, isTrue);
+    expect(Simulator.time, 100);
   });
 
   test('simulator waits for async registered actions to complete', () async {

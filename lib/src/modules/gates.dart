@@ -215,14 +215,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    dynamic toPut;
-    try {
-      toPut = _op(_in0.value, _in1.value);
-    } on Exception {
-      // in case of things like divide by 0
-      toPut = LogicValue.x;
-    }
-    out.put(toPut);
+    out.put(_op(_in0.value, _in1.value));
   }
 
   @override

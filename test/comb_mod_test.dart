@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 
 class IncrModule extends Module {
   Logic get result => output('result');
-  IncrModule(Logic toIncr) {
+  IncrModule(Logic toIncr) : super(name: 'incr') {
     toIncr = addInput('toIncr', toIncr, width: toIncr.width);
     addOutput('result', width: toIncr.width);
     result <= toIncr + 1;

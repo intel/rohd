@@ -74,6 +74,18 @@ class BusSubsetNaming extends Module {
   }
 }
 
+class DrivenOutputModule extends Module {
+  Logic get x => output('x');
+  DrivenOutputModule(Logic? toDrive) {
+    final a = addInput('a', Logic());
+    addOutput('x');
+
+    final internal = toDrive ?? Logic(name: 'internal');
+
+    x <= mux(a, internal, a);
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -146,6 +158,26 @@ void main() {
       await mod.build();
       final sv = mod.generateSynth();
       expect(sv, contains('c = b[3]'));
+    });
+  });
+
+  group('floating signals', () {
+    test('unconnected floating', () async {
+      final mod = DrivenOutputModule(null);
+      await mod.build();
+      final sv = mod.generateSynth();
+
+      // shouldn't add a Z in there if left floating
+      expect(!sv.contains('z'), true);
+    });
+
+    test('driven to z', () async {
+      final mod = DrivenOutputModule(Const('z'));
+      await mod.build();
+      final sv = mod.generateSynth();
+
+      // should add a Z if it's explicitly added
+      expect(sv, contains('z'));
     });
   });
 }

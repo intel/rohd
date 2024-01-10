@@ -11,6 +11,9 @@
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
+// Import necessary dart pacakges for this file.
+import 'dart:async';
+
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
@@ -31,28 +34,10 @@ class Counter extends Module {
     en = addInput('en', en);
     reset = addInput('reset', reset);
     clk = addInput('clk', clk);
+    addOutput('val', width: width);
 
-    final val = addOutput('val', width: width);
-
-    // A local signal named 'nextVal'.
-    final nextVal = Logic(name: 'nextVal', width: width);
-
-    // Assignment statement of nextVal to be val+1
-    // ('<=' is the assignment operator).
-    nextVal <= val + 1;
-
-    // `Sequential` is like SystemVerilog's always_ff, in this case trigger on
-    // the positive edge of clk.
-    Sequential(clk, [
-      // `If` is a conditional if statement, like `if` in SystemVerilog
-      // always blocks.
-      If(reset, then: [
-        // The '<' operator is a conditional assignment.
-        val < 0
-      ], orElse: [
-        If(en, then: [val < nextVal])
-      ])
-    ]);
+    // We can use the `flop` function to automate creation of a `Sequential`.
+    val <= flop(clk, reset: reset, en: en, val + 1);
   }
 }
 
@@ -83,33 +68,50 @@ Future<void> main({bool noPrint = false}) async {
 
   // Now let's try simulating!
 
-  // Let's start off with a disabled counter and asserting reset.
-  en.inject(0);
-  reset.inject(1);
-
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
     WaveDumper(counter);
   }
 
-  // Drop reset at time 25.
-  Simulator.registerAction(25, () => reset.put(0));
+  // Let's also print a message every time the value on the counter changes,
+  // just for this example to make it easier to see before we look at waves.
+  if (!noPrint) {
+    counter.val.changed
+        .listen((e) => print('@${Simulator.time}: Value changed: $e'));
+  }
 
-  // Raise enable at time 45.
-  Simulator.registerAction(45, () => en.put(1));
+  // Start off with a disabled counter and asserting reset at the start.
+  en.inject(0);
+  reset.inject(1);
 
-  // Print a message when we're done with the simulation!
+  // Ahead of time, register to drop reset at time 27.
+  Simulator.registerAction(27, () => reset.put(0));
+
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(100);
+
+  // Print a message when we're done with the simulation, too!
   Simulator.registerAction(100, () {
     if (!noPrint) {
       print('Simulation completed!');
     }
   });
 
-  // Set a maximum time for the simulation so it doesn't keep running forever.
-  Simulator.setMaxSimTime(100);
+  // Kick off the simulator (but don't await it)!
+  if (!noPrint) {
+    print('Starting simulation...');
+  }
+  unawaited(Simulator.run());
 
-  // Kick off the simulation.
-  await Simulator.run();
+  // Let's wait for reset, then a few clock cycles, then enable the counter.
+  await reset.nextNegedge;
+  for (var i = 0; i < 3; i++) {
+    await clk.nextPosedge;
+  }
+  en.inject(1);
+
+  // Wait here until the simulation has completed (due to maximum time).
+  await Simulator.simulationEnded;
 
   // We can take a look at the waves now.
   if (!noPrint) {

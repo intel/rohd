@@ -16,7 +16,8 @@ extension RandLogicValue on math.Random {
   BigInt _nextBigInt({required int numBits}) {
     var result = BigInt.zero;
     for (var i = 0; i < numBits; i += 32) {
-      result = (result << 32) | BigInt.from(nextInt(1 << 32));
+      // BigInt is safe with it, though
+      result = (result << 32) | BigInt.from(nextInt(oneSllBy(32)));
     }
     return result & ((BigInt.one << numBits) - BigInt.one);
   }
@@ -67,13 +68,12 @@ extension RandLogicValue on math.Random {
 
       return LogicValue.ofString(bitString.toString());
     } else {
-      if (width <= LogicValue._INT_BITS) {
+      if (width <= INT_BITS) {
         final ranNum = width <= 32
-            ? LogicValue.ofInt(nextInt(1 << width), width)
+            ? LogicValue.ofInt(nextInt(oneSllBy(width)), width)
             : LogicValue.ofInt(_nextBigInt(numBits: width).toInt(), width);
 
-        if (max == null ||
-            (max is BigInt && max.bitLength > LogicValue._INT_BITS)) {
+        if (max == null || (max is BigInt && max.bitLength > INT_BITS)) {
           return ranNum;
         } else {
           return LogicValue.ofInt(
