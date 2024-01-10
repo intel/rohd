@@ -1,6 +1,6 @@
 # ROHD Devtool
 
-The ROHD Devtool provides debugging functionality for hardware designers. Initial proposals and discussions for the devtool can be found at https://github.com/intel/rohd/discussions/418.
+The ROHD Devtool provides debugging functionality for hardware designers. Initial proposals and discussions for the devtool can be found at <https://github.com/intel/rohd/discussions/418>.
 
 How to Use the ROHD Devtool:
 
