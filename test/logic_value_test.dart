@@ -983,6 +983,24 @@ void main() {
           equals(LogicValue.filled(4, LogicValue.x)));
     });
 
+    test('absolute', () {
+      expect(
+          // test of positive value
+          LogicValue.ofInt(2, 32).abs(),
+          equals(LogicValue.ofInt(2, 32)));
+      expect(
+          // test of negative value
+          LogicValue.ofInt(-7, 32).abs(),
+          equals(LogicValue.ofInt(7, 32)));
+      expect(
+          // test of zero width 
+          LogicValue.filled(0, LogicValue.zero).abs(),
+          equals(LogicValue.filled(0, LogicValue.zero)));
+      expect(
+          //test string
+          LogicValue.ofString('000010').abs(),
+          equals(LogicValue.ofString('000010')));
+    });
     test('addsub', () {
       expect(
           // + normal

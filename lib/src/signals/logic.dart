@@ -633,7 +633,10 @@ class Logic {
     ].swizzle();
   }
 
-  ///This function calculate the value of a signal or value
+  /// This function calculates the absolute value of a signal. It first checks
+  /// the size of the signal. Then checks to see if upper bits is a positive or
+  /// negative value. In a postive scenario, it returns the same value. In a
+  /// negative scenario, it  inverts the values and add 1 to it.
   Logic abs() {
     if (width == 0) {
       return this;
@@ -641,7 +644,7 @@ class Logic {
     return mux(this[-1], ~this + 1, this);
   }
 
-  /// Returns a new [Logic] wi}th width [newWidth] where new bits added are sign
+  /// Returns a new [Logic] width width [newWidth] where new bits added are sign
   /// bits as the most significant bits.  The sign is determined using two's
   /// complement, so it takes the most significant bit of the original signal
   /// and extends with that.

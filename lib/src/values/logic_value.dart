@@ -863,6 +863,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
     return op(this, other);
   }
 
+  /// This function calculates the absolute value of a signal. It first checks
+  /// the size of the signal. Then checks to see if upper bits is a positive or
+  /// negative value. In a postive scenario, it returns the same value. In a
+  /// negative scenario, it  inverts the values and add 1 to it.
   LogicValue abs() {
     if (width == 0) {
       return this;
