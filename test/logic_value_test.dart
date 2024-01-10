@@ -1173,7 +1173,7 @@ void main() {
           LogicValue.ofInt(-7, 32).abs(),
           equals(LogicValue.ofInt(7, 32)));
       expect(
-          // test of zero width 
+          // test of zero width
           LogicValue.filled(0, LogicValue.zero).abs(),
           equals(LogicValue.filled(0, LogicValue.zero)));
       expect(
