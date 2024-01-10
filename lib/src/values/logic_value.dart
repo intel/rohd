@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -862,10 +862,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
     return op(this, other);
   }
 
-  /// This function calculates the absolute value of a signal. It first checks
-  /// the size of the signal. Then checks to see if upper bits is a positive or
-  /// negative value. In a postive scenario, it returns the same value. In a
-  /// negative scenario, it  inverts the values and add 1 to it.
+  /// Calculates the absolute value, assuming that the
+  /// number is a two's complement.
   LogicValue abs() {
     if (width == 0) {
       return this;

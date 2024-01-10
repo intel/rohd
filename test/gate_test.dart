@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // gate_test.dart
@@ -55,8 +55,8 @@ class UnaryGateTestModule extends Module {
   }
 }
 
-class absolute extends Module {
-  absolute(Logic a) : super(name: 'absolute') {
+class Absolute extends Module {
+  Absolute(Logic a) : super(name: 'absolute') {
     a = addInput('a', a, width: a.width);
 
     final y = addOutput('y', width: a.width);
@@ -421,7 +421,7 @@ void main() {
     });
 
     test('absolute', () async {
-      final mod = absolute(Logic(width: 4));
+      final mod = Absolute(Logic(width: 4));
       await mod.build();
       final vectors = [
         Vector({'a': bin('1111')}, {'y': bin('0001')}),
