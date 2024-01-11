@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -860,6 +860,20 @@ abstract class LogicValue implements Comparable<LogicValue> {
       return op(other, this);
     }
     return op(this, other);
+  }
+
+  /// Calculates the absolute value, assuming that the
+  /// number is a two's complement.
+  LogicValue abs() {
+    if (width == 0) {
+      return this;
+    }
+    if (!this[-1].isValid) {
+      return LogicValue.filled(width, LogicValue.x);
+    }
+    return this[-1] == LogicValue.one
+        ? ~this + LogicValue.ofInt(1, width)
+        : this;
   }
 
   /// Unary AND operation.

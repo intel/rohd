@@ -13,5 +13,6 @@ set -euo pipefail
 
 dart test
 
-# run tests in JS
+# run tests in JS (increase heap size also)
+export NODE_OPTIONS="--max-old-space-size=6144"
 dart test --platform node

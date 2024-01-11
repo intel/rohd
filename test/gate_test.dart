@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // gate_test.dart
@@ -52,6 +52,16 @@ class UnaryGateTestModule extends Module {
     aAnd <= a.and();
     aOr <= a.or();
     aXor <= a.xor();
+  }
+}
+
+class Absolute extends Module {
+  Absolute(Logic a) : super(name: 'absolute') {
+    a = addInput('a', a, width: a.width);
+
+    final y = addOutput('y', width: a.width);
+
+    y <= a.abs();
   }
 }
 
@@ -404,6 +414,20 @@ void main() {
         Vector({'control': 1, 'd0': 0, 'd1': 1}, {'y': 1}),
         Vector({'control': 0, 'd0': 0, 'd1': 1}, {'y': 0}),
         Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('absolute', () async {
+      final mod = Absolute(Logic(width: 4));
+      await mod.build();
+      final vectors = [
+        Vector({'a': bin('1111')}, {'y': bin('0001')}),
+        Vector({'a': bin('0110')}, {'y': bin('0110')}),
+        Vector({'a': bin('0010')}, {'y': bin('0010')}),
+        Vector({'a': bin('1011')}, {'y': bin('0101')}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
