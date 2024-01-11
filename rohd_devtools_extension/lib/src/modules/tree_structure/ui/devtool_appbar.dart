@@ -18,13 +18,27 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.onPrimary,
-      title: const Row(
-        children: [
-          Icon(Icons.build),
-          SizedBox(width: 5),
-          Text('ROHD DevTool (Beta)'),
-        ],
-      ),
+      title: const Text('ROHD DevTool (Beta)'),
+      leading: const Icon(Icons.build),
+      actions: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(right: 20.0),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: () {
+                showLicensePage(context: context);
+              },
+              child: const Text(
+                'Licenses',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
