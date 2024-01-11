@@ -477,6 +477,18 @@ class IndexBitOfArrayModule extends Module {
   }
 }
 
+class AssignSubsetModule extends Module {
+  AssignSubsetModule(List<Logic> updatedSubset, {int? start}) {
+    final o = LogicArray([10], 3, name: 'logicArray');
+    o <= Const(LogicValue.ofString('1').replicate(10 * 3));
+    if (start != null) {
+      o.assignSubset(updatedSubset, start: start);
+    } else {
+      o.assignSubset(updatedSubset);
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -929,6 +941,40 @@ void main() {
 
     test('indexing single bit of array', () async {
       final mod = IndexBitOfArrayModule();
+      await mod.build();
+
+      final vectors = [
+        Vector({}, {'o0': 0, 'o3': 1})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assign subset of logic array without mentioning start', () async {
+      final updatedSubset = <Logic>[
+        Const(0, width: 3),
+        Const(0, width: 3),
+        Const(0, width: 3)
+      ];
+      final mod = AssignSubsetModule(updatedSubset);
+      await mod.build();
+
+      final vectors = [
+        Vector({}, {'o0': 0, 'o3': 1})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assign subset of logic array mentioning start', () async {
+      final updatedSubset = <Logic>[
+        Const(2, width: 3),
+        Const(1, width: 3),
+        Const(3, width: 3)
+      ];
+      final mod = AssignSubsetModule(updatedSubset, start: 3);
       await mod.build();
 
       final vectors = [
