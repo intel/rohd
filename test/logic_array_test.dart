@@ -478,13 +478,16 @@ class IndexBitOfArrayModule extends Module {
 }
 
 class AssignSubsetModule extends Module {
-  AssignSubsetModule(List<Logic> updatedSubset, {int? start}) {
-    final o = LogicArray([10], 3, name: 'logicArray');
-    o <= Const(LogicValue.ofString('1').replicate(10 * 3));
+  AssignSubsetModule(LogicArray updatedSubset, {int? start}) {
+    updatedSubset = addInputArray('inputLogicArray', updatedSubset,
+        dimensions: [5], elementWidth: 3);
+
+    final o =
+        addOutputArray('outputLogicArray', dimensions: [10], elementWidth: 3);
     if (start != null) {
-      o.assignSubset(updatedSubset, start: start);
+      o.assignSubset(updatedSubset.elements, start: start);
     } else {
-      o.assignSubset(updatedSubset);
+      o.assignSubset(updatedSubset.elements);
     }
   }
 }
@@ -952,33 +955,39 @@ void main() {
     });
 
     test('assign subset of logic array without mentioning start', () async {
-      final updatedSubset = <Logic>[
-        Const(0, width: 3),
-        Const(0, width: 3),
-        Const(0, width: 3)
-      ];
+      final updatedSubset = LogicArray([5], 3, name: 'updatedSubset');
       final mod = AssignSubsetModule(updatedSubset);
       await mod.build();
 
       final vectors = [
-        Vector({}, {'o0': 0, 'o3': 1})
+        Vector({'inputLogicArray': 0},
+            {'outputLogicArray': LogicValue.ofString(('z' * 15) + ('0' * 15))}),
+        Vector({'inputLogicArray': bin('101' * 5)},
+            {'outputLogicArray': LogicValue.ofString(('z' * 15) + ('101' * 5))})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('assign subset of logic array mentioning start', () async {
-      final updatedSubset = <Logic>[
-        Const(2, width: 3),
-        Const(1, width: 3),
-        Const(3, width: 3)
-      ];
+    test('assign subset of logic array with mentioning start', () async {
+      final updatedSubset = LogicArray([5], 3, name: 'updatedSubset');
       final mod = AssignSubsetModule(updatedSubset, start: 3);
       await mod.build();
 
       final vectors = [
-        Vector({}, {'o0': 0, 'o3': 1})
+        Vector({
+          'inputLogicArray': 0
+        }, {
+          'outputLogicArray':
+              LogicValue.ofString(('z' * 3 * 2) + ('0' * 3 * 5) + ('z' * 3 * 3))
+        }),
+        Vector({
+          'inputLogicArray': bin('101' * 5)
+        }, {
+          'outputLogicArray':
+              LogicValue.ofString(('z' * 3 * 2) + ('101' * 5) + ('z' * 3 * 3))
+        })
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
