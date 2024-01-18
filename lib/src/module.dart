@@ -201,13 +201,13 @@ abstract class Module {
     return hierarchyQueue;
   }
 
-  /// Indicates whether this [Module] has had the [build()] method called on it.
+  /// Indicates whether this [Module] has had the [build] method called on it.
   bool get hasBuilt => _hasBuilt;
   bool _hasBuilt = false;
 
   /// Builds the [Module] and all [subModules] within it.
   ///
-  /// It is recommended not to override [build()] nor put logic in [build()]
+  /// It is recommended not to override [build] nor put logic in [build]
   /// unless you have good reason to do so.  Aim to build up relevant logic in
   /// the constructor.
   ///

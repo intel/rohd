@@ -167,8 +167,8 @@ class ConditionalAssignModule extends Module {
   ConditionalAssignModule(
     Logic a,
   ) : super(name: 'ConditionalAssignModule') {
-    a = addInput('a', a);
-    final c = addOutput('c');
+    a = addInput('a', a, width: a.width);
+    final c = addOutput('c', width: a.width);
     Combinational([c < a]);
   }
 }
@@ -614,6 +614,22 @@ void main() {
         Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
+      // no SV run here, ROHD converts Z to X
+    });
+
+    test('Conditional assign module with invalid inputs wider than 1 bit',
+        () async {
+      final mod = ConditionalAssignModule(Logic(width: 8));
+      await mod.build();
+      final vectors = [
+        Vector({'a': 0xa5}, {'c': 0xa5}),
+        Vector({'a': LogicValue.z}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.x}, {'c': LogicValue.x}),
+        Vector({'a': LogicValue.ofString('01zzxx10')},
+            {'c': LogicValue.ofString('01xxxx10')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      // no SV run here, ROHD converts Z to X
     });
 
     test('single elseifblock comb', () async {
