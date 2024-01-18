@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A [Synthesizer] which generates equivalent SystemVerilog as the
@@ -762,7 +763,15 @@ class _SynthLogicArrayElement extends _SynthLogic {
   bool get needsDeclaration => false;
 
   @override
-  String get name => '${parentArray.name}[${logic.arrayIndex!}]';
+  String get name {
+    final n = '${parentArray.name}[${logic.arrayIndex!}]';
+    assert(
+      Sanitizer.isSanitary(
+          n.substring(0, n.contains('[') ? n.indexOf('[') : null)),
+      'Array name should be sanitary, but found $n',
+    );
+    return n;
+  }
 
   /// The element of the [parentArray].
   final Logic logic;
@@ -840,7 +849,13 @@ class _SynthLogic {
   /// The chosen name of this.
   ///
   /// Must call [pickName] before this is accessible.
-  String get name => _name!;
+  String get name {
+    assert(isConstant || Sanitizer.isSanitary(_name!),
+        'Signal names should be sanitary, but found $_name.');
+
+    return _name!;
+  }
+
   String? _name;
 
   /// Picks a [name].

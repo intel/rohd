@@ -1,6 +1,6 @@
 ## 0.5.2
 
-- Added APIs for accessing indices of a `List<Logic>` using another `Logic`: `Logic.selectFrom` and `List<Logic>.selectIndex`.
+- Added APIs for accessing indices of a `List<Logic>` using another `Logic`: `Logic.selectFrom` and `List<Logic>.selectIndex` (<https://github.com/intel/rohd/pull/438>).
 - Added/fixed support for compiling ROHD to JavaScript via bug fixes, compile-time arithmetic precision consideration, and testing (<https://github.com/intel/rohd/pull/445>).
 - Added `isZero` to `LogicValue`.
 - Improved `Pipeline` abstraction via bug fixes, better error checking, improved documentation, and new APIs (<https://github.com/intel/rohd/pull/447>).

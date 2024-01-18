@@ -909,7 +909,9 @@ class ConditionalAssign extends Conditional {
 
     final currentValue = driverValue(driver);
     if (!currentValue.isValid) {
-      _receiverOutput.put(LogicValue.x);
+      // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
+      // It's too pessimistic to convert the whole bus to X.
+      _receiverOutput.put(currentValue & currentValue);
     } else {
       _receiverOutput.put(currentValue);
     }
