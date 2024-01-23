@@ -39,7 +39,7 @@ class RohdExtensionModule extends ConsumerStatefulWidget {
 class _RohdExtensionModuleState extends ConsumerState<RohdExtensionModule> {
   late final EvalOnDartLibrary rohdControllerEval;
 
-  late AsyncValue<TreeModel> futureModuleTree;
+  late AsyncValue<TreeModel?> futureModuleTree;
 
   @override
   void initState() {
@@ -55,7 +55,7 @@ class _RohdExtensionModuleState extends ConsumerState<RohdExtensionModule> {
   @override
   Widget build(BuildContext context) {
     final selectedModule = ref.watch(selectedModuleProvider);
-    final AsyncValue<TreeModel> futureModuleTree =
+    final AsyncValue<TreeModel?> futureModuleTree =
         ref.watch(rohdModuleTreeProvider);
     final screenSize = MediaQuery.of(context).size;
 

@@ -85,5 +85,9 @@ class ModuleTree {
   /// Returns: string representing hierarchical structure of modules in JSON
   /// format.
   String get hierarchyJSON =>
-      rootModuleInstance?.buildModuleTreeJsonSchema(rootModuleInstance!) ?? '';
+      rootModuleInstance?.buildModuleTreeJsonSchema(rootModuleInstance!) ??
+      json.encode({
+        'status': 'fail',
+        'reason': 'module not yet build',
+      });
 }

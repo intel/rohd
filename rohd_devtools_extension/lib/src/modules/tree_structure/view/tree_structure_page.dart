@@ -8,6 +8,7 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
@@ -26,7 +27,7 @@ class TreeStructurePage extends ConsumerWidget {
   });
 
   final Size screenSize;
-  final AsyncValue<TreeModel> futureModuleTree;
+  final AsyncValue<TreeModel?> futureModuleTree;
   final TreeModel? selectedModule;
 
   final ScrollController _horizontal = ScrollController();
@@ -101,12 +102,51 @@ class TreeStructurePage extends ConsumerWidget {
                                   thumbVisibility: true,
                                   controller: _horizontal,
                                   child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    controller: _horizontal,
-                                    child: ModuleTreeCard(
-                                      futureModuleTree: futureModuleTree,
-                                    ),
-                                  ),
+                                      scrollDirection: Axis.horizontal,
+                                      controller: _horizontal,
+                                      child: Builder(builder: (context) {
+                                        // if (futureModuleTree) {
+                                        //   return const Text(
+                                        //     'please build your model!',
+                                        //   );
+                                        // } else {
+                                        //   return ModuleTreeCard(
+                                        //     futureModuleTree: futureModuleTree,
+                                        //   );
+                                        // }
+
+                                        return futureModuleTree.when(
+                                          data: (data) {
+                                            if (data == null) {
+                                              return Expanded(
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(20),
+                                                  child: const Text(
+                                                    'Friendly Notice: Please make '
+                                                    'sure that you use build() method '
+                                                    'to build your model and put '
+                                                    'the breakpoint at the '
+                                                    'simulation time.',
+                                                    style:
+                                                        TextStyle(fontSize: 20),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              );
+                                            } else {
+                                              return ModuleTreeCard(
+                                                futureModuleTree: data,
+                                              );
+                                            }
+                                          },
+                                          error: (error, stackTrace) =>
+                                              Text('Error: $error'),
+                                          loading: () => const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+                                      })),
                                 ),
                               ),
                             ],

@@ -13,17 +13,27 @@ import 'package:devtools_app_shared/service.dart';
 import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
 
 class TreeService {
+  final invokeFunc = 'ModuleTree.instance.hierarchyJSON';
   final EvalOnDartLibrary rohdControllerEval;
   final Disposable evalDisposable;
 
   TreeService(this.rohdControllerEval, this.evalDisposable);
 
-  Future<TreeModel> evalModuleTree() async {
+  Future<TreeModel?> evalModuleTree() async {
     final treeInstance = await rohdControllerEval.evalInstance(
-        'ModuleTree.instance.hierarchyJSON',
-        isAlive: evalDisposable);
+      invokeFunc,
+      isAlive: evalDisposable,
+    );
 
-    return TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
+    final treeObj = jsonDecode(treeInstance.valueAsString ?? '') as Map;
+
+    if (treeObj['status'] == 'fail') {
+      print('error');
+
+      return null;
+    } else {
+      return TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? ""));
+    }
   }
 
   bool isNodeOrDescendentMatching(TreeModel module, String? treeSearchTerm) {
@@ -41,8 +51,7 @@ class TreeService {
 
   Future<TreeModel> refreshModuleTree() {
     return rohdControllerEval
-        .evalInstance('ModuleTree.instance.hierarchyJSON',
-            isAlive: evalDisposable)
+        .evalInstance(invokeFunc, isAlive: evalDisposable)
         .then((treeInstance) =>
             TreeModel.fromJson(jsonDecode(treeInstance.valueAsString ?? "{}")));
   }

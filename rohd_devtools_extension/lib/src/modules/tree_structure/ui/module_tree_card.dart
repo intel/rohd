@@ -17,7 +17,7 @@ import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tre
 import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
 class ModuleTreeCard extends ConsumerStatefulWidget {
-  final AsyncValue<TreeModel> futureModuleTree;
+  final TreeModel futureModuleTree;
   const ModuleTreeCard({
     super.key,
     required this.futureModuleTree,
@@ -33,7 +33,7 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
   @override
   Widget build(BuildContext context) {
     return genModuleTree(
-      moduleTreeAsyncValue: widget.futureModuleTree,
+      moduleTree: widget.futureModuleTree,
     );
   }
 
@@ -97,21 +97,13 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
   }
 
   Widget genModuleTree({
-    required AsyncValue<TreeModel> moduleTreeAsyncValue,
+    required TreeModel moduleTree,
   }) {
-    return moduleTreeAsyncValue.when(
-      data: (TreeModel data) {
-        var root = buildNode(data);
-        if (root != null) {
-          return TreeView(nodes: [root]);
-        } else {
-          return const Text('No data');
-        }
-      },
-      error: (error, stackTrace) => Text('Error: $error'),
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    var root = buildNode(moduleTree);
+    if (root != null) {
+      return TreeView(nodes: [root]);
+    } else {
+      return const Text('No data');
+    }
   }
 }

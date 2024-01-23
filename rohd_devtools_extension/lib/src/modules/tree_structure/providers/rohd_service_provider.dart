@@ -26,7 +26,7 @@ class RohdModuleTree extends _$RohdModuleTree {
   late Disposable evalDisposable;
 
   @override
-  Future<TreeModel> build() {
+  Future<TreeModel?> build() {
     _initEval();
     rohdControllerEval = EvalOnDartLibrary(
       'package:rohd/src/diagnostics/inspector_service.dart',
@@ -45,7 +45,7 @@ class RohdModuleTree extends _$RohdModuleTree {
     await serviceManager.onServiceAvailable;
   }
 
-  Future<TreeModel> evalModuleTree() {
+  Future<TreeModel?> evalModuleTree() {
     return treeService.evalModuleTree();
   }
 
