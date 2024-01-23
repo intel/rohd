@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// inspector_service.dart
+// The service that handle interaction between ROHD and Devtools Extension.
+//
+// 2024 January 23
+// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+
 import 'dart:convert';
 import 'package:rohd/rohd.dart';
 
