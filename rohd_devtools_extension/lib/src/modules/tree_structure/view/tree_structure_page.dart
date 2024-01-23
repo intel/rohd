@@ -125,7 +125,7 @@ class TreeStructurePage extends ConsumerWidget {
                                                   child: const Text(
                                                     'Friendly Notice: Please make '
                                                     'sure that you use build() method '
-                                                    'to build your model and put '
+                                                    'to build your module and put '
                                                     'the breakpoint at the '
                                                     'simulation time.',
                                                     style:
