@@ -36,8 +36,7 @@ void main() {
   testWidgets('ModuleTreeCard renders tree correctly',
       (WidgetTester tester) async {
     // Initialize the futureModuleTree
-    final futureModuleTree =
-        AsyncValue<TreeModel>.data(TreeModelStub.simpleTreeModel);
+    final futureModuleTree = TreeModelStub.simpleTreeModel;
 
     // Wrap the ModuleTreeCard widget in ProviderScope for Riverpod Providers
     await tester.pumpWidget(
