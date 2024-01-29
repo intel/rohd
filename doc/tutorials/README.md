@@ -1,5 +1,7 @@
 # Content Page
 
+Below are the ROHD tutorial content page, you can also find ROHD tutorial in our [YouTube playlist](https://www.youtube.com/watch?v=9eBV5DOn9mI&list=PLQiWLKsqVT-q5aJmcWWoPKHDxOEPhPExy).
+
 ## Chapter 1: Getting Started
 
 - [Introduction to ROHD](./chapter_1/00_introduction_to_rohd.md)
