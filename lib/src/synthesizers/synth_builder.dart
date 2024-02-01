@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A generic class which can convert a module into a generated output using
@@ -87,6 +88,9 @@ class SynthBuilder {
       newName = _instanceTypeUniquifier.getUniqueName(
           initialName: newName, reserved: module.reserveDefinitionName);
     }
+
+    assert(Sanitizer.isSanitary(newName),
+        'Module definition names should be sanitary.');
 
     _moduleToInstanceTypeMap[module] = newName;
     return newName;

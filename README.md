@@ -20,6 +20,7 @@ For documentation, guides, and more, [**visit the ROHD Website!**](https://intel
 - [Try it in-browser](https://dartpad.dev/?id=375e800a9d0bd402c9bfa5ebe2210c40)
 - [User Guide](https://intel.github.io/rohd-website/docs/sample-example/)
 - [Tutorials](https://github.com/intel/rohd/tree/main/doc/tutorials)
+- [YouTube Channel](https://www.youtube.com/@ROHD-DEV)
 - [API Docs](https://intel.github.io/rohd/rohd/rohd-library.html)
 - [Blog](https://intel.github.io/rohd-website/blog/)
 - [Contributing](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md)

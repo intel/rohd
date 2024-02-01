@@ -93,6 +93,29 @@ class ModuleWithFloatingSignals extends Module {
   }
 }
 
+class TopCustomSvWrap extends Module {
+  TopCustomSvWrap(Logic a, Logic b) {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    SubCustomSv([a, b]);
+  }
+}
+
+class SubCustomSv extends Module with CustomSystemVerilog {
+  SubCustomSv(List<Logic> toSwizzle) {
+    addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> inputs, Map<String, String> outputs) =>
+      '''
+logic my_fancy_new_signal; // $instanceName (of type $instanceType)
+assign my_fancy_new_signal <= ^${inputs['fer_swizzle']};
+''';
+}
+
 void main() {
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
@@ -172,5 +195,12 @@ void main() {
     // only expect 1 assignment to xylophone
     expect('assign'.allMatches(sv).length, 1);
     expect('assign xylophone'.allMatches(sv).length, 1);
+  });
+
+  test('properly drops in custom systemveri;og', () async {
+    final mod = TopCustomSvWrap(Logic(), Logic());
+    await mod.build();
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
   });
 }
