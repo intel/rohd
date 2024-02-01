@@ -131,7 +131,7 @@ class LogicArray extends LogicStructure {
   /// Perform Assign operation on a Logic subset or slice
   ///
   /// Assigns part of this LogicArray with a given [updatedSubset] of type
-  /// [List<Logic>]. The update is performed from a given[start] position
+  /// [List<Logic>]. The update is performed from a given [start] position
   /// to the length of the [updatedSubset].
   ///
   /// Example:
@@ -146,10 +146,8 @@ class LogicArray extends LogicStructure {
   /// ```
   ///
   void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
-    // TO-DO later: optimize with dart: zip, reduce,
-
     if (updatedSubset.length > elements.length - start) {
-      /* TODO: ERROR */
+      throw LogicConstructionException('${updatedSubset.length}');
     }
 
     // Assign Logic array from `start` index to `start+updatedSubset.length`
