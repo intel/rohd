@@ -18,8 +18,6 @@ We welcome contributions to the development of the ROHD Devtool. Please refer to
 
 The ROHD Devtool runs in an iframe, which means that the --platform chrome flag is required to ensure tests are run in the browser.
 
-Markdown Block
-
 ```cmd
 flutter test --platform chrome Optional[test\modules\tree_structure\model_tree_card_test.dart] > test_output.txt
 ```
