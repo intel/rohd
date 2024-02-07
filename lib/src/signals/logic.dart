@@ -181,26 +181,23 @@ class Logic {
   set parentModule(Module? newParentModule) => _parentModule = newParentModule;
 
   /// Returns true iff this signal is an input of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
   late final bool isInput =
       // this can be cached because parentModule is set at port creation
       parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
   late final bool isOutput =
       // this can be cached because parentModule is set at port creation
       parentModule?.isOutput(this) ?? false;
 
-  /// Returns true iff this signal is an input or output of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isPort => isInput || isOutput;
+  /// Returns true iff this signal is an inOut of its parent [Module].
+  late final bool isInOut =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isInOut(this) ?? false;
+
+  /// Returns true iff this signal is an input, output, or inOut of its parent
+  /// [Module].
+  late final bool isPort = isInput || isOutput || isInOut;
 
   /// Controls the naming (and renaming) preferences of this signal in generated
   /// outputs.

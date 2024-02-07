@@ -129,17 +129,23 @@ abstract class Module {
   /// Provides the [output] named [name] if it exists, otherwise `null`.
   Logic? tryOutput(String name) => _outputs[name];
 
-  /// Returns true iff [net] is the same [Logic] as the input port of this
+  /// Returns true iff [signal] is the same [Logic] as the [input] port of this
   /// [Module] with the same name.
-  bool isInput(Logic net) =>
-      _inputs[net.name] == net ||
-      (net.isArrayMember && isInput(net.parentStructure!));
+  bool isInput(Logic signal) =>
+      _inputs[signal.name] == signal ||
+      (signal.isArrayMember && isInput(signal.parentStructure!));
 
-  /// Returns true iff [net] is the same [Logic] as the output port of this
+  /// Returns true iff [signal] is the same [Logic] as the [output] port of this
   /// [Module] with the same name.
-  bool isOutput(Logic net) =>
-      _outputs[net.name] == net ||
-      (net.isArrayMember && isOutput(net.parentStructure!));
+  bool isOutput(Logic signal) =>
+      _outputs[signal.name] == signal ||
+      (signal.isArrayMember && isOutput(signal.parentStructure!));
+
+  /// Returns true iff [signal] is the same [Logic] as the [inOut] port of this
+  /// [Module] with the same name.
+  bool isInOut(Logic signal) =>
+      _inOuts[signal.name] == signal ||
+      (signal.isArrayMember && isInOut(signal.parentStructure!));
 
   /// Returns true iff [net] is the same [Logic] as an input or output port of
   /// this [Module] with the same name.
@@ -250,11 +256,11 @@ abstract class Module {
 
     // construct the list of modules within this module
     // 1) trace from outputs of this module back to inputs of this module
-    for (final output in _outputs.values) {
+    for (final output in [..._outputs.values, ...inOuts.values]) {
       await _traceOutputForModuleContents(output, dontAddSignal: true);
     }
     // 2) trace from inputs of all modules to inputs of this module
-    for (final input in _inputs.values) {
+    for (final input in [..._inputs.values, ...inOuts.values]) {
       await _traceInputForModuleContents(input, dontAddSignal: true);
     }
 
@@ -310,12 +316,13 @@ abstract class Module {
       return;
     }
 
-    if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
+    if (!signal.isPort && signal.parentModule != null) {
       // we've already parsed down this path
       return;
     }
 
-    final subModule = signal.isInput ? signal.parentModule : null;
+    final subModule =
+        (signal.isInput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
 
@@ -341,16 +348,25 @@ abstract class Module {
       if (subModuleParent != this) {
         await _addAndBuildModule(subModule);
       }
-      for (final subModuleOutput in subModule._outputs.values) {
+      for (final subModuleOutput in [
+        ...subModule._outputs.values,
+        ...subModule._inOuts.values
+      ]) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
       }
-      for (final subModuleInput in subModule._inputs.values) {
+      for (final subModuleInput in [
+        ...subModule._inputs.values,
+        ...subModule._inOuts.values
+      ]) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
     } else {
-      if (!dontAddSignal && !isInput(signal) && subModule == null) {
+      if (!dontAddSignal &&
+          !isInput(signal) &&
+          !isInOut(signal) &&
+          subModule == null) {
         _addInternalSignal(signal);
       }
 
@@ -382,12 +398,13 @@ abstract class Module {
       return;
     }
 
-    if (!signal.isInput && !signal.isOutput && signal.parentModule != null) {
+    if (!signal.isPort && signal.parentModule != null) {
       // we've already parsed down this path
       return;
     }
 
-    final subModule = signal.isOutput ? signal.parentModule : null;
+    final subModule =
+        (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
 
@@ -413,16 +430,25 @@ abstract class Module {
       if (subModuleParent != this) {
         await _addAndBuildModule(subModule);
       }
-      for (final subModuleInput in subModule._inputs.values) {
+      for (final subModuleInput in [
+        ...subModule._inputs.values,
+        ...subModule._inOuts.values
+      ]) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
-      for (final subModuleOutput in subModule._outputs.values) {
+      for (final subModuleOutput in [
+        ...subModule._outputs.values,
+        ...subModule._inOuts.values
+      ]) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
       }
     } else {
-      if (!dontAddSignal && !isOutput(signal) && subModule == null) {
+      if (!dontAddSignal &&
+          !isOutput(signal) &&
+          !isInOut(signal) &&
+          subModule == null) {
         _addInternalSignal(signal);
         for (final dstConnection in signal.dstConnections) {
           await _traceInputForModuleContents(dstConnection);
@@ -430,6 +456,10 @@ abstract class Module {
       }
 
       if (signal is LogicStructure) {
+        for (final srcConnection in signal.srcConnections) {
+          await _traceOutputForModuleContents(srcConnection);
+        }
+      } else if (signal is LogicNet) {
         for (final srcConnection in signal.srcConnections) {
           await _traceOutputForModuleContents(srcConnection);
         }

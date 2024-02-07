@@ -21,7 +21,7 @@ class TriStateBuffer extends Module with InlineSystemVerilog {
 
   /// Creates a tri-state buffer which drives [out] with [in_] if [enable] is
   /// high, otherwise leaves it floating `z`.
-  TriStateBuffer(Logic in_, {required Logic enable}) {
+  TriStateBuffer(Logic in_, {required Logic enable, super.name = 'tristate'}) {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${name}_${in_.name}');
     _enableName = Naming.unpreferredName('enable_${enable.name}');

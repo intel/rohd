@@ -33,11 +33,32 @@ abstract class ExternalSystemVerilogModule extends Module
   }) : super(definitionName: definitionName, reserveDefinitionName: true);
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-          Map<String, String> inputs, Map<String, String> outputs) =>
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> inputs,
+    Map<String, String> outputs,
+  ) {
+    assert(
+        inOuts.isEmpty, 'Should not be instantiating without inouts present.');
+
+    return instantiationVerilogWithInOuts(
+        instanceType, instanceName, inputs, outputs, {});
+  }
+
+  @override
+  String instantiationVerilogWithInOuts(
+    String instanceType,
+    String instanceName,
+    Map<String, String> inputs,
+    Map<String, String> outputs,
+    Map<String, String> inOuts,
+  ) =>
       SystemVerilogSynthesizer.instantiationVerilogWithParameters(
           this, definitionName, instanceName, inputs, outputs,
-          parameters: parameters, forceStandardInstantiation: true);
+          inOuts: inOuts,
+          parameters: parameters,
+          forceStandardInstantiation: true);
 }
 
 /// Deprecated - Use [ExternalSystemVerilogModule] instead.

@@ -40,12 +40,13 @@ class SystemVerilogSynthesizer extends Synthesizer {
       String instanceName,
       Map<String, String> inputs,
       Map<String, String> outputs,
-      {Map<String, String>? parameters,
+      {Map<String, String> inOuts = const {},
+      Map<String, String>? parameters,
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
       if (module is CustomSystemVerilog) {
-        return module.instantiationVerilog(
-            instanceType, instanceName, inputs, outputs);
+        return module.instantiationVerilogWithInOuts(
+            instanceType, instanceName, inputs, outputs, inOuts);
       }
     }
 
@@ -59,6 +60,11 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     for (final signalName in module.outputs.keys) {
       connections.add('.$signalName(${outputs[signalName]!})');
+    }
+
+    // ignore: invalid_use_of_protected_member
+    for (final signalName in module.inOuts.keys) {
+      connections.add('.$signalName(${inOuts[signalName]!})');
     }
 
     final connectionsStr = connections.join(',');
@@ -90,6 +96,18 @@ mixin CustomSystemVerilog on Module {
   /// those ports in the generated SystemVerilog.
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs);
+
+  String instantiationVerilogWithInOuts(
+      String instanceType,
+      String instanceName,
+      Map<String, String> inputs,
+      Map<String, String> outputs,
+      Map<String, String> inOuts) {
+    if (inOuts.isNotEmpty) {
+      throw Exception('Inouts are provided'); //TODO
+    }
+    return instantiationVerilog(instanceType, instanceName, inputs, outputs);
+  }
 
   /// A list of names of [input]s which should not have any SystemVerilog
   /// expressions (including constants) in-lined into them. Only signal names
@@ -125,6 +143,19 @@ mixin InlineSystemVerilog on Module implements CustomSystemVerilog {
     final output = outputs.values.first;
     final inline = inlineVerilog(inputs);
     return 'assign $output = $inline;  // $instanceName';
+  }
+
+  @override
+  String instantiationVerilogWithInOuts(
+      String instanceType,
+      String instanceName,
+      Map<String, String> inputs,
+      Map<String, String> outputs,
+      Map<String, String> inOuts) {
+    if (inOuts.isNotEmpty) {
+      throw Exception('Inouts are provided'); //TODO
+    }
+    return instantiationVerilog(instanceType, instanceName, inputs, outputs);
   }
 
   @override
@@ -168,7 +199,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all input port declarations in generated SV.
   List<String> _verilogInputs() {
     final declarations = _synthModuleDefinition.inputs
-        .map((sig) => 'input logic ${sig.definitionName()}')
+        .map((sig) => 'input ${sig.definitionType()} ${sig.definitionName()}')
         .toList(growable: false);
     return declarations;
   }
@@ -176,18 +207,26 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all output port declarations in generated SV.
   List<String> _verilogOutputs() {
     final declarations = _synthModuleDefinition.outputs
-        .map((sig) => 'output logic ${sig.definitionName()}')
+        .map((sig) => 'output ${sig.definitionType()} ${sig.definitionName()}')
+        .toList(growable: false);
+    return declarations;
+  }
+
+  /// Representation of all inout port declarations in generated SV.
+  List<String> _verilogInOuts() {
+    final declarations = _synthModuleDefinition.inOuts
+        .map((sig) => 'inout ${sig.definitionType()} ${sig.definitionName()}')
         .toList(growable: false);
     return declarations;
   }
 
   /// Representation of all internal net declarations in generated SV.
-  String _verilogInternalNets() {
+  String _verilogInternalSignals() {
     final declarations = <String>[];
-    for (final sig in _synthModuleDefinition.internalNets
+    for (final sig in _synthModuleDefinition.internalSignals
         .sorted((a, b) => a.name.compareTo(b.name))) {
       if (sig.needsDeclaration) {
-        declarations.add('logic ${sig.definitionName()};');
+        declarations.add('${sig.definitionType()} ${sig.definitionName()};');
       }
     }
     return declarations.join('\n');
@@ -229,7 +268,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   /// declaration, ports, etc.
   String _verilogModuleContents(Map<Module, String> moduleToInstanceTypeMap) =>
       [
-        _verilogInternalNets(),
+        _verilogInternalSignals(),
         _verilogAssignments(),
         _verilogSubModuleInstantiations(moduleToInstanceTypeMap),
       ].where((element) => element.isNotEmpty).join('\n');
@@ -238,6 +277,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogPorts() => [
         ..._verilogInputs(),
         ..._verilogOutputs(),
+        ..._verilogInOuts(),
       ].join(',\n');
 
   /// The full SV representation of this module.
@@ -280,6 +320,9 @@ class _SynthSubModuleInstantiation {
 
   /// A mapping of output port name to [_SynthLogic].
   final Map<String, _SynthLogic> outputMapping = {};
+
+  /// A mapping of output port name to [_SynthLogic].
+  final Map<String, _SynthLogic> inOutMapping = {};
 
   /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
@@ -331,6 +374,9 @@ class _SynthSubModuleInstantiation {
       outputMapping.map((name, synthLogic) => MapEntry(
           name, // port name guaranteed to match
           synthLogic.name)),
+      inOuts: inOutMapping.map((name, synthLogic) => MapEntry(
+          name, // port name guaranteed to match
+          synthLogic.name)),
     );
   }
 }
@@ -345,7 +391,7 @@ class _SynthModuleDefinition {
   /// All other internal signals that are not ports.
   ///
   /// This is the only collection that maye have mergeable items in it.
-  final Set<_SynthLogic> internalNets = {};
+  final Set<_SynthLogic> internalSignals = {};
 
   /// All the input ports.
   ///
@@ -356,6 +402,11 @@ class _SynthModuleDefinition {
   ///
   /// This will *never* have any mergeable items in it.
   final Set<_SynthLogic> outputs = {};
+
+  /// All the output ports.
+  ///
+  /// This will *never* have any mergeable items in it.
+  final Set<_SynthLogic> inOuts = {};
 
   /// A mapping from original [Logic]s to the [_SynthLogic]s that represent
   /// them.
@@ -432,6 +483,8 @@ class _SynthModuleDefinition {
             // ignore: invalid_use_of_protected_member
             ...module.inputs.keys,
             ...module.outputs.keys,
+            // ignore: invalid_use_of_protected_member
+            ...module.inOuts.keys,
           },
         ) {
     // start by traversing output signals
@@ -447,6 +500,12 @@ class _SynthModuleDefinition {
       inputs.add(_getSynthLogic(input)!);
     }
 
+    // make sure disconnected inouts are included, also
+    // ignore: invalid_use_of_protected_member
+    for (final inOut in module.inOuts.values) {
+      inOuts.add(_getSynthLogic(inOut)!);
+    }
+
     // find any named signals sitting around that don't do anything
     // this is not necessary for functionality, just nice naming inclusion
     logicsToTraverse.addAll(
@@ -460,7 +519,9 @@ class _SynthModuleDefinition {
       logicsToTraverse
         // ignore: invalid_use_of_protected_member
         ..addAll(subModule.inputs.values)
-        ..addAll(subModule.outputs.values);
+        ..addAll(subModule.outputs.values)
+        // ignore: invalid_use_of_protected_member
+        ..addAll(subModule.inOuts.values);
     }
 
     // search for other modules contained within this module
@@ -476,6 +537,19 @@ class _SynthModuleDefinition {
         logicsToTraverse.add(receiver.parentStructure!);
       }
 
+      final synthReceiver = _getSynthLogic(receiver)!;
+
+      if (receiver is LogicNet) {
+        logicsToTraverse.addAll(receiver.srcConnections);
+
+        for (final srcConnection in receiver.srcConnections) {
+          assignments.add(_SynthAssignment(
+            _getSynthLogic(srcConnection)!,
+            synthReceiver,
+          ));
+        }
+      }
+
       final driver = receiver.srcConnection;
 
       final receiverIsConstant = driver == null && receiver is Const;
@@ -484,16 +558,31 @@ class _SynthModuleDefinition {
           module.isInput(receiver) && !receiver.isArrayMember;
       final receiverIsModuleOutput =
           module.isOutput(receiver) && !receiver.isArrayMember;
+      final receiverIsModuleInOut =
+          module.isInOut(receiver) && !receiver.isArrayMember;
 
-      final synthReceiver = _getSynthLogic(receiver)!;
       final synthDriver = _getSynthLogic(driver);
 
       if (receiverIsModuleInput) {
         inputs.add(synthReceiver);
       } else if (receiverIsModuleOutput) {
         outputs.add(synthReceiver);
+      } else if (receiverIsModuleInOut) {
+        inOuts.add(synthReceiver);
       } else {
-        internalNets.add(synthReceiver);
+        internalSignals.add(synthReceiver);
+      }
+
+      final receiverIsSubmoduleInOut =
+          receiver.isInOut && (receiver.parentModule?.parent == module);
+      if (receiverIsSubmoduleInOut) {
+        final subModule = receiver.parentModule!;
+        final subModuleInstantiation =
+            _getSynthSubModuleInstantiation(subModule);
+        subModuleInstantiation.inOutMapping[receiver.name] = synthReceiver;
+
+        // ignore: invalid_use_of_protected_member
+        logicsToTraverse.addAll(subModule.inOuts.values);
       }
 
       final receiverIsSubModuleOutput =
@@ -504,8 +593,11 @@ class _SynthModuleDefinition {
             _getSynthSubModuleInstantiation(subModule);
         subModuleInstantiation.outputMapping[receiver.name] = synthReceiver;
 
-        // ignore: invalid_use_of_protected_member
-        logicsToTraverse.addAll(subModule.inputs.values);
+        logicsToTraverse
+          // ignore: invalid_use_of_protected_member
+          ..addAll(subModule.inputs.values)
+          // ignore: invalid_use_of_protected_member
+          ..addAll(subModule.inOuts.values);
       } else if (driver != null) {
         if (!module.isInput(receiver)) {
           // stop at the input to this module
@@ -519,7 +611,7 @@ class _SynthModuleDefinition {
 
         // make a new const node, it will merge away if not needed
         final newReceiverConst = _getSynthLogic(Const(receiver.value))!;
-        internalNets.add(newReceiverConst);
+        internalSignals.add(newReceiverConst);
         assignments.add(_SynthAssignment(newReceiverConst, synthReceiver));
       }
 
@@ -557,6 +649,13 @@ class _SynthModuleDefinition {
         submoduleInstantiation.outputMapping[outputName] =
             orig.replacement ?? orig;
       }
+
+      // ignore: invalid_use_of_protected_member
+      for (final inOutName in submoduleInstantiation.module.inOuts.keys) {
+        final orig = submoduleInstantiation.inOutMapping[inOutName]!;
+        submoduleInstantiation.inOutMapping[inOutName] =
+            orig.replacement ?? orig;
+      }
     }
   }
 
@@ -568,6 +667,9 @@ class _SynthModuleDefinition {
     }
     for (final output in outputs) {
       output.pickName(_synthInstantiationNameUniquifier);
+    }
+    for (final inOut in inOuts) {
+      inOut.pickName(_synthInstantiationNameUniquifier);
     }
 
     // pick names of *reserved* submodule instances
@@ -582,7 +684,7 @@ class _SynthModuleDefinition {
 
     // then *reserved* internal signals get priority
     final nonReservedSignals = <_SynthLogic>[];
-    for (final signal in internalNets) {
+    for (final signal in internalSignals) {
       if (signal.isReserved) {
         signal.pickName(_synthInstantiationNameUniquifier);
       } else {
@@ -678,7 +780,7 @@ class _SynthModuleDefinition {
           submoduleInstantiation.outputMapping.values.first;
 
       // clear declaration of intermediate signal replaced by inline
-      internalNets.remove(outputSynthLogic);
+      internalSignals.remove(outputSynthLogic);
 
       // clear declaration of instantiation for inline module
       submoduleInstantiation.clearDeclaration();
@@ -713,9 +815,9 @@ class _SynthModuleDefinition {
         if (mergedAway != null) {
           final kept = mergedAway == dst ? src : dst;
 
-          final foundInternal = internalNets.remove(mergedAway);
+          final foundInternal = internalSignals.remove(mergedAway);
           if (!foundInternal) {
-            final foundKept = internalNets.remove(kept);
+            final foundKept = internalSignals.remove(kept);
             assert(foundKept,
                 'One of the two should be internal since we cant merge ports.');
 
@@ -727,10 +829,14 @@ class _SynthModuleDefinition {
               outputs
                 ..remove(mergedAway)
                 ..add(kept);
+            } else if (inOuts.contains(mergedAway)) {
+              inOuts
+                ..remove(mergedAway)
+                ..add(kept);
             }
           }
         } else if (assignment.src.isFloatingConstant) {
-          internalNets.remove(assignment.src);
+          internalSignals.remove(assignment.src);
         } else {
           reducedAssignments.add(assignment);
         }
@@ -743,7 +849,12 @@ class _SynthModuleDefinition {
 
     // update the look-up table post-merge
     logicToSynthMap.clear();
-    for (final synthLogic in [...inputs, ...outputs, ...internalNets]) {
+    for (final synthLogic in [
+      ...inputs,
+      ...outputs,
+      ...inOuts,
+      ...internalSignals
+    ]) {
       for (final logic in synthLogic.logics) {
         logicToSynthMap[logic] = synthLogic;
       }
@@ -830,6 +941,11 @@ class _SynthLogic {
   /// Whether this represents a constant.
   bool get isConstant => _constLogic != null;
 
+  /// Whether this represents a net.
+  bool get isNet =>
+      // can just look at the first since nets and non-nets cannot be merged
+      logics.first is LogicNet;
+
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
   bool _constNameDisallowed;
@@ -850,6 +966,8 @@ class _SynthLogic {
   ///
   /// Must call [pickName] before this is accessible.
   String get name {
+    assert(_replacement == null,
+        'If this has been replaced, then we should not be getting its name.');
     assert(isConstant || Sanitizer.isSanitary(_name!),
         'Signal names should be sanitary, but found $_name.');
 
@@ -953,6 +1071,11 @@ class _SynthLogic {
       return null;
     }
 
+    if (a.isNet != b.isNet) {
+      // do not merge nets with non-nets
+      return null;
+    }
+
     if (b.mergeable) {
       a.adopt(b);
       return b;
@@ -1027,6 +1150,8 @@ class _SynthLogic {
       return '';
     }
   }
+
+  String definitionType() => isNet ? 'wire' : 'logic';
 
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.

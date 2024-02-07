@@ -260,13 +260,16 @@ class LogicStructure implements Logic {
   LogicStructure? _parentStructure;
 
   @override
-  bool get isInput => parentModule?.isInput(this) ?? false;
+  late final bool isInput = parentModule?.isInput(this) ?? false;
 
   @override
-  bool get isOutput => parentModule?.isOutput(this) ?? false;
+  late final bool isOutput = parentModule?.isOutput(this) ?? false;
 
   @override
-  bool get isPort => isInput || isOutput;
+  late final bool isInOut = parentModule?.isInOut(this) ?? false;
+
+  @override
+  late final bool isPort = isInput || isOutput || isInOut;
 
   @override
   void makeUnassignable() {

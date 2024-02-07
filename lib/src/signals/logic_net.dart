@@ -42,6 +42,9 @@ class LogicNet extends Logic {
   @override
   Logic? get srcConnection => null;
 
+  late final List<Logic> srcConnections = UnmodifiableListView(_srcConnections);
+  List<Logic> _srcConnections = [];
+
   LogicNet({super.name, super.width, super.naming})
       : super._(wire: _WireNet(width: width)) {}
 
@@ -60,5 +63,10 @@ class LogicNet extends Logic {
     }
 
     (_wire as _WireNet)._evaluateNewValue(signalName: name);
+
+    _srcConnections.add(other);
   }
+
+  @override
+  String toString() => 'LogicNet($width): $name';
 }

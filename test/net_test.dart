@@ -3,7 +3,8 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class SubModWithInout extends Module {
-  SubModWithInout(Logic isDriver, Logic toDrive, Logic io) {
+  SubModWithInout(Logic isDriver, Logic toDrive, Logic io)
+      : super(name: 'submodwithinout') {
     isDriver = addInput('isDriver', isDriver);
     toDrive = addInput('toDrive', toDrive, width: toDrive.width);
     io = addInOut('io', io, width: toDrive.width);
@@ -14,7 +15,7 @@ class SubModWithInout extends Module {
 
 class TopModWithDrivers extends Module {
   Logic get drivenValue => output('drivenValue');
-  TopModWithDrivers(Logic driverSelect) {
+  TopModWithDrivers(Logic driverSelect) : super(name: 'topmodwdrivers') {
     driverSelect = addInput('driverSelect', driverSelect);
 
     final driveable = LogicNet(
@@ -32,6 +33,7 @@ class TopModWithDrivers extends Module {
 
 //TODO: test when there are multiple assignments with named wires nets, bidirectional assignment behavior
 //TODO: test driving and being driven by structs, arrays
+//TODO: test module hierarchy searching with only inouts
 
 void main() {
   test('simple tristate', () async {
@@ -41,6 +43,8 @@ void main() {
 
     driverSelect.put(1);
     print(mod.drivenValue.value);
+
+    print(mod.generateSynth());
   });
 
   test('simple tristate simcompare', () async {
