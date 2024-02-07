@@ -13,6 +13,7 @@ class SubModWithInout extends Module {
 }
 
 class TopModWithDrivers extends Module {
+  Logic get drivenValue => output('drivenValue');
   TopModWithDrivers(Logic driverSelect) {
     driverSelect = addInput('driverSelect', driverSelect);
 
@@ -34,11 +35,23 @@ class TopModWithDrivers extends Module {
 
 void main() {
   test('simple tristate', () async {
+    final driverSelect = Logic();
+    final mod = TopModWithDrivers(driverSelect);
+    await mod.build();
+
+    driverSelect.put(1);
+    print(mod.drivenValue.value);
+  });
+
+  test('simple tristate simcompare', () async {
     final mod = TopModWithDrivers(Logic());
     await mod.build();
 
     final vectors = [
       Vector({'driverSelect': 0}, {'drivenValue': 0x55}),
+      Vector({'driverSelect': 1}, {'drivenValue': 0xaa}),
+      Vector({'driverSelect': LogicValue.z}, {'drivenValue': LogicValue.x}),
+      Vector({'driverSelect': LogicValue.x}, {'drivenValue': LogicValue.x}),
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);

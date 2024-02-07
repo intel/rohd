@@ -223,6 +223,9 @@ class Logic {
           naming: naming,
         );
 
+  //TODO
+  factory Logic.net() => LogicNet();
+
   //TODO doc
   Logic._({
     String? name,
@@ -283,7 +286,7 @@ class Logic {
   void put(dynamic val, {bool fill = false}) =>
       _wire.put(val, signalName: name, fill: fill);
 
-  /// Connects this [Logic] directly to [other].
+  /// Connects this [Logic] directly to be driven by [other].
   ///
   /// Every time [other] transitions ([glitch]es), this signal will transition
   /// the same way.
@@ -302,10 +305,16 @@ class Logic {
     other._registerConnection(this);
   }
 
-  /// Handles the actual connection of this [Logic] to [other].
+  /// Handles the actual connection of this [Logic] to be driven by [other].
   void _connect(Logic other) {
     _unassignable = true;
-    _updateWire(other._wire);
+    if (other is LogicNet) {
+      other.glitch.listen((args) {
+        put(other.value);
+      });
+    } else {
+      _updateWire(other._wire);
+    }
     _srcConnection = other;
   }
 

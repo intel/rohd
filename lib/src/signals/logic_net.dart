@@ -5,14 +5,14 @@ part of 'signals.dart';
 //TODO: Z checking should be per-bit, not per bus! (do this in LogicValue)
 
 class _WireNet extends _Wire {
-  final Set<Logic> _srcConnections = {};
+  final Set<Logic> _drivers = {};
 
   _WireNet({required super.width});
 
   void _evaluateNewValue({required String signalName}) {
     var newValue = LogicValue.filled(width, LogicValue.z);
-    for (final srcConnection in _srcConnections) {
-      newValue = newValue.triState(srcConnection.value);
+    for (final driver in _drivers) {
+      newValue = newValue.triState(driver.value);
     }
     put(newValue, signalName: signalName);
   }
@@ -24,15 +24,15 @@ class _WireNet extends _Wire {
 
     super._adopt(other);
 
-    other._srcConnections
-      ..forEach(_addSrcConnection)
+    other._drivers
+      ..forEach(_addDriver)
       ..clear();
   }
 
-  void _addSrcConnection(Logic srcConnection) {
-    _srcConnections.add(srcConnection);
-    srcConnection.glitch.listen((args) {
-      _evaluateNewValue(signalName: srcConnection.name);
+  void _addDriver(Logic driver) {
+    _drivers.add(driver);
+    driver.glitch.listen((args) {
+      _evaluateNewValue(signalName: driver.name);
     });
   }
 }
@@ -45,17 +45,20 @@ class LogicNet extends Logic {
   LogicNet({super.name, super.width, super.naming})
       : super._(wire: _WireNet(width: width)) {}
 
-  Set<Logic> get _srcConnections => (_wire as _WireNet)._srcConnections;
+  //TODO: NO, this needs to be separately tracked?
+  // Set<Logic> get _srcConnections => (_wire as _WireNet)._drivers;
 
   @override
   void _connect(Logic other) {
-    _updateWire(other._wire);
-
     //TODO: cannot merge wires with non-Nets!
     //TODO: should there really be a different type? or just a setting on Logic?
 
-    (_wire as _WireNet)
-      .._addSrcConnection(other)
-      .._evaluateNewValue(signalName: name);
+    if (other is LogicNet) {
+      _updateWire(other._wire);
+    } else {
+      (_wire as _WireNet)._addDriver(other);
+    }
+
+    (_wire as _WireNet)._evaluateNewValue(signalName: name);
   }
 }
