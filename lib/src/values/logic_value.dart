@@ -842,6 +842,23 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue operator ^(LogicValue other) =>
       _twoInputBitwiseOp(other, (a, b) => a._xor2(b));
 
+  /// Bitwise tristate merge of this value with [other].
+  ///
+  /// Per bit:
+  /// - tristate(0, 0) == 0
+  /// - tristate(0, 1) == x
+  /// - tristate(0, x) == x
+  /// - tristate(0, z) == 0
+  /// - tristate(1, 1) == 1
+  /// - tristate(1, x) == x
+  /// - tristate(1, z) == 1
+  /// - tristate(z, x) == x
+  /// - tristate(z, z) == z
+  /// - tristate(x, x) == x
+  LogicValue triState(LogicValue other) =>
+      _twoInputBitwiseOp(other, (a, b) => a._triState2(b));
+  //TODO: test all 3 flavors of LogicValue (and mix between! and both directions!)
+
   /// Bitwise AND operation.  No width comparison.
   LogicValue _and2(LogicValue other);
 
@@ -850,6 +867,24 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Bitwise XOR operation.  No width comparison.
   LogicValue _xor2(LogicValue other);
+
+  /// Bitwise tristate merge.  No width comparison.
+  ///
+  /// Truth table for reference:
+  /// ```
+  /// s0	value0	invalid0	s1	value1	invalid1	result	value	invalid
+  /// 0	0	0	0	0	0	0	0	0
+  /// 0	0	0	1	1	0	x	0	1
+  /// 0	0	0	x	0	1	x	0	1
+  /// 0	0	0	z	1	1	0	0	0
+  /// 1	1	0	1	1	0	1	1	0
+  /// 1	1	0	x	0	1	x	0	1
+  /// 1	1	0	z	1	1	1	1	0
+  /// x	0	1	x	0	1	x	0	1
+  /// z	1	1	x	0	1	x	0	1
+  /// z	1	1	z	1	1	z	1	1
+  /// ```
+  LogicValue _triState2(LogicValue other);
 
   LogicValue _twoInputBitwiseOp(
       LogicValue other, LogicValue Function(LogicValue, LogicValue) op) {

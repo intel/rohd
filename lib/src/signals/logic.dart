@@ -217,9 +217,21 @@ class Logic {
     String? name,
     int width = 1,
     Naming? naming,
+  }) : this._(
+          name: name,
+          width: width,
+          naming: naming,
+        );
+
+  //TODO doc
+  Logic._({
+    String? name,
+    int width = 1,
+    Naming? naming,
+    _Wire? wire,
   })  : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
-        _wire = _Wire(width: width) {
+        _wire = wire ?? _Wire(width: width) {
     if (width < 0) {
       throw LogicConstructionException(
           'Logic width must be greater than or equal to 0.');
@@ -246,6 +258,10 @@ class Logic {
     if (other.width != width) {
       throw SignalWidthMismatchException(other, width);
     }
+
+    if (_wire == other._wire) {
+      throw SelfConnectingLogicException(this, other);
+    }
   }
 
   /// Injects a value onto this signal in the current [Simulator] tick.
@@ -269,11 +285,9 @@ class Logic {
 
   /// Connects this [Logic] directly to [other].
   ///
-  /// Every time [other] transitions (`glitch`es), this signal will transition
+  /// Every time [other] transitions ([glitch]es), this signal will transition
   /// the same way.
   void gets(Logic other) {
-    _assertConnectable(other);
-
     // If we are connecting a `LogicStructure` to this simple `Logic`,
     // then pack it first.
     if (other is LogicStructure) {
@@ -281,20 +295,18 @@ class Logic {
       other = other.packed;
     }
 
+    _assertConnectable(other);
+
     _connect(other);
 
-    _srcConnection = other;
     other._registerConnection(this);
   }
 
   /// Handles the actual connection of this [Logic] to [other].
   void _connect(Logic other) {
-    if (_wire == other._wire) {
-      throw SelfConnectingLogicException(this, other);
-    }
-
     _unassignable = true;
     _updateWire(other._wire);
+    _srcConnection = other;
   }
 
   /// Updates the current active [_Wire] for this [Logic] and also

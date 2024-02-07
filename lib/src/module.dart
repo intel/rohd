@@ -46,6 +46,9 @@ abstract class Module {
   /// An internal list of outputs to this [Module].
   final Map<String, Logic> _outputs = {};
 
+  /// An internal list of inouts to this [Module].
+  final Map<String, LogicNet> _inOuts = {};
+
   /// The parent [Module] of this [Module].
   ///
   /// This only gets populated after its parent [Module], if it exists, has
@@ -64,6 +67,10 @@ abstract class Module {
   /// signals.
   Map<String, Logic> get outputs =>
       UnmodifiableMapView<String, Logic>(_outputs);
+
+  @protected //TODO
+  Map<String, LogicNet> get inOuts =>
+      UnmodifiableMapView<String, LogicNet>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
   ///
@@ -112,6 +119,12 @@ abstract class Module {
       ? _outputs[name]!
       : throw PortDoesNotExistException(
           'Output name "$name" not found as an output of this Module.');
+
+  @protected //TODO: should this be protected or is it like output?  i think yes like input
+  LogicNet inOut(String name) => _inOuts.containsKey(name)
+      ? _inOuts[name]!
+      : throw PortDoesNotExistException(
+          'InOut name "$name" not found as an in/out of this Module.');
 
   /// Provides the [output] named [name] if it exists, otherwise `null`.
   Logic? tryOutput(String name) => _outputs[name];
@@ -440,7 +453,9 @@ abstract class Module {
   void _checkForSafePortName(String name) {
     Naming.validatedName(name, reserveName: true);
 
-    if (outputs.containsKey(name) || inputs.containsKey(name)) {
+    if (outputs.containsKey(name) ||
+        inputs.containsKey(name) ||
+        inOuts.containsKey(name)) {
       throw UnavailableReservedNameException.withMessage(
           'Already defined a port with name "$name".');
     }
@@ -470,6 +485,24 @@ abstract class Module {
     _inputs[name] = inPort;
 
     return inPort;
+  }
+
+  @protected
+  Logic addInOut(String name, Logic x, {int width = 1}) {
+    _checkForSafePortName(name);
+    if (x.width != width) {
+      throw PortWidthMismatchException(x, width);
+    }
+
+    final inOutPort =
+        LogicNet(name: name, width: width, naming: Naming.reserved)
+          ..gets(x)
+          // ignore: invalid_use_of_protected_member
+          ..parentModule = this;
+
+    _inOuts[name] = inOutPort;
+
+    return inOutPort;
   }
 
   /// Registers and returns an input [LogicArray] port to this [Module] with
@@ -551,6 +584,10 @@ abstract class Module {
 
     return outArr;
   }
+
+  // TODO: do we really need tristate arrays and structs?
+  // @protected
+  // Logic addInOutArray(String name) {}
 
   @override
   String toString() => '"$name" ($runtimeType)  :'

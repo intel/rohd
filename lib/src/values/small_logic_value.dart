@@ -154,6 +154,20 @@ class _SmallLogicValue extends LogicValue {
   }
 
   @override
+  LogicValue _triState2(LogicValue other) {
+    assert(other is _SmallLogicValue, 'Will always be a _SmallLogicValue');
+    other as _SmallLogicValue;
+
+    final newValue = _value & other._value;
+    final newInvalid = ((_invalid & other._invalid) |
+            (~_value & _invalid) |
+            (~other._value & other._invalid)) &
+        _mask;
+
+    return LogicValue._smallLogicValueOrFilled(newValue, newInvalid, width);
+  }
+
+  @override
   LogicValue and() => (~_value & ~_invalid) & _mask != 0
       ? LogicValue.zero
       : !isValid
