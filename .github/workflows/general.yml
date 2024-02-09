@@ -124,6 +124,7 @@ jobs:
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git checkout -b artifacts
+          git pull
           sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
           git add .
           git commit -m "Add build artifacts and modify .gitignore"
