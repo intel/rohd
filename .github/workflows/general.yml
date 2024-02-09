@@ -111,12 +111,17 @@ jobs:
 
       - name: Build Static Web
         run: tool/gh_actions/devtool/build_web.sh
-      
-      - name: Create release branch and push changes
+
+      # 1. checkout to branch artifacts
+      # 2. Do not ignore build/ folder (just for artifacts branch)
+      # 3. Commit everythings including the build/ folder
+      # 4. Push the new branch artifacts
+
+      - name: Create artifact branch and push changes
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git checkout -b artifact
+          git checkout -b artifacts
           sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
           git add .
           git commit -m "Add build artifacts and modify .gitignore"
@@ -127,6 +132,6 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: artifact
+          branch: artifacts
 
 
