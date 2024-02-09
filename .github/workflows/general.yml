@@ -112,14 +112,21 @@ jobs:
       - name: Build Static Web
         run: tool/gh_actions/devtool/build_web.sh
       
-      - name: Create artifact branch and push changes
+      - name: Create release branch and push changes
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git checkout -b artifact
-          sed -i '/build\//d' rohd_devtools_extension/.gitignore  # Remove the line that ignores the build directory
+          sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
           git add .
-          git commit -m "Add build artifacts"
-          git push origin artifact
+          git commit -m "Add build artifacts and modify .gitignore"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: artifact
 
 
