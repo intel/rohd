@@ -8,7 +8,10 @@ on:
       - main
 
 # Top-level default, no permissions
-permissions: {}
+permissions:
+  pull-requests: write
+  issues: write
+  repository-projects: write
 
 jobs:
   run-checks:
