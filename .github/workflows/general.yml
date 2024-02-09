@@ -95,6 +95,9 @@ jobs:
 
   build-devtool:
     name: Build Devtools
+    permissions:
+      contents: write
+      pull-requests: write
     timeout-minutes: 30
     runs-on: ubuntu-22.04
     steps:
@@ -111,5 +114,27 @@ jobs:
 
       - name: Build Static Web
         run: tool/gh_actions/devtool/build_web.sh
+
+      # 1. checkout to branch artifacts
+      # 2. Do not ignore build/ folder (just for artifacts branch)
+      # 3. Commit everythings including the build/ folder
+      # 4. Push the new branch artifacts
+      - name: Create artifact branch and commit
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git fetch origin
+          git checkout -b artifacts
+          git pull origin main
+          sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
+          git add .
+          git commit -m "Add build artifacts and modify .gitignore"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: artifacts
+          force: true
 
 
