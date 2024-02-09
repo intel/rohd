@@ -117,7 +117,7 @@ jobs:
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git checkout -b artifact
-          sed -i '/build\//d' .rohd_devtools_extension/.gitignore  # Remove the line that ignores the build directory
+          sed -i '/build\//d' rohd_devtools_extension/.gitignore  # Remove the line that ignores the build directory
           git add .
           git commit -m "Add build artifacts"
           git push origin artifact
