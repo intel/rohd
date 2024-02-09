@@ -119,10 +119,11 @@ jobs:
       # 2. Do not ignore build/ folder (just for artifacts branch)
       # 3. Commit everythings including the build/ folder
       # 4. Push the new branch artifacts
-      - name: Create artifact branch and push changes
+      - name: Create artifact branch and commit
         run: |
           git config --global user.name "${GITHUB_ACTOR}"
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git fetch origin
           git checkout -b artifacts
           git pull origin main
           sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
