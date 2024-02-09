@@ -129,14 +129,12 @@ jobs:
           sed -i '/build\//d' .gitignore  # Remove the line that ignores the build directory
           git add .
           git commit -m "Add build artifacts and modify .gitignore"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: artifacts
-          force_with_lease: true
+          force: true
 
 
