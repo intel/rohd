@@ -3,7 +3,7 @@ import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class SubModWithInout extends Module {
-  SubModWithInout(Logic isDriver, Logic toDrive, Logic io)
+  SubModWithInout(Logic isDriver, Logic toDrive, LogicNet io)
       : super(name: 'submodwithinout') {
     isDriver = addInput('isDriver', isDriver);
     toDrive = addInput('toDrive', toDrive, width: toDrive.width);
@@ -34,8 +34,70 @@ class TopModWithDrivers extends Module {
 //TODO: test when there are multiple assignments with named wires nets, bidirectional assignment behavior
 //TODO: test driving and being driven by structs, arrays
 //TODO: test module hierarchy searching with only inouts
+//TODO: test `changed` on nets
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
+  test('basic net connection', () {
+    final a = LogicNet(name: 'a');
+    final b = LogicNet(name: 'b');
+
+    a <= b;
+
+    expect(b.value, LogicValue.z);
+    expect(a.value, LogicValue.z);
+
+    a.put(1);
+
+    expect(b.value.toInt(), 1);
+    expect(a.value.toInt(), 1);
+
+    b.put(0);
+
+    expect(b.value.toInt(), 0);
+    expect(a.value.toInt(), 0);
+
+    a.put(LogicValue.z);
+
+    expect(b.value, LogicValue.z);
+    expect(a.value, LogicValue.z);
+  });
+
+  test('basic net with logic drivers', () {
+    final a = Logic(name: 'a');
+    final b = Logic(name: 'b');
+
+    final n = LogicNet(name: 'n');
+
+    n <= a;
+    n <= b;
+
+    expect(a.value, LogicValue.z);
+    expect(b.value, LogicValue.z);
+    expect(n.value, LogicValue.z);
+
+    a.put(1);
+
+    expect(a.value.toInt(), 1);
+    expect(b.value, LogicValue.z);
+    expect(n.value.toInt(), 1);
+
+    b.put(0);
+
+    expect(a.value.toInt(), 1);
+    expect(b.value.toInt(), 0);
+    expect(n.value, LogicValue.x);
+
+    a.put(LogicValue.z);
+
+    expect(a.value, LogicValue.z);
+    expect(b.value.toInt(), 0);
+    expect(n.value.toInt(), 0);
+  });
+
   test('simple tristate', () async {
     final driverSelect = Logic();
     final mod = TopModWithDrivers(driverSelect);

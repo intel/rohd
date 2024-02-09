@@ -30,10 +30,11 @@ class _WireNet extends _Wire {
   }
 
   void _addDriver(Logic driver) {
-    _drivers.add(driver);
-    driver.glitch.listen((args) {
-      _evaluateNewValue(signalName: driver.name);
-    });
+    if (_drivers.add(driver)) {
+      driver.glitch.listen((args) {
+        _evaluateNewValue(signalName: driver.name);
+      });
+    }
   }
 }
 

@@ -127,12 +127,13 @@ class _Wire {
   /// Only non-null if [_changedBeingWatched] is true.
   StreamSubscription<void>? _postTickSubscription;
 
-  /// Cancels all [Simulator] subscriptions and uses [newChanged] as the
+  /// Cancels all [Simulator] subscriptions and uses [other]'s [changed] as the
   /// source to replace all [changed] events for this [_Wire].
-  void _migrateChangedTriggers(Stream<LogicValueChanged> newChanged) {
+  void _migrateChangedTriggers(_Wire other) {
     unawaited(_preTickSubscription?.cancel());
 
     if (_changedBeingWatched) {
+      final newChanged = other.changed;
       unawaited(_postTickSubscription?.cancel());
       newChanged.listen(_changedController.add);
       _changedBeingWatched = false;
@@ -143,7 +144,7 @@ class _Wire {
   /// it can replace [other].
   void _adopt(_Wire other) {
     _glitchController.emitter.adopt(other._glitchController.emitter);
-    other._migrateChangedTriggers(changed);
+    other._migrateChangedTriggers(this);
   }
 
   /// Store the [negedge] stream to avoid creating multiple copies

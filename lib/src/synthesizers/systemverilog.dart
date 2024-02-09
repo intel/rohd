@@ -489,7 +489,10 @@ class _SynthModuleDefinition {
         ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
-      ..addAll(module.outputs.values);
+      ..addAll(module.outputs.values)
+      // ignore: invalid_use_of_protected_member
+      ..addAll(module.inOuts.values);
+
     for (final output in module.outputs.values) {
       outputs.add(_getSynthLogic(output)!);
     }
@@ -540,13 +543,24 @@ class _SynthModuleDefinition {
       final synthReceiver = _getSynthLogic(receiver)!;
 
       if (receiver is LogicNet) {
-        logicsToTraverse.addAll(receiver.srcConnections);
+        logicsToTraverse.addAll([
+          ...receiver.srcConnections,
+          ...receiver.dstConnections
+        ].where((element) => element.parentModule == module));
 
         for (final srcConnection in receiver.srcConnections) {
-          assignments.add(_SynthAssignment(
-            _getSynthLogic(srcConnection)!,
-            synthReceiver,
-          ));
+          if (srcConnection.parentModule == module ||
+              ((srcConnection.isOutput || srcConnection.isInOut) &&
+                  srcConnection.parentModule!.parent == module)) {
+            // logicsToTraverse.add(srcConnection);
+
+            final netSynthDriver = _getSynthLogic(srcConnection)!;
+
+            assignments.add(_SynthAssignment(
+              netSynthDriver,
+              synthReceiver,
+            ));
+          }
         }
       }
 
@@ -599,7 +613,9 @@ class _SynthModuleDefinition {
           // ignore: invalid_use_of_protected_member
           ..addAll(subModule.inOuts.values);
       } else if (driver != null) {
-        if (!module.isInput(receiver)) {
+        if (!module.isInput(receiver) &&
+            //TODO is this right?
+            !module.isInOut(receiver)) {
           // stop at the input to this module
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver!, synthReceiver));
@@ -811,6 +827,8 @@ class _SynthModuleDefinition {
             'No circular assignment allowed between $dst and $src.');
 
         final mergedAway = _SynthLogic.tryMerge(dst, src);
+
+        //TODO: undriven wires should be deleted?
 
         if (mergedAway != null) {
           final kept = mergedAway == dst ? src : dst;

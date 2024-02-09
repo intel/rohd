@@ -460,7 +460,10 @@ abstract class Module {
           await _traceOutputForModuleContents(srcConnection);
         }
       } else if (signal is LogicNet) {
-        for (final srcConnection in signal.srcConnections) {
+        for (final srcConnection in [
+          ...signal.srcConnections,
+          ...signal.dstConnections
+        ]) {
           await _traceOutputForModuleContents(srcConnection);
         }
       } else if (signal.srcConnection != null) {
@@ -518,11 +521,15 @@ abstract class Module {
   }
 
   @protected
-  Logic addInOut(String name, Logic x, {int width = 1}) {
+  LogicNet addInOut(String name, LogicNet x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
       throw PortWidthMismatchException(x, width);
     }
+
+    //TODO: is x really necessary?
+    // how can we tell if an inout is being driven from inside or outside of a module???
+    // maybe we can trust that build() finds the *first* driver of it as external and then sets parentModule correctly?
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)

@@ -266,7 +266,7 @@ class Logic {
 
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
-  /// This function calls [put()] in [Simulator.injectAction()].
+  /// This function calls [put] in [Simulator.injectAction].
   void inject(dynamic val, {bool fill = false}) =>
       _wire.inject(val, signalName: name, fill: fill);
 
@@ -326,7 +326,18 @@ class Logic {
     _wire = newWire;
 
     // tell all downstream signals to update to the new wire as well
-    for (final dstConnection in dstConnections) {
+    final Iterable<Logic> toUpdateWire;
+    if (this is LogicNet) {
+      toUpdateWire = [
+        ...dstConnections,
+        ...(this as LogicNet).srcConnections,
+      ].where(
+          (connection) => connection._wire != _wire && connection is LogicNet);
+    } else {
+      toUpdateWire = dstConnections.where((element) => element is! LogicNet);
+    }
+
+    for (final dstConnection in toUpdateWire) {
       dstConnection._updateWire(newWire);
     }
   }

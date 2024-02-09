@@ -1,6 +1,6 @@
 import 'package:rohd/rohd.dart';
 
-class TriStateBuffer extends Module with InlineSystemVerilog {
+class TriStateBuffer extends Module with CustomSystemVerilog {
   /// Name for the control signal of this mux.
   late final String _enableName;
 
@@ -17,18 +17,28 @@ class TriStateBuffer extends Module with InlineSystemVerilog {
   late final Logic _enable = input(_enableName);
 
   /// The output of this gate (width is always 1).
-  late final Logic out = output(_outName);
+  //TODO
+  // late final Logic out = output(_outName);
+  late final Logic out = inOut(_outName);
+
+  //TODO
+  final Logic _outDriver;
 
   /// Creates a tri-state buffer which drives [out] with [in_] if [enable] is
   /// high, otherwise leaves it floating `z`.
-  TriStateBuffer(Logic in_, {required Logic enable, super.name = 'tristate'}) {
+  TriStateBuffer(Logic in_, {required Logic enable, super.name = 'tristate'})
+      : _outDriver = Logic(name: 'outDriver', width: in_.width) {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${name}_${in_.name}');
     _enableName = Naming.unpreferredName('enable_${enable.name}');
 
     addInput(_inName, in_, width: in_.width);
     addInput(_enableName, enable);
-    addOutput(_outName, width: in_.width);
+
+    //TODO
+    // addOutput(_outName, width: in_.width);
+    addInOut(_outName, LogicNet(width: in_.width)..gets(_outDriver),
+        width: in_.width);
 
     _setup();
   }
@@ -48,19 +58,43 @@ class TriStateBuffer extends Module with InlineSystemVerilog {
   /// Executes the functional behavior of the tristate buffer.
   void _execute() {
     if (!_enable.value.isValid) {
-      out.put(LogicValue.x);
+      _outDriver.put(LogicValue.x);
     } else if (_enable.value == LogicValue.one) {
-      out.put(_in.value);
+      _outDriver.put(_in.value);
     } else {
-      out.put(LogicValue.z);
+      _outDriver.put(LogicValue.z);
     }
   }
 
+  // @override
+  // String inlineVerilog(Map<String, String> inputs) {
+  //   assert(inputs.length == 2, 'Tristate buffer should have 2 inputs.');
+  //   final in_ = inputs[_inName]!;
+  //   final enable = inputs[_enableName]!;
+  //   return '$enable ? $in_ : ${LogicValue.filled(_in.width, LogicValue.z)}';
+  // }
+
   @override
-  String inlineVerilog(Map<String, String> inputs) {
+  String instantiationVerilog(String instanceType, String instanceName,
+      Map<String, String> inputs, Map<String, String> outputs) {
+    //TODO
+    throw UnimplementedError();
+  }
+
+  @override
+  String instantiationVerilogWithInOuts(
+      String instanceType,
+      String instanceName,
+      Map<String, String> inputs,
+      Map<String, String> outputs,
+      Map<String, String> inOuts) {
     assert(inputs.length == 2, 'Tristate buffer should have 2 inputs.');
+    assert(outputs.isEmpty);
+    assert(inOuts.length == 1);
+
     final in_ = inputs[_inName]!;
     final enable = inputs[_enableName]!;
-    return '$enable ? $in_ : ${LogicValue.filled(_in.width, LogicValue.z)}';
+    final out = inOuts[_outName];
+    return 'assign $out = $enable ? $in_ : ${LogicValue.filled(_in.width, LogicValue.z)}; // tristate';
   }
 }
