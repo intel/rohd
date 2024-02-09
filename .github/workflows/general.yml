@@ -137,5 +137,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: artifacts
+          with:
+            force_with_lease: true
 
 
