@@ -73,7 +73,7 @@ class Vector {
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
       // ignore: invalid_use_of_protected_member
-      final signal = module.input(signalName);
+      final signal = module.tryInOut(signalName) ?? module.inOut(signalName);
 
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
@@ -96,7 +96,9 @@ class Vector {
     final checksList = <String>[];
     for (final expectedOutput in expectedOutputValues.entries) {
       final outputName = expectedOutput.key;
-      final outputPort = module.output(outputName);
+      final outputPort =
+          // ignore: invalid_use_of_protected_member
+          module.tryOutput(outputName) ?? module.inOut(outputName);
       final expected = expectedOutput.value;
       final expectedValue = LogicValue.of(
         expected,
@@ -146,14 +148,16 @@ abstract class SimCompare {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           // ignore: invalid_use_of_protected_member
-          module.input(signalName).put(value);
+          (module.tryInput(signalName) ?? module.inOut(signalName)).put(value);
         }
 
         if (enableChecking) {
           Simulator.postTick.first.then((value) {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
-              final o = module.output(signalName);
+              final o =
+                  // ignore: invalid_use_of_protected_member
+                  module.tryOutput(signalName) ?? module.inOut(signalName);
 
               final errorReason =
                   'For vector #${vectors.indexOf(vector)} $vector,'
@@ -231,6 +235,9 @@ abstract class SimCompare {
     }
   }
 
+  //TODO doc (and warning not to name signals same way that may conflict)
+  static String _toTbWireName(String name) => 'wire__$name';
+
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
@@ -248,8 +255,15 @@ abstract class SimCompare {
       return true;
     }
 
-    String signalDeclaration(String signalName) {
+    // TODO: doc, incl adjust
+    String signalDeclaration(String signalName,
+        {String Function(String original)? adjust}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
+
+      if (adjust != null) {
+        // ignore: parameter_assignments
+        signalName = adjust(signalName);
+      }
 
       if (signal is LogicArray) {
         final unpackedDims =
@@ -272,9 +286,26 @@ abstract class SimCompare {
       for (final v in vectors) ...v.inputValues.keys,
       for (final v in vectors) ...v.expectedOutputValues.keys,
     };
-    final localDeclarations =
-        allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
-    final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
+
+    final logicToWireMapping = Map.fromEntries(vectors
+        .map((v) => v.inputValues.keys)
+        .flattened
+        // ignore: invalid_use_of_protected_member
+        .where((name) => module.tryInOut(name) != null)
+        .map((name) => MapEntry(name, _toTbWireName(name))));
+
+    final localDeclarations = [
+      ...allSignals.map((e) => 'logic ${signalDeclaration(e)};'),
+      ...logicToWireMapping.entries.map((e) {
+        final logicName = e.key;
+        final wireName = e.value;
+        return 'wire ${signalDeclaration(logicName, adjust: _toTbWireName)};'
+            '  assign $wireName = $logicName;';
+      }),
+    ].join('\n');
+
+    final moduleConnections =
+        allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
     final generatedVerilog = module.generateSynth();

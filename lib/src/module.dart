@@ -14,6 +14,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -88,11 +89,12 @@ abstract class Module {
   /// inputs, outputs, and internal signals of this [Module].
   ///
   /// This does not contain any signals within submodules.
-  Iterable<Logic> get signals => CombinedListView([
-        UnmodifiableListView(_inputs.values),
-        UnmodifiableListView(_outputs.values),
-        UnmodifiableListView(internalSignals),
-      ]);
+  late final Iterable<Logic> signals = CombinedListView([
+    UnmodifiableListView(_inputs.values),
+    UnmodifiableListView(_outputs.values),
+    UnmodifiableListView(_inOuts.values),
+    UnmodifiableListView(internalSignals),
+  ]);
 
   /// Accesses the [Logic] associated with this [Module]s input port
   /// named [name].
@@ -125,6 +127,11 @@ abstract class Module {
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
           'InOut name "$name" not found as an in/out of this Module.');
+
+  //TODO: doc
+  //TODO: test
+  @protected
+  Logic? tryInOut(String name) => _inOuts[name];
 
   /// Provides the [output] named [name] if it exists, otherwise `null`.
   Logic? tryOutput(String name) => _outputs[name];
@@ -272,7 +279,35 @@ abstract class Module {
           reserved: module.reserveName);
     }
 
+    //TODO: assert that no modules contain each other
+    //TODO: check benchmarks on perf hit for this, should be low
+    assert(
+      _moduleSelfContainmentCheck(this),
+      'No module should contain itself.',
+    );
+
     _hasBuilt = true;
+  }
+
+  //TODO: doc
+  static bool _moduleSelfContainmentCheck(Module module) {
+    //TODO: test this method?
+
+    final mods = TraverseableCollection<Module>()..add(module);
+
+    for (var i = 0; i < mods.length; i++) {
+      final mod = mods[i];
+
+      for (final subMod in mod.subModules) {
+        if (mods.contains(subMod)) {
+          return false;
+        }
+
+        mods.add(mod);
+      }
+    }
+
+    return true;
   }
 
   /// Adds a [Module] to this as a subModule.
@@ -312,7 +347,7 @@ abstract class Module {
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
-    if (isOutput(signal)) {
+    if (isOutput(signal) || _inOutDrivers.contains(signal)) {
       return;
     }
 
@@ -394,7 +429,7 @@ abstract class Module {
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
   Future<void> _traceOutputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
-    if (isInput(signal)) {
+    if (isInput(signal) || _inOutDrivers.contains(signal)) {
       return;
     }
 
@@ -520,6 +555,10 @@ abstract class Module {
     return inPort;
   }
 
+  /// TODO
+  /// A set of signals that drive [inOut]s from *outside* this [Module].
+  final Set<LogicNet> _inOutDrivers = {};
+
   @protected
   LogicNet addInOut(String name, LogicNet x, {int width = 1}) {
     _checkForSafePortName(name);
@@ -530,6 +569,8 @@ abstract class Module {
     //TODO: is x really necessary?
     // how can we tell if an inout is being driven from inside or outside of a module???
     // maybe we can trust that build() finds the *first* driver of it as external and then sets parentModule correctly?
+
+    _inOutDrivers.add(x);
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
@@ -622,7 +663,7 @@ abstract class Module {
     return outArr;
   }
 
-  // TODO: do we really need tristate arrays and structs?
+  // TODO: do we really need tristate arrays and structs?  yes...
   // @protected
   // Logic addInOutArray(String name) {}
 

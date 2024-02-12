@@ -94,6 +94,7 @@ mixin CustomSystemVerilog on Module {
   /// been overridden.  The [Map]s [inputs] and [outputs] are a mapping from the
   /// [Module]'s port names to the names of the signals that are passed into
   /// those ports in the generated SystemVerilog.
+  @Deprecated('Use `instantiationVerilogWithInOuts` instead.') //TODO
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs);
 

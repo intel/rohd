@@ -31,6 +31,36 @@ class TopModWithDrivers extends Module {
   }
 }
 
+class SubModInoutOnly extends Module {
+  SubModInoutOnly({LogicNet? inio, LogicNet? outio}) {
+    final internalio = LogicNet(name: 'internalio');
+    if (inio != null) {
+      internalio <= addInOut('inio', inio);
+    }
+    if (outio != null) {
+      addInOut('outio', outio) <= internalio;
+    }
+  }
+}
+
+class TopModConnectivity extends Module {
+  TopModConnectivity({LogicNet? inio, LogicNet? outio, LogicNet? io}) {
+    if (io != null) {
+      io = addInOut('io', io);
+    }
+
+    if (inio != null) {
+      inio = addInOut('inio', inio);
+      SubModInoutOnly(inio: inio, outio: io);
+    }
+
+    if (outio != null) {
+      outio = addInOut('outio', outio);
+      SubModInoutOnly(outio: outio, inio: io);
+    }
+  }
+}
+
 //TODO: test when there are multiple assignments with named wires nets, bidirectional assignment behavior
 //TODO: test driving and being driven by structs, arrays
 //TODO: test module hierarchy searching with only inouts
@@ -104,9 +134,8 @@ void main() {
     await mod.build();
 
     driverSelect.put(1);
-    print(mod.drivenValue.value);
 
-    print(mod.generateSynth());
+    expect(mod.drivenValue.value.toInt(), 0xaa);
   });
 
   test('simple tristate simcompare', () async {
@@ -121,7 +150,22 @@ void main() {
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
 
-    // print(mod.generateSynth());
+  group('io only hier', () {
+    test('all ios', () async {
+      final mod = TopModConnectivity(
+          inio: LogicNet(), outio: LogicNet(), io: LogicNet());
+      await mod.build();
+
+      final vectors = [
+        Vector({'inio': 0}, {'outio': 0, 'io': 0}),
+        Vector({'inio': 1}, {'outio': 1, 'io': 1}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 }
