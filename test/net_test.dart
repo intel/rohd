@@ -32,7 +32,7 @@ class TopModWithDrivers extends Module {
 }
 
 class SubModInoutOnly extends Module {
-  SubModInoutOnly({LogicNet? inio, LogicNet? outio}) {
+  SubModInoutOnly({LogicNet? inio, LogicNet? outio}) : super(name: 'submod') {
     final internalio = LogicNet(name: 'internalio');
     if (inio != null) {
       internalio <= addInOut('inio', inio);
@@ -51,11 +51,17 @@ class TopModConnectivity extends Module {
 
     if (inio != null) {
       inio = addInOut('inio', inio);
+    }
+
+    if (inio != null || io != null) {
       SubModInoutOnly(inio: inio, outio: io);
     }
 
     if (outio != null) {
       outio = addInOut('outio', outio);
+    }
+
+    if (outio != null || io != null) {
       SubModInoutOnly(outio: outio, inio: io);
     }
   }
@@ -156,7 +162,11 @@ void main() {
   group('io only hier', () {
     test('all ios', () async {
       final mod = TopModConnectivity(
-          inio: LogicNet(), outio: LogicNet(), io: LogicNet());
+        inio: LogicNet(),
+        outio: LogicNet(),
+        io: LogicNet(),
+      );
+
       await mod.build();
 
       final vectors = [
@@ -166,6 +176,39 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('in io only', () async {
+      final mod = TopModConnectivity(
+        inio: LogicNet(),
+      );
+
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
+    });
+
+    test('out io only', () async {
+      final mod = TopModConnectivity(
+        outio: LogicNet(),
+      );
+
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
+    });
+
+    test('mid io only', () async {
+      final mod = TopModConnectivity(
+        io: LogicNet(),
+      );
+
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect('  submod'.allMatches(sv).length, 2);
     });
   });
 }
