@@ -94,14 +94,15 @@ class ModuleWithFloatingSignals extends Module {
 }
 
 class TopCustomSvWrap extends Module {
-  TopCustomSvWrap(Logic a, Logic b, {bool useOld = false}) {
+  TopCustomSvWrap(Logic a, Logic b,
+      {bool useOld = false, bool banExpressions = false}) {
     a = addInput('a', a);
     b = addInput('b', b);
 
     if (useOld) {
-      SubCustomSv([a, b]);
+      SubCustomSv([a, b], banExpressions: banExpressions);
     } else {
-      SubSv([a, b]);
+      SubSv([a, b], banExpressions: banExpressions);
     }
   }
 }
@@ -109,7 +110,13 @@ class TopCustomSvWrap extends Module {
 /// This is for legacy deprecated testing.
 // ignore: deprecated_member_use_from_same_package
 class SubCustomSv extends Module with CustomSystemVerilog {
-  SubCustomSv(List<Logic> toSwizzle) {
+  final bool banExpressions;
+
+  @override
+  List<String> get expressionlessInputs =>
+      banExpressions ? inputs.keys.toList() : const [];
+
+  SubCustomSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
     addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
   }
 
@@ -123,7 +130,13 @@ assign my_fancy_new_signal <= ^${inputs['fer_swizzle']};
 }
 
 class SubSv extends Module with SystemVerilog {
-  SubSv(List<Logic> toSwizzle) {
+  final bool banExpressions;
+
+  @override
+  List<String> get expressionlessInputs =>
+      banExpressions ? inputs.keys.toList() : const [];
+
+  SubSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
     addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
   }
 
@@ -217,17 +230,22 @@ void main() {
     expect('assign xylophone'.allMatches(sv).length, 1);
   });
 
-  test('properly drops in custom systemverilog (old)', () async {
-    final mod = TopCustomSvWrap(Logic(), Logic(), useOld: true);
-    await mod.build();
-    final sv = mod.generateSynth();
-    expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
-  });
+  group('properly drops in custom systemverilog', () {
+    for (final useOld in [true, false]) {
+      for (final banExpressions in [true, false]) {
+        test('(useOld=$useOld, banExpressions=$banExpressions)', () async {
+          final mod = TopCustomSvWrap(Logic(), Logic(),
+              useOld: useOld, banExpressions: banExpressions);
+          await mod.build();
+          final sv = mod.generateSynth();
 
-  test('properly drops in custom systemverilog', () async {
-    final mod = TopCustomSvWrap(Logic(), Logic());
-    await mod.build();
-    final sv = mod.generateSynth();
-    expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+          if (banExpressions) {
+            expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
+          } else {
+            expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+          }
+        });
+      }
+    }
   });
 }

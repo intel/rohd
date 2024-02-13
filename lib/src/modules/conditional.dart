@@ -1650,7 +1650,7 @@ Logic flop(
     ).q;
 
 /// Represents a single flip-flop with no reset.
-class FlipFlop extends Module with CustomSystemVerilog {
+class FlipFlop extends Module with SystemVerilog {
   /// Name for the enable input of this flop
   final String _enName = Naming.unpreferredName('en');
 
@@ -1758,8 +1758,8 @@ class FlipFlop extends Module with CustomSystemVerilog {
   }
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+      String instanceType, String instanceName, Map<String, String> ports) {
     var expectedInputs = 2;
     if (_en != null) {
       expectedInputs++;
@@ -1771,27 +1771,24 @@ class FlipFlop extends Module with CustomSystemVerilog {
       expectedInputs++;
     }
 
-    if (inputs.length != expectedInputs || outputs.length != 1) {
-      throw Exception(
-          'FlipFlop has exactly $expectedInputs inputs and one output.');
-    }
+    assert(ports.length == expectedInputs + 1,
+        'FlipFlop has exactly $expectedInputs inputs and one output.');
 
-    final clk = inputs[_clkName]!;
-    final d = inputs[_dName]!;
-    final q = outputs[_qName]!;
+    final clk = ports[_clkName]!;
+    final d = ports[_dName]!;
+    final q = ports[_qName]!;
 
     final svBuffer = StringBuffer('always_ff @(posedge $clk) ');
 
     if (_reset != null) {
       final resetValueString = _resetValuePort != null
-          ? inputs[_resetValueName]!
+          ? ports[_resetValueName]!
           : _resetValueConst.toString();
-      svBuffer
-          .write('if(${inputs[_resetName]}) $q <= $resetValueString; else ');
+      svBuffer.write('if(${ports[_resetName]}) $q <= $resetValueString; else ');
     }
 
     if (_en != null) {
-      svBuffer.write('if(${inputs[_enName]!}) ');
+      svBuffer.write('if(${ports[_enName]!}) ');
     }
 
     svBuffer.write('$q <= $d;  // $instanceName');

@@ -7,7 +7,7 @@ issue_tracker: https://github.com/intel/rohd/issues
 documentation: https://intel.github.io/rohd-website/docs/sample-example/
 
 environment:
-  sdk: '>=2.19.0 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   collection: ^1.15.0

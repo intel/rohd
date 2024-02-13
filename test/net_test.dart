@@ -72,6 +72,7 @@ class TopModConnectivity extends Module {
 //TODO: test module hierarchy searching with only inouts
 //TODO: test `changed` on nets
 //TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
+//TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 
 void main() {
   tearDown(() async {

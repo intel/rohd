@@ -846,11 +846,17 @@ class _SynthModuleDefinition {
                 submoduleInstantiation.outputMapping.values.first));
 
     // remove any inlineability for those that want no expressions
-    for (final submoduleInstantiation in inlineableSubmoduleInstantiations) {
-      singleUseSignals.removeAll(
-          (submoduleInstantiation.module as InlineSystemVerilog)
-              .expressionlessInputs
-              .map((e) => submoduleInstantiation.inputMapping[e]!));
+    for (final MapEntry(key: subModule, value: instantiation)
+        in moduleToSubModuleInstantiationMap.entries) {
+      if (subModule is SystemVerilog) {
+        singleUseSignals.removeAll(subModule.expressionlessInputs
+            .map((e) => instantiation.inputMapping[e]!));
+      }
+      // ignore: deprecated_member_use_from_same_package
+      else if (subModule is CustomSystemVerilog) {
+        singleUseSignals.removeAll(subModule.expressionlessInputs
+            .map((e) => instantiation.inputMapping[e]!));
+      }
     }
 
     final synthLogicToInlineableSynthSubmoduleMap =

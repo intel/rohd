@@ -2,6 +2,8 @@
 
 - Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports and collapses all ports into a single `ports` argument.
 - Breaking: `ExternalSystemVerilogModule` and `InlineSystemVerilog` now extend `SystemVerilog` instead of `CustomSystemVerilog`, meaning the `instantiationVerilog` API arguments have been modified.
+- Breaking: Increased minimum Dart SDK version to 3.0.0.
+- Fixed a bug where `expressionlessInputs` may not have been honored in non-inline custom SystemVerilog modules.
 
 ## 0.5.2
 
