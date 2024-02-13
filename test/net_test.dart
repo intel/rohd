@@ -71,6 +71,7 @@ class TopModConnectivity extends Module {
 //TODO: test driving and being driven by structs, arrays
 //TODO: test module hierarchy searching with only inouts
 //TODO: test `changed` on nets
+//TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
 
 void main() {
   tearDown(() async {

@@ -73,7 +73,7 @@ class Vector {
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
       // ignore: invalid_use_of_protected_member
-      final signal = module.tryInOut(signalName) ?? module.inOut(signalName);
+      final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
@@ -98,7 +98,7 @@ class Vector {
       final outputName = expectedOutput.key;
       final outputPort =
           // ignore: invalid_use_of_protected_member
-          module.tryOutput(outputName) ?? module.inOut(outputName);
+          module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
       final expectedValue = LogicValue.of(
         expected,

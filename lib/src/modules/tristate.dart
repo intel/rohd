@@ -1,6 +1,6 @@
 import 'package:rohd/rohd.dart';
 
-class TriStateBuffer extends Module with CustomSystemVerilog {
+class TriStateBuffer extends Module with SystemVerilog {
   /// Name for the control signal of this mux.
   late final String _enableName;
 
@@ -66,35 +66,17 @@ class TriStateBuffer extends Module with CustomSystemVerilog {
     }
   }
 
-  // @override
-  // String inlineVerilog(Map<String, String> inputs) {
-  //   assert(inputs.length == 2, 'Tristate buffer should have 2 inputs.');
-  //   final in_ = inputs[_inName]!;
-  //   final enable = inputs[_enableName]!;
-  //   return '$enable ? $in_ : ${LogicValue.filled(_in.width, LogicValue.z)}';
-  // }
-
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
-    //TODO
-    throw UnimplementedError();
-  }
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    assert(ports.length == 3, 'Tristate buffer should have 2 inputs, 1 inout.');
 
-  @override
-  String instantiationVerilogWithInOuts(
-      String instanceType,
-      String instanceName,
-      Map<String, String> inputs,
-      Map<String, String> outputs,
-      Map<String, String> inOuts) {
-    assert(inputs.length == 2, 'Tristate buffer should have 2 inputs.');
-    assert(outputs.isEmpty);
-    assert(inOuts.length == 1);
-
-    final in_ = inputs[_inName]!;
-    final enable = inputs[_enableName]!;
-    final out = inOuts[_outName];
+    final in_ = ports[_inName]!;
+    final enable = ports[_enableName]!;
+    final out = ports[_outName];
     return 'assign $out = $enable ? $in_ : ${LogicValue.filled(_in.width, LogicValue.z)}; // tristate';
   }
 }

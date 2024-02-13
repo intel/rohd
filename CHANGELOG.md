@@ -1,3 +1,8 @@
+## Next release
+
+- Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports and collapses all ports into a single `ports` argument.
+- Breaking: `ExternalSystemVerilogModule` and `InlineSystemVerilog` now extend `SystemVerilog` instead of `CustomSystemVerilog`, meaning the `instantiationVerilog` API arguments have been modified.
+
 ## 0.5.2
 
 - Added APIs for accessing indices of a `List<Logic>` using another `Logic`: `Logic.selectFrom` and `List<Logic>.selectIndex` (<https://github.com/intel/rohd/pull/438>).

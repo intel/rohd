@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // external.dart
@@ -15,8 +15,7 @@ import 'package:rohd/rohd.dart';
 /// This is useful for interacting with SystemVerilog modules. You can add
 /// custom behavior for how to synthesize the generated SystemVerilog as well
 /// as extend functionality with behavioral models or cosimulation.
-abstract class ExternalSystemVerilogModule extends Module
-    with CustomSystemVerilog {
+abstract class ExternalSystemVerilogModule extends Module with SystemVerilog {
   /// A map of parameter names and values to be passed to the SystemVerilog
   /// module.
   final Map<String, String>? parameters;
@@ -36,29 +35,16 @@ abstract class ExternalSystemVerilogModule extends Module
   String instantiationVerilog(
     String instanceType,
     String instanceName,
-    Map<String, String> inputs,
-    Map<String, String> outputs,
-  ) {
-    assert(
-        inOuts.isEmpty, 'Should not be instantiating without inouts present.');
-
-    return instantiationVerilogWithInOuts(
-        instanceType, instanceName, inputs, outputs, {});
-  }
-
-  @override
-  String instantiationVerilogWithInOuts(
-    String instanceType,
-    String instanceName,
-    Map<String, String> inputs,
-    Map<String, String> outputs,
-    Map<String, String> inOuts,
+    Map<String, String> ports,
   ) =>
-      SystemVerilogSynthesizer.instantiationVerilogWithParameters(
-          this, definitionName, instanceName, inputs, outputs,
-          inOuts: inOuts,
-          parameters: parameters,
-          forceStandardInstantiation: true);
+      SystemVerilogSynthesizer.instantiationVerilogFor(
+        module: this,
+        instanceType: definitionName,
+        instanceName: instanceName,
+        ports: ports,
+        parameters: parameters,
+        forceStandardInstantiation: true,
+      );
 }
 
 /// Deprecated - Use [ExternalSystemVerilogModule] instead.

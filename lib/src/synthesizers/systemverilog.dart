@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog.dart
@@ -20,33 +20,50 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
   @override
-  bool generatesDefinition(Module module) => module is! CustomSystemVerilog;
+  bool generatesDefinition(Module module) =>
+      // ignore: deprecated_member_use_from_same_package
+      !((module is CustomSystemVerilog) || (module is SystemVerilog));
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
   /// The instantiation will create it as type [instanceType] and name
   /// [instanceName].
   ///
-  /// [inputs] and [outputs] map `module` input/output name to a verilog signal name.
+  /// [ports] maps [module] input/output/inout names to a verilog signal name.
+  ///
   /// For example:
   /// To generate this SystemVerilog:  `sig_c = sig_a & sig_b`
   /// Based on this module definition: `c <= a & b`
-  /// The values for [inputs] and [outputs] should be:
-  /// inputs:  `{ 'a' : 'sig_a', 'b' : 'sig_b'}`
-  /// outputs: `{ 'c' : 'sig_c' }`
-  static String instantiationVerilogWithParameters(
-      Module module,
-      String instanceType,
-      String instanceName,
-      Map<String, String> inputs,
-      Map<String, String> outputs,
-      {Map<String, String> inOuts = const {},
+  /// The values for [ports] should be:
+  /// ports:  `{ 'a' : 'sig_a', 'b' : 'sig_b', 'c' : 'sig_c'}`
+  static String instantiationVerilogFor(
+      {required Module module,
+      required String instanceType,
+      required String instanceName,
+      required Map<String, String> ports,
       Map<String, String>? parameters,
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
-      if (module is CustomSystemVerilog) {
-        return module.instantiationVerilogWithInOuts(
-            instanceType, instanceName, inputs, outputs, inOuts);
+      if (module is SystemVerilog) {
+        //TODO: test this path
+        return module.instantiationVerilog(
+          instanceType,
+          instanceName,
+          ports,
+        );
+      }
+      // ignore: deprecated_member_use_from_same_package
+      else if (module is CustomSystemVerilog) {
+        //TODO: test this path
+        return module.instantiationVerilog(
+          instanceType,
+          instanceName,
+          Map.fromEntries(ports.entries
+              // ignore: invalid_use_of_protected_member
+              .where((element) => module.inputs.containsKey(element.key))),
+          Map.fromEntries(ports.entries
+              .where((element) => module.outputs.containsKey(element.key))),
+        );
       }
     }
 
@@ -55,27 +72,62 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
     // ignore: invalid_use_of_protected_member
     for (final signalName in module.inputs.keys) {
-      connections.add('.$signalName(${inputs[signalName]!})');
+      connections.add('.$signalName(${ports[signalName]!})');
     }
 
     for (final signalName in module.outputs.keys) {
-      connections.add('.$signalName(${outputs[signalName]!})');
+      connections.add('.$signalName(${ports[signalName]!})');
     }
 
     // ignore: invalid_use_of_protected_member
     for (final signalName in module.inOuts.keys) {
-      connections.add('.$signalName(${inOuts[signalName]!})');
+      connections.add('.$signalName(${ports[signalName]!})');
     }
 
     final connectionsStr = connections.join(',');
+
     var parameterString = '';
     if (parameters != null) {
       final parameterContents =
           parameters.entries.map((e) => '.${e.key}(${e.value})').join(',');
       parameterString = '#($parameterContents)';
     }
+
     return '$instanceType $parameterString $instanceName($connectionsStr);';
   }
+
+  /// Creates a line of SystemVerilog that instantiates [module].
+  ///
+  /// The instantiation will create it as type [instanceType] and name
+  /// [instanceName].
+  ///
+  /// [inputs] and [outputs] map `module` input/output name to a verilog signal
+  /// name.
+  ///
+  /// For example:
+  /// To generate this SystemVerilog:  `sig_c = sig_a & sig_b`
+  /// Based on this module definition: `c <= a & b`
+  /// The values for [inputs] and [outputs] should be:
+  /// inputs:  `{ 'a' : 'sig_a', 'b' : 'sig_b'}`
+  /// outputs: `{ 'c' : 'sig_c' }`
+  @Deprecated('Use `instantiationVerilogFor` instead.')
+  static String instantiationVerilogWithParameters(
+          Module module,
+          String instanceType,
+          String instanceName,
+          Map<String, String> inputs,
+          Map<String, String> outputs,
+          {Map<String, String> inOuts = const {},
+          Map<String, String>? parameters,
+          bool forceStandardInstantiation = false}) =>
+      instantiationVerilogFor(
+        module: module,
+        instanceType: instanceType,
+        instanceName: instanceName,
+        ports: {...inputs, ...outputs, ...inOuts},
+        parameters: parameters,
+        forceStandardInstantiation: forceStandardInstantiation,
+      );
 
   @override
   SynthesisResult synthesize(
@@ -85,6 +137,9 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
 /// injected in generated output instead of instantiating a separate `module`.
+//TODO: update docs with new recommendations
+//TODO: make sure test cover both old and new version
+@Deprecated('Use `SystemVerilog` instead')
 mixin CustomSystemVerilog on Module {
   /// Generates custom SystemVerilog to be injected in place of a `module`
   /// instantiation.
@@ -94,69 +149,73 @@ mixin CustomSystemVerilog on Module {
   /// been overridden.  The [Map]s [inputs] and [outputs] are a mapping from the
   /// [Module]'s port names to the names of the signals that are passed into
   /// those ports in the generated SystemVerilog.
-  @Deprecated('Use `instantiationVerilogWithInOuts` instead.') //TODO
   String instantiationVerilog(String instanceType, String instanceName,
       Map<String, String> inputs, Map<String, String> outputs);
-
-  String instantiationVerilogWithInOuts(
-      String instanceType,
-      String instanceName,
-      Map<String, String> inputs,
-      Map<String, String> outputs,
-      Map<String, String> inOuts) {
-    if (inOuts.isNotEmpty) {
-      throw Exception('Inouts are provided'); //TODO
-    }
-    return instantiationVerilog(instanceType, instanceName, inputs, outputs);
-  }
 
   /// A list of names of [input]s which should not have any SystemVerilog
   /// expressions (including constants) in-lined into them. Only signal names
   /// will be fed into these.
   @protected
-  final List<String> expressionlessInputs = const [];
+  final List<String> expressionlessInputs = const []; //TODO: test this old one
 }
 
-/// Allows a [Module] to define a special type of [CustomSystemVerilog] which
-/// can be inlined within other SystemVerilog code.
+/// Allows a [Module] to define a custom implementation of SystemVerilog to be
+/// injected in generated output instead of instantiating a separate `module`.
+mixin SystemVerilog on Module {
+  /// Generates custom SystemVerilog to be injected in place of a `module`
+  /// instantiation.
+  ///
+  /// The [instanceType] and [instanceName] represent the type and name,
+  /// respectively of the module that would have been instantiated had it not
+  /// been overridden.  [ports] is a mapping from the [Module]'s port names to
+  /// the names of the signals that are passed into those ports in the generated
+  /// SystemVerilog.
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  );
+
+  /// A list of names of [input]s which should not have any SystemVerilog
+  /// expressions (including constants) in-lined into them. Only signal names
+  /// will be fed into these.
+  @protected
+  final List<String> expressionlessInputs = const []; //TODO: test this new one
+}
+
+/// Allows a [Module] to define a special type of [SystemVerilog] which can be
+/// inlined within other SystemVerilog code.
 ///
-/// The inline SystemVerilog will get parentheses wrapped around it and
-/// then dropped into other code in the same way a variable name is.
-mixin InlineSystemVerilog on Module implements CustomSystemVerilog {
+/// The inline SystemVerilog will get parentheses wrapped around it and then
+/// dropped into other code in the same way a variable name is.
+mixin InlineSystemVerilog on Module implements SystemVerilog {
   /// Generates custom SystemVerilog to be injected in place of the output
   /// port's corresponding signal name.
   ///
   /// The [inputs] are a mapping from the [Module]'s port names to the names of
   /// the signals that are passed into those ports in the generated
-  /// SystemVerilog.
+  /// SystemVerilog. It will only contain [input]s and [inOut]s, as there
+  /// should only be one [output] which is driven by the expression.
   ///
   /// The output will be appropriately wrapped with parentheses to guarantee
   /// proper order of operations.
   String inlineVerilog(Map<String, String> inputs);
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
     if (outputs.length != 1) {
       throw Exception(
           'Inline verilog must have exactly one output, but saw $outputs.');
     }
-    final output = outputs.values.first;
-    final inline = inlineVerilog(inputs);
+    final output = ports[outputs.keys.first];
+    final inputPorts = Map.fromEntries(ports.entries.where((element) =>
+        inputs.containsKey(element.key) || inOuts.containsKey(element.key)));
+    final inline = inlineVerilog(inputPorts);
     return 'assign $output = $inline;  // $instanceName';
-  }
-
-  @override
-  String instantiationVerilogWithInOuts(
-      String instanceType,
-      String instanceName,
-      Map<String, String> inputs,
-      Map<String, String> outputs,
-      Map<String, String> inOuts) {
-    if (inOuts.isNotEmpty) {
-      throw Exception('Inouts are provided'); //TODO
-    }
-    return instantiationVerilog(instanceType, instanceName, inputs, outputs);
   }
 
   @override
@@ -458,10 +517,16 @@ class _SynthModuleDefinition {
         newSynth = _SynthLogicArrayElement(logic, parentArraySynthLogic!);
       } else {
         final disallowConstName = logic.isInput &&
-            logic.parentModule is CustomSystemVerilog &&
-            (logic.parentModule! as CustomSystemVerilog)
-                .expressionlessInputs
-                .contains(logic.name);
+            // ignore: deprecated_member_use_from_same_package
+            ((logic.parentModule is CustomSystemVerilog &&
+                    // ignore: deprecated_member_use_from_same_package
+                    (logic.parentModule! as CustomSystemVerilog)
+                        .expressionlessInputs
+                        .contains(logic.name)) ||
+                (logic.parentModule is SystemVerilog &&
+                    (logic.parentModule! as SystemVerilog)
+                        .expressionlessInputs
+                        .contains(logic.name)));
 
         newSynth = _SynthLogic(
           logic,
@@ -783,7 +848,7 @@ class _SynthModuleDefinition {
     // remove any inlineability for those that want no expressions
     for (final submoduleInstantiation in inlineableSubmoduleInstantiations) {
       singleUseSignals.removeAll(
-          (submoduleInstantiation.module as CustomSystemVerilog)
+          (submoduleInstantiation.module as InlineSystemVerilog)
               .expressionlessInputs
               .map((e) => submoduleInstantiation.inputMapping[e]!));
     }

@@ -59,12 +59,12 @@ abstract class Module {
   /// A cached copy of the parent, useful for debug and efficiency
   Module? _parent;
 
-  /// A map from input port names to this [Module] to corresponding [Logic]
+  /// A map from [input] port names to this [Module] to corresponding [Logic]
   /// signals.
   @protected
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
-  /// A map from output port names to this [Module] to corresponding [Logic]
+  /// A map from [output] port names to this [Module] to corresponding [Logic]
   /// signals.
   Map<String, Logic> get outputs =>
       UnmodifiableMapView<String, Logic>(_outputs);

@@ -94,14 +94,20 @@ class ModuleWithFloatingSignals extends Module {
 }
 
 class TopCustomSvWrap extends Module {
-  TopCustomSvWrap(Logic a, Logic b) {
+  TopCustomSvWrap(Logic a, Logic b, {bool useOld = false}) {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    SubCustomSv([a, b]);
+    if (useOld) {
+      SubCustomSv([a, b]);
+    } else {
+      SubSv([a, b]);
+    }
   }
 }
 
+/// This is for legacy deprecated testing.
+// ignore: deprecated_member_use_from_same_package
 class SubCustomSv extends Module with CustomSystemVerilog {
   SubCustomSv(List<Logic> toSwizzle) {
     addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
@@ -113,6 +119,20 @@ class SubCustomSv extends Module with CustomSystemVerilog {
       '''
 logic my_fancy_new_signal; // $instanceName (of type $instanceType)
 assign my_fancy_new_signal <= ^${inputs['fer_swizzle']};
+''';
+}
+
+class SubSv extends Module with SystemVerilog {
+  SubSv(List<Logic> toSwizzle) {
+    addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> ports) =>
+      '''
+logic my_fancy_new_signal; // $instanceName (of type $instanceType)
+assign my_fancy_new_signal <= ^${ports['fer_swizzle']};
 ''';
 }
 
@@ -197,7 +217,14 @@ void main() {
     expect('assign xylophone'.allMatches(sv).length, 1);
   });
 
-  test('properly drops in custom systemveri;og', () async {
+  test('properly drops in custom systemverilog (old)', () async {
+    final mod = TopCustomSvWrap(Logic(), Logic(), useOld: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+  });
+
+  test('properly drops in custom systemverilog', () async {
     final mod = TopCustomSvWrap(Logic(), Logic());
     await mod.build();
     final sv = mod.generateSynth();

@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
-abstract class _Always extends Module with CustomSystemVerilog {
+abstract class _Always extends Module with SystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   List<Conditional> get conditionals =>
       UnmodifiableListView<Conditional>(_conditionals);
@@ -161,8 +161,17 @@ abstract class _Always extends Module with CustomSystemVerilog {
   String assignOperator();
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    // no `inouts` can be used in a `Conditional`
+    final inputs = Map.fromEntries(
+        ports.entries.where((element) => this.inputs.containsKey(element.key)));
+    final outputs = Map.fromEntries(ports.entries
+        .where((element) => this.outputs.containsKey(element.key)));
+
     var verilog = '';
     verilog += '//  $instanceName\n';
     verilog += '${alwaysVerilogStatement(inputs)} begin\n';
@@ -299,7 +308,10 @@ class Combinational extends _Always {
 
       _signalToSsaDrivers.putIfAbsent(tpi, () => <_SsaLogic>{}).add(ssaDriver);
 
-      if (tpi.isInput && tpi.parentModule! is CustomSystemVerilog) {
+      if (tpi.isInput &&
+          // ignore: deprecated_member_use_from_same_package
+          ((tpi.parentModule! is CustomSystemVerilog) ||
+              tpi.parentModule! is SystemVerilog)) {
         toParse.addAll(tpi.parentModule!.outputs.values);
       } else {
         toParse.addAll(tpi.dstConnections);
