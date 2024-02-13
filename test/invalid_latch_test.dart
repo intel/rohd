@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // invalid_latch_test.dart
@@ -45,17 +45,14 @@ class _DLatch extends Module {
       case _DLatchCombType.assignments:
         _out.gets(nand2gate2.out);
         _outB.gets(nand2gate3.out);
-        break;
       case _DLatchCombType.oneComb:
         Combinational([
           ConditionalAssign(_out, nand2gate2.out),
           ConditionalAssign(_outB, nand2gate3.out)
         ]);
-        break;
       case _DLatchCombType.manyCombs:
         Combinational([ConditionalAssign(_out, nand2gate2.out)]);
         Combinational([ConditionalAssign(_outB, nand2gate3.out)]);
-        break;
     }
   }
 

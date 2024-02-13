@@ -1214,16 +1214,12 @@ class _SynthLogic {
       switch (naming) {
         case Naming.reserved:
           _reservedLogic = logic;
-          break;
         case Naming.renameable:
           _renameableLogic = logic;
-          break;
         case Naming.mergeable:
           _mergeableLogics.add(logic);
-          break;
         case Naming.unnamed:
           _unnamedLogics.add(logic);
-          break;
       }
     }
   }

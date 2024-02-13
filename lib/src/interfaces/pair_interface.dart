@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface.dart
@@ -104,7 +104,6 @@ class PairInterface extends Interface<PairDirection> {
         outputTags = {
           PairDirection.fromConsumer,
         };
-        break;
 
       case PairRole.provider:
         inputTags = {
@@ -114,7 +113,6 @@ class PairInterface extends Interface<PairDirection> {
         outputTags = {
           PairDirection.fromProvider,
         };
-        break;
     }
 
     connectIO(module, srcInterface,
