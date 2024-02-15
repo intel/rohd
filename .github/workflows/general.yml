@@ -92,23 +92,23 @@ jobs:
         with:
           folder: doc/api
           branch: docs
-          
+
   build-devtool:
-      name: Build Devtools
-      timeout-minutes: 30
-      runs-on: ubuntu-22.04
-      steps:
-        - uses: actions/checkout@v2
+    name: Build Devtools
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Setup Flutter SDK
-          uses: flutter-actions/setup-flutter@v2
-          with:
-            channel: beta
-            version: 3.18.0-0.2.pre
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v2
+        with:
+          channel: beta
+          version: 3.18.0-0.2.pre
 
-        - name: Run Flutter Test
-          run: tool/gh_actions/devtool/run_devtool_test.sh
+      - name: Run Flutter Test
+        run: tool/gh_actions/devtool/run_devtool_test.sh
 
-        - name: Build Static Web
-          run: tool/gh_actions/devtool/build_web.sh
+      - name: Build Static Web
+        run: tool/gh_actions/devtool/build_web.sh
 
