@@ -19,8 +19,9 @@ class SignalWidthMismatchException extends RohdException {
             ' $additionalMessage');
 
   /// Constructs a new [Exception] for when a dynamic has a wrong width.
-  SignalWidthMismatchException.forDynamic(int expectedWidth, int actualWidth,
-      {String additionalMessage = '', dynamic val = ''})
+  SignalWidthMismatchException.forDynamic(
+      dynamic val, int expectedWidth, int actualWidth,
+      {String additionalMessage = ''})
       : super('Value $val has the wrong width.'
             ' Expected $expectedWidth but found $actualWidth.'
             ' $additionalMessage');
@@ -30,4 +31,12 @@ class SignalWidthMismatchException extends RohdException {
   SignalWidthMismatchException.forNull(dynamic val)
       : super('Could not infer width of input $val.'
             ' Please provide a valid width.');
+
+  /// Constructs a new [Exception] for when a dynamic has a wrong width.
+  SignalWidthMismatchException.forWidthOverflow(int actualWidth, int maxWidth,
+      {String customMessage = ''})
+      : super(customMessage == ''
+            ? 'Value has the wrong width.'
+                ' Expected $actualWidth to be less than $maxWidth.'
+            : customMessage);
 }

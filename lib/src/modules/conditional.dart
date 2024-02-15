@@ -1012,7 +1012,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
 
     if (width != inferredWidth && width != null && inferredWidth != null) {
       throw SignalWidthMismatchException.forDynamic(
-          val: conditionValue, width, inferredWidth);
+          conditionValue, width, inferredWidth);
     }
 
     width ??= inferredWidth;
@@ -1026,18 +1026,14 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     if (condition.key is Logic) {
       if (expression.width != (condition.key as Logic).width) {
         throw SignalWidthMismatchException.forDynamic(
-            val: condition.key,
-            expression.width,
-            (condition.key as Logic).width);
+            condition.key, expression.width, (condition.key as Logic).width);
       }
     }
 
     if (condition.key is LogicValue) {
       if (expression.width != (condition.key as LogicValue).width) {
-        throw SignalWidthMismatchException.forDynamic(
-            val: condition.key,
-            expression.width,
-            (condition.key as LogicValue).width);
+        throw SignalWidthMismatchException.forDynamic(condition.key,
+            expression.width, (condition.key as LogicValue).width);
       }
     }
   }

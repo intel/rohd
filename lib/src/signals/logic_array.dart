@@ -147,8 +147,8 @@ class LogicArray extends LogicStructure {
   ///
   void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
     if (updatedSubset.length > elements.length - start) {
-      throw SignalWidthMismatchException.forDynamic(
-          elements.length - start, updatedSubset.length);
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, elements.length - start);
     }
 
     // Assign Logic array from `start` index to `start+updatedSubset.length`
