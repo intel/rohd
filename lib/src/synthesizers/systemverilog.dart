@@ -22,7 +22,8 @@ class SystemVerilogSynthesizer extends Synthesizer {
   @override
   bool generatesDefinition(Module module) =>
       // ignore: deprecated_member_use_from_same_package
-      !((module is CustomSystemVerilog) || (module is SystemVerilog));
+      !((module is CustomSystemVerilog) ||
+          (module is SystemVerilog && !module.generatesDefinition));
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
@@ -132,7 +133,10 @@ class SystemVerilogSynthesizer extends Synthesizer {
   @override
   SynthesisResult synthesize(
           Module module, Map<Module, String> moduleToInstanceTypeMap) =>
-      _SystemVerilogSynthesisResult(module, moduleToInstanceTypeMap);
+      module is SystemVerilog && module.generatesDefinition
+          ? _SystemVerilogCustomDefinitionSynthesisResult(
+              module, moduleToInstanceTypeMap)
+          : _SystemVerilogSynthesisResult(module, moduleToInstanceTypeMap);
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
@@ -181,6 +185,14 @@ mixin SystemVerilog on Module {
   /// will be fed into these.
   @protected
   final List<String> expressionlessInputs = const []; //TODO: test this new one
+
+  //TODO: doc
+  /// If `null`, no definition generated...
+  /// must consistently generate the same thing (whats the word for that? isosomething)
+  String? definitionVerilog(String definitionType) => null;
+
+  //TODO
+  bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
 }
 
 /// Allows a [Module] to define a special type of [SystemVerilog] which can be
@@ -221,6 +233,34 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   @override
   @protected
   final List<String> expressionlessInputs = const [];
+
+  @override
+  String? definitionVerilog(String definitionType) => null;
+
+  @override
+  bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
+}
+
+//TODO: doc
+class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
+  _SystemVerilogCustomDefinitionSynthesisResult(
+      super.module, super.moduleToInstanceTypeMap)
+      : assert(module is SystemVerilog && module.generatesDefinition,
+            'This should only be used for custom system verilog definitions.');
+
+  @override
+  int get matchHashCode =>
+      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!.hashCode;
+
+  @override
+  bool matchesImplementation(SynthesisResult other) =>
+      other is _SystemVerilogCustomDefinitionSynthesisResult &&
+      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')! ==
+          (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
+
+  @override
+  String toFileContents() => (module as SystemVerilog)
+      .definitionVerilog(moduleToInstanceTypeMap[module]!)!;
 }
 
 /// A [SynthesisResult] representing a conversion of a [Module] to
@@ -296,8 +336,33 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogAssignments() {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
-      assignmentLines
-          .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+      //TODO: alias?
+      if (assignment.src.isNet && assignment.dst.isNet) {
+        // assignmentLines
+        //     .add('alias ${assignment.dst.name} = ${assignment.src.name};');
+
+        // assignmentLines
+        //     .add('assign ${assignment.src.name} = ${assignment.dst.name};');
+        // assignmentLines
+        //     .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+
+        // assignmentLines
+        //     .add('tran t1 (${assignment.src.name}, ${assignment.dst.name});');
+
+        //TODO: THE PLAN:
+        // - all net to net connections create a netalias module AND an assignment
+        // - as assignments are collapsed, remove the netaliases
+        // - after all assignments collapsed, remove any assignments between nets
+        // - add a way for `SystemVerilog` to support adding a definition
+
+        assert(
+            false); //This shouldnt happen i think? TODO make this an assertion
+        assignmentLines
+            .add('myalias ma(${assignment.src.name}, ${assignment.dst.name});');
+      } else {
+        assignmentLines
+            .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+      }
     }
     return assignmentLines.join('\n');
   }
@@ -710,8 +775,33 @@ class _SynthModuleDefinition {
     // The order of these is important!
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    _updateNetConnections();
     _collapseChainableModules();
     _pickNames();
+  }
+
+  //TODO doc
+  void _updateNetConnections() {
+    // clear declarations for net connection modules which don't have a
+    // corresponding assignment anymore
+    for (final netConnectSynth in moduleToSubModuleInstantiationMap.entries
+        .where((entry) => entry.key is NetConnect)
+        .map((e) => e.value)) {
+      final matchingAssignments = assignments
+          .where((assignment) =>
+              netConnectSynth.inOutMapping.containsValue(assignment.src) &&
+              netConnectSynth.inOutMapping.containsValue(assignment.dst))
+          .toList();
+
+      if (matchingAssignments.isEmpty) {
+        // if no assignments are present, then this connection was merged
+        netConnectSynth.clearDeclaration();
+      } else {
+        // if some do exist, then we should keep the net connect but ditch the
+        // other assignments
+        matchingAssignments.forEach(assignments.remove);
+      }
+    }
   }
 
   /// Updates all sub-module instantiations with information about which
@@ -888,6 +978,7 @@ class _SynthModuleDefinition {
   void _collapseAssignments() {
     // there might be more assign statements than necessary, so let's ditch them
     var prevAssignmentCount = 0;
+
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <_SynthAssignment>[];
@@ -925,6 +1016,28 @@ class _SynthModuleDefinition {
                 ..add(kept);
             }
           }
+
+          // if (src.isNet && dst.isNet) {
+          //   // if we've eliminated an assignment between nets, then remove the
+          //   // net connection as well
+          //   for (final logicNet in src.logics) {
+          //     for (final dstConnection in logicNet.dstConnections) {
+          //       if (dstConnection.isInOut &&
+          //           dstConnection.parentModule is NetConnect &&
+          //           dst.logics.contains(dstConnection
+          //               .parentModule!
+          //               // ignore: invalid_use_of_protected_member
+          //               .inOuts
+          //               .values
+          //               .where((element) => element != dstConnection)
+          //               .first
+          //               .srcConnection)) {
+          //         moduleToSubModuleInstantiationMap[dstConnection.parentModule]!
+          //             .clearDeclaration();
+          //       }
+          //     }
+          //   }
+          // }
         } else if (assignment.src.isFloatingConstant) {
           internalSignals.remove(assignment.src);
         } else {
@@ -936,6 +1049,22 @@ class _SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
+
+    // create net assignments to replace normal assignments
+    // final nonNetAssignments = <_SynthAssignment>[];
+    // for (final assignment in assignments) {
+    //   if (assignment.src.isNet && assignment.dst.isNet) {
+    //     _getSynthSubModuleInstantiation(NetConnect(
+    //       assignment.dst.logics.first as LogicNet,
+    //       assignment.src.logics.first as LogicNet,
+    //     ));
+    //   } else {
+    //     nonNetAssignments.add(assignment);
+    //   }
+    // }
+    // assignments
+    //   ..clear()
+    //   ..addAll(nonNetAssignments);
 
     // update the look-up table post-merge
     logicToSynthMap.clear();
@@ -1034,7 +1163,8 @@ class _SynthLogic {
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
-      logics.first is LogicNet;
+      logics.first is LogicNet ||
+      (isArray && (logics.first as LogicArray).isNet);
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;

@@ -48,26 +48,38 @@ class Interface<TagType> {
   /// This [name] is not a uniquified name, it is the original port name.
   Logic port(String name) => _ports.containsKey(name)
       ? _ports[name]!
-      : throw Exception('Port name "$name" not found on this interface.');
+      : throw PortDoesNotExistException(
+          'Port named "$name" not found on this interface.');
 
   /// Provides the [port] named [name] if it exists, otherwise `null`.
   Logic? tryPort(String name) => _ports[name];
 
-  /// Connects [module]'s inputs and outputs up to [srcInterface] and this
-  /// [Interface].
+  /// Connects [module]'s inputs, outputs, and inOuts up to [srcInterface] and
+  /// this [Interface].
   ///
-  /// The [srcInterface] should be a new instance of the [Interface] to be used
-  /// by [module] for all input and output connectivity.  All signals in the
-  /// interface with specified [TagType] will be connected to the [Module] via
-  /// [Module.addInput] or [Module.addOutput] based on [inputTags] and
-  /// [outputTags], respectively.  [uniquify] can be used to uniquifiy
-  /// port names by manipulating the original name of the port.
+  /// The [srcInterface] should be an external instance of the [Interface]
+  /// passed in from outside the [module], and [connectIO] should be called on a
+  /// new instance of the [Interface] to be used by [module] for all input and
+  /// output connectivity.  For example:
   ///
-  /// If [inputTags] or [outputTags] is not specified, then, respectively,
-  /// no inputs or outputs will be added.
+  /// ```dart
+  /// MyMod(MyIntf srcIntf) {
+  ///   srcIntf = MyIntf(args)..connectIO(this, srcIntf, inputTags: ... );
+  /// }
+  /// ```
+  ///
+  /// All signals in the interface with specified [TagType] will be connected to
+  /// the [Module] via [Module.addInput], [Module.addOutput], or
+  /// [Module.addInOut] based on [inputTags], [outputTags], and [inOutTags],
+  /// respectively. [uniquify] can be used to uniquifiy port names by
+  /// manipulating the original name of the port.
+  ///
+  /// If [inputTags], [outputTags], or [inOutTags] is not specified, then,
+  /// respectively, no inputs or outputs will be added.
   void connectIO(Module module, Interface<dynamic> srcInterface,
       {Iterable<TagType>? inputTags,
       Iterable<TagType>? outputTags,
+      Iterable<TagType>? inOutTags,
       String Function(String original)? uniquify}) {
     uniquify ??= (original) => original;
 
@@ -77,7 +89,7 @@ class Interface<TagType> {
             (port is LogicArray
                 // ignore: invalid_use_of_protected_member
                 ? module.addInputArray(
-                    port.name,
+                    uniquify(port.name),
                     srcInterface.port(port.name),
                     dimensions: port.dimensions,
                     elementWidth: port.elementWidth,
@@ -94,11 +106,10 @@ class Interface<TagType> {
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
-        // ignore: invalid_use_of_protected_member
         final output = (port is LogicArray
             // ignore: invalid_use_of_protected_member
             ? module.addOutputArray(
-                port.name,
+                uniquify(port.name),
                 dimensions: port.dimensions,
                 elementWidth: port.elementWidth,
                 numUnpackedDimensions: port.numUnpackedDimensions,
@@ -110,6 +121,27 @@ class Interface<TagType> {
               ));
         output <= port;
         srcInterface.port(port.name) <= output;
+      }
+    }
+
+    if (inOutTags != null) {
+      for (final port in getPorts(inOutTags).values) {
+        port <=
+            (port is LogicArray
+                // ignore: invalid_use_of_protected_member
+                ? module.addInOutArray(
+                    uniquify(port.name),
+                    srcInterface.port(port.name),
+                    dimensions: port.dimensions,
+                    elementWidth: port.elementWidth,
+                    numUnpackedDimensions: port.numUnpackedDimensions,
+                  )
+                // ignore: invalid_use_of_protected_member
+                : module.addInOut(
+                    uniquify(port.name),
+                    srcInterface.port(port.name),
+                    width: port.width,
+                  ));
       }
     }
   }

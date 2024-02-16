@@ -318,6 +318,9 @@ class Logic {
   /// Updates the current active [_Wire] for this [Logic] and also
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
+    assert((_wire is _WireNet) == (newWire is _WireNet),
+        'Should not merge nets of different types.');
+
     // first, propagate the new value (if it's different) downstream
     _wire.put(newWire.value, signalName: name);
 

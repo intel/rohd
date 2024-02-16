@@ -67,6 +67,95 @@ class TopModConnectivity extends Module {
   }
 }
 
+class BidirectionalAssignmentMod extends Module {
+  BidirectionalAssignmentMod(Logic control,
+      {required bool directionBackwards}) {
+    control = addInput('control', control);
+
+    final result = addInOut('result', LogicNet(width: 8), width: 8);
+
+    final intermediate = LogicNet(name: 'intermediate', width: 8);
+
+    intermediate <= TriStateBuffer(Const(0x55, width: 8), enable: control).out;
+    TriStateBuffer(Const(0xaa, width: 8), enable: ~control).out <= intermediate;
+
+    if (directionBackwards) {
+      intermediate <= result;
+    } else {
+      result <= intermediate;
+    }
+  }
+}
+
+enum NetArrayTag { d2, d3 }
+
+class NetArrayIntf extends Interface<NetArrayTag> {
+  NetArrayIntf() {
+    setPorts([
+      LogicArray.netPort('ad2', [2], 8)
+    ], {
+      NetArrayTag.d2
+    });
+
+    setPorts([
+      LogicArray.netPort('bd3', [2, 2], 8)
+    ], {
+      NetArrayTag.d3
+    });
+  }
+}
+
+class NetArraySubMod extends Module {
+  NetArraySubMod(NetArrayIntf intf, LogicArray in4net, LogicArray in4normal,
+      NetArrayTag drive) {
+    in4net = addInOutArray(
+      'in4net',
+      in4net,
+      dimensions: [3],
+      elementWidth: 8,
+    );
+
+    in4normal = addInOutArray(
+      'in4normal',
+      in4net,
+      dimensions: [3],
+      elementWidth: 8,
+    );
+
+    intf = NetArrayIntf()..connectIO(this, intf, inOutTags: [drive]);
+
+    final drivePort = intf.getPorts([drive]).values.first as LogicArray;
+    for (var i = 0; i < drivePort.leafElements.length; i++) {
+      if (i.isEven) {
+        drivePort.leafElements[i] <= in4net.elements[i % 3];
+      } else {
+        drivePort.leafElements[i] <= in4normal.elements[i % 3];
+      }
+    }
+  }
+}
+
+class NetArrayTopMod extends Module {
+  NetArrayTopMod(Logic x, NetArrayIntf intf) {
+    x = addInput('x', x, width: 8);
+
+    final net = LogicArray.net([3], 8, name: 'myNet');
+    final norm = LogicArray([3], 8, name: 'myNorm');
+    intf = NetArrayIntf()
+      ..connectIO(this, intf, outputTags: NetArrayTag.values);
+
+    for (final element in net.elements) {
+      element <= ~x;
+    }
+    for (final element in norm.elements) {
+      element <= x;
+    }
+
+    NetArraySubMod(intf, net, norm, NetArrayTag.d2);
+    NetArraySubMod(intf, norm, net, NetArrayTag.d3);
+  }
+}
+
 //TODO: test when there are multiple assignments with named wires nets, bidirectional assignment behavior
 //TODO: test driving and being driven by structs, arrays
 //TODO: test module hierarchy searching with only inouts
@@ -211,6 +300,47 @@ void main() {
 
       final sv = mod.generateSynth();
       expect('  submod'.allMatches(sv).length, 2);
+    });
+  });
+
+  group('bidirectional assignments', () {
+    for (final driveBackwards in [true, false]) {
+      test('drive backwards = $driveBackwards', () async {
+        final mod = BidirectionalAssignmentMod(Logic(),
+            directionBackwards: driveBackwards);
+        await mod.build();
+
+        final vectors = [
+          Vector({'control': 1}, {'result': 0x55}),
+          Vector({'control': 0}, {'result': 0xaa}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+      });
+    }
+  });
+
+  group('net arrays', () {
+    test('simple build', () async {
+      final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      print(sv);
+      // expect(sv, contains('wire [1:0][7:0] bd3 [1:0];'));
+    });
+
+    test('connections and build', () async {
+      final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
+      await mod.build();
+
+      final vectors = [
+        Vector({'x': 0xaa}, {'ad2': 0xaa55, 'bd3': 0xaa55aa55})
+      ];
+
+      // await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors, dumpWaves: true);
     });
   });
 }

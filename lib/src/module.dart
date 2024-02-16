@@ -48,7 +48,7 @@ abstract class Module {
   final Map<String, Logic> _outputs = {};
 
   /// An internal list of inouts to this [Module].
-  final Map<String, LogicNet> _inOuts = {};
+  final Map<String, Logic> _inOuts = {};
 
   /// The parent [Module] of this [Module].
   ///
@@ -70,8 +70,7 @@ abstract class Module {
       UnmodifiableMapView<String, Logic>(_outputs);
 
   @protected //TODO
-  Map<String, LogicNet> get inOuts =>
-      UnmodifiableMapView<String, LogicNet>(_inOuts);
+  Map<String, Logic> get inOuts => UnmodifiableMapView<String, Logic>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
   ///
@@ -123,7 +122,7 @@ abstract class Module {
           'Output name "$name" not found as an output of this Module.');
 
   @protected //TODO: should this be protected or is it like output?  i think yes like input
-  LogicNet inOut(String name) => _inOuts.containsKey(name)
+  Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
           'InOut name "$name" not found as an in/out of this Module.');
@@ -154,9 +153,10 @@ abstract class Module {
       _inOuts[signal.name] == signal ||
       (signal.isArrayMember && isInOut(signal.parentStructure!));
 
-  /// Returns true iff [net] is the same [Logic] as an input or output port of
-  /// this [Module] with the same name.
-  bool isPort(Logic net) => isInput(net) || isOutput(net);
+  /// Returns true iff [signal] is the same [Logic] as an [input], [output], or
+  /// [inOut] port of this [Module] with the same name.
+  bool isPort(Logic signal) =>
+      isInput(signal) || isOutput(signal) || isInOut(signal);
 
   /// If this module has a [parent], after [build] this will be a guaranteed
   /// unique name within its scope.
@@ -557,10 +557,11 @@ abstract class Module {
 
   /// TODO
   /// A set of signals that drive [inOut]s from *outside* this [Module].
-  final Set<LogicNet> _inOutDrivers = {};
+  final Set<Logic> _inOutDrivers = {};
 
+  //TODO: is it important that `x` here is a LogicNet? what about for arrays?
   @protected
-  LogicNet addInOut(String name, LogicNet x, {int width = 1}) {
+  LogicNet addInOut(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
       throw PortWidthMismatchException(x, width);
@@ -574,9 +575,9 @@ abstract class Module {
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
-          ..gets(x)
           // ignore: invalid_use_of_protected_member
-          ..parentModule = this;
+          ..parentModule = this
+          ..gets(x);
 
     _inOuts[name] = inOutPort;
 
@@ -663,13 +664,47 @@ abstract class Module {
     return outArr;
   }
 
-  // TODO: do we really need tristate arrays and structs?  yes...
-  // @protected
-  // Logic addInOutArray(String name) {}
+  // TODO test
+  // TODO doc
+  @protected
+  LogicArray addInOutArray(
+    String name,
+    Logic x, {
+    List<int> dimensions = const [1],
+    int elementWidth = 1,
+    int numUnpackedDimensions = 0,
+  }) {
+    _checkForSafePortName(name);
+
+    // make sure we register all the _inOutDrivers properly
+    final xElems = [x];
+    for (var i = 0; i < xElems.length; i++) {
+      final xi = xElems[i];
+      _inOutDrivers.add(xi);
+      if (xi is LogicArray) {
+        xElems.addAll(xi.elements);
+      }
+    }
+
+    final inOutArr = LogicArray.net(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
+      ..gets(x)
+      // ignore: invalid_use_of_protected_member
+      ..parentModule = this;
+
+    _inOuts[name] = inOutArr;
+
+    return inOutArr;
+  }
 
   @override
   String toString() => '"$name" ($runtimeType)  :'
-      '  ${_inputs.keys} => ${_outputs.keys}';
+      '  ${_inputs.keys} => ${_outputs.keys}; ${_inOuts.keys}';
 
   /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
   /// this [Module].

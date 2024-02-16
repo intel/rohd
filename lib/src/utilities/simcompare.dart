@@ -260,6 +260,11 @@ abstract class SimCompare {
         {String Function(String original)? adjust}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
+      final signalType =
+          (signal is LogicNet || (signal is LogicArray && signal.isNet))
+              ? 'wire'
+              : 'logic';
+
       if (adjust != null) {
         // ignore: parameter_assignments
         signalName = adjust(signalName);
@@ -271,13 +276,15 @@ abstract class SimCompare {
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
-        return packedDims.map((d) => '[${d - 1}:0]').join() +
+        return signalType +
+            ' ' +
+            packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +
             unpackedDims.map((d) => '[${d - 1}:0]').join();
       } else if (signal.width != 1) {
-        return '[${signal.width - 1}:0] $signalName';
+        return '$signalType [${signal.width - 1}:0] $signalName';
       } else {
-        return signalName;
+        return '$signalType $signalName';
       }
     }
 
@@ -295,7 +302,7 @@ abstract class SimCompare {
         .map((name) => MapEntry(name, _toTbWireName(name))));
 
     final localDeclarations = [
-      ...allSignals.map((e) => 'logic ${signalDeclaration(e)};'),
+      ...allSignals.map((e) => '${signalDeclaration(e)};'),
       ...logicToWireMapping.entries.map((e) {
         final logicName = e.key;
         final wireName = e.value;
@@ -326,6 +333,12 @@ abstract class SimCompare {
 ''';
 
     final testbench = [
+      //TODO: temp
+      '''
+module myalias (a, a);
+inout wire[7:0] a;
+endmodule
+''',
       generatedVerilog,
       'module tb;',
       localDeclarations,
