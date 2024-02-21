@@ -41,8 +41,7 @@ class NetConnect extends Module with SystemVerilog {
 // A special module for connecting two nets bidirectionally
 module $definitionType #(parameter WIDTH=1) (w, w); 
 inout wire[WIDTH-1:0] w;
-endmodule
-''';
+endmodule''';
 }
 
 class _WireNet extends _Wire {

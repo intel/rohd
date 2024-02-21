@@ -99,7 +99,9 @@ class NetIntf extends Interface<NetTag> {
 
 class NetISubMod extends Module {
   NetISubMod(Logic norm, LogicNet net, NetIntf intf, NetTag drive)
-      : super(name: 'submod_${drive.name}') {
+      : super(
+            name: 'submod_${drive.name}',
+            definitionName: 'NetISubMod_${drive.name}') {
     norm = addInput('inNorm', norm, width: 8);
     net = addInOut('inNet', net, width: 8);
 
@@ -379,8 +381,9 @@ void main() {
 
     final sv = mod.generateSynth();
 
-    //TODO: test that " _b;" is not present
-    // expect(sv.contains(' _b;'), isFalse);
+    // test that " _b;" is not present (indication that a leftover internal
+    // signal was there)
+    expect(sv.contains(' _b;'), isFalse);
 
     print(sv);
   });

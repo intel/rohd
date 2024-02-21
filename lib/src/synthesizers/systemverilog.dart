@@ -676,6 +676,7 @@ class _SynthModuleDefinition {
           !module.subModules.contains(receiver.parentModule)) {
         print('in $module skipping $receiver');
         //TODO: this is bad! shouldn't happen!
+        assert(false);
         continue;
       }
 
@@ -835,6 +836,25 @@ class _SynthModuleDefinition {
         //TODO: should we do something more efficient than this removal on a list?
       }
     }
+
+    // now clear out any internal signals not used by any assignment or
+    // submodule anymore
+    internalSignals.removeWhere((internalSignal) =>
+        // no assignment uses the signal
+        (assignments.firstWhereOrNull((assignment) =>
+                assignment.src == internalSignal ||
+                assignment.dst == internalSignal) ==
+            null) &&
+        // no submodule instantiation uses the signal.
+        (moduleToSubModuleInstantiationMap.values
+                .where((submoduleSynthInstantiation) =>
+                    submoduleSynthInstantiation.needsDeclaration)
+                .firstWhereOrNull((submoduleSynthInstantiation) => [
+                      ...submoduleSynthInstantiation.inputMapping.values,
+                      ...submoduleSynthInstantiation.outputMapping.values,
+                      ...submoduleSynthInstantiation.inOutMapping.values,
+                    ].contains(internalSignal)) ==
+            null));
   }
 
   /// Updates all sub-module instantiations with information about which
@@ -1050,6 +1070,7 @@ class _SynthModuleDefinition {
             }
           }
 
+          //TODO
           // if (src.isNet && dst.isNet) {
           //   // if we've eliminated an assignment between nets, then remove the
           //   // net connection as well
