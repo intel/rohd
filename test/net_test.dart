@@ -107,8 +107,10 @@ class NetISubMod extends Module {
 
     intf = NetIntf()..connectIO(this, intf, inOutTags: [drive]);
 
-    intf.getPorts([drive]).values.first <= net;
-    // [norm.getRange(0, 4), net.getRange(0, 4)].swizzle(); //TODO
+    final internal = LogicNet(name: 'internal', width: 8);
+    internal <= [norm.getRange(0, 4), net.getRange(0, 4)].swizzle();
+
+    intf.getPorts([drive]).values.first <= internal;
   }
 }
 
@@ -369,8 +371,6 @@ void main() {
     final mod = NetITopMod(Logic(width: 8), NetIntf());
     await mod.build();
 
-    print(mod.hierarchyString());
-
     // test that internal signals contains myNorm and myNet
     for (final expectedInternal in ['myNorm', 'myNet']) {
       expect(
@@ -385,7 +385,12 @@ void main() {
     // signal was there)
     expect(sv.contains(' _b;'), isFalse);
 
-    print(sv);
+    final vectors = [
+      Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 
   group('net arrays', () {
