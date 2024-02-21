@@ -126,6 +126,14 @@ class Interface<TagType> {
 
     if (inOutTags != null) {
       for (final port in getPorts(inOutTags).values) {
+        if (port is LogicArray) {
+          if (!port.isNet) {
+            throw Exception('only nets can be inouts'); //TODO
+          }
+        } else if (port is! LogicNet) {
+          throw Exception('only nets can be inouts'); //TODO
+        }
+
         port <=
             (port is LogicArray
                 // ignore: invalid_use_of_protected_member

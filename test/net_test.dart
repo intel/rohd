@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -87,6 +88,46 @@ class BidirectionalAssignmentMod extends Module {
   }
 }
 
+enum NetTag { na, nb }
+
+class NetIntf extends Interface<NetTag> {
+  NetIntf() {
+    setPorts([LogicNet.port('ana', 8)], {NetTag.na});
+    setPorts([LogicNet.port('anb', 8)], {NetTag.nb});
+  }
+}
+
+class NetISubMod extends Module {
+  NetISubMod(Logic norm, LogicNet net, NetIntf intf, NetTag drive)
+      : super(name: 'submod_${drive.name}') {
+    norm = addInput('inNorm', norm, width: 8);
+    net = addInOut('inNet', net, width: 8);
+
+    intf = NetIntf()..connectIO(this, intf, inOutTags: [drive]);
+
+    intf.getPorts([drive]).values.first <= net;
+    // [norm.getRange(0, 4), net.getRange(0, 4)].swizzle(); //TODO
+  }
+}
+
+class NetITopMod extends Module {
+  NetITopMod(Logic x, NetIntf intf) : super(name: 'itop') {
+    x = addInput('x', x, width: 8);
+
+    final net = LogicNet(width: 8, name: 'myNet');
+    final norm = LogicNet(width: 8, name: 'myNorm');
+
+    // ignore: parameter_assignments
+    intf = NetIntf()..connectIO(this, intf, outputTags: NetTag.values);
+
+    NetISubMod(norm, net, intf, NetTag.na);
+    NetISubMod(net, norm, intf, NetTag.nb);
+
+    net <= ~x;
+    norm <= x;
+  }
+}
+
 enum NetArrayTag { d2, d3 }
 
 class NetArrayIntf extends Interface<NetArrayTag> {
@@ -162,6 +203,7 @@ class NetArrayTopMod extends Module {
 //TODO: test `changed` on nets
 //TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
+//TODO: test build when misconnected inout (without a port)
 
 void main() {
   tearDown(() async {
@@ -321,10 +363,39 @@ void main() {
     }
   });
 
+  test('hier with intfs for nets', () async {
+    final mod = NetITopMod(Logic(width: 8), NetIntf());
+    await mod.build();
+
+    print(mod.hierarchyString());
+
+    // test that internal signals contains myNorm and myNet
+    for (final expectedInternal in ['myNorm', 'myNet']) {
+      expect(
+          mod.internalSignals
+              .firstWhereOrNull((element) => element.name == expectedInternal),
+          isNotNull);
+    }
+
+    final sv = mod.generateSynth();
+
+    //TODO: test that " _b;" is not present
+    // expect(sv.contains(' _b;'), isFalse);
+
+    print(sv);
+  });
+
   group('net arrays', () {
     test('simple build', () async {
       final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
       await mod.build();
+
+      // mod.internalSignals.forEach(print);
+      // print('--');
+      // mod.subModules.forEach((element) {
+      //   element.internalSignals.forEach(print);
+      //   print('--');
+      // });
 
       final sv = mod.generateSynth();
       print(sv);

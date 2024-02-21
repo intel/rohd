@@ -366,8 +366,9 @@ abstract class Module {
       // nor this module, bad!
       throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs'
-          ' of that Module.  See https://github.com/intel/rohd#modules for'
-          ' more information.');
+          ' of that Module.'
+          '  See https://intel.github.io/rohd-website/docs/modules/'
+          ' for more information.');
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -383,19 +384,20 @@ abstract class Module {
       if (subModuleParent != this) {
         await _addAndBuildModule(subModule);
       }
-      for (final subModuleOutput in [
-        ...subModule._outputs.values,
-        ...subModule._inOuts.values
-      ]) {
+      for (final subModuleOutput in subModule._outputs.values) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
       }
-      for (final subModuleInput in [
-        ...subModule._inputs.values,
-        ...subModule._inOuts.values
-      ]) {
+      for (final subModuleInput in subModule._inputs.values) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
+      }
+
+      for (final subModuleInOutDriver in [
+        ...subModule._inOutDrivers,
+      ]) {
+        await _traceInputForModuleContents(subModuleInOutDriver);
+        await _traceOutputForModuleContents(subModuleInOutDriver);
       }
     } else {
       if (!dontAddSignal &&
@@ -449,7 +451,8 @@ abstract class Module {
       throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs'
           ' of that Module.'
-          '  See https://github.com/intel/rohd#modules for more information.');
+          '  See https://intel.github.io/rohd-website/docs/modules/'
+          ' for more information.');
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -467,14 +470,14 @@ abstract class Module {
       }
       for (final subModuleInput in [
         ...subModule._inputs.values,
-        ...subModule._inOuts.values
+        ...subModule._inOutDrivers,
       ]) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
       for (final subModuleOutput in [
         ...subModule._outputs.values,
-        ...subModule._inOuts.values
+        ...subModule._inOutDrivers,
       ]) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
@@ -495,11 +498,11 @@ abstract class Module {
           await _traceOutputForModuleContents(srcConnection);
         }
       } else if (signal is LogicNet) {
-        for (final srcConnection in [
-          ...signal.srcConnections,
-          ...signal.dstConnections
-        ]) {
+        for (final srcConnection in signal.srcConnections) {
           await _traceOutputForModuleContents(srcConnection);
+        }
+        for (final dstConnection in signal.dstConnections) {
+          await _traceInputForModuleContents(dstConnection);
         }
       } else if (signal.srcConnection != null) {
         await _traceOutputForModuleContents(signal.srcConnection!);
@@ -512,6 +515,10 @@ abstract class Module {
     assert(!signal.isPort, 'Should not be adding a port as an internal signal');
 
     _internalSignals.add(signal);
+
+    if (signal.isArrayMember) {
+      _addInternalSignal(signal.parentStructure!);
+    }
 
     // ignore: invalid_use_of_protected_member
     signal.parentModule = this;
@@ -711,6 +718,22 @@ abstract class Module {
   String hierarchyString([int indent = 0]) {
     final padding = List.filled(indent, '  ').join();
     final hier = StringBuffer('$padding> ${toString()}');
+
+    //TODO TEMP
+    hier.writeln();
+    for (final s in inputs.values) {
+      hier.writeln('$padding>-  in: \t$s');
+    }
+    for (final s in outputs.values) {
+      hier.writeln('$padding>-  out:\t$s');
+    }
+    for (final s in inOuts.values) {
+      hier.writeln('$padding>-  inout:\t$s');
+    }
+    for (final s in internalSignals) {
+      hier.writeln('$padding>-  internal:\t$s');
+    }
+
     for (final module in _modules) {
       hier.write('\n${module.hierarchyString(indent + 1)}');
     }

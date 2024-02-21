@@ -28,7 +28,11 @@ class LogicArray extends LogicStructure {
   final Naming naming;
 
   @override
-  String toString() => 'LogicArray($dimensions, $elementWidth): $name';
+  String toString() => [
+        'LogicArray($dimensions, $elementWidth): $name',
+        if (isArrayMember) 'index $arrayIndex of ($parentStructure)',
+        if (isNet) '[Net]'
+      ].join(', ');
 
   /// The number of [dimensions] which should be treated as "unpacked", starting
   /// from the outermost (first) elements of [dimensions].
@@ -62,6 +66,7 @@ class LogicArray extends LogicStructure {
         isNet: false,
       );
 
+  //TODO
   final bool isNet;
 
   /// Creates an array of [LogicNet]s with specified [dimensions] and

@@ -11,6 +11,9 @@ class NetConnect extends Module with SystemVerilog {
 
   final int width;
 
+  late final String _aName = Naming.unpreferredName('a');
+  late final String _bName = Naming.unpreferredName('b');
+
   NetConnect(LogicNet a, LogicNet b)
       : assert(a.width == b.width, 'Widths must be equal.'),
         width = a.width,
@@ -18,8 +21,8 @@ class NetConnect extends Module with SystemVerilog {
           definitionName: _definitionName,
           name: _definitionName,
         ) {
-    a = addInOut('a', a, width: width);
-    b = addInOut('b', b, width: width);
+    a = addInOut(_aName, a, width: width);
+    b = addInOut(_bName, b, width: width);
   }
 
   @override
@@ -30,7 +33,7 @@ class NetConnect extends Module with SystemVerilog {
     return '$instanceType'
         ' #(.WIDTH($width))'
         ' $instanceName'
-        ' (${ports['a']}, ${ports['b']});';
+        ' (${ports[_aName]}, ${ports[_bName]});';
   }
 
   @override
@@ -84,6 +87,8 @@ class LogicNet extends Logic {
   late final List<Logic> srcConnections = UnmodifiableListView(_srcConnections);
   List<Logic> _srcConnections = [];
 
+  //TODO: should we just have a generic "connections"?
+
   LogicNet({super.name, super.width, super.naming})
       : super._(wire: _WireNet(width: width));
 
@@ -127,5 +132,5 @@ class LogicNet extends Logic {
   }
 
   @override
-  String toString() => 'LogicNet($width): $name';
+  String toString() => '${super.toString()}, [Net]';
 }

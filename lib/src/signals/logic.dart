@@ -239,7 +239,10 @@ class Logic {
   }
 
   @override
-  String toString() => 'Logic($width): $name';
+  String toString() => [
+        'Logic($width): $name',
+        if (isArrayMember) 'index $arrayIndex of ($parentStructure)'
+      ].join(', ');
 
   /// Throws an exception if this [Logic] cannot be connected to another signal.
   void _assertConnectable(Logic other) {

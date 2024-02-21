@@ -57,7 +57,7 @@ class LogicStructure implements Logic {
   LogicStructure clone({String? name}) => LogicStructure(
       elements.map((e) => e is LogicStructure
           ? e.clone()
-          : Logic(name: e.name, width: e.width)),
+          : Logic(name: e.name, width: e.width, naming: e.naming)),
       name: name ?? this.name);
 
   @override

@@ -336,6 +336,12 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogAssignments() {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
+      //TODO: include this assertion!
+      // assert(
+      //     !(assignment.src.isNet && assignment.dst.isNet),
+      //     'Net connections should have been implemented as'
+      //     ' bidirectional net connections.');
+
       //TODO: alias?
       if (assignment.src.isNet && assignment.dst.isNet) {
         // assignmentLines
@@ -355,8 +361,8 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         // - after all assignments collapsed, remove any assignments between nets
         // - add a way for `SystemVerilog` to support adding a definition
 
-        assert(
-            false); //This shouldnt happen i think? TODO make this an assertion
+        // assert(
+        //     false); //This shouldnt happen i think? TODO make this an assertion
         assignmentLines
             .add('myalias ma(${assignment.src.name}, ${assignment.dst.name});');
       } else {
@@ -663,6 +669,23 @@ class _SynthModuleDefinition {
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
 
+      assert(receiver.parentModule != null,
+          'Any signal traced by this should have been detected by build.');
+
+      if (receiver.parentModule != module &&
+          !module.subModules.contains(receiver.parentModule)) {
+        print('in $module skipping $receiver');
+        //TODO: this is bad! shouldn't happen!
+        continue;
+      }
+
+      // if (receiver.parentModule != module) {
+      //   //TODO: is this ok?
+      //   print(receiver);
+      //   continue;
+      // }
+      // assert(receiver.parentModule == module); //TODO
+
       if (receiver is LogicArray) {
         logicsToTraverse.addAll(receiver.elements);
       }
@@ -677,8 +700,16 @@ class _SynthModuleDefinition {
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections
-        ].where((element) => element.parentModule == module));
+        ].where((element) =>
+            element.parentModule == module ||
+            (element.isPort &&
+                element.parentModule!.parent ==
+                    module))); //TODO: is this right?
 
+        // if (receiver.parentModule == module
+        //     /*||
+        //     (receiver.isInOut && receiver.parentModule?.parent == module)*/
+        //     ) {
         for (final srcConnection in receiver.srcConnections) {
           if (srcConnection.parentModule == module ||
               ((srcConnection.isOutput || srcConnection.isInOut) &&
@@ -692,6 +723,7 @@ class _SynthModuleDefinition {
               synthReceiver,
             ));
           }
+          // }
         }
       }
 
@@ -800,6 +832,7 @@ class _SynthModuleDefinition {
         // if some do exist, then we should keep the net connect but ditch the
         // other assignments
         matchingAssignments.forEach(assignments.remove);
+        //TODO: should we do something more efficient than this removal on a list?
       }
     }
   }
@@ -1111,6 +1144,11 @@ class _SynthLogicArrayElement extends _SynthLogic {
       : assert(logic.isArrayMember,
             'Should only be used for elements in a LogicArray'),
         super(logic);
+
+  @override
+  String toString() => '${_name == null ? 'null' : '"$name"'},'
+      ' parentArray=($parentArray), element ${logic.arrayIndex}, logic: $logic'
+      ' logics contained: ${logics.map((e) => e.name).toList()}';
 }
 
 /// Represents a logic signal in the generated code within a module.
@@ -1319,6 +1357,15 @@ class _SynthLogic {
     assert(other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
+
+    //TODO: why is this assertion bad?
+    // assert(
+    //     other.logics.first.parentModule! == logics.first.parentModule! ||
+    //         (other.logics.first.parentModule!.subModules
+    //             .contains(logics.first.parentModule)) ||
+    //         (logics.first.parentModule!.subModules
+    //             .contains(other.logics.first.parentModule)),
+    //     'Merged signals should be near each other');
 
     _constNameDisallowed |= other._constNameDisallowed;
 
