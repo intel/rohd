@@ -480,7 +480,7 @@ class IndexBitOfArrayModule extends Module {
 class AssignSubsetModule extends Module {
   AssignSubsetModule(LogicArray updatedSubset,
       {int? start, bool? isError = false}) {
-    final dim = (isError != null ? 10 : 5);
+    final dim = ((isError != null && isError) ? 10 : 5);
     updatedSubset = addInputArray('inputLogicArray', updatedSubset,
         dimensions: [dim], elementWidth: 3);
 
