@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022-2023 Intel Corporation
+# Copyright (C) 2022-2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # check_documentation.sh
@@ -22,7 +22,7 @@ set -euo pipefail
 output=$(dart doc 2>&1 | tee)
 
 # In case of problems, the searched substring will not be found.
-if echo "${output}" | grep --silent 'no issues found'; then
+if echo "${output}" | grep --silent -e 'no issues found' -e 'Success!'; then
   echo 'Documentation check passed!'
 else
   echo "${output}"
