@@ -152,7 +152,10 @@ class NetArrayIntf extends Interface<NetArrayTag> {
 
 class NetArraySubMod extends Module {
   NetArraySubMod(NetArrayIntf intf, LogicArray in4net, LogicArray in4normal,
-      NetArrayTag drive) {
+      NetArrayTag drive)
+      : super(
+            name: 'net_array_submod_inst_${drive.name}',
+            definitionName: 'net_array_submod_${drive.name}') {
     in4net = addInOutArray(
       'in4net',
       in4net,
@@ -404,6 +407,8 @@ void main() {
       //   element.internalSignals.forEach(print);
       //   print('--');
       // });
+
+      print(mod.hierarchyString());
 
       final sv = mod.generateSynth();
       print(sv);

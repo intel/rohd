@@ -281,6 +281,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         super(module, moduleToInstanceTypeMap) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(moduleToInstanceTypeMap);
+    //TODO: do module definition and instances need different names?
   }
 
   @override
@@ -840,6 +841,8 @@ class _SynthModuleDefinition {
     // now clear out any internal signals not used by any assignment or
     // submodule anymore
     internalSignals.removeWhere((internalSignal) =>
+        // don't remove arrays! //TODO is this right?
+        !internalSignal.isArray &&
         // no assignment uses the signal
         (assignments.firstWhereOrNull((assignment) =>
                 assignment.src == internalSignal ||
@@ -902,6 +905,8 @@ class _SynthModuleDefinition {
     for (final submodule in moduleToSubModuleInstantiationMap.values) {
       if (submodule.module.reserveName) {
         submodule.pickName(_synthInstantiationNameUniquifier);
+        assert(submodule.module.name == submodule.name,
+            'Expect reserved names to retain their name.');
       } else {
         nonReservedSubmodules.add(submodule);
       }
@@ -918,7 +923,8 @@ class _SynthModuleDefinition {
     }
 
     // then submodule instances
-    for (final submodule in nonReservedSubmodules) {
+    for (final submodule
+        in nonReservedSubmodules.where((element) => element.needsDeclaration)) {
       submodule.pickName(_synthInstantiationNameUniquifier);
     }
 
