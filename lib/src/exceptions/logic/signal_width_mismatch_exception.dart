@@ -34,9 +34,8 @@ class SignalWidthMismatchException extends RohdException {
 
   /// Constructs a new [Exception] for when a dynamic has a wrong width.
   SignalWidthMismatchException.forWidthOverflow(int actualWidth, int maxWidth,
-      {String customMessage = ''})
-      : super(customMessage == ''
-            ? 'Value has the wrong width.'
-                ' Expected $actualWidth to be less than $maxWidth.'
-            : customMessage);
+      {String? customMessage})
+      : super(customMessage ??
+            'Value has the wrong width.'
+                ' Expected $actualWidth to be less than $maxWidth.');
 }
