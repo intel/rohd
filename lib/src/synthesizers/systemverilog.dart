@@ -365,7 +365,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         // assert(
         //     false); //This shouldnt happen i think? TODO make this an assertion
         assignmentLines
-            .add('myalias ma(${assignment.src.name}, ${assignment.dst.name});');
+            .add('myalias ma(${assignment.dst.name}, ${assignment.src.name});');
       } else {
         assignmentLines
             .add('assign ${assignment.dst.name} = ${assignment.src.name};');

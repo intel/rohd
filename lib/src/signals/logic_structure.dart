@@ -247,6 +247,9 @@ class LogicStructure implements Logic {
   @protected
   @override
   set parentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
     _parentModule = newParentModule;
     for (final element in elements) {
       element.parentModule = newParentModule;

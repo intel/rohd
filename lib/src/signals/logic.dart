@@ -178,7 +178,12 @@ class Logic {
   /// This should *only* be called by [Module.build()].  It is used to
   /// optimize search.
   @protected
-  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+  set parentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
+    _parentModule = newParentModule;
+  }
 
   /// Returns true iff this signal is an input of its parent [Module].
   late final bool isInput =
@@ -323,6 +328,11 @@ class Logic {
   void _updateWire(_Wire newWire) {
     assert((_wire is _WireNet) == (newWire is _WireNet),
         'Should not merge nets of different types.');
+
+    if (newWire == _wire) {
+      // no need to do any work if we're already on the same wire!
+      return;
+    }
 
     // first, propagate the new value (if it's different) downstream
     _wire.put(newWire.value, signalName: name);

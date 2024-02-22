@@ -117,6 +117,7 @@ class LogicArray extends LogicStructure {
     required Logic Function({
       int width,
       Naming naming,
+      String name,
     }) logicBuilder,
     required LogicArray Function(
       List<int> nextDimensions,
@@ -153,6 +154,7 @@ class LogicArray extends LogicStructure {
               ? logicBuilder(
                   width: elementWidth,
                   naming: Naming.renameable,
+                  name: '${name}_$index',
                 )
               : logicArrayBuilder(
                   nextDimensions!,

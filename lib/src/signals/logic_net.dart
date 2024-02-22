@@ -84,7 +84,7 @@ class LogicNet extends Logic {
   Logic? get srcConnection => null;
 
   late final List<Logic> srcConnections = UnmodifiableListView(_srcConnections);
-  List<Logic> _srcConnections = [];
+  Set<Logic> _srcConnections = {};
 
   //TODO: should we just have a generic "connections"?
 
@@ -127,7 +127,9 @@ class LogicNet extends Logic {
 
     (_wire as _WireNet)._evaluateNewValue(signalName: name);
 
-    _srcConnections.add(other);
+    if (other != this) {
+      _srcConnections.add(other);
+    }
   }
 
   @override

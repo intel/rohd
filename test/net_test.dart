@@ -165,7 +165,7 @@ class NetArraySubMod extends Module {
 
     in4normal = addInOutArray(
       'in4normal',
-      in4net,
+      in4normal,
       dimensions: [3],
       elementWidth: 8,
     );
@@ -211,6 +211,7 @@ class NetArrayTopMod extends Module {
 //TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 //TODO: test build when misconnected inout (without a port)
+//TODO: test two inout ports of a module connected to the same signal! (this appears to have triggered another bug? how to tell if signal is internal?)
 
 void main() {
   tearDown(() async {
