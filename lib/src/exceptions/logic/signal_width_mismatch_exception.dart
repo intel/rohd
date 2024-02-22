@@ -37,5 +37,6 @@ class SignalWidthMismatchException extends RohdException {
       {String? customMessage})
       : super(customMessage ??
             'Value has the wrong width.'
-                ' Expected $actualWidth to be less than or equal to $maxWidth.');
+                ' Expected $actualWidth to be less than'
+                ' or equal to $maxWidth.');
 }
