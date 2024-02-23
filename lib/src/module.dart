@@ -344,6 +344,8 @@ abstract class Module {
   @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
   static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
 
+//TODO BUG: not finding sub-modules in arrays for connections between net arrays (often)
+
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
@@ -351,15 +353,36 @@ abstract class Module {
       return;
     }
 
-    if (!signal.isPort && signal.parentModule != null) {
-      // we've already parsed down this path
+    // if (!signal.isPort && signal.parentModule != null) {
+    //   // we've already parsed down this path
+    //   return;
+    // }
+
+    if (_hasParsedFromInput.contains(signal)) {
       return;
+    }
+    _hasParsedFromInput.add(signal);
+
+    print('ti: (${parent?.name} $name) $signal');
+
+    if (signal is LogicStructure && !isPort(signal)) {
+      for (final subSignal in signal.elements) {
+        await _traceInputForModuleContents(subSignal);
+      }
     }
 
     final subModule =
         (signal.isInput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
+
+    if (signal.srcConnections
+            .where((element) => element.name.contains('myNet'))
+            .isNotEmpty &&
+        name.contains('submod') &&
+        subModule != this) {
+      print('WTF');
+    }
 
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule
@@ -382,6 +405,14 @@ abstract class Module {
       // if the subModuleParent hasn't been set, or it is the current module,
       // then trace it
       if (subModuleParent != this) {
+        if (subModule.name.contains('connect') &&
+            subModule.inOuts.values
+                .where((io) => io.srcConnections
+                    .where((srcconn) => srcconn.name.contains('myNet'))
+                    .isNotEmpty)
+                .isNotEmpty) {
+          print('WTF2');
+        }
         await _addAndBuildModule(subModule);
       }
       for (final subModuleOutput in subModule._outputs.values) {
@@ -423,10 +454,40 @@ abstract class Module {
           continue;
         }
 
+        // TODO this seems over-the-top, is there a better way?
+        if (isInOut(signal) &&
+            dstConnection.parentModule is NetConnect &&
+            dstConnection.parentModule!._inOuts.values
+                .map((e) => e.srcConnections)
+                .flattened
+                .where(_inOutDrivers.contains)
+                .isNotEmpty) {
+          // if this is a NetConnect crossing the module boundary, don't trace
+          continue;
+        }
+
         await _traceInputForModuleContents(dstConnection);
       }
+
+      //TODO: is this needed?
+      // if (signal.isNet) {
+      //   for (final srcConnection
+      //       in signal.srcConnections.where((element) => element.isNet)) {
+      //     await _traceInputForModuleContents(srcConnection);
+      //     await _traceOutputForModuleContents(srcConnection);
+      //   }
+      //   for (final dstConnection
+      //       in signal.dstConnections.where((element) => element.isNet)) {
+      //     await _traceInputForModuleContents(dstConnection);
+      //     await _traceOutputForModuleContents(dstConnection);
+      //   }
+      // }
     }
   }
+
+  //TODO: these shouldnt need to be split
+  final Set<Logic> _hasParsedFromInput = {};
+  final Set<Logic> _hasParsedFromOutput = {};
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
   Future<void> _traceOutputForModuleContents(Logic signal,
@@ -435,15 +496,39 @@ abstract class Module {
       return;
     }
 
-    if (!signal.isPort && signal.parentModule != null) {
-      // we've already parsed down this path
+    // TODO THIS IS THE BUG: when an array has it's internal signal added, all sub-nets are also added, so it doesnt parse down those trees anymore
+    // when the first one gets added, it adds parent, and then all sub of that!
+
+    // if (!signal.isPort && signal.parentModule != null) {
+    //   // we've already parsed down this path
+    //   return;
+    // }
+
+    if (_hasParsedFromOutput.contains(signal)) {
       return;
+    }
+    _hasParsedFromOutput.add(signal);
+
+    print('to: (${parent?.name} $name) $signal');
+
+    if (signal is LogicStructure && !isPort(signal)) {
+      for (final subSignal in signal.elements) {
+        await _traceOutputForModuleContents(subSignal);
+      }
     }
 
     final subModule =
         (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
+
+    if (signal.srcConnections
+            .where((element) => element.name.contains('myNet'))
+            .isNotEmpty &&
+        name.contains('submod') &&
+        subModule != this) {
+      print('WTF');
+    }
 
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule
@@ -466,21 +551,30 @@ abstract class Module {
       // if the subModuleParent hasn't been set, or it is the current module,
       // then trace it
       if (subModuleParent != this) {
+        if (subModule.name.contains('connect') &&
+            subModule.inOuts.values
+                .where((io) => io.srcConnections
+                    .where((srcconn) => srcconn.name.contains('myNet'))
+                    .isNotEmpty)
+                .isNotEmpty) {
+          print('WTF2');
+        }
         await _addAndBuildModule(subModule);
       }
-      for (final subModuleInput in [
-        ...subModule._inputs.values,
-        ...subModule._inOutDrivers,
-      ]) {
+      for (final subModuleInput in subModule._inputs.values) {
         await _traceOutputForModuleContents(subModuleInput,
             dontAddSignal: true);
       }
-      for (final subModuleOutput in [
-        ...subModule._outputs.values,
-        ...subModule._inOutDrivers,
-      ]) {
+      for (final subModuleOutput in subModule._outputs.values) {
         await _traceInputForModuleContents(subModuleOutput,
             dontAddSignal: true);
+      }
+
+      for (final subModuleInOutDriver in [
+        ...subModule._inOutDrivers,
+      ]) {
+        await _traceInputForModuleContents(subModuleInOutDriver);
+        await _traceOutputForModuleContents(subModuleInOutDriver);
       }
     } else {
       if (!dontAddSignal &&
@@ -493,16 +587,24 @@ abstract class Module {
         }
       }
 
+      //TODO: is this needed?
+      // if (signal.isNet && !isPort(signal)) {
+      //   for (final srcConnection
+      //       in signal.srcConnections.where((element) => element.isNet)) {
+      //     await _traceOutputForModuleContents(srcConnection);
+      //     await _traceInputForModuleContents(srcConnection);
+      //   }
+      //   for (final dstConnection
+      //       in signal.dstConnections.where((element) => element.isNet)) {
+      //     //TODO: why not all dst?
+      //     await _traceOutputForModuleContents(dstConnection);
+      //     await _traceInputForModuleContents(dstConnection);
+      //   }
+      // }
+
       if (signal is LogicStructure) {
         for (final srcConnection in signal.srcConnections) {
           await _traceOutputForModuleContents(srcConnection);
-        }
-      } else if (signal is LogicNet) {
-        for (final srcConnection in signal.srcConnections) {
-          await _traceOutputForModuleContents(srcConnection);
-        }
-        for (final dstConnection in signal.dstConnections) {
-          await _traceInputForModuleContents(dstConnection);
         }
       } else if (signal.srcConnection != null) {
         await _traceOutputForModuleContents(signal.srcConnection!);
@@ -764,16 +866,16 @@ abstract class Module {
   }
 }
 
-extension _ModuleLogicStructureUtils on LogicStructure {
-  /// Provides a list of all source connections of all elements within
-  /// this structure, recursively.
-  ///
-  /// Useful for searching during [Module] build.
-  Iterable<Logic> get srcConnections => [
-        for (final element in elements)
-          if (element is LogicStructure)
-            ...element.srcConnections
-          else if (element.srcConnection != null)
-            element.srcConnection!
-      ];
-}
+// extension _ModuleLogicStructureUtils on LogicStructure {
+//   /// Provides a list of all source connections of all elements within
+//   /// this structure, recursively.
+//   ///
+//   /// Useful for searching during [Module] build.
+//   Iterable<Logic> get srcConnections => [
+//         for (final element in elements)
+//           if (element is LogicStructure)
+//             ...element.srcConnections
+//           else if (element.srcConnection != null)
+//             element.srcConnection!
+//       ];
+// }

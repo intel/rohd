@@ -200,6 +200,13 @@ class Logic {
       // this can be cached because parentModule is set at port creation
       parentModule?.isInOut(this) ?? false;
 
+  //TODO
+  final bool isNet = false;
+
+  //TODO: is this ok to keep here?
+  Iterable<Logic> get srcConnections =>
+      [if (srcConnection != null) srcConnection!];
+
   /// Returns true iff this signal is an input, output, or inOut of its parent
   /// [Module].
   late final bool isPort = isInput || isOutput || isInOut;
@@ -624,7 +631,9 @@ class Logic {
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
-  Logic get reversed => slice(0, width - 1);
+  late final Logic reversed =
+      Logic(name: 'reversed_$name', naming: Naming.unnamed, width: width)
+        ..gets(slice(0, width - 1));
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].

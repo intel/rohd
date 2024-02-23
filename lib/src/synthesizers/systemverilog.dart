@@ -838,6 +838,13 @@ class _SynthModuleDefinition {
       }
     }
 
+    //TODO KEEP
+    // assert(
+    //     assignments.firstWhereOrNull(
+    //             (element) => element.src.isNet && element.dst.isNet) ==
+    //         null,
+    //     'No assignments should remain between nets.');
+
     // now clear out any internal signals not used by any assignment or
     // submodule anymore
     internalSignals.removeWhere((internalSignal) =>

@@ -235,9 +235,8 @@ class LogicStructure implements Logic {
       s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   @override
-  late final Iterable<Logic> dstConnections = [
-    for (final element in elements) ...element.dstConnections
-  ];
+  Iterable<Logic> get dstConnections =>
+      {for (final element in elements) ...element.dstConnections}.toList();
 
   @override
   Module? get parentModule => _parentModule;
@@ -487,7 +486,7 @@ class LogicStructure implements Logic {
   Logic replicate(int multiplier) => packed.replicate(multiplier);
 
   @override
-  Logic get reversed => packed.reversed;
+  late final Logic reversed = packed.reversed;
 
   @override
   Logic abs() => packed.abs();
@@ -558,4 +557,17 @@ class LogicStructure implements Logic {
   @override
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
       packed.selectFrom(busList, defaultValue: defaultValue);
+
+  @override
+  // TODO
+  bool get isNet => false;
+
+  //TODO: is this ok to keep?
+  //TODO: convert to set?
+  /// Provides a list of all source connections of all elements within
+  /// this structure, recursively.
+  ///
+  /// Useful for searching during [Module] build.
+  Iterable<Logic> get srcConnections =>
+      {for (final element in elements) ...element.srcConnections}.toList();
 }

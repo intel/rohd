@@ -25,6 +25,8 @@ class NetConnect extends Module with SystemVerilog {
     b = addInOut(_bName, b, width: width);
   }
 
+  //TODO: override unique instance name?
+
   @override
   String instantiationVerilog(
       String instanceType, String instanceName, Map<String, String> ports) {
@@ -83,7 +85,12 @@ class LogicNet extends Logic {
   @override
   Logic? get srcConnection => null;
 
-  late final List<Logic> srcConnections = UnmodifiableListView(_srcConnections);
+  //TODO
+  @override
+  final bool isNet = true;
+
+  late final Iterable<Logic> srcConnections =
+      UnmodifiableListView(_srcConnections);
   Set<Logic> _srcConnections = {};
 
   //TODO: should we just have a generic "connections"?

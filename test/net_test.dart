@@ -184,7 +184,7 @@ class NetArraySubMod extends Module {
 }
 
 class NetArrayTopMod extends Module {
-  NetArrayTopMod(Logic x, NetArrayIntf intf) {
+  NetArrayTopMod(Logic x, NetArrayIntf intf) : super(name: 'netarrtop') {
     x = addInput('x', x, width: 8);
 
     final net = LogicArray.net([3], 8, name: 'myNet');
@@ -200,7 +200,7 @@ class NetArrayTopMod extends Module {
     }
 
     NetArraySubMod(intf, net, norm, NetArrayTag.d2);
-    NetArraySubMod(intf, norm, net, NetArrayTag.d3);
+    NetArraySubMod(intf, norm, net, NetArrayTag.d3); //TODO: put back
   }
 }
 
@@ -409,7 +409,7 @@ void main() {
       //   print('--');
       // });
 
-      print(mod.hierarchyString());
+      // print(mod.hierarchyString());
 
       final sv = mod.generateSynth();
       print(sv);
