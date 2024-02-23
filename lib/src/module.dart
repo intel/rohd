@@ -353,6 +353,7 @@ abstract class Module {
       return;
     }
 
+    //TODO: can we go back?
     // if (!signal.isPort && signal.parentModule != null) {
     //   // we've already parsed down this path
     //   return;
@@ -362,8 +363,6 @@ abstract class Module {
       return;
     }
     _hasParsedFromInput.add(signal);
-
-    print('ti: (${parent?.name} $name) $signal');
 
     if (signal is LogicStructure && !isPort(signal)) {
       for (final subSignal in signal.elements) {
@@ -375,14 +374,6 @@ abstract class Module {
         (signal.isInput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
-
-    if (signal.srcConnections
-            .where((element) => element.name.contains('myNet'))
-            .isNotEmpty &&
-        name.contains('submod') &&
-        subModule != this) {
-      print('WTF');
-    }
 
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule
@@ -405,14 +396,6 @@ abstract class Module {
       // if the subModuleParent hasn't been set, or it is the current module,
       // then trace it
       if (subModuleParent != this) {
-        if (subModule.name.contains('connect') &&
-            subModule.inOuts.values
-                .where((io) => io.srcConnections
-                    .where((srcconn) => srcconn.name.contains('myNet'))
-                    .isNotEmpty)
-                .isNotEmpty) {
-          print('WTF2');
-        }
         await _addAndBuildModule(subModule);
       }
       for (final subModuleOutput in subModule._outputs.values) {
@@ -455,6 +438,7 @@ abstract class Module {
         }
 
         // TODO this seems over-the-top, is there a better way?
+        // maybe a function in NetConnect that lets you find the "other" one would be good
         if (isInOut(signal) &&
             dstConnection.parentModule is NetConnect &&
             dstConnection.parentModule!._inOuts.values
@@ -496,9 +480,7 @@ abstract class Module {
       return;
     }
 
-    // TODO THIS IS THE BUG: when an array has it's internal signal added, all sub-nets are also added, so it doesnt parse down those trees anymore
-    // when the first one gets added, it adds parent, and then all sub of that!
-
+    //TODO: can we go back to this method of parent module determination?
     // if (!signal.isPort && signal.parentModule != null) {
     //   // we've already parsed down this path
     //   return;
@@ -508,8 +490,6 @@ abstract class Module {
       return;
     }
     _hasParsedFromOutput.add(signal);
-
-    print('to: (${parent?.name} $name) $signal');
 
     if (signal is LogicStructure && !isPort(signal)) {
       for (final subSignal in signal.elements) {
@@ -521,14 +501,6 @@ abstract class Module {
         (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
 
     final subModuleParent = subModule?.parent;
-
-    if (signal.srcConnections
-            .where((element) => element.name.contains('myNet'))
-            .isNotEmpty &&
-        name.contains('submod') &&
-        subModule != this) {
-      print('WTF');
-    }
 
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule
@@ -551,14 +523,6 @@ abstract class Module {
       // if the subModuleParent hasn't been set, or it is the current module,
       // then trace it
       if (subModuleParent != this) {
-        if (subModule.name.contains('connect') &&
-            subModule.inOuts.values
-                .where((io) => io.srcConnections
-                    .where((srcconn) => srcconn.name.contains('myNet'))
-                    .isNotEmpty)
-                .isNotEmpty) {
-          print('WTF2');
-        }
         await _addAndBuildModule(subModule);
       }
       for (final subModuleInput in subModule._inputs.values) {

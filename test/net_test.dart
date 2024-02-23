@@ -402,18 +402,8 @@ void main() {
       final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
       await mod.build();
 
-      // mod.internalSignals.forEach(print);
-      // print('--');
-      // mod.subModules.forEach((element) {
-      //   element.internalSignals.forEach(print);
-      //   print('--');
-      // });
-
-      // print(mod.hierarchyString());
-
       final sv = mod.generateSynth();
-      print(sv);
-      // expect(sv, contains('wire [1:0][7:0] bd3 [1:0];'));
+      expect(sv, contains('wire [1:0][1:0][7:0] bd3'));
     });
 
     test('connections and build', () async {
@@ -421,11 +411,11 @@ void main() {
       await mod.build();
 
       final vectors = [
-        Vector({'x': 0xaa}, {'ad2': 0xaa55, 'bd3': 0xaa55aa55})
+        Vector({'x': 0xaa}, {'ad2': 0xaa55, 'bd3': 0x55aa55aa})
       ];
 
-      // await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors, dumpWaves: true);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
     });
   });
 }
