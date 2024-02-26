@@ -354,15 +354,15 @@ abstract class Module {
     }
 
     //TODO: can we go back?
-    // if (!signal.isPort && signal.parentModule != null) {
-    //   // we've already parsed down this path
-    //   return;
-    // }
-
-    if (_hasParsedFromInput.contains(signal)) {
+    if (!signal.isPort && signal.parentModule != null) {
+      // we've already parsed down this path
       return;
     }
-    _hasParsedFromInput.add(signal);
+
+    // if (_hasParsedFromInput.contains(signal)) {
+    //   return;
+    // }
+    // _hasParsedFromInput.add(signal);
 
     if (signal is LogicStructure && !isPort(signal)) {
       for (final subSignal in signal.elements) {
@@ -481,15 +481,15 @@ abstract class Module {
     }
 
     //TODO: can we go back to this method of parent module determination?
-    // if (!signal.isPort && signal.parentModule != null) {
-    //   // we've already parsed down this path
-    //   return;
-    // }
-
-    if (_hasParsedFromOutput.contains(signal)) {
+    if (!signal.isPort && signal.parentModule != null) {
+      // we've already parsed down this path
       return;
     }
-    _hasParsedFromOutput.add(signal);
+
+    // if (_hasParsedFromOutput.contains(signal)) {
+    //   return;
+    // }
+    // _hasParsedFromOutput.add(signal);
 
     if (signal is LogicStructure && !isPort(signal)) {
       for (final subSignal in signal.elements) {
@@ -566,6 +566,7 @@ abstract class Module {
       //   }
       // }
 
+      // TODO: why can't we just always iterate across all srcConnections here?
       if (signal is LogicStructure) {
         for (final srcConnection in signal.srcConnections) {
           await _traceOutputForModuleContents(srcConnection);

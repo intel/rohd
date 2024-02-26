@@ -11,6 +11,7 @@ class NetConnect extends Module with SystemVerilog {
 
   final int width;
 
+  //TODO: make these names based on a and b names
   late final String _aName = Naming.unpreferredName('a');
   late final String _bName = Naming.unpreferredName('b');
 
