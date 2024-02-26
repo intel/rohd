@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Const-class.html">Const</a></li>
     <li class="self-crumb">Const constructor</li>
   </ol>
@@ -63,8 +63,8 @@
     <section class="multi-line-signature">
       
       <span class="name ">Const</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span></li>
-<li><span class="parameter" id="-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
-<li><span class="parameter" id="-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span></li>
+<li><span class="parameter" id="-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
+<li><span class="parameter" id="-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span></li>
 </ol>)
     </section>
 
@@ -78,7 +78,16 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Const</code></pre>
+  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false})
+    : super(
+        name: &#39;const_$val&#39;,
+        width: val is LogicValue ? val.width : width ?? 1,
+        &#47;&#47; we don&#39;t care about maintaining this node unless necessary
+        naming: Naming.unnamed,
+      ) {
+  put(val, fill: fill);
+  _unassignable = true;
+}</code></pre>
 </section>
 
 

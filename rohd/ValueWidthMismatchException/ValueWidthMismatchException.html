@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/ValueWidthMismatchException-class.html">ValueWidthMismatchException</a></li>
     <li class="self-crumb">ValueWidthMismatchException constructor</li>
   </ol>
@@ -77,7 +77,9 @@ are of different width.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ValueWidthMismatchException</code></pre>
+  <pre class="language-dart"><code class="language-dart">ValueWidthMismatchException(LogicValue a, LogicValue b)
+    : super(&#39;Width mismatch between $a (${a.width}) &amp; $b (${b.width}): &#39;
+          &#39;LogicValues must be of same width for this operation.&#39;);</code></pre>
 </section>
 
 

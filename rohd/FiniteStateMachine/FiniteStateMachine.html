@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/FiniteStateMachine-class.html">FiniteStateMachine<span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></a></li>
     <li class="self-crumb">FiniteStateMachine constructor</li>
   </ol>
@@ -65,7 +65,7 @@
       <span class="name ">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
 <li><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span></li>
-<li><span class="parameter" id="-param-states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">states</span></span></li>
+<li><span class="parameter" id="-param-states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">states</span></span></li>
 </ol>)
     </section>
 
@@ -80,7 +80,12 @@ transitions on positive <code>clk</code> edges.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">FiniteStateMachine</code></pre>
+  <pre class="language-dart"><code class="language-dart">FiniteStateMachine(
+  Logic clk,
+  Logic reset,
+  StateIdentifier resetState,
+  List&lt;State&lt;StateIdentifier&gt;&gt; states,
+) : this.multi([clk], reset, resetState, states);</code></pre>
 </section>
 
 

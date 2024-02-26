@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SignalWidthMismatchException-class.html">SignalWidthMismatchException</a></li>
     <li class="self-crumb">SignalWidthMismatchException constructor</li>
   </ol>
@@ -63,21 +63,25 @@
     <section class="multi-line-signature">
       
       <span class="name ">SignalWidthMismatchException</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span>, </span></li>
-<li><span class="parameter" id="-param-expectedWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">expectedWidth</span>, </span></li>
-<li><span class="parameter" id="-param-additionalMessage">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">additionalMessage</span> = <span class="default-value">&#39;&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-expectedWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">expectedWidth</span>, </span></li>
+<li><span class="parameter" id="-param-additionalMessage">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">additionalMessage</span> = <span class="default-value">&#39;&#39;</span>}</span></li>
 </ol>)
     </section>
 
     
 <section class="desc markdown">
-  <p>Constructs a new <a href="https://api.dart.dev/stable/3.2.6/dart-core/Exception-class.html">Exception</a> for when a signal has the wrong width.</p>
+  <p>Constructs a new <a href="https://api.dart.dev/stable/3.3.0/dart-core/Exception-class.html">Exception</a> for when a signal has the wrong width.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">SignalWidthMismatchException</code></pre>
+  <pre class="language-dart"><code class="language-dart">SignalWidthMismatchException(Logic signal, int expectedWidth,
+    {String additionalMessage = &#39;&#39;})
+    : super(&#39;Signal ${signal.name} has the wrong width.&#39;
+          &#39; Expected $expectedWidth but found ${signal.width}.&#39;
+          &#39; $additionalMessage&#39;);</code></pre>
 </section>
 
 

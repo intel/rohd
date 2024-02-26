@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
     <li class="self-crumb">SynthBuilder constructor</li>
   </ol>
@@ -77,7 +77,28 @@ using <a href="../../rohd/SynthBuilder/synthesizer.html">synthesizer</a> for gen
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">SynthBuilder</code></pre>
+  <pre class="language-dart"><code class="language-dart">SynthBuilder(this.top, this.synthesizer) {
+  if (!top.hasBuilt) {
+    throw ModuleNotBuiltException();
+  }
+
+  final modulesToParse = &lt;Module&gt;[top];
+  for (var i = 0; i &lt; modulesToParse.length; i++) {
+    final moduleI = modulesToParse[i];
+    if (!synthesizer.generatesDefinition(moduleI)) {
+      continue;
+    }
+    modulesToParse.addAll(moduleI.subModules);
+  }
+
+  &#47;&#47; go backwards to start from the bottom (...now we&#39;re here)
+  &#47;&#47; critical to go in this order for caching to work properly
+  for (final module in modulesToParse.reversed) {
+    if (synthesizer.generatesDefinition(module)) {
+      _getInstanceType(module);
+    }
+  }
+}</code></pre>
 </section>
 
 

@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/ARShift-class.html">ARShift</a></li>
     <li class="self-crumb">ARShift constructor</li>
   </ol>
@@ -64,7 +64,7 @@
       
       <span class="name ">ARShift</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-in_"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in_</span>, </span></li>
 <li><span class="parameter" id="-param-shiftAmount"><span class="type-annotation">dynamic</span> <span class="parameter-name">shiftAmount</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;arshift&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;arshift&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -78,7 +78,10 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ARShift</code></pre>
+  <pre class="language-dart"><code class="language-dart">ARShift(Logic in_, dynamic shiftAmount, {String name = &#39;arshift&#39;})
+    : &#47;&#47; Note: &gt;&gt;&gt; vs &gt;&gt; is backwards for SystemVerilog and Dart
+      super((a, shamt) =&gt; a &gt;&gt; shamt, &#39;&gt;&gt;&gt;&#39;, in_, shiftAmount,
+          name: name, signed: true);</code></pre>
 </section>
 
 

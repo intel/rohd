@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SelfConnectingLogicException-class.html">SelfConnectingLogicException</a></li>
     <li class="self-crumb">SelfConnectingLogicException constructor</li>
   </ol>
@@ -76,7 +76,9 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">SelfConnectingLogicException</code></pre>
+  <pre class="language-dart"><code class="language-dart">SelfConnectingLogicException(Logic a, Logic b)
+    : super(&#39;Failed to connect signal &quot;$a&quot; with signal &quot;$b&quot;:&#39;
+          &#39; Self connecting logic not allowed.&#39;);</code></pre>
 </section>
 
 

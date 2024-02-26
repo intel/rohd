@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/BusSubset-class.html">BusSubset</a></li>
     <li class="self-crumb">BusSubset constructor</li>
   </ol>
@@ -63,9 +63,9 @@
     <section class="multi-line-signature">
       
       <span class="name ">BusSubset</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-bus"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">bus</span>, </span></li>
-<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
-<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
+<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -81,7 +81,35 @@ in the generated SystemVerilog.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">BusSubset</code></pre>
+  <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
+    {super.name = &#39;bussubset&#39;}) {
+  &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
+  &#47;&#47; on a Logic Bus
+  if (startIndex &lt; 0 || endIndex &lt; 0) {
+    throw Exception(
+        &#39;Start ($startIndex) and End ($endIndex) must be greater than or &#39;
+        &#39;equal to 0.&#39;);
+  }
+  &#47;&#47; If the +ve indices are more than Logic bus width, Index out of bounds
+  if (endIndex &gt; bus.width - 1 || startIndex &gt; bus.width - 1) {
+    throw Exception(
+        &#39;Index out of bounds, indices $startIndex and $endIndex must be less&#39;
+        &#39; than ${bus.width}&#39;);
+  }
+
+  _original = Naming.unpreferredName(&#39;original_${bus.name}&#39;);
+  _subset =
+      Naming.unpreferredName(&#39;subset_${endIndex}_${startIndex}_${bus.name}&#39;);
+
+  addInput(_original, bus, width: bus.width);
+  final newWidth = (endIndex - startIndex).abs() + 1;
+  addOutput(_subset, width: newWidth);
+
+  &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
+  subset.makeUnassignable();
+
+  _setup();
+}</code></pre>
 </section>
 
 

@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Combinational-class.html">Combinational</a></li>
     <li class="self-crumb">Combinational constructor</li>
   </ol>
@@ -62,8 +62,8 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Combinational</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-_conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">_conditionals</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;combinational&#39;</span>}</span></li>
+      <span class="name ">Combinational</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-_conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">_conditionals</span>, </span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;combinational&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -80,7 +80,14 @@ synthesis.  See <a href="../../rohd/Combinational/Combinational.ssa.html">Combin
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Combinational</code></pre>
+  <pre class="language-dart"><code class="language-dart">Combinational(super._conditionals, {super.name = &#39;combinational&#39;}) {
+  _execute(); &#47;&#47; for initial values
+  for (final driver in _assignedDriverToInputMap.keys) {
+    driver.glitch.listen((args) {
+      _execute();
+    });
+  }
+}</code></pre>
 </section>
 
 

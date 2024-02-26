@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
     <li class="self-crumb">FlipFlop constructor</li>
   </ol>
@@ -67,7 +67,7 @@
 <li><span class="parameter" id="-param-en">{<span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span></li>
 <li><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span></li>
-<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -81,14 +81,45 @@ input<code>d</code>. For low <code>en</code>, output remains frozen irrespective
 If no <code>resetValue</code> is provided, the reset value is always <code>0</code>. Otherwise,
 it will reset to the provided <code>resetValue</code>. The type of <code>resetValue</code> must
 be a valid driver of a <a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a> (e.g. <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
-<a href="https://api.dart.dev/stable/3.2.6/dart-core/int-class.html">int</a>, etc.).</p>
+<a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a>, etc.).</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">FlipFlop</code></pre>
+  <pre class="language-dart"><code class="language-dart">FlipFlop(
+  Logic clk,
+  Logic d, {
+  Logic? en,
+  Logic? reset,
+  dynamic resetValue,
+  super.name = &#39;flipflop&#39;,
+}) {
+  if (clk.width != 1) {
+    throw Exception(&#39;clk must be 1 bit&#39;);
+  }
+
+  addInput(_clkName, clk);
+  addInput(_dName, d, width: d.width);
+  addOutput(_qName, width: d.width);
+
+  if (en != null) {
+    addInput(_enName, en);
+  }
+
+  if (reset != null) {
+    addInput(_resetName, reset);
+
+    if (resetValue != null &amp;&amp; resetValue is Logic) {
+      _resetValuePort = addInput(_resetValueName, resetValue, width: d.width);
+    } else {
+      _resetValueConst = LogicValue.of(resetValue ?? 0, width: d.width);
+    }
+  }
+
+  _setup();
+}</code></pre>
 </section>
 
 

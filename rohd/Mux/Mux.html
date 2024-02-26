@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Mux-class.html">Mux</a></li>
     <li class="self-crumb">Mux constructor</li>
   </ol>
@@ -65,7 +65,7 @@
       <span class="name ">Mux</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-control"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
 <li><span class="parameter" id="-param-d1"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span></li>
 <li><span class="parameter" id="-param-d0"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -79,7 +79,26 @@ on if <code>control</code> is 0 or 1, respectively.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Mux</code></pre>
+  <pre class="language-dart"><code class="language-dart">Mux(Logic control, Logic d1, Logic d0, {super.name = &#39;mux&#39;}) {
+  if (control.width != 1) {
+    throw PortWidthMismatchException(control, 1);
+  }
+  if (d0.width != d1.width) {
+    throw PortWidthMismatchException.equalWidth(d0, d1);
+  }
+
+  _controlName = Naming.unpreferredName(&#39;control_${control.name}&#39;);
+  _d0Name = Naming.unpreferredName(&#39;d0_${d0.name}&#39;);
+  _d1Name = Naming.unpreferredName(&#39;d1_${d1.name}&#39;);
+  _outName = Naming.unpreferredName(&#39;out&#39;);
+
+  addInput(_controlName, control);
+  addInput(_d0Name, d0, width: d0.width);
+  addInput(_d1Name, d1, width: d1.width);
+  addOutput(_outName, width: d0.width);
+
+  _setup();
+}</code></pre>
 </section>
 
 

@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/IndexGate-class.html">IndexGate</a></li>
     <li class="self-crumb">IndexGate constructor</li>
   </ol>
@@ -82,7 +82,18 @@ SystemVerilog.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">IndexGate</code></pre>
+  <pre class="language-dart"><code class="language-dart">IndexGate(Logic original, Logic index) : super() {
+  _originalName = &#39;original_${original.name}&#39;;
+  _indexName = Naming.unpreferredName(&#39;index_${index.name}&#39;);
+  _selectionName =
+      Naming.unpreferredName(&#39;${original.name}_indexby_${index.name}&#39;);
+
+  addInput(_originalName, original, width: original.width);
+  addInput(_indexName, index, width: index.width);
+  addOutput(_selectionName);
+
+  _setup();
+}</code></pre>
 </section>
 
 

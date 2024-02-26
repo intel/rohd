@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
     <li class="self-crumb">Xor2Gate constructor</li>
   </ol>
@@ -64,7 +64,7 @@
       
       <span class="name ">Xor2Gate</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="-param-in0"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in0</span>, </span></li>
 <li><span class="parameter" id="-param-in1"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in1</span>, </span></li>
-<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.2.6/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;xor&#39;</span>}</span></li>
+<li><span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;xor&#39;</span>}</span></li>
 </ol>)
     </section>
 
@@ -77,7 +77,8 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Xor2Gate</code></pre>
+  <pre class="language-dart"><code class="language-dart">Xor2Gate(Logic in0, Logic in1, {String name = &#39;xor&#39;})
+    : super((a, b) =&gt; a ^ b, &#39;^&#39;, in0, in1, name: name);</code></pre>
 </section>
 
 

@@ -29,7 +29,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/WriteAfterReadException-class.html">WriteAfterReadException</a></li>
     <li class="self-crumb">WriteAfterReadException constructor</li>
   </ol>
@@ -74,7 +74,12 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">WriteAfterReadException</code></pre>
+  <pre class="language-dart"><code class="language-dart">WriteAfterReadException()
+    : super(&#39;Signal changed its value after being used&#39;
+          &#39; within one `Combinational` execution.&#39;
+          &#39; This can lead to a mismatch between simulation and synthesis.&#39;
+          &#39; You may be able to use `Combinational.ssa` to correct your&#39;
+          &#39; design with minimal refactoring.&#39;);</code></pre>
 </section>
 
 
