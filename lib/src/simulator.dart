@@ -7,6 +7,8 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+// Some modification from Adam Rose <adam.david.rose@gmail.com>
+
 import 'dart:async';
 import 'dart:collection';
 
@@ -183,7 +185,7 @@ abstract class Simulator {
   ///
   /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {
-    if (timestamp <= _currentTimestamp) {
+    if (timestamp < _currentTimestamp) {
       throw Exception('Cannot add timestamp "$timestamp" in the past.'
           '  Current time is ${Simulator.time}');
     }
@@ -191,6 +193,26 @@ abstract class Simulator {
       _pendingTimestamps[timestamp] = [];
     }
     _pendingTimestamps[timestamp]!.add(action);
+  }
+
+  /// cancels an [action] previously scheduled for [timestamp]
+  static bool cancelAction( int timestamp, dynamic Function() action ) {
+    if( !_pendingTimestamps.containsKey( timestamp ) )
+    {
+      return false;
+    }
+
+    if( !_pendingTimestamps[timestamp]!.remove( action ) )
+    {
+      return false;
+    }
+
+    if( _pendingTimestamps[timestamp]!.isEmpty )
+    {
+      _pendingTimestamps.remove( timestamp );
+    }
+
+    return true;
   }
 
   /// Registers an arbitrary [action] to be executed at the end of the
@@ -231,18 +253,21 @@ abstract class Simulator {
     }
 
     final nextTimeStamp = _pendingTimestamps.firstKey();
+
     if (nextTimeStamp == null) {
       return;
     }
 
     _currentTimestamp = nextTimeStamp;
 
+    var pendingList = _pendingTimestamps[nextTimeStamp]!;
+    _pendingTimestamps.remove(_currentTimestamp);
+
     await tickExecute(() async {
-      for (final func in _pendingTimestamps[nextTimeStamp]!) {
+      for (final func in pendingList) {
         await func();
       }
     });
-    _pendingTimestamps.remove(_currentTimestamp);
   }
 
   /// Executes all pending injected actions.
