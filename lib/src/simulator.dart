@@ -200,20 +200,17 @@ abstract class Simulator {
   /// Cancels an [action] previously scheduled for [timestamp].
   ///
   /// Returns true iff a [action] was previously registered at [timestamp].
-  static bool cancelAction( int timestamp, dynamic Function() action ) {
-    if( !_pendingTimestamps.containsKey( timestamp ) )
-    {
+  static bool cancelAction(int timestamp, dynamic Function() action) {
+    if (!_pendingTimestamps.containsKey(timestamp)) {
       return false;
     }
 
-    if( !_pendingTimestamps[timestamp]!.remove( action ) )
-    {
+    if (!_pendingTimestamps[timestamp]!.remove(action)) {
       return false;
     }
 
-    if( _pendingTimestamps[timestamp]!.isEmpty )
-    {
-      _pendingTimestamps.remove( timestamp );
+    if (_pendingTimestamps[timestamp]!.isEmpty) {
+      _pendingTimestamps.remove(timestamp);
     }
 
     return true;
