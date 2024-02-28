@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simulator_test.dart
@@ -6,7 +7,10 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
-
+//
+// 2024 Feb 28th
+// Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility
+//
 import 'dart:async';
 
 import 'package:rohd/rohd.dart';
@@ -24,13 +28,15 @@ void main() {
     expect(actionTaken, equals(true));
   });
 
-  test('simulator supports cancelation of previously scheduled actions', () async {
+  test('simulator supports cancelation of previously scheduled actions',
+      () async {
     var actionCount = 0;
     var incrementCount = () => actionCount++;
 
-    Simulator.registerAction( 50 , () => Simulator.cancelAction( 100 , incrementCount ) );
-    Simulator.registerAction(100, incrementCount );
-    Simulator.registerAction(200, incrementCount );
+    Simulator.registerAction(
+        50, () => Simulator.cancelAction(100, incrementCount));
+    Simulator.registerAction(100, incrementCount);
+    Simulator.registerAction(200, incrementCount);
 
     await Simulator.run();
     expect(actionCount, equals(1));
@@ -132,56 +138,65 @@ void main() {
     test('simulator supports delta cycles', () async {
       List<String> testLog = [];
 
-      void Function(int t,int i) deltaFunc = ( t , i ) {
+      void Function(int t, int i) deltaFunc = (t, i) {
         testLog.add('wake up $i');
-        Simulator.registerAction( 100 , () => testLog.add('delta $i'));
+        Simulator.registerAction(100, () => testLog.add('delta $i'));
       };
 
-      Simulator.registerAction(100, () => deltaFunc( Simulator.time , 0 ));
-      Simulator.registerAction(100, () => deltaFunc( Simulator.time , 1 ));
+      Simulator.registerAction(100, () => deltaFunc(Simulator.time, 0));
+      Simulator.registerAction(100, () => deltaFunc(Simulator.time, 1));
 
       await Simulator.run();
 
-      List<String> expectedLog = ['wake up 0','wake up 1','delta 0','delta 1'];
-      expect(testLog,expectedLog);
+      List<String> expectedLog = [
+        'wake up 0',
+        'wake up 1',
+        'delta 0',
+        'delta 1'
+      ];
+      expect(testLog, expectedLog);
     });
 
-    test('simulator supports end of delta one shot callbacks' , () async {
+    test('simulator supports end of delta one shot callbacks', () async {
       var callbackCount = 0;
 
       // add a self cancelling listener
-      Simulator.registerAction(100, () => Simulator.injectAction( () => callbackCount++ ) );
-      Simulator.registerAction(200, () {} );
+      Simulator.registerAction(
+          100, () => Simulator.injectAction(() => callbackCount++));
+      Simulator.registerAction(200, () {});
 
       await Simulator.run();
-      expect(callbackCount,1);
+      expect(callbackCount, 1);
     });
 
     test('deltas occur after end of delta', () async {
       List<String> testLog = [];
 
-      void Function(int t,int i) deltaFunc = ( t , i ) {
+      void Function(int t, int i) deltaFunc = (t, i) {
         testLog.add('first delta $i');
 
         Simulator.registerAction(t, () {
-          Simulator.registerAction( Simulator.time , () => testLog.add('next delta $i') );
-          Simulator.injectAction( () => testLog.add('end delta $i'));
+          Simulator.registerAction(
+              Simulator.time, () => testLog.add('next delta $i'));
+          Simulator.injectAction(() => testLog.add('end delta $i'));
         });
       };
 
-      Simulator.registerAction(100, () => deltaFunc( Simulator.time , 0 ));
-      Simulator.registerAction(100, () => deltaFunc( Simulator.time , 1 ));
+      Simulator.registerAction(100, () => deltaFunc(Simulator.time, 0));
+      Simulator.registerAction(100, () => deltaFunc(Simulator.time, 1));
 
       await Simulator.run();
 
       List<String> expectedLog = [
-        'first delta 0','first delta 1',
-        'end delta 0','end delta 1',
-        'next delta 0','next delta 1'
+        'first delta 0',
+        'first delta 1',
+        'end delta 0',
+        'end delta 1',
+        'next delta 0',
+        'next delta 1'
       ];
 
-      expect(testLog,expectedLog);
+      expect(testLog, expectedLog);
     });
-
   });
 }

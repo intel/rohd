@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simulator.dart
@@ -6,9 +7,10 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
-
-// Some modification from Adam Rose <adam.david.rose@gmail.com>
-
+//
+// 2024 Feb 28th
+// Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility
+//
 import 'dart:async';
 import 'dart:collection';
 
@@ -195,7 +197,9 @@ abstract class Simulator {
     _pendingTimestamps[timestamp]!.add(action);
   }
 
-  /// cancels an [action] previously scheduled for [timestamp]
+  /// Cancels an [action] previously scheduled for [timestamp].
+  ///
+  /// Returns true iff a [action] was previously registered at [timestamp].
   static bool cancelAction( int timestamp, dynamic Function() action ) {
     if( !_pendingTimestamps.containsKey( timestamp ) )
     {
