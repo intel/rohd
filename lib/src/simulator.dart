@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simulator.dart
@@ -6,7 +7,10 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
-
+//
+// 2024 Feb 28th
+// Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility
+//
 import 'dart:async';
 import 'dart:collection';
 
@@ -183,7 +187,7 @@ abstract class Simulator {
   ///
   /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {
-    if (timestamp <= _currentTimestamp) {
+    if (timestamp < _currentTimestamp) {
       throw Exception('Cannot add timestamp "$timestamp" in the past.'
           '  Current time is ${Simulator.time}');
     }
@@ -191,6 +195,25 @@ abstract class Simulator {
       _pendingTimestamps[timestamp] = [];
     }
     _pendingTimestamps[timestamp]!.add(action);
+  }
+
+  /// Cancels an [action] previously scheduled for [timestamp].
+  ///
+  /// Returns true iff a [action] was previously registered at [timestamp].
+  static bool cancelAction(int timestamp, dynamic Function() action) {
+    if (!_pendingTimestamps.containsKey(timestamp)) {
+      return false;
+    }
+
+    if (!_pendingTimestamps[timestamp]!.remove(action)) {
+      return false;
+    }
+
+    if (_pendingTimestamps[timestamp]!.isEmpty) {
+      _pendingTimestamps.remove(timestamp);
+    }
+
+    return true;
   }
 
   /// Registers an arbitrary [action] to be executed at the end of the
@@ -231,18 +254,21 @@ abstract class Simulator {
     }
 
     final nextTimeStamp = _pendingTimestamps.firstKey();
+
     if (nextTimeStamp == null) {
       return;
     }
 
     _currentTimestamp = nextTimeStamp;
 
+    final pendingList = _pendingTimestamps[nextTimeStamp]!;
+    _pendingTimestamps.remove(_currentTimestamp);
+
     await tickExecute(() async {
-      for (final func in _pendingTimestamps[nextTimeStamp]!) {
+      for (final func in pendingList) {
         await func();
       }
     });
-    _pendingTimestamps.remove(_currentTimestamp);
   }
 
   /// Executes all pending injected actions.

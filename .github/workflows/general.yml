@@ -49,7 +49,7 @@ jobs:
         run: tool/gh_actions/analyze_source.sh
 
       - name: Check project documentation
-        run: tool/gh_actions/check_documentation.sh
+        run: tool/gh_actions/generate_documentation.sh
 
       - name: Install software - Icarus Verilog
         run: tool/gh_actions/install_iverilog.sh
