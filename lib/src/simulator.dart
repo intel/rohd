@@ -261,7 +261,7 @@ abstract class Simulator {
 
     _currentTimestamp = nextTimeStamp;
 
-    var pendingList = _pendingTimestamps[nextTimeStamp]!;
+    final pendingList = _pendingTimestamps[nextTimeStamp]!;
     _pendingTimestamps.remove(_currentTimestamp);
 
     await tickExecute(() async {

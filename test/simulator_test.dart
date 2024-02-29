@@ -31,7 +31,10 @@ void main() {
   test('simulator supports cancelation of previously scheduled actions',
       () async {
     var actionCount = 0;
-    var incrementCount = () => actionCount++;
+
+    void incrementCount() {
+      actionCount++;
+    }
 
     Simulator.registerAction(
         50, () => Simulator.cancelAction(100, incrementCount));
@@ -136,19 +139,21 @@ void main() {
 
   group('Rohme compatibility tests', () {
     test('simulator supports delta cycles', () async {
-      List<String> testLog = [];
+      // ignore: omit_local_variable_types
+      final List<String> testLog = [];
 
-      void Function(int t, int i) deltaFunc = (t, i) {
+      void deltaFunc(int t, int i) {
         testLog.add('wake up $i');
         Simulator.registerAction(100, () => testLog.add('delta $i'));
-      };
+      }
 
       Simulator.registerAction(100, () => deltaFunc(Simulator.time, 0));
       Simulator.registerAction(100, () => deltaFunc(Simulator.time, 1));
 
       await Simulator.run();
 
-      List<String> expectedLog = [
+      // ignore: omit_local_variable_types
+      final List<String> expectedLog = [
         'wake up 0',
         'wake up 1',
         'delta 0',
@@ -170,9 +175,10 @@ void main() {
     });
 
     test('deltas occur after end of delta', () async {
-      List<String> testLog = [];
+      // ignore: omit_local_variable_types
+      final List<String> testLog = [];
 
-      void Function(int t, int i) deltaFunc = (t, i) {
+      void deltaFunc(int t, int i) {
         testLog.add('first delta $i');
 
         Simulator.registerAction(t, () {
@@ -180,14 +186,15 @@ void main() {
               Simulator.time, () => testLog.add('next delta $i'));
           Simulator.injectAction(() => testLog.add('end delta $i'));
         });
-      };
+      }
 
       Simulator.registerAction(100, () => deltaFunc(Simulator.time, 0));
       Simulator.registerAction(100, () => deltaFunc(Simulator.time, 1));
 
       await Simulator.run();
 
-      List<String> expectedLog = [
+      // ignore: omit_local_variable_types
+      final List<String> expectedLog = [
         'first delta 0',
         'first delta 1',
         'end delta 0',
