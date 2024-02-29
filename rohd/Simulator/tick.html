@@ -91,18 +91,21 @@ timestamp, and passes through all events and phases on the way.</p>
   }
 
   final nextTimeStamp = _pendingTimestamps.firstKey();
+
   if (nextTimeStamp == null) {
     return;
   }
 
   _currentTimestamp = nextTimeStamp;
 
+  final pendingList = _pendingTimestamps[nextTimeStamp]!;
+  _pendingTimestamps.remove(_currentTimestamp);
+
   await tickExecute(() async {
-    for (final func in _pendingTimestamps[nextTimeStamp]!) {
+    for (final func in pendingList) {
       await func();
     }
   });
-  _pendingTimestamps.remove(_currentTimestamp);
 }</code></pre>
 </section>
 

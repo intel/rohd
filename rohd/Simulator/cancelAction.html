@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the registerAction method from the Simulator class, for the Dart programming language.">
-  <title>registerAction method - Simulator class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the cancelAction method from the Simulator class, for the Dart programming language.">
+  <title>cancelAction method - Simulator class - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-    <li class="self-crumb">registerAction static method</li>
+    <li class="self-crumb">cancelAction static method</li>
   </ol>
-  <div class="self-name">registerAction</div>
+  <div class="self-name">cancelAction</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -57,15 +57,15 @@
       data-above-sidebar="rohd&#47;Simulator-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-method">registerAction</span> static method 
+<h1><span class="kind-method">cancelAction</span> static method 
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype">void</span>
-<span class="name ">registerAction</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="registerAction-param-timestamp"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">timestamp</span>, </span></li>
-<li><span class="parameter" id="registerAction-param-action"><span class="type-annotation">dynamic</span> <span class="parameter-name">action</span>(<ol class="parameter-list"></ol>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.3.0/dart-core/bool-class.html">bool</a></span>
+<span class="name ">cancelAction</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="cancelAction-param-timestamp"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">timestamp</span>, </span></li>
+<li><span class="parameter" id="cancelAction-param-action"><span class="type-annotation">dynamic</span> <span class="parameter-name">action</span>(<ol class="parameter-list"></ol>
 )</span></li>
 </ol>)
 
@@ -74,23 +74,28 @@
     </section>
     
 <section class="desc markdown">
-  <p>Registers an abritrary <code>action</code> to be executed at <code>timestamp</code> time.</p>
-<p>The <code>action</code>, if it returns a <a href="https://api.dart.dev/stable/3.3.0/dart-async/Future-class.html">Future</a>, will be <code>await</code>ed.</p>
+  <p>Cancels an <code>action</code> previously scheduled for <code>timestamp</code>.</p>
+<p>Returns true iff a <code>action</code> was previously registered at <code>timestamp</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static void registerAction(int timestamp, dynamic Function() action) {
-  if (timestamp &lt; _currentTimestamp) {
-    throw Exception(&#39;Cannot add timestamp &quot;$timestamp&quot; in the past.&#39;
-        &#39;  Current time is ${Simulator.time}&#39;);
-  }
+  <pre class="language-dart"><code class="language-dart">static bool cancelAction(int timestamp, dynamic Function() action) {
   if (!_pendingTimestamps.containsKey(timestamp)) {
-    _pendingTimestamps[timestamp] = [];
+    return false;
   }
-  _pendingTimestamps[timestamp]!.add(action);
+
+  if (!_pendingTimestamps[timestamp]!.remove(action)) {
+    return false;
+  }
+
+  if (_pendingTimestamps[timestamp]!.isEmpty) {
+    _pendingTimestamps.remove(timestamp);
+  }
+
+  return true;
 }</code></pre>
 </section>
 
@@ -109,7 +114,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-    <li class="self-crumb">registerAction static method</li>
+    <li class="self-crumb">cancelAction static method</li>
 </ol>
 
 
