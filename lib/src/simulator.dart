@@ -76,8 +76,14 @@ abstract class Simulator {
       _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
 
   /// Sorted storage for pending functions to execute at appropriate times.
-  static final SplayTreeMap<int, List<dynamic Function()>> _pendingTimestamps =
-      SplayTreeMap<int, List<dynamic Function()>>();
+  static final SplayTreeMap<int, ListQueue<dynamic Function()>>
+      _pendingTimestamps = SplayTreeMap<int, ListQueue<dynamic Function()>>();
+
+  /// The list of actions to be performed in this timestamp
+  ///
+  /// This is a class variable so that [registerImmediateAction] can add to
+  /// it during [SimulatorPhase.mainTick].
+  static ListQueue<dynamic Function()> _pendingList = ListQueue();
 
   /// Functions to be executed as soon as possible by the [Simulator].
   ///
@@ -183,6 +189,23 @@ abstract class Simulator {
     _maxSimTime = newMaxSimTime;
   }
 
+  /// Registers an arbitrary [action] to be executed immediately.
+  ///
+  /// An immediate action occurs in this delta cycle, before any injected
+  /// actions.
+  ///
+  /// Throws an exception if attempted outside of mainTick phase.
+  ///
+  /// We do not provide a cancel method for immediate actions, precisely
+  /// because they are immediate.
+  static void registerImmediateAction(dynamic Function() action) {
+    if (_phase != SimulatorPhase.mainTick) {
+      throw Exception(
+          'Cannot register immediate action outside of mainTick phase');
+    }
+    _pendingList.add(action);
+  }
+
   /// Registers an abritrary [action] to be executed at [timestamp] time.
   ///
   /// The [action], if it returns a [Future], will be `await`ed.
@@ -192,7 +215,7 @@ abstract class Simulator {
           '  Current time is ${Simulator.time}');
     }
     if (!_pendingTimestamps.containsKey(timestamp)) {
-      _pendingTimestamps[timestamp] = [];
+      _pendingTimestamps[timestamp] = ListQueue();
     }
     _pendingTimestamps[timestamp]!.add(action);
   }
@@ -261,12 +284,12 @@ abstract class Simulator {
 
     _currentTimestamp = nextTimeStamp;
 
-    final pendingList = _pendingTimestamps[nextTimeStamp]!;
+    _pendingList = _pendingTimestamps[nextTimeStamp]!;
     _pendingTimestamps.remove(_currentTimestamp);
 
     await tickExecute(() async {
-      for (final func in pendingList) {
-        await func();
+      while (_pendingList.isNotEmpty) {
+        await _pendingList.removeFirst()();
       }
     });
   }
