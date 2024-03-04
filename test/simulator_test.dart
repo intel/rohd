@@ -205,5 +205,72 @@ void main() {
 
       expect(testLog, expectedLog);
     });
+
+    test('immediate action occurs at same time, before injected'
+         ' and before next delta',
+        () async {
+      // ignore: omit_local_variable_types
+      final List<String> testLog = [];
+
+      Simulator.registerAction(100, () {
+        testLog.add('first');
+        expect(Simulator.time, 100);
+
+        // next delta
+        Simulator.registerAction( 100 , () {
+          expect(Simulator.time, 100);
+          testLog.add('delta');
+        });
+
+        // next microtask ( end of this delta )
+        Simulator.injectAction(() {
+          expect(Simulator.time, 100);
+          testLog.add('injected');
+        });
+
+        // immediate 
+        Simulator.registerImmediateAction(() {
+          expect(Simulator.time, 100);
+          testLog.add('immediate');
+        });
+      });
+
+      Simulator.registerAction(200, () {
+        expect(Simulator.time, 200);
+        testLog.add('second');
+      });
+
+      await Simulator.run();
+
+      // ignore: omit_local_variable_types
+      final List<String> expectedLog = [
+        'first',
+        'immediate',
+        'injected',
+        'delta',
+        'second'
+      ];
+
+      expect(testLog, expectedLog);
+    });
+
+    test('Can only register immediate actions in mainTick', () async {
+      Simulator.registerAction(100, () {
+        Simulator.injectAction(() {
+          Simulator.registerImmediateAction( () {} );
+        });
+      });
+
+      bool ok = true;
+      try
+      {
+        await Simulator.run();
+      }
+      catch( e )
+      {
+        ok = false;
+      }
+      expect( ok , false );
+    });
   });
 }
