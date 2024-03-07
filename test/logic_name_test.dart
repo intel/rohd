@@ -86,6 +86,26 @@ class DrivenOutputModule extends Module {
   }
 }
 
+class ModWithNameCollisionArrayPorts extends Module {
+  Logic get o => output('o');
+  ModWithNameCollisionArrayPorts(LogicArray portA, Logic portA2)
+      : super(name: 'submod') {
+    portA2 = addInput('portA_2', portA2);
+    portA = addInputArray('portA', portA, dimensions: [3, 1]);
+    addOutput('o') <= portA2;
+
+    addOutput('portB_1');
+    addOutputArray('portB', dimensions: [2, 1]);
+  }
+}
+
+class NameCollisionArrayTop extends Module {
+  NameCollisionArrayTop() {
+    addOutput('o') <=
+        ModWithNameCollisionArrayPorts(LogicArray([3, 1], 1), Logic()).o;
+  }
+}
+
 void main() {
   test(
       'GIVEN logic name is valid '
@@ -179,5 +199,16 @@ void main() {
       // should add a Z if it's explicitly added
       expect(sv, contains('z'));
     });
+  });
+
+  test('array port and simple port with _num name conflict', () async {
+    final mod = NameCollisionArrayTop();
+    await mod.build();
+    final sv = mod.generateSynth();
+    expect(
+        sv,
+        contains('submod(.portA_2(portA_2),.portA(portA),'
+            '.o(o),'
+            '.portB_1(portB_1),.portB(portB))'));
   });
 }
