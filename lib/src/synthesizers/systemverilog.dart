@@ -276,10 +276,41 @@ class _SynthSubModuleInstantiation {
   }
 
   /// A mapping of input port name to [_SynthLogic].
-  final Map<String, _SynthLogic> inputMapping = {};
+  late final Map<String, _SynthLogic> inputMapping =
+      UnmodifiableMapView(_inputMapping);
+  final Map<String, _SynthLogic> _inputMapping = {};
+
+  /// Adds an input mapping from [name] to [synthLogic].
+  void setInputMapping(String name, _SynthLogic synthLogic,
+      {bool replace = false}) {
+    // ignore: invalid_use_of_protected_member
+    assert(module.inputs.containsKey(name),
+        'Input $name not found in module ${module.name}.');
+    assert(
+        (replace && _inputMapping.containsKey(name)) ||
+            !_inputMapping.containsKey(name),
+        'A mapping already exists to this input: $name.');
+
+    _inputMapping[name] = synthLogic;
+  }
 
   /// A mapping of output port name to [_SynthLogic].
-  final Map<String, _SynthLogic> outputMapping = {};
+  late final Map<String, _SynthLogic> outputMapping =
+      UnmodifiableMapView(_outputMapping);
+  final Map<String, _SynthLogic> _outputMapping = {};
+
+  /// Adds an output mapping from [name] to [synthLogic].
+  void setOutputMapping(String name, _SynthLogic synthLogic,
+      {bool replace = false}) {
+    assert(module.outputs.containsKey(name),
+        'Output $name not found in module ${module.name}.');
+    assert(
+        (replace && _outputMapping.containsKey(name)) ||
+            !_outputMapping.containsKey(name),
+        'A mapping already exists to this output: $name.');
+
+    _outputMapping[name] = synthLogic;
+  }
 
   /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
@@ -500,9 +531,12 @@ class _SynthModuleDefinition {
           receiver.isOutput && (receiver.parentModule?.parent == module);
       if (receiverIsSubModuleOutput) {
         final subModule = receiver.parentModule!;
-        final subModuleInstantiation =
-            _getSynthSubModuleInstantiation(subModule);
-        subModuleInstantiation.outputMapping[receiver.name] = synthReceiver;
+
+        // array elements are not named ports, just contained in array
+        if (synthReceiver is! _SynthLogicArrayElement) {
+          _getSynthSubModuleInstantiation(subModule)
+              .setOutputMapping(receiver.name, synthReceiver);
+        }
 
         // ignore: invalid_use_of_protected_member
         logicsToTraverse.addAll(subModule.inputs.values);
@@ -527,9 +561,12 @@ class _SynthModuleDefinition {
           receiver.isInput && (receiver.parentModule?.parent == module);
       if (receiverIsSubModuleInput) {
         final subModule = receiver.parentModule!;
-        final subModuleInstantiation =
-            _getSynthSubModuleInstantiation(subModule);
-        subModuleInstantiation.inputMapping[receiver.name] = synthReceiver;
+
+        // array elements are not named ports, just contained in array
+        if (synthReceiver is! _SynthLogicArrayElement) {
+          _getSynthSubModuleInstantiation(subModule)
+              .setInputMapping(receiver.name, synthReceiver);
+        }
       }
     }
 
@@ -548,14 +585,16 @@ class _SynthModuleDefinition {
       // ignore: invalid_use_of_protected_member
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
-        submoduleInstantiation.inputMapping[inputName] =
-            orig.replacement ?? orig;
+        submoduleInstantiation.setInputMapping(
+            inputName, orig.replacement ?? orig,
+            replace: true);
       }
 
       for (final outputName in submoduleInstantiation.module.outputs.keys) {
         final orig = submoduleInstantiation.outputMapping[outputName]!;
-        submoduleInstantiation.outputMapping[outputName] =
-            orig.replacement ?? orig;
+        submoduleInstantiation.setOutputMapping(
+            outputName, orig.replacement ?? orig,
+            replace: true);
       }
     }
   }
