@@ -39,7 +39,7 @@ jobs:
             git pull origin main
             git add .
             git add -f extension/*
-            git commit -m "Add build artifacts and modify .gitignore"
+            git commit -m "Add build artifacts"
 
         - name: Push changes
           uses: ad-m/github-push-action@master
