@@ -469,13 +469,98 @@ class Power extends _TwoInputBitwiseGate {
 }
 
 /// A two-input addition module.
-class Add extends _TwoInputBitwiseGate {
+class Add extends Module with CustomSystemVerilog {
+  /// Name for a first input port of this module.
+  late final String _in0Name;
+
+  /// Name for a second input port of this module.
+  late final String _in1Name;
+
+  /// Name for the output port of this module.
+  late final String _outName;
+
+  /// Name for the carry bit.
+  late final String _carryName;
+
+  /// An input to this gate.
+  late final Logic _in0 = input(_in0Name);
+
+  /// An input to this gate.
+  late final Logic _in1 = input(_in1Name);
+
+  /// The output of this gate.
+  late final Logic out = output(_outName);
+
+  /// The carry bit of the addition.
+  late final Logic carry = output(_carryName);
+
+  /// The output of this gate.
+  ///
+  /// Deprecated: use [out] instead.
+  @Deprecated('Use `out` instead.')
+  Logic get y => out;
+
+  /// The functional operation to perform for this gate.
+  LogicValue _op(LogicValue in0, LogicValue in1) => in0 + in1;
+
+  /// The `String` representing the operation to perform in generated code.
+  final String _opStr = '+';
+
+  /// The width of the inputs and outputs for this operation.
+  final int width;
+
   /// Calculates the sum of [in0] and [in1].
   ///
   /// [in1] can be either a [Logic] or [int].
-  Add(Logic in0, dynamic in1, {String name = 'add'})
-      : super((a, b) => a + b, '+', in0, in1,
-            name: name, outputSvWidthExpansion: 1);
+  Add(Logic in0, dynamic in1, {super.name = 'add'}) : width = in0.width {
+    if (in1 is Logic && in0.width != in1.width) {
+      throw PortWidthMismatchException.equalWidth(in0, in1);
+    }
+
+    final in1Logic = in1 is Logic ? in1 : Const(in1, width: width);
+
+    _in0Name = Naming.unpreferredName('in0_${in0.name}');
+    _in1Name = Naming.unpreferredName('in1_${in1Logic.name}');
+    _outName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
+    _carryName = Naming.unpreferredName('carry_$_outName');
+
+    addInput(_in0Name, in0, width: width);
+    addInput(_in1Name, in1Logic, width: width);
+    addOutput(_outName, width: width);
+    addOutput(_carryName);
+
+    _setup();
+  }
+
+  /// Performs setup steps for custom functional behavior.
+  void _setup() {
+    _execute(); // for initial values
+    _in0.glitch.listen((args) {
+      _execute();
+    });
+    _in1.glitch.listen((args) {
+      _execute();
+    });
+  }
+
+  /// Executes the functional behavior of this gate.
+  void _execute() {
+    out.put(_op(_in0.value, _in1.value));
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+      Map<String, String> inputs, Map<String, String> outputs) {
+    assert(inputs.length == 2, 'Gate has exactly two inputs');
+    assert(outputs.length == 2, 'Gate has exactly two outputs');
+
+    final in0 = inputs[_in0Name]!;
+    final in1 = inputs[_in1Name]!;
+    final out = outputs[_outName]!;
+    final carry = outputs[_carryName]!;
+
+    return 'assign {$carry, $out} = $in0 $_opStr $in1;';
+  }
 }
 
 /// A two-input subtraction module.
