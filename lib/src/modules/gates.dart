@@ -480,6 +480,10 @@ class Add extends Module with CustomSystemVerilog {
   late final String _outName;
 
   /// Name for the carry bit.
+  ///
+  /// Note that the carry bit is *not* actually driven by anything, this is just
+  /// a signal generated for lint avoidance as ROHD makes output width the same
+  /// as input width for addition operations.
   late final String _carryName;
 
   /// An input to this gate.
@@ -490,9 +494,6 @@ class Add extends Module with CustomSystemVerilog {
 
   /// The output of this gate.
   late final Logic out = output(_outName);
-
-  /// The carry bit of the addition.
-  late final Logic carry = output(_carryName);
 
   /// The output of this gate.
   ///
@@ -527,7 +528,7 @@ class Add extends Module with CustomSystemVerilog {
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
     addOutput(_outName, width: width);
-    addOutput(_carryName);
+    addOutput(_carryName); // just for SV generation, not used
 
     _setup();
   }
