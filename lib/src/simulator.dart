@@ -248,10 +248,19 @@ abstract class Simulator {
   ///
   /// If there are no timestamps pending to execute, nothing will execute.
   static Future<void> tick() async {
-    // deals with an injected actions not dealt with by previous tick
     if (_injectedActions.isNotEmpty) {
-      _preTick();
-      await _outOfTick();
+       // case 1 : ( the usual Rohd case )
+       //   The previous delta cycle did NOT do 'registerAction( _currentTimeStamp );'.
+       //   In that case, _pendingTimestamps[_currentTimestamp] is null so we will
+       //   add a new empty list, which will trigger a new delta cycle.
+       // case 2 :
+       //   The previous delta cycle DID do 'registerAction( _currentTimestamp );'.
+       //   In that case, there is *already* another tick scheduled for
+       //   _currentTimestamp, and the injected actions will get called in
+       //   the normal way.
+      _pendingTimestamps.putIfAbsent( _currentTimestamp , () => ListQueue() );
+      // Either way, the end result is that a whole new tick gets scheduled for
+      // _currentTimestamp and any outstanding injected actions get executed.
     }
 
     // the main event loop
