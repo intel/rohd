@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 # Top-level default, no permissions
 permissions: {}
@@ -15,7 +16,7 @@ jobs:
     name: Run Checks
     permissions: {}
     timeout-minutes: 60
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -73,7 +74,7 @@ jobs:
     permissions:
       contents: write # required for "JamesIves/github-pages-deploy-action"
     timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
