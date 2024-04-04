@@ -63,7 +63,7 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.3.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.3.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">tick</span>(<wbr>)
 
       
@@ -83,29 +83,32 @@ timestamp, and passes through all events and phases on the way.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
   if (_injectedActions.isNotEmpty) {
-    &#47;&#47; injected actions will automatically be executed during tickExecute
-    await tickExecute(() {});
+    &#47;&#47; case 1 : ( the usual Rohd case )
+    &#47;&#47; The previous delta cycle did NOT do
+    &#47;&#47; &#39;registerAction( _currentTimeStamp );&#39;.
+    &#47;&#47; In that case, _pendingTimestamps[_currentTimestamp] is null so we will
+    &#47;&#47; add a new empty list, which will trigger a new delta cycle.
+    &#47;&#47;
+    &#47;&#47; case 2 :
+    &#47;&#47; The previous delta cycle DID do &#39;registerAction( _currentTimestamp );&#39;.
+    &#47;&#47; In that case, there is *already* another tick scheduled for
+    &#47;&#47; _currentTimestamp, and the injected actions will get called in
+    &#47;&#47;  the normal way.
+    &#47;&#47;
+    &#47;&#47; Either way, the end result is that a whole new tick gets scheduled for
+    &#47;&#47; _currentTimestamp and any outstanding injected actions get executed.
 
-    &#47;&#47; don&#39;t continue through the tick for injected actions, come back around
-    return;
+    &#47;&#47; ignore: unnecessary_lambdas
+    _pendingTimestamps.putIfAbsent(_currentTimestamp, () =&gt; ListQueue());
   }
 
-  final nextTimeStamp = _pendingTimestamps.firstKey();
-
-  if (nextTimeStamp == null) {
-    return;
+  &#47;&#47; the main event loop
+  if (_updateTimeStamp()) {
+    _preTick();
+    await _mainTick();
+    _clkStable();
+    await _outOfTick();
   }
-
-  _currentTimestamp = nextTimeStamp;
-
-  final pendingList = _pendingTimestamps[nextTimeStamp]!;
-  _pendingTimestamps.remove(_currentTimestamp);
-
-  await tickExecute(() async {
-    for (final func in pendingList) {
-      await func();
-    }
-  });
 }</code></pre>
 </section>
 
