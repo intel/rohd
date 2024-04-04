@@ -15,7 +15,7 @@ jobs:
   run-checks:
     name: Run Checks
     permissions: {}
-    timeout-minutes: 30
+    timeout-minutes: 60
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
@@ -97,7 +97,7 @@ jobs:
   build-devtool:
     name: Build Devtools
     timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v2
 
