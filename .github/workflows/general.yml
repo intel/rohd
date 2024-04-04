@@ -97,7 +97,7 @@ jobs:
   build-devtool:
     name: Build Devtools
     timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v2
 
