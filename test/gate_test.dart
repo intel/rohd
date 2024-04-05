@@ -7,8 +7,6 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
