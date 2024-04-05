@@ -1,4 +1,4 @@
-# NOTE: Be sure to update .pubignore as well!
+# NOTE: Everything (probably) from .gitignore should be in here!
 
 # Files and directories created by pub
 .dart_tool/
@@ -21,3 +21,6 @@ tmp_test/
 # Exceptions
 !.vscode/extensions.json
 !test/example_icarus_waves.vcd
+
+# Release with devtools build
+!extension/devtools/build

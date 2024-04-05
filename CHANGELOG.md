@@ -1,3 +1,13 @@
+## 0.5.3
+
+- Added beta version of the ROHD DevTools Extension to aid in ROHD hardware debug by displaying module hierarchy and signal information visually and interactively (<https://github.com/intel/rohd/pull/435>).
+- Added absolute value (`abs()`) to both `Logic` and `LogicValue` (<https://github.com/intel/rohd/pull/442>).
+- Added `assignSubset` for performing an assignment on a subset of a `LogicArray` (<https://github.com/intel/rohd/pull/456>).
+- Made conditional assignments more optimistic with partially invalid values (<https://github.com/intel/rohd/pull/459>).
+- Upgraded the simulator to support cancelling actions and registering actions at the current time (<https://github.com/intel/rohd/pull/468>).
+- Fixed a bug where SystemVerilog generation could mishandle naming collisions between `Logic`s and `LogicArray`s (<https://github.com/intel/rohd/pull/473>).
+- Added new checks to help catch SystemVerilog generation issues in cases where built-in functionality is overridden.
+
 ## 0.5.2
 
 - Added APIs for accessing indices of a `List<Logic>` using another `Logic`: `Logic.selectFrom` and `List<Logic>.selectIndex` (<https://github.com/intel/rohd/pull/438>).
