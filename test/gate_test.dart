@@ -7,6 +7,8 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -350,6 +352,109 @@ void main() {
       control.put(LogicValue.zero);
       expect(() => cases(control, {d0: 2, d1: 4}, defaultValue: 3),
           throwsA(isA<SignalWidthMismatchException>()));
+    });
+  });
+
+  group('Const input Gate test', () {
+    test('NotGate single bit Constant input', () async {
+      final a = Logic();
+      final b = Const(LogicValue.zero, width: 1);
+      final c = Const(LogicValue.x, width: 1);
+      final d = Const(LogicValue.one, width: 1);
+      a.put(LogicValue.one);
+
+      final result = ~b;
+      expect(result, isA<Const>());
+      expect(result.value, equals(LogicValue.one));
+
+      final result2 = ~c;
+      expect(result2, isA<Const>());
+      expect(result2.value, equals(LogicValue.x));
+
+      final result3 = ~d;
+      expect(result3, isA<Const>());
+      expect(result3.value, equals(LogicValue.zero));
+    });
+
+    test('NotGate Multi bit Constant input', () async {
+      final b = Const(bin('1111'), width: 4);
+      final c = Const(bin('0100'), width: 4);
+      final result = ~b;
+
+      expect(result, isA<Const>());
+      expect(result.value, equals(LogicValue.of(LogicValue.zero, width: 4)));
+
+      final result2 = ~c;
+      expect(result2, isA<Logic>());
+      expect(result2.value, equals(LogicValue.of(11, width: 4)));
+    });
+
+    test('And2Gate Single bit Constant input', () async {
+      final a = Logic();
+      final b = Const(LogicValue.zero, width: 1);
+      final c = Const(LogicValue.x, width: 1);
+      final d = Const(LogicValue.one, width: 1);
+      a.put(LogicValue.one);
+
+      final result = a & b;
+      expect(result, isA<Const>());
+      expect(result.value, equals(LogicValue.zero));
+
+      final result2 = a & c;
+      expect(result2, isA<Const>());
+      expect(result2.value, equals(LogicValue.x));
+
+      final result3 = a & d;
+      expect(result3, isA<Logic>());
+      expect(result3.value, equals(a.value));
+    });
+
+    test('And2Gate Multi bit Constant input', () async {
+      final a = Const(LogicValue.of(LogicValue.zero, width: 4));
+      final b = Const(bin('1111'), width: 4);
+      final c = Const(bin('0100'), width: 4);
+      final result = a & c;
+
+      expect(result, isA<Const>());
+      expect(result.value, equals(LogicValue.of(LogicValue.zero, width: 4)));
+
+      final result2 = b & c;
+      expect(result2, isA<Logic>());
+      expect(result2.value, equals(c.value));
+    });
+
+    test('OR2Gate Single bit Constant input', () async {
+      final a = Logic();
+      final b = Const(LogicValue.zero, width: 1);
+      final c = Const(LogicValue.x, width: 1);
+      final d = Const(LogicValue.one, width: 1);
+      a.put(LogicValue.one);
+
+      final result = a | b;
+      expect(result, isA<Logic>());
+      expect(result.value, equals(a.value));
+
+      final result2 = a | c;
+      expect(result2, isA<Const>());
+      expect(result2.value, equals(LogicValue.x));
+
+      final result3 = a | d;
+      expect(result3, isA<Const>());
+      expect(result3.value, equals(LogicValue.one));
+    });
+
+    test('OR2Gate Multi bit Constant input', () async {
+      final a = Const(LogicValue.of(LogicValue.zero, width: 4));
+      final b = Const(bin('1111'), width: 4);
+      final c = Const(bin('0100'), width: 4);
+      final result = a | c;
+
+      expect(result, isA<Logic>());
+      expect(result.value, equals(c.value));
+
+      final result2 = b | c;
+      expect(result2, isA<Const>());
+      expect(result2.value, equals(LogicValue.filled(4, LogicValue.one)));
     });
   });
 
