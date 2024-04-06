@@ -223,4 +223,33 @@ class LogicArray extends LogicStructure {
     return LogicArray.net(dimensions, elementWidth,
         numUnpackedDimensions: numUnpackedDimensions, name: name);
   }
+
+  /// Perform Assign operation on a Logic subset or slice
+  ///
+  /// Assigns part of this LogicArray with a given [updatedSubset] of type
+  /// [List<Logic>]. The update is performed from a given [start] position
+  /// to the length of the [updatedSubset].
+  ///
+  /// Example:
+  /// ```
+  /// LogicArray sampleLogic;
+  /// // Note: updatedSubset.length < (sampleLogic.length - start)
+  /// List<Logic> updatedSubset;
+  /// // Assign part of sampleLogic as [updatedSubset]
+  /// sampleLogic.assignSubset(updatedSubset); // start = 0 by default
+  /// // assign updated subset to sampleLogic[10:10+updatedSubset.length]
+  /// sampleLogic.assignSubset(updatedSubset, 10);
+  /// ```
+  ///
+  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
+    if (updatedSubset.length > elements.length - start) {
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, elements.length - start);
+    }
+
+    // Assign Logic array from `start` index to `start+updatedSubset.length`
+    for (var i = 0; i < updatedSubset.length; i++) {
+      elements[start + i] <= updatedSubset[i];
+    }
+  }
 }

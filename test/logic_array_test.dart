@@ -477,6 +477,28 @@ class IndexBitOfArrayModule extends Module {
   }
 }
 
+class AssignSubsetModule extends Module {
+  AssignSubsetModule(LogicArray updatedSubset,
+      {int? start, bool? isError = false}) {
+    final dim = ((isError != null && isError) ? 10 : 5);
+    updatedSubset = addInputArray('inputLogicArray', updatedSubset,
+        dimensions: [dim], elementWidth: 3);
+
+    final o =
+        addOutputArray('outputLogicArray', dimensions: [10], elementWidth: 3);
+    final error = addOutput('errorBit');
+    try {
+      if (start != null) {
+        o.assignSubset(updatedSubset.elements, start: start);
+      } else {
+        o.assignSubset(updatedSubset.elements);
+      }
+    } on SignalWidthMismatchException {
+      error <= Const(1);
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -934,6 +956,59 @@ void main() {
 
       final vectors = [
         Vector({}, {'o0': 0, 'o3': 1})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assign subset of logic array without mentioning start', () async {
+      final updatedSubset = LogicArray([5], 3, name: 'updatedSubset');
+      final mod = AssignSubsetModule(updatedSubset);
+      await mod.build();
+
+      final vectors = [
+        Vector({'inputLogicArray': 0},
+            {'outputLogicArray': LogicValue.ofString(('z' * 15) + ('0' * 15))}),
+        Vector({'inputLogicArray': bin('101' * 5)},
+            {'outputLogicArray': LogicValue.ofString(('z' * 15) + ('101' * 5))})
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assign subset of logic array with mentioning start', () async {
+      final updatedSubset = LogicArray([5], 3, name: 'updatedSubset');
+      final mod = AssignSubsetModule(updatedSubset, start: 3);
+      await mod.build();
+
+      final vectors = [
+        Vector({
+          'inputLogicArray': 0
+        }, {
+          'outputLogicArray':
+              LogicValue.ofString(('z' * 3 * 2) + ('0' * 3 * 5) + ('z' * 3 * 3))
+        }),
+        Vector({
+          'inputLogicArray': bin('101' * 5)
+        }, {
+          'outputLogicArray':
+              LogicValue.ofString(('z' * 3 * 2) + ('101' * 5) + ('z' * 3 * 3))
+        }),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('error in assign subset of logic array', () async {
+      final updatedSubset = LogicArray([10], 3, name: 'updatedSubset');
+      final mod = AssignSubsetModule(updatedSubset, start: 3, isError: true);
+      await mod.build();
+
+      final vectors = [
+        Vector({'inputLogicArray': bin('101' * 10)}, {'errorBit': 1})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
