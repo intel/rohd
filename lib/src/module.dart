@@ -508,6 +508,7 @@ abstract class Module {
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule
       // nor this module, bad!
+      //TODO: update this message and docs about inouts!
       throw Exception('Violation of input/output rules in $this on $signal.'
           '  Logic within a Module should only consume inputs and drive outputs'
           ' of that Module.'
@@ -637,6 +638,8 @@ abstract class Module {
   final Set<Logic> _inOutDrivers = {};
 
   //TODO: is it important that `x` here is a LogicNet? what about for arrays?
+  // TODO: the `x` must be the port to the *outside* world, and the returned
+  //  signal from `addInOut` or `inOut` is what should be used inside!
   @protected
   LogicNet addInOut(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);

@@ -90,6 +90,7 @@ class LogicNet extends Logic {
   @override
   final bool isNet = true;
 
+  //TODO: why not just call it "connections" and it be seaprate from "srcConnections" from LogicStructure?
   late final Iterable<Logic> srcConnections =
       UnmodifiableListView(_srcConnections);
   Set<Logic> _srcConnections = {};

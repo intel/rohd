@@ -19,7 +19,7 @@ class TriStateBuffer extends Module with SystemVerilog {
   /// The output of this gate (width is always 1).
   //TODO
   // late final Logic out = output(_outName);
-  late final Logic out = inOut(_outName);
+  late final LogicNet out; // = inOut(_outName) as LogicNet;
 
   //TODO
   final Logic _outDriver;
@@ -35,10 +35,8 @@ class TriStateBuffer extends Module with SystemVerilog {
     addInput(_inName, in_, width: in_.width);
     addInput(_enableName, enable);
 
-    //TODO
-    // addOutput(_outName, width: in_.width);
-    addInOut(_outName, LogicNet(width: in_.width)..gets(_outDriver),
-        width: in_.width);
+    out = LogicNet(width: in_.width)..gets(_outDriver);
+    addInOut(_outName, out, width: in_.width);
 
     _setup();
   }
