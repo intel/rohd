@@ -257,13 +257,15 @@ abstract class SimCompare {
 
     // TODO: doc, incl adjust
     String signalDeclaration(String signalName,
-        {String Function(String original)? adjust}) {
+        {String Function(String original)? adjust,
+        String signalType = 'logic'}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
-      final signalType =
-          (signal is LogicNet || (signal is LogicArray && signal.isNet))
-              ? 'wire'
-              : 'logic';
+      //TODO
+      // final signalType = 'logic';
+      // (signal is LogicNet || (signal is LogicArray && signal.isNet))
+      //     ? 'wire'
+      //     : 'logic';
 
       if (adjust != null) {
         // ignore: parameter_assignments
@@ -306,7 +308,7 @@ abstract class SimCompare {
       ...logicToWireMapping.entries.map((e) {
         final logicName = e.key;
         final wireName = e.value;
-        return 'wire ${signalDeclaration(logicName, adjust: _toTbWireName)};'
+        return '${signalDeclaration(logicName, adjust: _toTbWireName, signalType: 'wire')};'
             '  assign $wireName = $logicName;';
       }),
     ].join('\n');
