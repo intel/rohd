@@ -91,6 +91,7 @@ class LogicNet extends Logic {
   final bool isNet = true;
 
   //TODO: why not just call it "connections" and it be seaprate from "srcConnections" from LogicStructure?
+  // or should it be that srcConnections == dstConnections for a net?
   late final Iterable<Logic> srcConnections =
       UnmodifiableListView(_srcConnections);
   Set<Logic> _srcConnections = {};

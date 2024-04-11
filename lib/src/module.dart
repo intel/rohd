@@ -367,11 +367,11 @@ abstract class Module {
     // }
     // _hasParsedFromInput.add(signal);
 
-    if (signal is LogicStructure && !isPort(signal)) {
-      for (final subSignal in signal.elements) {
-        await _traceInputForModuleContents(subSignal);
-      }
-    }
+    // if (signal is LogicStructure && !isPort(signal)) {
+    //   for (final subSignal in signal.elements) {
+    //     await _traceInputForModuleContents(subSignal);
+    //   }
+    // }
 
     final subModule =
         (signal.isInput || signal.isInOut) ? signal.parentModule : null;
@@ -494,11 +494,11 @@ abstract class Module {
     // }
     // _hasParsedFromOutput.add(signal);
 
-    if (signal is LogicStructure && !isPort(signal)) {
-      for (final subSignal in signal.elements) {
-        await _traceOutputForModuleContents(subSignal);
-      }
-    }
+    // if (signal is LogicStructure && !isPort(signal)) {
+    //   for (final subSignal in signal.elements) {
+    //     await _traceOutputForModuleContents(subSignal);
+    //   }
+    // }
 
     final subModule =
         (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
