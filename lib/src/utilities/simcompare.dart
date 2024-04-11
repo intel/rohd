@@ -258,14 +258,13 @@ abstract class SimCompare {
     // TODO: doc, incl adjust
     String signalDeclaration(String signalName,
         {String Function(String original)? adjust,
-        String signalType = 'logic'}) {
+        String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
-      //TODO
-      // final signalType = 'logic';
-      // (signal is LogicNet || (signal is LogicArray && signal.isNet))
-      //     ? 'wire'
-      //     : 'logic';
+      final signalType = signalTypeOverride ??
+          ((signal is LogicNet || (signal is LogicArray && signal.isNet))
+              ? 'wire'
+              : 'logic');
 
       if (adjust != null) {
         // ignore: parameter_assignments
@@ -304,12 +303,19 @@ abstract class SimCompare {
         .map((name) => MapEntry(name, _toTbWireName(name))));
 
     final localDeclarations = [
-      ...allSignals.map((e) => '${signalDeclaration(e)};'),
+      ...allSignals.map((e) {
+        final sigDecl = signalDeclaration(e,
+            signalTypeOverride:
+                logicToWireMapping.containsKey(e) ? 'logic' : null);
+        return '$sigDecl;';
+      }),
       ...logicToWireMapping.entries.map((e) {
         final logicName = e.key;
         final wireName = e.value;
-        return '${signalDeclaration(logicName, adjust: _toTbWireName, signalType: 'wire')};'
-            '  assign $wireName = $logicName;';
+
+        final sigDecl = signalDeclaration(logicName,
+            adjust: _toTbWireName, signalTypeOverride: 'wire');
+        return '$sigDecl; assign $wireName = $logicName;';
       }),
     ].join('\n');
 
