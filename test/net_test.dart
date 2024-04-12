@@ -277,8 +277,20 @@ class NetOperations extends Module {
   }
 }
 
-//TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
-//TODO: test build when misconnected inout (without a port)
+class MissingPortTop extends Module {
+  MissingPortTop(LogicNet a) {
+    a = addInOut('a', a);
+    addOutput('b') <= MissingPortSub(a).b;
+  }
+}
+
+class MissingPortSub extends Module {
+  late final Logic b;
+  MissingPortSub(LogicNet a) {
+    b = addOutput('b')..gets(a);
+  }
+}
+
 //TODO: test two inout ports of a module connected to the same signal! (this appears to have triggered another bug? how to tell if signal is internal?)
 
 void main() {
@@ -587,5 +599,12 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('build fails with missing inout port', () async {
+    final mod = MissingPortTop(LogicNet());
+
+    expect(
+        () async => mod.build(), throwsA(isA<PortRulesViolationException>()));
   });
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // port_does_not_exist_exception.dart
@@ -9,7 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 
-/// An [Exception] thrown when a port has the wrong width.
+/// An [Exception] thrown when a port does not exist.
 class PortDoesNotExistException extends RohdException {
   /// Constructs a new [Exception] for when a port is not present.
   PortDoesNotExistException(super.message);

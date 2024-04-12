@@ -382,11 +382,7 @@ abstract class Module {
     if (!dontAddSignal && signal.isOutput) {
       // somehow we have reached the output of a module which is not a submodule
       // nor this module, bad!
-      throw Exception('Violation of input/output rules in $this on $signal.'
-          '  Logic within a Module should only consume inputs and drive outputs'
-          ' of that Module.'
-          '  See https://intel.github.io/rohd-website/docs/modules/'
-          ' for more information.');
+      throw PortRulesViolationException(this, signal.toString());
     }
 
     if (subModule != this && subModuleParent != null) {
@@ -510,11 +506,7 @@ abstract class Module {
       // somehow we have reached the input of a module which is not a submodule
       // nor this module, bad!
       //TODO: update this message and docs about inouts!
-      throw Exception('Violation of input/output rules in $this on $signal.'
-          '  Logic within a Module should only consume inputs and drive outputs'
-          ' of that Module.'
-          '  See https://intel.github.io/rohd-website/docs/modules/'
-          ' for more information.');
+      throw PortRulesViolationException(this, signal.toString());
     }
 
     if (subModule != this && subModuleParent != null) {

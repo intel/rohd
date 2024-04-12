@@ -2,7 +2,7 @@
 title: "Modules"
 permalink: /docs/modules/
 excerpt: "Modules"
-last_modified_at: 2022-12-06
+last_modified_at: 2024-4-12
 toc: true
 ---
 
@@ -10,17 +10,20 @@ toc: true
 
 1. All logic within a `Module` must consume only inputs (from the `input` or `addInput` methods) to the Module either directly or indirectly.
 2. Any logic outside of a `Module` must consume the signals only via outputs (from the `output` or `addOutput` methods) of the Module.
-3. Logic must be defined *before* the call to `super.build()`, which *always* must be called at the end of the `build()` method if it is overidden.
+3. Logic must be defined *before* the call to `super.build()`.
+
+**Note:** inouts (from the `inOut` or `addInOut` methods) can be treated as either an input or an output when following these rules.  
+**Note:** corresponding functions for creating `LogicArray` ports follow the same rules.
 
 The reasons for these rules have to do with how ROHD is able to determine which logic and `Module`s exist within a given Module and how ROHD builds connectivity.  If these rules are not followed, generated outputs (including waveforms and SystemVerilog) may be unpredictable.
 
-You should strive to build logic within the constructor of your `Module` (directly or via method calls within the constructor).  This way any code can utilize your `Module` immediately after creating it.  **Be careful** to consume the registered `input`s and drive the registered `output`s of your module, and not the "raw" parameters.
+You should strive to build logic within the constructor of your `Module` (directly or via method calls within the constructor).  This way any code can utilize your `Module` immediately after creating it.  **Be careful** to consume the registered `input`s and drive the registered `output`s of your module, and not the "raw" arguments passed to the constructor.
 
 It is legal to put logic within an override of the `build` function, but that forces users of your module to always call `build` before it will be functionally usable for simple simulation.  If you put logic in `build()`, ensure you put the call to `super.build()` *at the end* of the method.
 
-Note that the `build()` method returns a `Future<void>`, not just `void`.  This is because the `build()` method is permitted to consume real wallclock time in some cases, for example for setting up cosimulation with another simulator.  If you expect your build to consume wallclock time, make sure the `Simulator` is aware it needs to wait before proceeding.
+Note that the `build()` method returns a `Future<void>`, not just `void`.  This is because the `build()` method is permitted to consume real wall clock time in some cases, for example for setting up cosimulation with another simulator.  If you expect your build to consume wall clock time, make sure the `build` completes before the simulation begins.
 
-It is not necessary to put all logic directly within a class that extends Module.  You can put synthesizable logic in other functions and classes, as long as the logic eventually connects to an input or output of a module if you hope to convert it to SystemVerilog.  Except where there is a desire for the waveforms and SystemVerilog generated to have module hierarchy, it is not necessary to use submodules within modules instead of plain classes or functions.
+It is not necessary to put all logic directly within a class that extends Module.  You can put synthesizable logic in other functions and classes, as long as the logic eventually connects to an input or output of a module if you hope to convert it to SystemVerilog.  Except where there is a desire for the waveforms and SystemVerilog generated to have equivalent module hierarchy, it is not necessary to use submodules within modules instead of plain classes or functions.
 
 The `Module` base class has an optional String argument 'name' which is an instance name.
 
@@ -31,7 +34,7 @@ The `Module` base class has an optional String argument 'name' which is an insta
 class MyModule extends Module {
     
     // constructor
-    MyModule(Logic in1, {String name='mymodule'}) : super(name: name) {
+    MyModule(Logic in1) {
         // add inputs in the constructor, passing in the Logic it is connected to
         // it's a good idea to re-set the input parameters, 
         // so you don't accidentally use the wrong one
