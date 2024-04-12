@@ -291,7 +291,13 @@ class MissingPortSub extends Module {
   }
 }
 
-//TODO: test two inout ports of a module connected to the same signal! (this appears to have triggered another bug? how to tell if signal is internal?)
+class DoubleConnectedPortMod extends Module {
+  DoubleConnectedPortMod(LogicNet a, LogicNet b) {
+    a = addInOut('a', a);
+    b = addInOut('b', b);
+    a <= b;
+  }
+}
 
 void main() {
   tearDown(() async {
@@ -606,5 +612,18 @@ void main() {
 
     expect(
         () async => mod.build(), throwsA(isA<PortRulesViolationException>()));
+  });
+
+  test('double connected port mod', () async {
+    final mod = DoubleConnectedPortMod(LogicNet(), LogicNet());
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0}, {'b': 0}),
+      Vector({'a': 1}, {'b': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 }
