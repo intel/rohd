@@ -789,7 +789,7 @@ void main() {
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
-      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 'invalid runtime type'}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 7.543}),
     ];
 
     try {
