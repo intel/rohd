@@ -249,7 +249,19 @@ class NetsStructsArraysDriving extends Module {
   }
 }
 
-//TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
+class AlwaysBlocksConnectionsNets extends Module {
+  AlwaysBlocksConnectionsNets(
+      LogicNet a, LogicNet b, LogicNet aOut, LogicNet bOut) {
+    a = addInOut('a', a, width: 8);
+    b = addInOut('b', b, width: 8);
+    aOut = addInOut('aOut', aOut, width: 8);
+    bOut = addInOut('bOut', bOut, width: 8);
+
+    Combinational([aOut < a]);
+    Sequential(SimpleClockGenerator(10).clk, [bOut < b]);
+  }
+}
+
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 //TODO: test build when misconnected inout (without a port)
 //TODO: test two inout ports of a module connected to the same signal! (this appears to have triggered another bug? how to tell if signal is internal?)
@@ -518,5 +530,24 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  test('always blocks with nets', () async {
+    final mod = AlwaysBlocksConnectionsNets(
+      LogicNet(width: 8),
+      LogicNet(width: 8),
+      LogicNet(width: 8),
+      LogicNet(width: 8),
+    );
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0x11, 'b': 0xaa}, {'aOut': 0x11}),
+      Vector({'a': 0x22, 'b': 0xbb}, {'aOut': 0x22, 'bOut': 0xaa}),
+      Vector({'a': 0x33, 'b': 0xcc}, {'aOut': 0x33, 'bOut': 0xbb}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }
