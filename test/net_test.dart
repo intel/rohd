@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -221,12 +219,36 @@ class NetArrayTopMod extends Module {
     }
 
     NetArraySubMod(intf, net, norm, NetArrayTag.d2);
-    NetArraySubMod(intf, norm, net, NetArrayTag.d3); //TODO: put back
+    NetArraySubMod(intf, norm, net, NetArrayTag.d3);
   }
 }
 
-//TODO: test driving and being driven by structs, arrays
-//TODO: test module hierarchy searching with only inouts
+class NetfulLogicStructure extends LogicStructure {
+  NetfulLogicStructure()
+      : super([
+          LogicNet(name: 'structnet', width: 4),
+          Logic(name: 'structlogic', width: 4)
+        ]);
+}
+
+class NetsStructsArraysDriving extends Module {
+  NetsStructsArraysDriving(
+      LogicNet logicNetInOut, LogicArray logicArrayNetInOut)
+      : assert(logicArrayNetInOut.isNet, 'expect a net'),
+        super(name: 'nets_structs_arrays_driving') {
+    logicNetInOut = addInOut('logicNetInOut', logicNetInOut, width: 8);
+    logicArrayNetInOut = addInOutArray('logicArrayNetInOut', logicArrayNetInOut,
+        dimensions: [4], elementWidth: 2);
+
+    final struct = NetfulLogicStructure();
+    struct <= logicNetInOut;
+    final outStruct = addOutput('outStruct', width: 8);
+    outStruct <= struct;
+
+    logicArrayNetInOut <= struct;
+  }
+}
+
 //TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 //TODO: test build when misconnected inout (without a port)
@@ -361,7 +383,7 @@ void main() {
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('io only hier', () {
@@ -430,9 +452,24 @@ void main() {
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
     }
+  });
+
+  test('structures, arrays, and nets driving together', () async {
+    final mod =
+        NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+
+    await mod.build();
+
+    final vectors = [
+      Vector({'logicNetInOut': 0xab},
+          {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test('hier with intfs for nets', () async {
@@ -458,7 +495,7 @@ void main() {
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('net arrays', () {
