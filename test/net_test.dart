@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -65,6 +67,25 @@ class TopModConnectivity extends Module {
     if (outio != null || io != null) {
       SubModInoutOnly(outio: outio, inio: io);
     }
+  }
+}
+
+class MultipleNamedIntermediates extends Module {
+  MultipleNamedIntermediates(LogicNet a) {
+    a = addInOut('a', a, width: 4);
+
+    final intermediate1 = LogicNet(name: 'intermediate1', width: 4);
+    final intermediate2 = LogicNet(name: 'intermediate2', width: 4);
+    final intermediate3 = LogicNet(name: 'intermediate3', width: 4);
+    final intermediate4 = LogicNet(name: 'intermediate4', width: 4);
+
+    a <= intermediate1;
+    intermediate1 <= intermediate2;
+    intermediate1 <= intermediate3;
+    intermediate3 <= intermediate1;
+    intermediate4 <= intermediate2;
+
+    addOutput('b', width: 4) <= intermediate4;
   }
 }
 
@@ -204,10 +225,8 @@ class NetArrayTopMod extends Module {
   }
 }
 
-//TODO: test when there are multiple assignments with named wires nets, bidirectional assignment behavior
 //TODO: test driving and being driven by structs, arrays
 //TODO: test module hierarchy searching with only inouts
-//TODO: test `changed` on nets
 //TODO: test driving from an always_comb/always_ff to make sure a separate assignment is generated
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 //TODO: test build when misconnected inout (without a port)
@@ -285,6 +304,29 @@ void main() {
     expect(mod.drivenValue.value.toInt(), 0xaa);
   });
 
+  test('logicnet glitch and changed', () async {
+    final net = LogicNet(width: 8)..put(0);
+
+    var i = 0;
+
+    net.glitch.listen((args) {
+      expect(net.value.toInt(), i + 1);
+      i++;
+    });
+
+    net.changed.listen((event) {
+      expect(event.previousValue.toInt(), i - 1);
+      expect(event.newValue.toInt(), i);
+    });
+
+    for (var j = 0; j < 10; j++) {
+      Simulator.registerAction(j * 10, () => net.put(j));
+    }
+
+    Simulator.setMaxSimTime(1000);
+    await Simulator.run();
+  });
+
   test('simple tristate simcompare', () async {
     final mod = TopModWithDrivers(Logic());
     await mod.build();
@@ -298,6 +340,28 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('multiple named intermediate nets', () async {
+    final mod = MultipleNamedIntermediates(LogicNet(width: 4));
+
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('intermediate1'));
+    expect(sv, contains('intermediate2'));
+    expect(sv, contains('intermediate3'));
+    expect(sv, contains('intermediate4'));
+
+    final vectors = [
+      Vector({'a': 0}, {'b': 0}),
+      Vector({'a': 1}, {'b': 1}),
+      Vector({'a': 'z'}, {'b': 'z'}),
+      Vector({'a': 'x'}, {'b': 'x'}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
   });
 
   group('io only hier', () {

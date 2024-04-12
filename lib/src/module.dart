@@ -89,12 +89,12 @@ abstract class Module {
   /// inputs, outputs, and internal signals of this [Module].
   ///
   /// This does not contain any signals within submodules.
-  late final Iterable<Logic> signals = CombinedListView([
-    UnmodifiableListView(_inputs.values),
-    UnmodifiableListView(_outputs.values),
-    UnmodifiableListView(_inOuts.values),
-    UnmodifiableListView(internalSignals),
-  ]);
+  Iterable<Logic> get signals => UnmodifiableListView([
+        ..._inputs.values,
+        ..._outputs.values,
+        ..._inOuts.values,
+        ...internalSignals,
+      ]);
 
   /// Accesses the [Logic] associated with this [Module]s input port
   /// named [name].
@@ -286,6 +286,7 @@ abstract class Module {
       _moduleSelfContainmentCheck(this),
       'No module should contain itself.',
     );
+    //TODO: bug report: if modules are more than 2-3 levels circular, does not catch! add tests!
 
     _hasBuilt = true;
 

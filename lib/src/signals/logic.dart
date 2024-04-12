@@ -200,8 +200,9 @@ class Logic {
       // this can be cached because parentModule is set at port creation
       parentModule?.isInOut(this) ?? false;
 
-  //TODO
-  final bool isNet = false;
+  /// Indicates whether this signal behaves like a [LogicNet], allowing multiple
+  /// drivers.
+  bool get isNet => false;
 
   //TODO: is this ok to keep here?
   Iterable<Logic> get srcConnections =>
@@ -274,7 +275,7 @@ class Logic {
       throw SignalWidthMismatchException(other, width);
     }
 
-    if (_wire == other._wire) {
+    if (_wire == other._wire && !isNet) {
       throw SelfConnectingLogicException(this, other);
     }
   }

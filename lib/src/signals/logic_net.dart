@@ -86,9 +86,8 @@ class LogicNet extends Logic {
   @override
   Logic? get srcConnection => null;
 
-  //TODO
   @override
-  final bool isNet = true;
+  bool get isNet => true;
 
   //TODO: why not just call it "connections" and it be seaprate from "srcConnections" from LogicStructure?
   // or should it be that srcConnections == dstConnections for a net?
@@ -123,6 +122,11 @@ class LogicNet extends Logic {
   void _connect(Logic other) {
     //TODO: cannot merge wires with non-Nets!
     //TODO: should there really be a different type? or just a setting on Logic?
+
+    // if they are already connected, don't connect again!
+    if (_srcConnections.contains(other)) {
+      return;
+    }
 
     if (other is LogicNet) {
       _updateWire(other._wire);

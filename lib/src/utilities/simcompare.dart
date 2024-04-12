@@ -47,7 +47,10 @@ class Vector {
   /// the [inputValues].
   static String _errorCheckString(String sigName, dynamic expected,
       LogicValue expectedVal, String inputValues) {
-    if (expected is! int && expected is! LogicValue && expected is! BigInt) {
+    if (expected is! int &&
+        expected is! LogicValue &&
+        expected is! BigInt &&
+        expected is! String) {
       throw NonSupportedTypeException(expected);
     }
 
@@ -55,12 +58,13 @@ class Vector {
     if (expected is int) {
       expectedHexStr =
           BigInt.from(expected).toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr = '0x$expectedHexStr';
     } else if (expected is BigInt) {
       expectedHexStr = expected.toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr = '0x$expectedHexStr';
     } else {
       expectedHexStr = expected.toString();
     }
-    expectedHexStr = '0x$expectedHexStr';
 
     final expectedValStr = expectedVal.toString();
 
@@ -179,6 +183,9 @@ abstract class SimCompare {
                 } else {
                   expect(o.value, equals(value), reason: errorReason);
                 }
+              } else if (value is String) {
+                expect(o.value, LogicValue.of(value, width: o.width),
+                    reason: errorReason);
               } else {
                 throw NonSupportedTypeException(value);
               }
