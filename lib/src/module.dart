@@ -280,39 +280,49 @@ abstract class Module {
           reserved: module.reserveName);
     }
 
-    //TODO: assert that no modules contain each other
     //TODO: check benchmarks on perf hit for this, should be low
-    assert(
-      _moduleSelfContainmentCheck(this),
-      'No module should contain itself.',
-    );
-    //TODO: bug report: if modules are more than 2-3 levels circular, does not catch! add tests!
+    _checkValidHierarchy(visited: {});
 
     _hasBuilt = true;
 
     ModuleTree.rootModuleInstance = this;
   }
 
-  //TODO: doc
-  static bool _moduleSelfContainmentCheck(Module module) {
-    //TODO: test this method?
+  /// Confirms that the post-[build] hierarchy is valid.
+  ///
+  /// - No module exists in two separate hierarchies.
+  /// - No module is a submodule of itself.
+  void _checkValidHierarchy({
+    required Map<Module, List<Module>> visited,
+    List<Module> hierarchy = const [],
+  }) {
+    final newHierarchy = [...hierarchy, this];
 
-    final mods = TraverseableCollection<Module>()..add(module);
-
-    for (var i = 0; i < mods.length; i++) {
-      final mod = mods[i];
-
-      for (final subMod in mod.subModules) {
-        if (mods.contains(subMod)) {
-          return false;
-        }
-
-        mods.add(mod);
-      }
+    if (hierarchy.contains(this)) {
+      final loopHierarchy = _hierarchyListToString(newHierarchy);
+      throw InvalidHierarchyException(
+          'Module $this is a submodule of itself: $loopHierarchy');
     }
 
-    return true;
+    if (visited.containsKey(this)) {
+      final otherHierarchy = _hierarchyListToString(visited[this]!);
+      final thisHierarchy = _hierarchyListToString(hierarchy);
+      throw InvalidHierarchyException(
+          'Module $this exists at more than one hierarchy: '
+          '$otherHierarchy and $thisHierarchy');
+    }
+
+    visited[this] = newHierarchy;
+
+    for (final subModule in subModules) {
+      subModule._checkValidHierarchy(visited: visited, hierarchy: newHierarchy);
+    }
   }
+
+  /// Converts a [hierarchy] (like used in [_checkValidHierarchy]) into a string
+  /// that can be used for error messages.
+  static String _hierarchyListToString(List<Module> hierarchy) =>
+      hierarchy.map((e) => e.name).join('.');
 
   /// Adds a [Module] to this as a subModule.
   Future<void> _addAndBuildModule(Module module) async {
