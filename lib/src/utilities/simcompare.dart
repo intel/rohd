@@ -348,12 +348,6 @@ abstract class SimCompare {
 ''';
 
     final testbench = [
-      //TODO: temp
-      '''
-module myalias (a, a);
-inout wire[7:0] a;
-endmodule
-''',
       generatedVerilog,
       'module tb;',
       localDeclarations,

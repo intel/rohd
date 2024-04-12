@@ -262,6 +262,21 @@ class AlwaysBlocksConnectionsNets extends Module {
   }
 }
 
+class NetOperations extends Module {
+  NetOperations(LogicNet a, LogicNet b, LogicNet c, LogicNet d) {
+    a = addInOut('a', a);
+    b = addInOut('b', b);
+    c = addInOut('c', c);
+    d = addInOut('d', d);
+
+    final aIntermediate = LogicNet(name: 'aIntermediate')..gets(a);
+    final bIntermediate = LogicNet(name: 'bIntermediate')..gets(b);
+
+    c <= a & b;
+    d <= aIntermediate | bIntermediate;
+  }
+}
+
 //TODO: test gate operations on nets (like binary operations & |), keep an eye out for wire name inlineing? shouldnt happen if feeding into a wire port!
 //TODO: test build when misconnected inout (without a port)
 //TODO: test two inout ports of a module connected to the same signal! (this appears to have triggered another bug? how to tell if signal is internal?)
@@ -545,6 +560,29 @@ void main() {
       Vector({'a': 0x11, 'b': 0xaa}, {'aOut': 0x11}),
       Vector({'a': 0x22, 'b': 0xbb}, {'aOut': 0x22, 'bOut': 0xaa}),
       Vector({'a': 0x33, 'b': 0xcc}, {'aOut': 0x33, 'bOut': 0xbb}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('net operations not inlined', () async {
+    final mod = NetOperations(
+      LogicNet(),
+      LogicNet(),
+      LogicNet(),
+      LogicNet(),
+    );
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign c = _a_and_b;'));
+    expect(sv, contains('assign d = _aIntermediate_or_bIntermediate;'));
+
+    final vectors = [
+      Vector({'a': 0, 'b': 0}, {'c': 0, 'd': 0}),
+      Vector({'a': 1, 'b': 1}, {'c': 1, 'd': 1}),
+      Vector({'a': 1, 'b': 0}, {'c': 0, 'd': 1}),
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
