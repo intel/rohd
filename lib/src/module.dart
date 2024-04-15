@@ -14,6 +14,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -94,7 +95,7 @@ abstract class Module {
   @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
-      : throw Exception(
+      : throw PortDoesNotExistException(
           'Input name "$name" not found as an input to this Module.');
 
   /// Provides the [input] named [name] if it exists, otherwise `null`.
@@ -110,7 +111,7 @@ abstract class Module {
   /// to consume this within this [Module] as well.
   Logic output(String name) => _outputs.containsKey(name)
       ? _outputs[name]!
-      : throw Exception(
+      : throw PortDoesNotExistException(
           'Output name "$name" not found as an output of this Module.');
 
   /// Provides the [output] named [name] if it exists, otherwise `null`.
@@ -201,13 +202,13 @@ abstract class Module {
     return hierarchyQueue;
   }
 
-  /// Indicates whether this [Module] has had the [build()] method called on it.
+  /// Indicates whether this [Module] has had the [build] method called on it.
   bool get hasBuilt => _hasBuilt;
   bool _hasBuilt = false;
 
   /// Builds the [Module] and all [subModules] within it.
   ///
-  /// It is recommended not to override [build()] nor put logic in [build()]
+  /// It is recommended not to override [build] nor put logic in [build]
   /// unless you have good reason to do so.  Aim to build up relevant logic in
   /// the constructor.
   ///
@@ -254,6 +255,8 @@ abstract class Module {
     }
 
     _hasBuilt = true;
+
+    ModuleTree.rootModuleInstance = this;
   }
 
   /// Adds a [Module] to this as a subModule.

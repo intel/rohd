@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // finite_state_machine.dart
@@ -179,8 +179,19 @@ class FiniteStateMachine<StateIdentifier> {
 
     for (final state in _states) {
       for (final entry in state.events.entries) {
-        figure.addTransitions(state.identifier.toString(),
-            entry.value.toString(), entry.key.name);
+        figure.addTransitions(
+          state.identifier.toString(),
+          entry.value.toString(),
+          entry.key.name,
+        );
+      }
+
+      if (state.defaultNextState != state.identifier) {
+        figure.addTransitions(
+          state.identifier.toString(),
+          state.defaultNextState.toString(),
+          '(default)',
+        );
       }
     }
     figure.writeToFile();

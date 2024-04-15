@@ -2,7 +2,7 @@
 title: "Overview"
 permalink: /get-started/overview/
 excerpt: "Overview of ROHD framework."
-last_modified_at: 2022-12-05
+last_modified_at: 2024-01-04
 toc: true
 ---
 
@@ -42,7 +42,7 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 
 Dart is a modern, relatively new language developed by Google.  It is designed with client-side application development in mind (e.g. apps and websites), but also has great performance for general tasks.  It adopts some of the most loved syntax and features from languages like C++, Java, C#, JavaScript/TypeScript, and Kotlin.  Dart is extremely user-friendly, fun to use, and **easy to learn**.  The excellent, fast static analysis with a modern IDE with autocomplete makes it easy to learn as you work.  Dart has a lot of great modern language features, including null safety.
 
-Because it is designed with asynchronous requests in mind (i.e. sending a request to a server and not freezing the application while it waits for a response), Dart has async/await and `Future`s built in, with concurrent programming using *isolates*.  These constructs enable code to execute in parallel without multithreading.  These chacteristics make modelling hardware very easy.
+Because it is designed with asynchronous requests in mind (i.e. sending a request to a server and not freezing the application while it waits for a response), Dart has `async`/`await` and `Future`s built in, with [concurrent programming](https://dart.dev/language/concurrency).  These constructs enable code to execute in parallel without multithreading.  These chacteristics make modelling hardware very easy.
 
 Dart can compile to native machine code, but also includes its own high-performance VM and a JIT compiler.  During development, you can use a feature called "hot reload" to change code while the program is actively executing.
 

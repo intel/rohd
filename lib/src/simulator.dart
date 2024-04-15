@@ -1,4 +1,5 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simulator.dart
@@ -6,7 +7,10 @@
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
-
+//
+// 2024 Feb 28th
+// Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility
+//
 import 'dart:async';
 import 'dart:collection';
 
@@ -72,8 +76,11 @@ abstract class Simulator {
       _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
 
   /// Sorted storage for pending functions to execute at appropriate times.
-  static final SplayTreeMap<int, List<dynamic Function()>> _pendingTimestamps =
-      SplayTreeMap<int, List<dynamic Function()>>();
+  static final SplayTreeMap<int, ListQueue<dynamic Function()>>
+      _pendingTimestamps = SplayTreeMap<int, ListQueue<dynamic Function()>>();
+
+  /// The list of actions to be performed in this timestamp
+  static ListQueue<dynamic Function()> _pendingList = ListQueue();
 
   /// Functions to be executed as soon as possible by the [Simulator].
   ///
@@ -89,24 +96,28 @@ abstract class Simulator {
 
   /// Emits an event before any other actions take place on the tick.
   static Stream<void> get preTick => _preTickController.stream;
+  static StreamController<void> _preTickController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event at the start of actions within a tick.
   static Stream<void> get startTick => _startTickController.stream;
+  static StreamController<void> _startTickController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event when most events are complete, and clocks are stable.
   static Stream<void> get clkStable => _clkStableController.stream;
+  static StreamController<void> _clkStableController =
+      StreamController.broadcast(sync: true);
 
   /// Emits an event after all events are completed.
   static Stream<void> get postTick => _postTickController.stream;
-
-  static StreamController<void> _preTickController =
-      StreamController.broadcast(sync: true);
-  static StreamController<void> _startTickController =
-      StreamController.broadcast(sync: true);
-  static StreamController<void> _clkStableController =
-      StreamController.broadcast(sync: true);
   static StreamController<void> _postTickController =
       StreamController.broadcast(sync: true);
+
+  /// Completes when [reset] is called after the [Simulator] has completed any
+  /// actions it needs to perform to prepare for the next simulation.
+  static Future<void> get resetRequested => _resetCompleter.future;
+  static Completer<void> _resetCompleter = Completer<void>();
 
   /// Completes when the simulation has completed.
   static Future<void> get simulationEnded => _simulationEndedCompleter.future;
@@ -156,6 +167,13 @@ abstract class Simulator {
     _pendingTimestamps.clear();
     _phase = SimulatorPhase.outOfTick;
     _injectedActions.clear();
+
+    // make sure we've already passed the new completer so that listeners can
+    // get the latest
+    final oldResetCompleter = _resetCompleter;
+    _resetCompleter = Completer();
+    oldResetCompleter.complete();
+    await oldResetCompleter.future;
   }
 
   /// Sets a time, after which, the [Simulator] will halt processing of new
@@ -172,14 +190,33 @@ abstract class Simulator {
   ///
   /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {
-    if (timestamp <= _currentTimestamp) {
+    if (timestamp < _currentTimestamp) {
       throw Exception('Cannot add timestamp "$timestamp" in the past.'
           '  Current time is ${Simulator.time}');
     }
     if (!_pendingTimestamps.containsKey(timestamp)) {
-      _pendingTimestamps[timestamp] = [];
+      _pendingTimestamps[timestamp] = ListQueue();
     }
     _pendingTimestamps[timestamp]!.add(action);
+  }
+
+  /// Cancels an [action] previously scheduled for [timestamp].
+  ///
+  /// Returns true iff a [action] was previously registered at [timestamp].
+  static bool cancelAction(int timestamp, dynamic Function() action) {
+    if (!_pendingTimestamps.containsKey(timestamp)) {
+      return false;
+    }
+
+    if (!_pendingTimestamps[timestamp]!.remove(action)) {
+      return false;
+    }
+
+    if (_pendingTimestamps[timestamp]!.isEmpty) {
+      _pendingTimestamps.remove(timestamp);
+    }
+
+    return true;
   }
 
   /// Registers an arbitrary [action] to be executed at the end of the
@@ -212,55 +249,99 @@ abstract class Simulator {
   /// If there are no timestamps pending to execute, nothing will execute.
   static Future<void> tick() async {
     if (_injectedActions.isNotEmpty) {
-      // injected actions will automatically be executed during tickExecute
-      await tickExecute(() {});
+      // case 1 : ( the usual Rohd case )
+      // The previous delta cycle did NOT do
+      // 'registerAction( _currentTimeStamp );'.
+      // In that case, _pendingTimestamps[_currentTimestamp] is null so we will
+      // add a new empty list, which will trigger a new delta cycle.
+      //
+      // case 2 :
+      // The previous delta cycle DID do 'registerAction( _currentTimestamp );'.
+      // In that case, there is *already* another tick scheduled for
+      // _currentTimestamp, and the injected actions will get called in
+      //  the normal way.
+      //
+      // Either way, the end result is that a whole new tick gets scheduled for
+      // _currentTimestamp and any outstanding injected actions get executed.
 
-      // don't continue through the tick for injected actions, come back around
-      return;
+      // ignore: unnecessary_lambdas
+      _pendingTimestamps.putIfAbsent(_currentTimestamp, () => ListQueue());
     }
 
+    // the main event loop
+    if (_updateTimeStamp()) {
+      _preTick();
+      await _mainTick();
+      _clkStable();
+      await _outOfTick();
+    }
+  }
+
+  /// Updates [_currentTimestamp] with the next time stamp.
+  ///
+  /// Returns true iff there is a next time stamp.
+  ///
+  /// Also updates [_pendingList] with the list of actions scheduled for this
+  /// timestamp.
+  ///
+  /// If any of the actions in [_pendingList] schedule an action for
+  /// [_currentTimestamp], then this action is registered in the next delta
+  /// cycle. The next delta cycle is modelled as a new list of actions with the
+  /// same time as [_currentTimestamp].
+  static bool _updateTimeStamp() {
     final nextTimeStamp = _pendingTimestamps.firstKey();
+
     if (nextTimeStamp == null) {
-      return;
+      return false;
     }
 
     _currentTimestamp = nextTimeStamp;
 
-    await tickExecute(() async {
-      for (final func in _pendingTimestamps[nextTimeStamp]!) {
-        await func();
-      }
-    });
-    _pendingTimestamps.remove(_currentTimestamp);
+    // remove current list of actions but keep it for use in the mainTick phase
+    _pendingList = _pendingTimestamps.remove(_currentTimestamp)!;
+    return true;
   }
 
-  /// Executes all pending injected actions.
-  static Future<void> _executeInjectedActions() async {
-    while (_injectedActions.isNotEmpty) {
-      final injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
-  }
-
-  /// Performs the actual execution of a collection of actions for a [tick()].
-  static Future<void> tickExecute(dynamic Function() toExecute) async {
+  /// Executes the preTick phase.
+  static void _preTick() {
     _phase = SimulatorPhase.beforeTick;
-
-    // useful for flop sampling
     _preTickController.add(null);
+  }
 
+  /// Executes the mainTick phase.
+  ///
+  /// After [_startTickController] is notified, this method awaits all the
+  /// actions registered with this tick, removing the action from [_pendingList]
+  /// as it goes.
+  static Future<void> _mainTick() async {
     _phase = SimulatorPhase.mainTick;
 
     // useful for things that need to trigger every tick without other input
     _startTickController.add(null);
-    await toExecute();
 
+    // execute the actions for this timestamp
+    while (_pendingList.isNotEmpty) {
+      await _pendingList.removeFirst()();
+    }
+  }
+
+  /// Executes the clkStable phase
+  static void _clkStable() {
     _phase = SimulatorPhase.clkStable;
 
     // useful for flop clk input stability
     _clkStableController.add(null);
+  }
 
-    await _executeInjectedActions();
+  /// Executes the outOfTick phase
+  ////
+  /// Just before we end the current tick, we execute the injected actions,
+  /// removing them from [_injectedActions] as we go.
+  static Future<void> _outOfTick() async {
+    while (_injectedActions.isNotEmpty) {
+      final injectedFunction = _injectedActions.removeFirst();
+      await injectedFunction();
+    }
 
     _phase = SimulatorPhase.outOfTick;
 
@@ -270,8 +351,14 @@ abstract class Simulator {
 
   /// Halts the simulation.  Allows the current [tick] to finish, if there
   /// is one.
-  static void endSimulation() {
+  ///
+  /// The [Future] returned is equivalent to [simulationEnded] and completes
+  /// once the simulation has actually ended.
+  static Future<void> endSimulation() async {
     _simulationEndRequested = true;
+
+    // wait for the simulation to actually end
+    await simulationEnded;
   }
 
   /// Collects an [exception] and associated [stackTrace] triggered

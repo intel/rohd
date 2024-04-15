@@ -5,6 +5,9 @@
     },
     {
       "pattern":"^https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html$"
+    },
+    {
+      "pattern":"^https://stackoverflow.com"
     }
   ]
 }

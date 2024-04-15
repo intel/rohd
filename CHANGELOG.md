@@ -1,3 +1,29 @@
+## 0.5.3
+
+- Added beta version of the ROHD DevTools Extension to aid in ROHD hardware debug by displaying module hierarchy and signal information visually and interactively (<https://github.com/intel/rohd/pull/435>).
+- Added absolute value (`abs()`) to both `Logic` and `LogicValue` (<https://github.com/intel/rohd/pull/442>).
+- Added `assignSubset` for performing an assignment on a subset of a `LogicArray` (<https://github.com/intel/rohd/pull/456>).
+- Made conditional assignments more optimistic with partially invalid values (<https://github.com/intel/rohd/pull/459>).
+- Upgraded the simulator to support cancelling actions and registering actions at the current time (<https://github.com/intel/rohd/pull/468>).
+- Fixed a bug where SystemVerilog generation could mishandle naming collisions between `Logic`s and `LogicArray`s (<https://github.com/intel/rohd/pull/473>).
+- Added new checks to help catch SystemVerilog generation issues in cases where built-in functionality is overridden.
+
+## 0.5.2
+
+- Added APIs for accessing indices of a `List<Logic>` using another `Logic`: `Logic.selectFrom` and `List<Logic>.selectIndex` (<https://github.com/intel/rohd/pull/438>).
+- Added/fixed support for compiling ROHD to JavaScript via bug fixes, compile-time arithmetic precision consideration, and testing (<https://github.com/intel/rohd/pull/445>).
+- Added `isZero` to `LogicValue`.
+- Improved `Pipeline` abstraction via bug fixes, better error checking, improved documentation, and new APIs (<https://github.com/intel/rohd/pull/447>).
+- Improved performance of construction of `Combinational.ssa` (<https://github.com/intel/rohd/pull/443>).
+- Updated `Simulator.endSimulation` API to return a `Future` which completes once the simulation has ended (<https://github.com/intel/rohd/pull/455>).
+- Fixed bugs where certain non-synthesizable function calls on `LogicStructure`s (e.g. for verification) could add additional hardware (which did not affect functionality) and also cause unexpected behavior on `previousValue` (<https://github.com/intel/rohd/issues/457>).
+- Fixed bugs where certain APIs on `Logic` (e.g. `changed`, `previousValue`) could have incorrect behavior after a `Simulator.reset` (<https://github.com/intel/rohd/pull/458>).
+- Fixed a bug where `LogicValue.clog2` was inaccurate in rare scenarios.
+- Fixed a bug that caused a crash when comparing certain `LogicValue`s.
+- Fixed a bug where conversions between `BigInt`s and `LogicValue`s could result in incorrect arithmetic operations.
+- Fixed a bug where `FiniteStateMachine`-generated mermaid diagrams were missing "default next state" cases (<https://github.com/intel/rohd/pull/454>).
+- Allowed generated SystemVerilog to contain assignments to `z` (floating) if explicitly connected to a constant `z` (<https://github.com/intel/rohd/pull/441>).
+
 ## 0.5.1
 
 - Fixed bugs and improved controllability around naming of internal signals and collapsing of inlineable functionality, leading to significantly more readable generated SystemVerilog (<https://github.com/intel/rohd/pull/439>).

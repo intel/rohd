@@ -184,7 +184,7 @@ class _SsaLogic extends Logic {
 
   /// Constructs a new SSA node referring to a signal in a specific context.
   _SsaLogic(this._ref, this._context)
-      : super(width: _ref.width, name: _ref.name);
+      : super(width: _ref.width, name: _ref.name, naming: Naming.mergeable);
 }
 
 /// Represents a block of combinational logic.
@@ -909,7 +909,9 @@ class ConditionalAssign extends Conditional {
 
     final currentValue = driverValue(driver);
     if (!currentValue.isValid) {
-      _receiverOutput.put(LogicValue.x);
+      // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
+      // It's too pessimistic to convert the whole bus to X.
+      _receiverOutput.put(currentValue & currentValue);
     } else {
       _receiverOutput.put(currentValue);
     }
@@ -1036,7 +1038,7 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
     }
   }
 
-  final result = Logic(name: 'result', width: width);
+  final result = Logic(name: 'result', width: width, naming: Naming.mergeable);
 
   Combinational([
     Case(
@@ -1280,6 +1282,7 @@ ${subPadding}end
           phiMappings[localMapping.key] = Logic(
             name: '${localMapping.key.name}_phi',
             width: localMapping.key.width,
+            naming: Naming.mergeable,
           );
         }
 
@@ -1570,6 +1573,7 @@ ${padding}end ''');
           phiMappings[localMapping.key] = Logic(
             name: '${localMapping.key.name}_phi',
             width: localMapping.key.width,
+            naming: Naming.mergeable,
           );
         }
 
