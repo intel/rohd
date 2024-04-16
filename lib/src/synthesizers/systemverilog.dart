@@ -338,10 +338,10 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
       //TODO: include this assertion!
-      // assert(
-      //     !(assignment.src.isNet && assignment.dst.isNet),
-      //     'Net connections should have been implemented as'
-      //     ' bidirectional net connections.');
+      assert(
+          !(assignment.src.isNet && assignment.dst.isNet),
+          'Net connections should have been implemented as'
+          ' bidirectional net connections.');
 
       //TODO: alias?
       if (assignment.src.isNet && assignment.dst.isNet) {
