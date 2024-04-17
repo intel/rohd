@@ -139,6 +139,21 @@ class NegedgeTriggeredSeq extends Module {
   }
 }
 
+class BothTriggeredSeq extends Module {
+  BothTriggeredSeq(Logic reset) {
+    reset = addInput('reset', reset);
+    final b = addOutput('b', width: 8);
+    final clk = SimpleClockGenerator(10).clk;
+
+    Sequential.multi(
+      [clk],
+      reset: reset,
+      negedgeTriggers: [clk],
+      [b < b + 1],
+    );
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -233,6 +248,23 @@ void main() {
       Vector({'a': 0}, {}),
       Vector({'a': 1}, {'b': 0}),
       Vector({'a': 0}, {'b': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('multiple triggers, both edges', () async {
+    final mod = BothTriggeredSeq(Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'reset': 1}, {}),
+      Vector({'reset': 1}, {'b': 0}),
+      Vector({'reset': 0}, {'b': 0}),
+      Vector({}, {'b': 2}),
+      Vector({}, {'b': 4}),
+      Vector({}, {'b': 6}),
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
