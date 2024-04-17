@@ -238,4 +238,39 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
   });
+
+  test('negedge trigger actually occurs on negedge', () async {
+    final clk = Logic()..put(0);
+
+    final a = Logic()..put(1);
+    final b = Logic();
+
+    Sequential.multi([], negedgeTriggers: [clk], [b < a]);
+
+    Simulator.registerAction(20, () => clk.put(1));
+
+    Simulator.registerAction(30, () => expect(b.value, LogicValue.z));
+
+    Simulator.registerAction(40, () => clk.put(0));
+
+    Simulator.registerAction(50, () => expect(b.value, LogicValue.one));
+
+    await Simulator.run();
+  });
+
+  test('invalid trigger after valid trigger still causes x prop', () async {
+    final c1 = Logic()..put(0);
+    final c2 = Logic()..put(LogicValue.x);
+
+    final a = Logic()..put(1);
+    final b = Logic();
+
+    Sequential.multi([c1, c2], [b < a]);
+
+    Simulator.registerAction(20, () => c1.put(1));
+
+    Simulator.registerAction(30, () => expect(b.value, LogicValue.x));
+
+    await Simulator.run();
+  });
 }

@@ -625,8 +625,6 @@ class Sequential extends _Always {
   }
 
   void _execute() {
-    //TODO: test what if n'th triggered, n+1'th invalid, still treats as invalid
-
     final anyTriggered = _triggers.any((t) => t.isTriggered);
     final anyTriggerInvalid = _triggers.any((t) => !t.isValid);
 
