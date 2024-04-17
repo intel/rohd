@@ -405,20 +405,55 @@ class Combinational extends _Always {
 @Deprecated('Use Sequential instead')
 typedef FF = Sequential;
 
+/// A tracking construct for triggers of [Sequential]s.
+class _SequentialTrigger {
+  /// The signal for this trigger.
+  final Logic signal;
+
+  /// Whether this triggers on a positive edge (`true`) or a negative edge
+  /// (`false`).
+  final bool isPosedge;
+
+  /// The value of the trigger before the tick.
+  LogicValue? preTickValue;
+
+  /// Creates a tracking object for triggers.
+  _SequentialTrigger(this.signal, {required this.isPosedge})
+      : _edgeCheck = isPosedge ? LogicValue.isPosedge : LogicValue.isNegedge;
+
+  /// The method for checking whether an edge has occurred.
+  final bool Function(LogicValue previousValue, LogicValue newValue) _edgeCheck;
+
+  /// The previous value of the signal.
+  LogicValue get _previousValue =>
+      // if the pre-tick value is null, then it should have the same value as
+      // it currently does
+      preTickValue ?? signal.value;
+
+  /// Whether this trigger has been triggered.
+  bool get isTriggered => isValid && _edgeCheck(_previousValue, signal.value);
+
+  /// Whether this trigger is valid.
+  bool get isValid => signal.value.isValid && _previousValue.isValid;
+
+  /// The SystemVerilog keyword for this trigger.
+  String get verilogTriggerKeyword => isPosedge ? 'posedge' : 'negedge';
+}
+
 /// Represents a block of sequential logic.
 ///
 /// This is similar to an `always_ff` block in SystemVerilog.  Positive edge
 /// triggered by either one trigger or multiple with [Sequential.multi].
 class Sequential extends _Always {
-  /// The input clocks used in this block.
-  final List<Logic> _clks = [];
+  /// The input edge triggers used in this block.
+  final List<_SequentialTrigger> _triggers = [];
 
   /// When `false`, an [SignalRedrivenException] will be thrown during
   /// simulation if the same signal is driven multiple times within this
   /// [Sequential].
   final bool allowMultipleAssignments;
 
-  /// Constructs a [Sequential] single-triggered by [clk].
+  /// Constructs a [Sequential] single-triggered by the positive edge of [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
   /// conditionally reset when the signal is high.
@@ -443,49 +478,59 @@ class Sequential extends _Always {
           allowMultipleAssignments: allowMultipleAssignments,
         );
 
-  /// Constructs a [Sequential] multi-triggered by any of [clks].
+  /// Constructs a [Sequential] multi-triggered by any of [posedgeTriggers] and
+  /// [negedgeTriggers] (on positive and negative edges, respectively).
   ///
   /// If `reset` is provided, then all signals driven by this block will be
-  /// conditionally reset when the signal is high.
-  /// The default reset value is to `0`, but if `resetValues` is provided then
-  /// the corresponding value associated with the driven signal will be set to
-  /// that value instead upon reset. If a signal is in `resetValues` but not
-  /// driven by any other [Conditional] in this block, it will be driven to the
-  /// specified reset value.
+  /// conditionally reset when the signal is high. The default reset value is to
+  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// [Conditional] in this block, it will be driven to the specified reset
+  /// value.
   Sequential.multi(
-    List<Logic> clks,
+    List<Logic> posedgeTriggers,
     super._conditionals, {
     super.reset,
     super.resetValues,
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
+    List<Logic> negedgeTriggers = const [],
   }) {
-    if (clks.isEmpty) {
+    if (posedgeTriggers.isEmpty) {
       throw IllegalConfigurationException('Must provide at least one clock.');
     }
 
-    for (var i = 0; i < clks.length; i++) {
-      final clk = clks[i];
-      if (clk.width > 1) {
-        throw Exception('Each clk must be 1 bit, but saw $clk.');
-      }
-      _clks.add(addInput(
-          _portUniquifier.getUniqueName(
-              initialName: Sanitizer.sanitizeSV(
-                  Naming.unpreferredName('clk${i}_${clk.name}'))),
-          clk));
-      _preTickClkValues.add(null);
-    }
+    _registerInputTriggers(posedgeTriggers, isPosedge: true);
+    _registerInputTriggers(negedgeTriggers, isPosedge: false);
+
     _setup();
+  }
+
+  /// Registers either positive or negative edge trigger inputs for
+  /// [providedTriggers] based on [isPosedge].
+  void _registerInputTriggers(List<Logic> providedTriggers,
+      {required bool isPosedge}) {
+    for (var i = 0; i < providedTriggers.length; i++) {
+      final trigger = providedTriggers[i];
+      if (trigger.width != 1) {
+        throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
+      }
+
+      _triggers.add(_SequentialTrigger(
+          addInput(
+              _portUniquifier.getUniqueName(
+                  initialName: Sanitizer.sanitizeSV(
+                      Naming.unpreferredName('clk${i}_${trigger.name}'))),
+              trigger),
+          isPosedge: isPosedge));
+    }
   }
 
   /// A map from input [Logic]s to the values that should be used for
   /// computations on the edge.
   final Map<Logic, LogicValue> _inputToPreTickInputValuesMap =
       HashMap<Logic, LogicValue>();
-
-  /// The value of the clock before the tick.
-  final List<LogicValue?> _preTickClkValues = [];
 
   /// Keeps track of whether the clock has glitched and an [_execute] is
   /// necessary.
@@ -548,11 +593,10 @@ class Sequential extends _Always {
     }
 
     // listen to every clock glitch to see if we need to execute
-    for (var i = 0; i < _clks.length; i++) {
-      final clk = _clks[i];
-      clk.glitch.listen((event) async {
+    for (final trigger in _triggers) {
+      trigger.signal.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
-        _preTickClkValues[i] ??= event.previousValue;
+        trigger.preTickValue ??= event.previousValue;
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF
@@ -581,27 +625,16 @@ class Sequential extends _Always {
   }
 
   void _execute() {
-    var anyClkInvalid = false;
-    var anyClkPosedge = false;
+    //TODO: test what if n'th triggered, n+1'th invalid, still treats as invalid
 
-    for (var i = 0; i < _clks.length; i++) {
-      // if the pre-tick value is null, then it should have the same value as
-      // it currently does
-      if (!_clks[i].value.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
-        anyClkInvalid = true;
-        break;
-      } else if (_preTickClkValues[i] != null &&
-          LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].value)) {
-        anyClkPosedge = true;
-        break;
-      }
-    }
+    final anyTriggered = _triggers.any((t) => t.isTriggered);
+    final anyTriggerInvalid = _triggers.any((t) => !t.isValid);
 
-    if (anyClkInvalid) {
+    if (anyTriggerInvalid) {
       for (final receiverOutput in _assignedReceiverToOutputMap.values) {
         receiverOutput.put(LogicValue.x);
       }
-    } else if (anyClkPosedge) {
+    } else if (anyTriggered) {
       if (allowMultipleAssignments) {
         for (final element in conditionals) {
           element.execute(null, null);
@@ -618,16 +651,18 @@ class Sequential extends _Always {
     }
 
     // clear out all the pre-tick value of clocks
-    for (var i = 0; i < _clks.length; i++) {
-      _preTickClkValues[i] = null;
+    for (final trigger in _triggers) {
+      trigger.preTickValue = null;
     }
   }
 
   @override
   String alwaysVerilogStatement(Map<String, String> inputs) {
-    final triggers =
-        _clks.map((clk) => 'posedge ${inputs[clk.name]}').join(' or ');
-    return 'always_ff @($triggers)';
+    final svTriggers = _triggers
+        .map((trigger) =>
+            '${trigger.verilogTriggerKeyword} ${inputs[trigger.signal.name]}')
+        .join(' or ');
+    return 'always_ff @($svTriggers)';
   }
 
   @override
