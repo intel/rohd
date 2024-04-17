@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
@@ -497,12 +497,12 @@ class Sequential extends _Always {
     this.allowMultipleAssignments = true,
     List<Logic> negedgeTriggers = const [],
   }) {
-    if (posedgeTriggers.isEmpty) {
-      throw IllegalConfigurationException('Must provide at least one clock.');
-    }
-
     _registerInputTriggers(posedgeTriggers, isPosedge: true);
     _registerInputTriggers(negedgeTriggers, isPosedge: false);
+
+    if (_triggers.isEmpty) {
+      throw IllegalConfigurationException('Must provide at least one clock.');
+    }
 
     _setup();
   }

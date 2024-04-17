@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 //
 // sequential_test.dart
 // Unit test for Sequential
@@ -125,6 +125,20 @@ class SeqResetValTypes extends Module {
   }
 }
 
+class NegedgeTriggeredSeq extends Module {
+  NegedgeTriggeredSeq(Logic a) {
+    a = addInput('a', a);
+    final b = addOutput('b');
+    final clk = SimpleClockGenerator(10).clk;
+
+    Sequential.multi(
+      [],
+      negedgeTriggers: [~clk],
+      [b < a],
+    );
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -152,8 +166,7 @@ void main() {
       Vector({}, {'out': 5}),
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
-    final simResult = SimCompare.iverilogVector(dut, vectors);
-    expect(simResult, equals(true));
+    SimCompare.checkIverilogVector(dut, vectors);
   });
 
   group('shorthand with sequential', () {
@@ -207,5 +220,22 @@ void main() {
 
     await SimCompare.checkFunctionalVector(dut, vectors);
     SimCompare.checkIverilogVector(dut, vectors);
+  });
+
+  test('negedge triggered flop', () async {
+    final mod = NegedgeTriggeredSeq(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('always_ff @(negedge'));
+
+    final vectors = [
+      Vector({'a': 0}, {}),
+      Vector({'a': 1}, {'b': 0}),
+      Vector({'a': 0}, {'b': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }
