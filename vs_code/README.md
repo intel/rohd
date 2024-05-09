@@ -8,7 +8,7 @@ ROHD (pronounced as "road") is a framework for describing and verifying hardware
 
 ## Features
 
-Currently, this extension follows the conventions in ROHD [v0.5.1](https://github.com/intel/rohd/releases/tag/v0.5.1). It suggests auto-completions when you start typing the prefixes as shown in the table below:
+Currently, this extension follows the conventions in ROHD [v0.5.3](https://github.com/intel/rohd/releases/tag/v0.5.1). It suggests auto-completions when you start typing the prefixes as shown in the table below:
 
 |  Name  |  Prefix  |  Description  |
 |  :---:  |  :---:  |  :--:  |
