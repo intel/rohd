@@ -158,10 +158,14 @@ class _SmallLogicValue extends LogicValue {
     assert(other is _SmallLogicValue, 'Will always be a _SmallLogicValue');
     other as _SmallLogicValue;
 
-    final newValue = _value & other._value;
+    final oppositeValids =
+        ~_invalid & ~other._invalid & (_value ^ other._value);
+
+    final newValue = _value & other._value & ~oppositeValids & _mask;
     final newInvalid = ((_invalid & other._invalid) |
             (~_value & _invalid) |
-            (~other._value & other._invalid)) &
+            (~other._value & other._invalid) |
+            oppositeValids) &
         _mask;
 
     return LogicValue._smallLogicValueOrFilled(newValue, newInvalid, width);

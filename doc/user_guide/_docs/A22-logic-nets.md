@@ -6,3 +6,5 @@ toc: true
 ---
 
 TODO
+
+TODO: include description of tristate (logicvalue and gate)

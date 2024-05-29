@@ -234,7 +234,6 @@ class _FilledLogicValue extends LogicValue {
   LogicValue _xor2(LogicValue other) {
     if (other is _FilledLogicValue) {
       if (!isValid || !other.isValid) {
-        //TODO: test this line
         return _FilledLogicValue(_LogicValueEnum.x, width);
       }
       return ((_value == _LogicValueEnum.one) ^
@@ -286,18 +285,18 @@ class _FilledLogicValue extends LogicValue {
     } else if (_value == _LogicValueEnum.zero) {
       if (other is _SmallLogicValue) {
         return LogicValue._smallLogicValueOrFilled(
-            0, ~other._value & other._invalid & other._mask, width);
+            0, (other._value ^ other._invalid) & other._mask, width);
       } else if (other is _BigLogicValue) {
         return LogicValue._bigLogicValueOrFilled(
-            BigInt.zero, ~other._value & other._invalid & other._mask, width);
+            BigInt.zero, (other._value ^ other._invalid) & other._mask, width);
       }
     } else if (_value == _LogicValueEnum.one) {
       if (other is _SmallLogicValue) {
         return LogicValue._smallLogicValueOrFilled(
-            other._value, ~other._value & other._invalid & other._mask, width);
+            other._value, ~other._value & other._mask, width);
       } else if (other is _BigLogicValue) {
         return LogicValue._bigLogicValueOrFilled(
-            other._value, ~other._value & other._invalid & other._mask, width);
+            other._value, ~other._value & other._mask, width);
       }
     }
     throw Exception('Unhandled scenario.');

@@ -857,7 +857,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// - tristate(x, x) == x
   LogicValue triState(LogicValue other) =>
       _twoInputBitwiseOp(other, (a, b) => a._triState2(b));
-  //TODO: test all 3 flavors of LogicValue (and mix between! and both directions!)
 
   /// Bitwise AND operation.  No width comparison.
   LogicValue _and2(LogicValue other);
