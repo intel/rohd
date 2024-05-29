@@ -70,7 +70,7 @@ abstract class Module {
   Map<String, Logic> get outputs =>
       UnmodifiableMapView<String, Logic>(_outputs);
 
-  @protected //TODO
+  @protected //TODO: doc
   Map<String, Logic> get inOuts => UnmodifiableMapView<String, Logic>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
@@ -122,7 +122,7 @@ abstract class Module {
       : throw PortDoesNotExistException(
           'Output name "$name" not found as an output of this Module.');
 
-  @protected //TODO: should this be protected or is it like output?  i think yes like input
+  @protected
   Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
@@ -357,8 +357,6 @@ abstract class Module {
   /// See documentation for [unpreferredName] for more details.
   @Deprecated('Use `Naming.isUnpreferred` or `Logic.naming` instead.')
   static bool isUnpreferred(String name) => Naming.isUnpreferred(name);
-
-//TODO BUG: not finding sub-modules in arrays for connections between net arrays (often)
 
   /// Searches for [Logic]s and [Module]s within this [Module] from its inputs.
   Future<void> _traceInputForModuleContents(Logic signal,

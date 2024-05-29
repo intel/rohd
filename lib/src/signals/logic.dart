@@ -64,6 +64,11 @@ class Logic {
   bool isFloating() => value.isFloating;
 
   /// The [Logic] signal that is driving `this`, if any.
+  ///
+  /// If there are multiple drivers (e.g. this is an instance of a special
+  /// type/subclass of [Logic]), this will be `null` and [srcConnections] can be
+  /// referenced to find all drivers. A simple [Logic] will always have either
+  /// one or no driver.
   Logic? get srcConnection => _srcConnection;
   Logic? _srcConnection;
 

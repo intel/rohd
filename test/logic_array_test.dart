@@ -887,7 +887,6 @@ void main() {
     test('withset', () async {
       final mod = WithSetArrayModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod);
-      //TODO debug
     });
 
     test('withset offset', () async {

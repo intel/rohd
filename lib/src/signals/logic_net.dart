@@ -1,55 +1,5 @@
 part of 'signals.dart';
 
-//TODO: this must be represented as `wire` in SV
-//TODO: in verilog, must use continuous assignment to this, not always block (no procedural)
-//TODO: Z checking should be per-bit, not per bus! (do this in LogicValue)
-
-//TODO: DO NOT EXPOSE - removable!
-// TODO: rename
-//TODO: make private within SV gen code only
-class NetConnect extends Module with SystemVerilog {
-  static const String _definitionName = 'net_connect';
-
-  final int width;
-
-  @override
-  bool get hasBuilt => true; //TODO: is this ok?
-
-  static final String n0Name = Naming.unpreferredName('n0');
-  static final String n1Name = Naming.unpreferredName('n1');
-
-  NetConnect(LogicNet n0, LogicNet n1)
-      : assert(n0.width == n1.width, 'Widths must be equal.'),
-        width = n0.width,
-        super(
-          definitionName: _definitionName,
-          name: _definitionName,
-        ) {
-    n0 = addInOut(n0Name, n0, width: width);
-    n1 = addInOut(n1Name, n1, width: width);
-  }
-
-  //TODO: override unique instance name?
-
-  @override
-  String instantiationVerilog(
-      String instanceType, String instanceName, Map<String, String> ports) {
-    assert(instanceType == _definitionName,
-        'Instance type selected should match the definition name.');
-    return '$instanceType'
-        ' #(.WIDTH($width))'
-        ' $instanceName'
-        ' (${ports[n0Name]}, ${ports[n1Name]});';
-  }
-
-  @override
-  String? definitionVerilog(String definitionType) => '''
-// A special module for connecting two nets bidirectionally
-module $definitionType #(parameter WIDTH=1) (w, w); 
-inout wire[WIDTH-1:0] w;
-endmodule''';
-}
-
 class _WireNet extends _Wire {
   final Set<Logic> _drivers = {};
 
@@ -123,7 +73,6 @@ class LogicNet extends Logic {
 
   @override
   void _connect(Logic other) {
-    //TODO: cannot merge wires with non-Nets!
     //TODO: should there really be a different type? or just a setting on Logic?
 
     // if they are already connected, don't connect again!
@@ -133,11 +82,6 @@ class LogicNet extends Logic {
 
     if (other is LogicNet) {
       _updateWire(other._wire);
-
-      if (parentModule is! NetConnect) {
-        //TODO: hacky?
-        // NetConnect(this, other);
-      }
     } else {
       (_wire as _WireNet)._addDriver(other);
     }

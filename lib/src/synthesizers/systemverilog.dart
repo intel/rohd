@@ -340,44 +340,13 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogAssignments() {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
-      // //TODO: include this assertion!
-      // assert(
-      //     !(assignment.src.isNet && assignment.dst.isNet),
-      //     'Net connections should have been implemented as'
-      //     ' bidirectional net connections.');
+      assert(
+          !(assignment.src.isNet && assignment.dst.isNet),
+          'Net connections should have been implemented as'
+          ' bidirectional net connections.');
 
-      //TODO: alias?
-      if (assignment.src.isNet && assignment.dst.isNet) {
-        // assignmentLines
-        //     .add('alias ${assignment.dst.name} = ${assignment.src.name};');
-
-        // assignmentLines
-        //     .add('assign ${assignment.src.name} = ${assignment.dst.name};');
-        // assignmentLines
-        //     .add('assign ${assignment.dst.name} = ${assignment.src.name};');
-
-        // assignmentLines
-        //     .add('tran t1 (${assignment.src.name}, ${assignment.dst.name});');
-
-        //TODO: THE PLAN:
-        // - all net to net connections create a netalias module AND an assignment
-        // - as assignments are collapsed, remove the netaliases
-        // - after all assignments collapsed, remove any assignments between nets
-        // - add a way for `SystemVerilog` to support adding a definition
-
-        // assert(
-        //     false); //This shouldnt happen i think? TODO make this an assertion
-        // assignmentLines
-        //     .add('myalias ma(${assignment.dst.name}, ${assignment.src.name});');
-
-        // _addNetConnect(assignment.dst, assignment.src);
-
-        // these should not exist, should have been removed!
-        assert(false); //TODO
-      } else {
-        assignmentLines
-            .add('assign ${assignment.dst.name} = ${assignment.src.name};');
-      }
+      assignmentLines
+          .add('assign ${assignment.dst.name} = ${assignment.src.name};');
     }
     return assignmentLines.join('\n');
   }
@@ -564,6 +533,49 @@ class _SynthSubModuleInstantiation {
   }
 }
 
+class _NetConnect extends Module with SystemVerilog {
+  static const String _definitionName = 'net_connect';
+
+  final int width;
+
+  @override
+  bool get hasBuilt => true; //TODO: is this ok?
+
+  static final String n0Name = Naming.unpreferredName('n0');
+  static final String n1Name = Naming.unpreferredName('n1');
+
+  _NetConnect(LogicNet n0, LogicNet n1)
+      : assert(n0.width == n1.width, 'Widths must be equal.'),
+        width = n0.width,
+        super(
+          definitionName: _definitionName,
+          name: _definitionName,
+        ) {
+    n0 = addInOut(n0Name, n0, width: width);
+    n1 = addInOut(n1Name, n1, width: width);
+  }
+
+  //TODO: override unique instance name?
+
+  @override
+  String instantiationVerilog(
+      String instanceType, String instanceName, Map<String, String> ports) {
+    assert(instanceType == _definitionName,
+        'Instance type selected should match the definition name.');
+    return '$instanceType'
+        ' #(.WIDTH($width))'
+        ' $instanceName'
+        ' (${ports[n0Name]}, ${ports[n1Name]});';
+  }
+
+  @override
+  String? definitionVerilog(String definitionType) => '''
+// A special module for connecting two nets bidirectionally
+module $definitionType #(parameter WIDTH=1) (w, w); 
+inout wire[WIDTH-1:0] w;
+endmodule''';
+}
+
 /// Represents the definition of a module.
 class _SynthModuleDefinition {
   /// The [Module] being defined.
@@ -726,18 +738,10 @@ class _SynthModuleDefinition {
 
       if (receiver.parentModule != module &&
           !module.subModules.contains(receiver.parentModule)) {
-        print('in $module skipping $receiver');
-        //TODO: this is bad! shouldn't happen!
-        assert(false);
+        // This should never happen!
+        assert(false, 'Receiver is not in this module or a submodule.');
         continue;
       }
-
-      // if (receiver.parentModule != module) {
-      //   //TODO: is this ok?
-      //   print(receiver);
-      //   continue;
-      // }
-      // assert(receiver.parentModule == module); //TODO
 
       if (receiver is LogicArray) {
         logicsToTraverse.addAll(receiver.elements);
@@ -868,7 +872,6 @@ class _SynthModuleDefinition {
     // The order of these is important!
     _collapseAssignments();
     _assignSubmodulePortMapping();
-    // _updateNetConnections(); //TODO
     _replaceNetConnections();
     _collapseChainableModules();
     _pickNames();
@@ -881,80 +884,37 @@ class _SynthModuleDefinition {
   void _addNetConnect(_SynthLogic dst, _SynthLogic src) {
     // make an (unconnected) module representing the assignment
     final netConnect =
-        NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
+        _NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
 
     // instantiate the module within the definition
     _getSynthSubModuleInstantiation(netConnect)
 
       // map inouts to the appropriate `_SynthLogic`s
-      ..setInOutMapping(NetConnect.n0Name, dst)
-      ..setInOutMapping(NetConnect.n1Name, src);
+      ..setInOutMapping(_NetConnect.n0Name, dst)
+      ..setInOutMapping(_NetConnect.n1Name, src);
 
     // notify the `SynthBuilder` that it needs declaration
     supportingModules.add(netConnect);
   }
 
+  //TODO: doc
   void _replaceNetConnections() {
+    final reducedAssignments = <_SynthAssignment>[];
+
     for (final assignment in assignments) {
       if (assignment.src.isNet && assignment.dst.isNet) {
         _addNetConnect(assignment.dst, assignment.src);
-      }
-    }
-    assignments.removeWhere(
-        (assignment) => assignment.src.isNet && assignment.dst.isNet);
-  }
-
-  //TODO doc
-  void _updateNetConnections() {
-    // clear declarations for net connection modules which don't have a
-    // corresponding assignment anymore
-    for (final netConnectSynth in moduleToSubModuleInstantiationMap.entries
-        .where((entry) => entry.key is NetConnect)
-        .map((e) => e.value)) {
-      final matchingAssignments = assignments
-          .where((assignment) =>
-              netConnectSynth.inOutMapping.containsValue(assignment.src) &&
-              netConnectSynth.inOutMapping.containsValue(assignment.dst))
-          .toList();
-
-      if (matchingAssignments.isEmpty) {
-        // if no assignments are present, then this connection was merged
-        netConnectSynth.clearDeclaration();
       } else {
-        // if some do exist, then we should keep the net connect but ditch the
-        // other assignments
-        matchingAssignments.forEach(assignments.remove);
-        //TODO: should we do something more efficient than this removal on a list?
+        reducedAssignments.add(assignment);
       }
     }
 
-    //TODO KEEP
-    assert(
-        assignments.firstWhereOrNull(
-                (element) => element.src.isNet && element.dst.isNet) ==
-            null,
-        'No assignments should remain between nets.');
-
-    // now clear out any internal signals not used by any assignment or
-    // submodule anymore
-    internalSignals.removeWhere((internalSignal) =>
-        // don't remove arrays! //TODO is this right?
-        !internalSignal.isArray &&
-        // no assignment uses the signal
-        (assignments.firstWhereOrNull((assignment) =>
-                assignment.src == internalSignal ||
-                assignment.dst == internalSignal) ==
-            null) &&
-        // no submodule instantiation uses the signal.
-        (moduleToSubModuleInstantiationMap.values
-                .where((submoduleSynthInstantiation) =>
-                    submoduleSynthInstantiation.needsDeclaration)
-                .firstWhereOrNull((submoduleSynthInstantiation) => [
-                      ...submoduleSynthInstantiation.inputMapping.values,
-                      ...submoduleSynthInstantiation.outputMapping.values,
-                      ...submoduleSynthInstantiation.inOutMapping.values,
-                    ].contains(internalSignal)) ==
-            null));
+    // only swap them if we actually did anything
+    if (assignments.length != reducedAssignments.length) {
+      assignments
+        ..clear()
+        ..addAll(reducedAssignments);
+    }
   }
 
   /// Updates all sub-module instantiations with information about which
