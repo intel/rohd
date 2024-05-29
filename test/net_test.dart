@@ -415,7 +415,6 @@ void main() {
     await mod.build();
 
     final sv = mod.generateSynth();
-    print(sv);
     expect(sv, contains('intermediate1'));
     expect(sv, contains('intermediate2'));
     expect(sv, contains('intermediate3'));

@@ -448,35 +448,22 @@ abstract class Module {
           continue;
         }
 
-        // TODO this seems over-the-top, is there a better way?
-        // maybe a function in NetConnect that lets you find the "other" one would be good
-        if (isInOut(signal) &&
-            dstConnection.parentModule is NetConnect &&
-            dstConnection.parentModule!._inOuts.values
-                .map((e) => e.srcConnections)
-                .flattened
-                .where(_inOutDrivers.contains)
-                .isNotEmpty) {
-          // if this is a NetConnect crossing the module boundary, don't trace
-          continue;
-        }
-
         await _traceInputForModuleContents(dstConnection);
       }
 
       //TODO: is this needed?
-      // if (signal.isNet) {
-      //   for (final srcConnection
-      //       in signal.srcConnections.where((element) => element.isNet)) {
-      //     await _traceInputForModuleContents(srcConnection);
-      //     await _traceOutputForModuleContents(srcConnection);
-      //   }
-      //   for (final dstConnection
-      //       in signal.dstConnections.where((element) => element.isNet)) {
-      //     await _traceInputForModuleContents(dstConnection);
-      //     await _traceOutputForModuleContents(dstConnection);
-      //   }
-      // }
+      if (signal.isNet && !isPort(signal)) {
+        for (final srcConnection
+            in signal.srcConnections.where((element) => element.isNet)) {
+          await _traceInputForModuleContents(srcConnection);
+          await _traceOutputForModuleContents(srcConnection);
+        }
+        for (final dstConnection
+            in signal.dstConnections.where((element) => element.isNet)) {
+          await _traceInputForModuleContents(dstConnection);
+          await _traceOutputForModuleContents(dstConnection);
+        }
+      }
     }
   }
 
@@ -560,19 +547,19 @@ abstract class Module {
       }
 
       //TODO: is this needed?
-      // if (signal.isNet && !isPort(signal)) {
-      //   for (final srcConnection
-      //       in signal.srcConnections.where((element) => element.isNet)) {
-      //     await _traceOutputForModuleContents(srcConnection);
-      //     await _traceInputForModuleContents(srcConnection);
-      //   }
-      //   for (final dstConnection
-      //       in signal.dstConnections.where((element) => element.isNet)) {
-      //     //TODO: why not all dst?
-      //     await _traceOutputForModuleContents(dstConnection);
-      //     await _traceInputForModuleContents(dstConnection);
-      //   }
-      // }
+      if (signal.isNet && !isPort(signal)) {
+        for (final srcConnection
+            in signal.srcConnections.where((element) => element.isNet)) {
+          await _traceOutputForModuleContents(srcConnection);
+          await _traceInputForModuleContents(srcConnection);
+        }
+        for (final dstConnection
+            in signal.dstConnections.where((element) => element.isNet)) {
+          //TODO: why not all dst?
+          await _traceOutputForModuleContents(dstConnection);
+          await _traceInputForModuleContents(dstConnection);
+        }
+      }
 
       // TODO: why can't we just always iterate across all srcConnections here?
       if (signal is LogicStructure) {
