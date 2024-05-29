@@ -209,7 +209,12 @@ class Logic {
   /// drivers.
   bool get isNet => false;
 
-  //TODO: is this ok to keep here?
+  /// All [Logic]s driving `this`, if any.
+  ///
+  /// For a simple [Logic], this will simply be an [Iterable] containing either
+  /// nothing (if no driver), or one element equal to [srcConnection]. If there
+  /// are multiple drivers (e.g. this is an instance of a special type/subclass
+  /// of [Logic]), then there may be multiple drivers.
   Iterable<Logic> get srcConnections =>
       [if (srcConnection != null) srcConnection!];
 

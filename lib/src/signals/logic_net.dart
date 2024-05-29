@@ -1,3 +1,5 @@
+//TODO:header
+
 part of 'signals.dart';
 
 class _WireNet extends _Wire {
@@ -35,20 +37,16 @@ class _WireNet extends _Wire {
 }
 
 class LogicNet extends Logic {
-  /// TODO: doc: UndirectionalLogic can have any number of srcConnections
   @override
   Logic? get srcConnection => null;
 
   @override
   bool get isNet => true;
 
-  //TODO: why not just call it "connections" and it be seaprate from "srcConnections" from LogicStructure?
-  // or should it be that srcConnections == dstConnections for a net?
+  @override
   late final Iterable<Logic> srcConnections =
       UnmodifiableListView(_srcConnections);
-  Set<Logic> _srcConnections = {};
-
-  //TODO: should we just have a generic "connections"?
+  final Set<Logic> _srcConnections = {};
 
   LogicNet({super.name, super.width, super.naming})
       : super._(wire: _WireNet(width: width));
@@ -68,13 +66,8 @@ class LogicNet extends Logic {
     );
   }
 
-  //TODO: NO, this needs to be separately tracked?
-  // Set<Logic> get _srcConnections => (_wire as _WireNet)._drivers;
-
   @override
   void _connect(Logic other) {
-    //TODO: should there really be a different type? or just a setting on Logic?
-
     // if they are already connected, don't connect again!
     if (_srcConnections.contains(other)) {
       return;

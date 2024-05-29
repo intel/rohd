@@ -30,6 +30,4 @@ class Port extends Logic {
       throw InvalidPortNameException(name);
     }
   }
-
-  //TODO: should we deprecate Port for Logic.port, then typedef it?
 }

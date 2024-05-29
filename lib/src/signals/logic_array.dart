@@ -204,8 +204,14 @@ class LogicArray extends LogicStructure {
       throw InvalidPortNameException(name);
     }
 
-    return LogicArray(dimensions, elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions, name: name);
+    return LogicArray(
+      dimensions, elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions, name: name,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
   }
 
   /// Constructs a new [LogicArray.net] with a more convenient constructor
@@ -220,8 +226,15 @@ class LogicArray extends LogicStructure {
       throw InvalidPortNameException(name);
     }
 
-    return LogicArray.net(dimensions, elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions, name: name);
+    return LogicArray.net(
+      dimensions, elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      name: name,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
   }
 
   /// Perform Assign operation on a Logic subset or slice
