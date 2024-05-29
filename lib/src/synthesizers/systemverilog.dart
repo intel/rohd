@@ -131,12 +131,12 @@ class SystemVerilogSynthesizer extends Synthesizer {
       );
 
   @override
-  SynthesisResult synthesize(
-          Module module, Map<Module, String> moduleToInstanceTypeMap) =>
+  SynthesisResult synthesize(Module module,
+          String Function(Module module) getInstanceTypeOfModule) =>
       module is SystemVerilog && module.generatesDefinition
           ? _SystemVerilogCustomDefinitionSynthesisResult(
-              module, moduleToInstanceTypeMap)
-          : _SystemVerilogSynthesisResult(module, moduleToInstanceTypeMap);
+              module, getInstanceTypeOfModule)
+          : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
@@ -190,6 +190,7 @@ mixin SystemVerilog on Module {
   /// If `null`, no definition generated...
   /// must consistently generate the same thing (whats the word for that? isosomething)
   String? definitionVerilog(String definitionType) => null;
+  //TODO: this seems dangerous, can't check for name conflicts with name of module...?
 
   //TODO
   bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
@@ -242,9 +243,10 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 }
 
 //TODO: doc
+// TODO: test generically that this works
 class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   _SystemVerilogCustomDefinitionSynthesisResult(
-      super.module, super.moduleToInstanceTypeMap)
+      super.module, super.getInstanceTypeOfModule)
       : assert(module is SystemVerilog && module.generatesDefinition,
             'This should only be used for custom system verilog definitions.');
 
@@ -260,7 +262,7 @@ class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
 
   @override
   String toFileContents() => (module as SystemVerilog)
-      .definitionVerilog(moduleToInstanceTypeMap[module]!)!;
+      .definitionVerilog(getInstanceTypeOfModule(module))!;
 }
 
 /// A [SynthesisResult] representing a conversion of a [Module] to
@@ -275,13 +277,14 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   /// The main [_SynthModuleDefinition] for this.
   final _SynthModuleDefinition _synthModuleDefinition;
 
-  _SystemVerilogSynthesisResult(
-      Module module, Map<Module, String> moduleToInstanceTypeMap)
-      : _synthModuleDefinition = _SynthModuleDefinition(module),
-        super(module, moduleToInstanceTypeMap) {
+  @override
+  List<Module> get supportingModules =>
+      _synthModuleDefinition.supportingModules;
+
+  _SystemVerilogSynthesisResult(super.module, super.getInstanceTypeOfModule)
+      : _synthModuleDefinition = _SynthModuleDefinition(module) {
     _portsString = _verilogPorts();
-    _moduleContentsString = _verilogModuleContents(moduleToInstanceTypeMap);
-    //TODO: do module definition and instances need different names?
+    _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
   }
 
   @override
@@ -295,7 +298,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
       _portsString.hashCode ^ _moduleContentsString.hashCode;
 
   @override
-  String toFileContents() => _toVerilog(moduleToInstanceTypeMap);
+  String toFileContents() => _toVerilog(getInstanceTypeOfModule);
 
   /// Representation of all input port declarations in generated SV.
   List<String> _verilogInputs() {
@@ -337,11 +340,11 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogAssignments() {
     final assignmentLines = <String>[];
     for (final assignment in _synthModuleDefinition.assignments) {
-      //TODO: include this assertion!
-      assert(
-          !(assignment.src.isNet && assignment.dst.isNet),
-          'Net connections should have been implemented as'
-          ' bidirectional net connections.');
+      // //TODO: include this assertion!
+      // assert(
+      //     !(assignment.src.isNet && assignment.dst.isNet),
+      //     'Net connections should have been implemented as'
+      //     ' bidirectional net connections.');
 
       //TODO: alias?
       if (assignment.src.isNet && assignment.dst.isNet) {
@@ -364,8 +367,13 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
         // assert(
         //     false); //This shouldnt happen i think? TODO make this an assertion
-        assignmentLines
-            .add('myalias ma(${assignment.dst.name}, ${assignment.src.name});');
+        // assignmentLines
+        //     .add('myalias ma(${assignment.dst.name}, ${assignment.src.name});');
+
+        // _addNetConnect(assignment.dst, assignment.src);
+
+        // these should not exist, should have been removed!
+        assert(false); //TODO
       } else {
         assignmentLines
             .add('assign ${assignment.dst.name} = ${assignment.src.name};');
@@ -376,17 +384,13 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   /// Representation of all sub-module instantiations in generated SV.
   String _verilogSubModuleInstantiations(
-      Map<Module, String> moduleToInstanceTypeMap) {
+      String Function(Module module) getInstanceTypeOfModule) {
     final subModuleLines = <String>[];
     for (final subModuleInstantiation
         in _synthModuleDefinition.moduleToSubModuleInstantiationMap.values) {
-      if (SystemVerilogSynthesizer()
-              .generatesDefinition(subModuleInstantiation.module) &&
-          !moduleToInstanceTypeMap.containsKey(subModuleInstantiation.module)) {
-        throw Exception('No defined instance type found.');
-      }
       final instanceType =
-          moduleToInstanceTypeMap[subModuleInstantiation.module] ?? '*NONE*';
+          getInstanceTypeOfModule(subModuleInstantiation.module);
+
       final instantiationVerilog =
           subModuleInstantiation.instantiationVerilog(instanceType);
       if (instantiationVerilog != null) {
@@ -398,11 +402,12 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
 
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.
-  String _verilogModuleContents(Map<Module, String> moduleToInstanceTypeMap) =>
+  String _verilogModuleContents(
+          String Function(Module module) getInstanceTypeOfModule) =>
       [
         _verilogInternalSignals(),
-        _verilogAssignments(),
-        _verilogSubModuleInstantiations(moduleToInstanceTypeMap),
+        _verilogAssignments(), // order matters!
+        _verilogSubModuleInstantiations(getInstanceTypeOfModule),
       ].where((element) => element.isNotEmpty).join('\n');
 
   /// The representation of all port declarations.
@@ -413,8 +418,8 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
       ].join(',\n');
 
   /// The full SV representation of this module.
-  String _toVerilog(Map<Module, String> moduleToInstanceTypeMap) {
-    final verilogModuleName = moduleToInstanceTypeMap[module];
+  String _toVerilog(String Function(Module module) getInstanceTypeOfModule) {
+    final verilogModuleName = getInstanceTypeOfModule(module);
     return [
       'module $verilogModuleName(',
       _portsString,
@@ -485,7 +490,22 @@ class _SynthSubModuleInstantiation {
   }
 
   /// A mapping of output port name to [_SynthLogic].
-  final Map<String, _SynthLogic> inOutMapping = {};
+  late final Map<String, _SynthLogic> inOutMapping =
+      UnmodifiableMapView(_inOutMapping);
+  final Map<String, _SynthLogic> _inOutMapping = {};
+
+  void setInOutMapping(String name, _SynthLogic synthLogic,
+      {bool replace = false}) {
+    // ignore: invalid_use_of_protected_member
+    assert(module.inOuts.containsKey(name),
+        'InOut $name not found in module ${module.name}.');
+    assert(
+        (replace && _inOutMapping.containsKey(name)) ||
+            !_inOutMapping.containsKey(name),
+        'A mapping already exists to this output: $name.');
+
+    _inOutMapping[name] = synthLogic;
+  }
 
   /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
@@ -787,9 +807,11 @@ class _SynthModuleDefinition {
           receiver.isInOut && (receiver.parentModule?.parent == module);
       if (receiverIsSubmoduleInOut) {
         final subModule = receiver.parentModule!;
-        final subModuleInstantiation =
-            _getSynthSubModuleInstantiation(subModule);
-        subModuleInstantiation.inOutMapping[receiver.name] = synthReceiver;
+
+        if (synthReceiver is! _SynthLogicArrayElement) {
+          _getSynthSubModuleInstantiation(subModule)
+              .setInOutMapping(receiver.name, synthReceiver);
+        }
 
         // ignore: invalid_use_of_protected_member
         logicsToTraverse.addAll(subModule.inOuts.values);
@@ -846,9 +868,40 @@ class _SynthModuleDefinition {
     // The order of these is important!
     _collapseAssignments();
     _assignSubmodulePortMapping();
-    _updateNetConnections();
+    // _updateNetConnections(); //TODO
+    _replaceNetConnections();
     _collapseChainableModules();
     _pickNames();
+  }
+
+  // TODO: doc, move?
+  final List<Module> supportingModules = [];
+
+  //TODO: doc
+  void _addNetConnect(_SynthLogic dst, _SynthLogic src) {
+    // make an (unconnected) module representing the assignment
+    final netConnect =
+        NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
+
+    // instantiate the module within the definition
+    _getSynthSubModuleInstantiation(netConnect)
+
+      // map inouts to the appropriate `_SynthLogic`s
+      ..setInOutMapping(NetConnect.n0Name, dst)
+      ..setInOutMapping(NetConnect.n1Name, src);
+
+    // notify the `SynthBuilder` that it needs declaration
+    supportingModules.add(netConnect);
+  }
+
+  void _replaceNetConnections() {
+    for (final assignment in assignments) {
+      if (assignment.src.isNet && assignment.dst.isNet) {
+        _addNetConnect(assignment.dst, assignment.src);
+      }
+    }
+    assignments.removeWhere(
+        (assignment) => assignment.src.isNet && assignment.dst.isNet);
   }
 
   //TODO doc
@@ -876,11 +929,11 @@ class _SynthModuleDefinition {
     }
 
     //TODO KEEP
-    // assert(
-    //     assignments.firstWhereOrNull(
-    //             (element) => element.src.isNet && element.dst.isNet) ==
-    //         null,
-    //     'No assignments should remain between nets.');
+    assert(
+        assignments.firstWhereOrNull(
+                (element) => element.src.isNet && element.dst.isNet) ==
+            null,
+        'No assignments should remain between nets.');
 
     // now clear out any internal signals not used by any assignment or
     // submodule anymore
@@ -927,8 +980,9 @@ class _SynthModuleDefinition {
       // ignore: invalid_use_of_protected_member
       for (final inOutName in submoduleInstantiation.module.inOuts.keys) {
         final orig = submoduleInstantiation.inOutMapping[inOutName]!;
-        submoduleInstantiation.inOutMapping[inOutName] =
-            orig.replacement ?? orig;
+        submoduleInstantiation.setInOutMapping(
+            inOutName, orig.replacement ?? orig,
+            replace: true);
       }
     }
   }
@@ -1242,6 +1296,9 @@ class _SynthLogic {
     _replacement?.replacement = newReplacement;
     _replacement = newReplacement;
   }
+
+  /// The width of any/all of the [logics].
+  int get width => logics.first.width;
 
   _SynthLogic? _replacement;
 

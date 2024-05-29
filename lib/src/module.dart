@@ -428,7 +428,8 @@ abstract class Module {
           !isInput(signal) &&
           !isInOut(signal) &&
           subModule == null) {
-        _addInternalSignal(signal);
+        _addInternalSignal(
+            signal); //TODO: feels like we're missing one of these for nets somewhere?
       }
 
       if (!dontAddSignal && isInput(signal)) {

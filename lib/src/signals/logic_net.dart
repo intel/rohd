@@ -6,24 +6,27 @@ part of 'signals.dart';
 
 //TODO: DO NOT EXPOSE - removable!
 // TODO: rename
+//TODO: make private within SV gen code only
 class NetConnect extends Module with SystemVerilog {
   static const String _definitionName = 'net_connect';
 
   final int width;
 
-  //TODO: make these names based on a and b names
-  late final String _aName = Naming.unpreferredName('a');
-  late final String _bName = Naming.unpreferredName('b');
+  @override
+  bool get hasBuilt => true; //TODO: is this ok?
 
-  NetConnect(LogicNet a, LogicNet b)
-      : assert(a.width == b.width, 'Widths must be equal.'),
-        width = a.width,
+  static final String n0Name = Naming.unpreferredName('n0');
+  static final String n1Name = Naming.unpreferredName('n1');
+
+  NetConnect(LogicNet n0, LogicNet n1)
+      : assert(n0.width == n1.width, 'Widths must be equal.'),
+        width = n0.width,
         super(
           definitionName: _definitionName,
           name: _definitionName,
         ) {
-    a = addInOut(_aName, a, width: width);
-    b = addInOut(_bName, b, width: width);
+    n0 = addInOut(n0Name, n0, width: width);
+    n1 = addInOut(n1Name, n1, width: width);
   }
 
   //TODO: override unique instance name?
@@ -36,7 +39,7 @@ class NetConnect extends Module with SystemVerilog {
     return '$instanceType'
         ' #(.WIDTH($width))'
         ' $instanceName'
-        ' (${ports[_aName]}, ${ports[_bName]});';
+        ' (${ports[n0Name]}, ${ports[n1Name]});';
   }
 
   @override
@@ -133,7 +136,7 @@ class LogicNet extends Logic {
 
       if (parentModule is! NetConnect) {
         //TODO: hacky?
-        NetConnect(this, other);
+        // NetConnect(this, other);
       }
     } else {
       (_wire as _WireNet)._addDriver(other);

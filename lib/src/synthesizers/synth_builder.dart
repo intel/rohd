@@ -53,10 +53,10 @@ class SynthBuilder {
 
     // go backwards to start from the bottom (...now we're here)
     // critical to go in this order for caching to work properly
-    for (final module in modulesToParse.reversed) {
-      if (synthesizer.generatesDefinition(module)) {
-        _getInstanceType(module);
-      }
+    for (final module
+        in modulesToParse.reversed.where(synthesizer.generatesDefinition)) {
+      // synthesizer.synthesize(module, _getInstanceType); //TODO: review this for loop's construction
+      _getInstanceType(module); //TODO: is this line necessary?
     }
   }
 
@@ -72,13 +72,16 @@ class SynthBuilder {
   /// If another [Module] is equivalent (as determined by comparing the
   /// [SynthesisResult]s), they will both get the same name.
   String _getInstanceType(Module module) {
+    if (!synthesizer.generatesDefinition(module)) {
+      return '*NONE*'; //TODO: is this right?
+    }
+
     if (_moduleToInstanceTypeMap.containsKey(module)) {
       return _moduleToInstanceTypeMap[module]!;
     }
     var newName = module.definitionName;
 
-    final newSynthesisResult =
-        synthesizer.synthesize(module, _moduleToInstanceTypeMap);
+    final newSynthesisResult = synthesizer.synthesize(module, _getInstanceType);
     if (_synthesisResults.contains(newSynthesisResult)) {
       // a name for this module already exists
       newName = _moduleToInstanceTypeMap[
@@ -93,6 +96,10 @@ class SynthBuilder {
         'Module definition names should be sanitary.');
 
     _moduleToInstanceTypeMap[module] = newName;
+
+    // add any required supporting modules to be synthesized
+    newSynthesisResult.supportingModules?.forEach(_getInstanceType);
+
     return newName;
   }
 }

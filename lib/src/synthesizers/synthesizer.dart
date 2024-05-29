@@ -16,8 +16,9 @@ abstract class Synthesizer {
   /// described in-line.
   bool generatesDefinition(Module module);
 
-  /// Synthesizes [module] into a [SynthesisResult], given the mapping in
-  /// [moduleToInstanceTypeMap].
+  /// Synthesizes [module] into a [SynthesisResult], given the mapping provided
+  /// by [getInstanceTypeOfModule].
   SynthesisResult synthesize(
-      Module module, Map<Module, String> moduleToInstanceTypeMap);
+      Module module, String Function(Module module) getInstanceTypeOfModule);
+  //TODO: update changelog with details about breaking changes here (and down the stack)
 }
