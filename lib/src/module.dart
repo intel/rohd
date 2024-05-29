@@ -10,11 +10,9 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -70,7 +68,9 @@ abstract class Module {
   Map<String, Logic> get outputs =>
       UnmodifiableMapView<String, Logic>(_outputs);
 
-  @protected //TODO: doc
+  /// A map from [inOut] port names to this [Module] to corresponding [Logic]
+  /// signals.
+  @protected
   Map<String, Logic> get inOuts => UnmodifiableMapView<String, Logic>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
@@ -96,7 +96,7 @@ abstract class Module {
         ...internalSignals,
       ]);
 
-  /// Accesses the [Logic] associated with this [Module]s input port
+  /// Accesses the [Logic] associated with this [Module]s [input] port
   /// named [name].
   ///
   /// Only logic within this [Module] should consume this signal.
@@ -122,19 +122,22 @@ abstract class Module {
       : throw PortDoesNotExistException(
           'Output name "$name" not found as an output of this Module.');
 
+  /// Provides the [output] named [name] if it exists, otherwise `null`.
+  Logic? tryOutput(String name) => _outputs[name];
+
+  /// Accesses the [Logic] associated with this [Module]s inOut port
+  /// named [name].
+  ///
+  /// Only logic within this [Module] should consume this signal.
   @protected
   Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
           'InOut name "$name" not found as an in/out of this Module.');
 
-  //TODO: doc
-  //TODO: test
+  /// Provides the [inOut] named [name] if it exists, otherwise `null`.
   @protected
   Logic? tryInOut(String name) => _inOuts[name];
-
-  /// Provides the [output] named [name] if it exists, otherwise `null`.
-  Logic? tryOutput(String name) => _outputs[name];
 
   /// Returns true iff [signal] is the same [Logic] as the [input] port of this
   /// [Module] with the same name.
@@ -280,7 +283,6 @@ abstract class Module {
           reserved: module.reserveName);
     }
 
-    //TODO: check benchmarks on perf hit for this, should be low
     _checkValidHierarchy(visited: {});
 
     _hasBuilt = true;

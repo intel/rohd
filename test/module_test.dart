@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_test.dart
@@ -13,12 +13,17 @@ import 'package:test/test.dart';
 class ModuleWithMaybePorts extends Module {
   Logic? get i => tryInput('i');
   Logic? get o => tryOutput('o');
-  ModuleWithMaybePorts({required bool addIn, required bool addOut}) {
+  Logic? get io => tryInOut('io');
+  ModuleWithMaybePorts(
+      {bool addIn = false, bool addOut = false, bool addIo = false}) {
     if (addIn) {
       addInput('i', Logic());
     }
     if (addOut) {
       addOutput('o');
+    }
+    if (addIo) {
+      addInOut('io', LogicNet());
     }
   }
 }
@@ -58,23 +63,33 @@ class MultipleLocation extends Module {
 
 void main() {
   test('tryInput, exists', () {
-    final mod = ModuleWithMaybePorts(addIn: true, addOut: false);
+    final mod = ModuleWithMaybePorts(addIn: true);
     expect(mod.i, isNotNull);
   });
 
   test('tryInput, doesnt exist', () {
-    final mod = ModuleWithMaybePorts(addIn: false, addOut: false);
+    final mod = ModuleWithMaybePorts();
     expect(mod.i, null);
   });
 
   test('tryOutput, exists', () {
-    final mod = ModuleWithMaybePorts(addIn: false, addOut: true);
+    final mod = ModuleWithMaybePorts(addOut: true);
     expect(mod.o, isNotNull);
   });
 
   test('tryOutput, doesnt exist', () {
-    final mod = ModuleWithMaybePorts(addIn: false, addOut: false);
+    final mod = ModuleWithMaybePorts();
     expect(mod.o, null);
+  });
+
+  test('tryInOut, exists', () {
+    final mod = ModuleWithMaybePorts(addIo: true);
+    expect(mod.io, isNotNull);
+  });
+
+  test('tryInOut, doesnt exist', () {
+    final mod = ModuleWithMaybePorts();
+    expect(mod.io, null);
   });
 
   test('self-containing hierarchy', () async {
