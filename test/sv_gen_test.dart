@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class AlphabeticalModule extends Module {
@@ -149,6 +150,44 @@ assign my_fancy_new_signal <= ^${ports['fer_swizzle']};
 ''';
 }
 
+class CustomDefinitionModule extends Module with SystemVerilog {
+  late final Logic b;
+  CustomDefinitionModule(Logic a) {
+    a = addInput('a', a);
+    b = addOutput('b')..gets(a);
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> ports) =>
+      SystemVerilogSynthesizer.instantiationVerilogFor(
+        module: this,
+        instanceType: instanceType,
+        instanceName: instanceName,
+        ports: ports,
+        forceStandardInstantiation: true,
+      );
+
+  @override
+  String? definitionVerilog(String definitionType) => '''
+module $definitionType (
+  input logic a,
+  output logic b
+);
+// this is a custom definition!
+assign b = a;
+endmodule
+''';
+}
+
+class TopWithCustomDef extends Module {
+  TopWithCustomDef(Logic a) {
+    a = addInput('a', a);
+    final sub = CustomDefinitionModule(a);
+    addOutput('b') <= sub.b;
+  }
+}
+
 void main() {
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
@@ -247,5 +286,22 @@ void main() {
         });
       }
     }
+  });
+
+  test('custom definition', () async {
+    final mod = TopWithCustomDef(Logic());
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('module CustomDefinitionModule ('));
+    expect(sv, contains('// this is a custom definition!'));
+
+    final vectors = [
+      Vector({'a': 1}, {'b': 1}),
+      Vector({'a': 0}, {'b': 0}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }

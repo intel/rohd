@@ -48,10 +48,16 @@ class SystemVerilogSynthesizer extends Synthesizer {
       if (module is SystemVerilog) {
         //TODO: test this path
         return module.instantiationVerilog(
-          instanceType,
-          instanceName,
-          ports,
-        );
+              instanceType,
+              instanceName,
+              ports,
+            ) ??
+            instantiationVerilogFor(
+                module: module,
+                instanceType: instanceType,
+                instanceName: instanceName,
+                ports: ports,
+                forceStandardInstantiation: true);
       }
       // ignore: deprecated_member_use_from_same_package
       else if (module is CustomSystemVerilog) {
@@ -174,7 +180,11 @@ mixin SystemVerilog on Module {
   /// been overridden.  [ports] is a mapping from the [Module]'s port names to
   /// the names of the signals that are passed into those ports in the generated
   /// SystemVerilog.
-  String instantiationVerilog(
+  ///
+  /// If a standard instantiation is desired, either return `null` or use
+  /// [SystemVerilogSynthesizer.instantiationVerilogFor] with
+  /// `forceStandardInstantiation` set to `true`.
+  String? instantiationVerilog(
     String instanceType,
     String instanceName,
     Map<String, String> ports,
@@ -186,11 +196,12 @@ mixin SystemVerilog on Module {
   @protected
   final List<String> expressionlessInputs = const []; //TODO: test this new one
 
-  //TODO: doc
-  /// If `null`, no definition generated...
-  /// must consistently generate the same thing (whats the word for that? isosomething)
+  /// A custom SystemVerilog definition to be produced for this [Module].
+  ///
+  /// If `null` is returned, then no definition will be generated. Otherwise,
+  /// this function should be a pure function, i.e. it should have no side
+  /// effects and always return the same thing for the same inputs.
   String? definitionVerilog(String definitionType) => null;
-  //TODO: this seems dangerous, can't check for name conflicts with name of module...?
 
   //TODO
   bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;

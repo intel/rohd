@@ -735,7 +735,6 @@ abstract class Module {
     return outArr;
   }
 
-  // TODO test
   // TODO doc
   @protected
   LogicArray addInOutArray(
