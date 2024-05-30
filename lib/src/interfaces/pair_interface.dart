@@ -24,7 +24,6 @@ enum PairDirection {
   /// Signals that are inputs to both components in the pair.
   sharedInputs,
 
-  //TODO: test (incl hierarchical)
   /// Signals that are inOuts for both components in the pair.
   commonInOuts,
 }
@@ -80,7 +79,6 @@ class PairInterface extends Interface<PairDirection> {
           .getPorts({tag})
           .entries
           .map((e) {
-            //TODO: test all these combinations
             final p = e.value;
             final name = e.key;
             switch (p) {

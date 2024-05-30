@@ -46,7 +46,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
       if (module is SystemVerilog) {
-        //TODO: test this path
         return module.instantiationVerilog(
               instanceType,
               instanceName,
@@ -61,7 +60,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
       }
       // ignore: deprecated_member_use_from_same_package
       else if (module is CustomSystemVerilog) {
-        //TODO: test this path
         return module.instantiationVerilog(
           instanceType,
           instanceName,
@@ -147,8 +145,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
 /// injected in generated output instead of instantiating a separate `module`.
-//TODO: update docs with new recommendations
-//TODO: make sure test cover both old and new version
+//TODO: update docs with new recommendations (in user guide too)
 @Deprecated('Use `SystemVerilog` instead')
 mixin CustomSystemVerilog on Module {
   /// Generates custom SystemVerilog to be injected in place of a `module`
@@ -166,7 +163,7 @@ mixin CustomSystemVerilog on Module {
   /// expressions (including constants) in-lined into them. Only signal names
   /// will be fed into these.
   @protected
-  final List<String> expressionlessInputs = const []; //TODO: test this old one
+  final List<String> expressionlessInputs = const [];
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
@@ -194,7 +191,7 @@ mixin SystemVerilog on Module {
   /// expressions (including constants) in-lined into them. Only signal names
   /// will be fed into these.
   @protected
-  final List<String> expressionlessInputs = const []; //TODO: test this new one
+  final List<String> expressionlessInputs = const [];
 
   /// A custom SystemVerilog definition to be produced for this [Module].
   ///
@@ -254,7 +251,6 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 }
 
 //TODO: doc
-// TODO: test generically that this works
 class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   _SystemVerilogCustomDefinitionSynthesisResult(
       super.module, super.getInstanceTypeOfModule)
@@ -544,6 +540,7 @@ class _SynthSubModuleInstantiation {
   }
 }
 
+//TODO: doc
 class _NetConnect extends Module with SystemVerilog {
   static const String _definitionName = 'net_connect';
 
