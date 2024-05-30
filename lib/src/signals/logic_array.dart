@@ -41,8 +41,6 @@ class LogicArray extends LogicStructure {
   /// as a hint for [Synthesizer]s.
   final int numUnpackedDimensions;
 
-  //TODO: do we need net arrays? inout arrays? i think so...
-
   /// Creates an array with specified [dimensions] and [elementWidth] named
   /// [name].
   ///

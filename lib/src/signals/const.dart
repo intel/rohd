@@ -24,14 +24,4 @@ class Const extends Logic {
     _wire.put(val, fill: fill, signalName: name);
     _unassignable = true;
   }
-
-  ///TODO
-  @override
-  void put(dynamic val, {bool fill = false}) =>
-      throw Exception(); //TODO (and doc)
-
-  ///TODO
-  @override
-  void inject(dynamic val, {bool fill = false}) =>
-      throw Exception(); //TODO (and doc)
 }

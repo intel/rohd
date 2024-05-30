@@ -367,22 +367,10 @@ abstract class Module {
       return;
     }
 
-    //TODO: can we go back?
     if (!signal.isPort && signal.parentModule != null) {
       // we've already parsed down this path
       return;
     }
-
-    // if (_hasParsedFromInput.contains(signal)) {
-    //   return;
-    // }
-    // _hasParsedFromInput.add(signal);
-
-    // if (signal is LogicStructure && !isPort(signal)) {
-    //   for (final subSignal in signal.elements) {
-    //     await _traceInputForModuleContents(subSignal);
-    //   }
-    // }
 
     final subModule =
         (signal.isInput || signal.isInOut) ? signal.parentModule : null;
@@ -451,7 +439,6 @@ abstract class Module {
         await _traceInputForModuleContents(dstConnection);
       }
 
-      //TODO: is this needed?
       if (signal.isNet && !isPort(signal)) {
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
@@ -467,10 +454,6 @@ abstract class Module {
     }
   }
 
-  //TODO: these shouldnt need to be split
-  final Set<Logic> _hasParsedFromInput = {};
-  final Set<Logic> _hasParsedFromOutput = {};
-
   /// Searches for [Logic]s and [Module]s within this [Module] from its outputs.
   Future<void> _traceOutputForModuleContents(Logic signal,
       {bool dontAddSignal = false}) async {
@@ -483,17 +466,6 @@ abstract class Module {
       // we've already parsed down this path
       return;
     }
-
-    // if (_hasParsedFromOutput.contains(signal)) {
-    //   return;
-    // }
-    // _hasParsedFromOutput.add(signal);
-
-    // if (signal is LogicStructure && !isPort(signal)) {
-    //   for (final subSignal in signal.elements) {
-    //     await _traceOutputForModuleContents(subSignal);
-    //   }
-    // }
 
     final subModule =
         (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
@@ -546,7 +518,6 @@ abstract class Module {
         }
       }
 
-      //TODO: is this needed?
       if (signal.isNet && !isPort(signal)) {
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {

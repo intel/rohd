@@ -11,8 +11,6 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
-//TODO: inout in interface and ports
-
 /// Represents a logical interface to a [Module].
 ///
 /// Interfaces make it easier to define port connections of a [Module]

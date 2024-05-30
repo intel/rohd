@@ -525,18 +525,19 @@ class _SynthSubModuleInstantiation {
     if (!needsDeclaration) {
       return null;
     }
-    return SystemVerilogSynthesizer.instantiationVerilogWithParameters(
-      module,
-      instanceType,
-      name,
-      _moduleInputsMap(),
-      outputMapping.map((name, synthLogic) => MapEntry(
-          name, // port name guaranteed to match
-          synthLogic.name)),
-      inOuts: inOutMapping.map((name, synthLogic) => MapEntry(
-          name, // port name guaranteed to match
-          synthLogic.name)),
-    );
+    return SystemVerilogSynthesizer.instantiationVerilogFor(
+        module: module,
+        instanceType: instanceType,
+        instanceName: name,
+        ports: {
+          ..._moduleInputsMap(),
+          ...outputMapping.map((name, synthLogic) => MapEntry(
+              name, // port name guaranteed to match
+              synthLogic.name)),
+          ...inOutMapping.map((name, synthLogic) => MapEntry(
+              name, // port name guaranteed to match
+              synthLogic.name)),
+        });
   }
 }
 
@@ -1143,29 +1144,6 @@ class _SynthModuleDefinition {
                 ..add(kept);
             }
           }
-
-          //TODO
-          // if (src.isNet && dst.isNet) {
-          //   // if we've eliminated an assignment between nets, then remove the
-          //   // net connection as well
-          //   for (final logicNet in src.logics) {
-          //     for (final dstConnection in logicNet.dstConnections) {
-          //       if (dstConnection.isInOut &&
-          //           dstConnection.parentModule is NetConnect &&
-          //           dst.logics.contains(dstConnection
-          //               .parentModule!
-          //               // ignore: invalid_use_of_protected_member
-          //               .inOuts
-          //               .values
-          //               .where((element) => element != dstConnection)
-          //               .first
-          //               .srcConnection)) {
-          //         moduleToSubModuleInstantiationMap[dstConnection.parentModule]!
-          //             .clearDeclaration();
-          //       }
-          //     }
-          //   }
-          // }
         } else if (assignment.src.isFloatingConstant) {
           internalSignals.remove(assignment.src);
         } else {
@@ -1177,22 +1155,6 @@ class _SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
-
-    // create net assignments to replace normal assignments
-    // final nonNetAssignments = <_SynthAssignment>[];
-    // for (final assignment in assignments) {
-    //   if (assignment.src.isNet && assignment.dst.isNet) {
-    //     _getSynthSubModuleInstantiation(NetConnect(
-    //       assignment.dst.logics.first as LogicNet,
-    //       assignment.src.logics.first as LogicNet,
-    //     ));
-    //   } else {
-    //     nonNetAssignments.add(assignment);
-    //   }
-    // }
-    // assignments
-    //   ..clear()
-    //   ..addAll(nonNetAssignments);
 
     // update the look-up table post-merge
     logicToSynthMap.clear();
