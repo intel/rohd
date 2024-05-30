@@ -47,6 +47,22 @@ class MaybePortInterface extends Interface<MyDirection> {
   }
 }
 
+class BadNetInterface extends Interface<MyDirection> {
+  BadNetInterface() {
+    setPorts([Port('p')], [MyDirection.dir1]);
+    setPorts([LogicArray.port('a')], [MyDirection.dir2]);
+  }
+}
+
+class BadNetModule extends Module {
+  BadNetModule({bool badPort = false, bool badArr = false}) {
+    BadNetInterface().connectIO(this, BadNetInterface(), inOutTags: {
+      if (badPort) MyDirection.dir1,
+      if (badArr) MyDirection.dir2,
+    });
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -65,6 +81,18 @@ void main() {
     expect(() async {
       UncleanPortInterface();
     }, throwsException);
+  });
+
+  group('bad net args intf', () {
+    test('port', () {
+      expect(
+          () => BadNetModule(badPort: true), throwsA(isA<PortTypeException>()));
+    });
+
+    test('array', () {
+      expect(
+          () => BadNetModule(badArr: true), throwsA(isA<PortTypeException>()));
+    });
   });
 
   group('maybe port', () {

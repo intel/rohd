@@ -126,10 +126,12 @@ class Interface<TagType> {
       for (final port in getPorts(inOutTags).values) {
         if (port is LogicArray) {
           if (!port.isNet) {
-            throw Exception('only nets can be inouts'); //TODO
+            throw PortTypeException(
+                port, 'LogicArray nets must be used for inOut array ports.');
           }
         } else if (port is! LogicNet) {
-          throw Exception('only nets can be inouts'); //TODO
+          throw PortTypeException(
+              port, 'LogicNet must be used for inOut ports.');
         }
 
         port <=
