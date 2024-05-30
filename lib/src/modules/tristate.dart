@@ -35,8 +35,8 @@ class TriStateBuffer extends Module with SystemVerilog {
     addInput(_inName, in_, width: in_.width);
     addInput(_enableName, enable);
 
-    out = LogicNet(width: in_.width)..gets(_outDriver);
-    addInOut(_outName, out, width: in_.width);
+    out = LogicNet(width: in_.width);
+    addInOut(_outName, out, width: in_.width) <= _outDriver;
 
     _setup();
   }

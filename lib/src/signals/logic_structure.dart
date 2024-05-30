@@ -562,12 +562,10 @@ class LogicStructure implements Logic {
   // TODO
   bool get isNet => false;
 
-  //TODO: is this ok to keep?
-  //TODO: convert to set?
-  /// Provides a list of all source connections of all elements within
-  /// this structure, recursively.
-  ///
-  /// Useful for searching during [Module] build.
+  @override
   Iterable<Logic> get srcConnections =>
       {for (final element in elements) ...element.srcConnections}.toList();
+
+  @override
+  List<Logic> get _srcConnections => throw UnsupportedError('Unnecessary');
 }

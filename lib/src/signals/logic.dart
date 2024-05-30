@@ -215,8 +215,10 @@ class Logic {
   /// nothing (if no driver), or one element equal to [srcConnection]. If there
   /// are multiple drivers (e.g. this is an instance of a special type/subclass
   /// of [Logic]), then there may be multiple drivers.
-  Iterable<Logic> get srcConnections =>
-      [if (srcConnection != null) srcConnection!];
+  late final Iterable<Logic> srcConnections =
+      UnmodifiableListView(_srcConnections);
+  // [if (srcConnection != null) srcConnection!];
+  late final List<Logic> _srcConnections = [];
 
   /// Returns true iff this signal is an input, output, or inOut of its parent
   /// [Module].
@@ -339,6 +341,7 @@ class Logic {
       _updateWire(other._wire);
     }
     _srcConnection = other;
+    _srcConnections.add(other);
   }
 
   /// Updates the current active [_Wire] for this [Logic] and also

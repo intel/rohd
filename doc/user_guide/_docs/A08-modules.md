@@ -8,24 +8,21 @@ toc: true
 
 [`Module`](https://intel.github.io/rohd/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
 
-1. All logic within a `Module` must consume only inputs (from the `input` or `addInput` methods) to the Module either directly or indirectly.
-2. Any logic outside of a `Module` must consume the signals only via outputs (from the `output` or `addOutput` methods) of the Module.
-3. Logic must be defined *before* the call to `super.build()`.
-
-**Note:** inouts (from the `inOut` or `addInOut` methods) can be treated as either an input or an output when following these rules.  
-**Note:** corresponding functions for creating `LogicArray` ports follow the same rules.
+1. Inputs and inOuts (from `input`, `addInput`, `inOut` or `addInOut` methods, or their array equivalents) return *internal* copies of ports that should be used inside a `Module`.  Signals should not be consumed directly from outside a `Module`.  Internal module logic should consume the internal versions.  Logic outside the `Module` can drive to (or receive from, in the case of inOut) that `Module` only through the external copies, i.e. arguments passed to `addInput`, `addInOut`, etc.
+2. Outputs (from `output` or `addOutput`, or their array equivalents) are the only way logic outside of a `Module` can consume signals from that `Module`.  There are no internal vs. external versions of `output`s, so they may be consumed inside of `Module`s as well.
+3. All logic must be defined *before* the call to `super.build()`.  Logic should not be further defined after build.
 
 The reasons for these rules have to do with how ROHD is able to determine which logic and `Module`s exist within a given Module and how ROHD builds connectivity.  If these rules are not followed, generated outputs (including waveforms and SystemVerilog) may be unpredictable.
 
-You should strive to build logic within the constructor of your `Module` (directly or via method calls within the constructor).  This way any code can utilize your `Module` immediately after creating it.  **Be careful** to consume the registered `input`s and drive the registered `output`s of your module, and not the "raw" arguments passed to the constructor.
+You should strive to build logic within the constructor of your `Module` (directly or via method calls within the constructor).  This way any code can utilize your `Module` immediately after creating it.  **Be careful** to consume the registered `input`s and drive the registered `output`s of your module, and not the "raw" external arguments passed to the constructor.
 
 It is legal to put logic within an override of the `build` function, but that forces users of your module to always call `build` before it will be functionally usable for simple simulation.  If you put logic in `build()`, ensure you put the call to `super.build()` *at the end* of the method.
 
-Note that the `build()` method returns a `Future<void>`, not just `void`.  This is because the `build()` method is permitted to consume real wall clock time in some cases, for example for setting up cosimulation with another simulator.  If you expect your build to consume wall clock time, make sure the `build` completes before the simulation begins.
+Note that the `build()` method returns a `Future<void>`, not just `void`.  This is because the `build()` method is permitted to consume real wall clock time in some cases, for example for setting up cosimulation with another simulator.  Make sure the `build` completes before the simulation begins.
 
-It is not necessary to put all logic directly within a class that extends Module.  You can put synthesizable logic in other functions and classes, as long as the logic eventually connects to an input or output of a module if you hope to convert it to SystemVerilog.  Except where there is a desire for the waveforms and SystemVerilog generated to have equivalent module hierarchy, it is not necessary to use submodules within modules instead of plain classes or functions.
+It is not necessary to put all logic directly within a class that extends Module.  You can put synthesizable logic in other functions and classes, as long as the logic eventually connects to an input or output of a module if you hope to convert it to SystemVerilog.  Except where there is a desire for the debug hierarchy, waveforms, SystemVerilog generated, etc. to have equivalent module hierarchy, it is not necessary to use submodules within modules instead of plain classes or functions.
 
-The `Module` base class has an optional String argument 'name' which is an instance name.
+The `Module` base class has an optional String argument `name` which is an instance name.
 
 `Module`s have the below basic structure:
 

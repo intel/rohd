@@ -43,11 +43,6 @@ class LogicNet extends Logic {
   @override
   bool get isNet => true;
 
-  @override
-  late final Iterable<Logic> srcConnections =
-      UnmodifiableListView(_srcConnections);
-  final Set<Logic> _srcConnections = {};
-
   LogicNet({super.name, super.width, super.naming})
       : super._(wire: _WireNet(width: width));
 

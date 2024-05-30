@@ -416,12 +416,14 @@ abstract class Module {
           !isInput(signal) &&
           !isInOut(signal) &&
           subModule == null) {
-        _addInternalSignal(
-            signal); //TODO: feels like we're missing one of these for nets somewhere?
+        _addInternalSignal(signal);
       }
 
       if (!dontAddSignal && isInput(signal)) {
-        throw Exception('Input $signal of module $this is dependent on'
+        throw PortRulesViolationException(
+            this,
+            signal.name,
+            'Input $signal of module $this is dependent on'
             ' another input of the same module.');
       }
 
@@ -439,6 +441,7 @@ abstract class Module {
         await _traceInputForModuleContents(dstConnection);
       }
 
+      // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
@@ -461,7 +464,6 @@ abstract class Module {
       return;
     }
 
-    //TODO: can we go back to this method of parent module determination?
     if (!signal.isPort && signal.parentModule != null) {
       // we've already parsed down this path
       return;
@@ -475,7 +477,6 @@ abstract class Module {
     if (!dontAddSignal && signal.isInput) {
       // somehow we have reached the input of a module which is not a submodule
       // nor this module, bad!
-      //TODO: update this message and docs about inouts!
       throw PortRulesViolationException(this, signal.toString());
     }
 
@@ -518,6 +519,7 @@ abstract class Module {
         }
       }
 
+      // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
@@ -526,19 +528,13 @@ abstract class Module {
         }
         for (final dstConnection
             in signal.dstConnections.where((element) => element.isNet)) {
-          //TODO: why not all dst?
           await _traceOutputForModuleContents(dstConnection);
           await _traceInputForModuleContents(dstConnection);
         }
       }
 
-      // TODO: why can't we just always iterate across all srcConnections here?
-      if (signal is LogicStructure) {
-        for (final srcConnection in signal.srcConnections) {
-          await _traceOutputForModuleContents(srcConnection);
-        }
-      } else if (signal.srcConnection != null) {
-        await _traceOutputForModuleContents(signal.srcConnection!);
+      for (final srcConnection in signal.srcConnections) {
+        await _traceOutputForModuleContents(srcConnection);
       }
     }
   }
