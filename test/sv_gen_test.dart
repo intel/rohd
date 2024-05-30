@@ -158,15 +158,9 @@ class CustomDefinitionModule extends Module with SystemVerilog {
   }
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
+  String? instantiationVerilog(String instanceType, String instanceName,
           Map<String, String> ports) =>
-      SystemVerilogSynthesizer.instantiationVerilogFor(
-        module: this,
-        instanceType: instanceType,
-        instanceName: instanceName,
-        ports: ports,
-        forceStandardInstantiation: true,
-      );
+      null;
 
   @override
   String? definitionVerilog(String definitionType) => '''
