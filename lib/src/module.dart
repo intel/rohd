@@ -568,7 +568,7 @@ abstract class Module {
   /// Registers a signal as an input to this [Module] and returns an input port
   /// that can be consumed.
   ///
-  /// The return value is the same as what is returned by [input()].
+  /// The return value is the same as what is returned by [input].
   @protected
   Logic addInput(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
@@ -591,23 +591,22 @@ abstract class Module {
     return inPort;
   }
 
-  /// TODO
   /// A set of signals that drive [inOut]s from *outside* this [Module].
+  ///
+  /// This is necessary to keep track when tracing since these are
+  /// bidirectional.
   final Set<Logic> _inOutDrivers = {};
 
-  //TODO: is it important that `x` here is a LogicNet? what about for arrays?
-  // TODO: the `x` must be the port to the *outside* world, and the returned
-  //  signal from `addInOut` or `inOut` is what should be used inside!
+  /// Registers a signal as an inOut to this [Module] and returns an inOut port
+  /// that can be consumed.
+  ///
+  /// The return value is the same as what is returned by [inOut].
   @protected
   LogicNet addInOut(String name, Logic x, {int width = 1}) {
     _checkForSafePortName(name);
     if (x.width != width) {
       throw PortWidthMismatchException(x, width);
     }
-
-    //TODO: is x really necessary?
-    // how can we tell if an inout is being driven from inside or outside of a module???
-    // maybe we can trust that build() finds the *first* driver of it as external and then sets parentModule correctly?
 
     _inOutDrivers.add(x);
 
@@ -659,7 +658,7 @@ abstract class Module {
   /// Registers an output to this [Module] and returns an output port that
   /// can be driven.
   ///
-  /// The return value is the same as what is returned by [output()].
+  /// The return value is the same as what is returned by [output].
   @protected
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
@@ -702,7 +701,14 @@ abstract class Module {
     return outArr;
   }
 
-  // TODO doc
+  /// Registers and returns an inOut [LogicArray] port to this [Module] with
+  /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
+  /// named [name].
+  ///
+  /// This is very similar to [addInOut], except for [LogicArray]s.
+  ///
+  /// Performs validation on overall width matching for [x], but not on
+  /// [dimensions], [elementWidth], or [numUnpackedDimensions].
   @protected
   LogicArray addInOutArray(
     String name,
@@ -748,21 +754,6 @@ abstract class Module {
   String hierarchyString([int indent = 0]) {
     final padding = List.filled(indent, '  ').join();
     final hier = StringBuffer('$padding> ${toString()}');
-
-    //TODO TEMP
-    hier.writeln();
-    for (final s in inputs.values) {
-      hier.writeln('$padding>-  in: \t$s');
-    }
-    for (final s in outputs.values) {
-      hier.writeln('$padding>-  out:\t$s');
-    }
-    for (final s in inOuts.values) {
-      hier.writeln('$padding>-  inout:\t$s');
-    }
-    for (final s in internalSignals) {
-      hier.writeln('$padding>-  internal:\t$s');
-    }
 
     for (final module in _modules) {
       hier.write('\n${module.hierarchyString(indent + 1)}');
