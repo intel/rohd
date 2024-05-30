@@ -53,10 +53,10 @@ class PairInterface extends Interface<PairDirection> {
   /// The [modify] function will allow modification of all port names, in
   /// addition to the usual uniquification that can occur during [connectIO].
   PairInterface({
-    List<Port>? portsFromConsumer,
-    List<Port>? portsFromProvider,
-    List<Port>? sharedInputPorts,
-    List<Port>? commonInOutPorts,
+    List<Logic>? portsFromConsumer,
+    List<Logic>? portsFromProvider,
+    List<Logic>? sharedInputPorts,
+    List<Logic>? commonInOutPorts,
     this.modify,
   }) {
     if (portsFromConsumer != null) {
@@ -74,12 +74,28 @@ class PairInterface extends Interface<PairDirection> {
   }
 
   /// Collects ports on a given [interface] tagged with [tag].
-  static List<Port> _getMatchPorts(
+  static List<Logic> _getMatchPorts(
           Interface<PairDirection> interface, PairDirection tag) =>
       interface
           .getPorts({tag})
           .entries
-          .map((e) => Port(e.key, e.value.width))
+          .map((e) {
+            //TODO: test all these combinations
+            final p = e.value;
+            final name = e.key;
+            switch (p) {
+              case LogicArray():
+                return p.isNet
+                    ? LogicArray.netPort(name, p.dimensions, p.elementWidth,
+                        p.numUnpackedDimensions)
+                    : LogicArray.port(name, p.dimensions, p.elementWidth,
+                        p.numUnpackedDimensions);
+              case LogicNet():
+                return LogicNet.port(name, p.width);
+              default:
+                return Port(name, p.width);
+            }
+          })
           .toList();
 
   /// Creates a new instance of a [PairInterface] with the same ports other
@@ -92,6 +108,8 @@ class PairInterface extends Interface<PairDirection> {
               _getMatchPorts(otherInterface, PairDirection.fromProvider),
           sharedInputPorts:
               _getMatchPorts(otherInterface, PairDirection.sharedInputs),
+          commonInOutPorts:
+              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
           modify: otherInterface.modify,
         );
 
@@ -150,7 +168,10 @@ class PairInterface extends Interface<PairDirection> {
         nonNullUniquify(nonNullModify(original));
 
     super.connectIO(module, srcInterface,
-        inputTags: inputTags, outputTags: outputTags, uniquify: newUniquify);
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: newUniquify);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
