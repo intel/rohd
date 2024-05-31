@@ -64,7 +64,7 @@ class LogicArray extends LogicStructure {
         isNet: false,
       );
 
-  //TODO
+  @override
   final bool isNet;
 
   /// Creates an array of [LogicNet]s with specified [dimensions] and

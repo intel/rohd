@@ -1141,13 +1141,11 @@ class Case extends Conditional {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);
         }
-        //TODO: why execute? if foundMatch !=null?
+
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           _driveX(drivenSignals);
           return;
         }
-
-        //TODO: what if not isMatch, but is invalid?
 
         foundMatch = item;
 

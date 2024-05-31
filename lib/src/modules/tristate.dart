@@ -1,7 +1,15 @@
-//TODO: header
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// tristate.dart
+// A tri-state buffer.
+//
+// 2024 May 30
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 
+/// A tri-state buffer: can drive 0, 1, or leave the output floating.
 class TriStateBuffer extends Module with SystemVerilog {
   /// Name for the control signal of this mux.
   late final String _enableName;
@@ -21,7 +29,7 @@ class TriStateBuffer extends Module with SystemVerilog {
   /// The output of this gate (width is always 1).
   late final LogicNet out;
 
-  //TODO
+  /// An internal signal for the modelling logic to drive.
   final Logic _outDriver;
 
   /// Creates a tri-state buffer which drives [out] with [in_] if [enable] is

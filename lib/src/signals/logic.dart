@@ -230,11 +230,11 @@ class Logic {
 
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
-  /// The default value for [width] is 1.  The [name] should be synthesizable
-  /// to the desired output (e.g. SystemVerilog).
+  /// The default value for [width] is 1.  The [name] should be sanitary
+  /// (variable rules for languages such as SystemVerilog).
   ///
-  /// The [naming] and [name], if unspecified, are chosen based on the rules
-  /// in [Naming.chooseNaming] and [Naming.chooseName], respectively.
+  /// The [naming] and [name], if unspecified, are chosen based on the rules in
+  /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
   Logic({
     String? name,
     int width = 1,
@@ -245,10 +245,8 @@ class Logic {
           naming: naming,
         );
 
-  //TODO
-  factory Logic.net() => LogicNet();
-
-  //TODO doc
+  /// An internal constructor for [Logic] which additional provides access to
+  /// setting the [wire].
   Logic._({
     String? name,
     int width = 1,

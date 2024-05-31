@@ -559,7 +559,6 @@ class LogicStructure implements Logic {
       packed.selectFrom(busList, defaultValue: defaultValue);
 
   @override
-  // TODO
   bool get isNet => false;
 
   @override
