@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
@@ -242,9 +243,6 @@ abstract class SimCompare {
     }
   }
 
-  //TODO doc (and warning not to name signals same way that may conflict)
-  static String _toTbWireName(String name) => 'wire__$name';
-
   /// Executes [vectors] against the Icarus Verilog simulator.
   static bool iverilogVector(
     Module module,
@@ -262,7 +260,6 @@ abstract class SimCompare {
       return true;
     }
 
-    // TODO: doc, incl adjust
     String signalDeclaration(String signalName,
         {String Function(String original)? adjust,
         String? signalTypeOverride}) {
@@ -302,12 +299,17 @@ abstract class SimCompare {
       for (final v in vectors) ...v.expectedOutputValues.keys,
     };
 
+    late final tbWireUniquifier = Uniquifier();
+    late final alreadyMappedLogicToWires = <String, String>{};
+    String toTbWireName(String name) => alreadyMappedLogicToWires.putIfAbsent(
+        name, () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'));
+
     final logicToWireMapping = Map.fromEntries(vectors
         .map((v) => v.inputValues.keys)
         .flattened
         // ignore: invalid_use_of_protected_member
         .where((name) => module.tryInOut(name) != null)
-        .map((name) => MapEntry(name, _toTbWireName(name))));
+        .map((name) => MapEntry(name, toTbWireName(name))));
 
     final localDeclarations = [
       ...allSignals.map((e) {
@@ -321,7 +323,7 @@ abstract class SimCompare {
         final wireName = e.value;
 
         final sigDecl = signalDeclaration(logicName,
-            adjust: _toTbWireName, signalTypeOverride: 'wire');
+            adjust: toTbWireName, signalTypeOverride: 'wire');
         return '$sigDecl; assign $wireName = $logicName;';
       }),
     ].join('\n');
