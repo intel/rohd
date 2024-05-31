@@ -52,5 +52,10 @@ abstract class SynthesisResult {
   /// Generates what could go into a file
   String toFileContents();
 
+  /// If provided, a [List] of additional [Module]s that should be included in
+  /// the generated results.
+  ///
+  /// This is intended for cases where a supporting additional module
+  /// declaration is required for functionality of the generated output.
   List<Module>? get supportingModules => null;
 }

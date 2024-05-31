@@ -20,5 +20,4 @@ abstract class Synthesizer {
   /// by [getInstanceTypeOfModule].
   SynthesisResult synthesize(
       Module module, String Function(Module module) getInstanceTypeOfModule);
-  //TODO: update changelog with details about breaking changes here (and down the stack)
 }

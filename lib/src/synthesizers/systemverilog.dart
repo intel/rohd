@@ -145,7 +145,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
 /// injected in generated output instead of instantiating a separate `module`.
-//TODO: update docs with new recommendations (in user guide too)
 @Deprecated('Use `SystemVerilog` instead')
 mixin CustomSystemVerilog on Module {
   /// Generates custom SystemVerilog to be injected in place of a `module`
@@ -200,7 +199,10 @@ mixin SystemVerilog on Module {
   /// effects and always return the same thing for the same inputs.
   String? definitionVerilog(String definitionType) => null;
 
-  //TODO
+  /// Whether or not this [Module] generates a SystemVerilog definition.
+  ///
+  /// By default, this is automatically calculated by whether or not
+  /// [definitionVerilog] provides a definition.
   bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
 }
 
@@ -250,7 +252,8 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
 }
 
-//TODO: doc
+/// A [SynthesisResult] representing a [Module] that provides a custom
+/// SystemVerilog definition.
 class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   _SystemVerilogCustomDefinitionSynthesisResult(
       super.module, super.getInstanceTypeOfModule)
@@ -541,14 +544,21 @@ class _SynthSubModuleInstantiation {
   }
 }
 
-//TODO: doc
+/// A special [Module] for connecting or assigning two SystemVerilog nets
+/// together bidirectionally.
+///
+/// The `alias` keyword in SystemVerilog could alternatively work, but many
+/// tools do not support it, so this `module` definition is a convenient trick
+/// to accomplish the same thing in a tool-compatible way.
 class _NetConnect extends Module with SystemVerilog {
   static const String _definitionName = 'net_connect';
 
   final int width;
 
   @override
-  bool get hasBuilt => true; //TODO: is this ok?
+  bool get hasBuilt =>
+      // we force it to say it has built since it is being generated post-build
+      true;
 
   static final String n0Name = Naming.unpreferredName('n0');
   static final String n1Name = Naming.unpreferredName('n1');
@@ -563,8 +573,6 @@ class _NetConnect extends Module with SystemVerilog {
     n0 = addInOut(n0Name, n0, width: width);
     n1 = addInOut(n1Name, n1, width: width);
   }
-
-  //TODO: override unique instance name?
 
   @override
   String instantiationVerilog(
@@ -686,6 +694,10 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// A [List] of supporting modules that need to be instantiated within this
+  /// definition.
+  final List<Module> supportingModules = [];
+
   /// Creates a new definition representation for this [module].
   _SynthModuleDefinition(this.module)
       : _synthInstantiationNameUniquifier = Uniquifier(
@@ -766,22 +778,12 @@ class _SynthModuleDefinition {
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections
-        ].where((element) =>
-            element.parentModule == module ||
-            (element.isPort &&
-                element.parentModule!.parent ==
-                    module))); //TODO: is this right?
+        ].where((element) => element.parentModule == module));
 
-        // if (receiver.parentModule == module
-        //     /*||
-        //     (receiver.isInOut && receiver.parentModule?.parent == module)*/
-        //     ) {
         for (final srcConnection in receiver.srcConnections) {
           if (srcConnection.parentModule == module ||
-              ((srcConnection.isOutput || srcConnection.isInOut) &&
+              (srcConnection.isOutput &&
                   srcConnection.parentModule!.parent == module)) {
-            // logicsToTraverse.add(srcConnection);
-
             final netSynthDriver = _getSynthLogic(srcConnection)!;
 
             assignments.add(_SynthAssignment(
@@ -789,7 +791,6 @@ class _SynthModuleDefinition {
               synthReceiver,
             ));
           }
-          // }
         }
       }
 
@@ -847,9 +848,7 @@ class _SynthModuleDefinition {
           // ignore: invalid_use_of_protected_member
           ..addAll(subModule.inOuts.values);
       } else if (driver != null) {
-        if (!module.isInput(receiver) &&
-            //TODO is this right?
-            !module.isInOut(receiver)) {
+        if (!module.isInput(receiver) && !module.isInOut(receiver)) {
           // stop at the input to this module
           logicsToTraverse.add(driver);
           assignments.add(_SynthAssignment(synthDriver!, synthReceiver));
@@ -886,10 +885,8 @@ class _SynthModuleDefinition {
     _pickNames();
   }
 
-  // TODO: doc, move?
-  final List<Module> supportingModules = [];
-
-  //TODO: doc
+  /// Creates a new [_NetConnect] module to synthesize assignment between two
+  /// [LogicNet]s.
   void _addNetConnect(_SynthLogic dst, _SynthLogic src) {
     // make an (unconnected) module representing the assignment
     final netConnect =
@@ -906,7 +903,7 @@ class _SynthModuleDefinition {
     supportingModules.add(netConnect);
   }
 
-  //TODO: doc
+  /// Replace all [assignments] between two [LogicNet]s with a [_NetConnect].
   void _replaceNetConnections() {
     final reducedAssignments = <_SynthAssignment>[];
 
@@ -1118,8 +1115,6 @@ class _SynthModuleDefinition {
             'No circular assignment allowed between $dst and $src.');
 
         final mergedAway = _SynthLogic.tryMerge(dst, src);
-
-        //TODO: undriven wires should be deleted?
 
         if (mergedAway != null) {
           final kept = mergedAway == dst ? src : dst;
@@ -1417,15 +1412,6 @@ class _SynthLogic {
     assert(other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
-
-    //TODO: why is this assertion bad?
-    // assert(
-    //     other.logics.first.parentModule! == logics.first.parentModule! ||
-    //         (other.logics.first.parentModule!.subModules
-    //             .contains(logics.first.parentModule)) ||
-    //         (logics.first.parentModule!.subModules
-    //             .contains(other.logics.first.parentModule)),
-    //     'Merged signals should be near each other');
 
     _constNameDisallowed |= other._constNameDisallowed;
 
