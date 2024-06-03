@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
+// ignore_for_file: invalid_use_of_protected_member
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -16,18 +17,22 @@ enum MyDirection { dir1, dir2 }
 
 class MyModuleInterface extends Interface<MyDirection> {
   MyModuleInterface() {
-    setPorts([Port('p1')], [MyDirection.dir1]);
-    setPorts([Port('p2')], [MyDirection.dir2]);
+    setPorts([Port('p1'), LogicArray.port('p1arr')], [MyDirection.dir1]);
+    setPorts(
+        [LogicNet.port('p2'), LogicArray.netPort('p2arr')], [MyDirection.dir2]);
   }
 }
 
 class MyModule extends Module {
-  late final MyModuleInterface i1, i2;
   MyModule(MyModuleInterface i1, MyModuleInterface i2) {
-    this.i1 = MyModuleInterface()
-      ..connectIO(this, i1, uniquify: (oldName) => 'i1$oldName');
-    this.i2 = MyModuleInterface()
-      ..connectIO(this, i2, uniquify: (oldName) => 'i2$oldName');
+    MyModuleInterface().connectIO(this, i1,
+        uniquify: (oldName) => 'i1$oldName',
+        inOutTags: {MyDirection.dir2},
+        inputTags: {MyDirection.dir1});
+    MyModuleInterface().connectIO(this, i2,
+        uniquify: (oldName) => 'i2$oldName',
+        inOutTags: {MyDirection.dir2},
+        outputTags: {MyDirection.dir1});
   }
 }
 
@@ -72,8 +77,17 @@ void main() {
     test('get uniquified ports', () async {
       final m = MyModule(MyModuleInterface(), MyModuleInterface());
       await m.build();
-      expect(m.i1.getPorts({MyDirection.dir1}).length, 1);
-      expect(m.i2.getPorts({MyDirection.dir2}).length, 1);
+
+      expect(m.tryOutput('i2p1'), isNotNull);
+      expect(m.tryOutput('i2p1arr'), isNotNull);
+
+      expect(m.tryInput('i1p1'), isNotNull);
+      expect(m.tryInput('i1p1arr'), isNotNull);
+
+      expect(m.tryInOut('i1p2'), isNotNull);
+      expect(m.tryInOut('i1p2arr'), isNotNull);
+      expect(m.tryInOut('i2p2'), isNotNull);
+      expect(m.tryInOut('i2p2arr'), isNotNull);
     });
   });
 

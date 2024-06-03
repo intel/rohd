@@ -73,7 +73,7 @@ class Interface<TagType> {
   /// manipulating the original name of the port.
   ///
   /// If [inputTags], [outputTags], or [inOutTags] is not specified, then,
-  /// respectively, no inputs or outputs will be added.
+  /// respectively, no inputs, outputs, or inOuts will be added.
   void connectIO(Module module, Interface<dynamic> srcInterface,
       {Iterable<TagType>? inputTags,
       Iterable<TagType>? outputTags,
@@ -87,6 +87,7 @@ class Interface<TagType> {
             (port is LogicArray
                 // ignore: invalid_use_of_protected_member
                 ? module.addInputArray(
+                    //TODO Test uniquify on array ports (all 3 types)
                     uniquify(port.name),
                     srcInterface.port(port.name),
                     dimensions: port.dimensions,

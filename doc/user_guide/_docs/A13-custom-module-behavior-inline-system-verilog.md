@@ -2,7 +2,7 @@
 title: "Custom module behavior with custom in-line SystemVerilog representation"
 permalink: /docs/custom-module-behavior-inline-system-verilog/
 excerpt: "Custom module behavior with custom in-line SystemVerilog representation"
-last_modified_at: 2022-12-06
+last_modified_at: 2024-6-3
 toc: true
 ---
 

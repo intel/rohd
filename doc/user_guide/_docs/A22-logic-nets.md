@@ -1,7 +1,7 @@
 ---
 title: "Logic Nets, In/Outs, and Tri-state Buffers"
 permalink: /docs/logic-nets/
-last_modified_at: 2024-5-31
+last_modified_at: 2024-6-3
 toc: true
 ---
 
