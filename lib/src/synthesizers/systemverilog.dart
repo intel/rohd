@@ -553,6 +553,7 @@ class _SynthSubModuleInstantiation {
 class _NetConnect extends Module with SystemVerilog {
   static const String _definitionName = 'net_connect';
 
+  /// The width of the nets on this instance.
   final int width;
 
   @override
@@ -560,7 +561,10 @@ class _NetConnect extends Module with SystemVerilog {
       // we force it to say it has built since it is being generated post-build
       true;
 
+  /// The name of net 0.
   static final String n0Name = Naming.unpreferredName('n0');
+
+  /// The name of net 1.
   static final String n1Name = Naming.unpreferredName('n1');
 
   _NetConnect(LogicNet n0, LogicNet n1)

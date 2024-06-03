@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// net_test.dart
+// Tests for LogicNets, inOuts, and tristate buffers
+//
+// 2024 May
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -625,6 +634,6 @@ void main() {
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }
