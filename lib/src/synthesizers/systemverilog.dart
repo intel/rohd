@@ -921,8 +921,6 @@ class _SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
-
-    //TODO: deduplicate net assignments that aren't necessary?
   }
 
   /// Updates all sub-module instantiations with information about which
