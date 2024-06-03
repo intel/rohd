@@ -784,17 +784,3 @@ abstract class Module {
             .join('\n\n////////////////////\n\n');
   }
 }
-
-// extension _ModuleLogicStructureUtils on LogicStructure {
-//   /// Provides a list of all source connections of all elements within
-//   /// this structure, recursively.
-//   ///
-//   /// Useful for searching during [Module] build.
-//   Iterable<Logic> get srcConnections => [
-//         for (final element in elements)
-//           if (element is LogicStructure)
-//             ...element.srcConnections
-//           else if (element.srcConnection != null)
-//             element.srcConnection!
-//       ];
-// }

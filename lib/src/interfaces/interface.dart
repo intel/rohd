@@ -87,7 +87,6 @@ class Interface<TagType> {
             (port is LogicArray
                 // ignore: invalid_use_of_protected_member
                 ? module.addInputArray(
-                    //TODO Test uniquify on array ports (all 3 types)
                     uniquify(port.name),
                     srcInterface.port(port.name),
                     dimensions: port.dimensions,
