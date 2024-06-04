@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface.dart
@@ -22,7 +22,10 @@ enum PairDirection {
   fromConsumer,
 
   /// Signals that are inputs to both components in the pair.
-  sharedInputs
+  sharedInputs,
+
+  /// Signals that are inOuts for both components in the pair.
+  commonInOuts,
 }
 
 /// The role that a component in a pair plays.
@@ -49,9 +52,10 @@ class PairInterface extends Interface<PairDirection> {
   /// The [modify] function will allow modification of all port names, in
   /// addition to the usual uniquification that can occur during [connectIO].
   PairInterface({
-    List<Port>? portsFromConsumer,
-    List<Port>? portsFromProvider,
-    List<Port>? sharedInputPorts,
+    List<Logic>? portsFromConsumer,
+    List<Logic>? portsFromProvider,
+    List<Logic>? sharedInputPorts,
+    List<Logic>? commonInOutPorts,
     this.modify,
   }) {
     if (portsFromConsumer != null) {
@@ -63,15 +67,33 @@ class PairInterface extends Interface<PairDirection> {
     if (sharedInputPorts != null) {
       setPorts(sharedInputPorts, [PairDirection.sharedInputs]);
     }
+    if (commonInOutPorts != null) {
+      setPorts(commonInOutPorts, [PairDirection.commonInOuts]);
+    }
   }
 
   /// Collects ports on a given [interface] tagged with [tag].
-  static List<Port> _getMatchPorts(
+  static List<Logic> _getMatchPorts(
           Interface<PairDirection> interface, PairDirection tag) =>
       interface
           .getPorts({tag})
           .entries
-          .map((e) => Port(e.key, e.value.width))
+          .map((e) {
+            final p = e.value;
+            final name = e.key;
+            switch (p) {
+              case LogicArray():
+                return p.isNet
+                    ? LogicArray.netPort(name, p.dimensions, p.elementWidth,
+                        p.numUnpackedDimensions)
+                    : LogicArray.port(name, p.dimensions, p.elementWidth,
+                        p.numUnpackedDimensions);
+              case LogicNet():
+                return LogicNet.port(name, p.width);
+              default:
+                return Port(name, p.width);
+            }
+          })
           .toList();
 
   /// Creates a new instance of a [PairInterface] with the same ports other
@@ -84,6 +106,8 @@ class PairInterface extends Interface<PairDirection> {
               _getMatchPorts(otherInterface, PairDirection.fromProvider),
           sharedInputPorts:
               _getMatchPorts(otherInterface, PairDirection.sharedInputs),
+          commonInOutPorts:
+              _getMatchPorts(otherInterface, PairDirection.commonInOuts),
           modify: otherInterface.modify,
         );
 
@@ -92,39 +116,49 @@ class PairInterface extends Interface<PairDirection> {
   void pairConnectIO(
       Module module, Interface<PairDirection> srcInterface, PairRole role,
       {String Function(String original)? uniquify}) {
-    Set<PairDirection> inputTags;
-    Set<PairDirection> outputTags;
+    final List<PairDirection> inputTags;
+    final List<PairDirection> outputTags;
+    final inOutTags = [
+      PairDirection.commonInOuts,
+    ];
 
     switch (role) {
       case PairRole.consumer:
-        inputTags = {
+        inputTags = [
           PairDirection.sharedInputs,
           PairDirection.fromProvider,
-        };
-        outputTags = {
+        ];
+        outputTags = [
           PairDirection.fromConsumer,
-        };
-        break;
+        ];
 
       case PairRole.provider:
-        inputTags = {
+        inputTags = [
           PairDirection.sharedInputs,
           PairDirection.fromConsumer,
-        };
-        outputTags = {
+        ];
+        outputTags = [
           PairDirection.fromProvider,
-        };
-        break;
+        ];
     }
 
-    connectIO(module, srcInterface,
-        inputTags: inputTags, outputTags: outputTags, uniquify: uniquify);
+    connectIO(
+      module,
+      srcInterface,
+      inputTags: inputTags,
+      outputTags: outputTags,
+      inOutTags: inOutTags,
+      uniquify: uniquify,
+    );
   }
 
+  /// Calls [Interface.connectIO] for ports of this interface as well as
+  /// hierarchically for all [subInterfaces].
   @override
   void connectIO(Module module, Interface<dynamic> srcInterface,
       {Iterable<PairDirection>? inputTags,
       Iterable<PairDirection>? outputTags,
+      Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
     final nonNullModify = modify ?? (original) => original;
@@ -132,7 +166,10 @@ class PairInterface extends Interface<PairDirection> {
         nonNullUniquify(nonNullModify(original));
 
     super.connectIO(module, srcInterface,
-        inputTags: inputTags, outputTags: outputTags, uniquify: newUniquify);
+        inputTags: inputTags,
+        outputTags: outputTags,
+        inOutTags: inOutTags,
+        uniquify: newUniquify);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -154,29 +191,31 @@ class PairInterface extends Interface<PairDirection> {
         // handle possible reversal as best as we can
         Iterable<PairDirection>? subIntfInputTags;
         Iterable<PairDirection>? subIntfOutputTags;
+        final subIntfInOutTags = inOutTags;
+
         if (subInterfaceEntry.value.reverse) {
           // swap consumer tag
           if (inputTags?.contains(PairDirection.fromConsumer) ?? false) {
-            subIntfOutputTags = {PairDirection.fromConsumer};
+            subIntfOutputTags = [PairDirection.fromConsumer];
           }
           if (outputTags?.contains(PairDirection.fromConsumer) ?? false) {
-            subIntfInputTags = {PairDirection.fromConsumer};
+            subIntfInputTags = [PairDirection.fromConsumer];
           }
 
           // swap provider tag
           if (outputTags?.contains(PairDirection.fromProvider) ?? false) {
-            subIntfInputTags = {PairDirection.fromProvider};
+            subIntfInputTags = [PairDirection.fromProvider];
           }
           if (inputTags?.contains(PairDirection.fromProvider) ?? false) {
-            subIntfOutputTags = {PairDirection.fromProvider};
+            subIntfOutputTags = [PairDirection.fromProvider];
           }
 
           // keep sharedInputs, if it's there
           if (inputTags?.contains(PairDirection.sharedInputs) ?? false) {
-            subIntfInputTags = {
+            subIntfInputTags = [
               if (subIntfInputTags != null) ...subIntfInputTags,
               PairDirection.sharedInputs,
-            };
+            ];
           }
         } else {
           subIntfInputTags = inputTags;
@@ -188,6 +227,7 @@ class PairInterface extends Interface<PairDirection> {
           srcInterface._subInterfaces[subInterfaceName]!.interface,
           inputTags: subIntfInputTags,
           outputTags: subIntfOutputTags,
+          inOutTags: subIntfInOutTags,
           uniquify: newUniquify,
         );
       }

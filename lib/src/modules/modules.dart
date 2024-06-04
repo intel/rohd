@@ -6,3 +6,4 @@ export 'clkgen.dart';
 export 'conditional.dart';
 export 'gates.dart';
 export 'pipeline.dart';
+export 'tristate.dart';

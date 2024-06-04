@@ -20,7 +20,7 @@ var bus = Logic(name: 'b', width: 8)
 
 #### The value of a signal
 
-You can access the current value of a signal using `value`.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propogation.  If the signal is valid (no X or Z in it), you can also convert it to an `int` with `value.toInt()` (ROHD will throw an exception otherwise).  If the signal has more bits than a dart `int` (64 bits, usually), you need to use `value.toBigInt()` to get a `BigInt` (again, ROHD will throw an exception otherwise).
+You can access the current value of a signal using `value`.  You cannot access this as part of synthesizable ROHD code.  ROHD supports X and Z values and propagation.  If the signal is valid (no X or Z in it), you can also convert it to an `int` with `value.toInt()` (ROHD will throw an exception otherwise).  If the signal has more bits than a dart `int` (64 bits, usually), you need to use `value.toBigInt()` to get a `BigInt` (again, ROHD will throw an exception otherwise).
 
 The value of a `Logic` is of type [`LogicValue`](https://intel.github.io/rohd/rohd/LogicValue-class.html), with pre-defined constant bit values `x`, `z`, `one`, and `zero`.  `LogicValue` has a number of built-in logical operations (like `&`, `|`, `^`, `+`, `-`, etc.).
 

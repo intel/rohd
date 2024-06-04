@@ -27,6 +27,10 @@ class TopModule extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('multimodules5', () async {
     final mod = TopModule(Logic());
     await mod.build();
