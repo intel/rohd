@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,26 +37,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;Module-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Module-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">build</span> method 
 </h1></div>
 
@@ -64,11 +64,11 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.14.0/meta/mustCallSuper-constant.html">mustCallSuper</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/mustCallSuper-constant.html">mustCallSuper</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.3.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.4.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
 <span class="name ">build</span>(<wbr>)
 
       
@@ -108,11 +108,11 @@ Future&lt;void&gt; build() async {
 
   &#47;&#47; construct the list of modules within this module
   &#47;&#47; 1) trace from outputs of this module back to inputs of this module
-  for (final output in _outputs.values) {
+  for (final output in [..._outputs.values, ...inOuts.values]) {
     await _traceOutputForModuleContents(output, dontAddSignal: true);
   }
   &#47;&#47; 2) trace from inputs of all modules to inputs of this module
-  for (final input in _inputs.values) {
+  for (final input in [..._inputs.values, ...inOuts.values]) {
     await _traceInputForModuleContents(input, dontAddSignal: true);
   }
 
@@ -123,6 +123,8 @@ Future&lt;void&gt; build() async {
         initialName: Sanitizer.sanitizeSV(module.name),
         reserved: module.reserveName);
   }
+
+  _checkValidHierarchy(visited: {});
 
   _hasBuilt = true;
 
@@ -154,7 +156,7 @@ Future&lt;void&gt; build() async {
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

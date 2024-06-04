@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,26 +37,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;LogicSwizzle-extension-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;LogicSwizzle-extension-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">rswizzle</span> method 
 </h1></div>
 
@@ -74,7 +74,7 @@
   <p>Performs a concatenation operation on the list of signals, where index 0
 of this list is the <em>least</em> significant bit(s).</p>
 <p>This is the one you should probably use if you're trying to concatenate a
-generated <a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a> of signals. If you call <a href="../../rohd/LogicSwizzle/rswizzle.html">rswizzle</a> on <code>[a, b, c]</code> you
+generated <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a> of signals. If you call <a href="../../rohd/LogicSwizzle/rswizzle.html">rswizzle</a> on <code>[a, b, c]</code> you
 would get a single output <a href="../../rohd/Logic-class.html">Logic</a> where the bits in <code>a</code> are the least
 significant (lowest) bits.</p>
 <p>If you want the opposite, check out <a href="../../rohd/LogicSwizzle/swizzle.html">swizzle</a>.</p>
@@ -107,12 +107,12 @@ significant (lowest) bits.</p>
 </ol>
 
 
-    <h5>LogicSwizzle extension</h5>
+    <h5>LogicSwizzle extension on <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

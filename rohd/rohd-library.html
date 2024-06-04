@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../static-assets/github.css?v1">
   <link rel="stylesheet" href="../static-assets/styles.css?v1">
@@ -35,36 +35,36 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar=""
-      data-below-sidebar="rohd&#47;rohd-library-sidebar.html">
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="rohd&#47;rohd-library-sidebar.html">
+  
+    <div>
       
-      <div>
-        
 
-        <h1>
-          <span class="kind-library">rohd</span>
-          library 
+      <h1>
+        <span class="kind-library">rohd</span>
+        library 
  
 
-        </h1>
-      </div>
+      </h1>
+    </div>
 
     
 
@@ -73,7 +73,7 @@
       <h2>Classes</h2>
 
       <dl>
-        <dt id="Add">
+          <dt id="Add">
   <span class="name "><a href="../rohd/Add-class.html">Add</a></span> 
 
 </dt>
@@ -81,7 +81,7 @@
   A two-input addition module.
 </dd>
 
-        <dt id="And2Gate">
+          <dt id="And2Gate">
   <span class="name "><a href="../rohd/And2Gate-class.html">And2Gate</a></span> 
 
 </dt>
@@ -89,7 +89,7 @@
   A two-input AND gate.
 </dd>
 
-        <dt id="AndUnary">
+          <dt id="AndUnary">
   <span class="name "><a href="../rohd/AndUnary-class.html">AndUnary</a></span> 
 
 </dt>
@@ -97,7 +97,7 @@
   A unary AND gate.
 </dd>
 
-        <dt id="ARShift">
+          <dt id="ARShift">
   <span class="name "><a href="../rohd/ARShift-class.html">ARShift</a></span> 
 
 </dt>
@@ -105,7 +105,7 @@
   An arithmetic right-shift module.
 </dd>
 
-        <dt id="BusSubset">
+          <dt id="BusSubset">
   <span class="name "><a href="../rohd/BusSubset-class.html">BusSubset</a></span> 
 
 </dt>
@@ -113,7 +113,7 @@
   A <a href="../rohd/Module-class.html">Module</a> which gives access to a subset range of signals of the input.
 </dd>
 
-        <dt id="Case">
+          <dt id="Case">
   <span class="name "><a href="../rohd/Case-class.html">Case</a></span> 
 
 </dt>
@@ -122,7 +122,7 @@
 is executed.
 </dd>
 
-        <dt id="CaseItem">
+          <dt id="CaseItem">
   <span class="name "><a href="../rohd/CaseItem-class.html">CaseItem</a></span> 
 
 </dt>
@@ -130,7 +130,7 @@ is executed.
   Represents a single case within a <a href="../rohd/Case-class.html">Case</a> block.
 </dd>
 
-        <dt id="CaseZ">
+          <dt id="CaseZ">
   <span class="name "><a href="../rohd/CaseZ-class.html">CaseZ</a></span> 
 
 </dt>
@@ -139,7 +139,7 @@ is executed.
 the expression.
 </dd>
 
-        <dt id="Combinational">
+          <dt id="Combinational">
   <span class="name "><a href="../rohd/Combinational-class.html">Combinational</a></span> 
 
 </dt>
@@ -147,7 +147,7 @@ the expression.
   Represents a block of combinational logic.
 </dd>
 
-        <dt id="Conditional">
+          <dt id="Conditional">
   <span class="name "><a href="../rohd/Conditional-class.html">Conditional</a></span> 
 
 </dt>
@@ -156,7 +156,7 @@ the expression.
 under certain conditions.
 </dd>
 
-        <dt id="ConditionalAssign">
+          <dt id="ConditionalAssign">
   <span class="name "><a href="../rohd/ConditionalAssign-class.html">ConditionalAssign</a></span> 
 
 </dt>
@@ -164,7 +164,7 @@ under certain conditions.
   An assignment that only happens under certain conditions.
 </dd>
 
-        <dt id="ConditionalGroup">
+          <dt id="ConditionalGroup">
   <span class="name "><a href="../rohd/ConditionalGroup-class.html">ConditionalGroup</a></span> 
 
 </dt>
@@ -172,7 +172,7 @@ under certain conditions.
   Represents a group of <a href="../rohd/Conditional-class.html">Conditional</a>s to be executed.
 </dd>
 
-        <dt id="Const">
+          <dt id="Const">
   <span class="name "><a href="../rohd/Const-class.html">Const</a></span> 
 
 </dt>
@@ -180,7 +180,7 @@ under certain conditions.
   Represents a <a href="../rohd/Logic-class.html">Logic</a> that never changes value.
 </dd>
 
-        <dt id="Divide">
+          <dt id="Divide">
   <span class="name "><a href="../rohd/Divide-class.html">Divide</a></span> 
 
 </dt>
@@ -188,7 +188,7 @@ under certain conditions.
   A two-input divison module.
 </dd>
 
-        <dt id="Else">
+          <dt id="Else">
   <span class="name "><a href="../rohd/Else-class.html">Else</a></span> 
 
 </dt>
@@ -196,7 +196,7 @@ under certain conditions.
   A conditional block to execute only if <a href="../rohd/ElseIf/condition.html">condition</a> is satisified.
 </dd>
 
-        <dt id="ElseIf">
+          <dt id="ElseIf">
   <span class="name "><a href="../rohd/ElseIf-class.html">ElseIf</a></span> 
 
 </dt>
@@ -204,7 +204,7 @@ under certain conditions.
   A conditional block to execute only if <a href="../rohd/ElseIf/condition.html">condition</a> is satisified.
 </dd>
 
-        <dt id="Equals">
+          <dt id="Equals">
   <span class="name "><a href="../rohd/Equals-class.html">Equals</a></span> 
 
 </dt>
@@ -212,7 +212,7 @@ under certain conditions.
   A two-input equality comparison module.
 </dd>
 
-        <dt id="ExternalSystemVerilogModule">
+          <dt id="ExternalSystemVerilogModule">
   <span class="name "><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></span> 
 
 </dt>
@@ -221,7 +221,7 @@ under certain conditions.
 in SystemVerilog.
 </dd>
 
-        <dt id="FiniteStateMachine">
+          <dt id="FiniteStateMachine">
   <span class="name "><a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
 
 </dt>
@@ -229,7 +229,7 @@ in SystemVerilog.
   Simple class for FSM <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a>.
 </dd>
 
-        <dt id="FlipFlop">
+          <dt id="FlipFlop">
   <span class="name "><a href="../rohd/FlipFlop-class.html">FlipFlop</a></span> 
 
 </dt>
@@ -237,7 +237,7 @@ in SystemVerilog.
   Represents a single flip-flop with no reset.
 </dd>
 
-        <dt id="GreaterThan">
+          <dt id="GreaterThan">
   <span class="name "><a href="../rohd/GreaterThan-class.html">GreaterThan</a></span> 
 
 </dt>
@@ -245,7 +245,7 @@ in SystemVerilog.
   A two-input comparison module for greater-than.
 </dd>
 
-        <dt id="GreaterThanOrEqual">
+          <dt id="GreaterThanOrEqual">
   <span class="name "><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></span> 
 
 </dt>
@@ -253,7 +253,7 @@ in SystemVerilog.
   A two-input comparison module for greater-than-or-equal-to.
 </dd>
 
-        <dt id="If">
+          <dt id="If">
   <span class="name "><a href="../rohd/If-class.html">If</a></span> 
 
 </dt>
@@ -262,7 +262,7 @@ in SystemVerilog.
 <code>if</code>/<code>else if</code>/<code>else</code>.
 </dd>
 
-        <dt id="IfBlock">
+          <dt id="IfBlock">
   <span class="name deprecated"><a class="deprecated" href="../rohd/IfBlock-class.html">IfBlock</a></span> 
 
 </dt>
@@ -271,7 +271,7 @@ in SystemVerilog.
 <code>if</code>/<code>else if</code>/<code>else</code>.
 </dd>
 
-        <dt id="IndexGate">
+          <dt id="IndexGate">
   <span class="name "><a href="../rohd/IndexGate-class.html">IndexGate</a></span> 
 
 </dt>
@@ -279,7 +279,7 @@ in SystemVerilog.
   A two-input bit index gate <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
-        <dt id="Interface">
+          <dt id="Interface">
   <span class="name "><a href="../rohd/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span> 
 
 </dt>
@@ -287,7 +287,7 @@ in SystemVerilog.
   Represents a logical interface to a <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
-        <dt id="LessThan">
+          <dt id="LessThan">
   <span class="name "><a href="../rohd/LessThan-class.html">LessThan</a></span> 
 
 </dt>
@@ -295,7 +295,7 @@ in SystemVerilog.
   A two-input comparison module for less-than.
 </dd>
 
-        <dt id="LessThanOrEqual">
+          <dt id="LessThanOrEqual">
   <span class="name "><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></span> 
 
 </dt>
@@ -303,7 +303,7 @@ in SystemVerilog.
   A two-input comparison module for less-than-or-equal-to.
 </dd>
 
-        <dt id="Logic">
+          <dt id="Logic">
   <span class="name "><a href="../rohd/Logic-class.html">Logic</a></span> 
 
 </dt>
@@ -311,7 +311,7 @@ in SystemVerilog.
   Represents a logical signal of any width which can change values.
 </dd>
 
-        <dt id="LogicArray">
+          <dt id="LogicArray">
   <span class="name "><a href="../rohd/LogicArray-class.html">LogicArray</a></span> 
 
 </dt>
@@ -319,7 +319,16 @@ in SystemVerilog.
   Represents a multi-dimensional array structure of independent <a href="../rohd/Logic-class.html">Logic</a>s.
 </dd>
 
-        <dt id="LogicStructure">
+          <dt id="LogicNet">
+  <span class="name "><a href="../rohd/LogicNet-class.html">LogicNet</a></span> 
+
+</dt>
+<dd>
+  Represents a <a href="../rohd/Logic-class.html">Logic</a> which can be have multiple drivers, supporting
+bidirectional signals.
+</dd>
+
+          <dt id="LogicStructure">
   <span class="name "><a href="../rohd/LogicStructure-class.html">LogicStructure</a></span> 
 
 </dt>
@@ -328,7 +337,7 @@ in SystemVerilog.
 in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
 </dd>
 
-        <dt id="LogicValue">
+          <dt id="LogicValue">
   <span class="name "><a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
 
 </dt>
@@ -336,7 +345,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
   An immutable 4-value representation of an arbitrary number of bits.
 </dd>
 
-        <dt id="LogicValueChanged">
+          <dt id="LogicValueChanged">
   <span class="name "><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span> 
 
 </dt>
@@ -344,7 +353,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
   Represents the event of a <a href="../rohd/Logic-class.html">Logic</a> changing value.
 </dd>
 
-        <dt id="LShift">
+          <dt id="LShift">
   <span class="name "><a href="../rohd/LShift-class.html">LShift</a></span> 
 
 </dt>
@@ -352,7 +361,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
   A logical left-shift module.
 </dd>
 
-        <dt id="Module">
+          <dt id="Module">
   <span class="name "><a href="../rohd/Module-class.html">Module</a></span> 
 
 </dt>
@@ -361,7 +370,7 @@ in a similar way as an individual <a href="../rohd/Logic-class.html">Logic</a>.
 boundaries.
 </dd>
 
-        <dt id="Modulo">
+          <dt id="Modulo">
   <span class="name "><a href="../rohd/Modulo-class.html">Modulo</a></span> 
 
 </dt>
@@ -369,7 +378,7 @@ boundaries.
   A two-input modulo module.
 </dd>
 
-        <dt id="Multiply">
+          <dt id="Multiply">
   <span class="name "><a href="../rohd/Multiply-class.html">Multiply</a></span> 
 
 </dt>
@@ -377,7 +386,7 @@ boundaries.
   A two-input multiplication module.
 </dd>
 
-        <dt id="Mux">
+          <dt id="Mux">
   <span class="name "><a href="../rohd/Mux-class.html">Mux</a></span> 
 
 </dt>
@@ -385,7 +394,7 @@ boundaries.
   A mux (multiplexer) module.
 </dd>
 
-        <dt id="NotEquals">
+          <dt id="NotEquals">
   <span class="name "><a href="../rohd/NotEquals-class.html">NotEquals</a></span> 
 
 </dt>
@@ -393,7 +402,7 @@ boundaries.
   A two-input inequality comparison module.
 </dd>
 
-        <dt id="NotGate">
+          <dt id="NotGate">
   <span class="name "><a href="../rohd/NotGate-class.html">NotGate</a></span> 
 
 </dt>
@@ -401,7 +410,7 @@ boundaries.
   A gate <a href="../rohd/Module-class.html">Module</a> that performs bit-wise inversion.
 </dd>
 
-        <dt id="Or2Gate">
+          <dt id="Or2Gate">
   <span class="name "><a href="../rohd/Or2Gate-class.html">Or2Gate</a></span> 
 
 </dt>
@@ -409,7 +418,7 @@ boundaries.
   A two-input OR gate.
 </dd>
 
-        <dt id="OrUnary">
+          <dt id="OrUnary">
   <span class="name "><a href="../rohd/OrUnary-class.html">OrUnary</a></span> 
 
 </dt>
@@ -417,7 +426,7 @@ boundaries.
   A unary OR gate.
 </dd>
 
-        <dt id="PairInterface">
+          <dt id="PairInterface">
   <span class="name "><a href="../rohd/PairInterface-class.html">PairInterface</a></span> 
 
 </dt>
@@ -427,7 +436,7 @@ where two components are communicating with each other and may share some
 common inputs.
 </dd>
 
-        <dt id="Pipeline">
+          <dt id="Pipeline">
   <span class="name "><a href="../rohd/Pipeline-class.html">Pipeline</a></span> 
 
 </dt>
@@ -435,7 +444,7 @@ common inputs.
   A simple pipeline, separating arbitrary combinational logic by flop stages.
 </dd>
 
-        <dt id="PipelineStageInfo">
+          <dt id="PipelineStageInfo">
   <span class="name "><a href="../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> 
 
 </dt>
@@ -443,7 +452,7 @@ common inputs.
   Information and accessors associated with a <a href="../rohd/Pipeline-class.html">Pipeline</a> stage.
 </dd>
 
-        <dt id="Port">
+          <dt id="Port">
   <span class="name "><a href="../rohd/Port-class.html">Port</a></span> 
 
 </dt>
@@ -452,7 +461,7 @@ common inputs.
 inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
 </dd>
 
-        <dt id="Power">
+          <dt id="Power">
   <span class="name "><a href="../rohd/Power-class.html">Power</a></span> 
 
 </dt>
@@ -460,7 +469,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   A two-input power module.
 </dd>
 
-        <dt id="ReadyValidPipeline">
+          <dt id="ReadyValidPipeline">
   <span class="name "><a href="../rohd/ReadyValidPipeline-class.html">ReadyValidPipeline</a></span> 
 
 </dt>
@@ -468,7 +477,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   A pipeline that implements Ready/Valid protocol at each stage.
 </dd>
 
-        <dt id="ReplicationOp">
+          <dt id="ReplicationOp">
   <span class="name "><a href="../rohd/ReplicationOp-class.html">ReplicationOp</a></span> 
 
 </dt>
@@ -476,7 +485,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   A Replication Operator <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
-        <dt id="RShift">
+          <dt id="RShift">
   <span class="name "><a href="../rohd/RShift-class.html">RShift</a></span> 
 
 </dt>
@@ -484,7 +493,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   A logical right-shift module.
 </dd>
 
-        <dt id="Sequential">
+          <dt id="Sequential">
   <span class="name "><a href="../rohd/Sequential-class.html">Sequential</a></span> 
 
 </dt>
@@ -492,7 +501,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
   Represents a block of sequential logic.
 </dd>
 
-        <dt id="SimpleClockGenerator">
+          <dt id="SimpleClockGenerator">
   <span class="name "><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></span> 
 
 </dt>
@@ -501,7 +510,7 @@ inputs and outputs of <a href="../rohd/Module-class.html">Module</a>s.
 representation.
 </dd>
 
-        <dt id="Simulator">
+          <dt id="Simulator">
   <span class="name "><a href="../rohd/Simulator-class.html">Simulator</a></span> 
 
 </dt>
@@ -509,7 +518,7 @@ representation.
   A functional event-based static simulator for logic behavior.
 </dd>
 
-        <dt id="State">
+          <dt id="State">
   <span class="name "><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span> 
 
 </dt>
@@ -517,7 +526,7 @@ representation.
   Simple class to initialize each state of the FSM.
 </dd>
 
-        <dt id="Subtract">
+          <dt id="Subtract">
   <span class="name "><a href="../rohd/Subtract-class.html">Subtract</a></span> 
 
 </dt>
@@ -525,7 +534,7 @@ representation.
   A two-input subtraction module.
 </dd>
 
-        <dt id="Swizzle">
+          <dt id="Swizzle">
   <span class="name "><a href="../rohd/Swizzle-class.html">Swizzle</a></span> 
 
 </dt>
@@ -533,7 +542,7 @@ representation.
   A <a href="../rohd/Module-class.html">Module</a> that performs concatenation of signals into one bigger <a href="../rohd/Logic-class.html">Logic</a>.
 </dd>
 
-        <dt id="SynthBuilder">
+          <dt id="SynthBuilder">
   <span class="name "><a href="../rohd/SynthBuilder-class.html">SynthBuilder</a></span> 
 
 </dt>
@@ -542,7 +551,7 @@ representation.
 a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
 </dd>
 
-        <dt id="SynthesisResult">
+          <dt id="SynthesisResult">
   <span class="name "><a href="../rohd/SynthesisResult-class.html">SynthesisResult</a></span> 
 
 </dt>
@@ -550,7 +559,7 @@ a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
   An object representing the output of a Synthesizer
 </dd>
 
-        <dt id="Synthesizer">
+          <dt id="Synthesizer">
   <span class="name "><a href="../rohd/Synthesizer-class.html">Synthesizer</a></span> 
 
 </dt>
@@ -558,7 +567,7 @@ a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
   An object capable of converting a module into some new output format
 </dd>
 
-        <dt id="SystemVerilogSynthesizer">
+          <dt id="SystemVerilogSynthesizer">
   <span class="name "><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></span> 
 
 </dt>
@@ -567,7 +576,15 @@ a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
 given <a href="../rohd/Module-class.html">Module</a>.
 </dd>
 
-        <dt id="WaveDumper">
+          <dt id="TriStateBuffer">
+  <span class="name "><a href="../rohd/TriStateBuffer-class.html">TriStateBuffer</a></span> 
+
+</dt>
+<dd>
+  A tri-state buffer: can drive 0, 1, or leave the output floating.
+</dd>
+
+          <dt id="WaveDumper">
   <span class="name "><a href="../rohd/WaveDumper-class.html">WaveDumper</a></span> 
 
 </dt>
@@ -575,7 +592,7 @@ given <a href="../rohd/Module-class.html">Module</a>.
   A waveform dumper for simulations.
 </dd>
 
-        <dt id="Xor2Gate">
+          <dt id="Xor2Gate">
   <span class="name "><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></span> 
 
 </dt>
@@ -583,7 +600,7 @@ given <a href="../rohd/Module-class.html">Module</a>.
   A two-input XOR gate.
 </dd>
 
-        <dt id="XorUnary">
+          <dt id="XorUnary">
   <span class="name "><a href="../rohd/XorUnary-class.html">XorUnary</a></span> 
 
 </dt>
@@ -594,12 +611,59 @@ given <a href="../rohd/Module-class.html">Module</a>.
       </dl>
     </section>
 
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+
+      <dl>
+          <dt id="ConditionalType">
+  <span class="name "><a href="../rohd/ConditionalType.html">ConditionalType</a></span> 
+
+</dt>
+<dd>
+  Controls characteristics about <a href="../rohd/Case-class.html">Case</a> blocks.
+</dd>
+
+          <dt id="Naming">
+  <span class="name "><a href="../rohd/Naming.html">Naming</a></span> 
+
+</dt>
+<dd>
+  / Configuration options and utilities for naming and renaming signals.
+</dd>
+
+          <dt id="PairDirection">
+  <span class="name "><a href="../rohd/PairDirection.html">PairDirection</a></span> 
+
+</dt>
+<dd>
+  A direction for signals between a pair of components.
+</dd>
+
+          <dt id="PairRole">
+  <span class="name "><a href="../rohd/PairRole.html">PairRole</a></span> 
+
+</dt>
+<dd>
+  The role that a component in a pair plays.
+</dd>
+
+          <dt id="SimulatorPhase">
+  <span class="name "><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></span> 
+
+</dt>
+<dd>
+  An enum for the various phases of the <a href="../rohd/Simulator-class.html">Simulator</a>.
+</dd>
+
+      </dl>
+    </section>
+
     <section class="summary offset-anchor" id="mixins">
       <h2>Mixins</h2>
 
       <dl>
-        <dt id="CustomSystemVerilog">
-  <span class="name "><a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
+          <dt id="CustomSystemVerilog">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></span> 
 
 </dt>
 <dd>
@@ -607,72 +671,91 @@ given <a href="../rohd/Module-class.html">Module</a>.
 injected in generated output instead of instantiating a separate <code>module</code>.
 </dd>
 
-        <dt id="InlineSystemVerilog">
+          <dt id="InlineSystemVerilog">
   <span class="name "><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></span> 
 
 </dt>
 <dd>
-  Allows a <a href="../rohd/Module-class.html">Module</a> to define a special type of <a href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a> which
-can be inlined within other SystemVerilog code.
+  Allows a <a href="../rohd/Module-class.html">Module</a> to define a special type of <a href="../rohd/SystemVerilog-mixin.html">SystemVerilog</a> which can be
+inlined within other SystemVerilog code.
+</dd>
+
+          <dt id="SystemVerilog">
+  <span class="name "><a href="../rohd/SystemVerilog-mixin.html">SystemVerilog</a></span> 
+
+</dt>
+<dd>
+  Allows a <a href="../rohd/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be
+injected in generated output instead of instantiating a separate <code>module</code>.
 </dd>
 
       </dl>
     </section>
+
 
     <section class="summary offset-anchor" id="extensions">
       <h2>Extensions</h2>
 
       <dl>
-        <dt id="BigLogicValueBigIntUtilities">
-    <span class="name "><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></span> 
+          <dt id="BigLogicValueBigIntUtilities">
+  <span class="name "><a href="../rohd/BigLogicValueBigIntUtilities.html">BigLogicValueBigIntUtilities</a></span>
+  on <a href="https://api.dart.dev/stable/3.4.2/dart-core/BigInt-class.html">BigInt</a>
+  
 
 </dt>
 <dd>
-    Extends <a href="https://api.dart.dev/stable/3.3.3/dart-core/BigInt-class.html">BigInt</a> with utility functions that are useful for dealing with
+  Extends <a href="https://api.dart.dev/stable/3.4.2/dart-core/BigInt-class.html">BigInt</a> with utility functions that are useful for dealing with
 large bit vectors and conversion between types.
 </dd>
 
 
-        <dt id="IndexedLogic">
-    <span class="name "><a href="../rohd/IndexedLogic.html">IndexedLogic</a></span> 
+          <dt id="IndexedLogic">
+  <span class="name "><a href="../rohd/IndexedLogic.html">IndexedLogic</a></span>
+  on <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>
+  
 
 </dt>
 <dd>
-    Allows a lists of <a href="../rohd/Logic-class.html">Logic</a>s to have its elemets picked
+  Allows a lists of <a href="../rohd/Logic-class.html">Logic</a>s to have its elemets picked
 by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 </dd>
 
 
-        <dt id="LogicSwizzle">
-    <span class="name "><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></span> 
+          <dt id="LogicSwizzle">
+  <span class="name "><a href="../rohd/LogicSwizzle.html">LogicSwizzle</a></span>
+  on <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>
+  
 
 </dt>
 <dd>
-    Allows lists of <a href="../rohd/Logic-class.html">Logic</a>s to be swizzled.
+  Allows lists of <a href="../rohd/Logic-class.html">Logic</a>s to be swizzled.
 </dd>
 
 
-        <dt id="LogicValueSwizzle">
-    <span class="name "><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></span> 
+          <dt id="LogicValueSwizzle">
+  <span class="name "><a href="../rohd/LogicValueSwizzle.html">LogicValueSwizzle</a></span>
+  on <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span>
+  
 
 </dt>
 <dd>
-    Allows lists of <a href="../rohd/LogicValue-class.html">LogicValue</a>s to be swizzled.
+  Allows lists of <a href="../rohd/LogicValue-class.html">LogicValue</a>s to be swizzled.
 </dd>
 
 
-        <dt id="RandLogicValue">
-    <span class="name "><a href="../rohd/RandLogicValue.html">RandLogicValue</a></span> 
+          <dt id="RandLogicValue">
+  <span class="name "><a href="../rohd/RandLogicValue.html">RandLogicValue</a></span>
+  on <a href="https://api.dart.dev/stable/3.4.2/dart-math/Random-class.html">Random</a>
+  
 
 </dt>
 <dd>
-    Allows random generation of <a href="../rohd/LogicValue-class.html">LogicValue</a> for <a href="https://api.dart.dev/stable/3.3.3/dart-core/BigInt-class.html">BigInt</a> and <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>.
+  Allows random generation of <a href="../rohd/LogicValue-class.html">LogicValue</a> for <a href="https://api.dart.dev/stable/3.4.2/dart-core/BigInt-class.html">BigInt</a> and <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>.
 </dd>
 
 
       </dl>
     </section>
-
 
 
 
@@ -680,21 +763,21 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
       <h2>Functions</h2>
 
       <dl class="callables">
-        <dt id="bin" class="callable">
-  <span class="name"><a href="../rohd/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span>
+          <dt id="bin" class="callable">
+  <span class="name"><a href="../rohd/bin.html">bin</a></span><span class="signature">(<wbr><span class="parameter" id="bin-param-s"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">s</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Converts a binary <a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>.
+  Converts a binary <a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a> representation to a binary <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>.
   
 
 </dd>
 
-        <dt id="cases" class="callable">
-  <span class="name"><a href="../rohd/cases.html">cases</a></span><span class="signature">(<wbr><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, </span><span class="parameter" id="cases-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>}</span>)
+          <dt id="cases" class="callable">
+  <span class="name"><a href="../rohd/cases.html">cases</a></span><span class="signature">(<wbr><span class="parameter" id="cases-param-expression"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">expression</span>, </span><span class="parameter" id="cases-param-conditions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Map-class.html">Map</a></span> <span class="parameter-name">conditions</span>, </span><span class="parameter" id="cases-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="cases-param-conditionalType"><span class="type-annotation"><a href="../rohd/ConditionalType.html">ConditionalType</a></span> <span class="parameter-name">conditionalType</span> = <span class="default-value">ConditionalType.none</span>, </span><span class="parameter" id="cases-param-defaultValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">defaultValue</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -706,7 +789,7 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
-        <dt id="flop" class="callable">
+          <dt id="flop" class="callable">
   <span class="name"><a href="../rohd/flop.html">flop</a></span><span class="signature">(<wbr><span class="parameter" id="flop-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="flop-param-d"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d</span>, </span><span class="parameter" id="flop-param-en">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span><span class="parameter" id="flop-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="flop-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
@@ -719,7 +802,7 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
-        <dt id="mux" class="callable">
+          <dt id="mux" class="callable">
   <span class="name"><a href="../rohd/mux.html">mux</a></span><span class="signature">(<wbr><span class="parameter" id="mux-param-control"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span><span class="parameter" id="mux-param-d1"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span><span class="parameter" id="mux-param-d0"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
@@ -732,8 +815,8 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
-        <dt id="rswizzle" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+          <dt id="rswizzle" class="callable">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/rswizzle.html">rswizzle</a></span><span class="signature">(<wbr><span class="parameter" id="rswizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -746,8 +829,8 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 
 </dd>
 
-        <dt id="swizzle" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
+          <dt id="swizzle" class="callable">
+  <span class="name deprecated"><a class="deprecated" href="../rohd/swizzle.html">swizzle</a></span><span class="signature">(<wbr><span class="parameter" id="swizzle-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -758,53 +841,6 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 <code>signals</code> is the <em>most</em> significant bit(s).
   
 
-</dd>
-
-      </dl>
-    </section>
-
-    <section class="summary offset-anchor" id="enums">
-      <h2>Enums</h2>
-
-      <dl>
-        <dt id="ConditionalType">
-  <span class="name "><a href="../rohd/ConditionalType.html">ConditionalType</a></span> 
-
-</dt>
-<dd>
-  Controls characteristics about <a href="../rohd/Case-class.html">Case</a> blocks.
-</dd>
-
-        <dt id="Naming">
-  <span class="name "><a href="../rohd/Naming.html">Naming</a></span> 
-
-</dt>
-<dd>
-  / Configuration options and utilities for naming and renaming signals.
-</dd>
-
-        <dt id="PairDirection">
-  <span class="name "><a href="../rohd/PairDirection.html">PairDirection</a></span> 
-
-</dt>
-<dd>
-  A direction for signals between a pair of components.
-</dd>
-
-        <dt id="PairRole">
-  <span class="name "><a href="../rohd/PairRole.html">PairRole</a></span> 
-
-</dt>
-<dd>
-  The role that a component in a pair plays.
-</dd>
-
-        <dt id="SimulatorPhase">
-  <span class="name "><a href="../rohd/SimulatorPhase.html">SimulatorPhase</a></span> 
-
-</dt>
-<dd>
-  An enum for the various phases of the <a href="../rohd/Simulator-class.html">Simulator</a>.
 </dd>
 
       </dl>
@@ -911,7 +947,7 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
       <h2>Exceptions / Errors</h2>
 
       <dl>
-        <dt id="EmptyReservedNameException">
+          <dt id="EmptyReservedNameException">
   <span class="name "><a href="../rohd/EmptyReservedNameException-class.html">EmptyReservedNameException</a></span> 
 
 </dt>
@@ -919,7 +955,7 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
   An exception that thrown when a reserved name is <code>null</code>.
 </dd>
 
-        <dt id="IllegalConfigurationException">
+          <dt id="IllegalConfigurationException">
   <span class="name "><a href="../rohd/IllegalConfigurationException-class.html">IllegalConfigurationException</a></span> 
 
 </dt>
@@ -927,23 +963,23 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
   An exception that is thrown when somethins is configured in an illegal way.
 </dd>
 
-        <dt id="InterfaceNameException">
+          <dt id="InterfaceNameException">
   <span class="name "><a href="../rohd/InterfaceNameException-class.html">InterfaceNameException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when an interface has an invalid name.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when an interface has an invalid name.
 </dd>
 
-        <dt id="InterfaceTypeException">
+          <dt id="InterfaceTypeException">
   <span class="name "><a href="../rohd/InterfaceTypeException-class.html">InterfaceTypeException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when an interface has an issue with its type.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when an interface has an issue with its type.
 </dd>
 
-        <dt id="InvalidConditionalException">
+          <dt id="InvalidConditionalException">
   <span class="name "><a href="../rohd/InvalidConditionalException-class.html">InvalidConditionalException</a></span> 
 
 </dt>
@@ -952,7 +988,15 @@ by a <a href="../rohd/Logic-class.html">Logic</a> index value.
 an invalid way.
 </dd>
 
-        <dt id="InvalidMultiplierException">
+          <dt id="InvalidHierarchyException">
+  <span class="name "><a href="../rohd/InvalidHierarchyException-class.html">InvalidHierarchyException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a constructed hierarchy is illegal.
+</dd>
+
+          <dt id="InvalidMultiplierException">
   <span class="name "><a href="../rohd/InvalidMultiplierException-class.html">InvalidMultiplierException</a></span> 
 
 </dt>
@@ -961,7 +1005,7 @@ an invalid way.
 multiplier.
 </dd>
 
-        <dt id="InvalidPortNameException">
+          <dt id="InvalidPortNameException">
   <span class="name "><a href="../rohd/InvalidPortNameException-class.html">InvalidPortNameException</a></span> 
 
 </dt>
@@ -969,7 +1013,7 @@ multiplier.
   An exception that thrown when a port or interface name is invalid.
 </dd>
 
-        <dt id="InvalidReservedNameException">
+          <dt id="InvalidReservedNameException">
   <span class="name "><a href="../rohd/InvalidReservedNameException-class.html">InvalidReservedNameException</a></span> 
 
 </dt>
@@ -977,7 +1021,7 @@ multiplier.
   An exception that thrown when a reserved name is invalid.
 </dd>
 
-        <dt id="InvalidTruncationException">
+          <dt id="InvalidTruncationException">
   <span class="name "><a href="../rohd/InvalidTruncationException-class.html">InvalidTruncationException</a></span> 
 
 </dt>
@@ -986,7 +1030,7 @@ multiplier.
 couldn't be performed due invalid data truncation.
 </dd>
 
-        <dt id="InvalidValueOperationException">
+          <dt id="InvalidValueOperationException">
   <span class="name "><a href="../rohd/InvalidValueOperationException-class.html">InvalidValueOperationException</a></span> 
 
 </dt>
@@ -995,7 +1039,7 @@ couldn't be performed due invalid data truncation.
 invalid <a href="../rohd/LogicValue-class.html">LogicValue</a>
 </dd>
 
-        <dt id="LogicConstructionException">
+          <dt id="LogicConstructionException">
   <span class="name "><a href="../rohd/LogicConstructionException-class.html">LogicConstructionException</a></span> 
 
 </dt>
@@ -1003,7 +1047,7 @@ invalid <a href="../rohd/LogicValue-class.html">LogicValue</a>
   An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> is connecting to itself.
 </dd>
 
-        <dt id="LogicValueConstructionException">
+          <dt id="LogicValueConstructionException">
   <span class="name "><a href="../rohd/LogicValueConstructionException-class.html">LogicValueConstructionException</a></span> 
 
 </dt>
@@ -1011,7 +1055,7 @@ invalid <a href="../rohd/LogicValue-class.html">LogicValue</a>
   An exception that thrown when a <a href="../rohd/LogicValue-class.html">LogicValue</a> cannot be properly constructed.
 </dd>
 
-        <dt id="MappedSignalAlreadyAssignedException">
+          <dt id="MappedSignalAlreadyAssignedException">
   <span class="name "><a href="../rohd/MappedSignalAlreadyAssignedException-class.html">MappedSignalAlreadyAssignedException</a></span> 
 
 </dt>
@@ -1021,16 +1065,16 @@ deduce mappings for signals but fails since a signal would be connected
 multiple times.
 </dd>
 
-        <dt id="ModuleNotBuiltException">
+          <dt id="ModuleNotBuiltException">
   <span class="name "><a href="../rohd/ModuleNotBuiltException-class.html">ModuleNotBuiltException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when a <a href="../rohd/Module-class.html">Module</a> was used in a way that required it
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a <a href="../rohd/Module-class.html">Module</a> was used in a way that required it
 to be built first, but it was not yet built.
 </dd>
 
-        <dt id="NonSupportedTypeException">
+          <dt id="NonSupportedTypeException">
   <span class="name "><a href="../rohd/NonSupportedTypeException-class.html">NonSupportedTypeException</a></span> 
 
 </dt>
@@ -1039,7 +1083,7 @@ to be built first, but it was not yet built.
 output from <code>SimCompare</code> is invalid or unsupported.
 </dd>
 
-        <dt id="NullReservedNameException">
+          <dt id="NullReservedNameException">
   <span class="name "><a href="../rohd/NullReservedNameException-class.html">NullReservedNameException</a></span> 
 
 </dt>
@@ -1047,23 +1091,39 @@ output from <code>SimCompare</code> is invalid or unsupported.
   An exception that thrown when a reserved name is <code>null</code>.
 </dd>
 
-        <dt id="PortDoesNotExistException">
+          <dt id="PortDoesNotExistException">
   <span class="name "><a href="../rohd/PortDoesNotExistException-class.html">PortDoesNotExistException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when a port has the wrong width.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a port does not exist.
 </dd>
 
-        <dt id="PortWidthMismatchException">
+          <dt id="PortRulesViolationException">
+  <span class="name "><a href="../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a port is not following the input/output rules.
+</dd>
+
+          <dt id="PortTypeException">
+  <span class="name "><a href="../rohd/PortTypeException-class.html">PortTypeException</a></span> 
+
+</dt>
+<dd>
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a port has the wrong type.
+</dd>
+
+          <dt id="PortWidthMismatchException">
   <span class="name "><a href="../rohd/PortWidthMismatchException-class.html">PortWidthMismatchException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when a port has the wrong width.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a port has the wrong width.
 </dd>
 
-        <dt id="PutException">
+          <dt id="PutException">
   <span class="name "><a href="../rohd/PutException-class.html">PutException</a></span> 
 
 </dt>
@@ -1071,7 +1131,7 @@ output from <code>SimCompare</code> is invalid or unsupported.
   An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> signal fails to <code>put</code>.
 </dd>
 
-        <dt id="RohdException">
+          <dt id="RohdException">
   <span class="name "><a href="../rohd/RohdException-class.html">RohdException</a></span> 
 
 </dt>
@@ -1079,7 +1139,7 @@ output from <code>SimCompare</code> is invalid or unsupported.
   A base type of exception that ROHD-specific exceptions inherit from.
 </dd>
 
-        <dt id="SelfConnectingLogicException">
+          <dt id="SelfConnectingLogicException">
   <span class="name "><a href="../rohd/SelfConnectingLogicException-class.html">SelfConnectingLogicException</a></span> 
 
 </dt>
@@ -1087,7 +1147,7 @@ output from <code>SimCompare</code> is invalid or unsupported.
   An exception that thrown when a <a href="../rohd/Logic-class.html">Logic</a> is connecting to itself.
 </dd>
 
-        <dt id="SignalRedrivenException">
+          <dt id="SignalRedrivenException">
   <span class="name "><a href="../rohd/SignalRedrivenException-class.html">SignalRedrivenException</a></span> 
 
 </dt>
@@ -1096,15 +1156,15 @@ output from <code>SimCompare</code> is invalid or unsupported.
 driven multiple times.
 </dd>
 
-        <dt id="SignalWidthMismatchException">
+          <dt id="SignalWidthMismatchException">
   <span class="name "><a href="../rohd/SignalWidthMismatchException-class.html">SignalWidthMismatchException</a></span> 
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Exception-class.html">Exception</a> thrown when a signal has the wrong width.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a> thrown when a signal has the wrong width.
 </dd>
 
-        <dt id="UnavailableReservedNameException">
+          <dt id="UnavailableReservedNameException">
   <span class="name "><a href="../rohd/UnavailableReservedNameException-class.html">UnavailableReservedNameException</a></span> 
 
 </dt>
@@ -1112,7 +1172,7 @@ driven multiple times.
   An exception that thrown when a reserved name cannot be acquired.
 </dd>
 
-        <dt id="UninitializedSignalException">
+          <dt id="UninitializedSignalException">
   <span class="name "><a href="../rohd/UninitializedSignalException-class.html">UninitializedSignalException</a></span> 
 
 </dt>
@@ -1121,7 +1181,7 @@ driven multiple times.
 signal is being used before it was initialized.
 </dd>
 
-        <dt id="UnsupportedTypeException">
+          <dt id="UnsupportedTypeException">
   <span class="name "><a href="../rohd/UnsupportedTypeException-class.html">UnsupportedTypeException</a></span> 
 
 </dt>
@@ -1129,7 +1189,7 @@ signal is being used before it was initialized.
   An exception that is thrown when an unsupported type is used.
 </dd>
 
-        <dt id="ValueWidthMismatchException">
+          <dt id="ValueWidthMismatchException">
   <span class="name "><a href="../rohd/ValueWidthMismatchException-class.html">ValueWidthMismatchException</a></span> 
 
 </dt>
@@ -1137,7 +1197,7 @@ signal is being used before it was initialized.
   An exception that is thrown when <a href="../rohd/LogicValue-class.html">LogicValue</a>s of different width are found.
 </dd>
 
-        <dt id="WriteAfterReadException">
+          <dt id="WriteAfterReadException">
   <span class="name "><a href="../rohd/WriteAfterReadException-class.html">WriteAfterReadException</a></span> 
 
 </dt>

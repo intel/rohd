@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,26 +37,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">assignSubset</span> method 
 </h1></div>
 
@@ -64,8 +64,8 @@
       
 
 <span class="returntype">void</span>
-<span class="name ">assignSubset</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="assignSubset-param-updatedSubset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">updatedSubset</span>, </span></li>
-<li><span class="parameter" id="assignSubset-param-start">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">start</span> = <span class="default-value">0</span>}</span></li>
+<span class="name ">assignSubset</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="assignSubset-param-updatedSubset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">updatedSubset</span>, </span></li>
+<li><span class="parameter" id="assignSubset-param-start">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">start</span> = <span class="default-value">0</span>}</span></li>
 </ol>)
 
       
@@ -75,7 +75,7 @@
 <section class="desc markdown">
   <p>Perform Assign operation on a Logic subset or slice</p>
 <p>Assigns part of this LogicArray with a given <code>updatedSubset</code> of type
-<a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List&lt;Logic&gt;</a>. The update is performed from a given <code>start</code> position
+<a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List&lt;Logic&gt;</a>. The update is performed from a given <code>start</code> position
 to the length of the <code>updatedSubset</code>.</p>
 <p>Example:</p>
 <pre class="language-dart"><code>LogicArray sampleLogic;
@@ -129,7 +129,7 @@ sampleLogic.assignSubset(updatedSubset, 10);
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

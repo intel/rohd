@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,26 +37,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;IndexedLogic-extension-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;IndexedLogic-extension-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">selectIndex</span> method 
 </h1></div>
 
@@ -73,8 +73,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Performs a <code>index</code> based selection on an <a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a>.</p>
-<p>Given a <a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a> say <code>logicList</code> on which we apply <a href="../../rohd/IndexedLogic/selectIndex.html">selectIndex</a>
+  <p>Performs a <code>index</code> based selection on an <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a>.</p>
+<p>Given a <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a> of <a href="../../rohd/Logic-class.html">Logic</a> say <code>logicList</code> on which we apply <a href="../../rohd/IndexedLogic/selectIndex.html">selectIndex</a>
 and an element <code>index</code> as argument , we can select any valid element
 of type <a href="../../rohd/Logic-class.html">Logic</a> within the <code>logicList</code> using the <code>index</code> of <a href="../../rohd/Logic-class.html">Logic</a> type.</p>
 <p>Alternatively we can approach this with <code>index.selectFrom(logicList)</code></p>
@@ -112,12 +112,12 @@ selected &lt;= logicList.selectIndex(index);
 </ol>
 
 
-    <h5>IndexedLogic extension</h5>
+    <h5>IndexedLogic extension on <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

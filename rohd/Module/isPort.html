@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,34 +37,34 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;Module-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Module-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">isPort</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span>
-<span class="name ">isPort</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isPort-param-net"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">net</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+<span class="name ">isPort</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="isPort-param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
 </ol>)
 
       
@@ -72,15 +72,16 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns true iff <code>net</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as an input or output port of
-this <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
+  <p>Returns true iff <code>signal</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as an <a href="../../rohd/Module/input.html">input</a>, <a href="../../rohd/Module/output.html">output</a>, or
+<a href="../../rohd/Module/inOut.html">inOut</a> port of this <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool isPort(Logic net) =&gt; isInput(net) || isOutput(net);</code></pre>
+  <pre class="language-dart"><code class="language-dart">bool isPort(Logic signal) =&gt;
+    isInput(signal) || isOutput(signal) || isInOut(signal);</code></pre>
 </section>
 
 
@@ -107,7 +108,7 @@ this <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

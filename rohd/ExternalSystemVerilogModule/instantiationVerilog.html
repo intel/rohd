@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,26 +37,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;ExternalSystemVerilogModule-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;ExternalSystemVerilogModule-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-method">instantiationVerilog</span> method 
 </h1></div>
 
@@ -64,15 +64,14 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.3.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.4.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>
-<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-outputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputs</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>
+<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -84,9 +83,12 @@
 instantiation.</p>
 <p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name,
 respectively of the module that would have been instantiated had it not
-been overridden.  The <a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a>s <code>inputs</code> and <code>outputs</code> are a mapping from the
-<a href="../../rohd/Module-class.html">Module</a>'s port names to the names of the signals that are passed into
-those ports in the generated SystemVerilog.</p>
+been overridden.  <code>ports</code> is a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to
+the names of the signals that are passed into those ports in the generated
+SystemVerilog.</p>
+<p>If a standard instantiation is desired, either return <code>null</code> or use
+<a href="../../rohd/SystemVerilogSynthesizer/instantiationVerilogFor.html">SystemVerilogSynthesizer.instantiationVerilogFor</a> with
+<code>forceStandardInstantiation</code> set to <code>true</code>.</p>
 </section>
 
 
@@ -94,11 +96,19 @@ those ports in the generated SystemVerilog.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String instantiationVerilog(String instanceType, String instanceName,
-        Map&lt;String, String&gt; inputs, Map&lt;String, String&gt; outputs) =&gt;
-    SystemVerilogSynthesizer.instantiationVerilogWithParameters(
-        this, definitionName, instanceName, inputs, outputs,
-        parameters: parameters, forceStandardInstantiation: true);</code></pre>
+String instantiationVerilog(
+  String instanceType,
+  String instanceName,
+  Map&lt;String, String&gt; ports,
+) =&gt;
+    SystemVerilogSynthesizer.instantiationVerilogFor(
+      module: this,
+      instanceType: definitionName,
+      instanceName: instanceName,
+      ports: ports,
+      parameters: parameters,
+      forceStandardInstantiation: true,
+    );</code></pre>
 </section>
 
 
@@ -125,7 +135,7 @@ String instantiationVerilog(String instanceType, String instanceName,
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

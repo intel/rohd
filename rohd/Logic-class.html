@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../static-assets/github.css?v1">
   <link rel="stylesheet" href="../static-assets/styles.css?v1">
@@ -36,26 +36,26 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
-      data-below-sidebar="rohd&#47;Logic-class-sidebar.html">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
+    data-below-sidebar="rohd&#47;Logic-class-sidebar.html">
+    <div>
 <h1><span class="kind-class">Logic</span> class 
  
 </h1></div>
@@ -73,12 +73,13 @@
         
         
 
-        <dt>Implementers</dt>
-        <dd><ul class="comma-separated clazz-relationships">
-          <li><a href="../rohd/Const-class.html">Const</a></li>
-          <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
-          <li><a href="../rohd/Port-class.html">Port</a></li>
-        </ul></dd>
+          <dt>Implementers</dt>
+          <dd><ul class="comma-separated clazz-relationships">
+              <li><a href="../rohd/Const-class.html">Const</a></li>
+              <li><a href="../rohd/LogicNet-class.html">LogicNet</a></li>
+              <li><a href="../rohd/LogicStructure-class.html">LogicStructure</a></li>
+              <li><a href="../rohd/Port-class.html">Port</a></li>
+          </ul></dd>
 
 
         
@@ -93,21 +94,23 @@
 
     <dl class="constructor-summary-list">
         <dt id="Logic" class="callable">
-          <span class="name"><a href="../rohd/Logic/Logic.html">Logic</a></span><span class="signature">(<span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span><span class="parameter" id="-param-naming"><span class="type-annotation"><a href="../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span>}</span>)</span>
+          <span class="name"><a href="../rohd/Logic/Logic.html">Logic</a></span><span class="signature">(<span class="parameter" id="-param-name">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span><span class="parameter" id="-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span><span class="parameter" id="-param-naming"><span class="type-annotation"><a href="../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span>}</span>)</span>
         </dt>
         <dd>
           Constructs a new <a href="../rohd/Logic-class.html">Logic</a> named <code>name</code> with <code>width</code> bits.
         </dd>
     </dl>
   </section>
-
-    <section class="summary offset-anchor" id="instance-properties">
-      <h2>Properties</h2>
-
-      <dl class="properties">
+    
+  <section
+      class="summary offset-anchor"
+      id="instance-properties">
+    <h2>Properties</h2>
+    <dl class="properties">
         <dt id="arrayIndex" class="property">
   <span class="name"><a href="../rohd/Logic/arrayIndex.html">arrayIndex</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>?</span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>?</span>
+  
 
 </dt>
 <dd>
@@ -119,7 +122,8 @@ Othwerise, returns <code>null</code>.
 
         <dt id="bit" class="property">
   <span class="name"><a class="deprecated" href="../rohd/Logic/bit.html">bit</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
+  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  
 
 </dt>
 <dd>
@@ -131,11 +135,12 @@ a <a href="../rohd/LogicValue-class.html">LogicValue</a>.
 
         <dt id="changed" class="property">
   <span class="name"><a href="../rohd/Logic/changed.html">changed</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  A <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -143,18 +148,20 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
         <dt id="dstConnections" class="property">
   <span class="name"><a href="../rohd/Logic/dstConnections.html">dstConnections</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.3.3/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
+  An <a href="https://api.dart.dev/stable/3.4.2/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s that are being directly driven by <code>this</code>.
   <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
         <dt id="elements" class="property">
   <span class="name"><a href="../rohd/Logic/elements.html">elements</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
@@ -165,7 +172,8 @@ per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of 
 
         <dt id="glitch" class="property">
   <span class="name"><a href="../rohd/Logic/glitch.html">glitch</a></span>
-  <span class="signature">&#8594; SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; SynchronousEmitter<span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
@@ -176,8 +184,9 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 </dd>
 
         <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span>
+  
 
 </dt>
 <dd class="inherited">
@@ -188,7 +197,8 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
         <dt id="isArrayMember" class="property">
   <span class="name"><a href="../rohd/Logic/isArrayMember.html">isArrayMember</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
 
 </dt>
 <dd>
@@ -197,9 +207,22 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
 </dd>
 
+        <dt id="isInOut" class="property">
+  <span class="name"><a href="../rohd/Logic/isInOut.html">isInOut</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Returns true iff this signal is an inOut of its parent <a href="../rohd/Module-class.html">Module</a>.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="isInput" class="property">
   <span class="name"><a href="../rohd/Logic/isInput.html">isInput</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
 
 </dt>
 <dd>
@@ -208,9 +231,23 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
 </dd>
 
+        <dt id="isNet" class="property">
+  <span class="name"><a href="../rohd/Logic/isNet.html">isNet</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
+
+</dt>
+<dd>
+  Indicates whether this signal behaves like a <a href="../rohd/LogicNet-class.html">LogicNet</a>, allowing multiple
+drivers.
+  <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
         <dt id="isOutput" class="property">
   <span class="name"><a href="../rohd/Logic/isOutput.html">isOutput</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
 
 </dt>
 <dd>
@@ -221,18 +258,21 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
         <dt id="isPort" class="property">
   <span class="name"><a href="../rohd/Logic/isPort.html">isPort</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
+  
 
 </dt>
 <dd>
-  Returns true iff this signal is an input or output of its parent <a href="../rohd/Module-class.html">Module</a>.
-  <div class="features"><span class="feature">no setter</span></div>
+  Returns true iff this signal is an input, output, or inOut of its parent
+<a href="../rohd/Module-class.html">Module</a>.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
         <dt id="name" class="property">
   <span class="name"><a href="../rohd/Logic/name.html">name</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>
+  
 
 </dt>
 <dd>
@@ -243,7 +283,8 @@ transitions at any time during a <a href="../rohd/Simulator-class.html">Simulato
 
         <dt id="naming" class="property">
   <span class="name"><a href="../rohd/Logic/naming.html">naming</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Naming.html">Naming</a></span> 
+  <span class="signature">&#8594; <a href="../rohd/Naming.html">Naming</a></span>
+  
 
 </dt>
 <dd>
@@ -255,11 +296,12 @@ outputs.
 
         <dt id="negedge" class="property">
   <span class="name"><a href="../rohd/Logic/negedge.html">negedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  A <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
 from <code>1</code> to <code>0</code>.
   <div class="features"><span class="feature">no setter</span></div>
@@ -268,7 +310,8 @@ from <code>1</code> to <code>0</code>.
 
         <dt id="nextChanged" class="property">
   <span class="name"><a href="../rohd/Logic/nextChanged.html">nextChanged</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
@@ -280,7 +323,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick.
 
         <dt id="nextNegedge" class="property">
   <span class="name"><a href="../rohd/Logic/nextNegedge.html">nextNegedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
@@ -292,7 +336,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 
         <dt id="nextPosedge" class="property">
   <span class="name"><a href="../rohd/Logic/nextPosedge.html">nextPosedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
@@ -304,7 +349,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 
         <dt id="parentModule" class="property">
   <span class="name"><a href="../rohd/Logic/parentModule.html">parentModule</a></span>
-  <span class="signature">&#8596; <a href="../rohd/Module-class.html">Module</a>?</span> 
+  <span class="signature">&#8596; <a href="../rohd/Module-class.html">Module</a>?</span>
+  
 
 </dt>
 <dd>
@@ -315,7 +361,8 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 
         <dt id="parentStructure" class="property">
   <span class="name"><a href="../rohd/Logic/parentStructure.html">parentStructure</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicStructure-class.html">LogicStructure</a>?</span> 
+  <span class="signature">&#8594; <a href="../rohd/LogicStructure-class.html">LogicStructure</a>?</span>
+  
 
 </dt>
 <dd>
@@ -327,11 +374,12 @@ a part of.  Otherwise, <code>null</code>.
 
         <dt id="posedge" class="property">
   <span class="name"><a href="../rohd/Logic/posedge.html">posedge</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+  
 
 </dt>
 <dd>
-  A <a href="https://api.dart.dev/stable/3.3.3/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  A <a href="https://api.dart.dev/stable/3.4.2/dart-async/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
 from <code>0</code> to <code>1</code>.
   <div class="features"><span class="feature">no setter</span></div>
@@ -340,7 +388,8 @@ from <code>0</code> to <code>1</code>.
 
         <dt id="previousValue" class="property">
   <span class="name"><a href="../rohd/Logic/previousValue.html">previousValue</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a>?</span> 
+  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a>?</span>
+  
 
 </dt>
 <dd>
@@ -353,18 +402,20 @@ created.
 
         <dt id="reversed" class="property">
   <span class="name"><a href="../rohd/Logic/reversed.html">reversed</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span> 
+  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  
 
 </dt>
 <dd>
   Returns a version of this <a href="../rohd/Logic-class.html">Logic</a> with the bit order reversed.
-  <div class="features"><span class="feature">no setter</span></div>
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/Type-class.html">Type</a></span> 
+  <span class="name"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/Type-class.html">Type</a></span>
+  
 
 </dt>
 <dd class="inherited">
@@ -375,7 +426,8 @@ created.
 
         <dt id="srcConnection" class="property">
   <span class="name"><a href="../rohd/Logic/srcConnection.html">srcConnection</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a>?</span> 
+  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a>?</span>
+  
 
 </dt>
 <dd>
@@ -384,9 +436,22 @@ created.
 
 </dd>
 
+        <dt id="srcConnections" class="property">
+  <span class="name"><a href="../rohd/Logic/srcConnections.html">srcConnections</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  All <code>Logic</code>s driving <code>this</code>, if any.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="structureName" class="property">
   <span class="name"><a href="../rohd/Logic/structureName.html">structureName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>
+  
 
 </dt>
 <dd>
@@ -398,7 +463,8 @@ one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">na
 
         <dt id="value" class="property">
   <span class="name"><a href="../rohd/Logic/value.html">value</a></span>
-  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span> 
+  <span class="signature">&#8594; <a href="../rohd/LogicValue-class.html">LogicValue</a></span>
+  
 
 </dt>
 <dd>
@@ -409,29 +475,32 @@ one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">na
 
         <dt id="valueBigInt" class="property">
   <span class="name"><a class="deprecated" href="../rohd/Logic/valueBigInt.html">valueBigInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/BigInt-class.html">BigInt</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/BigInt-class.html">BigInt</a></span>
+  
 
 </dt>
 <dd>
-  The current valid active value of this signal as a <a href="https://api.dart.dev/stable/3.3.3/dart-core/BigInt-class.html">BigInt</a>.
+  The current valid active value of this signal as a <a href="https://api.dart.dev/stable/3.4.2/dart-core/BigInt-class.html">BigInt</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
         <dt id="valueInt" class="property">
   <span class="name"><a class="deprecated" href="../rohd/Logic/valueInt.html">valueInt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span>
+  
 
 </dt>
 <dd>
-  The current valid active value of this signal as an <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>.
+  The current valid active value of this signal as an <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
         <dt id="width" class="property">
   <span class="name"><a href="../rohd/Logic/width.html">width</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> 
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span>
+  
 
 </dt>
 <dd>
@@ -440,9 +509,8 @@ one exists.  Otherwise, this is the same as <a href="../rohd/Logic/name.html">na
 
 </dd>
 
-      </dl>
-    </section>
-
+    </dl>
+  </section>
     
   <section
       class="summary offset-anchor"
@@ -516,7 +584,7 @@ number is a two's complement.
 </dd>
 
         <dt id="getRange" class="callable">
-  <span class="name"><a href="../rohd/Logic/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
+  <span class="name"><a href="../rohd/Logic/getRange.html">getRange</a></span><span class="signature">(<wbr><span class="parameter" id="getRange-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="getRange-param-endIndex">[<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">endIndex</span>]</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -537,7 +605,7 @@ number is a two's complement.
 
 </dt>
 <dd>
-  Connects this <a href="../rohd/Logic-class.html">Logic</a> directly to <code>other</code>.
+  Connects this <a href="../rohd/Logic-class.html">Logic</a> directly to be driven by <code>other</code>.
   
 
 </dd>
@@ -570,7 +638,7 @@ number is a two's complement.
 
         <dt id="hasValidValue" class="callable">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Logic/hasValidValue.html">hasValidValue</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -595,7 +663,7 @@ number is a two's complement.
 </dd>
 
         <dt id="inject" class="callable">
-  <span class="name"><a href="../rohd/Logic/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="inject-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/Logic/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="inject-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -609,7 +677,7 @@ number is a two's complement.
 
         <dt id="isFloating" class="callable">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Logic/isFloating.html">isFloating</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -621,7 +689,7 @@ number is a two's complement.
 </dd>
 
         <dt id="isIn" class="callable">
-  <span class="name"><a href="../rohd/Logic/isIn.html">isIn</a></span><span class="signature">(<wbr><span class="parameter" id="isIn-param-list"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a></span> <span class="parameter-name">list</span></span>)
+  <span class="name"><a href="../rohd/Logic/isIn.html">isIn</a></span><span class="signature">(<wbr><span class="parameter" id="isIn-param-list"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a></span> <span class="parameter-name">list</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -701,7 +769,7 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -740,7 +808,7 @@ conditional (<code>&lt;</code>) assignment.
 </dd>
 
         <dt id="put" class="callable">
-  <span class="name"><a href="../rohd/Logic/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="put-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
+  <span class="name"><a href="../rohd/Logic/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, </span><span class="parameter" id="put-param-fill">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>}</span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -754,7 +822,7 @@ for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Si
 </dd>
 
         <dt id="replicate" class="callable">
-  <span class="name"><a href="../rohd/Logic/replicate.html">replicate</a></span><span class="signature">(<wbr><span class="parameter" id="replicate-param-multiplier"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">multiplier</span></span>)
+  <span class="name"><a href="../rohd/Logic/replicate.html">replicate</a></span><span class="signature">(<wbr><span class="parameter" id="replicate-param-multiplier"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">multiplier</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -770,21 +838,21 @@ thrown, otherwise.
 </dd>
 
         <dt id="selectFrom" class="callable">
-  <span class="name"><a href="../rohd/Logic/selectFrom.html">selectFrom</a></span><span class="signature">(<wbr><span class="parameter" id="selectFrom-param-busList"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">busList</span>, </span><span class="parameter" id="selectFrom-param-defaultValue">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">defaultValue</span>}</span>)
+  <span class="name"><a href="../rohd/Logic/selectFrom.html">selectFrom</a></span><span class="signature">(<wbr><span class="parameter" id="selectFrom-param-busList"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">busList</span>, </span><span class="parameter" id="selectFrom-param-defaultValue">{<span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">defaultValue</span>}</span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Performs a <a href="../rohd/Logic-class.html">Logic</a> <code>index</code> based selection on an <a href="https://api.dart.dev/stable/3.3.3/dart-core/List-class.html">List</a> of <a href="../rohd/Logic-class.html">Logic</a>
+  Performs a <a href="../rohd/Logic-class.html">Logic</a> <code>index</code> based selection on an <a href="https://api.dart.dev/stable/3.4.2/dart-core/List-class.html">List</a> of <a href="../rohd/Logic-class.html">Logic</a>
 named <code>busList</code>.
   
 
 </dd>
 
         <dt id="signExtend" class="callable">
-  <span class="name"><a href="../rohd/Logic/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/Logic/signExtend.html">signExtend</a></span><span class="signature">(<wbr><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -800,7 +868,7 @@ and extends with that.
 </dd>
 
         <dt id="slice" class="callable">
-  <span class="name"><a href="../rohd/Logic/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
+  <span class="name"><a href="../rohd/Logic/slice.html">slice</a></span><span class="signature">(<wbr><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -815,7 +883,7 @@ both inclusive.
 
         <dt id="toString" class="callable">
   <span class="name"><a href="../rohd/Logic/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -827,7 +895,7 @@ both inclusive.
 </dd>
 
         <dt id="withSet" class="callable">
-  <span class="name"><a href="../rohd/Logic/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">update</span></span>)
+  <span class="name"><a href="../rohd/Logic/withSet.html">withSet</a></span><span class="signature">(<wbr><span class="parameter" id="withSet-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span><span class="parameter" id="withSet-param-update"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">update</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -855,7 +923,7 @@ of their original value.
 </dd>
 
         <dt id="zeroExtend" class="callable">
-  <span class="name"><a href="../rohd/Logic/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
+  <span class="name"><a href="../rohd/Logic/zeroExtend.html">zeroExtend</a></span><span class="signature">(<wbr><span class="parameter" id="zeroExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -994,8 +1062,8 @@ as the most significant bits.
 </dd>
 
         <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.3.3/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.3.3/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span>
   </span>
   
 

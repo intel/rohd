@@ -11,7 +11,7 @@
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -37,47 +37,47 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;LogicStructure-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;LogicStructure-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
 <h1><span class="kind-property">parentModule</span> property 
 </h1></div>
 
 
         
-<section id="getter">
+  <section id="getter">
 
-<section class="multi-line-signature">
-  
+    <section class="multi-line-signature">
+      
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.3.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.4.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-  <span class="returntype"><a href="../../rohd/Module-class.html">Module</a>?</span>
-  <span class="name ">parentModule</span>
-  <div class="features"><span class="feature">override</span></div>
+      <span class="returntype"><a href="../../rohd/Module-class.html">Module</a>?</span>
+      <span class="name ">parentModule</span>
+      <div class="features"><span class="feature">override</span></div>
 
-</section>
+    </section>
 
-
+    
 <section class="desc markdown">
   <p>The <a href="../../rohd/Module-class.html">Module</a> that this <a href="../../rohd/Logic-class.html">Logic</a> exists within.</p>
 <p>For internal signals, this only gets populated after its parent <a href="../../rohd/Module-class.html">Module</a>,
@@ -85,46 +85,49 @@ if it exists, has been built.  Ports (both input and output) have this
 populated at the time of creation.</p>
 </section>
 
-
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 Module? get parentModule =&gt; _parentModule;</code></pre>
 </section>
 
-</section>
+  </section>
 
 
         
-<section id="setter">
+  <section id="setter">
 
-<section class="multi-line-signature">
-  
+    <section class="multi-line-signature">
+      
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.14.0/meta/protected-constant.html">protected</a></li>
-        <li>@<a href="https://api.dart.dev/stable/3.3.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.4.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-  <span class="returntype">void</span>
-  <span class="name ">parentModule=</span><span class="signature">(<wbr><span class="parameter" id="parentModule=-param-newParentModule"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParentModule</span></span>)</span>
-  <div class="features"><span class="feature">override</span></div>
+      <span class="returntype">void</span>
+      <span class="name ">parentModule=</span><span class="signature">(<wbr><span class="parameter" id="parentModule=-param-newParentModule"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParentModule</span></span>)</span>
+      <div class="features"><span class="feature">override</span></div>
 
-</section>
+    </section>
 
-
+    
 <section class="desc markdown">
   <p>Sets the value of <a href="../../rohd/LogicStructure/parentModule.html">parentModule</a> to <code>newParentModule</code>.</p>
 <p>This should <em>only</em> be called by <a href="../../rohd/Module/build.html">Module.build()</a>.  It is used to
 optimize search.</p>
 </section>
 
-
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 @override
 set parentModule(Module? newParentModule) {
+  assert(_parentModule == null || _parentModule == newParentModule,
+      &#39;Should only set parent module once.&#39;);
+
   _parentModule = newParentModule;
   for (final element in elements) {
     element.parentModule = newParentModule;
@@ -132,12 +135,12 @@ set parentModule(Module? newParentModule) {
 }</code></pre>
 </section>
 
-</section>
+  </section>
 
-  </div> <!-- /.main-content -->
+</div> <!-- /.main-content -->
 
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -152,12 +155,12 @@ set parentModule(Module? newParentModule) {
 </ol>
 
 
-    <h5>LogicStructure class</h5>
-    <div id="dartdoc-sidebar-left-content"></div>
-  </div><!--/.sidebar-offcanvas-->
+  <h5>LogicStructure class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
 
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 

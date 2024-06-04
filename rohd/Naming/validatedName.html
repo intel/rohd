@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the moduleToInstanceTypeMap property from the SynthesisResult class, for the Dart programming language.">
-  <title>moduleToInstanceTypeMap property - SynthesisResult class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the validatedName method from the Naming enum, for the Dart programming language.">
+  <title>validatedName method - Naming enum - rohd library - Dart API</title>
 
 
   
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
   
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
@@ -30,58 +30,72 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
-    <li class="self-crumb">moduleToInstanceTypeMap property</li>
+    <li><a href="../../rohd/Naming.html">Naming</a></li>
+    <li class="self-crumb">validatedName static method</li>
   </ol>
-  <div class="self-name">moduleToInstanceTypeMap</div>
+  <div class="self-name">validatedName</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button">
+  <div class="toggle" id="theme-button" title="Toggle brightness">
     <label for="theme">
       <input type="checkbox" id="theme" value="light-theme">
       <span id="dark-theme-button" class="material-symbols-outlined">
-        brightness_4
+        dark_mode
       </span>
       <span id="light-theme-button" class="material-symbols-outlined">
-        brightness_5
+        light_mode
       </span>
     </label>
   </div>
 </header>
 <main>
 
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;SynthesisResult-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
-<h1><span class="kind-property">moduleToInstanceTypeMap</span> property 
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Naming-enum-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">validatedName</span> static method 
 </h1></div>
 
-        <section class="multi-line-signature">
-          
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.14.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
-          <a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Module-class.html">Module</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.3.3/dart-core/String-class.html">String</a></span>&gt;</span>
-          <span class="name ">moduleToInstanceTypeMap</span>
-          <div class="features"><span class="feature">final</span></div>
+    <section class="multi-line-signature">
+      
 
-        </section>
-        
+<span class="returntype"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a>?</span>
+<span class="name ">validatedName</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="validatedName-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="validatedName-param-reserveName">{<span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveName</span>}</span></li>
+</ol>)
+
+      
+
+    </section>
+    
 <section class="desc markdown">
-  <p>A <a href="https://api.dart.dev/stable/3.3.3/dart-core/Map-class.html">Map</a> from <code>Module</code> instances to synthesis instance type names.</p>
+  <p>Returns <code>name</code> if it meets requirements for the specified <code>reserveName</code>,
+otherwise throws an <a href="https://api.dart.dev/stable/3.4.2/dart-core/Exception-class.html">Exception</a>.</p>
+<p>This same function is reusable for other reference names like <a href="../../rohd/Module-class.html">Module</a>s,
+not only <a href="../../rohd/Logic-class.html">Logic</a>s.</p>
 </section>
 
-        
+
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-final Map&lt;Module, String&gt; moduleToInstanceTypeMap;</code></pre>
+  <pre class="language-dart"><code class="language-dart">static String? validatedName(String? name, {required bool reserveName}) {
+  if (reserveName) {
+    if (name == null) {
+      throw NullReservedNameException();
+    } else if (name.isEmpty) {
+      throw EmptyReservedNameException();
+    } else if (!Sanitizer.isSanitary(name)) {
+      throw InvalidReservedNameException();
+    }
+  }
+
+  return name;
+}</code></pre>
 </section>
 
 
@@ -98,17 +112,17 @@ final Map&lt;Module, String&gt; moduleToInstanceTypeMap;</code></pre>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/SynthesisResult-class.html">SynthesisResult</a></li>
-    <li class="self-crumb">moduleToInstanceTypeMap property</li>
+    <li><a href="../../rohd/Naming.html">Naming</a></li>
+    <li class="self-crumb">validatedName static method</li>
 </ol>
 
 
-    <h5>SynthesisResult class</h5>
+    <h5>Naming enum</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
 
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+</div><!--/.sidebar-offcanvas-->
 
 </main>
 
