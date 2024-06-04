@@ -154,6 +154,7 @@ class Pipeline {
             resetValues: resetValues,
             reset: reset);
 
+  // TODO: allow Pipeline to support async reset
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
   Pipeline.multi(this._clks,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
