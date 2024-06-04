@@ -415,6 +415,54 @@ void main() {
           LogicValue.filled(65, LogicValue.one) ^
               LogicValue.ofString('${'1' * 61}0000'),
           equals(LogicValue.of(BigInt.from(15), width: 65)));
+
+      // test filled xor with invalid
+      expect(
+          LogicValue.filled(25, LogicValue.z) ^
+              LogicValue.filled(25, LogicValue.z),
+          LogicValue.filled(25, LogicValue.x));
+    });
+
+    test('tristate2', () {
+      // some constants useful for testing all combinations on small and big
+      const a = '00001111xxxxzzzz';
+      const b = '01xz01xz01xz01xz';
+      const r = '0xx0x1x1xxxx01xz';
+
+      // small logic value
+      expect(LogicValue.ofString(a).triState(LogicValue.ofString(b)),
+          equals(LogicValue.ofString(r)));
+
+      // big logic value
+      const m = 5;
+      expect(LogicValue.ofString(a * m).triState(LogicValue.ofString(b * m)),
+          equals(LogicValue.ofString(r * m)));
+
+      // filled logic value
+      const f = 10;
+      for (var i = 0; i < a.length; i++) {
+        final ac = a.substring(i, i + 1);
+        final bc = b.substring(i, i + 1);
+        final rc = r.substring(i, i + 1);
+        expect(LogicValue.of(ac * f).triState(LogicValue.of(bc * f)),
+            LogicValue.of(rc * f));
+      }
+
+      for (var i = 0; i < a.length; i += 4) {
+        final ac = a.substring(i, i + 4);
+        final bc = b.substring(i, i + 4);
+        final rc = r.substring(i, i + 4);
+
+        // filled with small
+        expect(LogicValue.ofString(ac).triState(LogicValue.ofString(bc)),
+            LogicValue.ofString(rc));
+
+        // filled with big
+        expect(
+            LogicValue.ofString(ac * m * 4)
+                .triState(LogicValue.ofString(bc * m * 4)),
+            LogicValue.ofString(rc * m * 4));
+      }
     });
   });
 

@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/synchronous_propagator.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a block of logic, similar to `always` blocks in SystemVerilog.
-abstract class _Always extends Module with CustomSystemVerilog {
+abstract class _Always extends Module with SystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   List<Conditional> get conditionals =>
       UnmodifiableListView<Conditional>(_conditionals);
@@ -161,8 +161,17 @@ abstract class _Always extends Module with CustomSystemVerilog {
   String assignOperator();
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    // no `inouts` can be used in a `Conditional`
+    final inputs = Map.fromEntries(
+        ports.entries.where((element) => this.inputs.containsKey(element.key)));
+    final outputs = Map.fromEntries(ports.entries
+        .where((element) => this.outputs.containsKey(element.key)));
+
     var verilog = '';
     verilog += '//  $instanceName\n';
     verilog += '${alwaysVerilogStatement(inputs)} begin\n';
@@ -299,7 +308,10 @@ class Combinational extends _Always {
 
       _signalToSsaDrivers.putIfAbsent(tpi, () => <_SsaLogic>{}).add(ssaDriver);
 
-      if (tpi.isInput && tpi.parentModule! is CustomSystemVerilog) {
+      if (tpi.isInput &&
+          // ignore: deprecated_member_use_from_same_package
+          ((tpi.parentModule! is CustomSystemVerilog) ||
+              tpi.parentModule! is SystemVerilog)) {
         toParse.addAll(tpi.parentModule!.outputs.values);
       } else {
         toParse.addAll(tpi.dstConnections);
@@ -1129,6 +1141,7 @@ class Case extends Conditional {
         for (final conditional in item.then) {
           conditional.execute(drivenSignals, guard);
         }
+
         if (foundMatch != null && conditionalType == ConditionalType.unique) {
           _driveX(drivenSignals);
           return;
@@ -1638,7 +1651,7 @@ Logic flop(
     ).q;
 
 /// Represents a single flip-flop with no reset.
-class FlipFlop extends Module with CustomSystemVerilog {
+class FlipFlop extends Module with SystemVerilog {
   /// Name for the enable input of this flop
   final String _enName = Naming.unpreferredName('en');
 
@@ -1746,8 +1759,8 @@ class FlipFlop extends Module with CustomSystemVerilog {
   }
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+      String instanceType, String instanceName, Map<String, String> ports) {
     var expectedInputs = 2;
     if (_en != null) {
       expectedInputs++;
@@ -1759,27 +1772,24 @@ class FlipFlop extends Module with CustomSystemVerilog {
       expectedInputs++;
     }
 
-    if (inputs.length != expectedInputs || outputs.length != 1) {
-      throw Exception(
-          'FlipFlop has exactly $expectedInputs inputs and one output.');
-    }
+    assert(ports.length == expectedInputs + 1,
+        'FlipFlop has exactly $expectedInputs inputs and one output.');
 
-    final clk = inputs[_clkName]!;
-    final d = inputs[_dName]!;
-    final q = outputs[_qName]!;
+    final clk = ports[_clkName]!;
+    final d = ports[_dName]!;
+    final q = ports[_qName]!;
 
     final svBuffer = StringBuffer('always_ff @(posedge $clk) ');
 
     if (_reset != null) {
       final resetValueString = _resetValuePort != null
-          ? inputs[_resetValueName]!
+          ? ports[_resetValueName]!
           : _resetValueConst.toString();
-      svBuffer
-          .write('if(${inputs[_resetName]}) $q <= $resetValueString; else ');
+      svBuffer.write('if(${ports[_resetName]}) $q <= $resetValueString; else ');
     }
 
     if (_en != null) {
-      svBuffer.write('if(${inputs[_enName]!}) ');
+      svBuffer.write('if(${ports[_enName]!}) ');
     }
 
     svBuffer.write('$q <= $d;  // $instanceName');

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // many_seq_and_comb_benchmark.dart
@@ -140,7 +140,6 @@ class _CombinationalWrapper extends Module {
         mcu.address <= intf.address;
         mcu.inputData <= intf.inputData;
         intf.outputData <= mcu.outputData;
-        break;
       case ManySeqAndCombCombConnectionType.manyCombs:
         Combinational([mcu.clock < intf.clock]);
         Combinational([mcu.enable < intf.enable]);
@@ -149,7 +148,6 @@ class _CombinationalWrapper extends Module {
         Combinational([mcu.address < intf.address]);
         Combinational([mcu.inputData < intf.inputData]);
         Combinational([intf.outputData < mcu.outputData]);
-        break;
       case ManySeqAndCombCombConnectionType.oneComb:
         Combinational([
           mcu.clock < intf.clock,
@@ -160,7 +158,6 @@ class _CombinationalWrapper extends Module {
           mcu.inputData < intf.inputData,
           intf.outputData < mcu.outputData,
         ]);
-        break;
       case ManySeqAndCombCombConnectionType.manySsaCombs:
         Combinational.ssa((s) => [mcu.clock < intf.clock]);
         Combinational.ssa((s) => [mcu.enable < intf.enable]);
@@ -169,7 +166,6 @@ class _CombinationalWrapper extends Module {
         Combinational.ssa((s) => [mcu.address < intf.address]);
         Combinational.ssa((s) => [mcu.inputData < intf.inputData]);
         Combinational.ssa((s) => [intf.outputData < mcu.outputData]);
-        break;
       case ManySeqAndCombCombConnectionType.oneSsaComb:
         Combinational.ssa((s) => [
               mcu.clock < intf.clock,
@@ -180,7 +176,6 @@ class _CombinationalWrapper extends Module {
               mcu.inputData < intf.inputData,
               intf.outputData < mcu.outputData,
             ]);
-        break;
     }
   }
 }

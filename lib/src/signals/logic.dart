@@ -64,6 +64,11 @@ class Logic {
   bool isFloating() => value.isFloating;
 
   /// The [Logic] signal that is driving `this`, if any.
+  ///
+  /// If there are multiple drivers (e.g. this is an instance of a special
+  /// type/subclass of [Logic]), this will be `null` and [srcConnections] can be
+  /// referenced to find all drivers. A simple [Logic] will always have either
+  /// one or no driver.
   Logic? get srcConnection => _srcConnection;
   Logic? _srcConnection;
 
@@ -178,29 +183,46 @@ class Logic {
   /// This should *only* be called by [Module.build()].  It is used to
   /// optimize search.
   @protected
-  set parentModule(Module? newParentModule) => _parentModule = newParentModule;
+  set parentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
+    _parentModule = newParentModule;
+  }
 
   /// Returns true iff this signal is an input of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
   late final bool isInput =
       // this can be cached because parentModule is set at port creation
       parentModule?.isInput(this) ?? false;
 
   /// Returns true iff this signal is an output of its parent [Module].
-  ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
   late final bool isOutput =
       // this can be cached because parentModule is set at port creation
       parentModule?.isOutput(this) ?? false;
 
-  /// Returns true iff this signal is an input or output of its parent [Module].
+  /// Returns true iff this signal is an inOut of its parent [Module].
+  late final bool isInOut =
+      // this can be cached because parentModule is set at port creation
+      parentModule?.isInOut(this) ?? false;
+
+  /// Indicates whether this signal behaves like a [LogicNet], allowing multiple
+  /// drivers.
+  bool get isNet => false;
+
+  /// All [Logic]s driving `this`, if any.
   ///
-  /// Note: [parentModule] is not populated until after its parent [Module],
-  /// if it exists, has been built. If no parent [Module] exists, returns false.
-  bool get isPort => isInput || isOutput;
+  /// For a simple [Logic], this will simply be an [Iterable] containing either
+  /// nothing (if no driver), or one element equal to [srcConnection]. If there
+  /// are multiple drivers (e.g. this is an instance of a special type/subclass
+  /// of [Logic]), then there may be multiple drivers.
+  late final Iterable<Logic> srcConnections =
+      UnmodifiableListView(_srcConnections);
+  // [if (srcConnection != null) srcConnection!];
+  late final List<Logic> _srcConnections = [];
+
+  /// Returns true iff this signal is an input, output, or inOut of its parent
+  /// [Module].
+  late final bool isPort = isInput || isOutput || isInOut;
 
   /// Controls the naming (and renaming) preferences of this signal in generated
   /// outputs.
@@ -208,18 +230,31 @@ class Logic {
 
   /// Constructs a new [Logic] named [name] with [width] bits.
   ///
-  /// The default value for [width] is 1.  The [name] should be synthesizable
-  /// to the desired output (e.g. SystemVerilog).
+  /// The default value for [width] is 1.  The [name] should be sanitary
+  /// (variable rules for languages such as SystemVerilog).
   ///
-  /// The [naming] and [name], if unspecified, are chosen based on the rules
-  /// in [Naming.chooseNaming] and [Naming.chooseName], respectively.
+  /// The [naming] and [name], if unspecified, are chosen based on the rules in
+  /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
   Logic({
     String? name,
     int width = 1,
     Naming? naming,
+  }) : this._(
+          name: name,
+          width: width,
+          naming: naming,
+        );
+
+  /// An internal constructor for [Logic] which additional provides access to
+  /// setting the [wire].
+  Logic._({
+    String? name,
+    int width = 1,
+    Naming? naming,
+    _Wire? wire,
   })  : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
-        _wire = _Wire(width: width) {
+        _wire = wire ?? _Wire(width: width) {
     if (width < 0) {
       throw LogicConstructionException(
           'Logic width must be greater than or equal to 0.');
@@ -227,7 +262,10 @@ class Logic {
   }
 
   @override
-  String toString() => 'Logic($width): $name';
+  String toString() => [
+        'Logic($width): $name',
+        if (isArrayMember) 'index $arrayIndex of ($parentStructure)'
+      ].join(', ');
 
   /// Throws an exception if this [Logic] cannot be connected to another signal.
   void _assertConnectable(Logic other) {
@@ -246,11 +284,15 @@ class Logic {
     if (other.width != width) {
       throw SignalWidthMismatchException(other, width);
     }
+
+    if (_wire == other._wire && !isNet) {
+      throw SelfConnectingLogicException(this, other);
+    }
   }
 
   /// Injects a value onto this signal in the current [Simulator] tick.
   ///
-  /// This function calls [put()] in [Simulator.injectAction()].
+  /// This function calls [put] in [Simulator.injectAction].
   void inject(dynamic val, {bool fill = false}) =>
       _wire.inject(val, signalName: name, fill: fill);
 
@@ -267,13 +309,11 @@ class Logic {
   void put(dynamic val, {bool fill = false}) =>
       _wire.put(val, signalName: name, fill: fill);
 
-  /// Connects this [Logic] directly to [other].
+  /// Connects this [Logic] directly to be driven by [other].
   ///
-  /// Every time [other] transitions (`glitch`es), this signal will transition
+  /// Every time [other] transitions ([glitch]es), this signal will transition
   /// the same way.
   void gets(Logic other) {
-    _assertConnectable(other);
-
     // If we are connecting a `LogicStructure` to this simple `Logic`,
     // then pack it first.
     if (other is LogicStructure) {
@@ -281,25 +321,38 @@ class Logic {
       other = other.packed;
     }
 
+    _assertConnectable(other);
+
     _connect(other);
 
-    _srcConnection = other;
     other._registerConnection(this);
   }
 
-  /// Handles the actual connection of this [Logic] to [other].
+  /// Handles the actual connection of this [Logic] to be driven by [other].
   void _connect(Logic other) {
-    if (_wire == other._wire) {
-      throw SelfConnectingLogicException(this, other);
-    }
-
     _unassignable = true;
-    _updateWire(other._wire);
+    if (other is LogicNet) {
+      other.glitch.listen((args) {
+        put(other.value);
+      });
+    } else {
+      _updateWire(other._wire);
+    }
+    _srcConnection = other;
+    _srcConnections.add(other);
   }
 
   /// Updates the current active [_Wire] for this [Logic] and also
   /// notifies all downstream [Logic]s of the new source [_Wire].
   void _updateWire(_Wire newWire) {
+    assert((_wire is _WireNet) == (newWire is _WireNet),
+        'Should not merge nets of different types.');
+
+    if (newWire == _wire) {
+      // no need to do any work if we're already on the same wire!
+      return;
+    }
+
     // first, propagate the new value (if it's different) downstream
     _wire.put(newWire.value, signalName: name);
 
@@ -308,7 +361,18 @@ class Logic {
     _wire = newWire;
 
     // tell all downstream signals to update to the new wire as well
-    for (final dstConnection in dstConnections) {
+    final Iterable<Logic> toUpdateWire;
+    if (this is LogicNet) {
+      toUpdateWire = [
+        ...dstConnections,
+        ...(this as LogicNet).srcConnections,
+      ].where(
+          (connection) => connection._wire != _wire && connection is LogicNet);
+    } else {
+      toUpdateWire = dstConnections.where((element) => element is! LogicNet);
+    }
+
+    for (final dstConnection in toUpdateWire) {
       dstConnection._updateWire(newWire);
     }
   }
@@ -579,7 +643,9 @@ class Logic {
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
-  Logic get reversed => slice(0, width - 1);
+  late final Logic reversed =
+      Logic(name: 'reversed_$name', naming: Naming.unnamed, width: width)
+        ..gets(slice(0, width - 1));
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].
