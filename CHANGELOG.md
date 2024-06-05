@@ -1,3 +1,16 @@
+## Next release
+
+- Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers.
+- Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports and collapses all ports into a single `ports` argument.
+- Breaking: `ExternalSystemVerilogModule` and `InlineSystemVerilog` now extend `SystemVerilog` instead of `CustomSystemVerilog`, meaning the `instantiationVerilog` API arguments have been modified.
+- Breaking: Increased minimum Dart SDK version to 3.0.0.
+- Breaking: `Interface.connectIO` has an additional optional named argument for `inOutTags`.  Implementations of `Interface` which override `connectIO` will need to be updated.
+- Fixed a bug where `expressionlessInputs` may not have been honored in non-inline custom SystemVerilog modules.
+- Fixed a bug where in some cases an `xor` between two `LogicValue`s could cause an exception due to a false width mismatch.
+- Added better checking, error handling, and message when module hierarchy cannot be properly resolved (e.g. self-containing modules, modules within multiple hierarchies).
+- Breaking: Updated APIs for `Synthesizer.synthesize` and down the stack to use a `Function` to calculate the instance type of a module instead of a `Map` look-up table.
+- Added `srcConnections` API to `Logic` to make it easier to trace drivers of subtypes of `Logic` which contain multiple drivers.
+
 ## 0.5.3
 
 - Added beta version of the ROHD DevTools Extension to aid in ROHD hardware debug by displaying module hierarchy and signal information visually and interactively (<https://github.com/intel/rohd/pull/435>).

@@ -177,6 +177,24 @@ class _BigLogicValue extends LogicValue {
   }
 
   @override
+  LogicValue _triState2(LogicValue other) {
+    assert(other is _BigLogicValue, 'Will always be a _BigLogicValue');
+    other as _BigLogicValue;
+
+    final oppositeValids =
+        ~_invalid & ~other._invalid & (_value ^ other._value);
+
+    final newValue = _value & other._value & ~oppositeValids & _mask;
+    final newInvalid = ((_invalid & other._invalid) |
+            (~_value & _invalid) |
+            (~other._value & other._invalid) |
+            oppositeValids) &
+        _mask;
+
+    return LogicValue._bigLogicValueOrFilled(newValue, newInvalid, width);
+  }
+
+  @override
   LogicValue and() => (~_value & ~_invalid) & _mask != BigInt.zero
       ? LogicValue.zero
       : !isValid

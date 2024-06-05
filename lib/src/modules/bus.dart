@@ -126,7 +126,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 
 /// A [Module] that performs concatenation of signals into one bigger [Logic].
 ///
-/// The concatenation occurs such that index 0 of [signals] is the *most*
+/// The concatenation occurs such that index 0 of `signals` is the *most*
 /// significant bit(s).
 ///
 /// You can use convenience functions [swizzle()] or [rswizzle()] to more easily

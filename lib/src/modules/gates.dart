@@ -49,9 +49,8 @@ class NotGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('Gate has exactly one input.');
-    }
+    assert(inputs.length == 1, 'Gate has exactly one input.');
+
     final a = inputs[_inName]!;
     return '~$a';
   }

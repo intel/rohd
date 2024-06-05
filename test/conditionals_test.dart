@@ -479,6 +479,18 @@ void main() {
         mod.a.put(1);
         expect(mod.x.value.toInt(), equals(0));
       });
+
+      test('ssa simcompare', () async {
+        final mod = LoopyCombModuleSsa(Logic());
+        await mod.build();
+
+        final vectors = [
+          Vector({'a': 0}, {'x': 1}),
+          Vector({'a': 1}, {'x': 0}),
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
     });
 
     group('flopped expressions for conditionals', () {
@@ -777,7 +789,7 @@ void main() {
     await mod.build();
     final vectors = [
       Vector({'a': 1, 'd': 1}, {}),
-      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 'invalid runtime type'}),
+      Vector({'a': 0, 'b': 0, 'd': 2}, {'q': 7.543}),
     ];
 
     try {

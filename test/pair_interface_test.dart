@@ -15,12 +15,18 @@ class SimpleInterface extends PairInterface {
   Logic get clk => port('clk');
   Logic get req => port('req');
   Logic get rsp => port('rsp');
+  Logic get io => port('io');
+  LogicArray get ioArr => port('io_arr') as LogicArray;
 
   SimpleInterface()
       : super(
           portsFromConsumer: [Port('rsp')],
-          portsFromProvider: [Port('req')],
+          portsFromProvider: [LogicArray.port('req')],
           sharedInputPorts: [Port('clk')],
+          commonInOutPorts: [
+            LogicNet.port('io'),
+            LogicArray.netPort('io_arr', [3])
+          ],
           modify: (original) => 'simple_$original',
         );
 
@@ -75,6 +81,7 @@ class PassthroughPairIntfModule extends Module {
         intf2,
         inputTags: {PairDirection.fromConsumer},
         outputTags: {PairDirection.fromProvider},
+        inOutTags: {PairDirection.commonInOuts},
         uniquify: (original) => '${original}_2',
       );
 
@@ -88,6 +95,9 @@ class PassthroughPairIntfModule extends Module {
         ..driveOther(intf2, {PairDirection.fromProvider})
         ..receiveOther(intf2, {PairDirection.fromConsumer});
     }
+
+    intf1.io <= intf2.io;
+    intf1.ioArr <= intf2.ioArr;
   }
 }
 
@@ -115,10 +125,28 @@ void main() {
       await mod.build();
 
       final vectors = [
-        Vector({'simple_req_1': 1, 'simple_rsp_2': 1},
-            {'simple_req_2': 1, 'simple_rsp_1': 1}),
-        Vector({'simple_req_1': 0, 'simple_rsp_2': 1},
-            {'simple_req_2': 0, 'simple_rsp_1': 1}),
+        Vector({
+          'simple_req_1': 1,
+          'simple_rsp_2': 1,
+          'simple_io_1': 1,
+          'simple_io_arr_2': 2
+        }, {
+          'simple_req_2': 1,
+          'simple_rsp_1': 1,
+          'simple_io_2': 1,
+          'simple_io_arr_1': 2
+        }),
+        Vector({
+          'simple_req_1': 0,
+          'simple_rsp_2': 1,
+          'simple_io_1': 0,
+          'simple_io_arr_2': 5
+        }, {
+          'simple_req_2': 0,
+          'simple_rsp_1': 1,
+          'simple_io_2': 0,
+          'simple_io_arr_1': 5
+        }),
         Vector({'simple_req_1': 1, 'simple_rsp_2': 0},
             {'simple_req_2': 1, 'simple_rsp_1': 0}),
       ];
