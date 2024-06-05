@@ -185,10 +185,9 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogInternalNets() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalNets
+        .where((element) => element.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      if (sig.needsDeclaration) {
-        declarations.add('logic ${sig.definitionName()};');
-      }
+      declarations.add('logic ${sig.definitionName()};');
     }
     return declarations.join('\n');
   }
@@ -571,6 +570,7 @@ class _SynthModuleDefinition {
     }
 
     // The order of these is important!
+    _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
     _collapseChainableModules();
@@ -733,6 +733,66 @@ class _SynthModuleDefinition {
     }
   }
 
+  _SynthLogic _getParentArray(_SynthLogicArrayElement arrayelement) {
+    if (arrayelement.parentArray is! _SynthLogicArrayElement) {
+      return arrayelement.parentArray;
+    } else {
+      return _getParentArray(
+          arrayelement.parentArray as _SynthLogicArrayElement);
+    }
+  }
+
+  void _collapseArrays() {
+    final boringArrayPairs = <(_SynthLogic, _SynthLogic)>[];
+
+    var prevAssignmentCount = 0;
+    while (prevAssignmentCount != assignments.length) {
+      final reducedAssignments = <_SynthAssignment>[];
+
+      final groupedAssignments =
+          <(_SynthLogic, _SynthLogic), List<_SynthAssignment>>{};
+
+      for (final assignment in assignments) {
+        final src = assignment.src;
+        final dst = assignment.dst;
+
+        if (src is _SynthLogicArrayElement && dst is _SynthLogicArrayElement) {
+          final srcArray = src.parentArray;
+          final dstArray = dst.parentArray;
+
+          assert(srcArray.logics.length == 1, 'should be 1');
+          assert(dstArray.logics.length == 1, 'should be 1');
+
+          if (srcArray.logics.first.elements.length !=
+                  dstArray.logics.first.elements.length ||
+              boringArrayPairs.contains((srcArray, dstArray))) {
+            reducedAssignments.add(assignment);
+          } else {
+            groupedAssignments[(srcArray, dstArray)] ??= [];
+            groupedAssignments[(srcArray, dstArray)]!.add(assignment);
+          }
+        } else {
+          reducedAssignments.add(assignment);
+        }
+      }
+
+      for (final MapEntry(key: (srcArray, dstArray), value: arrAssignments)
+          in groupedAssignments.entries) {
+        if (arrAssignments.length == srcArray.logics.first.elements.length) {
+          reducedAssignments.add(_SynthAssignment(srcArray, dstArray));
+        } else {
+          reducedAssignments.addAll(arrAssignments);
+          boringArrayPairs.add((srcArray, dstArray));
+        }
+      }
+
+      prevAssignmentCount = assignments.length;
+      assignments
+        ..clear()
+        ..addAll(reducedAssignments);
+    }
+  }
+
   /// Collapses assignments that don't need to remain present.
   void _collapseAssignments() {
     // there might be more assign statements than necessary, so let's ditch them
@@ -803,7 +863,8 @@ class _SynthLogicArrayElement extends _SynthLogic {
 
   @override
   String get name {
-    final n = '${parentArray.name}[${logic.arrayIndex!}]';
+    final parentArrayname = parentArray.replacement?.name ?? parentArray.name;
+    final n = '$parentArrayname[${logic.arrayIndex!}]';
     assert(
       Sanitizer.isSanitary(
           n.substring(0, n.contains('[') ? n.indexOf('[') : null)),
