@@ -1104,15 +1104,6 @@ class _SynthModuleDefinition {
     }
   }
 
-  _SynthLogic _getParentArray(_SynthLogicArrayElement arrayelement) {
-    if (arrayelement.parentArray is! _SynthLogicArrayElement) {
-      return arrayelement.parentArray;
-    } else {
-      return _getParentArray(
-          arrayelement.parentArray as _SynthLogicArrayElement);
-    }
-  }
-
   void _collapseArrays() {
     final boringArrayPairs = <(_SynthLogic, _SynthLogic)>[];
 
