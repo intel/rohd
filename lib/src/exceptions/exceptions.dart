@@ -10,4 +10,5 @@ export './name/name_exceptions.dart';
 export './sim_compare/sim_compare_exceptions.dart';
 export 'illegal_configuration_exception.dart';
 export 'rohd_exception.dart';
+export 'simulator_exception.dart';
 export 'unsupported_type_exception.dart';

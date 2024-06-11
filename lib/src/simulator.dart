@@ -191,8 +191,12 @@ abstract class Simulator {
   /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {
     if (timestamp < _currentTimestamp) {
-      throw Exception('Cannot add timestamp "$timestamp" in the past.'
-          '  Current time is ${Simulator.time}');
+      throw SimulatorException('Cannot add timestamp "$timestamp" in the past.'
+          ' Current time is ${Simulator.time}.'
+          ' Did you mean to include a call to Simulator.reset()?'
+          ' If this is hit in a series of unit tests, see the user guide'
+          ' for tips:'
+          ' https://intel.github.io/rohd-website/docs/unit-test/');
     }
     if (!_pendingTimestamps.containsKey(timestamp)) {
       _pendingTimestamps[timestamp] = ListQueue();
