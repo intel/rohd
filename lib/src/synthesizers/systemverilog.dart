@@ -744,7 +744,6 @@ class _SynthModuleDefinition {
 
     // make sure floating modules are included
     for (final subModule in module.subModules) {
-      //TODO
       _getSynthSubModuleInstantiation(subModule);
       logicsToTraverse
         // ignore: invalid_use_of_protected_member

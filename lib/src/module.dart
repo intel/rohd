@@ -37,7 +37,8 @@ abstract class Module {
   final TraverseableCollection<Module> _subModules = TraverseableCollection();
 
   /// An internal collection of internal signals.
-  final Set<Logic> _internalSignals = {};
+  final TraverseableCollection<Logic> _internalSignals =
+      TraverseableCollection();
 
   /// An internal list of inputs to this [Module].
   final Map<String, Logic> _inputs = {};
@@ -76,21 +77,20 @@ abstract class Module {
   ///
   /// This only gets populated after this [Module] has been built.
   Iterable<Module> get subModules =>
-      UnmodifiableTraversableCollectionView<Module>(_subModules); //TODO
+      UnmodifiableTraverseableCollectionView<Module>(_subModules);
 
   /// An [Iterable] of all [Logic]s contained within this [Module] which are
   /// *not* an input or output port of this [Module].
   ///
-  /// This does not contain any signals within submodules.
+  /// This does not contain any signals within [subModules].
   Iterable<Logic> get internalSignals =>
-      UnmodifiableListView<Logic>(_internalSignals); //TODO
+      UnmodifiableTraverseableCollectionView<Logic>(_internalSignals);
 
   /// An [Iterable] of all [Logic]s contained within this [Module], including
   /// inputs, outputs, and internal signals of this [Module].
   ///
-  /// This does not contain any signals within submodules.
+  /// This does not contain any signals within [subModules].
   Iterable<Logic> get signals => UnmodifiableListView([
-        //TODO: should this just be list?
         ..._inputs.values,
         ..._outputs.values,
         ..._inOuts.values,
@@ -318,7 +318,6 @@ abstract class Module {
     visited[this] = newHierarchy;
 
     for (final subModule in subModules) {
-      //TODO
       subModule._checkValidHierarchy(visited: visited, hierarchy: newHierarchy);
     }
   }

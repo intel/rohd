@@ -46,7 +46,7 @@ void main() {
 
   test('unmodifiable traverseable collection cannot be changed', () {
     final c = TraverseableCollection<int>();
-    final v = UnmodifiableTraversableCollectionView(c);
+    final v = UnmodifiableTraverseableCollectionView(c);
 
     c.addAll([1, 2, 3]);
 

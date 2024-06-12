@@ -15,7 +15,7 @@ import 'dart:collection';
 /// This collection stores all data twice: once in a [Set] and once in a [List].
 /// For index access, it uses the [List].  For [contains], it uses the [Set].
 /// Other operations like [add] and [remove] pay the penalty of performing
-/// the operation twice, once oneach collection.
+/// the operation twice, once on each collection.
 ///
 /// In situations where it is necessary to iterate through and frequently access
 /// elements by index, but also check whether a certain element is contained
@@ -70,11 +70,15 @@ class TraverseableCollection<T> with IterableMixin<T> {
   Iterator<T> get iterator => _list.iterator;
 }
 
-class UnmodifiableTraversableCollectionView<T>
+/// An unmodifiable view of a [TraverseableCollection], similar to
+/// [UnmodifiableListView] and [UnmodifiableSetView].
+class UnmodifiableTraverseableCollectionView<T>
     extends TraverseableCollection<T> {
+  /// The source [TraverseableCollection] that this view is looking at.
   final TraverseableCollection<T> _source;
 
-  UnmodifiableTraversableCollectionView(TraverseableCollection<T> source)
+  /// Creates an unmodifiable view of [source].
+  UnmodifiableTraverseableCollectionView(TraverseableCollection<T> source)
       : _source = source;
 
   @override

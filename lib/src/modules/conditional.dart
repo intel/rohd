@@ -52,8 +52,11 @@ abstract class _Always extends Module with SystemVerilog {
     var idx = 0;
 
     // Get all Receivers
-    final allReceivers =
-        conditionals.map((e) => e.receivers).expand((e) => e).toSet();
+    final allReceivers = conditionals
+        .map((e) => e.receivers)
+        .expand((e) => e)
+        .toSet()
+        .toList(growable: false);
 
     // This will reset the conditionals on setting the `reset` flag
     if (reset != null) {
@@ -90,7 +93,7 @@ abstract class _Always extends Module with SystemVerilog {
       }
 
       // now add the reset to 0 for all the remaining ones
-      for (final receiver in allReceivers.toList()) {
+      for (final receiver in allReceivers) {
         if (!signalsBeingReset.contains(receiver)) {
           allResetCondAssigns.add(receiver < 0);
         }

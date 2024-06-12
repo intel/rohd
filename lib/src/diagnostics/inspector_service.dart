@@ -44,7 +44,7 @@ extension _ModuleDevToolUtils on Module {
 
     if (!isCustomModule || !skipCustomModules) {
       json['subModules'] = subModules
-          .where((module) => //TODO
+          .where((module) =>
               // ignore: deprecated_member_use_from_same_package
               !((module is CustomSystemVerilog || module is SystemVerilog) &&
                   skipCustomModules))

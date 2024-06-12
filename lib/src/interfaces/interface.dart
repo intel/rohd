@@ -163,7 +163,7 @@ class Interface<TagType> {
       return ports;
     } else {
       final matchingPorts = <String, Logic>{};
-      for (final tag in tags.toSet().toList()) {
+      for (final tag in tags.toSet().toList(growable: false)) {
         matchingPorts.addEntries(_ports.keys
             .where(
                 (portName) => _portToTagMap[portName]?.contains(tag) ?? false)
@@ -226,7 +226,7 @@ class Interface<TagType> {
           .map((portName, thisPort) =>
               MapEntry(portName, other.port(portName) < thisPort))
           .values
-          .toList());
+          .toList(growable: false));
 
   /// Makes `this` signals tagged with [tags] be driven conditionally by
   /// [other].
@@ -236,5 +236,5 @@ class Interface<TagType> {
           .map((portName, thisPort) =>
               MapEntry(portName, thisPort < other.port(portName)))
           .values
-          .toList());
+          .toList(growable: false));
 }

@@ -94,7 +94,7 @@ class PairInterface extends Interface<PairDirection> {
                 return Port(name, p.width);
             }
           })
-          .toList();
+          .toList(growable: false);
 
   /// Creates a new instance of a [PairInterface] with the same ports other
   /// characteristics.

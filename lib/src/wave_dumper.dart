@@ -132,7 +132,6 @@ class WaveDumper {
         });
       }
       for (final subm in m.subModules) {
-        //TODO
         if (subm is InlineSystemVerilog) {
           // the InlineSystemVerilog modules are "boring" to inspect
           continue;
@@ -192,7 +191,6 @@ class WaveDumper {
           .write('  $padding\$var wire $width $marker $signalName \$end\n');
     }
     for (final subModule in m.subModules) {
-      //TODO
       innerScopeString
           .write(_computeScopeString(subModule, indent: indent + 1));
     }
