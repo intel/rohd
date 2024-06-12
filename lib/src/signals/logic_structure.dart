@@ -235,7 +235,7 @@ class LogicStructure implements Logic {
       s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   @override
-  Iterable<Logic> get dstConnections =>
+  Iterable<Logic> get dstConnections => //TODO: should this just be list?
       {for (final element in elements) ...element.dstConnections}.toList();
 
   @override
@@ -562,7 +562,7 @@ class LogicStructure implements Logic {
   bool get isNet => false;
 
   @override
-  Iterable<Logic> get srcConnections =>
+  Iterable<Logic> get srcConnections => //TODO: should this just be list?
       {for (final element in elements) ...element.srcConnections}.toList();
 
   @override
