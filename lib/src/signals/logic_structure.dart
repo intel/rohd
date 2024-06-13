@@ -235,8 +235,9 @@ class LogicStructure implements Logic {
       s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   @override
-  Iterable<Logic> get dstConnections =>
-      {for (final element in elements) ...element.dstConnections}.toList();
+  Iterable<Logic> get dstConnections => {
+        for (final element in elements) ...element.dstConnections
+      }.toList(growable: false);
 
   @override
   Module? get parentModule => _parentModule;
@@ -562,8 +563,9 @@ class LogicStructure implements Logic {
   bool get isNet => false;
 
   @override
-  Iterable<Logic> get srcConnections =>
-      {for (final element in elements) ...element.srcConnections}.toList();
+  Iterable<Logic> get srcConnections => {
+        for (final element in elements) ...element.srcConnections
+      }.toList(growable: false);
 
   @override
   List<Logic> get _srcConnections => throw UnsupportedError('Unnecessary');

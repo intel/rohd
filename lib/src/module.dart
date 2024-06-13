@@ -13,6 +13,7 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -32,13 +33,12 @@ abstract class Module {
   /// is guaranteed to match or else the [build] will fail.
   final String name;
 
-  /// An internal list of sub-modules.
-  final Set<Module> _modules = {};
+  /// An internal collection of sub-modules.
+  final TraverseableCollection<Module> _subModules = TraverseableCollection();
 
-  /// An internal list of internal-signals.
-  ///
-  /// Used for waveform dump efficiency.
-  final Set<Logic> _internalSignals = {};
+  /// An internal collection of internal signals.
+  final TraverseableCollection<Logic> _internalSignals =
+      TraverseableCollection();
 
   /// An internal list of inputs to this [Module].
   final Map<String, Logic> _inputs = {};
@@ -76,19 +76,20 @@ abstract class Module {
   /// An [Iterable] of all [Module]s contained within this [Module].
   ///
   /// This only gets populated after this [Module] has been built.
-  Iterable<Module> get subModules => UnmodifiableListView<Module>(_modules);
+  Iterable<Module> get subModules =>
+      UnmodifiableTraverseableCollectionView<Module>(_subModules);
 
   /// An [Iterable] of all [Logic]s contained within this [Module] which are
   /// *not* an input or output port of this [Module].
   ///
-  /// This does not contain any signals within submodules.
+  /// This does not contain any signals within [subModules].
   Iterable<Logic> get internalSignals =>
-      UnmodifiableListView<Logic>(_internalSignals);
+      UnmodifiableTraverseableCollectionView<Logic>(_internalSignals);
 
   /// An [Iterable] of all [Logic]s contained within this [Module], including
   /// inputs, outputs, and internal signals of this [Module].
   ///
-  /// This does not contain any signals within submodules.
+  /// This does not contain any signals within [subModules].
   Iterable<Logic> get signals => UnmodifiableListView([
         ..._inputs.values,
         ..._outputs.values,
@@ -277,7 +278,7 @@ abstract class Module {
 
     // set unique module instance names for submodules
     final uniquifier = Uniquifier();
-    for (final module in _modules) {
+    for (final module in _subModules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
           initialName: Sanitizer.sanitizeSV(module.name),
           reserved: module.reserveName);
@@ -334,7 +335,7 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
-    _modules.add(module);
+    _subModules.add(module);
 
     module._parent = this;
     await module.build();
@@ -755,7 +756,7 @@ abstract class Module {
     final padding = List.filled(indent, '  ').join();
     final hier = StringBuffer('$padding> ${toString()}');
 
-    for (final module in _modules) {
+    for (final module in _subModules) {
       hier.write('\n${module.hierarchyString(indent + 1)}');
     }
     return hier.toString();
