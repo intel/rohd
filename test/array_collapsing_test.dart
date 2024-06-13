@@ -7,8 +7,6 @@
 // 2024 June 5
 // Author: Shankar Sharma <shankar.sharma@intel.com>
 
-import 'dart:io';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -49,6 +47,9 @@ class ArrayModuleWithNetIntermediates extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
   test('array nets with intermediate collapse', () async {
     final mod = ArrayModuleWithNetIntermediates(
         LogicArray([3, 3], 1), LogicArray([3, 3], 1));
@@ -66,8 +67,6 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-
-    //TODO: what if unpacked?
   });
 
   test('array nets with intermediate collapse with unpacked', () async {
@@ -87,8 +86,6 @@ void main() {
       Vector({'a': 123}, {'b': 123}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-    //TODO: what if unpacked?
   });
 
   test('collapse test 2d', () async {

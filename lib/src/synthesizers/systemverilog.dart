@@ -1104,6 +1104,8 @@ class _SynthModuleDefinition {
     }
   }
 
+  /// Merges bit blasted array assignments into one single assignment whent
+  /// it's full array-full array assignment
   void _collapseArrays() {
     final boringArrayPairs = <(_SynthLogic, _SynthLogic)>[];
 
