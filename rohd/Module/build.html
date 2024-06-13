@@ -118,7 +118,7 @@ Future&lt;void&gt; build() async {
 
   &#47;&#47; set unique module instance names for submodules
   final uniquifier = Uniquifier();
-  for (final module in _modules) {
+  for (final module in _subModules) {
     module._uniqueInstanceName = uniquifier.getUniqueName(
         initialName: Sanitizer.sanitizeSV(module.name),
         reserved: module.reserveName);

@@ -87,7 +87,7 @@
         .map((portName, thisPort) =&gt;
             MapEntry(portName, other.port(portName) &lt; thisPort))
         .values
-        .toList());</code></pre>
+        .toList(growable: false));</code></pre>
 </section>
 
 

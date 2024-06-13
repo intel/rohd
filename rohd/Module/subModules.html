@@ -81,7 +81,8 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Iterable&lt;Module&gt; get subModules =&gt; UnmodifiableListView&lt;Module&gt;(_modules);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Iterable&lt;Module&gt; get subModules =&gt;
+    UnmodifiableTraverseableCollectionView&lt;Module&gt;(_subModules);</code></pre>
 </section>
 
   </section>

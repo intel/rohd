@@ -86,8 +86,9 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Iterable&lt;Logic&gt; get dstConnections =&gt;
-    {for (final element in elements) ...element.dstConnections}.toList();</code></pre>
+Iterable&lt;Logic&gt; get dstConnections =&gt; {
+      for (final element in elements) ...element.dstConnections
+    }.toList(growable: false);</code></pre>
 </section>
 
   </section>

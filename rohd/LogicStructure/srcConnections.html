@@ -90,8 +90,9 @@ of <code>Logic</code>), then there may be multiple drivers.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-Iterable&lt;Logic&gt; get srcConnections =&gt;
-    {for (final element in elements) ...element.srcConnections}.toList();</code></pre>
+Iterable&lt;Logic&gt; get srcConnections =&gt; {
+      for (final element in elements) ...element.srcConnections
+    }.toList(growable: false);</code></pre>
 </section>
 
   </section>

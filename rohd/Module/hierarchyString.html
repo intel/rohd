@@ -84,7 +84,7 @@ this <a href="../../rohd/Module-class.html">Module</a>.</p>
   final padding = List.filled(indent, &#39;  &#39;).join();
   final hier = StringBuffer(&#39;$padding&gt; ${toString()}&#39;);
 
-  for (final module in _modules) {
+  for (final module in _subModules) {
     hier.write(&#39;\n${module.hierarchyString(indent + 1)}&#39;);
   }
   return hier.toString();

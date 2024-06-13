@@ -76,14 +76,14 @@
 <section class="desc markdown">
   <p>An <a href="https://api.dart.dev/stable/3.4.4/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../../rohd/Module-class.html">Module</a> which are
 <em>not</em> an input or output port of this <a href="../../rohd/Module-class.html">Module</a>.</p>
-<p>This does not contain any signals within submodules.</p>
+<p>This does not contain any signals within <a href="../../rohd/Module/subModules.html">subModules</a>.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Iterable&lt;Logic&gt; get internalSignals =&gt;
-    UnmodifiableListView&lt;Logic&gt;(_internalSignals);</code></pre>
+    UnmodifiableTraverseableCollectionView&lt;Logic&gt;(_internalSignals);</code></pre>
 </section>
 
   </section>

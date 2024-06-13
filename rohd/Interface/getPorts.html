@@ -86,7 +86,7 @@
     return ports;
   } else {
     final matchingPorts = &lt;String, Logic&gt;{};
-    for (final tag in tags.toSet().toList()) {
+    for (final tag in tags.toSet().toList(growable: false)) {
       matchingPorts.addEntries(_ports.keys
           .where(
               (portName) =&gt; _portToTagMap[portName]?.contains(tag) ?? false)
