@@ -74,8 +74,8 @@ class Logic {
 
   /// An [Iterable] of all [Logic]s that are being directly driven by `this`.
   late final Iterable<Logic> dstConnections =
-      UnmodifiableListView(_dstConnections);
-  late final List<Logic> _dstConnections = [];
+      UnmodifiableSetView(_dstConnections);
+  late final Set<Logic> _dstConnections = {};
 
   /// Notifies `this` that [dstConnection] is now directly connected to the
   /// output of `this`.

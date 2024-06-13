@@ -542,7 +542,7 @@ class LogicStructure implements Logic {
   }
 
   @override
-  List<Logic> get _dstConnections =>
+  Set<Logic> get _dstConnections =>
       throw UnsupportedError('Delegated to elements');
 
   @override
