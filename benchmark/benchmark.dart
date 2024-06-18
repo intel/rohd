@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // benchmark.dart
@@ -11,6 +11,7 @@ import 'byte_enable_benchmark.dart';
 import 'comb_guard_fanout_benchmark.dart';
 import 'logic_value_of_benchmark.dart';
 import 'many_seq_and_comb_benchmark.dart' as many_seq_and_comb;
+import 'many_submodules_benchmark.dart';
 import 'pipeline_benchmark.dart';
 import 'ssa_driver_search_benchmark.dart';
 import 'wave_dump_benchmark.dart';
@@ -23,4 +24,5 @@ void main() async {
   await many_seq_and_comb.main();
   await CombGuardFanoutBenchmark().report();
   SsaDriverSearchBenchmark().report();
+  await ManySubmodulesBenchmark().report();
 }

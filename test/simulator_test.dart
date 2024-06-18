@@ -137,6 +137,16 @@ void main() {
     expect(injectedActionExecuted, isTrue);
   });
 
+  test('simulator exception when registering action in the past', () async {
+    Simulator.registerAction(100, () {
+      Simulator.registerAction(50, () {});
+    });
+
+    expect(() async {
+      await Simulator.run();
+    }, throwsA(isA<SimulatorException>()));
+  });
+
   group('Rohme compatibility tests', () {
     test('simulator supports delta cycles', () async {
       // ignore: omit_local_variable_types

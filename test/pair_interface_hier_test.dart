@@ -11,14 +11,21 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 class SubInterface extends PairInterface {
-  Logic get rsp => port('rsp');
   Logic get req => port('req');
+  Logic get rsp => port('rsp');
+  Logic get io => port('io');
+  LogicArray get ioArr => port('io_arr') as LogicArray;
 
   SubInterface({super.modify})
       : super(
           portsFromConsumer: [Port('rsp')],
-          portsFromProvider: [Port('req')],
+          portsFromProvider: [LogicArray.port('req')],
+          commonInOutPorts: [
+            LogicNet.port('io'),
+            LogicArray.netPort('io_arr', [3])
+          ],
         );
+
   SubInterface.clone(SubInterface super.otherInterface) : super.clone();
 }
 
@@ -86,7 +93,10 @@ void main() {
     await mod.build();
 
     final sv = mod.generateSynth();
+
     expect(sv, contains('HierConsumer  unnamed_module'));
     expect(sv, contains('HierProducer  unnamed_module'));
+    expect(sv, contains('inout wire io_0'));
+    expect(sv, contains('inout wire [2:0] io_arr_0'));
   });
 }
