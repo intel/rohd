@@ -417,6 +417,12 @@ abstract class Module {
           !isInput(signal) &&
           !isInOut(signal) &&
           subModule == null) {
+        // handle expanding the search for arrays
+        if (signal.isArrayMember) {
+          await _traceInputForModuleContents(signal.parentStructure!,
+              dontAddSignal: dontAddSignal);
+        }
+
         _addInternalSignal(signal);
       }
 
@@ -514,6 +520,12 @@ abstract class Module {
           !isOutput(signal) &&
           !isInOut(signal) &&
           subModule == null) {
+        // handle expanding the search for arrays
+        if (signal.isArrayMember) {
+          await _traceOutputForModuleContents(signal.parentStructure!,
+              dontAddSignal: dontAddSignal);
+        }
+
         _addInternalSignal(signal);
         for (final dstConnection in signal.dstConnections) {
           await _traceInputForModuleContents(dstConnection);
