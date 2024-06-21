@@ -870,7 +870,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Bitwise tristate merge.  No width comparison.
   ///
   /// Truth table for reference:
-  /// ```
+  /// ```csv
   /// s0	value0	invalid0	s1	value1	invalid1	result	value	invalid
   /// 0	0	0	0	0	0	0	0	0
   /// 0	0	0	1	1	0	x	0	1

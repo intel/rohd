@@ -800,7 +800,7 @@ class Logic {
   /// Alternatively we can approach this with `busList.selectIndex(index)`
   ///
   /// Example:
-  /// ```
+  /// ```dart
   /// // ordering matches closer to array indexing with `0` index-based.
   /// selected <= index.selectFrom(busList);
   /// ```
