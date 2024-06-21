@@ -242,7 +242,7 @@ class LogicArray extends LogicStructure {
   /// to the length of the [updatedSubset].
   ///
   /// Example:
-  /// ```
+  /// ```dart
   /// LogicArray sampleLogic;
   /// // Note: updatedSubset.length < (sampleLogic.length - start)
   /// List<Logic> updatedSubset;
