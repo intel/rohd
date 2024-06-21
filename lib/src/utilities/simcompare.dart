@@ -380,7 +380,7 @@ abstract class SimCompare {
             }
             return line;
           })
-          .whereNotNull()
+          .nonNulls
           .join('\n');
       if (maskedOutput.isNotEmpty) {
         print(maskedOutput);
