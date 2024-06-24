@@ -758,8 +758,10 @@ class _SynthModuleDefinition {
     for (var i = 0; i < logicsToTraverse.length; i++) {
       final receiver = logicsToTraverse[i];
 
-      assert(receiver.parentModule != null,
-          'Any signal traced by this should have been detected by build.');
+      assert(
+          receiver.parentModule != null,
+          'Any signal traced by this should have been detected by build,'
+          ' but $receiver was not.');
 
       if (receiver.parentModule != module &&
           !module.subModules.contains(receiver.parentModule)) {
