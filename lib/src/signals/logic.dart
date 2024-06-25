@@ -180,7 +180,7 @@ class Logic {
 
   /// Sets the value of [parentModule] to [newParentModule].
   ///
-  /// This should *only* be called by [Module.build()].  It is used to
+  /// This should *only* be called by [Module.build].  It is used to
   /// optimize search.
   @protected
   set parentModule(Module? newParentModule) {
