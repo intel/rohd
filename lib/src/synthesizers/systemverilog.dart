@@ -137,7 +137,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
   @override
   SynthesisResult synthesize(Module module,
           String Function(Module module) getInstanceTypeOfModule) =>
-      module is SystemVerilog && module.generatesDefinition
+      module is SystemVerilog && module.generatesCustomDefinition
           ? _SystemVerilogCustomDefinitionSynthesisResult(
               module, getInstanceTypeOfModule)
           : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
@@ -165,8 +165,36 @@ mixin CustomSystemVerilog on Module {
   final List<String> expressionlessInputs = const [];
 }
 
+class SystemVerilogParameter {
+  /// The SystemVerilog type to use for declaring this parameter.
+  ///
+  /// If `null`, then no type will be included.
+  final String? type;
+
+  /// The default value for this parameter.
+  ///
+  /// If `null`, then no default will be included.
+  final String? defaultValue;
+
+  /// The name of the parameter.
+  final String name;
+
+  const SystemVerilogParameter(this.name, {this.type, this.defaultValue});
+}
+
+// mixin SystemVerilogDefinitionAdjustment on Module {
+//   /// A collection of SystemVerilog [SystemVerilogParameter]s to be declared on
+//   /// the definition when generating SystemVerilog for this [Module].
+//   ///
+//   /// If `null` is returned, then no parameters will be generated. Otherwise,
+//   /// this function should have no side effects and always return the same thing
+//   /// for the same inputs.
+//   List<SystemVerilogParameter>? get definitionParameters => null;
+// }
+
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
-/// injected in generated output instead of instantiating a separate `module`.
+/// injected in generated output instead of instantiating a separate `module` or
+/// in addition to a custom definition.
 mixin SystemVerilog on Module {
   /// Generates custom SystemVerilog to be injected in place of a `module`
   /// instantiation.
@@ -180,11 +208,16 @@ mixin SystemVerilog on Module {
   /// If a standard instantiation is desired, either return `null` or use
   /// [SystemVerilogSynthesizer.instantiationVerilogFor] with
   /// `forceStandardInstantiation` set to `true`.
+  ///
+  /// TODO: default null, is that ok?
   String? instantiationVerilog(
     String instanceType,
     String instanceName,
     Map<String, String> ports,
-  );
+  ) =>
+      null;
+
+  //TODO: make sure user guide docs are updated
 
   /// A list of names of [input]s which should not have any SystemVerilog
   /// expressions (including constants) in-lined into them. Only signal names
@@ -194,16 +227,41 @@ mixin SystemVerilog on Module {
 
   /// A custom SystemVerilog definition to be produced for this [Module].
   ///
-  /// If `null` is returned, then no definition will be generated. Otherwise,
-  /// this function should be a pure function, i.e. it should have no side
-  /// effects and always return the same thing for the same inputs.
-  String? definitionVerilog(String definitionType) => null;
+  /// If an empty string is returned (the default behavior), then no definition
+  /// will be generated.
+  ///
+  /// If `null` is returned, then a default definition will be generated.
+  ///
+  /// This function should have no side effects and always return the same thing
+  /// for the same inputs.
+  String? definitionVerilog(String definitionType) => '';
+
+  bool get generatesStandardDefinition =>
+      definitionVerilog('*PLACEHOLDER*') == null;
+  bool get generatesCustomDefinition {
+    final def = definitionVerilog('*PLACEHOLDER*');
+    return def != null && def.isNotEmpty;
+  }
+
+  bool get generatesDefinition =>
+      generatesStandardDefinition || generatesCustomDefinition;
+
+  /// A collection of SystemVerilog [SystemVerilogParameter]s to be declared on
+  /// the definition when generating SystemVerilog for this [Module] if it
+  /// [generatesStandardDefinition].
+  ///
+  /// If `null` is returned, then no parameters will be generated. Otherwise,
+  /// this function should have no side effects and always return the same thing
+  /// for the same inputs.
+  List<SystemVerilogParameter>? get definitionParameters => null;
 
   /// Whether or not this [Module] generates a SystemVerilog definition.
   ///
   /// By default, this is automatically calculated by whether or not
-  /// [definitionVerilog] provides a definition.
-  bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
+  /// [definitionVerilog] provides a (non-empty) definition or `null`
+  /// definition.
+  // bool get generatesDefinition =>
+  //     definitionVerilog('*PLACEHOLDER*')?.isNotEmpty ?? true;
 }
 
 /// Allows a [Module] to define a special type of [SystemVerilog] which can be
@@ -257,7 +315,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   _SystemVerilogCustomDefinitionSynthesisResult(
       super.module, super.getInstanceTypeOfModule)
-      : assert(module is SystemVerilog && module.generatesDefinition,
+      : assert(module is SystemVerilog && module.generatesCustomDefinition,
             'This should only be used for custom system verilog definitions.');
 
   @override
@@ -278,11 +336,14 @@ class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
 /// A [SynthesisResult] representing a conversion of a [Module] to
 /// SystemVerilog.
 class _SystemVerilogSynthesisResult extends SynthesisResult {
-  /// A cached copy of the generated ports
+  /// A cached copy of the generated ports.
   late final String _portsString;
 
-  /// A cached copy of the generated contents of the module
+  /// A cached copy of the generated contents of the module.
   late final String _moduleContentsString;
+
+  /// A cached copy of the generated parameters.
+  late final String? _parameterString;
 
   /// The main [_SynthModuleDefinition] for this.
   final _SynthModuleDefinition _synthModuleDefinition;
@@ -295,17 +356,21 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
       : _synthModuleDefinition = _SynthModuleDefinition(module) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
+    _parameterString = _verilogParameters(module);
   }
 
   @override
   bool matchesImplementation(SynthesisResult other) =>
       other is _SystemVerilogSynthesisResult &&
       other._portsString == _portsString &&
+      other._parameterString == _parameterString &&
       other._moduleContentsString == _moduleContentsString;
 
   @override
   int get matchHashCode =>
-      _portsString.hashCode ^ _moduleContentsString.hashCode;
+      _portsString.hashCode ^
+      _moduleContentsString.hashCode ^
+      _parameterString.hashCode;
 
   @override
   String toFileContents() => _toVerilog(getInstanceTypeOfModule);
@@ -396,16 +461,42 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
         ..._verilogInOuts(),
       ].join(',\n');
 
+  String? _verilogParameters(Module module) {
+    if (module is SystemVerilog) {
+      final defParams = module.definitionParameters;
+      if (defParams == null) {
+        return null;
+      }
+
+      return [
+        '#(',
+        defParams
+            .map((p) => [
+                  'parameter',
+                  if (p.type != null) ' ${p.type}',
+                  ' ${p.name}',
+                  if (p.defaultValue != null) ' = ${p.defaultValue}'
+                ].join())
+            .join(',\n'),
+        ')',
+      ].join('\n');
+    }
+
+    return null;
+  }
+
   /// The full SV representation of this module.
   String _toVerilog(String Function(Module module) getInstanceTypeOfModule) {
     final verilogModuleName = getInstanceTypeOfModule(module);
     return [
-      'module $verilogModuleName(',
+      'module $verilogModuleName',
+      _parameterString,
+      '(',
       _portsString,
       ');',
       _moduleContentsString,
       'endmodule : $verilogModuleName'
-    ].join('\n');
+    ].nonNulls.join('\n');
   }
 }
 
@@ -626,7 +717,7 @@ class _SynthModuleDefinition {
 
   /// A mapping from original [Logic]s to the [_SynthLogic]s that represent
   /// them.
-  final Map<Logic, _SynthLogic> logicToSynthMap = {};
+  final Map<Logic, _SynthLogic> logicToSynthMap = {}; //TODO: hashmap?
 
   /// A mapping from the original [Module]s to the
   /// [_SynthSubModuleInstantiation]s that represent them.

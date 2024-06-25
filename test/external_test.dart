@@ -37,4 +37,6 @@ void main() {
         contains(
             'external_module_name #(.WIDTH(2)) external_module(.a(a),.b(b));'));
   });
+
+  //TODO: test that external module doesn't actually get created!
 }

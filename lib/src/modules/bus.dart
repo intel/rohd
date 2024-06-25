@@ -21,7 +21,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final String _subset;
 
   /// The input to get a subset of.
-  late final Logic original = input(_original);
+  late final Logic original = input(_original); //TODO: this should be private!
 
   /// The output, a subset of [original].
   late final Logic subset = output(_subset);
