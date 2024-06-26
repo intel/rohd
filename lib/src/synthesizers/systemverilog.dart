@@ -167,19 +167,16 @@ mixin CustomSystemVerilog on Module {
 
 class SystemVerilogParameter {
   /// The SystemVerilog type to use for declaring this parameter.
-  ///
-  /// If `null`, then no type will be included.
-  final String? type;
+  final String type;
 
   /// The default value for this parameter.
-  ///
-  /// If `null`, then no default will be included.
-  final String? defaultValue;
+  final String defaultValue;
 
   /// The name of the parameter.
   final String name;
 
-  const SystemVerilogParameter(this.name, {this.type, this.defaultValue});
+  const SystemVerilogParameter(this.name,
+      {required this.type, required this.defaultValue});
 }
 
 // mixin SystemVerilogDefinitionAdjustment on Module {
@@ -264,6 +261,17 @@ mixin SystemVerilog on Module {
   //     definitionVerilog('*PLACEHOLDER*')?.isNotEmpty ?? true;
 }
 
+enum DefinitionGenerationType {
+  /// No definition will be generated.
+  none,
+
+  /// A standard definition will be generated.
+  standard,
+
+  /// A custom definition will be generated.
+  custom,
+}
+
 /// Allows a [Module] to define a special type of [SystemVerilog] which can be
 /// inlined within other SystemVerilog code.
 ///
@@ -303,11 +311,20 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   @protected
   final List<String> expressionlessInputs = const [];
 
+  //TODO: all this stuff...
   @override
-  String? definitionVerilog(String definitionType) => null;
+  String? definitionVerilog(String definitionType) => '';
+  bool get generatesStandardDefinition =>
+      definitionVerilog('*PLACEHOLDER*') == null;
+  bool get generatesCustomDefinition {
+    final def = definitionVerilog('*PLACEHOLDER*');
+    return def != null && def.isNotEmpty;
+  }
 
+  List<SystemVerilogParameter>? get definitionParameters => null;
   @override
-  bool get generatesDefinition => definitionVerilog('*PLACEHOLDER*') != null;
+  bool get generatesDefinition =>
+      generatesStandardDefinition || generatesCustomDefinition;
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -471,12 +488,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
       return [
         '#(',
         defParams
-            .map((p) => [
-                  'parameter',
-                  if (p.type != null) ' ${p.type}',
-                  ' ${p.name}',
-                  if (p.defaultValue != null) ' = ${p.defaultValue}'
-                ].join())
+            .map((p) => 'parameter ${p.type} ${p.name} = ${p.defaultValue}')
             .join(',\n'),
         ')',
       ].join('\n');
@@ -489,14 +501,16 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String _toVerilog(String Function(Module module) getInstanceTypeOfModule) {
     final verilogModuleName = getInstanceTypeOfModule(module);
     return [
-      'module $verilogModuleName',
-      _parameterString,
-      '(',
+      [
+        'module $verilogModuleName',
+        _parameterString,
+        '(',
+      ].nonNulls.join(' '),
       _portsString,
       ');',
       _moduleContentsString,
       'endmodule : $verilogModuleName'
-    ].nonNulls.join('\n');
+    ].join('\n');
   }
 }
 
