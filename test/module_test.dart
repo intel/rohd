@@ -89,6 +89,24 @@ class ArrayConcatMod extends Module {
   }
 }
 
+class UnconnectedArraySig extends Module {
+  UnconnectedArraySig(Logic a) : super(name: 'unconnected_array_sig') {
+    a = addInput('a', a);
+
+    final aArr = LogicArray([2], 1, name: 'a_arr');
+    aArr.elements[0] <= a;
+    aArr.elements[1] <= Logic(name: 'unconnected');
+
+    SubModWithArray(aArr);
+  }
+}
+
+class SubModWithArray extends Module {
+  SubModWithArray(LogicArray aArr) : super(name: 'sub_mod_with_array') {
+    aArr = addInputArray('a_arr', aArr, dimensions: aArr.dimensions);
+  }
+}
+
 void main() {
   test('tryInput, exists', () {
     final mod = ModuleWithMaybePorts(addIn: true);
@@ -139,5 +157,16 @@ void main() {
 
     final sv = mod.generateSynth();
     expect(sv, contains('assign a_concat[0] = t0;'));
+  });
+
+  test('array unconnected input port found', () async {
+    final mod = UnconnectedArraySig(Logic());
+    await mod.build();
+
+    expect(mod.internalSignals.firstWhereOrNull((e) => e.name == 'unconnected'),
+        isNotNull);
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign a_arr[1] = unconnected;'));
   });
 }

@@ -251,7 +251,17 @@ class LogicStructure implements Logic {
         'Should only set parent module once.');
 
     _parentModule = newParentModule;
+  }
+
+  /// Performs a recursive call of setting [parentModule] on all of [elements]
+  /// and their [elements] for any sub-[LogicStructure]s.
+  @protected
+  void setAllParentModule(Module? newParentModule) {
+    parentModule = newParentModule;
     for (final element in elements) {
+      if (element is LogicStructure) {
+        element.setAllParentModule(newParentModule);
+      }
       element.parentModule = newParentModule;
     }
   }
