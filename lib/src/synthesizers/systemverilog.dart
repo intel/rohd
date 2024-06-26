@@ -23,7 +23,8 @@ class SystemVerilogSynthesizer extends Synthesizer {
   bool generatesDefinition(Module module) =>
       // ignore: deprecated_member_use_from_same_package
       !((module is CustomSystemVerilog) ||
-          (module is SystemVerilog && !module.generatesDefinition));
+          (module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none));
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
@@ -135,12 +136,19 @@ class SystemVerilogSynthesizer extends Synthesizer {
       );
 
   @override
-  SynthesisResult synthesize(Module module,
-          String Function(Module module) getInstanceTypeOfModule) =>
-      module is SystemVerilog && module.generatesCustomDefinition
-          ? _SystemVerilogCustomDefinitionSynthesisResult(
-              module, getInstanceTypeOfModule)
-          : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+  SynthesisResult synthesize(
+      Module module, String Function(Module module) getInstanceTypeOfModule) {
+    assert(
+        module is! SystemVerilog ||
+            module.generatedDefinitionType != DefinitionGenerationType.none,
+        'SystemVerilog modules synthesized must generate a definition.');
+
+    return module is SystemVerilog &&
+            module.generatedDefinitionType == DefinitionGenerationType.custom
+        ? _SystemVerilogCustomDefinitionSynthesisResult(
+            module, getInstanceTypeOfModule)
+        : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+  }
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
@@ -233,32 +241,30 @@ mixin SystemVerilog on Module {
   /// for the same inputs.
   String? definitionVerilog(String definitionType) => '';
 
-  bool get generatesStandardDefinition =>
-      definitionVerilog('*PLACEHOLDER*') == null;
-  bool get generatesCustomDefinition {
-    final def = definitionVerilog('*PLACEHOLDER*');
-    return def != null && def.isNotEmpty;
-  }
-
-  bool get generatesDefinition =>
-      generatesStandardDefinition || generatesCustomDefinition;
-
   /// A collection of SystemVerilog [SystemVerilogParameter]s to be declared on
-  /// the definition when generating SystemVerilog for this [Module] if it
-  /// [generatesStandardDefinition].
+  /// the definition when generating SystemVerilog for this [Module] if
+  /// [generatedDefinitionType] is [DefinitionGenerationType.standard].
   ///
   /// If `null` is returned, then no parameters will be generated. Otherwise,
   /// this function should have no side effects and always return the same thing
   /// for the same inputs.
   List<SystemVerilogParameter>? get definitionParameters => null;
 
-  /// Whether or not this [Module] generates a SystemVerilog definition.
+  /// What kind of SystemVerilog definition this [Module] generates, or whether
+  /// it does at all.
   ///
-  /// By default, this is automatically calculated by whether or not
-  /// [definitionVerilog] provides a (non-empty) definition or `null`
-  /// definition.
-  // bool get generatesDefinition =>
-  //     definitionVerilog('*PLACEHOLDER*')?.isNotEmpty ?? true;
+  /// By default, this is automatically calculated by the return value of
+  /// [definitionVerilog].
+  DefinitionGenerationType get generatedDefinitionType {
+    final def = definitionVerilog('*PLACEHOLDER*');
+    if (def == null) {
+      return DefinitionGenerationType.standard;
+    } else if (def.isNotEmpty) {
+      return DefinitionGenerationType.custom;
+    } else {
+      return DefinitionGenerationType.none;
+    }
+  }
 }
 
 enum DefinitionGenerationType {
@@ -311,20 +317,15 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   @protected
   final List<String> expressionlessInputs = const [];
 
-  //TODO: all this stuff...
   @override
   String? definitionVerilog(String definitionType) => '';
-  bool get generatesStandardDefinition =>
-      definitionVerilog('*PLACEHOLDER*') == null;
-  bool get generatesCustomDefinition {
-    final def = definitionVerilog('*PLACEHOLDER*');
-    return def != null && def.isNotEmpty;
-  }
 
-  List<SystemVerilogParameter>? get definitionParameters => null;
   @override
-  bool get generatesDefinition =>
-      generatesStandardDefinition || generatesCustomDefinition;
+  DefinitionGenerationType get generatedDefinitionType =>
+      DefinitionGenerationType.none;
+
+  @override
+  List<SystemVerilogParameter>? get definitionParameters => null;
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -332,7 +333,10 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 class _SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
   _SystemVerilogCustomDefinitionSynthesisResult(
       super.module, super.getInstanceTypeOfModule)
-      : assert(module is SystemVerilog && module.generatesCustomDefinition,
+      : assert(
+            module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.custom,
             'This should only be used for custom system verilog definitions.');
 
   @override
