@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_param_passthrough_test.dart
-// Unit tests for pass-thruogh SystemVerilog parameters
+// Unit tests for pass-through SystemVerilog parameters
 //
 // 2024 June 25
 // Author: Max Korbel <max.korbel@intel.com>
