@@ -32,11 +32,14 @@ void main() {
     final mod = TopModule(Logic(width: 2));
     await mod.build();
     final sv = mod.generateSynth();
+
+    // make sure we instantiate the external module properly
     expect(
         sv,
         contains(
             'external_module_name #(.WIDTH(2)) external_module(.a(a),.b(b));'));
-  });
 
-  //TODO: test that external module doesn't actually get created!
+    // make sure we don't generate the external module SV definition
+    expect(RegExp(r'module\s+external_module_name').hasMatch(sv), isFalse);
+  });
 }

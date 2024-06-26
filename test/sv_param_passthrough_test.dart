@@ -11,7 +11,7 @@ abstract class ModWithParamPassthrough extends Module with SystemVerilog {
       super.name});
 
   @override
-  final List<SystemVerilogParameter> definitionParameters;
+  final List<SystemVerilogParameterDefinition> definitionParameters;
 
   final Map<String, String> instantiationParameters;
 
@@ -38,10 +38,11 @@ class Top extends ModWithParamPassthrough {
   Logic get b => output('b');
   Top(Logic a, {super.instantiationParameters = const {}, super.name = 'top'})
       : super([
-          const SystemVerilogParameter('A', type: 'int', defaultValue: '3'),
-          const SystemVerilogParameter('B',
+          const SystemVerilogParameterDefinition('A',
+              type: 'int', defaultValue: '3'),
+          const SystemVerilogParameterDefinition('B',
               type: 'int', defaultValue: '$_bParam'),
-          const SystemVerilogParameter('C',
+          const SystemVerilogParameterDefinition('C',
               type: 'bit[3:0]', defaultValue: '2'),
         ]) {
     a = addInput('a', a, width: 8);
@@ -59,11 +60,13 @@ class Mid extends ModWithParamPassthrough {
   Logic get b => output('b');
   Mid(Logic a, {super.instantiationParameters = const {}, super.name = 'mid'})
       : super([
-          const SystemVerilogParameter('A', type: 'int', defaultValue: '3'),
-          const SystemVerilogParameter('B', type: 'int', defaultValue: '0'),
-          const SystemVerilogParameter('C',
+          const SystemVerilogParameterDefinition('A',
+              type: 'int', defaultValue: '3'),
+          const SystemVerilogParameterDefinition('B',
+              type: 'int', defaultValue: '0'),
+          const SystemVerilogParameterDefinition('C',
               type: 'bit[3:0]', defaultValue: '0'),
-          const SystemVerilogParameter('D',
+          const SystemVerilogParameterDefinition('D',
               type: 'logic', defaultValue: "1'b0"),
         ]) {
     a = addInput('a', a, width: 8);
@@ -84,11 +87,14 @@ class LeafNodeExternal extends ModWithParamPassthrough {
       super.instantiationParameters = const {},
       super.name = 'leaf'})
       : super([
-          const SystemVerilogParameter('A', type: 'int', defaultValue: '0'),
-          const SystemVerilogParameter('B', type: 'int', defaultValue: '0'),
-          const SystemVerilogParameter('C',
+          const SystemVerilogParameterDefinition('A',
+              type: 'int', defaultValue: '0'),
+          const SystemVerilogParameterDefinition('B',
+              type: 'int', defaultValue: '0'),
+          const SystemVerilogParameterDefinition('C',
               type: 'bit[3:0]', defaultValue: '0'),
-          const SystemVerilogParameter('D', type: 'logic', defaultValue: '0'),
+          const SystemVerilogParameterDefinition('D',
+              type: 'logic', defaultValue: '0'),
         ]) {
     a = addInput('a', a, width: 8);
     addOutput('b', width: 8);

@@ -7,6 +7,8 @@
 // 2021 August 26
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:collection';
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
@@ -38,6 +40,13 @@ class SystemVerilogSynthesizer extends Synthesizer {
   /// Based on this module definition: `c <= a & b`
   /// The values for [ports] should be:
   /// ports:  `{ 'a' : 'sig_a', 'b' : 'sig_b', 'c' : 'sig_c'}`
+  ///
+  /// If [forceStandardInstantiation] is set, then the standard instantiation
+  /// for SystemVerilog modules will be used.
+  ///
+  /// If [parameters] is provided, then the module will be instantiated with
+  /// all of the keys as parameter names set to the corresponding values
+  /// provided.
   static String instantiationVerilogFor(
       {required Module module,
       required String instanceType,
@@ -173,7 +182,9 @@ mixin CustomSystemVerilog on Module {
   final List<String> expressionlessInputs = const [];
 }
 
-class SystemVerilogParameter {
+/// Represents the definition of a SystemVerilog parameter at the time of
+/// declaration of a module definition.
+class SystemVerilogParameterDefinition {
   /// The SystemVerilog type to use for declaring this parameter.
   final String type;
 
@@ -183,23 +194,14 @@ class SystemVerilogParameter {
   /// The name of the parameter.
   final String name;
 
-  const SystemVerilogParameter(this.name,
+  /// Creates a new SystemVerilog parameter definition with [name] of the
+  /// provided [type] with the [defaultValue].
+  const SystemVerilogParameterDefinition(this.name,
       {required this.type, required this.defaultValue});
 }
 
-// mixin SystemVerilogDefinitionAdjustment on Module {
-//   /// A collection of SystemVerilog [SystemVerilogParameter]s to be declared on
-//   /// the definition when generating SystemVerilog for this [Module].
-//   ///
-//   /// If `null` is returned, then no parameters will be generated. Otherwise,
-//   /// this function should have no side effects and always return the same thing
-//   /// for the same inputs.
-//   List<SystemVerilogParameter>? get definitionParameters => null;
-// }
-
-/// Allows a [Module] to define a custom implementation of SystemVerilog to be
-/// injected in generated output instead of instantiating a separate `module` or
-/// in addition to a custom definition.
+/// Allows a [Module] to control the instantiation and/or definition of
+/// generated SystemVerilog for that module.
 mixin SystemVerilog on Module {
   /// Generates custom SystemVerilog to be injected in place of a `module`
   /// instantiation.
@@ -212,17 +214,14 @@ mixin SystemVerilog on Module {
   ///
   /// If a standard instantiation is desired, either return `null` or use
   /// [SystemVerilogSynthesizer.instantiationVerilogFor] with
-  /// `forceStandardInstantiation` set to `true`.
-  ///
-  /// TODO: default null, is that ok?
+  /// `forceStandardInstantiation` set to `true`.  By default, `null` is
+  /// returned and thus a standard instantiation is used.
   String? instantiationVerilog(
     String instanceType,
     String instanceName,
     Map<String, String> ports,
   ) =>
       null;
-
-  //TODO: make sure user guide docs are updated
 
   /// A list of names of [input]s which should not have any SystemVerilog
   /// expressions (including constants) in-lined into them. Only signal names
@@ -241,19 +240,19 @@ mixin SystemVerilog on Module {
   /// for the same inputs.
   String? definitionVerilog(String definitionType) => '';
 
-  /// A collection of SystemVerilog [SystemVerilogParameter]s to be declared on
-  /// the definition when generating SystemVerilog for this [Module] if
-  /// [generatedDefinitionType] is [DefinitionGenerationType.standard].
+  /// A collection of SystemVerilog [SystemVerilogParameterDefinition]s to be
+  /// declared on the definition when generating SystemVerilog for this [Module]
+  /// if [generatedDefinitionType] is [DefinitionGenerationType.standard].
   ///
-  /// If `null` is returned, then no parameters will be generated. Otherwise,
-  /// this function should have no side effects and always return the same thing
-  /// for the same inputs.
-  List<SystemVerilogParameter>? get definitionParameters => null;
+  /// If `null` is returned (the default), then no parameters will be generated.
+  /// Otherwise, this function should have no side effects and always return the
+  /// same thing for the same inputs.
+  List<SystemVerilogParameterDefinition>? get definitionParameters => null;
 
   /// What kind of SystemVerilog definition this [Module] generates, or whether
   /// it does at all.
   ///
-  /// By default, this is automatically calculated by the return value of
+  /// By default, this is automatically calculated based on the return value of
   /// [definitionVerilog].
   DefinitionGenerationType get generatedDefinitionType {
     final def = definitionVerilog('*PLACEHOLDER*');
@@ -267,6 +266,7 @@ mixin SystemVerilog on Module {
   }
 }
 
+/// A type of generation for generated outputs.
 enum DefinitionGenerationType {
   /// No definition will be generated.
   none,
@@ -325,7 +325,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
       DefinitionGenerationType.none;
 
   @override
-  List<SystemVerilogParameter>? get definitionParameters => null;
+  List<SystemVerilogParameterDefinition>? get definitionParameters => null;
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -735,7 +735,7 @@ class _SynthModuleDefinition {
 
   /// A mapping from original [Logic]s to the [_SynthLogic]s that represent
   /// them.
-  final Map<Logic, _SynthLogic> logicToSynthMap = {}; //TODO: hashmap?
+  final Map<Logic, _SynthLogic> logicToSynthMap = HashMap();
 
   /// A mapping from the original [Module]s to the
   /// [_SynthSubModuleInstantiation]s that represent them.
