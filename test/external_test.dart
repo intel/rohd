@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // external_test.dart
@@ -32,9 +32,14 @@ void main() {
     final mod = TopModule(Logic(width: 2));
     await mod.build();
     final sv = mod.generateSynth();
+
+    // make sure we instantiate the external module properly
     expect(
         sv,
         contains(
             'external_module_name #(.WIDTH(2)) external_module(.a(a),.b(b));'));
+
+    // make sure we don't generate the external module SV definition
+    expect(RegExp(r'module\s+external_module_name').hasMatch(sv), isFalse);
   });
 }

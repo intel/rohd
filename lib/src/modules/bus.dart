@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus.dart
@@ -15,16 +15,16 @@ import 'package:rohd/rohd.dart';
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
 class BusSubset extends Module with InlineSystemVerilog {
   /// Name for the input port of this module.
-  late final String _original;
+  late final String _originalName;
 
   /// Name for the output port of this module.
-  late final String _subset;
+  late final String _subsetName;
 
   /// The input to get a subset of.
-  late final Logic original = input(_original);
+  late final Logic _original = input(_originalName);
 
-  /// The output, a subset of [original].
-  late final Logic subset = output(_subset);
+  /// The output, a subset of [_original].
+  late final Logic subset = output(_subsetName);
 
   /// Start index of the subset.
   final int startIndex;
@@ -33,7 +33,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   final int endIndex;
 
   @override
-  List<String> get expressionlessInputs => [_original];
+  List<String> get expressionlessInputs => [_originalName];
 
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
@@ -55,13 +55,13 @@ class BusSubset extends Module with InlineSystemVerilog {
           ' than ${bus.width}');
     }
 
-    _original = Naming.unpreferredName('original_${bus.name}');
-    _subset =
+    _originalName = Naming.unpreferredName('original_${bus.name}');
+    _subsetName =
         Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
-    addInput(_original, bus, width: bus.width);
+    addInput(_originalName, bus, width: bus.width);
     final newWidth = (endIndex - startIndex).abs() + 1;
-    addOutput(_subset, width: newWidth);
+    addOutput(_subsetName, width: newWidth);
 
     // so that people can't do a slice assign, not (yet?) implemented
     subset.makeUnassignable();
@@ -72,22 +72,22 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-    original.glitch.listen((args) {
+    _original.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (original.width == 1) {
-      subset.put(original.value);
+    if (_original.width == 1) {
+      subset.put(_original.value);
       return;
     }
 
     if (endIndex < startIndex) {
-      subset.put(original.value.getRange(endIndex, startIndex + 1).reversed);
+      subset.put(_original.value.getRange(endIndex, startIndex + 1).reversed);
     } else {
-      subset.put(original.value.getRange(startIndex, endIndex + 1));
+      subset.put(_original.value.getRange(startIndex, endIndex + 1));
     }
   }
 
@@ -99,13 +99,13 @@ class BusSubset extends Module with InlineSystemVerilog {
     if (inputs.length != 1) {
       throw Exception('BusSubset has exactly one input, but saw $inputs.');
     }
-    final a = inputs[_original]!;
+    final a = inputs[_originalName]!;
 
     assert(!a.contains(_expressionRegex),
         'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
-    if (original.width == 1) {
+    if (_original.width == 1) {
       return a;
     }
 
