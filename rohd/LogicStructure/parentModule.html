@@ -115,7 +115,7 @@ Module? get parentModule =&gt; _parentModule;</code></pre>
     
 <section class="desc markdown">
   <p>Sets the value of <a href="../../rohd/LogicStructure/parentModule.html">parentModule</a> to <code>newParentModule</code>.</p>
-<p>This should <em>only</em> be called by <a href="../../rohd/Module/build.html">Module.build()</a>.  It is used to
+<p>This should <em>only</em> be called by <a href="../../rohd/Module/build.html">Module.build</a>.  It is used to
 optimize search.</p>
 </section>
 
@@ -129,9 +129,6 @@ set parentModule(Module? newParentModule) {
       &#39;Should only set parent module once.&#39;);
 
   _parentModule = newParentModule;
-  for (final element in elements) {
-    element.parentModule = newParentModule;
-  }
 }</code></pre>
 </section>
 

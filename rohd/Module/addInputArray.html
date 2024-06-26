@@ -112,7 +112,7 @@ LogicArray addInputArray(
   )
     ..gets(x)
     &#47;&#47; ignore: invalid_use_of_protected_member
-    ..parentModule = this;
+    ..setAllParentModule(this);
 
   _inputs[name] = inArr;
 
