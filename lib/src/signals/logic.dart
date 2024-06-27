@@ -383,13 +383,43 @@ class Logic {
   void operator <=(Logic other) => gets(other);
 
   /// Logical bitwise NOT.
-  Logic operator ~() => NotGate(this).out;
+  Logic operator ~() => this is Const ? Const(~value) : NotGate(this).out;
 
   /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).out;
+  Logic operator &(Logic other) {
+    if (this is Const &&
+        other is Const &&
+        value.isValid &&
+        other.value.isValid) {
+      if (value == LogicValue.of(0, width: width) ||
+          other.value == LogicValue.of(0, width: width)) {
+        return Const(LogicValue.of(0, width: width));
+      } else if (value == LogicValue.filled(width, LogicValue.one)) {
+        return other;
+      } else if (other.value == LogicValue.filled(width, LogicValue.one)) {
+        return this;
+      }
+    }
+    return And2Gate(this, other).out;
+  }
 
   /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).out;
+  Logic operator |(Logic other) {
+    if (this is Const &&
+        other is Const &&
+        value.isValid &&
+        other.value.isValid) {
+      if (value == LogicValue.filled(width, LogicValue.one) ||
+          other.value == LogicValue.filled(width, LogicValue.one)) {
+        return Const(LogicValue.filled(width, LogicValue.one));
+      } else if (value == LogicValue.of(LogicValue.zero, width: width)) {
+        return other;
+      } else if (other.value == LogicValue.of(LogicValue.zero, width: width)) {
+        return this;
+      }
+    }
+    return Or2Gate(this, other).out;
+  }
 
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
