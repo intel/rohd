@@ -78,9 +78,11 @@
     
 <section class="desc markdown">
   <p>A custom SystemVerilog definition to be produced for this <a href="../../rohd/Module-class.html">Module</a>.</p>
-<p>If <code>null</code> is returned, then no definition will be generated. Otherwise,
-this function should be a pure function, i.e. it should have no side
-effects and always return the same thing for the same inputs.</p>
+<p>If an empty string is returned (the default behavior), then no definition
+will be generated.</p>
+<p>If <code>null</code> is returned, then a default definition will be generated.</p>
+<p>This function should have no side effects and always return the same thing
+for the same inputs.</p>
 </section>
 
 
@@ -88,7 +90,7 @@ effects and always return the same thing for the same inputs.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String? definitionVerilog(String definitionType) =&gt; null;</code></pre>
+String? definitionVerilog(String definitionType) =&gt; &#39;&#39;;</code></pre>
 </section>
 
 

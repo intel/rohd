@@ -89,7 +89,8 @@ described in-line.</p>
 bool generatesDefinition(Module module) =&gt;
     &#47;&#47; ignore: deprecated_member_use_from_same_package
     !((module is CustomSystemVerilog) ||
-        (module is SystemVerilog &amp;&amp; !module.generatesDefinition));</code></pre>
+        (module is SystemVerilog &amp;&amp;
+            module.generatedDefinitionType == DefinitionGenerationType.none));</code></pre>
 </section>
 
 

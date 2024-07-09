@@ -96,13 +96,13 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   if (inputs.length != 1) {
     throw Exception(&#39;BusSubset has exactly one input, but saw $inputs.&#39;);
   }
-  final a = inputs[_original]!;
+  final a = inputs[_originalName]!;
 
   assert(!a.contains(_expressionRegex),
       &#39;Inputs to bus swizzle cannot contain any expressions.&#39;);
 
   &#47;&#47; When, input width is 1, ignore startIndex and endIndex
-  if (original.width == 1) {
+  if (_original.width == 1) {
     return a;
   }
 

@@ -86,6 +86,11 @@ To generate this SystemVerilog:  <code>sig_c = sig_a &amp; sig_b</code>
 Based on this module definition: <code>c &lt;= a &amp; b</code>
 The values for <code>ports</code> should be:
 ports:  <code>{ 'a' : 'sig_a', 'b' : 'sig_b', 'c' : 'sig_c'}</code></p>
+<p>If <code>forceStandardInstantiation</code> is set, then the standard instantiation
+for SystemVerilog modules will be used.</p>
+<p>If <code>parameters</code> is provided, then the module will be instantiated with
+all of the keys as parameter names set to the corresponding values
+provided.</p>
 </section>
 
 

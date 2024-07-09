@@ -31,7 +31,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">instantiationVerilog abstract method</li>
+    <li class="self-crumb">instantiationVerilog method</li>
   </ol>
   <div class="self-name">instantiationVerilog</div>
   <form class="search navbar-right" role="search">
@@ -57,7 +57,7 @@
     data-above-sidebar="rohd&#47;SystemVerilog-mixin-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">instantiationVerilog</span> abstract method 
+<h1><span class="kind-method">instantiationVerilog</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
@@ -83,7 +83,8 @@ the names of the signals that are passed into those ports in the generated
 SystemVerilog.</p>
 <p>If a standard instantiation is desired, either return <code>null</code> or use
 <a href="../../rohd/SystemVerilogSynthesizer/instantiationVerilogFor.html">SystemVerilogSynthesizer.instantiationVerilogFor</a> with
-<code>forceStandardInstantiation</code> set to <code>true</code>.</p>
+<code>forceStandardInstantiation</code> set to <code>true</code>.  By default, <code>null</code> is
+returned and thus a standard instantiation is used.</p>
 </section>
 
 
@@ -94,7 +95,8 @@ SystemVerilog.</p>
   String instanceType,
   String instanceName,
   Map&lt;String, String&gt; ports,
-);</code></pre>
+) =&gt;
+    null;</code></pre>
 </section>
 
 
@@ -112,7 +114,7 @@ SystemVerilog.</p>
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">instantiationVerilog abstract method</li>
+    <li class="self-crumb">instantiationVerilog method</li>
 </ol>
 
 

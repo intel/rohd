@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the generatesDefinition property from the InlineSystemVerilog mixin, for the Dart programming language.">
-  <title>generatesDefinition property - InlineSystemVerilog mixin - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the generatedDefinitionType property from the InlineSystemVerilog mixin, for the Dart programming language.">
+  <title>generatedDefinitionType property - InlineSystemVerilog mixin - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
-    <li class="self-crumb">generatesDefinition property</li>
+    <li class="self-crumb">generatedDefinitionType property</li>
   </ol>
-  <div class="self-name">generatesDefinition</div>
+  <div class="self-name">generatedDefinitionType</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -57,7 +57,7 @@
     data-above-sidebar="rohd&#47;InlineSystemVerilog-mixin-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">generatesDefinition</span> property 
+<h1><span class="kind-property">generatedDefinitionType</span> property 
 </h1></div>
 
 
@@ -71,24 +71,26 @@
         <li>@<a href="https://api.dart.dev/stable/3.4.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-      <span class="returntype"><a href="https://api.dart.dev/stable/3.4.4/dart-core/bool-class.html">bool</a></span>
-      <span class="name ">generatesDefinition</span>
+      <span class="returntype"><a href="../../rohd/DefinitionGenerationType.html">DefinitionGenerationType</a></span>
+      <span class="name ">generatedDefinitionType</span>
       <div class="features"><span class="feature">override</span></div>
 
     </section>
 
     
 <section class="desc markdown">
-  <p>Whether or not this <a href="../../rohd/Module-class.html">Module</a> generates a SystemVerilog definition.</p>
-<p>By default, this is automatically calculated by whether or not
-<a href="../../rohd/InlineSystemVerilog/definitionVerilog.html">definitionVerilog</a> provides a definition.</p>
+  <p>What kind of SystemVerilog definition this <a href="../../rohd/Module-class.html">Module</a> generates, or whether
+it does at all.</p>
+<p>By default, this is automatically calculated based on the return value of
+<a href="../../rohd/InlineSystemVerilog/definitionVerilog.html">definitionVerilog</a>.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-bool get generatesDefinition =&gt; definitionVerilog(&#39;*PLACEHOLDER*&#39;) != null;</code></pre>
+DefinitionGenerationType get generatedDefinitionType =&gt;
+    DefinitionGenerationType.none;</code></pre>
 </section>
 
   </section>
@@ -108,7 +110,7 @@ bool get generatesDefinition =&gt; definitionVerilog(&#39;*PLACEHOLDER*&#39;) !=
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
-    <li class="self-crumb">generatesDefinition property</li>
+    <li class="self-crumb">generatedDefinitionType property</li>
 </ol>
 
 

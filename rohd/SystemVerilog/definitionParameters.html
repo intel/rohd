@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the generatesDefinition property from the SystemVerilog mixin, for the Dart programming language.">
-  <title>generatesDefinition property - SystemVerilog mixin - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the definitionParameters property from the SystemVerilog mixin, for the Dart programming language.">
+  <title>definitionParameters property - SystemVerilog mixin - rohd library - Dart API</title>
 
 
   
@@ -31,9 +31,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">generatesDefinition property</li>
+    <li class="self-crumb">definitionParameters property</li>
   </ol>
-  <div class="self-name">generatesDefinition</div>
+  <div class="self-name">definitionParameters</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -57,7 +57,7 @@
     data-above-sidebar="rohd&#47;SystemVerilog-mixin-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-property">generatesDefinition</span> property 
+<h1><span class="kind-property">definitionParameters</span> property 
 </h1></div>
 
 
@@ -66,23 +66,26 @@
 
     <section class="multi-line-signature">
       
-      <span class="returntype"><a href="https://api.dart.dev/stable/3.4.4/dart-core/bool-class.html">bool</a></span>
-      <span class="name ">generatesDefinition</span>
+      <span class="returntype"><a href="https://api.dart.dev/stable/3.4.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span>&gt;</span>?</span>
+      <span class="name ">definitionParameters</span>
       
 
     </section>
 
     
 <section class="desc markdown">
-  <p>Whether or not this <a href="../../rohd/Module-class.html">Module</a> generates a SystemVerilog definition.</p>
-<p>By default, this is automatically calculated by whether or not
-<a href="../../rohd/SystemVerilog/definitionVerilog.html">definitionVerilog</a> provides a definition.</p>
+  <p>A collection of SystemVerilog <code>SystemVerilogParameterDefinition</code>s to be
+declared on the definition when generating SystemVerilog for this <a href="../../rohd/Module-class.html">Module</a>
+if <a href="../../rohd/SystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a> is <a href="../../rohd/DefinitionGenerationType.html">DefinitionGenerationType.standard</a>.</p>
+<p>If <code>null</code> is returned (the default), then no parameters will be generated.
+Otherwise, this function should have no side effects and always return the
+same thing for the same inputs.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool get generatesDefinition =&gt; definitionVerilog(&#39;*PLACEHOLDER*&#39;) != null;</code></pre>
+  <pre class="language-dart"><code class="language-dart">List&lt;SystemVerilogParameterDefinition&gt;? get definitionParameters =&gt; null;</code></pre>
 </section>
 
   </section>
@@ -102,7 +105,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
-    <li class="self-crumb">generatesDefinition property</li>
+    <li class="self-crumb">definitionParameters property</li>
 </ol>
 
 

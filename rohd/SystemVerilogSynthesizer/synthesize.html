@@ -89,12 +89,19 @@ by <code>getInstanceTypeOfModule</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-SynthesisResult synthesize(Module module,
-        String Function(Module module) getInstanceTypeOfModule) =&gt;
-    module is SystemVerilog &amp;&amp; module.generatesDefinition
-        ? _SystemVerilogCustomDefinitionSynthesisResult(
-            module, getInstanceTypeOfModule)
-        : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);</code></pre>
+SynthesisResult synthesize(
+    Module module, String Function(Module module) getInstanceTypeOfModule) {
+  assert(
+      module is! SystemVerilog ||
+          module.generatedDefinitionType != DefinitionGenerationType.none,
+      &#39;SystemVerilog modules synthesized must generate a definition.&#39;);
+
+  return module is SystemVerilog &amp;&amp;
+          module.generatedDefinitionType == DefinitionGenerationType.custom
+      ? _SystemVerilogCustomDefinitionSynthesisResult(
+          module, getInstanceTypeOfModule)
+      : _SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+}</code></pre>
 </section>
 
 

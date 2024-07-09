@@ -97,13 +97,13 @@ in the generated SystemVerilog.</p>
         &#39; than ${bus.width}&#39;);
   }
 
-  _original = Naming.unpreferredName(&#39;original_${bus.name}&#39;);
-  _subset =
+  _originalName = Naming.unpreferredName(&#39;original_${bus.name}&#39;);
+  _subsetName =
       Naming.unpreferredName(&#39;subset_${endIndex}_${startIndex}_${bus.name}&#39;);
 
-  addInput(_original, bus, width: bus.width);
+  addInput(_originalName, bus, width: bus.width);
   final newWidth = (endIndex - startIndex).abs() + 1;
-  addOutput(_subset, width: newWidth);
+  addOutput(_subsetName, width: newWidth);
 
   &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
   subset.makeUnassignable();

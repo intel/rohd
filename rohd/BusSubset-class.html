@@ -132,6 +132,20 @@ generated code.
 
 </dd>
 
+        <dt id="definitionParameters" class="property inherited">
+  <span class="name"><a href="../rohd/InlineSystemVerilog/definitionParameters.html">definitionParameters</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span>&gt;</span>?</span>
+  
+
+</dt>
+<dd class="inherited">
+  A collection of SystemVerilog <code>SystemVerilogParameterDefinition</code>s to be
+declared on the definition when generating SystemVerilog for this <a href="../rohd/Module-class.html">Module</a>
+if <a href="../rohd/InlineSystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a> is <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType.standard</a>.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="endIndex" class="property">
   <span class="name"><a href="../rohd/BusSubset/endIndex.html">endIndex</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span>
@@ -158,14 +172,15 @@ will be fed into these.
 
 </dd>
 
-        <dt id="generatesDefinition" class="property inherited">
-  <span class="name"><a href="../rohd/InlineSystemVerilog/generatesDefinition.html">generatesDefinition</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.4.4/dart-core/bool-class.html">bool</a></span>
+        <dt id="generatedDefinitionType" class="property inherited">
+  <span class="name"><a href="../rohd/InlineSystemVerilog/generatedDefinitionType.html">generatedDefinitionType</a></span>
+  <span class="signature">&#8594; <a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType</a></span>
   
 
 </dt>
 <dd class="inherited">
-  Whether or not this <a href="../rohd/Module-class.html">Module</a> generates a SystemVerilog definition.
+  What kind of SystemVerilog definition this <a href="../rohd/Module-class.html">Module</a> generates, or whether
+it does at all.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
 
 </dd>
@@ -242,18 +257,6 @@ signals.
 <dd class="inherited">
   The name of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
-
-</dd>
-
-        <dt id="original" class="property">
-  <span class="name"><a href="../rohd/BusSubset/original.html">original</a></span>
-  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
-  
-
-</dt>
-<dd>
-  The input to get a subset of.
-  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>
 
@@ -364,7 +367,7 @@ inputs, outputs, and internal signals of this <a href="../rohd/Module-class.html
 
 </dt>
 <dd>
-  The output, a subset of <a href="../rohd/BusSubset/original.html">original</a>.
+  The output, a subset of <code>_original</code>.
   <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
 
 </dd>

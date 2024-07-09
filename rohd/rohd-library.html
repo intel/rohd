@@ -567,6 +567,15 @@ a <a href="../rohd/Synthesizer-class.html">Synthesizer</a>.
   An object capable of converting a module into some new output format
 </dd>
 
+          <dt id="SystemVerilogParameterDefinition">
+  <span class="name "><a href="../rohd/SystemVerilogParameterDefinition-class.html">SystemVerilogParameterDefinition</a></span> 
+
+</dt>
+<dd>
+  Represents the definition of a SystemVerilog parameter at the time of
+declaration of a module definition.
+</dd>
+
           <dt id="SystemVerilogSynthesizer">
   <span class="name "><a href="../rohd/SystemVerilogSynthesizer-class.html">SystemVerilogSynthesizer</a></span> 
 
@@ -621,6 +630,14 @@ given <a href="../rohd/Module-class.html">Module</a>.
 </dt>
 <dd>
   Controls characteristics about <a href="../rohd/Case-class.html">Case</a> blocks.
+</dd>
+
+          <dt id="DefinitionGenerationType">
+  <span class="name "><a href="../rohd/DefinitionGenerationType.html">DefinitionGenerationType</a></span> 
+
+</dt>
+<dd>
+  A type of generation for generated outputs.
 </dd>
 
           <dt id="Naming">
@@ -685,8 +702,8 @@ inlined within other SystemVerilog code.
 
 </dt>
 <dd>
-  Allows a <a href="../rohd/Module-class.html">Module</a> to define a custom implementation of SystemVerilog to be
-injected in generated output instead of instantiating a separate <code>module</code>.
+  Allows a <a href="../rohd/Module-class.html">Module</a> to control the instantiation and/or definition of
+generated SystemVerilog for that module.
 </dd>
 
       </dl>
