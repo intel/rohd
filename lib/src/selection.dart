@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // selection.dart
@@ -21,7 +21,7 @@ extension IndexedLogic on List<Logic> {
   /// Alternatively we can approach this with `index.selectFrom(logicList)`
   ///
   /// Example:
-  /// ```
+  /// ```dart
   /// // ordering matches closer to array indexing with `0` index-based.
   /// List<Logic> logicList = [/* Add your Logic elements here */];
   /// selected <= logicList.selectIndex(index);

@@ -418,6 +418,26 @@ abstract class Module {
           !isInOut(signal) &&
           subModule == null) {
         _addInternalSignal(signal);
+
+        // handle expanding the search for arrays
+        if (signal.parentStructure != null) {
+          await _traceInputForModuleContents(signal.parentStructure!,
+              dontAddSignal: dontAddSignal);
+          await _traceOutputForModuleContents(signal.parentStructure!,
+              dontAddSignal: signal.isPort);
+        }
+        if (signal is LogicStructure) {
+          for (final elem in signal.elements) {
+            await _traceInputForModuleContents(elem,
+                dontAddSignal: dontAddSignal);
+            await _traceOutputForModuleContents(elem,
+                dontAddSignal: signal.isPort);
+          }
+        }
+
+        for (final srcConnection in signal.srcConnections) {
+          await _traceOutputForModuleContents(srcConnection);
+        }
       }
 
       if (!dontAddSignal && isInput(signal)) {
@@ -515,6 +535,23 @@ abstract class Module {
           !isInOut(signal) &&
           subModule == null) {
         _addInternalSignal(signal);
+
+        // handle expanding the search for arrays
+        if (signal.parentStructure != null) {
+          await _traceOutputForModuleContents(signal.parentStructure!,
+              dontAddSignal: dontAddSignal);
+          await _traceInputForModuleContents(signal.parentStructure!,
+              dontAddSignal: signal.isPort);
+        }
+        if (signal is LogicStructure) {
+          for (final elem in signal.elements) {
+            await _traceOutputForModuleContents(elem,
+                dontAddSignal: dontAddSignal);
+            await _traceInputForModuleContents(elem,
+                dontAddSignal: signal.isPort);
+          }
+        }
+
         for (final dstConnection in signal.dstConnections) {
           await _traceInputForModuleContents(dstConnection);
         }
@@ -545,10 +582,6 @@ abstract class Module {
     assert(!signal.isPort, 'Should not be adding a port as an internal signal');
 
     _internalSignals.add(signal);
-
-    if (signal.isArrayMember) {
-      _addInternalSignal(signal.parentStructure!);
-    }
 
     // ignore: invalid_use_of_protected_member
     signal.parentModule = this;
@@ -649,7 +682,7 @@ abstract class Module {
     )
       ..gets(x)
       // ignore: invalid_use_of_protected_member
-      ..parentModule = this;
+      ..setAllParentModule(this);
 
     _inputs[name] = inArr;
 
@@ -695,7 +728,7 @@ abstract class Module {
       naming: Naming.reserved,
     )
       // ignore: invalid_use_of_protected_member
-      ..parentModule = this;
+      ..setAllParentModule(this);
 
     _outputs[name] = outArr;
 
@@ -739,7 +772,7 @@ abstract class Module {
     )
       ..gets(x)
       // ignore: invalid_use_of_protected_member
-      ..parentModule = this;
+      ..setAllParentModule(this);
 
     _inOuts[name] = inOutArr;
 

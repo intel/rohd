@@ -7,6 +7,7 @@
 // 2023 September 11
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
@@ -61,6 +62,51 @@ class MultipleLocation extends Module {
   }
 }
 
+class ArrayConcatMod extends Module {
+  ArrayConcatMod() {
+    final a = addInput('a', Logic());
+    final en = addInput('en', Logic());
+    final b = addOutput('b');
+
+    final aBar = Logic(name: 'a_bar');
+    final orOut = Logic(name: 'or_out');
+
+    final t0 = Logic(name: 't0');
+    final t2 = Logic(name: 't2');
+    final t3 = Logic(name: 't3');
+    final aConcat = LogicArray([4], 1, name: 'a_concat');
+
+    aConcat.elements[3] <= t3;
+    aConcat.elements[2] <= t2;
+    aConcat.elements[1] <= a;
+    aConcat.elements[0] <= t0;
+
+    aBar <= ~aConcat.elements[1];
+
+    orOut <= aBar | en;
+
+    b <= aConcat.elements[1] & orOut;
+  }
+}
+
+class UnconnectedArraySig extends Module {
+  UnconnectedArraySig(Logic a) : super(name: 'unconnected_array_sig') {
+    a = addInput('a', a);
+
+    final aArr = LogicArray([2], 1, name: 'a_arr');
+    aArr.elements[0] <= a;
+    aArr.elements[1] <= Logic(name: 'unconnected');
+
+    SubModWithArray(aArr);
+  }
+}
+
+class SubModWithArray extends Module {
+  SubModWithArray(LogicArray aArr) : super(name: 'sub_mod_with_array') {
+    aArr = addInputArray('a_arr', aArr, dimensions: aArr.dimensions);
+  }
+}
+
 void main() {
   test('tryInput, exists', () {
     final mod = ModuleWithMaybePorts(addIn: true);
@@ -100,5 +146,27 @@ void main() {
   test('multiple location hierarchy', () async {
     final mod = MultipleLocation();
     expect(mod.build, throwsA(isA<PortRulesViolationException>()));
+  });
+
+  test('array concat per element builds and finds sigs', () async {
+    final mod = ArrayConcatMod();
+    await mod.build();
+
+    expect(
+        mod.internalSignals.firstWhereOrNull((e) => e.name == 't0'), isNotNull);
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign a_concat[0] = t0;'));
+  });
+
+  test('array unconnected input port found', () async {
+    final mod = UnconnectedArraySig(Logic());
+    await mod.build();
+
+    expect(mod.internalSignals.firstWhereOrNull((e) => e.name == 'unconnected'),
+        isNotNull);
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign a_arr[1] = unconnected;'));
   });
 }

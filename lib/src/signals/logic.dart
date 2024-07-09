@@ -180,7 +180,7 @@ class Logic {
 
   /// Sets the value of [parentModule] to [newParentModule].
   ///
-  /// This should *only* be called by [Module.build()].  It is used to
+  /// This should *only* be called by [Module.build].  It is used to
   /// optimize search.
   @protected
   set parentModule(Module? newParentModule) {
@@ -846,7 +846,7 @@ class Logic {
   /// Alternatively we can approach this with `busList.selectIndex(index)`
   ///
   /// Example:
-  /// ```
+  /// ```dart
   /// // ordering matches closer to array indexing with `0` index-based.
   /// selected <= index.selectFrom(busList);
   /// ```
