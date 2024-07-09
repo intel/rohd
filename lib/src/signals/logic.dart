@@ -387,17 +387,25 @@ class Logic {
 
   /// Logical bitwise AND.
   Logic operator &(Logic other) {
-    if (this is Const &&
-        other is Const &&
-        value.isValid &&
-        other.value.isValid) {
-      if (value == LogicValue.of(0, width: width) ||
-          other.value == LogicValue.of(0, width: width)) {
-        return Const(LogicValue.of(0, width: width));
-      } else if (value == LogicValue.filled(width, LogicValue.one)) {
-        return other;
-      } else if (other.value == LogicValue.filled(width, LogicValue.one)) {
-        return this;
+    if (this is Const && other is Const) {
+      return Const((this as Const).value & other.value);
+    }
+    Const? constOperand;
+    Logic? otherOperand;
+
+    if (this is Const && value.isValid) {
+      constOperand = Const(this);
+    } else if (other is Const && other.value.isValid) {
+      constOperand = other;
+      otherOperand = this;
+    }
+
+    if (constOperand != null) {
+      if (constOperand.value == LogicValue.filled(width, LogicValue.zero)) {
+        return Const(LogicValue.filled(width, LogicValue.zero));
+      } else if (constOperand.value ==
+          LogicValue.filled(width, LogicValue.one)) {
+        return otherOperand!;
       }
     }
     return And2Gate(this, other).out;
@@ -405,17 +413,25 @@ class Logic {
 
   /// Logical bitwise OR.
   Logic operator |(Logic other) {
-    if (this is Const &&
-        other is Const &&
-        value.isValid &&
-        other.value.isValid) {
-      if (value == LogicValue.filled(width, LogicValue.one) ||
-          other.value == LogicValue.filled(width, LogicValue.one)) {
+    if (this is Const && other is Const) {
+      return Const((this as Const).value | other.value);
+    }
+    Const? constOperand;
+    Logic? otherOperand;
+
+    if (this is Const && value.isValid) {
+      constOperand = Const(this);
+    } else if (other is Const && other.value.isValid) {
+      constOperand = other;
+      otherOperand = this;
+    }
+
+    if (constOperand != null) {
+      if (constOperand.value == LogicValue.filled(width, LogicValue.one)) {
         return Const(LogicValue.filled(width, LogicValue.one));
-      } else if (value == LogicValue.of(LogicValue.zero, width: width)) {
-        return other;
-      } else if (other.value == LogicValue.of(LogicValue.zero, width: width)) {
-        return this;
+      } else if (constOperand.value ==
+          LogicValue.filled(width, LogicValue.zero)) {
+        return otherOperand!;
       }
     }
     return Or2Gate(this, other).out;
