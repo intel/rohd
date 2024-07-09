@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // definition_name_test.dart
@@ -191,14 +191,15 @@ void main() {
     test('respected with no conflicts', () async {
       final mod = SpeciallyNamedModule(Logic(), false, false);
       await mod.build();
-      expect(mod.generateSynth(), contains('module specialName('));
+      final sv = mod.generateSynth();
+      expect(sv, contains('module specialName ('));
     });
     test('uniquified with conflicts', () async {
       final mod = TopModule(Logic(), false, false);
       await mod.build();
       final sv = mod.generateSynth();
-      expect(sv, contains('module specialName('));
-      expect(sv, contains('module specialName_0('));
+      expect(sv, contains('module specialName ('));
+      expect(sv, contains('module specialName_0 ('));
     });
     test('reserved throws exception with conflicts', () async {
       final mod = TopModule(Logic(), true, false);

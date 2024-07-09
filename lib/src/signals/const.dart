@@ -21,7 +21,7 @@ class Const extends Logic {
           // we don't care about maintaining this node unless necessary
           naming: Naming.unnamed,
         ) {
-    put(val, fill: fill);
+    _wire.put(val, fill: fill, signalName: name);
     _unassignable = true;
   }
 }

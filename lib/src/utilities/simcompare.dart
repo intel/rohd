@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
@@ -47,7 +48,10 @@ class Vector {
   /// the [inputValues].
   static String _errorCheckString(String sigName, dynamic expected,
       LogicValue expectedVal, String inputValues) {
-    if (expected is! int && expected is! LogicValue && expected is! BigInt) {
+    if (expected is! int &&
+        expected is! LogicValue &&
+        expected is! BigInt &&
+        expected is! String) {
       throw NonSupportedTypeException(expected);
     }
 
@@ -55,12 +59,13 @@ class Vector {
     if (expected is int) {
       expectedHexStr =
           BigInt.from(expected).toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr = '0x$expectedHexStr';
     } else if (expected is BigInt) {
       expectedHexStr = expected.toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr = '0x$expectedHexStr';
     } else {
       expectedHexStr = expected.toString();
     }
-    expectedHexStr = '0x$expectedHexStr';
 
     final expectedValStr = expectedVal.toString();
 
@@ -73,7 +78,7 @@ class Vector {
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
       // ignore: invalid_use_of_protected_member
-      final signal = module.input(signalName);
+      final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
@@ -96,7 +101,9 @@ class Vector {
     final checksList = <String>[];
     for (final expectedOutput in expectedOutputValues.entries) {
       final outputName = expectedOutput.key;
-      final outputPort = module.output(outputName);
+      final outputPort =
+          // ignore: invalid_use_of_protected_member
+          module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
       final expectedValue = LogicValue.of(
         expected,
@@ -146,14 +153,16 @@ abstract class SimCompare {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           // ignore: invalid_use_of_protected_member
-          module.input(signalName).put(value);
+          (module.tryInput(signalName) ?? module.inOut(signalName)).put(value);
         }
 
         if (enableChecking) {
           Simulator.postTick.first.then((value) {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
-              final o = module.output(signalName);
+              final o =
+                  // ignore: invalid_use_of_protected_member
+                  module.tryOutput(signalName) ?? module.inOut(signalName);
 
               final errorReason =
                   'For vector #${vectors.indexOf(vector)} $vector,'
@@ -175,6 +184,9 @@ abstract class SimCompare {
                 } else {
                   expect(o.value, equals(value), reason: errorReason);
                 }
+              } else if (value is String) {
+                expect(o.value, LogicValue.of(value, width: o.width),
+                    reason: errorReason);
               } else {
                 throw NonSupportedTypeException(value);
               }
@@ -248,8 +260,20 @@ abstract class SimCompare {
       return true;
     }
 
-    String signalDeclaration(String signalName) {
+    String signalDeclaration(String signalName,
+        {String Function(String original)? adjust,
+        String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
+
+      final signalType = signalTypeOverride ??
+          ((signal is LogicNet || (signal is LogicArray && signal.isNet))
+              ? 'wire'
+              : 'logic');
+
+      if (adjust != null) {
+        // ignore: parameter_assignments
+        signalName = adjust(signalName);
+      }
 
       if (signal is LogicArray) {
         final unpackedDims =
@@ -257,13 +281,15 @@ abstract class SimCompare {
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
-        return packedDims.map((d) => '[${d - 1}:0]').join() +
+        return signalType +
+            ' ' +
+            packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +
             unpackedDims.map((d) => '[${d - 1}:0]').join();
       } else if (signal.width != 1) {
-        return '[${signal.width - 1}:0] $signalName';
+        return '$signalType [${signal.width - 1}:0] $signalName';
       } else {
-        return signalName;
+        return '$signalType $signalName';
       }
     }
 
@@ -272,9 +298,38 @@ abstract class SimCompare {
       for (final v in vectors) ...v.inputValues.keys,
       for (final v in vectors) ...v.expectedOutputValues.keys,
     };
-    final localDeclarations =
-        allSignals.map((e) => 'logic ${signalDeclaration(e)};').join('\n');
-    final moduleConnections = allSignals.map((e) => '.$e($e)').join(', ');
+
+    late final tbWireUniquifier = Uniquifier();
+    late final alreadyMappedLogicToWires = <String, String>{};
+    String toTbWireName(String name) => alreadyMappedLogicToWires.putIfAbsent(
+        name, () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'));
+
+    final logicToWireMapping = Map.fromEntries(vectors
+        .map((v) => v.inputValues.keys)
+        .flattened
+        // ignore: invalid_use_of_protected_member
+        .where((name) => module.tryInOut(name) != null)
+        .map((name) => MapEntry(name, toTbWireName(name))));
+
+    final localDeclarations = [
+      ...allSignals.map((e) {
+        final sigDecl = signalDeclaration(e,
+            signalTypeOverride:
+                logicToWireMapping.containsKey(e) ? 'logic' : null);
+        return '$sigDecl;';
+      }),
+      ...logicToWireMapping.entries.map((e) {
+        final logicName = e.key;
+        final wireName = e.value;
+
+        final sigDecl = signalDeclaration(logicName,
+            adjust: toTbWireName, signalTypeOverride: 'wire');
+        return '$sigDecl; assign $wireName = $logicName;';
+      }),
+    ].join('\n');
+
+    final moduleConnections =
+        allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
     final generatedVerilog = module.generateSynth();
@@ -325,7 +380,7 @@ abstract class SimCompare {
             }
             return line;
           })
-          .whereNotNull()
+          .nonNulls
           .join('\n');
       if (maskedOutput.isNotEmpty) {
         print(maskedOutput);

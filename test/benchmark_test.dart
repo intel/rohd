@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // benchmark_test.dart
@@ -14,6 +14,7 @@ import '../benchmark/byte_enable_benchmark.dart';
 import '../benchmark/comb_guard_fanout_benchmark.dart';
 import '../benchmark/logic_value_of_benchmark.dart';
 import '../benchmark/many_seq_and_comb_benchmark.dart';
+import '../benchmark/many_submodules_benchmark.dart';
 import '../benchmark/pipeline_benchmark.dart';
 import '../benchmark/ssa_driver_search_benchmark.dart';
 import '../benchmark/wave_dump_benchmark.dart';
@@ -52,6 +53,10 @@ void main() {
 
     test('ssa driver search', () {
       SsaDriverSearchBenchmark().measure();
+    });
+
+    test('many submodule', () async {
+      await ManySubmodulesBenchmark().measure();
     });
   });
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // exercise_2.dart
@@ -20,13 +20,10 @@ void gate(Logic a, Logic b, Logic c) {
   switch (answer) {
     case 'or':
       c <= a | b;
-      break;
     case 'nor':
       c <= ~(a | b);
-      break;
     case 'xor':
       c <= a ^ b;
-      break;
   }
 }
 

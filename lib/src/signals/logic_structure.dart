@@ -57,7 +57,7 @@ class LogicStructure implements Logic {
   LogicStructure clone({String? name}) => LogicStructure(
       elements.map((e) => e is LogicStructure
           ? e.clone()
-          : Logic(name: e.name, width: e.width)),
+          : Logic(name: e.name, width: e.width, naming: e.naming)),
       name: name ?? this.name);
 
   @override
@@ -235,9 +235,9 @@ class LogicStructure implements Logic {
       s == null ? (this < this * val) : (s(this) < s(this) * val);
 
   @override
-  late final Iterable<Logic> dstConnections = [
-    for (final element in elements) ...element.dstConnections
-  ];
+  Iterable<Logic> get dstConnections => {
+        for (final element in elements) ...element.dstConnections
+      }.toList(growable: false);
 
   @override
   Module? get parentModule => _parentModule;
@@ -247,8 +247,21 @@ class LogicStructure implements Logic {
   @protected
   @override
   set parentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
     _parentModule = newParentModule;
+  }
+
+  /// Performs a recursive call of setting [parentModule] on all of [elements]
+  /// and their [elements] for any sub-[LogicStructure]s.
+  @protected
+  void setAllParentModule(Module? newParentModule) {
+    parentModule = newParentModule;
     for (final element in elements) {
+      if (element is LogicStructure) {
+        element.setAllParentModule(newParentModule);
+      }
       element.parentModule = newParentModule;
     }
   }
@@ -260,13 +273,16 @@ class LogicStructure implements Logic {
   LogicStructure? _parentStructure;
 
   @override
-  bool get isInput => parentModule?.isInput(this) ?? false;
+  late final bool isInput = parentModule?.isInput(this) ?? false;
 
   @override
-  bool get isOutput => parentModule?.isOutput(this) ?? false;
+  late final bool isOutput = parentModule?.isOutput(this) ?? false;
 
   @override
-  bool get isPort => isInput || isOutput;
+  late final bool isInOut = parentModule?.isInOut(this) ?? false;
+
+  @override
+  late final bool isPort = isInput || isOutput || isInOut;
 
   @override
   void makeUnassignable() {
@@ -481,7 +497,7 @@ class LogicStructure implements Logic {
   Logic replicate(int multiplier) => packed.replicate(multiplier);
 
   @override
-  Logic get reversed => packed.reversed;
+  late final Logic reversed = packed.reversed;
 
   @override
   Logic abs() => packed.abs();
@@ -552,4 +568,15 @@ class LogicStructure implements Logic {
   @override
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) =>
       packed.selectFrom(busList, defaultValue: defaultValue);
+
+  @override
+  bool get isNet => false;
+
+  @override
+  Iterable<Logic> get srcConnections => {
+        for (final element in elements) ...element.srcConnections
+      }.toList(growable: false);
+
+  @override
+  List<Logic> get _srcConnections => throw UnsupportedError('Unnecessary');
 }

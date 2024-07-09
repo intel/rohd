@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_array.dart
@@ -28,7 +28,11 @@ class LogicArray extends LogicStructure {
   final Naming naming;
 
   @override
-  String toString() => 'LogicArray($dimensions, $elementWidth): $name';
+  String toString() => [
+        'LogicArray($dimensions, $elementWidth): $name',
+        if (isArrayMember) 'index $arrayIndex of ($parentStructure)',
+        if (isNet) '[Net]'
+      ].join(', ');
 
   /// The number of [dimensions] which should be treated as "unpacked", starting
   /// from the outermost (first) elements of [dimensions].
@@ -48,7 +52,78 @@ class LogicArray extends LogicStructure {
   /// impact on simulation functionality or behavior. In SystemVerilog, there
   /// are some differences in access patterns for packed vs. unpacked arrays.
   factory LogicArray(List<int> dimensions, int elementWidth,
-      {String? name, int numUnpackedDimensions = 0, Naming? naming}) {
+          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
+      LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: naming,
+        logicBuilder: Logic.new,
+        logicArrayBuilder: LogicArray.new,
+        isNet: false,
+      );
+
+  @override
+  final bool isNet;
+
+  /// Creates an array of [LogicNet]s with specified [dimensions] and
+  /// [elementWidth] named [name].
+  ///
+  /// Setting the [numUnpackedDimensions] gives a hint to [Synthesizer]s about
+  /// the intent for declaration of signals. By default, all dimensions are
+  /// packed, but if the value is set to more than `0`, then the outer-most
+  /// dimensions (first in [dimensions]) will become unpacked.  It must be less
+  /// than or equal to the length of [dimensions]. Modifying it will have no
+  /// impact on simulation functionality or behavior. In SystemVerilog, there
+  /// are some differences in access patterns for packed vs. unpacked arrays.
+  factory LogicArray.net(List<int> dimensions, int elementWidth,
+          {String? name, int numUnpackedDimensions = 0, Naming? naming}) =>
+      LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: naming,
+        logicBuilder: LogicNet.new,
+        logicArrayBuilder: LogicArray.net,
+        isNet: true,
+      );
+
+  /// Internal factory constructor.
+  ///
+  /// Creates an array with specified [dimensions] and [elementWidth] named
+  /// [name].
+  ///
+  /// Setting the [numUnpackedDimensions] gives a hint to [Synthesizer]s about
+  /// the intent for declaration of signals. By default, all dimensions are
+  /// packed, but if the value is set to more than `0`, then the outer-most
+  /// dimensions (first in [dimensions]) will become unpacked.  It must be less
+  /// than or equal to the length of [dimensions]. Modifying it will have no
+  /// impact on simulation functionality or behavior. In SystemVerilog, there
+  /// are some differences in access patterns for packed vs. unpacked arrays.
+  ///
+  /// The [logicBuilder] and [logicArrayBuilder] functions should generate
+  /// proper types of [Logic]s as elements for the array.
+  factory LogicArray._factory(
+    List<int> dimensions,
+    int elementWidth, {
+    required String? name,
+    required int numUnpackedDimensions,
+    required Naming? naming,
+    required bool isNet,
+    required Logic Function({
+      int width,
+      Naming naming,
+      String name,
+    }) logicBuilder,
+    required LogicArray Function(
+      List<int> nextDimensions,
+      int width, {
+      int numUnpackedDimensions,
+      String name,
+    }) logicArrayBuilder,
+  }) {
     if (dimensions.isEmpty) {
       throw LogicConstructionException(
           'Arrays must have at least 1 dimension.');
@@ -74,11 +149,12 @@ class LogicArray extends LogicStructure {
       List.generate(
           dimensions.first,
           (index) => (dimensions.length == 1
-              ? Logic(
+              ? logicBuilder(
                   width: elementWidth,
                   naming: Naming.renameable,
+                  name: '${name}_$index',
                 )
-              : LogicArray(
+              : logicArrayBuilder(
                   nextDimensions!,
                   elementWidth,
                   numUnpackedDimensions: max(0, numUnpackedDimensions - 1),
@@ -91,6 +167,7 @@ class LogicArray extends LogicStructure {
       numUnpackedDimensions: numUnpackedDimensions,
       name: name,
       naming: naming,
+      isNet: isNet,
     );
   }
 
@@ -110,6 +187,7 @@ class LogicArray extends LogicStructure {
     required this.numUnpackedDimensions,
     required String? name,
     required Naming? naming,
+    required this.isNet,
   })  : naming = Naming.chooseNaming(name, naming),
         super(name: Naming.chooseName(name, naming, nullStarter: 'a'));
 
@@ -124,8 +202,37 @@ class LogicArray extends LogicStructure {
       throw InvalidPortNameException(name);
     }
 
-    return LogicArray(dimensions, elementWidth,
-        numUnpackedDimensions: numUnpackedDimensions, name: name);
+    return LogicArray(
+      dimensions, elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions, name: name,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
+  }
+
+  /// Constructs a new [LogicArray.net] with a more convenient constructor
+  /// signature for when many ports in an interface are declared together.  Also
+  /// performs some basic checks on the legality of the array as a port of a
+  /// [Module].
+  factory LogicArray.netPort(String name,
+      [List<int> dimensions = const [1],
+      int elementWidth = 1,
+      int numUnpackedDimensions = 0]) {
+    if (!Sanitizer.isSanitary(name)) {
+      throw InvalidPortNameException(name);
+    }
+
+    return LogicArray.net(
+      dimensions, elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      name: name,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
   }
 
   /// Perform Assign operation on a Logic subset or slice
@@ -135,7 +242,7 @@ class LogicArray extends LogicStructure {
   /// to the length of the [updatedSubset].
   ///
   /// Example:
-  /// ```
+  /// ```dart
   /// LogicArray sampleLogic;
   /// // Note: updatedSubset.length < (sampleLogic.length - start)
   /// List<Logic> updatedSubset;

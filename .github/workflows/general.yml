@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 # Top-level default, no permissions
 permissions: {}
@@ -14,8 +15,8 @@ jobs:
   run-checks:
     name: Run Checks
     permissions: {}
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -73,7 +74,7 @@ jobs:
     permissions:
       contents: write # required for "JamesIves/github-pages-deploy-action"
     timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -96,15 +97,15 @@ jobs:
   build-devtool:
     name: Build Devtools
     timeout-minutes: 30
-    runs-on: ubuntu-22.04
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v2
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v2
         with:
-          channel: beta
-          version: 3.18.0-0.2.pre
+          channel: stable
+          version: 3.19.3
 
       - name: Run Flutter Test
         run: tool/gh_actions/devtool/run_devtool_test.sh

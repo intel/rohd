@@ -49,9 +49,8 @@ class NotGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('Gate has exactly one input.');
-    }
+    assert(inputs.length == 1, 'Gate has exactly one input.');
+
     final a = inputs[_inName]!;
     return '~$a';
   }
@@ -620,7 +619,7 @@ class LShift extends _ShiftGate {
 /// Performs a multiplexer/ternary operation.
 ///
 /// This is equivalent to something like:
-/// ```
+/// ```SystemVerilog
 /// control ? d1 : d0
 /// ```
 Logic mux(Logic control, Logic d1, Logic d0) => Mux(control, d1, d0).out;
