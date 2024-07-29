@@ -102,7 +102,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
     final connectionsStr = connections.join(',');
 
     var parameterString = '';
-    if (parameters != null) {
+    if (parameters != null && parameters.isNotEmpty) {
       final parameterContents =
           parameters.entries.map((e) => '.${e.key}(${e.value})').join(',');
       parameterString = '#($parameterContents)';
@@ -485,7 +485,7 @@ class _SystemVerilogSynthesisResult extends SynthesisResult {
   String? _verilogParameters(Module module) {
     if (module is SystemVerilog) {
       final defParams = module.definitionParameters;
-      if (defParams == null) {
+      if (defParams == null || defParams.isEmpty) {
         return null;
       }
 

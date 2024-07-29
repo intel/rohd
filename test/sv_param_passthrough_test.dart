@@ -114,6 +114,35 @@ class LeafNodeExternal extends ModWithParamPassthrough {
   String? definitionVerilog(String definitionType) => '';
 }
 
+class TopForEmptyParams extends ModWithParamPassthrough {
+  Logic get b => output('b');
+  TopForEmptyParams(Logic a,
+      {super.definitionName = 'top_for_empty',
+      super.instantiationParameters = const {},
+      super.name = 'top'})
+      : super([]) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+    b <= LeafNodeExternalEmptyParams(a).b;
+  }
+}
+
+class LeafNodeExternalEmptyParams extends ModWithParamPassthrough {
+  Logic get b => output('b');
+  LeafNodeExternalEmptyParams(Logic a,
+      {super.definitionName = 'leaf_node',
+      super.instantiationParameters = const {},
+      super.name = 'leaf'})
+      : super([]) {
+    a = addInput('a', a, width: 8);
+    addOutput('b', width: 8);
+  }
+
+  // leaf node should not generate any SV, like external
+  @override
+  String? definitionVerilog(String definitionType) => '';
+}
+
 void main() {
   test('passthrough params custom system verilog', () async {
     final mod = Top(Logic(width: 8));
@@ -127,5 +156,13 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors, iverilogExtraArgs: [
       'test/sv_param_passthrough.sv', // include external SV
     ]);
+  });
+
+  test('empty params does include param # in generated system verilog',
+      () async {
+    final mod = TopForEmptyParams(Logic(width: 8));
+    await mod.build();
+    final sv = mod.generateSynth();
+    expect(sv.contains('#'), isFalse);
   });
 }
