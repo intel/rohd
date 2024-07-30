@@ -152,7 +152,7 @@ provided.</p>
   final connectionsStr = connections.join(&#39;,&#39;);
 
   var parameterString = &#39;&#39;;
-  if (parameters != null) {
+  if (parameters != null &amp;&amp; parameters.isNotEmpty) {
     final parameterContents =
         parameters.entries.map((e) =&gt; &#39;.${e.key}(${e.value})&#39;).join(&#39;,&#39;);
     parameterString = &#39;#($parameterContents)&#39;;
