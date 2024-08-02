@@ -826,4 +826,39 @@ class Logic {
 
     return selected;
   }
+
+  /// If [assignSubset] has been used on this signal, a reference to the
+  /// [LogicArray] that is usd to drive `this`.
+  LogicArray? _subsetDriver;
+
+  /// Performs an assignment operation on a portion this signal to be driven by
+  /// [updatedSubset].  Each index of [updatedSubset] will be assigned to drive
+  /// the corresponding index, plus [start], of this signal.
+  ///
+  /// Each of the elements of [updatedSubset] must have the same [width] as the
+  /// corresponding member of [elements] of this signal.
+  ///
+  /// Example:
+  /// ```dart
+  /// // assign elements 2 and 3 of receiverLogic to sig1 and sig2, respectively
+  /// receiverLogic.assignSubset([sig1, sig2], start: 2);
+  /// ```
+  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
+    if (updatedSubset.length > width - start) {
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, width - start);
+    }
+
+    if (_subsetDriver == null) {
+      _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
+        [width],
+        1,
+        name: '${name}_subset',
+        naming: Naming.unnamed,
+      );
+      this <= _subsetDriver!;
+    }
+
+    _subsetDriver!.assignSubset(updatedSubset, start: start);
+  }
 }

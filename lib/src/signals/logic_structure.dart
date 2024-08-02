@@ -358,6 +358,19 @@ class LogicStructure implements Logic {
   }
 
   @override
+  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
+    if (updatedSubset.length > elements.length - start) {
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, elements.length - start);
+    }
+
+    // Assign Logic array from `start` index to `start+updatedSubset.length`
+    for (var i = 0; i < updatedSubset.length; i++) {
+      elements[start + i] <= updatedSubset[i];
+    }
+  }
+
+  @override
   Logic operator ~() => ~packed;
 
   @override
@@ -579,4 +592,10 @@ class LogicStructure implements Logic {
 
   @override
   List<Logic> get _srcConnections => throw UnsupportedError('Unnecessary');
+
+  @override
+  LogicArray? get _subsetDriver => throw UnsupportedError('Unnecessary');
+
+  @override
+  set _subsetDriver(LogicArray? _) => throw UnsupportedError('Unnecessary');
 }
