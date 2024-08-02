@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_array_test.dart
@@ -632,6 +632,14 @@ void main() {
       la.elements[1].put(0);
       la.elements[0].put(1, fill: true);
       expect(slice.value, LogicValue.of('x000000001'));
+    });
+
+    test('slice exactly one element of array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(15, 8);
+      expect(slice.width, 8);
+      la.elements[1].put(1, fill: true);
+      expect(slice.value, LogicValue.of('11111111'));
     });
   });
 
