@@ -179,10 +179,17 @@ class LogicStructure implements Logic {
       final elementStart = index;
       final elementEnd = index + element.width;
 
-      final elementInRange = ((elementStart >= modifiedStartIndex) &&
-              (elementStart < modifiedEndIndex)) ||
-          ((elementEnd > modifiedStartIndex) &&
-              (elementEnd <= modifiedEndIndex));
+      // if the element is even partially within the range, then include it
+      // OR, if it is wholly contained within the range, include it
+      final elementInRange =
+          // end is within the element
+          (modifiedEndIndex > elementStart && modifiedEndIndex < elementEnd) ||
+              // start is within the element
+              (modifiedStartIndex >= elementStart &&
+                  modifiedStartIndex < elementEnd) ||
+              //element is fully contained
+              (modifiedEndIndex >= elementEnd &&
+                  modifiedStartIndex <= elementStart);
 
       if (elementInRange) {
         // figure out the subset of `element` that needs to be included
