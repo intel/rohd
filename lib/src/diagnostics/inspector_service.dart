@@ -34,7 +34,6 @@ extension _ModuleDevToolUtils on Module {
   Map<String, dynamic> toJson({bool skipCustomModules = true}) {
     final json = {
       'name': name,
-      // ignore: invalid_use_of_protected_member
       'inputs': inputs.map((key, value) => MapEntry(key, value.toMap())),
       'outputs': outputs.map((key, value) => MapEntry(key, value.toMap())),
     };

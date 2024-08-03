@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // interface_test.dart
@@ -6,9 +6,6 @@
 //
 // 2021 November 30
 // Author: Max Korbel <max.korbel@intel.com>
-
-// ignore_for_file: avoid_multiple_declarations_per_line
-// ignore_for_file: invalid_use_of_protected_member
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';

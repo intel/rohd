@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -77,7 +77,6 @@ class Vector {
   /// Converts this vector into a SystemVerilog check.
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
-      // ignore: invalid_use_of_protected_member
       final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
       if (signal is LogicArray) {
@@ -102,7 +101,6 @@ class Vector {
     for (final expectedOutput in expectedOutputValues.entries) {
       final outputName = expectedOutput.key;
       final outputPort =
-          // ignore: invalid_use_of_protected_member
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
       final expectedValue = LogicValue.of(
@@ -152,7 +150,6 @@ abstract class SimCompare {
       Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
-          // ignore: invalid_use_of_protected_member
           (module.tryInput(signalName) ?? module.inOut(signalName)).put(value);
         }
 
@@ -161,7 +158,6 @@ abstract class SimCompare {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o =
-                  // ignore: invalid_use_of_protected_member
                   module.tryOutput(signalName) ?? module.inOut(signalName);
 
               final errorReason =
@@ -307,7 +303,6 @@ abstract class SimCompare {
     final logicToWireMapping = Map.fromEntries(vectors
         .map((v) => v.inputValues.keys)
         .flattened
-        // ignore: invalid_use_of_protected_member
         .where((name) => module.tryInOut(name) != null)
         .map((name) => MapEntry(name, toTbWireName(name))));
 
