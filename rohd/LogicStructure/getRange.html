@@ -125,10 +125,17 @@ Logic getRange(int startIndex, [int? endIndex]) {
     final elementStart = index;
     final elementEnd = index + element.width;
 
-    final elementInRange = ((elementStart &gt;= modifiedStartIndex) &amp;&amp;
-            (elementStart &lt; modifiedEndIndex)) ||
-        ((elementEnd &gt; modifiedStartIndex) &amp;&amp;
-            (elementEnd &lt;= modifiedEndIndex));
+    &#47;&#47; if the element is even partially within the range, then include it
+    &#47;&#47; OR, if it is wholly contained within the range, include it
+    final elementInRange =
+        &#47;&#47; end is within the element
+        (modifiedEndIndex &gt; elementStart &amp;&amp; modifiedEndIndex &lt; elementEnd) ||
+            &#47;&#47; start is within the element
+            (modifiedStartIndex &gt;= elementStart &amp;&amp;
+                modifiedStartIndex &lt; elementEnd) ||
+            &#47;&#47;element is fully contained
+            (modifiedEndIndex &gt;= elementEnd &amp;&amp;
+                modifiedStartIndex &lt;= elementStart);
 
     if (elementInRange) {
       &#47;&#47; figure out the subset of `element` that needs to be included
