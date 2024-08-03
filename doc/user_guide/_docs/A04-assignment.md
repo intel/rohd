@@ -27,4 +27,4 @@ a.assignSubset(b.elements);
 a.assignSubset([Const(0)], 2);
 ```
 
-Note that using `assignSubset` on a `Logic` (as opposed to an array or struct) will bit-blast a pre-driver into a `LogicArray`. If you're assigning many bits that are already collected as a single `Logic`, consider using a `swizzle` to get better simulation performance and cleaner generated outputs.
+If you're assigning groups of bits that are already collected as a single `Logic`, consider using a [`swizzle`](https://intel.github.io/rohd-website/docs/bus-range-swizzling/).
