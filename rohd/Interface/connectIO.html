@@ -112,6 +112,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
     for (final port in getPorts(inputTags).values) {
       port &lt;=
           (port is LogicArray
+              &#47;&#47; ignore: invalid_use_of_protected_member
               ? module.addInputArray(
                   uniquify(port.name),
                   srcInterface.port(port.name),
@@ -119,6 +120,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
                   elementWidth: port.elementWidth,
                   numUnpackedDimensions: port.numUnpackedDimensions,
                 )
+              &#47;&#47; ignore: invalid_use_of_protected_member
               : module.addInput(
                   uniquify(port.name),
                   srcInterface.port(port.name),
@@ -130,12 +132,14 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
   if (outputTags != null) {
     for (final port in getPorts(outputTags).values) {
       final output = (port is LogicArray
+          &#47;&#47; ignore: invalid_use_of_protected_member
           ? module.addOutputArray(
               uniquify(port.name),
               dimensions: port.dimensions,
               elementWidth: port.elementWidth,
               numUnpackedDimensions: port.numUnpackedDimensions,
             )
+          &#47;&#47; ignore: invalid_use_of_protected_member
           : module.addOutput(
               uniquify(port.name),
               width: port.width,
@@ -159,6 +163,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
 
       port &lt;=
           (port is LogicArray
+              &#47;&#47; ignore: invalid_use_of_protected_member
               ? module.addInOutArray(
                   uniquify(port.name),
                   srcInterface.port(port.name),
@@ -166,6 +171,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
                   elementWidth: port.elementWidth,
                   numUnpackedDimensions: port.numUnpackedDimensions,
                 )
+              &#47;&#47; ignore: invalid_use_of_protected_member
               : module.addInOut(
                   uniquify(port.name),
                   srcInterface.port(port.name),

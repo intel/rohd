@@ -124,6 +124,7 @@ provided.</p>
         instanceType,
         instanceName,
         Map.fromEntries(ports.entries
+            &#47;&#47; ignore: invalid_use_of_protected_member
             .where((element) =&gt; module.inputs.containsKey(element.key))),
         Map.fromEntries(ports.entries
             .where((element) =&gt; module.outputs.containsKey(element.key))),
@@ -134,6 +135,7 @@ provided.</p>
   &#47;&#47;non-custom needs more details
   final connections = &lt;String&gt;[];
 
+  &#47;&#47; ignore: invalid_use_of_protected_member
   for (final signalName in module.inputs.keys) {
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }
@@ -142,6 +144,7 @@ provided.</p>
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }
 
+  &#47;&#47; ignore: invalid_use_of_protected_member
   for (final signalName in module.inOuts.keys) {
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }
