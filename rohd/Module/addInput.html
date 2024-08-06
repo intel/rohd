@@ -62,17 +62,12 @@
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">addInput</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="addInput-param-x"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">x</span>, </span></li>
-<li><span class="parameter" id="addInput-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span></li>
-</ol>)
+<span class="name ">addInput</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addInput-param-source"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span></li>
+<li><span class="parameter" id="addInput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
+</ol>})
 
       
 
@@ -81,31 +76,34 @@
 <section class="desc markdown">
   <p>Registers a signal as an input to this <a href="../../rohd/Module-class.html">Module</a> and returns an input port
 that can be consumed.</p>
-<p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a>.</p>
+<p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a> and should
+only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
+<a href="../../rohd/Module/inputSource.html">inputSource</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-Logic addInput(String name, Logic x, {int width = 1}) {
+  <pre class="language-dart"><code class="language-dart">Logic addInput(String name, Logic source, {int width = 1}) {
   _checkForSafePortName(name);
-  if (x.width != width) {
-    throw PortWidthMismatchException(x, width);
+  if (source.width != width) {
+    throw PortWidthMismatchException(source, width);
   }
 
-  if (x is LogicStructure) {
+  if (source is LogicStructure) {
     &#47;&#47; ignore: parameter_assignments
-    x = x.packed;
+    source = source.packed;
   }
 
   final inPort = Logic(name: name, width: width, naming: Naming.reserved)
-    ..gets(x)
+    ..gets(source)
     &#47;&#47; ignore: invalid_use_of_protected_member
     ..parentModule = this;
 
   _inputs[name] = inPort;
+
+  _inputSources[name] = source;
 
   return inPort;
 }</code></pre>

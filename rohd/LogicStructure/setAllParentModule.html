@@ -69,7 +69,7 @@
   </div>
 
 <span class="returntype">void</span>
-<span class="name ">setAllParentModule</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="setAllParentModule-param-newParentModule"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParentModule</span></span></li>
+<span class="name ">setAllParentModule</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="setAllParentModule-param-newParentModule"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a>?</span> <span class="parameter-name">newParentModule</span></span></li>
 </ol>)
 
       
@@ -79,6 +79,8 @@
 <section class="desc markdown">
   <p>Performs a recursive call of setting <a href="../../rohd/LogicStructure/parentModule.html">parentModule</a> on all of <a href="../../rohd/LogicStructure/elements.html">elements</a>
 and their <a href="../../rohd/LogicStructure/elements.html">elements</a> for any sub-<a href="../../rohd/LogicStructure-class.html">LogicStructure</a>s.</p>
+<p>This should <em>only</em> be called by <a href="../../rohd/Module/build.html">Module.build</a>.  It is used to optimize
+search.</p>
 </section>
 
 

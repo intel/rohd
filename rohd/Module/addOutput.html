@@ -62,16 +62,11 @@
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">addOutput</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="addOutput-param-width">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>}</span></li>
-</ol>)
+<span class="name ">addOutput</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span></li>
+<li><span class="parameter" id="addOutput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
+</ol>})
 
       
 
@@ -87,8 +82,7 @@ can be driven.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-Logic addOutput(String name, {int width = 1}) {
+  <pre class="language-dart"><code class="language-dart">Logic addOutput(String name, {int width = 1}) {
   _checkForSafePortName(name);
 
   final outPort = Logic(name: name, width: width, naming: Naming.reserved)

@@ -62,14 +62,9 @@
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">inOut</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="inOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
+<span class="name ">inOut</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="inOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span></li>
 </ol>)
 
       
@@ -86,8 +81,7 @@ named <code>name</code>.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-Logic inOut(String name) =&gt; _inOuts.containsKey(name)
+  <pre class="language-dart"><code class="language-dart">Logic inOut(String name) =&gt; _inOuts.containsKey(name)
     ? _inOuts[name]!
     : throw PortDoesNotExistException(
         &#39;InOut name &quot;$name&quot; not found as an in&#47;out of this Module.&#39;);</code></pre>

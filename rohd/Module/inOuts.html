@@ -66,12 +66,7 @@
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
-      <span class="returntype"><a href="https://api.dart.dev/stable/3.4.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+      <span class="returntype"><a href="https://api.dart.dev/stable/3.5.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
       <span class="name ">inOuts</span>
       
 
@@ -81,13 +76,15 @@
 <section class="desc markdown">
   <p>A map from <a href="../../rohd/Module/inOut.html">inOut</a> port names to this <a href="../../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
 signals.</p>
+<p>Note that <a href="../../rohd/Module/inOuts.html">inOuts</a> should only be used for hardware <em>within</em> a <a href="../../rohd/Module-class.html">Module</a>.
+To access the signal that drives/received these inOuts from outside of
+this <a href="../../rohd/Module-class.html">Module</a>, use <a href="../../rohd/Module/inOutSource.html">inOutSource</a>.</p>
 </section>
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-Map&lt;String, Logic&gt; get inOuts =&gt; UnmodifiableMapView&lt;String, Logic&gt;(_inOuts);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Map&lt;String, Logic&gt; get inOuts =&gt; UnmodifiableMapView&lt;String, Logic&gt;(_inOuts);</code></pre>
 </section>
 
   </section>

@@ -63,14 +63,14 @@
     <section class="multi-line-signature">
       
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>
-<span class="name ">instantiationVerilogFor</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="instantiationVerilogFor-param-module">{<span>required</span> <span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilogFor-param-instanceType"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilogFor-param-instanceName"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilogFor-param-ports"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilogFor-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilogFor-param-forceStandardInstantiation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">forceStandardInstantiation</span> = <span class="default-value">false</span>}</span></li>
-</ol>)
+<span class="returntype"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>
+<span class="name ">instantiationVerilogFor</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="instantiationVerilogFor-param-module"><span>required</span> <span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilogFor-param-instanceType"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilogFor-param-instanceName"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilogFor-param-ports"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilogFor-param-parameters"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">parameters</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilogFor-param-forceStandardInstantiation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">forceStandardInstantiation</span> = <span class="default-value">false</span>, </span></li>
+</ol>})
 
       
 
@@ -124,7 +124,6 @@ provided.</p>
         instanceType,
         instanceName,
         Map.fromEntries(ports.entries
-            &#47;&#47; ignore: invalid_use_of_protected_member
             .where((element) =&gt; module.inputs.containsKey(element.key))),
         Map.fromEntries(ports.entries
             .where((element) =&gt; module.outputs.containsKey(element.key))),
@@ -135,7 +134,6 @@ provided.</p>
   &#47;&#47;non-custom needs more details
   final connections = &lt;String&gt;[];
 
-  &#47;&#47; ignore: invalid_use_of_protected_member
   for (final signalName in module.inputs.keys) {
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }
@@ -144,7 +142,6 @@ provided.</p>
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }
 
-  &#47;&#47; ignore: invalid_use_of_protected_member
   for (final signalName in module.inOuts.keys) {
     connections.add(&#39;.$signalName(${ports[signalName]!})&#39;);
   }

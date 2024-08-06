@@ -62,19 +62,14 @@
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.15.0/meta/protected-constant.html">protected</a></li>
-    </ol>
-  </div>
 
 <span class="returntype"><a href="../../rohd/LogicArray-class.html">LogicArray</a></span>
-<span class="name ">addInOutArray</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="addInOutArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
-<li><span class="parameter" id="addInOutArray-param-x"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">x</span>, </span></li>
-<li><span class="parameter" id="addInOutArray-param-dimensions">{<span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span></li>
-<li><span class="parameter" id="addInOutArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span></li>
-<li><span class="parameter" id="addInOutArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.4.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>}</span></li>
-</ol>)
+<span class="name ">addInOutArray</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInOutArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addInOutArray-param-source"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span></li>
+<li><span class="parameter" id="addInOutArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.0/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span></li>
+<li><span class="parameter" id="addInOutArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span></li>
+<li><span class="parameter" id="addInOutArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span>, </span></li>
+</ol>})
 
       
 
@@ -85,7 +80,7 @@
 the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
 named <code>name</code>.</p>
 <p>This is very similar to <a href="../../rohd/Module/addInOut.html">addInOut</a>, except for <a href="../../rohd/LogicArray-class.html">LogicArray</a>s.</p>
-<p>Performs validation on overall width matching for <code>x</code>, but not on
+<p>Performs validation on overall width matching for <code>source</code>, but not on
 <code>dimensions</code>, <code>elementWidth</code>, or <code>numUnpackedDimensions</code>.</p>
 </section>
 
@@ -93,10 +88,9 @@ named <code>name</code>.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
-LogicArray addInOutArray(
+  <pre class="language-dart"><code class="language-dart">LogicArray addInOutArray(
   String name,
-  Logic x, {
+  Logic source, {
   List&lt;int&gt; dimensions = const [1],
   int elementWidth = 1,
   int numUnpackedDimensions = 0,
@@ -104,7 +98,7 @@ LogicArray addInOutArray(
   _checkForSafePortName(name);
 
   &#47;&#47; make sure we register all the _inOutDrivers properly
-  final xElems = [x];
+  final xElems = [source];
   for (var i = 0; i &lt; xElems.length; i++) {
     final xi = xElems[i];
     _inOutDrivers.add(xi);
@@ -120,11 +114,13 @@ LogicArray addInOutArray(
     numUnpackedDimensions: numUnpackedDimensions,
     naming: Naming.reserved,
   )
-    ..gets(x)
+    ..gets(source)
     &#47;&#47; ignore: invalid_use_of_protected_member
     ..setAllParentModule(this);
 
   _inOuts[name] = inOutArr;
+
+  _inOutSources[name] = source;
 
   return inOutArr;
 }</code></pre>
