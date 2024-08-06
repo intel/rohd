@@ -108,34 +108,62 @@ class SubModWithArray extends Module {
 }
 
 void main() {
-  test('tryInput, exists', () {
-    final mod = ModuleWithMaybePorts(addIn: true);
-    expect(mod.i, isNotNull);
+  group('try ports', () {
+    test('tryInput, exists', () {
+      final mod = ModuleWithMaybePorts(addIn: true);
+      expect(mod.i, isNotNull);
+    });
+
+    test('tryInput, doesnt exist', () {
+      final mod = ModuleWithMaybePorts();
+      expect(mod.i, null);
+    });
+
+    test('tryOutput, exists', () {
+      final mod = ModuleWithMaybePorts(addOut: true);
+      expect(mod.o, isNotNull);
+    });
+
+    test('tryOutput, doesnt exist', () {
+      final mod = ModuleWithMaybePorts();
+      expect(mod.o, null);
+    });
+
+    test('tryInOut, exists', () {
+      final mod = ModuleWithMaybePorts(addIo: true);
+      expect(mod.io, isNotNull);
+    });
+
+    test('tryInOut, doesnt exist', () {
+      final mod = ModuleWithMaybePorts();
+      expect(mod.io, null);
+    });
   });
 
-  test('tryInput, doesnt exist', () {
-    final mod = ModuleWithMaybePorts();
-    expect(mod.i, null);
-  });
+  group('port sources', () {
+    test('input port source', () {
+      final src = Logic();
+      final mod = FlexibleModule()..addInput('a', src);
+      expect(mod.inputSource('a'), src);
+    });
 
-  test('tryOutput, exists', () {
-    final mod = ModuleWithMaybePorts(addOut: true);
-    expect(mod.o, isNotNull);
-  });
+    test('inout port source', () {
+      final src = LogicNet();
+      final mod = FlexibleModule()..addInOut('a', src);
+      expect(mod.inOutSource('a'), src);
+    });
 
-  test('tryOutput, doesnt exist', () {
-    final mod = ModuleWithMaybePorts();
-    expect(mod.o, null);
-  });
+    test('input array port source', () {
+      final src = LogicArray([1], 1);
+      final mod = FlexibleModule()..addInputArray('a', src);
+      expect(mod.inputSource('a'), src);
+    });
 
-  test('tryInOut, exists', () {
-    final mod = ModuleWithMaybePorts(addIo: true);
-    expect(mod.io, isNotNull);
-  });
-
-  test('tryInOut, doesnt exist', () {
-    final mod = ModuleWithMaybePorts();
-    expect(mod.io, null);
+    test('inout array port source', () {
+      final src = LogicArray([1], 1);
+      final mod = FlexibleModule()..addInOutArray('a', src);
+      expect(mod.inOutSource('a'), src);
+    });
   });
 
   test('self-containing hierarchy', () async {

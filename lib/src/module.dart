@@ -40,14 +40,20 @@ abstract class Module {
   final TraverseableCollection<Logic> _internalSignals =
       TraverseableCollection();
 
-  /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = {};
+  /// An internal mapping of inputs to this [Module].
+  late final Map<String, Logic> _inputs = {};
 
-  /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = {};
+  /// An internal mapping of outputs to this [Module].
+  late final Map<String, Logic> _outputs = {};
 
-  /// An internal list of inouts to this [Module].
-  final Map<String, Logic> _inOuts = {};
+  /// An internal mapping of inOuts to this [Module].
+  late final Map<String, Logic> _inOuts = {};
+
+  /// An internal mapping of input names to their sources to this [Module].
+  late final Map<String, Logic> _inputSources = {};
+
+  /// An internal mapping of inOut names to their sources to this [Module].
+  late final Map<String, Logic> _inOutSources = {};
 
   /// The parent [Module] of this [Module].
   ///
@@ -60,7 +66,10 @@ abstract class Module {
 
   /// A map from [input] port names to this [Module] to corresponding [Logic]
   /// signals.
-  @protected
+  ///
+  /// Note that [inputs] should only be used to drive hardware *within* a
+  /// [Module]. To access the signal that drives these inputs, use
+  /// [inputSource].
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
   /// A map from [output] port names to this [Module] to corresponding [Logic]
@@ -70,7 +79,10 @@ abstract class Module {
 
   /// A map from [inOut] port names to this [Module] to corresponding [Logic]
   /// signals.
-  @protected
+  ///
+  /// Note that [inOuts] should only be used for hardware *within* a [Module].
+  /// To access the signal that drives/received these inOuts from outside of
+  /// this [Module], use [inOutSource].
   Map<String, Logic> get inOuts => UnmodifiableMapView<String, Logic>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
@@ -101,16 +113,21 @@ abstract class Module {
   /// named [name].
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw PortDoesNotExistException(
           'Input name "$name" not found as an input to this Module.');
 
+  /// The original `source` provided to the creation of the [input] port [name]
+  /// via [addInput] or [addInputArray].
+  Logic inputSource(String name) =>
+      _inputSources[name] ??
+      (throw PortDoesNotExistException(
+          '$name is not an input of this Module.'));
+
   /// Provides the [input] named [name] if it exists, otherwise `null`.
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic? tryInput(String name) => _inputs[name];
 
   /// Accesses the [Logic] associated with this [Module]s output port
@@ -130,14 +147,19 @@ abstract class Module {
   /// named [name].
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
           'InOut name "$name" not found as an in/out of this Module.');
 
+  /// The original `source` provided to the creation of the [inOut] port [name]
+  /// via [addInOut] or [addInOutArray].
+  Logic inOutSource(String name) =>
+      _inOutSources[name] ??
+      (throw PortDoesNotExistException(
+          '$name is not an inOut of this Module.'));
+
   /// Provides the [inOut] named [name] if it exists, otherwise `null`.
-  @protected
   Logic? tryInOut(String name) => _inOuts[name];
 
   /// Returns true iff [signal] is the same [Logic] as the [input] port of this
@@ -602,25 +624,28 @@ abstract class Module {
   /// Registers a signal as an input to this [Module] and returns an input port
   /// that can be consumed.
   ///
-  /// The return value is the same as what is returned by [input].
-  @protected
-  Logic addInput(String name, Logic x, {int width = 1}) {
+  /// The return value is the same as what is returned by [input] and should
+  /// only be used within this [Module]. The provided [source] is accessible via
+  /// [inputSource].
+  Logic addInput(String name, Logic source, {int width = 1}) {
     _checkForSafePortName(name);
-    if (x.width != width) {
-      throw PortWidthMismatchException(x, width);
+    if (source.width != width) {
+      throw PortWidthMismatchException(source, width);
     }
 
-    if (x is LogicStructure) {
+    if (source is LogicStructure) {
       // ignore: parameter_assignments
-      x = x.packed;
+      source = source.packed;
     }
 
     final inPort = Logic(name: name, width: width, naming: Naming.reserved)
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 
     _inputs[name] = inPort;
+
+    _inputSources[name] = source;
 
     return inPort;
   }
@@ -634,23 +659,26 @@ abstract class Module {
   /// Registers a signal as an inOut to this [Module] and returns an inOut port
   /// that can be consumed.
   ///
-  /// The return value is the same as what is returned by [inOut].
-  @protected
-  LogicNet addInOut(String name, Logic x, {int width = 1}) {
+  /// The return value is the same as what is returned by [inOut] and should
+  /// only be used within this [Module]. The provided [source] is accessible via
+  /// [inOutSource].
+  LogicNet addInOut(String name, Logic source, {int width = 1}) {
     _checkForSafePortName(name);
-    if (x.width != width) {
-      throw PortWidthMismatchException(x, width);
+    if (source.width != width) {
+      throw PortWidthMismatchException(source, width);
     }
 
-    _inOutDrivers.add(x);
+    _inOutDrivers.add(source);
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
           // ignore: invalid_use_of_protected_member
           ..parentModule = this
-          ..gets(x);
+          ..gets(source);
 
     _inOuts[name] = inOutPort;
+
+    _inOutSources[name] = source;
 
     return inOutPort;
   }
@@ -661,12 +689,11 @@ abstract class Module {
   ///
   /// This is very similar to [addInput], except for [LogicArray]s.
   ///
-  /// Performs validation on overall width matching for [x], but not on
+  /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  @protected
   LogicArray addInputArray(
     String name,
-    Logic x, {
+    Logic source, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
@@ -680,11 +707,13 @@ abstract class Module {
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
     )
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
 
     _inputs[name] = inArr;
+
+    _inputSources[name] = source;
 
     return inArr;
   }
@@ -693,7 +722,6 @@ abstract class Module {
   /// can be driven.
   ///
   /// The return value is the same as what is returned by [output].
-  @protected
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
 
@@ -711,7 +739,6 @@ abstract class Module {
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
-  @protected
   LogicArray addOutputArray(
     String name, {
     List<int> dimensions = const [1],
@@ -741,12 +768,11 @@ abstract class Module {
   ///
   /// This is very similar to [addInOut], except for [LogicArray]s.
   ///
-  /// Performs validation on overall width matching for [x], but not on
+  /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  @protected
   LogicArray addInOutArray(
     String name,
-    Logic x, {
+    Logic source, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
@@ -754,7 +780,7 @@ abstract class Module {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
-    final xElems = [x];
+    final xElems = [source];
     for (var i = 0; i < xElems.length; i++) {
       final xi = xElems[i];
       _inOutDrivers.add(xi);
@@ -770,11 +796,13 @@ abstract class Module {
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
     )
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
 
     _inOuts[name] = inOutArr;
+
+    _inOutSources[name] = source;
 
     return inOutArr;
   }

@@ -262,6 +262,9 @@ class LogicStructure implements Logic {
 
   /// Performs a recursive call of setting [parentModule] on all of [elements]
   /// and their [elements] for any sub-[LogicStructure]s.
+  ///
+  /// This should *only* be called by [Module.build].  It is used to optimize
+  /// search.
   @protected
   void setAllParentModule(Module? newParentModule) {
     parentModule = newParentModule;

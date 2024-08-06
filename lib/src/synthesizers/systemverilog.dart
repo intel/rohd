@@ -74,7 +74,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
           instanceType,
           instanceName,
           Map.fromEntries(ports.entries
-              // ignore: invalid_use_of_protected_member
               .where((element) => module.inputs.containsKey(element.key))),
           Map.fromEntries(ports.entries
               .where((element) => module.outputs.containsKey(element.key))),
@@ -85,7 +84,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
     //non-custom needs more details
     final connections = <String>[];
 
-    // ignore: invalid_use_of_protected_member
     for (final signalName in module.inputs.keys) {
       connections.add('.$signalName(${ports[signalName]!})');
     }
@@ -94,7 +92,6 @@ class SystemVerilogSynthesizer extends Synthesizer {
       connections.add('.$signalName(${ports[signalName]!})');
     }
 
-    // ignore: invalid_use_of_protected_member
     for (final signalName in module.inOuts.keys) {
       connections.add('.$signalName(${ports[signalName]!})');
     }
@@ -548,7 +545,6 @@ class _SynthSubModuleInstantiation {
   /// Adds an input mapping from [name] to [synthLogic].
   void setInputMapping(String name, _SynthLogic synthLogic,
       {bool replace = false}) {
-    // ignore: invalid_use_of_protected_member
     assert(module.inputs.containsKey(name),
         'Input $name not found in module ${module.name}.');
     assert(
@@ -584,7 +580,6 @@ class _SynthSubModuleInstantiation {
 
   void setInOutMapping(String name, _SynthLogic synthLogic,
       {bool replace = false}) {
-    // ignore: invalid_use_of_protected_member
     assert(module.inOuts.containsKey(name),
         'InOut $name not found in module ${module.name}.');
     assert(
@@ -815,17 +810,14 @@ class _SynthModuleDefinition {
   _SynthModuleDefinition(this.module)
       : _synthInstantiationNameUniquifier = Uniquifier(
           reservedNames: {
-            // ignore: invalid_use_of_protected_member
             ...module.inputs.keys,
             ...module.outputs.keys,
-            // ignore: invalid_use_of_protected_member
             ...module.inOuts.keys,
           },
         ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
-      // ignore: invalid_use_of_protected_member
       ..addAll(module.inOuts.values);
 
     for (final output in module.outputs.values) {
@@ -833,13 +825,11 @@ class _SynthModuleDefinition {
     }
 
     // make sure disconnected inputs are included
-    // ignore: invalid_use_of_protected_member
     for (final input in module.inputs.values) {
       inputs.add(_getSynthLogic(input)!);
     }
 
     // make sure disconnected inouts are included, also
-    // ignore: invalid_use_of_protected_member
     for (final inOut in module.inOuts.values) {
       inOuts.add(_getSynthLogic(inOut)!);
     }
@@ -855,10 +845,8 @@ class _SynthModuleDefinition {
     for (final subModule in module.subModules) {
       _getSynthSubModuleInstantiation(subModule);
       logicsToTraverse
-        // ignore: invalid_use_of_protected_member
         ..addAll(subModule.inputs.values)
         ..addAll(subModule.outputs.values)
-        // ignore: invalid_use_of_protected_member
         ..addAll(subModule.inOuts.values);
     }
 
@@ -942,7 +930,6 @@ class _SynthModuleDefinition {
               .setInOutMapping(receiver.name, synthReceiver);
         }
 
-        // ignore: invalid_use_of_protected_member
         logicsToTraverse.addAll(subModule.inOuts.values);
       }
 
@@ -958,9 +945,7 @@ class _SynthModuleDefinition {
         }
 
         logicsToTraverse
-          // ignore: invalid_use_of_protected_member
           ..addAll(subModule.inputs.values)
-          // ignore: invalid_use_of_protected_member
           ..addAll(subModule.inOuts.values);
       } else if (driver != null) {
         if (!module.isInput(receiver) && !module.isInOut(receiver)) {
@@ -1044,7 +1029,6 @@ class _SynthModuleDefinition {
   void _assignSubmodulePortMapping() {
     for (final submoduleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
-      // ignore: invalid_use_of_protected_member
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
         submoduleInstantiation.setInputMapping(
@@ -1059,7 +1043,6 @@ class _SynthModuleDefinition {
             replace: true);
       }
 
-      // ignore: invalid_use_of_protected_member
       for (final inOutName in submoduleInstantiation.module.inOuts.keys) {
         final orig = submoduleInstantiation.inOutMapping[inOutName]!;
         submoduleInstantiation.setInOutMapping(
