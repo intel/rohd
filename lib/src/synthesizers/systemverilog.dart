@@ -1218,8 +1218,8 @@ class _SynthModuleDefinition {
           final srcArray = src.parentArray;
           final dstArray = dst.parentArray;
 
-          assert(srcArray.logics.length == 1, 'should be 1');
-          assert(dstArray.logics.length == 1, 'should be 1');
+          assert(srcArray.logics.length == 1, 'should be 1 name for the array');
+          assert(dstArray.logics.length == 1, 'should be 1 name for the array');
 
           if (srcArray.logics.first.elements.length !=
                   dstArray.logics.first.elements.length ||
@@ -1236,7 +1236,31 @@ class _SynthModuleDefinition {
 
       for (final MapEntry(key: (srcArray, dstArray), value: arrAssignments)
           in groupedAssignments.entries) {
-        if (arrAssignments.length == srcArray.logics.first.elements.length) {
+        assert(
+            srcArray.logics.first.elements.length ==
+                dstArray.logics.first.elements.length,
+            'should be equal lengths of elements in both arrays by now');
+
+        // first requirement is that all elements have been assigned
+        var shouldMerge =
+            arrAssignments.length == srcArray.logics.first.elements.length;
+
+        if (shouldMerge) {
+          // only check each element if the lengths match
+          for (final arrAssignment in arrAssignments) {
+            final arrAssignmentSrc =
+                (arrAssignment.src as _SynthLogicArrayElement).logic;
+            final arrAssignmentDst =
+                (arrAssignment.dst as _SynthLogicArrayElement).logic;
+
+            if (arrAssignmentSrc.arrayIndex! != arrAssignmentDst.arrayIndex!) {
+              shouldMerge = false;
+              break;
+            }
+          }
+        }
+
+        if (shouldMerge) {
           reducedAssignments.add(_SynthAssignment(srcArray, dstArray));
         } else {
           reducedAssignments.addAll(arrAssignments);
