@@ -22,6 +22,17 @@ class ArrayModule extends Module {
   }
 }
 
+class ArrayWithShuffledAssignment extends Module {
+  ArrayWithShuffledAssignment(LogicArray a) {
+    final inpA = addInputArray('a', a, dimensions: a.dimensions);
+    final outB = addOutputArray('b', dimensions: a.dimensions);
+
+    for (var i = 0; i < a.dimensions.first; i++) {
+      outB.elements[i] <= inpA.elements[a.dimensions.first - i - 1];
+    }
+  }
+}
+
 class ArrayModuleWithNetIntermediates extends Module {
   ArrayModuleWithNetIntermediates(LogicArray a, LogicArray b) {
     a = addInOutArray('a', a,
@@ -64,6 +75,21 @@ void main() {
     final vectors = [
       Vector({'a': 0}, {'b': 0}),
       Vector({'a': 123}, {'b': 123}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('array assignment non-collapsing with shuffled assignment', () async {
+    final mod = ArrayWithShuffledAssignment(LogicArray([4], 1));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign b[0] = a[3];'));
+    expect(sv, contains('assign b[3] = a[0];'));
+
+    final vectors = [
+      Vector({'a': LogicValue.of('01xz')}, {'b': LogicValue.of('zx10')}),
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
