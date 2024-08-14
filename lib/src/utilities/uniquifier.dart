@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // uniquifier.dart
@@ -37,56 +37,53 @@ class Uniquifier {
       : _reservedNames = reservedNames ?? {};
 
   /// Returns `true` iff [name] is exactly available without uniquification.
-  bool isAvailable(String name) => !_reservedNames.contains(name);
+  ///
+  /// If [reserved] is set to `true`, then it will return that the [name] is
+  /// available if it is reserved but not yet taken.
+  bool isAvailable(String name, {bool reserved = false}) =>
+      !_takenNames.contains(name) &&
+      (reserved || !_reservedNames.contains(name));
 
   /// Provides a uniquified name that has never been returned by this
   /// [Uniquifier].
   ///
   /// If it is specified and there is no conflict, it will always choose
   /// [initialName]. If no [initialName] is specified, it will name it using
-  /// [nullStarter].  From the starting point, it will increment an integer
+  /// [nullStarter]. From the starting point, it will increment an integer
   /// appended to the end until no more conflict exists.
   ///
   /// Setting [reserved] will ensure the name does not get modified from its
-  /// original name. If a reserved name is already taken, an exception
-  /// will be thrown.
+  /// original name. If a reserved name is already taken, an exception will be
+  /// thrown.
   String getUniqueName(
       {String? initialName, bool reserved = false, String nullStarter = 'i'}) {
+    String actualName;
+
     if (reserved) {
       if (initialName == null) {
         throw NullReservedNameException();
       } else if (initialName.isEmpty) {
         throw EmptyReservedNameException();
+      } else if (!isAvailable(initialName, reserved: reserved)) {
+        throw UnavailableReservedNameException(initialName);
+      }
+
+      actualName = initialName;
+    } else {
+      final requestedName = initialName ?? nullStarter;
+
+      actualName = requestedName;
+
+      while (!isAvailable(actualName, reserved: reserved)) {
+        // initialize counter if necessary
+        _nameCounters[requestedName] ??= -1; // first one should be 0
+
+        _nameCounters[requestedName] = _nameCounters[requestedName]! + 1;
+        actualName = '${requestedName}_${_nameCounters[requestedName]!}';
       }
     }
 
-    final requestedName = initialName ?? nullStarter;
-    var actualName = requestedName;
-
-    String constructActualName() =>
-        '${requestedName}_${_nameCounters[requestedName]!}';
-
-    if (!_nameCounters.containsKey(initialName)) {
-      _nameCounters[requestedName] = -1; // first one should be 0
-    } else {
-      _nameCounters[requestedName] = _nameCounters[requestedName]! + 1;
-      actualName = constructActualName();
-    }
-    while (_takenNames.contains(actualName) ||
-        (!reserved && reservedNames.contains(actualName))) {
-      _nameCounters[requestedName] = _nameCounters[requestedName]! + 1;
-      actualName = constructActualName();
-    }
-
-    if (reserved && initialName != actualName) {
-      throw UnavailableReservedNameException(initialName!);
-    }
-
     _takenNames.add(actualName);
-    if (reserved) {
-      _reservedNames.add(actualName);
-    }
-
     return actualName;
   }
 }
