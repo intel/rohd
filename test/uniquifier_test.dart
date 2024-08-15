@@ -37,6 +37,27 @@ void main() {
     expect(name1, isNot(name2));
   });
 
+  test('uniquify incrementing name', () {
+    final uniq = Uniquifier(reservedNames: {'apple_4'});
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple');
+    expect(uniq.getUniqueName(initialName: 'apple_2'), 'apple_2');
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple_0');
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple_1');
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple_3');
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple_5');
+    expect(
+        uniq.getUniqueName(initialName: 'apple_4', reserved: true), 'apple_4');
+    expect(uniq.getUniqueName(initialName: 'apple'), 'apple_6');
+  });
+
+  test('null starter uniquify', () {
+    final uniq = Uniquifier();
+    expect(uniq.getUniqueName(nullStarter: 'a'), 'a');
+    expect(uniq.getUniqueName(nullStarter: 'a'), 'a_0');
+    expect(uniq.getUniqueName(), 'i');
+    expect(uniq.getUniqueName(), 'i_0');
+  });
+
   group('isAvailable', () {
     test('available name', () {
       final uniq = Uniquifier();
