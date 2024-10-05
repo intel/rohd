@@ -617,7 +617,7 @@ abstract class Module {
         inputs.containsKey(name) ||
         inOuts.containsKey(name)) {
       throw UnavailableReservedNameException.withMessage(
-          'Already defined a port with name "$name".');
+          'Already defined a port with name "$name" in module "${this.name}".');
     }
   }
 
