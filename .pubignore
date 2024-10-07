@@ -17,6 +17,7 @@ tmp_test/
 *.vcd
 *_fsm.md
 .vscode/*
+devtools_options.yaml
 
 # Exceptions
 !.vscode/extensions.json
