@@ -155,11 +155,11 @@ abstract class SimCompare {
       final signal = module.inOutSource(signalName);
       final driver = Logic(name: 'driver_of_$signalName', width: signal.width);
       signal <= driver;
+      _ioInputDrivers[signalName] = driver;
       return driver;
     }
 
     for (final vector in vectors) {
-      // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];

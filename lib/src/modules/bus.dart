@@ -175,11 +175,11 @@ class Swizzle extends Module with InlineSystemVerilog {
 
       _executeNet(swizzleIoDrivers, outDriver); // for initial values
       out.glitch.listen((args) {
-        _executeNet(swizzleIoDrivers, outDriver);
+        _executeNet(swizzleIoDrivers, null);
       });
       for (final swizzleIn in _swizzleInputs) {
         swizzleIn.glitch.listen((args) {
-          _executeNet(swizzleIoDrivers, outDriver);
+          _executeNet(null, outDriver); //TODO: per-input, not all!
         });
       }
     } else {
@@ -208,7 +208,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   bool _isExecutingNet = false;
 
   /// Executes functional behavior of this gate for when [_isNet] on the output.
-  void _executeNet(List<Logic> swizzleIoDrivers, Logic outDriver) {
+  void _executeNet(List<Logic>? swizzleIoDrivers, Logic? outDriver) {
     if (_isExecutingNet) {
       // prevent infinite recursion
       return;
@@ -217,9 +217,11 @@ class Swizzle extends Module with InlineSystemVerilog {
     _isExecutingNet = true;
 
     // first put everything to be floating
-    outDriver.put(LogicValue.z);
-    for (final swizzleIoDriver in swizzleIoDrivers) {
-      swizzleIoDriver.put(LogicValue.z, fill: true);
+    outDriver?.put(LogicValue.z);
+    if (swizzleIoDrivers != null) {
+      for (final swizzleIoDriver in swizzleIoDrivers) {
+        swizzleIoDriver.put(LogicValue.z, fill: true);
+      }
     }
 
     // now sample to get the new value it should be
@@ -234,12 +236,17 @@ class Swizzle extends Module with InlineSystemVerilog {
       idx += swizzleInput.width;
     }
 
+    print(newValue);
+
     // then put the new value back out
-    outDriver.put(newValue);
+    outDriver?.put(newValue);
     idx = 0;
-    for (final swizzleIoDriver in swizzleIoDrivers) {
-      swizzleIoDriver.put(newValue.getRange(idx, idx + swizzleIoDriver.width));
-      idx += swizzleIoDriver.width;
+    if (swizzleIoDrivers != null) {
+      for (final swizzleIoDriver in swizzleIoDrivers) {
+        swizzleIoDriver
+            .put(newValue.getRange(idx, idx + swizzleIoDriver.width));
+        idx += swizzleIoDriver.width;
+      }
     }
 
     _isExecutingNet = false;

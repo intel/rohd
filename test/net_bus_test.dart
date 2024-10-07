@@ -112,6 +112,20 @@ void main() {
 
   group('swizzle', () {
     group('just nets', () {
+      test('func sim', () {
+        final upper = LogicNet(width: 2, name: 'upper');
+        final lower = LogicNet(name: 'lower');
+        final swizzled = [
+          upper,
+          lower,
+        ].swizzle();
+
+        upper.put(2);
+        lower.put(0);
+
+        print(swizzled.value);
+      });
+
       test('many to one', () async {
         final mod = SwizzleMod([
           LogicNet(width: 8), // in0
@@ -126,6 +140,7 @@ void main() {
 
         final vectors = [
           Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd}, {'swizzled': 0xabcd}),
+          Vector({'in0': 0x12, 'in1': 0x3, 'in2': 0x4}, {'swizzled': 0x1234}),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
