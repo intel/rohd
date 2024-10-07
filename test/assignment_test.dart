@@ -157,6 +157,8 @@ void main() {
       );
       await mod.build();
 
+      //TODO: this doesn't work in the other direction!
+
       final vectors = [
         Vector({'subset1': bin('0000'), 'subset2': bin('1111')},
             {'result': LogicValue.ofString('11xx00zz')}),

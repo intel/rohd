@@ -293,21 +293,32 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   /// proper order of operations.
   String inlineVerilog(Map<String, String> inputs);
 
+  /// The name of the [output] (or [inOut]) port which can be the in-lined
+  /// symbol. By default, this assumes one [output] port. This should be
+  /// overridden in classes which have an [inOut] port as the in-lined symbol.
+  String get resultSignalName {
+    if (outputs.keys.length != 1) {
+      throw Exception(
+          'Inline verilog must have exactly one output, but saw $outputs.');
+    }
+
+    return outputs.keys.first;
+  }
+
   @override
   String instantiationVerilog(
     String instanceType,
     String instanceName,
     Map<String, String> ports,
   ) {
-    if (outputs.length != 1) {
-      throw Exception(
-          'Inline verilog must have exactly one output, but saw $outputs.');
-    }
-    final output = ports[outputs.keys.first];
-    final inputPorts = Map.fromEntries(ports.entries.where((element) =>
-        inputs.containsKey(element.key) || inOuts.containsKey(element.key)));
+    final result = ports[resultSignalName];
+    final inputPorts = Map.fromEntries(
+      ports.entries.where((element) =>
+          inputs.containsKey(element.key) ||
+          (inOuts.containsKey(element.key) && element.key != resultSignalName)),
+    );
     final inline = inlineVerilog(inputPorts);
-    return 'assign $output = $inline;  // $instanceName';
+    return 'assign $result = $inline;  // $instanceName';
   }
 
   @override
@@ -1154,10 +1165,16 @@ class _SynthModuleDefinition {
     });
 
     final singleUsageInlineableSubmoduleInstantiations =
-        inlineableSubmoduleInstantiations
-            .where((submoduleInstantiation) => singleUseSignals.contains(
-                // inlineable modules have only 1 output
-                submoduleInstantiation.outputMapping.values.first));
+        inlineableSubmoduleInstantiations.where((submoduleInstantiation) {
+      final inlineSvMod = submoduleInstantiation.module as InlineSystemVerilog;
+
+      // inlineable modules have only 1 result signal
+      final resultSynthLogic =
+          submoduleInstantiation.outputMapping[inlineSvMod.resultSignalName] ??
+              submoduleInstantiation.inOutMapping[inlineSvMod.resultSignalName];
+
+      return singleUseSignals.contains(resultSynthLogic);
+    });
 
     // remove any inlineability for those that want no expressions
     for (final MapEntry(key: subModule, value: instantiation)

@@ -135,29 +135,62 @@ class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.
-  late final Logic out = output(_out);
+  late final Logic out;
 
   final List<Logic> _swizzleInputs = [];
 
+  /// Whether this [Swizzle] is for [LogicNet]s.
+  final bool _isNet;
+
   /// Constructs a [Module] which concatenates [signals] into one large [out].
-  Swizzle(List<Logic> signals, {super.name = 'swizzle'}) {
+  Swizzle(List<Logic> signals, {super.name = 'swizzle'})
+      : _isNet =
+            signals.any((e) => e is LogicNet || (e is LogicArray && e.isNet)) {
     var idx = 0;
     var outputWidth = 0;
+
+    final inputCreator = _isNet ? addInOut : addInput;
+
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
       final inputName = Naming.unpreferredName('in${idx++}');
       _swizzleInputs.add(
-        addInput(inputName, signal, width: signal.width),
+        inputCreator(inputName, signal, width: signal.width),
       );
       outputWidth += signal.width;
     }
-    addOutput(_out, width: outputWidth);
 
-    _execute(); // for initial values
-    for (final swizzleInput in _swizzleInputs) {
-      swizzleInput.glitch.listen((args) {
-        _execute();
+    if (_isNet) {
+      out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
+      final internalOut = addInOut(_out, out, width: outputWidth);
+
+      final swizzleIoDrivers = _swizzleInputs.map((e) {
+        final swizzleIoDriver = Logic(width: e.width);
+        e <= swizzleIoDriver;
+        return swizzleIoDriver;
+      }).toList();
+
+      final outDriver = Logic(width: outputWidth);
+      internalOut <= outDriver;
+
+      _executeNet(swizzleIoDrivers, outDriver); // for initial values
+      out.glitch.listen((args) {
+        _executeNet(swizzleIoDrivers, outDriver);
       });
+      for (final swizzleIn in _swizzleInputs) {
+        swizzleIn.glitch.listen((args) {
+          _executeNet(swizzleIoDrivers, outDriver);
+        });
+      }
+    } else {
+      out = addOutput(_out, width: outputWidth);
+
+      _execute(); // for initial values
+      for (final swizzleInput in _swizzleInputs) {
+        swizzleInput.glitch.listen((args) {
+          _execute();
+        });
+      }
     }
   }
 
@@ -166,6 +199,50 @@ class Swizzle extends Module with InlineSystemVerilog {
     final updatedVal =
         LogicValue.ofIterable(_swizzleInputs.map((e) => e.value));
     out.put(updatedVal);
+  }
+
+  @override
+  String get resultSignalName => _out;
+
+  //TODO
+  bool _isExecutingNet = false;
+
+  /// Executes functional behavior of this gate for when [_isNet] on the output.
+  void _executeNet(List<Logic> swizzleIoDrivers, Logic outDriver) {
+    if (_isExecutingNet) {
+      // prevent infinite recursion
+      return;
+    }
+
+    _isExecutingNet = true;
+
+    // first put everything to be floating
+    outDriver.put(LogicValue.z);
+    for (final swizzleIoDriver in swizzleIoDrivers) {
+      swizzleIoDriver.put(LogicValue.z, fill: true);
+    }
+
+    // now sample to get the new value it should be
+    var newValue = out.value;
+    var idx = 0;
+    for (final swizzleInput in _swizzleInputs) {
+      newValue = newValue.triState(
+        LogicValue.filled(out.width, LogicValue.z)
+            .withSet(idx, swizzleInput.value),
+      );
+
+      idx += swizzleInput.width;
+    }
+
+    // then put the new value back out
+    outDriver.put(newValue);
+    idx = 0;
+    for (final swizzleIoDriver in swizzleIoDrivers) {
+      swizzleIoDriver.put(newValue.getRange(idx, idx + swizzleIoDriver.width));
+      idx += swizzleIoDriver.width;
+    }
+
+    _isExecutingNet = false;
   }
 
   @override
