@@ -21,7 +21,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final String _subsetName;
 
   /// The input to get a subset of.
-  late final Logic _original = input(_originalName);
+  late final Logic _original;
 
   /// The output, a subset of [_original].
   late final Logic subset;
@@ -31,6 +31,12 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// End index of the subset.
   final int endIndex;
+
+  //TODO
+  final bool _isNet;
+
+  @override
+  String get resultSignalName => _subsetName;
 
   @override
   List<String> get expressionlessInputs => [_originalName];
@@ -43,7 +49,8 @@ class BusSubset extends Module with InlineSystemVerilog {
   ///
   /// TODO: update doc for nets
   BusSubset(Logic bus, this.startIndex, this.endIndex,
-      {super.name = 'bussubset'}) {
+      {super.name = 'bussubset'})
+      : _isNet = bus.isNet {
     // If a converted index value is still -ve then it's an Index out of bounds
     // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
@@ -64,14 +71,15 @@ class BusSubset extends Module with InlineSystemVerilog {
 
     final newWidth = (endIndex - startIndex).abs() + 1;
 
-    if (bus.isNet) {
-      final internalBus = addInOut(_originalName, bus, width: bus.width);
+    if (_isNet) {
+      _original = addInOut(_originalName, bus, width: bus.width);
       subset = LogicNet(width: newWidth);
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-      internalBus.quietlyMergeSubsetTo(internalSubset, start: startIndex);
+      (_original as LogicNet)
+          .quietlyMergeSubsetTo(internalSubset, start: startIndex);
     } else {
-      addInput(_originalName, bus, width: bus.width);
+      _original = addInput(_originalName, bus, width: bus.width);
       subset = addOutput(_subsetName, width: newWidth);
 
       // so that people can't do a slice assign, not (yet?) implemented

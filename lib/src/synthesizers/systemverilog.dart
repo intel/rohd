@@ -1180,13 +1180,13 @@ class _SynthModuleDefinition {
     for (final MapEntry(key: subModule, value: instantiation)
         in moduleToSubModuleInstantiationMap.entries) {
       if (subModule is SystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs
-            .map((e) => instantiation.inputMapping[e]!));
+        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
+            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
       }
       // ignore: deprecated_member_use_from_same_package
       else if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs
-            .map((e) => instantiation.inputMapping[e]!));
+        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
+            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
       }
     }
 

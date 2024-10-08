@@ -113,8 +113,8 @@ void main() {
           Vector({'subset': '1100'}, {'bus': 'zz1100zz'}),
         ];
 
-        // await SimCompare.checkFunctionalVector(mod, vectors);
-        // SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
       });
     });
   });
