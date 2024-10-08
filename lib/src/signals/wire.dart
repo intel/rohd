@@ -141,10 +141,13 @@ class _Wire {
   }
 
   /// Tells this [_Wire] to adopt all the behavior of [other] so that
-  /// it can replace [other].
-  void _adopt(_Wire other) {
+  /// it can replace [other]. Returns the [_Wire] that has adopted everything.
+  _Wire _adopt(_Wire other) {
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
+
+    // ignore: avoid_returning_this
+    return this;
   }
 
   /// Store the [negedge] stream to avoid creating multiple copies
@@ -242,14 +245,19 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    final prevValue = _currentValue;
-    _currentValue = newValue;
+    final prevValue = value;
+    _updateValue(newValue);
 
     // sends out a glitch if the value deposited has changed
-    if (_currentValue != prevValue) {
+    if (value != prevValue) {
       _isPutting = true;
-      _glitchController.add(LogicValueChanged(_currentValue, prevValue));
+      _glitchController.add(LogicValueChanged(value, prevValue));
       _isPutting = false;
     }
+  }
+
+  //TODO
+  void _updateValue(LogicValue newValue) {
+    _currentValue = newValue;
   }
 }

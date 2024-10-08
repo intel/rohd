@@ -32,7 +32,7 @@ class Logic {
   int get width => _wire.width;
 
   /// The current active value of this signal.
-  LogicValue get value => _wire._currentValue;
+  LogicValue get value => _wire.value;
 
   /// The current active value of this signal if it has width 1, as
   /// a [LogicValue].
@@ -357,15 +357,14 @@ class Logic {
     _wire.put(newWire.value, signalName: name);
 
     // then, replace the wire
-    newWire._adopt(_wire);
-    _wire = newWire;
+    _wire = newWire._adopt(_wire);
 
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
       toUpdateWire = [
         ...dstConnections,
-        ...(this as LogicNet).srcConnections,
+        ...srcConnections,
       ].where(
           (connection) => connection._wire != _wire && connection is LogicNet);
     } else {
@@ -411,6 +410,8 @@ class Logic {
 
   /// Modulo operation.
   Logic operator %(dynamic other) => Modulo(this, other).out;
+
+  //TODO: shifts for logicnet should be just wires iff they are constant shift
 
   /// Arithmetic right-shift.
   Logic operator >>(dynamic other) => ARShift(this, other).out;
@@ -594,6 +595,7 @@ class Logic {
   /// [index] will be ignored, and the logic is returned as-is.
   Logic operator [](dynamic index) {
     if (index is Logic) {
+      //TODO: fix for net
       return IndexGate(this, index).selection;
     } else if (index is int) {
       return slice(index, index);
@@ -637,6 +639,8 @@ class Logic {
       // ignore: avoid_returning_this
       return this;
     }
+
+    //TODO: fix for nets
 
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
@@ -771,6 +775,7 @@ class Logic {
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
   Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
+  //TODO: does replication handle nets??
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
   /// [list]. Else `0` (of [width]=1) if not present.
@@ -850,6 +855,7 @@ class Logic {
     }
 
     if (_subsetDriver == null) {
+      //TODO: native support in wirenet?
       _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
         [width],
         1,

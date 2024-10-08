@@ -24,7 +24,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final Logic _original = input(_originalName);
 
   /// The output, a subset of [_original].
-  late final Logic subset = output(_subsetName);
+  late final Logic subset;
 
   /// Start index of the subset.
   final int startIndex;
@@ -37,8 +37,11 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
+  ///
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
   /// in the generated SystemVerilog.
+  ///
+  /// TODO: update doc for nets
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {super.name = 'bussubset'}) {
     // If a converted index value is still -ve then it's an Index out of bounds
@@ -59,14 +62,23 @@ class BusSubset extends Module with InlineSystemVerilog {
     _subsetName =
         Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
-    addInput(_originalName, bus, width: bus.width);
     final newWidth = (endIndex - startIndex).abs() + 1;
-    addOutput(_subsetName, width: newWidth);
 
-    // so that people can't do a slice assign, not (yet?) implemented
-    subset.makeUnassignable();
+    if (bus.isNet) {
+      final internalBus = addInOut(_originalName, bus, width: bus.width);
+      subset = LogicNet(width: newWidth);
+      final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-    _setup();
+      internalBus.quietlyMergeSubsetTo(internalSubset, start: startIndex);
+    } else {
+      addInput(_originalName, bus, width: bus.width);
+      subset = addOutput(_subsetName, width: newWidth);
+
+      // so that people can't do a slice assign, not (yet?) implemented
+      subset.makeUnassignable();
+
+      _setup();
+    }
   }
 
   /// Performs setup steps for custom functional behavior.
@@ -144,8 +156,7 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})
-      : _isNet =
-            signals.any((e) => e is LogicNet || (e is LogicArray && e.isNet)) {
+      : _isNet = signals.any((e) => e.isNet) {
     var idx = 0;
     var outputWidth = 0;
 
@@ -207,6 +218,29 @@ class Swizzle extends Module with InlineSystemVerilog {
   //TODO
   bool _isExecutingNet = false;
 
+  LogicValue _newNetValue() {
+    var newValue = out.value;
+    var idx = 0;
+    for (final swizzleInput in _swizzleInputs) {
+      newValue = newValue.triState(
+        LogicValue.filled(out.width, LogicValue.z)
+            .withSet(idx, swizzleInput.value),
+      );
+
+      idx += swizzleInput.width;
+    }
+
+    return newValue;
+  }
+
+  void _executeNetOutputUpdate(Logic outDriver) {
+    outDriver
+      ..put(LogicValue.z)
+      ..put(_newNetValue());
+  }
+
+  void _executeNetInputUpdate() {}
+
   /// Executes functional behavior of this gate for when [_isNet] on the output.
   void _executeNet(List<Logic>? swizzleIoDrivers, Logic? outDriver) {
     if (_isExecutingNet) {
@@ -225,22 +259,13 @@ class Swizzle extends Module with InlineSystemVerilog {
     }
 
     // now sample to get the new value it should be
-    var newValue = out.value;
-    var idx = 0;
-    for (final swizzleInput in _swizzleInputs) {
-      newValue = newValue.triState(
-        LogicValue.filled(out.width, LogicValue.z)
-            .withSet(idx, swizzleInput.value),
-      );
-
-      idx += swizzleInput.width;
-    }
+    final newValue = _newNetValue();
 
     print(newValue);
 
     // then put the new value back out
     outDriver?.put(newValue);
-    idx = 0;
+    var idx = 0;
     if (swizzleIoDrivers != null) {
       for (final swizzleIoDriver in swizzleIoDrivers) {
         swizzleIoDriver

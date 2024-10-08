@@ -74,6 +74,15 @@ void main() {
 
   group('subset', () {
     group('on net', () {
+      test('func sim', () {
+        final bus = LogicNet(width: 8);
+        final subset = LogicNet(width: 4);
+        subset <= BusSubset(bus, 2, 5).subset;
+
+        bus.put('00101100');
+        print(subset.value.toString(includeWidth: false));
+      });
+
       test('bus to subset', () async {
         final bus = LogicNet(width: 8);
         final subset = LogicNet(width: 4);
@@ -122,6 +131,12 @@ void main() {
 
         upper.put(2);
         lower.put(0);
+
+        //TODO: make sure contention update works?
+
+        print(swizzled.value);
+
+        swizzled.put(1, fill: true);
 
         print(swizzled.value);
       });
