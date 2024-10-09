@@ -12,11 +12,12 @@ part of 'signals.dart';
 class _WireNet extends _Wire {
   final Set<Logic> _drivers = {};
 
-  late final List<_WireNetBlasted> _parents = []; //TODO review
+  late final Set<_WireNetBlasted> _parents = {}; //TODO review
 
   _WireNet({required super.width});
 
   void _addParent(_WireNetBlasted parent) {
+    assert(width == 1, 'Only should be adding parents to blasted wires');
     _parents.add(parent);
   }
 
@@ -32,6 +33,12 @@ class _WireNet extends _Wire {
   _Wire _adopt(_Wire other) {
     assert(other is _WireNet, 'Only should be adopting other `_WireNet`s');
     assert(other.width == width, 'Width mismatch');
+
+    if (other == this) {
+      // nothing to do if this is the same wire already!
+      return this;
+    }
+
     other as _WireNet;
 
     if (other is _WireNetBlasted) {
@@ -45,7 +52,10 @@ class _WireNet extends _Wire {
       ..clear();
 
     other._parents
-      ..forEach((p) => p._replaceWire(other, this))
+      ..forEach((p) {
+        p._replaceWire(other, this);
+        _addParent(p);
+      })
       ..clear();
 
     return this;
@@ -155,5 +165,5 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
   @override
   // TODO: implement _parents
-  List<_WireNetBlasted> get _parents => throw UnimplementedError();
+  Set<_WireNetBlasted> get _parents => throw UnimplementedError();
 }

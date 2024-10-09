@@ -93,6 +93,40 @@ void main() {
   // - reversed
 
   group('multi-connection', () {
+    group('func only', () {
+      test('tied subsets', () async {
+        final base = LogicNet(width: 8);
+
+        final lowerDriver = Logic(width: 4);
+        final upperDriver = Logic(width: 4);
+        final midDriver = Logic(width: 4);
+
+        final lower = base.getRange(0, 4)..gets(lowerDriver);
+        final upper = base.getRange(4, 8)..gets(upperDriver);
+        final mid = base.getRange(2, 6)..gets(midDriver);
+
+        upper <= mid;
+
+        lowerDriver.put('1100');
+
+        expect(lower.value, LogicValue.of('1100'));
+        expect(mid.value, LogicValue.of('1111'));
+        expect(upper.value, LogicValue.of('1111'));
+
+        upperDriver.put('0000');
+
+        expect(upper.value, LogicValue.of('xxxx'));
+        expect(mid.value, LogicValue.of('xxxx'));
+        expect(lower.value, LogicValue.of('xx00'));
+
+        lowerDriver.put('zzzz');
+
+        expect(upper.value, LogicValue.of('0000'));
+        expect(mid.value, LogicValue.of('0000'));
+        expect(lower.value, LogicValue.of('00zz'));
+      });
+    });
+
     test('driving bus1', () async {
       final mod =
           MultiConnectionNetSubsetMod(LogicNet(width: 8), LogicNet(width: 8));
@@ -105,7 +139,7 @@ void main() {
         Vector({'bus1': 'zzzz1100'}, {'bus2': '11000000'}),
       ];
 
-      // await SimCompare.checkFunctionalVector(mod, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
   });
