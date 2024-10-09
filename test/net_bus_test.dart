@@ -78,12 +78,26 @@ void main() {
   group('subset', () {
     group('on net', () {
       test('func sim', () {
-        final bus = LogicNet(width: 8);
-        final subset = LogicNet(width: 4);
+        final busDriver = Logic(width: 8);
+        final subsetDriver = Logic(width: 4);
+
+        final bus = LogicNet(width: 8)..gets(busDriver);
+        final subset = LogicNet(width: 4)..gets(subsetDriver);
         subset <= BusSubset(bus, 2, 5).subset;
 
-        bus.put('00101100');
-        print(subset.value.toString(includeWidth: false));
+        busDriver.put('00101100');
+
+        expect(subset.value, LogicValue.of('1011'));
+
+        subsetDriver.put('1100');
+
+        expect(bus.value, LogicValue.of('001xxx00'));
+        expect(subset.value, LogicValue.of('1xxx'));
+
+        busDriver.put(LogicValue.z);
+
+        expect(subset.value, LogicValue.of('1100'));
+        expect(bus.value, LogicValue.of('zz1100zz'));
       });
 
       test('bus to subset', () async {
@@ -135,23 +149,41 @@ void main() {
   group('swizzle', () {
     group('just nets', () {
       test('func sim', () {
-        final upper = LogicNet(width: 2, name: 'upper');
-        final lower = LogicNet(name: 'lower');
+        final upperDriver = Logic(width: 2);
+        final lowerDriver = Logic();
+        final swizzeldDriver = Logic(width: 3);
+
+        final upper = LogicNet(width: 2, name: 'upper')..gets(upperDriver);
+        final lower = LogicNet(name: 'lower')..gets(lowerDriver);
         final swizzled = [
           upper,
           lower,
-        ].swizzle();
+        ].swizzle()
+          ..gets(swizzeldDriver);
 
-        upper.put(2);
-        lower.put(0);
+        upperDriver.put('10');
 
-        //TODO: make sure contention update works? (need to use Logic drivers)
+        expect(swizzled.value, LogicValue.of('10z'));
+        expect(lower.value, LogicValue.of('z'));
+        expect(upper.value, LogicValue.of('10'));
 
-        print(swizzled.value);
+        lowerDriver.put('1');
 
-        swizzled.put(1, fill: true);
+        expect(swizzled.value, LogicValue.of('101'));
+        expect(lower.value, LogicValue.of('1'));
+        expect(upper.value, LogicValue.of('10'));
 
-        print(swizzled.value);
+        swizzeldDriver.put('111');
+
+        expect(swizzled.value, LogicValue.of('1x1'));
+        expect(lower.value, LogicValue.of('1'));
+        expect(upper.value, LogicValue.of('1x'));
+
+        upperDriver.put('zz');
+
+        expect(swizzled.value, LogicValue.of('111'));
+        expect(lower.value, LogicValue.of('1'));
+        expect(upper.value, LogicValue.of('11'));
       });
 
       test('many to one', () async {
