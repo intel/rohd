@@ -116,7 +116,7 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    assert(inputs.length == 1 || inputs.length == 2 && _isNet,
+    assert(inputs.length == 1 || (inputs.length == 2 && _isNet),
         'BusSubset has exactly one input, but saw $inputs.');
 
     final a = inputs[_originalName]!;
@@ -213,10 +213,12 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != _swizzleInputs.length) {
-      throw Exception('This swizzle has ${_swizzleInputs.length} inputs,'
-          ' but saw $inputs with ${inputs.length} values.');
-    }
+    assert(
+        inputs.length == _swizzleInputs.length ||
+            (inputs.length == _swizzleInputs.length + 1 && _isNet),
+        'This swizzle has ${_swizzleInputs.length} inputs,'
+        ' but saw $inputs with ${inputs.length} values.');
+
     final inputStr = _swizzleInputs.reversed
         .where((e) => e.width > 0)
         .map((e) => inputs[e.name])

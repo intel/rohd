@@ -62,6 +62,9 @@ class SwizzleMod extends Module {
 //TODO: test combinational loops are properly caught!
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
   //TODO: testplan
   // - swizzle
   //    - just nets
@@ -90,6 +93,12 @@ void main() {
 
         await mod.build();
 
+        final sv = mod.generateSynth();
+        expect(
+            sv,
+            contains(
+                'net_connect #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
+
         final vectors = [
           Vector({'bus': '10000101'}, {'subset': '0001'}),
           Vector({'bus': 'xx1100xx'}, {'subset': '1100'}),
@@ -106,7 +115,11 @@ void main() {
 
         await mod.build();
 
-        print(mod.generateSynth());
+        final sv = mod.generateSynth();
+        expect(
+            sv,
+            contains(
+                'net_connect #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
 
         final vectors = [
           Vector({'subset': '0001'}, {'bus': 'zz0001zz'}),
@@ -114,7 +127,7 @@ void main() {
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors, dontDeleteTmpFiles: true);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
     });
   });
@@ -132,13 +145,11 @@ void main() {
         upper.put(2);
         lower.put(0);
 
-        //TODO: make sure contention update works?
+        //TODO: make sure contention update works? (need to use Logic drivers)
 
         print(swizzled.value);
 
         swizzled.put(1, fill: true);
-
-        //TODO: contention is broken, make sure that works!
 
         print(swizzled.value);
       });
@@ -153,7 +164,10 @@ void main() {
         await mod.build();
 
         final sv = mod.generateSynth();
-        // expect(sv, contains('assign swizzled = {in0,in1,in2};')); //TODO
+        expect(
+            sv,
+            contains('net_connect #(.WIDTH(16))'
+                ' net_connect (swizzled, ({in0,in1,in2}));'));
 
         final vectors = [
           Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd}, {'swizzled': 0xabcd}),
@@ -174,7 +188,10 @@ void main() {
         await mod.build();
 
         final sv = mod.generateSynth();
-        expect(sv, contains('assign swizzled = {in0,in1,in2};'));
+        expect(
+            sv,
+            contains('net_connect #(.WIDTH(16))'
+                ' net_connect (swizzled, ({in0,in1,in2}));'));
 
         final vectors = [
           Vector({'swizzled': 0xabcd}, {'in0': 0xab, 'in1': 0xc, 'in2': 0xd}),
