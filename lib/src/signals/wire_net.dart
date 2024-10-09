@@ -12,6 +12,7 @@ part of 'signals.dart';
 class _WireNet extends _Wire {
   final Set<Logic> _drivers = {};
 
+  //TODO: is there a way to merge/reduce the number of parents to track?
   late final Set<_WireNetBlasted> _parents = {}; //TODO review
 
   _WireNet({required super.width});
@@ -52,10 +53,7 @@ class _WireNet extends _Wire {
       ..clear();
 
     other._parents
-      ..forEach((p) {
-        p._replaceWire(other, this);
-        _addParent(p);
-      })
+      ..forEach((p) => p._replaceWire(other, this))
       ..clear();
 
     return this;
@@ -76,11 +74,10 @@ class _WireNet extends _Wire {
 class _WireNetBlasted extends _Wire implements _WireNet {
   final List<_WireNet> _wires;
 
-  // _WireNetBlasted({required super.width})
-  //     : _wires = List<_WireNet>.generate(width, (i) => _WireNet(width: 1));
-
   _WireNetBlasted.fromWireNet(_WireNet wire)
       : _wires = List<_WireNet>.generate(wire.width, (i) => _WireNet(width: 1)),
+        assert(
+            wire is! _WireNetBlasted, 'Should not be blasting a blasted wire'),
         super(width: wire.width) {
     for (final w in _wires) {
       w._addParent(this);
@@ -92,13 +89,22 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   void _replaceWire(_WireNet oldWire, _WireNet newWire) {
-    _wires[_wires.indexOf(oldWire)] = newWire;
+    final index = _wires.indexOf(oldWire);
+
+    if (index >= 0) {
+      // assert(index != -1, 'Wire should be there to replace.');
+      _wires[index] = newWire.._addParent(this);
+
+      // old wire parents need to be notified!! //TODO THIS IS THE PIECE THAT WAS MISSING
+      for (final parent in oldWire._parents) {
+        parent._replaceWire(oldWire, newWire);
+      }
+    }
   }
 
   @override
   _Wire _adopt(_Wire other) {
-    assert(other is _WireNet || other is _WireNetBlasted,
-        'Only should be adopting other `_WireNet`s');
+    assert(other is _WireNet, 'Only should be adopting other `_WireNet`s');
     assert(other.width == width, 'Width mismatch');
 
     other as _WireNet;
@@ -111,12 +117,14 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     super._adopt(other);
 
     for (var i = 0; i < width; i++) {
-      _wires[i]._adopt(other._wires[i]);
+      _wires[i] = _wires[i]._adopt(other._wires[i]) as _WireNet;
+      assert(_wires[i]._parents.contains(this), 'Parent not added');
     }
 
     return this;
   }
 
+  @override
   void _addDriver(Logic driver) {
     for (var i = 0; i < width; i++) {
       _wires[i]._addDriver(driver[i]);
@@ -139,7 +147,8 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
   void _adoptSubset(_WireNetBlasted other, {required int start}) {
     for (var i = 0; i < other.width; i++) {
-      _wires[start + i]._adopt(other._wires[i]);
+      _wires[start + i] = _wires[start + i]._adopt(other._wires[i]) as _WireNet;
+      assert(_wires[start + i]._parents.contains(this), 'Parent not added');
     }
   }
 

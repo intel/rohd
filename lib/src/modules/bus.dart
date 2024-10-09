@@ -169,11 +169,11 @@ class Swizzle extends Module with InlineSystemVerilog {
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})
       : _isNet = signals.any((e) => e.isNet) {
-    var idx = 0;
     var outputWidth = 0;
 
     final inputCreator = _isNet ? addInOut : addInput;
 
+    var idx = 0;
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
       final inputName = Naming.unpreferredName('in${idx++}');

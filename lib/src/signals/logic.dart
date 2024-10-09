@@ -372,7 +372,7 @@ class Logic {
     }
 
     for (final dstConnection in toUpdateWire) {
-      dstConnection._updateWire(newWire);
+      dstConnection._updateWire(_wire);
     }
   }
 

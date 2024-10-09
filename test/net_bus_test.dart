@@ -125,6 +125,19 @@ void main() {
         expect(mid.value, LogicValue.of('0000'));
         expect(lower.value, LogicValue.of('00zz'));
       });
+
+      test('multiple getRange connections', () {
+        final baseDriver = Logic(width: 8);
+        final base = LogicNet(width: 8)..gets(baseDriver);
+
+        base.getRange(0, 2) <= base.getRange(2, 4);
+        base.getRange(0, 2) <= base.getRange(4, 6);
+        base.getRange(2, 4) <= base.getRange(6, 8);
+
+        baseDriver.put('zzzzzz01');
+
+        expect(base.value, LogicValue.of('01' * 4));
+      });
     });
 
     test('driving bus1', () async {

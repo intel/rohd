@@ -71,19 +71,6 @@ class LogicNet extends Logic {
   @override
   String toString() => '${super.toString()}, [Net]';
 
-  // @override //TODO
-  // void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
-  //   if (updatedSubset.length > width - start) {
-  //     throw SignalWidthMismatchException.forWidthOverflow(
-  //         updatedSubset.length, width - start);
-  //   }
-
-  //   // _wire = (_wire as _WireNet)._blast();
-
-  //   // (_wire as _WireNetBlasted)
-  //   //     ._adoptSubset(other, start: start); //TODO use subset?
-  // }
-
   @protected //TODO: how to properly protect?
   void quietlyMergeSubsetTo(LogicNet other, {int start = 0}) {
     _blastWire();
