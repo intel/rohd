@@ -116,9 +116,9 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('BusSubset has exactly one input, but saw $inputs.');
-    }
+    assert(inputs.length == 1 || inputs.length == 2 && _isNet,
+        'BusSubset has exactly one input, but saw $inputs.');
+
     final a = inputs[_originalName]!;
 
     assert(!a.contains(_expressionRegex),
@@ -183,23 +183,11 @@ class Swizzle extends Module with InlineSystemVerilog {
       out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
 
-      final swizzleIoDrivers = _swizzleInputs.map((e) {
-        final swizzleIoDriver = Logic(width: e.width);
-        e <= swizzleIoDriver;
-        return swizzleIoDriver;
-      }).toList();
-
-      final outDriver = Logic(width: outputWidth);
-      internalOut <= outDriver;
-
-      _executeNet(swizzleIoDrivers, outDriver); // for initial values
-      out.glitch.listen((args) {
-        _executeNet(swizzleIoDrivers, null);
-      });
-      for (final swizzleIn in _swizzleInputs) {
-        swizzleIn.glitch.listen((args) {
-          _executeNet(null, outDriver); //TODO: per-input, not all!
-        });
+      var idx = 0;
+      for (final swizzleInput in _swizzleInputs) {
+        (out as LogicNet)
+            .quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
+        idx += swizzleInput.width;
       }
     } else {
       out = addOutput(_out, width: outputWidth);
@@ -222,68 +210,6 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   @override
   String get resultSignalName => _out;
-
-  //TODO
-  bool _isExecutingNet = false;
-
-  LogicValue _newNetValue() {
-    var newValue = out.value;
-    var idx = 0;
-    for (final swizzleInput in _swizzleInputs) {
-      newValue = newValue.triState(
-        LogicValue.filled(out.width, LogicValue.z)
-            .withSet(idx, swizzleInput.value),
-      );
-
-      idx += swizzleInput.width;
-    }
-
-    return newValue;
-  }
-
-  void _executeNetOutputUpdate(Logic outDriver) {
-    outDriver
-      ..put(LogicValue.z)
-      ..put(_newNetValue());
-  }
-
-  void _executeNetInputUpdate() {}
-
-  /// Executes functional behavior of this gate for when [_isNet] on the output.
-  void _executeNet(List<Logic>? swizzleIoDrivers, Logic? outDriver) {
-    if (_isExecutingNet) {
-      // prevent infinite recursion
-      return;
-    }
-
-    _isExecutingNet = true;
-
-    // first put everything to be floating
-    outDriver?.put(LogicValue.z);
-    if (swizzleIoDrivers != null) {
-      for (final swizzleIoDriver in swizzleIoDrivers) {
-        swizzleIoDriver.put(LogicValue.z, fill: true);
-      }
-    }
-
-    // now sample to get the new value it should be
-    final newValue = _newNetValue();
-
-    print(newValue);
-
-    // then put the new value back out
-    outDriver?.put(newValue);
-    var idx = 0;
-    if (swizzleIoDrivers != null) {
-      for (final swizzleIoDriver in swizzleIoDrivers) {
-        swizzleIoDriver
-            .put(newValue.getRange(idx, idx + swizzleIoDriver.width));
-        idx += swizzleIoDriver.width;
-      }
-    }
-
-    _isExecutingNet = false;
-  }
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
