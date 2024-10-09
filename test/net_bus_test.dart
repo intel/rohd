@@ -59,6 +59,22 @@ class SwizzleMod extends Module {
   }
 }
 
+class ReverseMod extends Module {
+  ReverseMod(LogicNet bus) {
+    bus = addInOut('bus', bus, width: bus.width);
+
+    addInOut('reversed', LogicNet(width: bus.width), width: bus.width) <=
+        bus.reversed;
+  }
+}
+
+class IndexMod extends Module {
+  IndexMod(LogicNet bus, int index) {
+    bus = addInOut('bus', bus, width: bus.width);
+    addInOut('indexed', LogicNet()) <= bus[index];
+  }
+}
+
 class MultiConnectionNetSubsetMod extends Module {
   MultiConnectionNetSubsetMod(LogicNet bus1, LogicNet bus2) {
     bus1 = addInOut('bus1', bus1, width: 8);
@@ -68,6 +84,9 @@ class MultiConnectionNetSubsetMod extends Module {
     bus2.getRange(0, 4) <= [bus1.getRange(0, 2), bus1.getRange(6, 8)].swizzle();
 
     bus1.getRange(4, 8) <= bus2.getRange(4, 8).reversed;
+
+    // bus1: 0011 1100
+    // bus2: 1100 0000
   }
 }
 
@@ -150,6 +169,114 @@ void main() {
 
       final vectors = [
         Vector({'bus1': 'zzzz1100'}, {'bus2': '11000000'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  });
+
+  group('index', () {
+    test('func sim', () {
+      final busDriver = Logic(width: 8);
+      final indexedDriver = Logic();
+
+      final bus = LogicNet(width: 8)..gets(busDriver);
+      final indexed = LogicNet()..gets(indexedDriver);
+      indexed <= bus[3];
+
+      busDriver.put('00001000');
+
+      expect(indexed.value, LogicValue.one);
+      expect(bus.value, LogicValue.of('00001000'));
+
+      indexedDriver.put('0');
+
+      expect(indexed.value, LogicValue.x);
+      expect(bus.value, LogicValue.of('0000x000'));
+
+      busDriver.put(LogicValue.z);
+
+      expect(indexed.value, LogicValue.zero);
+      expect(bus.value, LogicValue.of('zzzz0zzz'));
+    });
+
+    test('drive bus', () async {
+      final bus = LogicNet(width: 8);
+      final mod = IndexMod(bus, 3);
+
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect(
+          sv,
+          contains(
+              'net_connect #(.WIDTH(1)) net_connect (indexed, (bus[3]));'));
+
+      final vectors = [
+        Vector({'bus': '00101100'}, {'indexed': '1'}),
+        Vector({'bus': '00100100'}, {'indexed': '0'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('drive index', () async {
+      final bus = LogicNet(width: 8);
+      final mod = IndexMod(bus, 3);
+
+      await mod.build();
+
+      final vectors = [
+        Vector({'indexed': '1'}, {'bus': 'zzzz1zzz'}),
+        Vector({'indexed': '0'}, {'bus': 'zzzz0zzz'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  });
+
+  group('reversed', () {
+    test('func sim', () {
+      final busDriver = Logic(width: 8);
+      final reversedDriver = Logic(width: 8);
+
+      final bus = LogicNet(width: 8)..gets(busDriver);
+      final reversed = LogicNet(width: 8)..gets(reversedDriver);
+      reversed <= bus.reversed;
+
+      busDriver.put('00101100');
+
+      expect(reversed.value, LogicValue.of('00110100'));
+
+      reversedDriver.put('11001100');
+
+      expect(bus.value, LogicValue.of('xx1xxxxx'));
+      expect(reversed.value, LogicValue.of('xxxxx1xx'));
+
+      busDriver.put(LogicValue.z);
+
+      expect(reversed.value, LogicValue.of('11001100'));
+      expect(bus.value, LogicValue.of('00110011'));
+    });
+
+    test('drive bus', () async {
+      final bus = LogicNet(width: 8);
+      final mod = ReverseMod(bus);
+
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect(
+          sv,
+          contains(
+              'net_connect #(.WIDTH(8)) net_connect (reversed, (bus[7:0]));'));
+
+      final vectors = [
+        Vector({'bus': '00101100'}, {'reversed': '00110100'}),
+        Vector({'bus': '11001100'}, {'reversed': '11001100'}),
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
