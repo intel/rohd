@@ -60,7 +60,7 @@ class _WireNet extends _Wire {
     }
   }
 
-  _WireNetBlasted _blast() => _WireNetBlasted.fromWireNet(this);
+  _WireNetBlasted blast() => _WireNetBlasted.fromWireNet(this);
 }
 
 class _WireNetBlasted extends _Wire implements _WireNet {
@@ -95,7 +95,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
     if (other is! _WireNetBlasted) {
       // ignore: parameter_assignments
-      other = other._blast();
+      other = other.blast();
     }
 
     super._adopt(other);
@@ -134,7 +134,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   @override
-  _WireNetBlasted _blast() => this;
+  _WireNetBlasted blast() => this;
 
   @override
   void _evaluateNewValue({required String signalName}) {

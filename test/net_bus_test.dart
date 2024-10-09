@@ -59,6 +59,18 @@ class SwizzleMod extends Module {
   }
 }
 
+class MultiConnectionNetSubsetMod extends Module {
+  MultiConnectionNetSubsetMod(LogicNet bus1, LogicNet bus2) {
+    bus1 = addInOut('bus1', bus1, width: 8);
+    bus2 = addInOut('bus2', bus2, width: 8);
+
+    bus1.getRange(0, 4) <= bus2.getRange(4, 8);
+    bus2.getRange(0, 4) <= [bus1.getRange(0, 2), bus1.getRange(6, 8)].swizzle();
+
+    bus1.getRange(4, 8) <= bus2.getRange(4, 8).reversed;
+  }
+}
+
 //TODO: test combinational loops are properly caught!
 
 void main() {
@@ -74,6 +86,29 @@ void main() {
   // - subset
   //    - on net
   //    - on array net
+  // - collapsing of assignments in generated SV
+  // - multiple connections!
+  // - all kinds of shifts (signed arithmetic shift especially!)
+  // - zero and sign extensions
+  // - reversed
+
+  group('multi-connection', () {
+    test('driving bus1', () async {
+      final mod =
+          MultiConnectionNetSubsetMod(LogicNet(width: 8), LogicNet(width: 8));
+
+      await mod.build();
+
+      print(mod.generateSynth());
+
+      final vectors = [
+        Vector({'bus1': 'zzzz1100'}, {'bus2': '11000000'}),
+      ];
+
+      // await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  });
 
   group('subset', () {
     group('on net', () {

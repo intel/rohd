@@ -96,6 +96,6 @@ class LogicNet extends Logic {
   }
 
   void _blastWire() {
-    _updateWire((_wire as _WireNet)._blast());
+    _updateWire((_wire as _WireNet).blast());
   }
 }

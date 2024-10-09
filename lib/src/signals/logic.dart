@@ -647,9 +647,9 @@ class Logic {
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
-  late final Logic reversed =
-      Logic(name: 'reversed_$name', naming: Naming.unnamed, width: width)
-        ..gets(slice(0, width - 1));
+  late final Logic reversed = (isNet ? LogicNet.new : Logic.new)(
+      name: 'reversed_$name', naming: Naming.unnamed, width: width)
+    ..gets(slice(0, width - 1));
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].

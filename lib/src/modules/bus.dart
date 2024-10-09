@@ -7,6 +7,8 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math';
+
 import 'package:rohd/rohd.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
@@ -76,8 +78,10 @@ class BusSubset extends Module with InlineSystemVerilog {
       subset = LogicNet(width: newWidth);
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-      (_original as LogicNet)
-          .quietlyMergeSubsetTo(internalSubset, start: startIndex);
+      (_original as LogicNet).quietlyMergeSubsetTo(
+        internalSubset,
+        start: min(startIndex, endIndex),
+      );
     } else {
       _original = addInput(_originalName, bus, width: bus.width);
       subset = addOutput(_subsetName, width: newWidth);
