@@ -22,14 +22,6 @@ class _WireNet extends _Wire {
     _parents.add(parent);
   }
 
-  void _removeParent(_WireNetBlasted parent) {
-    assert(width == 1, 'Only should be removing parents from blasted wires');
-
-    final removed = _parents.remove(parent);
-
-    assert(removed, 'Parent not found to remove');
-  }
-
   void _evaluateNewValue({required String signalName}) {
     var newValue = LogicValue.filled(width, LogicValue.z);
     for (final driver in _drivers) {
@@ -126,8 +118,6 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
     for (var i = 0; i < width; i++) {
       _wires[i] = _wires[i]._adopt(other._wires[i]) as _WireNet;
-      //TODO: this is not safe because multiple wires could point to it for multiple reasons, is there a safe way?
-      // .._removeParent(other);
 
       assert(_wires[i]._parents.contains(this), 'Parent not added');
     }

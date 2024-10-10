@@ -84,9 +84,6 @@ class MultiConnectionNetSubsetMod extends Module {
     bus2.getRange(0, 4) <= [bus1.getRange(0, 2), bus1.getRange(6, 8)].swizzle();
 
     bus1.getRange(4, 8) <= bus2.getRange(4, 8).reversed;
-
-    // bus1: 0011 1100
-    // bus2: 1100 0000
   }
 }
 
@@ -164,8 +161,6 @@ void main() {
           MultiConnectionNetSubsetMod(LogicNet(width: 8), LogicNet(width: 8));
 
       await mod.build();
-
-      print(mod.generateSynth());
 
       final vectors = [
         Vector({'bus1': 'zzzz1100'}, {'bus2': '11000000'}),
@@ -278,6 +273,21 @@ void main() {
       final vectors = [
         Vector({'bus': '00101100'}, {'reversed': '00110100'}),
         Vector({'bus': '11001100'}, {'reversed': '00110011'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('drive reversed', () async {
+      final reversed = LogicNet(width: 8);
+      final mod = ReverseMod(reversed);
+
+      await mod.build();
+
+      final vectors = [
+        Vector({'reversed': '00110100'}, {'bus': '00101100'}),
+        Vector({'reversed': '00110011'}, {'bus': '11001100'}),
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
