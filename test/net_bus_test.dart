@@ -240,11 +240,12 @@ void main() {
 
   group('reversed', () {
     test('func sim', () {
-      final busDriver = Logic(width: 8);
-      final reversedDriver = Logic(width: 8);
+      final busDriver = Logic(name: 'busDriver', width: 8);
+      final reversedDriver = Logic(name: 'reversedDriver', width: 8);
 
-      final bus = LogicNet(width: 8)..gets(busDriver);
-      final reversed = LogicNet(width: 8)..gets(reversedDriver);
+      final bus = LogicNet(name: 'myBus', width: 8)..gets(busDriver);
+      final reversed = LogicNet(name: 'myReversed', width: 8)
+        ..gets(reversedDriver);
       reversed <= bus.reversed;
 
       busDriver.put('00101100');
@@ -253,8 +254,8 @@ void main() {
 
       reversedDriver.put('11001100');
 
-      expect(bus.value, LogicValue.of('xx1xxxxx'));
-      expect(reversed.value, LogicValue.of('xxxxx1xx'));
+      expect(bus.value, LogicValue.of('001xxxxx'));
+      expect(reversed.value, LogicValue.of('xxxxx100'));
 
       busDriver.put(LogicValue.z);
 

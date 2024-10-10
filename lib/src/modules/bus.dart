@@ -50,6 +50,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// in the generated SystemVerilog.
   ///
   /// TODO: update doc for nets
+  /// TODO: update doc for reverse if start/end are backwards
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {super.name = 'bussubset'})
       : _isNet = bus.isNet {
@@ -83,7 +84,7 @@ class BusSubset extends Module with InlineSystemVerilog {
         // reverse case
         for (var i = 0; i < newWidth; i++) {
           (internalSubset as LogicNet).quietlyMergeSubsetTo(
-            internalSubset[startIndex - i] as LogicNet,
+            _original[startIndex - i] as LogicNet,
             start: endIndex + i,
           );
         }
