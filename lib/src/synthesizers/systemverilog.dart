@@ -1231,7 +1231,6 @@ class _SynthModuleDefinition {
         in moduleToSubModuleInstantiationMap.values.toList().where((e) =>
             e.module is InlineSystemVerilog &&
             e.needsDeclaration &&
-            e.inputMapping.isEmpty &&
             e.outputMapping.isEmpty &&
             e.inOutMapping.isNotEmpty)) {
       // algorithm:
@@ -1247,7 +1246,8 @@ class _SynthModuleDefinition {
       final subModResult = subModuleInstantiation.inOutMapping[resultName]!;
 
       // TODO: is this right? use a dummy just as a placeholder?
-      final dummy = _SynthLogic(LogicNet(width: subModResult.width));
+      final dummy =
+          _SynthLogic(LogicNet(name: 'DUMMY', width: subModResult.width));
 
       final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
         .._synthLogicToInlineableSynthSubmoduleMap ??= {};

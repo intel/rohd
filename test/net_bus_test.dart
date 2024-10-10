@@ -14,9 +14,16 @@ import 'package:test/test.dart';
 class SubsetMod extends Module {
   LogicNet get subset => inOut('subset') as LogicNet;
 
-  SubsetMod(LogicNet bus, LogicNet subset, {int start = 1}) {
-    bus = addInOut('bus', bus, width: bus.width);
-    subset = addInOut('subset', subset, width: subset.width);
+  SubsetMod(Logic bus, Logic subset, {int start = 1}) {
+    bus = bus is LogicArray
+        ? addInOutArray('bus', bus,
+            dimensions: bus.dimensions, elementWidth: bus.elementWidth)
+        : addInOut('bus', bus, width: bus.width);
+
+    subset = subset is LogicArray
+        ? addInOutArray('subset', subset,
+            dimensions: subset.dimensions, elementWidth: subset.elementWidth)
+        : addInOut('subset', subset, width: subset.width);
 
     subset <= bus.getRange(start, start + subset.width);
   }
@@ -320,48 +327,62 @@ void main() {
         expect(bus.value, LogicValue.of('zz1100zz'));
       });
 
-      test('bus to subset', () async {
-        final bus = LogicNet(width: 8);
-        final subset = LogicNet(width: 4);
-        final mod = SubsetMod(bus, subset, start: 2);
+      group('simcompare', () {
+        final netTypes = {
+          LogicNet: () => (LogicNet(width: 8), LogicNet(width: 4)),
+          LogicArray: () => (LogicArray([2, 4], 1), LogicArray([2], 2)),
+        };
 
-        await mod.build();
+        for (final MapEntry(key: netTypeName, value: sigGen)
+            in netTypes.entries) {
+          group(netTypeName, () {
+            test('bus to subset', () async {
+              final (bus, subset) = sigGen();
+              final mod = SubsetMod(bus, subset, start: 2);
 
-        final sv = mod.generateSynth();
-        expect(
-            sv,
-            contains(
-                'net_connect #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
+              await mod.build();
 
-        final vectors = [
-          Vector({'bus': '10000101'}, {'subset': '0001'}),
-          Vector({'bus': 'xx1100xx'}, {'subset': '1100'}),
-        ];
+              final sv = mod.generateSynth();
+              if (netTypeName == LogicNet) {
+                expect(
+                    sv,
+                    contains('net_connect'
+                        ' #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
+              }
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
-      });
+              final vectors = [
+                Vector({'bus': '10000101'}, {'subset': '0001'}),
+                Vector({'bus': 'xx1100xx'}, {'subset': '1100'}),
+              ];
 
-      test('subset to bus', () async {
-        final bus = LogicNet(width: 8);
-        final subset = LogicNet(width: 4);
-        final mod = SubsetMod(bus, subset, start: 2);
+              await SimCompare.checkFunctionalVector(mod, vectors);
+              SimCompare.checkIverilogVector(mod, vectors);
+            });
 
-        await mod.build();
+            test('subset to bus', () async {
+              final (bus, subset) = sigGen();
+              final mod = SubsetMod(bus, subset, start: 2);
 
-        final sv = mod.generateSynth();
-        expect(
-            sv,
-            contains(
-                'net_connect #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
+              await mod.build();
 
-        final vectors = [
-          Vector({'subset': '0001'}, {'bus': 'zz0001zz'}),
-          Vector({'subset': '1100'}, {'bus': 'zz1100zz'}),
-        ];
+              final sv = mod.generateSynth();
+              if (netTypeName == LogicNet) {
+                expect(
+                    sv,
+                    contains('net_connect'
+                        ' #(.WIDTH(4)) net_connect (subset, (bus[5:2]));'));
+              }
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+              final vectors = [
+                Vector({'subset': '0001'}, {'bus': 'zz0001zz'}),
+                Vector({'subset': '1100'}, {'bus': 'zz1100zz'}),
+              ];
+
+              await SimCompare.checkFunctionalVector(mod, vectors);
+              SimCompare.checkIverilogVector(mod, vectors);
+            });
+          });
+        }
       });
     });
   });
