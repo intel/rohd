@@ -272,12 +272,12 @@ void main() {
       final sv = mod.generateSynth();
       expect(
           sv,
-          contains(
-              'net_connect #(.WIDTH(8)) net_connect (reversed, (bus[7:0]));'));
+          contains('net_connect (reversed, '
+              '({bus[0],bus[1],bus[2],bus[3],bus[4],bus[5],bus[6],bus[7]}));'));
 
       final vectors = [
         Vector({'bus': '00101100'}, {'reversed': '00110100'}),
-        Vector({'bus': '11001100'}, {'reversed': '11001100'}),
+        Vector({'bus': '11001100'}, {'reversed': '00110011'}),
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
