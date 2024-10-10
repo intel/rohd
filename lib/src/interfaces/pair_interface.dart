@@ -96,7 +96,7 @@ class PairInterface extends Interface<PairDirection> {
           })
           .toList(growable: false);
 
-  /// Creates a new instance of a [PairInterface] with the same ports other
+  /// Creates a new instance of a [PairInterface] with the same ports and other
   /// characteristics.
   PairInterface.clone(PairInterface otherInterface)
       : this(
