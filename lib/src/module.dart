@@ -670,6 +670,23 @@ abstract class Module {
 
     _inOutDrivers.add(source);
 
+    // we need to properly detect all inout sources, even for arrays
+    if (source.isArrayMember || source is LogicArray) {
+      final sourceElems = TraverseableCollection<Logic>()..add(source);
+      for (var i = 0; i < sourceElems.length; i++) {
+        final sei = sourceElems[i];
+        _inOutDrivers.add(sei);
+
+        if (sei.isArrayMember) {
+          sourceElems.add(sei.parentStructure!);
+        }
+
+        if (sei is LogicArray) {
+          sourceElems.addAll(sei.elements);
+        }
+      }
+    }
+
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
           // ignore: invalid_use_of_protected_member
@@ -780,12 +797,12 @@ abstract class Module {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
-    final xElems = [source];
-    for (var i = 0; i < xElems.length; i++) {
-      final xi = xElems[i];
+    final sourceElems = [source];
+    for (var i = 0; i < sourceElems.length; i++) {
+      final xi = sourceElems[i];
       _inOutDrivers.add(xi);
       if (xi is LogicArray) {
-        xElems.addAll(xi.elements);
+        sourceElems.addAll(xi.elements);
       }
     }
 

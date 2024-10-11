@@ -202,8 +202,7 @@ class Swizzle extends Module with InlineSystemVerilog {
 
       var idx = 0;
       for (final swizzleInput in _swizzleInputs) {
-        (out as LogicNet)
-            .quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
+        internalOut.quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
         idx += swizzleInput.width;
       }
     } else {

@@ -308,9 +308,35 @@ class DoubleConnectedPortMod extends Module {
   }
 }
 
+class ModArrToNetTop extends Module {
+  ModArrToNetTop(LogicArray topApple) {
+    topApple =
+        addInOutArray('topApple', topApple, dimensions: [2], elementWidth: 8);
+
+    final sub = ModArrToNetSub(topApple);
+    final banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
+    addInOut('banana', banana, width: 8) <= sub.banana;
+  }
+}
+
+class ModArrToNetSub extends Module {
+  late final LogicNet banana;
+  ModArrToNetSub(LogicArray apple) {
+    apple = addInOutArray('apple', apple, dimensions: [2], elementWidth: 8);
+
+    banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
+    addInOut('banana', banana, width: 8) <= apple.elements[0];
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('mod array to net hier', () async {
+    final mod = ModArrToNetTop(LogicArray.net([2], 8));
+    await mod.build();
   });
 
   test('basic net connection', () {
