@@ -503,8 +503,6 @@ void main() {
             expect(sv, contains('(swizzled, ({_in2,_swizzled,in2[0]}))'));
             expect(
                 sv, contains('(_swizzled, ({in1[3],in1[2],in1[1],in1[0]}))'));
-
-            print(sv);
           });
         });
 
@@ -570,7 +568,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  print(sv);
+                  print(sv); //TODO reenable checks
                   // expect(
                   //     sv,
                   //     contains('net_connect #(.WIDTH(16))'
@@ -593,7 +591,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  print(sv);
+                  print(sv); //TODO reenable checks
                   // expect(
                   //     sv,
                   //     contains('net_connect #(.WIDTH(16))'

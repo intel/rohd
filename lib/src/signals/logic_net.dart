@@ -57,6 +57,9 @@ class LogicNet extends Logic {
 
     if (other is LogicNet) {
       _updateWire(other._wire);
+
+      // also update in the opposite direction in case the swap was reversed
+      other._updateWire(_wire);
     } else {
       (_wire as _WireNet)._addDriver(other);
     }
