@@ -37,4 +37,26 @@ void main() {
       expect(e.toString(), contains('BusSubset'));
     }
   });
+
+  group('gates', () {
+    for (final out in [
+      Logic() & Logic(), // 2 input
+      ~Logic(), // not
+      Logic(width: 2).or(), // unary
+      Logic().replicate(3), // replication
+      Logic(width: 3) > Logic(width: 3), // comparison
+      Logic(width: 3) << 2, // shift
+      mux(Logic(), Logic(), Logic()), // mux
+      Logic(width: 2)[Logic()] // index
+    ]) {
+      test('${out.parentModule.runtimeType} outputs cannot be assigned', () {
+        try {
+          out <= Logic();
+          fail('Should have thrown an exception');
+        } on UnassignableException catch (e) {
+          expect(e.toString(), contains('${out.parentModule.runtimeType}'));
+        }
+      });
+    }
+  });
 }

@@ -30,7 +30,8 @@ class NotGate extends Module with InlineSystemVerilog {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${in_.name}_b');
     addInput(_inName, in_, width: in_.width);
-    addOutput(_outName, width: in_.width);
+    addOutput(_outName, width: in_.width)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
@@ -92,7 +93,8 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${name}_${in_.name}');
     addInput(_inName, in_, width: in_.width);
-    addOutput(_outName);
+    addOutput(_outName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
@@ -196,7 +198,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width + _outputSvWidthExpansion);
+    addOutput(_outName, width: width + _outputSvWidthExpansion)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -289,7 +292,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: in0.width);
     addInput(_in1Name, in1Logic, width: in1Logic.width);
-    addOutput(_outName);
+    addOutput(_outName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -396,7 +400,8 @@ class _ShiftGate extends Module with InlineSystemVerilog {
 
     addInput(_inName, in_, width: in_.width);
     addInput(_shiftAmountName, shiftAmountLogic, width: shiftAmountLogic.width);
-    addOutput(_outName, width: width);
+    addOutput(_outName, width: width)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -678,7 +683,8 @@ class Mux extends Module with InlineSystemVerilog {
     addInput(_controlName, control);
     addInput(_d0Name, d0, width: d0.width);
     addInput(_d1Name, d1, width: d1.width);
-    addOutput(_outName, width: d0.width);
+    addOutput(_outName, width: d0.width)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -754,7 +760,8 @@ class IndexGate extends Module with InlineSystemVerilog {
 
     addInput(_originalName, original, width: original.width);
     addInput(_indexName, index, width: index.width);
-    addOutput(_selectionName);
+    addOutput(_selectionName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -832,7 +839,8 @@ class ReplicationOp extends Module with InlineSystemVerilog {
     }
 
     addInput(_inputName, original, width: original.width);
-    addOutput(_outputName, width: original.width * _multiplier);
+    addOutput(_outputName, width: original.width * _multiplier)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
