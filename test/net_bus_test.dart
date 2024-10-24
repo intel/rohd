@@ -30,7 +30,7 @@ class SubsetMod extends Module {
 }
 
 class SwizzleMod extends Module {
-  SwizzleMod(List<Logic> toSwizzle) {
+  SwizzleMod(List<Logic> toSwizzle, {bool swapAssign = false}) {
     final innerToSwizzle = <Logic>[];
     var i = 0;
     for (final ts in toSwizzle) {
@@ -58,16 +58,15 @@ class SwizzleMod extends Module {
 
     final swizzled = innerToSwizzle.swizzle();
 
-    //TODO: order here matters??? maybe add a test that checks both orders?
-    addInOut('swizzled', LogicNet(width: swizzled.width),
-            width: swizzled.width) <=
-        swizzled;
-
-//TODO: the bug is in BUILD!  The order here impacts whether 1 or 2 swizzles are found!
-
-    // swizzled <=
-    //     addInOut('swizzled', LogicNet(width: swizzled.width),
-    //         width: swizzled.width);
+    if (!swapAssign || !swizzled.isNet) {
+      addInOut('swizzled', LogicNet(width: swizzled.width),
+              width: swizzled.width) <=
+          swizzled;
+    } else {
+      swizzled <=
+          addInOut('swizzled', LogicNet(width: swizzled.width),
+              width: swizzled.width);
+    }
   }
 }
 
@@ -433,155 +432,188 @@ void main() {
   });
 
   group('swizzle', () {
-    group('build checks', () {
-      test('simple net array', () async {
-        final mod = SwizzleMod([
-          LogicArray.net([1], 8),
-          LogicArray.net([1], 8),
-        ]);
+    for (final swapAssign in [false, true]) {
+      SwizzleMod swizzleModConstructor(List<Logic> toSwizzle) =>
+          SwizzleMod(toSwizzle, swapAssign: swapAssign);
 
-        await mod.build();
+      group('swap=$swapAssign', () {
+        group('build checks', () {
+          test('simple net array', () async {
+            final mod = swizzleModConstructor([
+              LogicArray.net([1], 8),
+              LogicArray.net([1], 8),
+            ]);
 
-        final sv = mod.generateSynth();
+            await mod.build();
 
-        expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
-      });
+            final sv = mod.generateSynth();
 
-      test('non-net array', () async {
-        final mod = SwizzleMod([
-          LogicArray([2, 2], 2), // in0
-          LogicArray([4], 1), // in1
-          LogicArray([1], 4), // in2
-        ]);
-
-        await mod.build();
-
-        final sv = mod.generateSynth();
-
-        print(sv);
-      });
-
-      test('net array', () async {
-        final mod = SwizzleMod([
-          // LogicArray.net([2, 2], 2), // in0
-          LogicArray.net([4], 1), // in1
-          LogicArray.net([1], 4), // in2
-        ]);
-
-        await mod.build();
-
-        final sv = mod.generateSynth();
-
-        //TODO: keep this test, finish also
-
-        print(sv);
-      });
-    });
-
-    group('just nets', () {
-      test('func sim', () {
-        final upperDriver = Logic(width: 2);
-        final lowerDriver = Logic();
-        final swizzeldDriver = Logic(width: 3);
-
-        final upper = LogicNet(width: 2, name: 'upper')..gets(upperDriver);
-        final lower = LogicNet(name: 'lower')..gets(lowerDriver);
-        final swizzled = [
-          upper,
-          lower,
-        ].swizzle()
-          ..gets(swizzeldDriver);
-
-        upperDriver.put('10');
-
-        expect(swizzled.value, LogicValue.of('10z'));
-        expect(lower.value, LogicValue.of('z'));
-        expect(upper.value, LogicValue.of('10'));
-
-        lowerDriver.put('1');
-
-        expect(swizzled.value, LogicValue.of('101'));
-        expect(lower.value, LogicValue.of('1'));
-        expect(upper.value, LogicValue.of('10'));
-
-        swizzeldDriver.put('111');
-
-        expect(swizzled.value, LogicValue.of('1x1'));
-        expect(lower.value, LogicValue.of('1'));
-        expect(upper.value, LogicValue.of('1x'));
-
-        upperDriver.put('zz');
-
-        expect(swizzled.value, LogicValue.of('111'));
-        expect(lower.value, LogicValue.of('1'));
-        expect(upper.value, LogicValue.of('11'));
-      });
-
-      group('simcompare', () {
-        final netTypes = {
-          LogicNet: () => [
-                LogicNet(width: 8), // in0
-                LogicNet(width: 4), // in1
-                LogicNet(width: 4), // in2
-              ],
-          LogicArray: () => [
-                LogicArray.net([2, 2], 2), // in0
-                LogicArray.net([4], 1), // in1
-                LogicArray.net([1], 4), // in2
-              ],
-        };
-
-        for (final MapEntry(key: netTypeName, value: sigGen)
-            in netTypes.entries) {
-          group(netTypeName, () {
-            test('many to one', () async {
-              final mod = SwizzleMod(sigGen());
-
-              await mod.build();
-
-              final sv = mod.generateSynth();
-              print(sv);
-              // expect(
-              //     sv,
-              //     contains('net_connect #(.WIDTH(16))'
-              //         ' net_connect (swizzled, ({in0,in1,in2}));'));
-
-              final vectors = [
-                Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd},
-                    {'swizzled': 0xabcd}),
-                Vector({'in0': 0x12, 'in1': 0x3, 'in2': 0x4},
-                    {'swizzled': 0x1234}),
-              ];
-
-              await SimCompare.checkFunctionalVector(mod, vectors);
-              SimCompare.checkIverilogVector(mod, vectors);
-            });
-
-            test('one to many', () async {
-              final mod = SwizzleMod(sigGen());
-
-              await mod.build();
-
-              final sv = mod.generateSynth();
-              print(sv);
-              // expect(
-              //     sv,
-              //     contains('net_connect #(.WIDTH(16))'
-              //         ' net_connect (swizzled, ({in0,in1,in2}));'));
-
-              final vectors = [
-                Vector({'swizzled': 0xabcd},
-                    {'in0': 0xab, 'in1': 0xc, 'in2': 0xd}),
-                Vector({'swizzled': 0x1234},
-                    {'in0': 0x12, 'in1': 0x3, 'in2': 0x4}),
-              ];
-
-              await SimCompare.checkFunctionalVector(mod, vectors);
-              SimCompare.checkIverilogVector(mod, vectors);
-            });
+            expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
           });
-        }
+
+          test('non-net array', () async {
+            final mod = swizzleModConstructor([
+              LogicArray([2, 2], 2), // in0
+              LogicArray([4], 1), // in1
+              // LogicArray([1], 4), // in2
+            ]);
+
+            await mod.build();
+
+            final sv = mod.generateSynth();
+
+            expect(
+                sv,
+                contains('assign _swizzled = '
+                    '{({({in0[1][1],in0[1][0]}),({in0[0][1],in0[0][0]})}),'
+                    '({in1[3],in1[2],in1[1],in1[0]})};'));
+          });
+
+          test('net array 2', () async {
+            final mod = swizzleModConstructor([
+              LogicArray.net([4], 1), // in0
+              LogicArray.net([1], 4), // in1
+            ]);
+
+            await mod.build();
+
+            final sv = mod.generateSynth();
+
+            expect(sv, contains(RegExp(r'net_connect.*,in1\[0\]}')));
+            expect(
+                sv,
+                contains(RegExp(
+                    r'net_connect.*\{in0\[3\],in0\[2\],in0\[1\],in0\[0\]\}')));
+          });
+
+          test('net array 3', () async {
+            final mod = swizzleModConstructor([
+              LogicArray.net([2, 2], 2), // in0
+              LogicArray.net([4], 1), // in1
+              LogicArray.net([1], 4), // in2
+            ]);
+
+            await mod.build();
+
+            final sv = mod.generateSynth();
+
+            expect(sv, contains('(_in0, ({in0[0][1],in0[0][0]}))'));
+            expect(sv, contains('(_in1, ({in0[1][1],in0[1][0]}))'));
+            expect(sv, contains('(_in2, ({_in1,_in0}))'));
+            expect(sv, contains('(swizzled, ({_in2,_swizzled,in2[0]}))'));
+            expect(
+                sv, contains('(_swizzled, ({in1[3],in1[2],in1[1],in1[0]}))'));
+
+            print(sv);
+          });
+        });
+
+        group('just nets', () {
+          test('func sim', () {
+            final upperDriver = Logic(width: 2);
+            final lowerDriver = Logic();
+            final swizzeldDriver = Logic(width: 3);
+
+            final upper = LogicNet(width: 2, name: 'upper')..gets(upperDriver);
+            final lower = LogicNet(name: 'lower')..gets(lowerDriver);
+            final swizzled = [
+              upper,
+              lower,
+            ].swizzle()
+              ..gets(swizzeldDriver);
+
+            upperDriver.put('10');
+
+            expect(swizzled.value, LogicValue.of('10z'));
+            expect(lower.value, LogicValue.of('z'));
+            expect(upper.value, LogicValue.of('10'));
+
+            lowerDriver.put('1');
+
+            expect(swizzled.value, LogicValue.of('101'));
+            expect(lower.value, LogicValue.of('1'));
+            expect(upper.value, LogicValue.of('10'));
+
+            swizzeldDriver.put('111');
+
+            expect(swizzled.value, LogicValue.of('1x1'));
+            expect(lower.value, LogicValue.of('1'));
+            expect(upper.value, LogicValue.of('1x'));
+
+            upperDriver.put('zz');
+
+            expect(swizzled.value, LogicValue.of('111'));
+            expect(lower.value, LogicValue.of('1'));
+            expect(upper.value, LogicValue.of('11'));
+          });
+
+          group('simcompare', () {
+            final netTypes = {
+              LogicNet: () => [
+                    LogicNet(width: 8), // in0
+                    LogicNet(width: 4), // in1
+                    LogicNet(width: 4), // in2
+                  ],
+              LogicArray: () => [
+                    LogicArray.net([2, 2], 2), // in0
+                    LogicArray.net([4], 1), // in1
+                    LogicArray.net([1], 4), // in2
+                  ],
+            };
+
+            for (final MapEntry(key: netTypeName, value: sigGen)
+                in netTypes.entries) {
+              group(netTypeName, () {
+                test('many to one', () async {
+                  final mod = swizzleModConstructor(sigGen());
+
+                  await mod.build();
+
+                  final sv = mod.generateSynth();
+                  print(sv);
+                  // expect(
+                  //     sv,
+                  //     contains('net_connect #(.WIDTH(16))'
+                  //         ' net_connect (swizzled, ({in0,in1,in2}));'));
+
+                  final vectors = [
+                    Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd},
+                        {'swizzled': 0xabcd}),
+                    Vector({'in0': 0x12, 'in1': 0x3, 'in2': 0x4},
+                        {'swizzled': 0x1234}),
+                  ];
+
+                  await SimCompare.checkFunctionalVector(mod, vectors);
+                  SimCompare.checkIverilogVector(mod, vectors);
+                });
+
+                test('one to many', () async {
+                  final mod = swizzleModConstructor(sigGen());
+
+                  await mod.build();
+
+                  final sv = mod.generateSynth();
+                  print(sv);
+                  // expect(
+                  //     sv,
+                  //     contains('net_connect #(.WIDTH(16))'
+                  //         ' net_connect (swizzled, ({in0,in1,in2}));'));
+
+                  final vectors = [
+                    Vector({'swizzled': 0xabcd},
+                        {'in0': 0xab, 'in1': 0xc, 'in2': 0xd}),
+                    Vector({'swizzled': 0x1234},
+                        {'in0': 0x12, 'in1': 0x3, 'in2': 0x4}),
+                  ];
+
+                  await SimCompare.checkFunctionalVector(mod, vectors);
+                  SimCompare.checkIverilogVector(mod, vectors);
+                });
+              });
+            }
+          });
+        });
       });
-    });
+    }
   });
 }

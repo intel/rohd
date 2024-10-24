@@ -100,7 +100,9 @@ class BusSubset extends Module with InlineSystemVerilog {
       subset = addOutput(_subsetName, width: newWidth);
 
       // so that people can't do a slice assign, not (yet?) implemented
-      subset.makeUnassignable();
+      subset.makeUnassignable(
+          reason:
+              'The output of a (non-LogicNet) BusSubset ($this) is read-only.');
 
       _setup();
     }
@@ -198,7 +200,10 @@ class Swizzle extends Module with InlineSystemVerilog {
 
     if (_isNet) {
       out = LogicNet(
-          name: _out + '123', width: outputWidth, naming: Naming.unnamed);
+          //TODO: ditch 123
+          name: _out + '123',
+          width: outputWidth,
+          naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
 
       var idx = 0;
@@ -208,6 +213,11 @@ class Swizzle extends Module with InlineSystemVerilog {
       }
     } else {
       out = addOutput(_out, width: outputWidth);
+
+      // so that you can't assign the output of a (Logic) swizzle
+      out.makeUnassignable(
+          reason:
+              'The output of a (non-LogicNet) Swizzle ($this) is read-only.');
 
       _execute(); // for initial values
       for (final swizzleInput in _swizzleInputs) {

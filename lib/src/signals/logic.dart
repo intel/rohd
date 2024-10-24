@@ -16,9 +16,19 @@ class Logic {
   // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
+  /// The reason why a signal is unassignable, if provided when
+  /// [makeUnassignable] is set.
+  String? _unassignableReason;
+
   /// Makes it so that this signal cannot be assigned by any full (`<=`) or
   /// conditional (`<`) assignment.
-  void makeUnassignable() => _unassignable = true;
+  ///
+  /// Optionally, a [reason] may be provided for why it cannot be assigned. If a
+  /// prior reason had been provided, this will overwrite it.
+  void makeUnassignable({String? reason}) {
+    _unassignable = true;
+    _unassignableReason = reason;
+  }
 
   /// The name of this signal.
   final String name;
@@ -276,9 +286,7 @@ class Logic {
     }
 
     if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise should'
-          ' not be assigned.');
+      throw UnassignableException(this, reason: _unassignableReason);
     }
 
     if (other.width != width) {

@@ -22,6 +22,7 @@ class Const extends Logic {
           naming: Naming.unnamed,
         ) {
     _wire.put(val, fill: fill, signalName: name);
-    _unassignable = true;
+
+    makeUnassignable(reason: '`Const` signals are unassignable.');
   }
 }
