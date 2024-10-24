@@ -357,6 +357,10 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
+    if (module is Swizzle && this is Swizzle && module != this) {
+      print('wtf');
+    }
+
     _subModules.add(module);
 
     module._parent = this;
@@ -486,6 +490,7 @@ abstract class Module {
 
       // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
+        await _traceOutputForModuleContents(signal);
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
           await _traceInputForModuleContents(srcConnection);
@@ -581,6 +586,7 @@ abstract class Module {
 
       // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
+        await _traceInputForModuleContents(signal);
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
           await _traceOutputForModuleContents(srcConnection);
@@ -602,6 +608,10 @@ abstract class Module {
   /// Registers a signal as an internal signal.
   void _addInternalSignal(Logic signal) {
     assert(!signal.isPort, 'Should not be adding a port as an internal signal');
+
+    if (signal.name.contains('123') && name == 'swizzle') {
+      print('wtf');
+    }
 
     _internalSignals.add(signal);
 
@@ -685,6 +695,11 @@ abstract class Module {
           sourceElems.addAll(sei.elements);
         }
       }
+    }
+
+    if (source is LogicArray) {
+      // need to also track the packed version if it's an array
+      _inOutDrivers.add(source.packed);
     }
 
     final inOutPort =
@@ -797,14 +812,21 @@ abstract class Module {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
-    final sourceElems = [source];
+    final sourceElems = TraverseableCollection<Logic>()..add(source);
     for (var i = 0; i < sourceElems.length; i++) {
-      final xi = sourceElems[i];
-      _inOutDrivers.add(xi);
-      if (xi is LogicArray) {
-        sourceElems.addAll(xi.elements);
+      final sei = sourceElems[i];
+      _inOutDrivers.add(sei);
+
+      if (sei.isArrayMember) {
+        sourceElems.add(sei.parentStructure!);
+      }
+
+      if (sei is LogicArray) {
+        sourceElems.addAll(sei.elements);
       }
     }
+
+    //TODO: need to properly consider all possible ways that sub-arrays might be packed!!
 
     final inOutArr = LogicArray.net(
       name: name,

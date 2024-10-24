@@ -691,6 +691,7 @@ class _NetConnect extends Module with SystemVerilog {
           definitionName: _definitionName,
           name: _definitionName,
         ) {
+    //TODO: how to check that we never get an array in here?? might be illegal?
     n0 = addInOut(n0Name, n0, width: width);
     n1 = addInOut(n1Name, n1, width: width);
   }
@@ -828,6 +829,8 @@ class _SynthModuleDefinition {
             ...module.inOuts.keys,
           },
         ) {
+    //TODO: can we skip a bunch of stuff if [module] doesn't need to be generated and is custom sv?
+
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -890,11 +893,15 @@ class _SynthModuleDefinition {
 
       final synthReceiver = _getSynthLogic(receiver)!;
 
-      if (receiver is LogicNet) {
+      if (receiver.isNet) {
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections
         ].where((element) => element.parentModule == module));
+
+        //TODO: what if there is no "receiver" that's a srcConnection at all for
+        // wires? then we need to make the assignment towards a dst to make sure
+        // it generates?
 
         for (final srcConnection in receiver.srcConnections) {
           if (srcConnection.parentModule == module ||
@@ -1492,8 +1499,7 @@ class _SynthLogic {
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
-      logics.first is LogicNet ||
-      (isArray && (logics.first as LogicArray).isNet);
+      logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;

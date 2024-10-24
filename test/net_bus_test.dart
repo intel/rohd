@@ -58,9 +58,16 @@ class SwizzleMod extends Module {
 
     final swizzled = innerToSwizzle.swizzle();
 
+    //TODO: order here matters??? maybe add a test that checks both orders?
     addInOut('swizzled', LogicNet(width: swizzled.width),
             width: swizzled.width) <=
         swizzled;
+
+//TODO: the bug is in BUILD!  The order here impacts whether 1 or 2 swizzles are found!
+
+    // swizzled <=
+    //     addInOut('swizzled', LogicNet(width: swizzled.width),
+    //         width: swizzled.width);
   }
 }
 
@@ -92,6 +99,25 @@ class MultiConnectionNetSubsetMod extends Module {
   }
 }
 
+class SimpleNetPassthrough extends Module {
+  SimpleNetPassthrough(LogicNet bus1, LogicNet bus2) {
+    bus1 = addInOut('bus1', bus1, width: bus1.width);
+    bus2 = addInOut('bus2', bus2, width: bus2.width);
+    // bus2 <= bus1;
+    bus1 <= bus2;
+  }
+}
+
+class DoubleNetPassthrough extends Module {
+  DoubleNetPassthrough(LogicNet bus1, LogicNet bus2) {
+    bus1 = addInOut('upbus1', bus1, width: bus1.width);
+    bus2 = addInOut('upbus2', bus2, width: bus2.width);
+    final busIntermediate = LogicNet(name: 'intermediate', width: bus1.width);
+    SimpleNetPassthrough(bus1, busIntermediate);
+    SimpleNetPassthrough(bus2, busIntermediate);
+  }
+}
+
 //TODO: test combinational loops are properly caught!
 
 void main() {
@@ -112,6 +138,15 @@ void main() {
   // - all kinds of shifts (signed arithmetic shift especially!)
   // - zero and sign extensions
   // - reversed
+
+  group('simple', () {
+    test('double passthrough', () async {
+      final dut = DoubleNetPassthrough(LogicNet(width: 8), LogicNet(width: 8));
+      await dut.build();
+      print(dut.generateSynth());
+      //TODO: finish test
+    });
+  });
 
   group('multi-connection', () {
     group('func only', () {
@@ -398,13 +433,49 @@ void main() {
   });
 
   group('swizzle', () {
-    test('array build', () async {
-      final mod = SwizzleMod([
-        LogicArray.net([1], 8),
-        LogicArray.net([1], 8),
-      ]);
+    group('build checks', () {
+      test('simple net array', () async {
+        final mod = SwizzleMod([
+          LogicArray.net([1], 8),
+          LogicArray.net([1], 8),
+        ]);
 
-      await mod.build();
+        await mod.build();
+
+        final sv = mod.generateSynth();
+
+        expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
+      });
+
+      test('non-net array', () async {
+        final mod = SwizzleMod([
+          LogicArray([2, 2], 2), // in0
+          LogicArray([4], 1), // in1
+          LogicArray([1], 4), // in2
+        ]);
+
+        await mod.build();
+
+        final sv = mod.generateSynth();
+
+        print(sv);
+      });
+
+      test('net array', () async {
+        final mod = SwizzleMod([
+          // LogicArray.net([2, 2], 2), // in0
+          LogicArray.net([4], 1), // in1
+          LogicArray.net([1], 4), // in2
+        ]);
+
+        await mod.build();
+
+        final sv = mod.generateSynth();
+
+        //TODO: keep this test, finish also
+
+        print(sv);
+      });
     });
 
     group('just nets', () {
@@ -469,6 +540,7 @@ void main() {
               await mod.build();
 
               final sv = mod.generateSynth();
+              print(sv);
               // expect(
               //     sv,
               //     contains('net_connect #(.WIDTH(16))'

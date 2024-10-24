@@ -71,7 +71,7 @@ class LogicNet extends Logic {
   @override
   String toString() => '${super.toString()}, [Net]';
 
-  @protected //TODO: how to properly protect?
+  @internal
   void quietlyMergeSubsetTo(LogicNet other, {int start = 0}) {
     _blastWire();
     other._blastWire();
