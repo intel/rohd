@@ -142,7 +142,7 @@ void main() {
     test('double passthrough', () async {
       final dut = DoubleNetPassthrough(LogicNet(width: 8), LogicNet(width: 8));
       await dut.build();
-      print(dut.generateSynth());
+      // print(dut.generateSynth());
       //TODO: finish test
     });
   });
@@ -568,7 +568,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  print(sv); //TODO reenable checks
+                  // print(sv); //TODO reenable checks
                   // expect(
                   //     sv,
                   //     contains('net_connect #(.WIDTH(16))'
@@ -591,7 +591,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  print(sv); //TODO reenable checks
+                  // print(sv); //TODO reenable checks
                   // expect(
                   //     sv,
                   //     contains('net_connect #(.WIDTH(16))'

@@ -199,11 +199,7 @@ class Swizzle extends Module with InlineSystemVerilog {
     }
 
     if (_isNet) {
-      out = LogicNet(
-          //TODO: ditch 123
-          name: _out + '123',
-          width: outputWidth,
-          naming: Naming.unnamed);
+      out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
 
       var idx = 0;

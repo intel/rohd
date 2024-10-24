@@ -357,10 +357,6 @@ abstract class Module {
           'a bug at https://github.com/intel/rohd/issues.');
     }
 
-    if (module is Swizzle && this is Swizzle && module != this) {
-      print('wtf');
-    }
-
     _subModules.add(module);
 
     module._parent = this;
@@ -608,10 +604,6 @@ abstract class Module {
   /// Registers a signal as an internal signal.
   void _addInternalSignal(Logic signal) {
     assert(!signal.isPort, 'Should not be adding a port as an internal signal');
-
-    if (signal.name.contains('123') && name == 'swizzle') {
-      print('wtf');
-    }
 
     _internalSignals.add(signal);
 

@@ -893,7 +893,7 @@ class _SynthModuleDefinition {
 
       final synthReceiver = _getSynthLogic(receiver)!;
 
-      if (receiver.isNet) {
+      if (receiver is LogicNet) {
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections
