@@ -145,6 +145,22 @@ void main() {
       // print(dut.generateSynth());
       //TODO: finish test
     });
+
+    test('subset glitching', () {
+      final netDriver = Logic(width: 8)..put(0);
+      final net = LogicNet(name: 'net', width: 8);
+      net <= netDriver;
+
+      final subset = net.getRange(0, 4);
+      final logic = Logic(width: 4);
+      logic <= subset;
+
+      print(logic.value);
+
+      netDriver.put(0x55);
+
+      print(logic.value);
+    });
   });
 
   group('multi-connection', () {
@@ -192,6 +208,28 @@ void main() {
         baseDriver.put('zzzzzz01');
 
         expect(base.value, LogicValue.of('01' * 4));
+      });
+
+      test('chained slices', () {
+        final baseDriver = Logic(width: 8);
+        final base = LogicNet(width: 8)..gets(baseDriver);
+
+        final slice1 = LogicNet(width: 4)..gets(base.getRange(0, 4));
+        final slice2 = LogicNet(width: 2);
+        final slice3 = LogicNet();
+
+        slice3 <= slice2.getRange(0, 1);
+        slice2 <= slice1.getRange(0, 2);
+        final mid = LogicNet(width: 4);
+        slice1 <= mid;
+        mid <= base.getRange(0, 4);
+
+        baseDriver.put('11111111');
+
+        expect(slice3.value, LogicValue.of('1'));
+
+        baseDriver.put('zzzzzzz0');
+        expect(slice3.value, LogicValue.of('0'));
       });
     });
 

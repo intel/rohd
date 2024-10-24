@@ -241,6 +241,9 @@ class NetfulLogicStructure extends LogicStructure {
 }
 
 class NetsStructsArraysDriving extends Module {
+  Logic get outStruct => output('outStruct');
+  Logic get logicArrayNetInOut => inOutSource('logicArrayNetInOut');
+  Logic get logicNetInOut => inOutSource('logicNetInOut');
   NetsStructsArraysDriving(
       LogicNet logicNetInOut, LogicArray logicArrayNetInOut)
       : assert(logicArrayNetInOut.isNet, 'expect a net'),
@@ -537,6 +540,21 @@ void main() {
     }
   });
 
+  test('structs, arrays, nets, func only', () {
+    final driver = Logic(width: 8)..put(0xab);
+    final dut = NetsStructsArraysDriving(
+        LogicNet(width: 8)..gets(driver), LogicArray.net([4], 2));
+
+    expect(dut.outStruct.value.toInt(), 0xab);
+    expect(dut.logicArrayNetInOut.value.toInt(), 0xab);
+
+    driver.put(0x5a);
+
+    expect(dut.outStruct.value.toInt(), 0x5a);
+    expect(dut.logicArrayNetInOut.value.toInt(), 0x5a);
+  });
+
+  //TODO: test this in both directions?!
   test('structures, arrays, and nets driving together', () async {
     final mod =
         NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
@@ -546,6 +564,7 @@ void main() {
     final vectors = [
       Vector({'logicNetInOut': 0xab},
           {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
+      //TODO: one more vector?
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -571,7 +590,8 @@ void main() {
     expect(sv.contains(' _b;'), isFalse);
 
     final vectors = [
-      Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a})
+      Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a}),
+      //TODO: one more vector?
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);

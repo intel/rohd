@@ -86,6 +86,17 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     wire._drivers
       ..forEach(_addDriver)
       ..clear();
+
+    // need to set up glitch listener for whole wire together
+    for (var i = 0; i < width; i++) {
+      _wires[i].glitch.listen((wireValueChange) {
+        //TODO: test that glitch properly updates!
+        //TODO: test that reassigning properly migrates glitch listeners!
+        //TODO: is there a way to do this more efficiently?
+        _glitchController.add(LogicValueChanged(
+            value, value.withSet(i, wireValueChange.previousValue)));
+      });
+    }
   }
 
   void _replaceWire(_WireNet oldWire, _WireNet newWire) {
@@ -128,7 +139,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   @override
   void _addDriver(Logic driver) {
     for (var i = 0; i < width; i++) {
-      _wires[i]._addDriver(driver[i]);
+      _wires[i]._addDriver(driver[i]); //TODO: costly to keep slicing?
     }
   }
 

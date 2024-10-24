@@ -146,16 +146,16 @@ abstract class SimCompare {
       {bool enableChecking = true}) async {
     var timestamp = 1;
 
-    final _ioInputDrivers = <String, Logic>{};
+    final ioInputDrivers = <String, Logic>{};
     Logic getIoInputDriver(String signalName) {
-      if (_ioInputDrivers.containsKey(signalName)) {
-        return _ioInputDrivers[signalName]!;
+      if (ioInputDrivers.containsKey(signalName)) {
+        return ioInputDrivers[signalName]!;
       }
 
       final signal = module.inOutSource(signalName);
       final driver = Logic(name: 'driver_of_$signalName', width: signal.width);
       signal <= driver;
-      _ioInputDrivers[signalName] = driver;
+      ioInputDrivers[signalName] = driver;
       return driver;
     }
 

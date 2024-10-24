@@ -340,6 +340,7 @@ class Logic {
   void _connect(Logic other) {
     _unassignable = true;
     if (other is LogicNet) {
+      put(other.value);
       other.glitch.listen((args) {
         put(other.value);
       });

@@ -245,8 +245,14 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    final prevValue = value;
     _updateValue(newValue);
+  }
+
+  //TODO
+  void _updateValue(LogicValue newValue) {
+    final prevValue = value;
+
+    _currentValue = newValue;
 
     // sends out a glitch if the value deposited has changed
     if (value != prevValue) {
@@ -254,10 +260,5 @@ class _Wire {
       _glitchController.add(LogicValueChanged(value, prevValue));
       _isPutting = false;
     }
-  }
-
-  //TODO
-  void _updateValue(LogicValue newValue) {
-    _currentValue = newValue;
   }
 }
