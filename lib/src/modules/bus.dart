@@ -7,8 +7,6 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:math';
-
 import 'package:rohd/rohd.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.

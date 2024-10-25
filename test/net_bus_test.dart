@@ -136,7 +136,8 @@ void main() {
   // - all kinds of shifts (signed arithmetic shift especially!)
   // - zero and sign extensions
   // - reversed
-  // - putting on a LogicNet and it propogates throughout (rather than immediately go back to driver calc)
+  // - putting on a LogicNet and it propogates throughout (rather than
+  //   immediately go back to driver calc)
   // - sv gen when swizzle assign to swizzle is one assign
 
   group('simple', () {

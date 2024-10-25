@@ -864,7 +864,6 @@ class Logic {
     }
 
     if (_subsetDriver == null) {
-      //TODO: native support in wirenet?
       _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
         [width],
         1,

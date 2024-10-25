@@ -62,13 +62,15 @@ class _WireNet extends _Wire {
   void _addDriver(Logic driver) {
     if (_drivers.add(driver)) {
       //TODO: eliminiate glitch listeners after adoption!? (in all wires)
+      // maybe already taken care of via adoption?
       driver.glitch.listen((args) {
         _evaluateNewValue(signalName: driver.name);
       });
     }
   }
 
-  _WireNetBlasted blast() => _WireNetBlasted.fromWireNet(this);
+  /// Converts this to a [_WireNetBlasted].
+  _WireNetBlasted toBlasted() => _WireNetBlasted.fromWireNet(this);
 }
 
 class _WireNetBlasted extends _Wire implements _WireNet {
@@ -122,7 +124,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
     if (other is! _WireNetBlasted) {
       // ignore: parameter_assignments
-      other = other.blast();
+      other = other.toBlasted();
     }
 
     super._adopt(other);
@@ -165,7 +167,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   @override
-  _WireNetBlasted blast() => this;
+  _WireNetBlasted toBlasted() => this;
 
   @override
   void _evaluateNewValue({required String signalName}) {
@@ -175,22 +177,11 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   @override
-  // TODO
   Set<Logic> get _drivers => throw UnimplementedError();
 
   @override
-  void _addParent(_WireNetBlasted parent) {
-    //TODO
-    throw UnimplementedError();
-  }
+  void _addParent(_WireNetBlasted parent) => throw UnimplementedError();
 
   @override
-  // TODO: implement _parents
   Set<_WireNetBlasted> get _parents => throw UnimplementedError();
-
-  @override
-  void _removeParent(_WireNetBlasted parent) {
-    // TODO
-    throw UnimplementedError();
-  }
 }

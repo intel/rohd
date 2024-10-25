@@ -295,8 +295,10 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   String inlineVerilog(Map<String, String> inputs);
 
   /// The name of the [output] (or [inOut]) port which can be the in-lined
-  /// symbol. By default, this assumes one [output] port. This should be
-  /// overridden in classes which have an [inOut] port as the in-lined symbol.
+  /// symbol.
+  ///
+  /// By default, this assumes one [output] port. This should be overridden in
+  /// classes which have an [inOut] port as the in-lined symbol.
   String get resultSignalName {
     // TODO: consider name
     if (outputs.keys.length != 1) {
