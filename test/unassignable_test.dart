@@ -38,6 +38,15 @@ void main() {
     }
   });
 
+  test('SimpleClockGenerator outputs cannot be assigned', () {
+    try {
+      SimpleClockGenerator(1).clk <= Logic();
+      fail('Should have thrown an exception');
+    } on UnassignableException catch (e) {
+      expect(e.toString(), contains('SimpleClockGenerator'));
+    }
+  });
+
   group('gates', () {
     for (final out in [
       Logic() & Logic(), // 2 input
