@@ -74,6 +74,11 @@ class LogicNet extends Logic {
   @override
   String toString() => '${super.toString()}, [Net]';
 
+  /// Connects the underlying [_Wire]s of [other] to `this`, starting at
+  /// [start]. The [start] index of `this` up through `start + other.width` will
+  /// be connected. This operation is "quiet", in that it merges wires without
+  /// building any real traceable connection and is intended only for simulation
+  /// behavior.
   @internal
   void quietlyMergeSubsetTo(LogicNet other, {int start = 0}) {
     _blastWire();

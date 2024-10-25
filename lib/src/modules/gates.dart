@@ -821,7 +821,10 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   late final Logic _input = input(_inputName);
 
   /// The output of this gate.
-  late final Logic replicated = output(_outputName);
+  late final Logic replicated;
+
+  //TODO
+  final bool _isNet;
 
   /// Constructs a ReplicationOp
   ///
@@ -832,16 +835,31 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
   ReplicationOp(Logic original, this._multiplier)
       : _inputName = Naming.unpreferredName(original.name),
-        _outputName = Naming.unpreferredName('replicated_${original.name}') {
+        _outputName = Naming.unpreferredName('replicated_${original.name}'),
+        _isNet = original.isNet {
     final newWidth = original.width * _multiplier;
     if (newWidth < 1) {
       throw InvalidMultiplierException(newWidth);
     }
 
-    addInput(_inputName, original, width: original.width);
-    addOutput(_outputName, width: original.width * _multiplier)
-        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
-    _setup();
+    if (_isNet) {
+      original = addInOut(_inputName, original, width: original.width);
+
+      replicated =
+          LogicNet(name: _outputName, width: newWidth, naming: Naming.unnamed);
+      final internalOut = addInOut(_outputName, replicated, width: newWidth);
+
+      for (var i = 0; i < _multiplier; i++) {
+        internalOut.quietlyMergeSubsetTo(original as LogicNet,
+            start: i * original.width);
+      }
+    } else {
+      addInput(_inputName, original, width: original.width);
+      replicated = addOutput(_outputName, width: original.width * _multiplier)
+        ..makeUnassignable(
+            reason: 'Output of a gate $this cannot be assigned.');
+      _setup();
+    }
   }
 
   /// Performs setup steps for custom functional behavior.
@@ -856,6 +874,9 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   void _execute() {
     replicated.put(_input.value.replicate(_multiplier));
   }
+
+  @override
+  String get resultSignalName => _outputName;
 
   @override
   String inlineVerilog(Map<String, String> inputs) {

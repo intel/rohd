@@ -116,6 +116,15 @@ class DoubleNetPassthrough extends Module {
   }
 }
 
+class ReplicateMod extends Module {
+  ReplicateMod(LogicNet bus, int times) {
+    bus = addInOut('bus', bus, width: bus.width);
+    addInOut('replicated', LogicNet(width: bus.width * times),
+            width: bus.width * times) <=
+        bus.replicate(times);
+  }
+}
+
 //TODO: test combinational loops are properly caught!
 
 void main() {
@@ -123,14 +132,8 @@ void main() {
     await Simulator.reset();
   });
   //TODO: testplan
-  // - subset
-  //    - on net
-  //    - on array net
-  //    - via index [] with const
   // - multiple connections!
   // - all kinds of shifts (signed arithmetic shift especially!)
-  // - zero and sign extensions + replication
-  // - reversed
   // - putting on a LogicNet and it propogates throughout (rather than
   //   immediately go back to driver calc)
   // - sv gen when swizzle assign to swizzle is one assign
@@ -747,5 +750,57 @@ void main() {
         });
       });
     }
+  });
+
+  group('replicate', () {
+    test('func sim', () {
+      final busDriver = Logic(width: 8);
+      final replicatedDriver = Logic(width: 16);
+
+      final bus = LogicNet(width: 8)..gets(busDriver);
+      final replicated = LogicNet(width: 16)..gets(replicatedDriver);
+      replicated <= bus.replicate(2);
+
+      busDriver.put('00101100');
+
+      expect(replicated.value, LogicValue.of('0010110000101100'));
+
+      busDriver.put(0xab);
+
+      expect(replicated.value.toInt(), 0xabab);
+
+      busDriver.put(LogicValue.z);
+
+      replicatedDriver.put('1111000010101010');
+
+      expect(bus.value, LogicValue.of('1x1xx0x0'));
+
+      busDriver.put('0zzzzzz1');
+
+      expect(bus.value, LogicValue.of('xx1xx0xx'));
+    });
+
+    test('simcompare one to many', () async {
+      final mod = ReplicateMod(LogicNet(width: 4), 2);
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(
+          sv,
+          contains('net_connect #(.WIDTH(8)) net_connect '
+              '(replicated, ({2{bus}}));'));
+
+      final vectors = [
+        Vector({'bus': '0011'}, {'replicated': '00110011'}),
+        Vector({'bus': '1100'}, {'replicated': '11001100'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+
+      // disabled pending feature support in icarus verilog
+      //  (https://github.com/steveicarus/iverilog/issues/1178)
+      // SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 }
