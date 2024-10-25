@@ -604,7 +604,6 @@ class Logic {
   /// [index] will be ignored, and the logic is returned as-is.
   Logic operator [](dynamic index) {
     if (index is Logic) {
-      //TODO: fix for net
       return IndexGate(this, index).selection;
     } else if (index is int) {
       return slice(index, index);
@@ -648,8 +647,6 @@ class Logic {
       // ignore: avoid_returning_this
       return this;
     }
-
-    //TODO: fix for nets
 
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;

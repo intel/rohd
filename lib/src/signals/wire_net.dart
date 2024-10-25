@@ -9,8 +9,24 @@
 
 part of 'signals.dart';
 
+/// Represents a driver of a [_WireNet], optionally with an index.
+class _WireNetDriver {
+  /// The signal doing the driving.
+  final Logic signal;
+
+  /// If non-null, the index of [signal] that is driving the same index of the
+  /// receiver (always the same).
+  final int? index;
+
+  /// Indicates if the full width is driven or only one index of it.
+  bool get isFullWidth => index == null;
+
+  /// Creates a tracker for a driver of a [_WireNet].
+  const _WireNetDriver(this.signal, [this.index]);
+}
+
 class _WireNet extends _Wire {
-  final Set<Logic> _drivers = {};
+  final Set<_WireNetDriver> _drivers = {};
 
   //TODO: is there a way to merge/reduce the number of parents to track?
   late final Set<_WireNetBlasted> _parents = {}; //TODO review
@@ -25,7 +41,11 @@ class _WireNet extends _Wire {
   void _evaluateNewValue({required String signalName}) {
     var newValue = LogicValue.filled(width, LogicValue.z);
     for (final driver in _drivers) {
-      newValue = newValue.triState(driver.value);
+      final valueToTristate = driver.isFullWidth
+          ? driver.signal.value
+          : driver.signal.value[driver.index!];
+
+      newValue = newValue.triState(valueToTristate);
     }
     put(newValue, signalName: signalName);
   }
@@ -59,12 +79,12 @@ class _WireNet extends _Wire {
     return this;
   }
 
-  void _addDriver(Logic driver) {
+  void _addDriver(_WireNetDriver driver) {
     if (_drivers.add(driver)) {
       //TODO: eliminiate glitch listeners after adoption!? (in all wires)
       // maybe already taken care of via adoption?
-      driver.glitch.listen((args) {
-        _evaluateNewValue(signalName: driver.name);
+      driver.signal.glitch.listen((args) {
+        _evaluateNewValue(signalName: driver.signal.name);
       });
     }
   }
@@ -139,9 +159,9 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   @override
-  void _addDriver(Logic driver) {
+  void _addDriver(_WireNetDriver driver) {
     for (var i = 0; i < width; i++) {
-      _wires[i]._addDriver(driver[i]); //TODO: costly to keep slicing?
+      _wires[i]._addDriver(_WireNetDriver(driver.signal, i));
     }
   }
 
@@ -177,7 +197,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   }
 
   @override
-  Set<Logic> get _drivers => throw UnimplementedError();
+  Set<_WireNetDriver> get _drivers => throw UnimplementedError();
 
   @override
   void _addParent(_WireNetBlasted parent) => throw UnimplementedError();

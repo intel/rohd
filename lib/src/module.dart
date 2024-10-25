@@ -429,8 +429,7 @@ abstract class Module {
       }
 
       for (final subModuleInOutDriver in subModule._inOutDrivers) {
-        final subModDontAddSignal = subModuleInOutDriver.isPort &&
-            subModuleInOutDriver.parentModule != this;
+        final subModDontAddSignal = subModuleInOutDriver.isPort;
         await _traceInputForModuleContents(subModuleInOutDriver,
             dontAddSignal: subModDontAddSignal);
         await _traceOutputForModuleContents(subModuleInOutDriver,
@@ -549,8 +548,7 @@ abstract class Module {
       }
 
       for (final subModuleInOutDriver in subModule._inOutDrivers) {
-        final subModDontAddSignal = subModuleInOutDriver.isPort &&
-            subModuleInOutDriver.parentModule != this;
+        final subModDontAddSignal = subModuleInOutDriver.isPort;
         await _traceInputForModuleContents(subModuleInOutDriver,
             dontAddSignal: subModDontAddSignal);
         await _traceOutputForModuleContents(subModuleInOutDriver,

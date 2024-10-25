@@ -131,10 +131,11 @@ void main() {
   // - subset
   //    - on net
   //    - on array net
+  //    - via index [] with const
   // - collapsing of assignments in generated SV
   // - multiple connections!
   // - all kinds of shifts (signed arithmetic shift especially!)
-  // - zero and sign extensions
+  // - zero and sign extensions + replication
   // - reversed
   // - putting on a LogicNet and it propogates throughout (rather than
   //   immediately go back to driver calc)
@@ -563,6 +564,24 @@ void main() {
                     '({in0[0][1],in0[0][0]})}),'
                     '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
           });
+
+          test('net and non-net', () async {
+            final mod = swizzleModConstructor([
+              Logic(width: 2),
+              LogicNet(width: 4),
+            ]);
+
+            await mod.build();
+            final sv = mod.generateSynth();
+
+            expect(sv, contains('assign _in1 = in0;'));
+            expect(
+                sv,
+                contains('net_connect #(.WIDTH(6)) net_connect'
+                    ' (swizzled, ({_in1,in1}));'));
+          });
+
+          test('net and non-net arrays', () {});
         });
 
         group('just nets', () {
