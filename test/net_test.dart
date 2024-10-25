@@ -575,6 +575,8 @@ void main() {
     final mod = NetITopMod(Logic(width: 8), NetIntf());
     await mod.build();
 
+    //TODO: this test failed?
+
     // test that internal signals contains myNorm and myNet
     for (final expectedInternal in ['myNorm', 'myNet']) {
       expect(

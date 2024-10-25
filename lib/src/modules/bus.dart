@@ -83,7 +83,7 @@ class BusSubset extends Module with InlineSystemVerilog {
       if (startIndex > endIndex) {
         // reverse case
         for (var i = 0; i < newWidth; i++) {
-          (internalSubset as LogicNet).quietlyMergeSubsetTo(
+          internalSubset.quietlyMergeSubsetTo(
             _original[startIndex - i] as LogicNet,
             start: endIndex + i,
           );

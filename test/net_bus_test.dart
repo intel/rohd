@@ -155,11 +155,11 @@ void main() {
       final logic = Logic(width: 4);
       logic <= subset;
 
-      print(logic.value);
+      expect(logic.value.toInt(), 0);
 
       netDriver.put(0x55);
 
-      print(logic.value);
+      expect(logic.value.toInt(), 5);
     });
   });
 

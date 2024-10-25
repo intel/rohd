@@ -428,11 +428,13 @@ abstract class Module {
             dontAddSignal: true);
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      for (final subModuleInOutDriver in subModule._inOutDrivers) {
+        final subModDontAddSignal = subModuleInOutDriver.isPort &&
+            subModuleInOutDriver.parentModule != this;
+        await _traceInputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
+        await _traceOutputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
       }
     } else {
       if (!dontAddSignal &&
@@ -546,11 +548,13 @@ abstract class Module {
             dontAddSignal: true);
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      for (final subModuleInOutDriver in subModule._inOutDrivers) {
+        final subModDontAddSignal = subModuleInOutDriver.isPort &&
+            subModuleInOutDriver.parentModule != this;
+        await _traceInputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
+        await _traceOutputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
       }
     } else {
       if (!dontAddSignal &&
