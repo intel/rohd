@@ -102,7 +102,6 @@ class SimpleNetPassthrough extends Module {
   SimpleNetPassthrough(LogicNet bus1, LogicNet bus2) {
     bus1 = addInOut('bus1', bus1, width: bus1.width);
     bus2 = addInOut('bus2', bus2, width: bus2.width);
-    // bus2 <= bus1;
     bus1 <= bus2;
   }
 }
@@ -137,13 +136,20 @@ void main() {
   // - all kinds of shifts (signed arithmetic shift especially!)
   // - zero and sign extensions
   // - reversed
+  // - putting on a LogicNet and it propogates throughout (rather than immediately go back to driver calc)
+  // - sv gen when swizzle assign to swizzle is one assign
 
   group('simple', () {
     test('double passthrough', () async {
       final dut = DoubleNetPassthrough(LogicNet(width: 8), LogicNet(width: 8));
       await dut.build();
-      // print(dut.generateSynth());
-      //TODO: finish test
+
+      final sv = dut.generateSynth();
+
+      expect(
+          sv,
+          contains('SimpleNetPassthrough'
+              '  unnamed_module(.bus1(upbus1),.bus2(intermediate));'));
     });
 
     test('subset glitching', () {
@@ -489,11 +495,26 @@ void main() {
             expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
           });
 
+          test('simple net array multi dim with simple net', () async {
+            final mod = swizzleModConstructor([
+              LogicNet(),
+              LogicArray.net([2], 2),
+            ]);
+
+            await mod.build();
+
+            final sv = mod.generateSynth();
+
+            expect(
+                sv,
+                contains('net_connect #(.WIDTH(5)) net_connect'
+                    ' (swizzled, ({in0,({in1[1],in1[0]})}));'));
+          });
+
           test('non-net array', () async {
             final mod = swizzleModConstructor([
               LogicArray([2, 2], 2), // in0
               LogicArray([4], 1), // in1
-              // LogicArray([1], 4), // in2
             ]);
 
             await mod.build();
@@ -517,11 +538,10 @@ void main() {
 
             final sv = mod.generateSynth();
 
-            expect(sv, contains(RegExp(r'net_connect.*,in1\[0\]}')));
             expect(
                 sv,
-                contains(RegExp(
-                    r'net_connect.*\{in0\[3\],in0\[2\],in0\[1\],in0\[0\]\}')));
+                contains('net_connect (swizzled,'
+                    ' ({({in0[3],in0[2],in0[1],in0[0]}),in1[0]}));'));
           });
 
           test('net array 3', () async {
@@ -535,12 +555,12 @@ void main() {
 
             final sv = mod.generateSynth();
 
-            expect(sv, contains('(_in0, ({in0[0][1],in0[0][0]}))'));
-            expect(sv, contains('(_in1, ({in0[1][1],in0[1][0]}))'));
-            expect(sv, contains('(_in2, ({_in1,_in0}))'));
-            expect(sv, contains('(swizzled, ({_in2,_swizzled,in2[0]}))'));
             expect(
-                sv, contains('(_swizzled, ({in1[3],in1[2],in1[1],in1[0]}))'));
+                sv,
+                contains('net_connect (swizzled, '
+                    '({({({in0[1][1],in0[1][0]}),'
+                    '({in0[0][1],in0[0][0]})}),'
+                    '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
           });
         });
 
@@ -599,6 +619,23 @@ void main() {
 
             for (final MapEntry(key: netTypeName, value: sigGen)
                 in netTypes.entries) {
+              void checkSV(String sv) {
+                if (netTypeName == LogicNet) {
+                  expect(
+                      sv,
+                      contains('net_connect #(.WIDTH(16))'
+                          ' net_connect (swizzled, ({in0,in1,in2}));'));
+                } else if (netTypeName == LogicArray) {
+                  expect(
+                      sv,
+                      contains(
+                          'net_connect #(.WIDTH(16)) net_connect (swizzled, '
+                          '({({({in0[1][1],in0[1][0]}),'
+                          '({in0[0][1],in0[0][0]})}),'
+                          '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
+                }
+              }
+
               group(netTypeName, () {
                 test('many to one', () async {
                   final mod = swizzleModConstructor(sigGen());
@@ -606,11 +643,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  // print(sv); //TODO reenable checks
-                  // expect(
-                  //     sv,
-                  //     contains('net_connect #(.WIDTH(16))'
-                  //         ' net_connect (swizzled, ({in0,in1,in2}));'));
+                  checkSV(sv);
 
                   final vectors = [
                     Vector({'in0': 0xab, 'in1': 0xc, 'in2': 0xd},
@@ -629,11 +662,7 @@ void main() {
                   await mod.build();
 
                   final sv = mod.generateSynth();
-                  // print(sv); //TODO reenable checks
-                  // expect(
-                  //     sv,
-                  //     contains('net_connect #(.WIDTH(16))'
-                  //         ' net_connect (swizzled, ({in0,in1,in2}));'));
+                  checkSV(sv);
 
                   final vectors = [
                     Vector({'swizzled': 0xabcd},

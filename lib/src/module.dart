@@ -823,6 +823,7 @@ abstract class Module {
     }
 
     //TODO: need to properly consider all possible ways that sub-arrays might be packed!!
+    // maybe keep track of "has packed" on each struct?
 
     final inOutArr = LogicArray.net(
       name: name,

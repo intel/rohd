@@ -603,6 +603,13 @@ class _SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
+  /// If [module] is [InlineSystemVerilog], this will be the [_SynthLogic] that
+  /// is the `result` of that module.  Otherwise, `null`.
+  _SynthLogic? get inlineResultLogic => module is! InlineSystemVerilog
+      ? null
+      : (outputMapping[(module as InlineSystemVerilog).resultSignalName] ??
+          inOutMapping[(module as InlineSystemVerilog).resultSignalName]);
+
   /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
   bool _needsDeclaration = true;
@@ -640,9 +647,9 @@ class _SynthSubModuleInstantiation {
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() =>
       '(${(module as InlineSystemVerilog).inlineVerilog(_modulePortsMapWithInline({
-            ...inputMapping,
-            ...inOutMapping
-          }))})'; //TODO inouts here too
+        ...inputMapping,
+        ...inOutMapping
+      }..remove((module as InlineSystemVerilog).resultSignalName)))})';
 
   /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
@@ -1153,15 +1160,22 @@ class _SynthModuleDefinition {
 
     for (final subModuleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
-      for (final inputSynthLogic
-          in subModuleInstantiation.inputMapping.values) {
-        if (inputs.contains(inputSynthLogic)) {
+      for (final inSynthLogic in [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values
+      ]) {
+        if (inputs.contains(inSynthLogic) || inOuts.contains(inSynthLogic)) {
           // dont worry about inputs to THIS module
           continue;
         }
 
+        if (subModuleInstantiation.inlineResultLogic == inSynthLogic) {
+          // don't worry about the result signal
+          continue;
+        }
+
         signalUsage.update(
-          inputSynthLogic,
+          inSynthLogic,
           (value) => value + 1,
           ifAbsent: () => 1,
         );
@@ -1180,12 +1194,8 @@ class _SynthModuleDefinition {
 
     final singleUsageInlineableSubmoduleInstantiations =
         inlineableSubmoduleInstantiations.where((submoduleInstantiation) {
-      final inlineSvMod = submoduleInstantiation.module as InlineSystemVerilog;
-
       // inlineable modules have only 1 result signal
-      final resultSynthLogic =
-          submoduleInstantiation.outputMapping[inlineSvMod.resultSignalName] ??
-              submoduleInstantiation.inOutMapping[inlineSvMod.resultSignalName];
+      final resultSynthLogic = submoduleInstantiation.inlineResultLogic!;
 
       return singleUseSignals.contains(resultSynthLogic);
     });
@@ -1208,18 +1218,18 @@ class _SynthModuleDefinition {
         <_SynthLogic, _SynthSubModuleInstantiation>{};
     for (final submoduleInstantiation
         in singleUsageInlineableSubmoduleInstantiations) {
-      final outputSynthLogic =
-          // inlineable modules have only 1 output
-          submoduleInstantiation
-              .outputMapping.values.first; //TODO: broken for inouts?
+      (submoduleInstantiation.module as InlineSystemVerilog).resultSignalName;
+
+      // inlineable modules have only 1 result signal
+      final resultSynthLogic = submoduleInstantiation.inlineResultLogic!;
 
       // clear declaration of intermediate signal replaced by inline
-      internalSignals.remove(outputSynthLogic);
+      internalSignals.remove(resultSynthLogic);
 
       // clear declaration of instantiation for inline module
       submoduleInstantiation.clearDeclaration();
 
-      synthLogicToInlineableSynthSubmoduleMap[outputSynthLogic] =
+      synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
           submoduleInstantiation;
     }
 
