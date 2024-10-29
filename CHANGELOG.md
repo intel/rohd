@@ -10,6 +10,7 @@
 - Added better checking, error handling, and message when module hierarchy cannot be properly resolved (e.g. self-containing modules, modules within multiple hierarchies).
 - Breaking: Updated APIs for `Synthesizer.synthesize` and down the stack to use a `Function` to calculate the instance type of a module instead of a `Map` look-up table.
 - Added `srcConnections` API to `Logic` to make it easier to trace drivers of subtypes of `Logic` which contain multiple drivers.
+- Breaking: `Const` constructor updated so that specified `width` takes precedence over the inherent width of a provided `LogicValue` `val`.
 
 ## 0.5.3
 

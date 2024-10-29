@@ -14,10 +14,14 @@ class Const extends Logic {
   /// Constructs a [Const] with the specified value.
   ///
   /// [val] should be processable by [LogicValue.of].
+  ///
+  /// If a [width] is provided, the [Const] will be that width.  If not, and
+  /// [val] is a [LogicValue], the [Const] will be the width of [val].
+  /// Otherwise, the [Const] will be 1 bit wide.
   Const(dynamic val, {int? width, bool fill = false})
       : super(
           name: 'const_$val',
-          width: val is LogicValue ? val.width : width ?? 1,
+          width: width ?? (val is LogicValue ? val.width : 1),
           // we don't care about maintaining this node unless necessary
           naming: Naming.unnamed,
         ) {

@@ -383,12 +383,21 @@ class _ShiftGate extends Module with InlineSystemVerilog {
       : width = in_.width,
         _outputSvWidthExpansion = outputSvWidthExpansion,
         super(name: name) {
-    final shiftAmountLogic = shiftAmount is Logic
-        ? shiftAmount
-        : Const(_outputSvWidthExpansion
-            ? LogicValue.of(shiftAmount, width: width)
-            : LogicValue.ofInferWidth(
-                shiftAmount)); //TODO BUG! shouldnt be 0 width for shift?
+    final Logic shiftAmountLogic;
+    if (shiftAmount is Logic) {
+      shiftAmountLogic = shiftAmount;
+    } else {
+      if (_outputSvWidthExpansion) {
+        shiftAmountLogic = Const(LogicValue.of(shiftAmount, width: width));
+      } else {
+        final lv = LogicValue.ofInferWidth(shiftAmount);
+        if (lv.isZero) {
+          shiftAmountLogic = Const(lv, width: 1);
+        } else {
+          shiftAmountLogic = Const(lv);
+        }
+      }
+    }
 
     _inName = Naming.unpreferredName('in_${in_.name}');
 
