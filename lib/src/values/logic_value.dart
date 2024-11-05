@@ -608,32 +608,38 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static String _reverse(String inString) =>
       String.fromCharCodes(inString.runes.toList().reversed);
 
-  /// Return the radix encoding of the current LogicValue as a sequence
+  /// Return the radix encoding of the current [LogicValue] as a sequence
   /// of radix characters prefixed by the length and encoding format.
-  /// Output format is: <len>'<format><encoded-value>.
-  /// Here is the number 1492 printed as a radix string:
-  /// - Binary: 15'b101 1101 0100
-  /// - Quaternary: 15'q11 3110
-  /// - Octal: 15'o2724
-  /// - Decimal: 10'd1492
-  /// - Hex: 15'h05d4
+  /// Output format is: `<len>'<format><encoded-value>`.
   ///
-  /// Spaces are output according to [chunkSize]
-  ///  - [chunkSize] = default:  61'h2 9ebc 5f06 5bf7
-  ///  - [chunkSize] = 10: 61'h29e bc5f065bf7
+  /// [ofRadixString] can parse a [String] produced by [toRadixString] and
+  /// construct a [LogicValue].
+  ///
+  /// Here is the number 1492 printed as a radix string:
+  /// - Binary: `15'b101 1101 0100`
+  /// - Quaternary: `15'q11 3110`
+  /// - Octal: `15'o2724`
+  /// - Decimal: `10'd1492`
+  /// - Hex: `15'h05d4`
+  ///
+  /// Spaces are output according to [chunkSize] starting from the LSB(right).
+  ///  - [chunkSize] = default:  `61'h2 9ebc 5f06 5bf7`
+  ///  - [chunkSize] = 10: `61'h29e bc5f065bf7`
   ///
   /// Leading 0s are omitted in the output string:
-  /// - 25'h1
+  /// - `25'h1`
   ///
-  /// When a LogicValue has 'x' or 'z' bits, then the radix characters those
+  /// When a [LogicValue] has 'x' or 'z' bits, then the radix characters those
   /// bits overlap will be expanded into binary form with '<' '>' bracketing
   /// them as follows:
-  ///    35'h7 ZZZZ Z<zzz0><100z>Z
+  ///   - `35'h7 ZZZZ Z<zzz0><100z>Z`
+  /// Such a [LogicValue] cannot be converted to a Decimal (10) radix string
+  /// and will throw an exception.
   ///
   /// If the leading bits are 'z', then the output radix character is 'Z' no
   /// matter what the length. When leading, 'Z' indicates one or more 'z'
   /// bits to fill the first radix character.
-  /// - 9'bz zzzz zzz = 9'hZZZ
+  /// - `9'bz zzzz zzz = 9'hZZZ`
   ///
   String toRadixString({int radix = 2, int chunkSize = 4}) {
     final radixStr = switch (radix) {
@@ -657,7 +663,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
       final extendedStr =
           LogicValue.of(this, width: span * (width / span).ceil());
       final buf = StringBuffer();
-      // for (var i = 0; i < extendedStr.width ~/ span; i++) {
       for (var i = (extendedStr.width ~/ span) - 1; i >= 0; i--) {
         final binaryChunk = extendedStr.slice((i + 1) * span - 1, i * span);
         var chunkString = binaryChunk.toString(includeWidth: false);
@@ -692,9 +697,28 @@ abstract class LogicValue implements Comparable<LogicValue> {
     return '$width$radixStr$fullString';
   }
 
-  /// Create a [LogicValue] from a len +radix-encoded string.
+  /// Create a [LogicValue] from a length/radix-encoded string of the
+  /// following format:
   ///
-  /// If the LogicValue width is not encoded as an even number of radix
+  ///  `<length><format><value-string>`.
+  ///
+  /// `<length>` is the binary digit length of the [LogicValue] to be
+  /// constructed.
+  ///
+  /// `<format>s`  supported are `'b,'q,'o,'d,'h` supporting radixes as follows:
+  ///  - 'b: binary (radix 2)
+  ///  - 'q: quaternary (radix 4)
+  ///  - 'o: octal (radix 8)
+  ///  - 'd: decimal (radix 10)
+  ///  - 'h: hexadecimal (radix 16)
+  ///
+  /// `<value-string>` contains space-separated digits corresponding to the
+  /// radix format.  Space-separation is for ease of reading and is often
+  /// in chunks of 4 digits.
+  ///
+  ///  Strings created by [toRadixString] are parsed by [ofRadixString].
+  ///
+  /// If the LogicValue width is not encoded as round number of radix
   /// characters, the leading character must be small enough to be encoded
   /// in the remaining width:
   ///  - 9'h1AA
@@ -708,7 +732,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
       if (formatStr != null) {
         final specifiedLength = int.parse(formatStr.group(1)!);
         final compressedStr = formatStr.group(3)!.replaceAll(' ', '');
-        // print('compressedStr=$compressedStr');
         // Extract radix
         final radixString = formatStr.group(2)!;
         final radix = switch (radixString) {
@@ -768,7 +791,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
               '$compressedStr in $specifiedLength');
         }
         final noBinariesStr = reversedStr.replaceAll(fullBinaries, '0');
-        // print('nobinaryStr=$noBinariesStr');
         final xLocations = RegExp('x|X')
             .allMatches(noBinariesStr)
             .indexed
