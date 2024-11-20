@@ -91,6 +91,7 @@ class LogicNet extends Logic {
   }
 
   void _blastWire() {
+    //TODO: this blasting needs to be broadcast?
     _updateWire((_wire as _WireNet).toBlasted());
   }
 }

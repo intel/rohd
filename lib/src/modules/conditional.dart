@@ -491,6 +491,7 @@ class Sequential extends _Always {
           clk));
       _preTickClkValues.add(null);
     }
+    //TODO: for asyncReset, if(reset), does it sample pre-tick or post-tick??? bug???
     _setup();
   }
 

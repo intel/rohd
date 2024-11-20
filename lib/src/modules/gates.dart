@@ -329,7 +329,7 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs and has one output of equal width to the primary
 /// of the input.
-class _ShiftGate extends Module with InlineSystemVerilog {
+abstract class _ShiftGate extends Module with InlineSystemVerilog {
   /// Name for the main input port of this module.
   late final String _inName;
 
@@ -340,13 +340,13 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   late final String _outName;
 
   /// The primary input to this gate.
-  late final Logic _in = input(_inName);
+  late final Logic _in;
 
   /// The shift amount for this gate.
-  late final Logic _shiftAmount = input(_shiftAmountName);
+  late final Logic _shiftAmount;
 
   /// The output of this gate.
-  late final Logic out = output(_outName);
+  late final Logic out;
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in_, LogicValue shiftAmount) _op;
@@ -369,6 +369,12 @@ class _ShiftGate extends Module with InlineSystemVerilog {
         if (_outputSvWidthExpansion) _shiftAmountName,
       ];
 
+  //TODO doc
+  final bool _isNet;
+
+  //TODO doc
+  late final LogicValue? _shiftAmountConstant;
+
   /// Constructs a two-input shift gate for an abitrary custom functional
   /// implementation.
   ///
@@ -382,19 +388,24 @@ class _ShiftGate extends Module with InlineSystemVerilog {
       bool outputSvWidthExpansion = false})
       : width = in_.width,
         _outputSvWidthExpansion = outputSvWidthExpansion,
+        _isNet = in_.isNet &&
+            // if it's a Logic, then we can't treat this like a net
+            shiftAmount is! Logic,
         super(name: name) {
     final Logic shiftAmountLogic;
     if (shiftAmount is Logic) {
       shiftAmountLogic = shiftAmount;
+      _shiftAmountConstant = null;
     } else {
       if (_outputSvWidthExpansion) {
-        shiftAmountLogic = Const(LogicValue.of(shiftAmount, width: width));
+        _shiftAmountConstant = LogicValue.of(shiftAmount, width: width);
+        shiftAmountLogic = Const(_shiftAmountConstant);
       } else {
-        final lv = LogicValue.ofInferWidth(shiftAmount);
-        if (lv.isZero) {
-          shiftAmountLogic = Const(lv, width: 1);
+        _shiftAmountConstant = LogicValue.ofInferWidth(shiftAmount);
+        if (_shiftAmountConstant!.isZero) {
+          shiftAmountLogic = Const(_shiftAmountConstant, width: 1);
         } else {
-          shiftAmountLogic = Const(lv);
+          shiftAmountLogic = Const(_shiftAmountConstant);
         }
       }
     }
@@ -407,13 +418,28 @@ class _ShiftGate extends Module with InlineSystemVerilog {
     _outName =
         Naming.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
 
-    addInput(_inName, in_, width: in_.width);
-    addInput(_shiftAmountName, shiftAmountLogic, width: shiftAmountLogic.width);
-    addOutput(_outName, width: width)
-        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
+    final inputCreator = _isNet ? addInOut : addInput;
+
+    _in = inputCreator(_inName, in_, width: in_.width);
+    _shiftAmount = inputCreator(_shiftAmountName, shiftAmountLogic,
+        width: shiftAmountLogic.width);
+
+    if (_isNet) {
+      out = LogicNet(name: _outName, width: width, naming: Naming.unnamed);
+      final internalOut = addInOut(_outName, out, width: width);
+
+      _netSetup(internalOut);
+    } else {
+      out = addOutput(_outName, width: width)
+        ..makeUnassignable(
+            reason: 'Output of a gate $this cannot be assigned.');
+    }
 
     _setup();
   }
+
+  //TODO doc
+  void _netSetup(LogicNet internalOut);
 
   /// Performs setup steps for custom functional behavior.
   void _setup() {
@@ -611,6 +637,16 @@ class RShift extends _ShiftGate {
   RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    final shamt = _shiftAmountConstant!.toInt();
+    internalOut <=
+        [
+          Const(0, width: shamt),
+          _in.getRange(shamt),
+        ].swizzle();
+  }
 }
 
 /// An arithmetic right-shift module.
@@ -621,6 +657,16 @@ class ARShift extends _ShiftGate {
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
             name: name, signed: true);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    final shamt = _shiftAmountConstant!.toInt();
+    internalOut <=
+        [
+          _in[-1].replicate(shamt),
+          _in.getRange(shamt),
+        ].swizzle();
+  }
 }
 
 /// A logical left-shift module.
@@ -629,6 +675,16 @@ class LShift extends _ShiftGate {
   LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
             name: name, outputSvWidthExpansion: true);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    final shamt = _shiftAmountConstant!.toInt();
+    internalOut <=
+        [
+          _in.getRange(shamt),
+          Const(0, width: shamt),
+        ].swizzle();
+  }
 }
 
 /// Performs a multiplexer/ternary operation.
@@ -852,6 +908,7 @@ class ReplicationOp extends Module with InlineSystemVerilog {
     }
 
     if (_isNet) {
+      //TODO: doc clearly that this might not work in some SV simulators with nets
       original = addInOut(_inputName, original, width: original.width);
 
       replicated =

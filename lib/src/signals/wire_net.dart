@@ -10,6 +10,7 @@
 part of 'signals.dart';
 
 /// Represents a driver of a [_WireNet], optionally with an index.
+@immutable
 class _WireNetDriver {
   /// The signal doing the driving.
   final Logic signal;
@@ -23,6 +24,16 @@ class _WireNetDriver {
 
   /// Creates a tracker for a driver of a [_WireNet].
   const _WireNetDriver(this.signal, [this.index]);
+
+  @override
+  String toString() => '$signal [$index]';
+
+  @override
+  bool operator ==(Object other) =>
+      other is _WireNetDriver && signal == other.signal && index == other.index;
+
+  @override
+  int get hashCode => signal.hashCode ^ index.hashCode;
 }
 
 class _WireNet extends _Wire {
@@ -172,11 +183,13 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   set _currentValue(LogicValue newValue) =>
       throw Exception('Not supported'); //TODO
 
+  //TODO: test puts directly on the wire?
   @override
-  void _updateValue(LogicValue newValue) {
+  void _updateValue(LogicValue newValue, {required String signalName}) {
     for (var i = 0; i < width; i++) {
-      _wires[i]._updateValue(newValue[i]);
+      _wires[i]._updateValue(newValue[i], signalName: signalName);
     }
+    // _evaluateNewValue(signalName: signalName); //TODO: is this needed?
   }
 
   void _adoptSubset(_WireNetBlasted other, {required int start}) {

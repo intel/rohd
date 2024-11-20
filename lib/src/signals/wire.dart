@@ -245,11 +245,11 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    _updateValue(newValue);
+    _updateValue(newValue, signalName: signalName);
   }
 
   //TODO
-  void _updateValue(LogicValue newValue) {
+  void _updateValue(LogicValue newValue, {required String signalName}) {
     final prevValue = value;
 
     _currentValue = newValue;
@@ -261,4 +261,7 @@ class _Wire {
       _isPutting = false;
     }
   }
+
+  @override
+  String toString() => 'wire $hashCode';
 }

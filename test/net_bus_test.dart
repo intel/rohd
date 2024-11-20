@@ -125,6 +125,40 @@ class ReplicateMod extends Module {
   }
 }
 
+class ShiftTestNetModule extends Module {
+  dynamic constant; // int or BigInt
+
+  ShiftTestNetModule(LogicNet a, LogicNet b,
+      {this.constant = 3, bool inclSra = true})
+      : super(name: 'shifttestmodule') {
+    a = addInOut('a', a, width: a.width);
+    b = addInOut('b', b, width: b.width);
+
+    final aRshiftB =
+        addInOut('a_rshift_b', LogicNet(width: a.width), width: a.width);
+    final aLshiftB =
+        addInOut('a_lshift_b', LogicNet(width: a.width), width: a.width);
+    final aArshiftB =
+        addInOut('a_arshift_b', LogicNet(width: a.width), width: a.width);
+
+    final aRshiftConst =
+        addInOut('a_rshift_const', LogicNet(width: a.width), width: a.width);
+    final aLshiftConst =
+        addInOut('a_lshift_const', LogicNet(width: a.width), width: a.width);
+    final aArshiftConst =
+        addInOut('a_arshift_const', LogicNet(width: a.width), width: a.width);
+
+    aRshiftB <= a >>> b;
+    aLshiftB <= a << b;
+    aArshiftB <= a >> b;
+    aRshiftConst <= a >>> constant;
+    aLshiftConst <= a << constant;
+    if (inclSra) {
+      aArshiftConst <= a >> constant;
+    }
+  }
+}
+
 //TODO: test combinational loops are properly caught!
 
 void main() {
@@ -475,6 +509,33 @@ void main() {
   });
 
   group('swizzle', () {
+    test('func mixed net and non-net', () {
+      final myNetDriver = Logic(name: 'my_net_driver');
+      final myNet = LogicNet(name: 'my_net')..gets(myNetDriver);
+      final myNonNet = Logic(name: 'my_non_net');
+      final swizzledDriver = Logic(name: 'swizzled_driver', width: 2);
+      final swizzled = [
+        myNet,
+        myNonNet,
+      ].swizzle()
+        ..gets(swizzledDriver);
+
+      myNetDriver.put(1);
+      myNonNet.put(0);
+
+      expect(swizzled.value, LogicValue.of('10'));
+
+      myNet.glitch.listen((_) {
+        print('asdf');
+      });
+
+      swizzledDriver.put('01');
+
+      expect(swizzled.value, LogicValue.of('xx'));
+      expect(myNet.value, LogicValue.of('x'));
+      // expect(myNonNet.value, LogicValue.of('x')); // no? non-net wont backprop?
+    });
+
     for (final swapAssign in [false, true]) {
       SwizzleMod swizzleModConstructor(List<Logic> toSwizzle) =>
           SwizzleMod(toSwizzle, swapAssign: swapAssign);
@@ -750,6 +811,37 @@ void main() {
         });
       });
     }
+  });
+
+  group('shift', () {
+    group('func sim', () {
+      test('right logical', () {
+        final aDriver = Logic(width: 8, name: 'aDriver');
+        final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
+
+        final a = LogicNet(width: 8)..gets(aDriver);
+
+        final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
+          ..gets(aRshiftBDriver)
+          ..gets(a >>> 3);
+
+        aDriver.put('00101100');
+
+        expect(aRshiftB.value, LogicValue.of('00000101'));
+
+        aRshiftBDriver.put('11110000');
+
+        expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
+        expect(a.value, LogicValue.of('x0x0x100'));
+
+        aDriver.put('zzzzzzzz');
+
+        expect(a.value, LogicValue.of('10000zzz'));
+
+        //TODO bug! there should be contention here on upper bits since not 0
+        expect(aRshiftB.value, LogicValue.of('xxx10000'));
+      });
+    });
   });
 
   group('replicate', () {

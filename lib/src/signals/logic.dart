@@ -423,12 +423,19 @@ class Logic {
   //TODO: shifts for logicnet should be just wires iff they are constant shift
 
   /// Arithmetic right-shift.
+  ///
+  /// The upper-most bits of the result will be equal to the upper-most bit of
+  /// the original signal.
   Logic operator >>(dynamic other) => ARShift(this, other).out;
 
   /// Logical left-shift.
+  ///
+  /// The lower bits are 0-filled.
   Logic operator <<(dynamic other) => LShift(this, other).out;
 
   /// Logical right-shift.
+  ///
+  /// The upper bits are 0-filled.
   Logic operator >>>(dynamic other) => RShift(this, other).out;
 
   /// Unary AND.
@@ -732,6 +739,7 @@ class Logic {
   /// an exception will be thrown.
   Logic signExtend(int newWidth) {
     if (width == 1) {
+      //TODO: just use `replicate` here?
       return ReplicationOp(this, newWidth).replicated;
     } else if (newWidth > width) {
       return [
@@ -781,7 +789,7 @@ class Logic {
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
   Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
-  //TODO: does replication handle nets??
+  //TODO: does replication handle nets?? no, should this just use swizzle?
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
   /// [list]. Else `0` (of [width]=1) if not present.
