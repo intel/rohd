@@ -16,7 +16,7 @@ A `LogicValue` represents a multi-bit (including 0-bit and 1-bit) 4-value (`1`, 
 
 The `Module` is the fundamental building block of hardware designs in ROHD. They have clearly defined inputs and outputs, and all logic contained within the module should connect either/both from inputs and to outputs. The ROHD framework will determine at `build()` time which logic sits within which `Module`. Any functional operation, whether a simple gate or a large module, is implemented as a `Module`.
 
-Every `Module` defines its own functionality. This could be through composition of other `Module`s, or through custom functional definition. For a custom functionality to be convertable to an output (e.g. SystemVerilog), it has to explicitly define how to convert it (via `SystemVerilog` or `InlineSystemVerilog`). Any time the input of a custom functionality `Module` toggles, the outputs should correspondingly change, if necessary.
+Every `Module` defines its own functionality. This could be through composition of other `Module`s, or through custom functional definition. For a custom functionality to be convertible to an output (e.g. SystemVerilog), it has to explicitly define how to convert it (via `SystemVerilog` or `InlineSystemVerilog`). Any time the input of a custom functionality `Module` toggles, the outputs should correspondingly change, if necessary.
 
 ### Simulator
 
@@ -30,26 +30,26 @@ A separate type of object responsible for taking a `Module` and converting it to
 
 All the code for the ROHD framework library is in `lib/src/`, with `lib/rohd.dart` exporting the main stuff for usage.
 
-### collections
+### Collections
 
 Software collections that are useful for high-performance internal implementation details in ROHD.
 
-### exceptions
+### Exceptions
 
 Exceptions that the ROHD framework may throw.
 
-### modules
+### Modules
 
 Contains a collection of `Module` implementations that can be used as primitive building blocks for ROHD designs.
 
-### synthesizers
+### Synthesizers
 
 Contains logic for synthesizing `Module`s into some output. It is structured to maximize reusability across different output types (including those not yet supported).
 
-### utilities
+### Utilities
 
 Various generic objects and classes that may be useful in different areas of ROHD.
 
-### values
+### Values
 
 Definitions for things related to `LogicValue`.
