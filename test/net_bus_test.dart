@@ -533,7 +533,35 @@ void main() {
 
       expect(swizzled.value, LogicValue.of('xx'));
       expect(myNet.value, LogicValue.of('x'));
-      // expect(myNonNet.value, LogicValue.of('x')); // no? non-net wont backprop?
+    });
+
+    test('func swizzle to swizzle nets', () {
+      final a0Driver = Logic();
+
+      final a0 = LogicNet()..gets(a0Driver);
+      final a1 = LogicNet();
+      final a = [a0, a1].rswizzle();
+
+      final inner = LogicNet(width: 2);
+
+      final b0 = LogicNet();
+      final b1 = LogicNet();
+      final b = [b0, b1].rswizzle();
+
+      // a <= inner;
+      inner <= a;
+      b <= inner;
+      // inner <= b;
+
+      a0Driver.put(1);
+
+      print(b0.value);
+
+      a0Driver.put(0);
+
+      print(b0.value);
+
+      //TODO: make this a check
     });
 
     for (final swapAssign in [false, true]) {
@@ -816,6 +844,9 @@ void main() {
   group('shift', () {
     group('func sim', () {
       test('right logical', () {
+        //TODO: figure out what's wrong with this!!
+        //  it looks like some glitch listner is not getting updated?
+
         final aDriver = Logic(width: 8, name: 'aDriver');
         final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
 
@@ -834,6 +865,7 @@ void main() {
         expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
         expect(a.value, LogicValue.of('x0x0x100'));
 
+        print('=================');
         aDriver.put('zzzzzzzz');
 
         expect(a.value, LogicValue.of('10000zzz'));

@@ -73,6 +73,10 @@ class _WireNet extends _Wire {
 
     other as _WireNet;
 
+    //TODO
+    assert(!(this is _WireNetBlasted && other is _WireNetBlasted),
+        'not sure if this is handled correctly?');
+
     if (other is _WireNetBlasted) {
       return other._adopt(this);
     }
@@ -102,6 +106,9 @@ class _WireNet extends _Wire {
 
   /// Converts this to a [_WireNetBlasted].
   _WireNetBlasted toBlasted() => _WireNetBlasted.fromWireNet(this);
+
+  @override
+  String toString() => '${super.toString()} (net)';
 }
 
 class _WireNetBlasted extends _Wire implements _WireNet {
@@ -116,6 +123,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
       w._addParent(this);
     }
     super._adopt(wire);
+
     wire._drivers
       ..forEach(_addDriver)
       ..clear();
@@ -150,6 +158,11 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   _Wire _adopt(_Wire other) {
     assert(other is _WireNet, 'Only should be adopting other `_WireNet`s');
     assert(other.width == width, 'Width mismatch');
+
+    if (other == this) {
+      // nothing to do if this is the same wire already!
+      return this;
+    }
 
     other as _WireNet;
 
@@ -189,7 +202,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     for (var i = 0; i < width; i++) {
       _wires[i]._updateValue(newValue[i], signalName: signalName);
     }
-    // _evaluateNewValue(signalName: signalName); //TODO: is this needed?
+    // _evaluateNewValue(signalName: signalName); //TODO: is this needed? no, inf loop
   }
 
   void _adoptSubset(_WireNetBlasted other, {required int start}) {
@@ -217,4 +230,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
   @override
   Set<_WireNetBlasted> get _parents => throw UnimplementedError();
+
+  @override
+  String toString() => '${super.toString()} (net blasted)';
 }

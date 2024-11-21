@@ -387,7 +387,7 @@ class Logic {
 
   /// Connects this [Logic] directly to another [Logic].
   ///
-  /// This is shorthand for [gets()].
+  /// This is shorthand for [gets].
   void operator <=(Logic other) => gets(other);
 
   /// Logical bitwise NOT.

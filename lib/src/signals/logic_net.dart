@@ -60,6 +60,8 @@ class LogicNet extends Logic {
 
       // also update in the opposite direction in case the swap was reversed
       other._updateWire(_wire);
+
+      assert(_wire == other._wire, 'Wires should be the same after updates.');
     } else {
       (_wire as _WireNet)._addDriver(_WireNetDriver(other));
     }
@@ -88,6 +90,7 @@ class LogicNet extends Logic {
         ._adoptSubset(other._wire as _WireNetBlasted, start: start);
 
     (_wire as _WireNet)._evaluateNewValue(signalName: name);
+    (other._wire as _WireNet)._evaluateNewValue(signalName: other.name);
   }
 
   void _blastWire() {

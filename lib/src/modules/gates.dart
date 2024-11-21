@@ -433,9 +433,9 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
       out = addOutput(_outName, width: width)
         ..makeUnassignable(
             reason: 'Output of a gate $this cannot be assigned.');
-    }
 
-    _setup();
+      _setup();
+    }
   }
 
   //TODO doc
