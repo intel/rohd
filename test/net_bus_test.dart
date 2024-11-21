@@ -548,20 +548,16 @@ void main() {
       final b1 = LogicNet();
       final b = [b0, b1].rswizzle();
 
-      // a <= inner;
       inner <= a;
       b <= inner;
-      // inner <= b;
 
       a0Driver.put(1);
 
-      print(b0.value);
+      expect(b0.value, LogicValue.of('1'));
 
       a0Driver.put(0);
 
-      print(b0.value);
-
-      //TODO: make this a check
+      expect(b0.value, LogicValue.of('0'));
     });
 
     for (final swapAssign in [false, true]) {
