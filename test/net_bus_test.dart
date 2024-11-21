@@ -840,9 +840,6 @@ void main() {
   group('shift', () {
     group('func sim', () {
       test('right logical', () {
-        //TODO: figure out what's wrong with this!!
-        //  it looks like some glitch listner is not getting updated?
-
         final aDriver = Logic(width: 8, name: 'aDriver');
         final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
 
@@ -861,13 +858,45 @@ void main() {
         expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
         expect(a.value, LogicValue.of('x0x0x100'));
 
-        print('=================');
         aDriver.put('zzzzzzzz');
 
         expect(a.value, LogicValue.of('10000zzz'));
 
-        //TODO bug! there should be contention here on upper bits since not 0
+        // there should be contention here on upper bits since not 0
         expect(aRshiftB.value, LogicValue.of('xxx10000'));
+      });
+
+      test('right arithmetic', () {
+        final aDriver = Logic(width: 8, name: 'aDriver');
+        final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
+
+        final a = LogicNet(width: 8)..gets(aDriver);
+
+        final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
+          ..gets(aRshiftBDriver)
+          ..gets(a >> 3);
+
+        aDriver.put('00101100');
+
+        expect(aRshiftB.value, LogicValue.of('00000101'));
+
+        aDriver.put('10101100');
+
+        expect(aRshiftB.value, LogicValue.of('11110101'));
+
+        aRshiftBDriver.put('00000000');
+
+        expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
+        expect(a.value, LogicValue.of('x0x0x100'));
+
+        aDriver.put('zzzzzz01');
+
+        expect(a.value, LogicValue.of('00000z01'));
+        expect(aRshiftB.value, LogicValue.of('00000000'));
+
+        aRshiftBDriver.put('10zzzzzz');
+        expect(aRshiftB.value, LogicValue.of('xxxxzzzz'));
+        expect(a.value, LogicValue.of('xzzzzz01'));
       });
     });
   });
