@@ -230,9 +230,6 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
-  //TODO: testplan
-  // - putting on a LogicNet and it propogates throughout (rather than
-  //   immediately go back to driver calc)
 
   test('array to array assignment', () async {
     final mod = ArrayToArrayNets(LogicArray.net([2, 2], 2),
@@ -245,6 +242,25 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('net put propagate', () async {
+    final a = LogicNet();
+    final b = LogicNet();
+    final c = LogicNet();
+    final d = LogicNet();
+
+    b <= a;
+    c <= b;
+    c <= d;
+
+    a.put(1);
+
+    expect(d.value, LogicValue.one);
+
+    c.put(0);
+
+    expect(a.value, LogicValue.zero);
   });
 
   group('simple', () {
