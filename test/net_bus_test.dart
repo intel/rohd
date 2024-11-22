@@ -47,6 +47,33 @@ class SwizzleSubArrayMod extends Module {
   }
 }
 
+class HierSwizzleArraysSubsTop extends Module {
+  HierSwizzleArraysSubsTop(LogicArray arr, LogicNet net) : super(name: 'top') {
+    arr = addInOutArray('arr', arr,
+        dimensions: arr.dimensions, elementWidth: arr.elementWidth);
+    net = addInOut('net', net, width: net.width);
+
+    final swizzled = HierSwizzleArraysSubsSub(arr, net).swizz;
+
+    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
+        swizzled;
+  }
+}
+
+class HierSwizzleArraysSubsSub extends Module {
+  LogicNet get swizz => inOutSource('swizz') as LogicNet;
+  HierSwizzleArraysSubsSub(LogicArray arr, LogicNet net) : super(name: 'sub') {
+    arr = addInOutArray('arr', arr,
+        dimensions: [arr.width ~/ 2], elementWidth: 2);
+    net = addInOut('net', net, width: net.width);
+
+    final swizzled = [arr, net].swizzle();
+
+    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
+        swizzled;
+  }
+}
+
 class SwizzleMod extends Module {
   SwizzleMod(List<Logic> toSwizzle, {bool swapAssign = false}) {
     final innerToSwizzle = <Logic>[];
@@ -573,6 +600,20 @@ void main() {
 
     test('array sub swizzle', () async {
       final mod = SwizzleSubArrayMod(LogicArray.net([4, 4], 1, name: 'top_arr'),
+          LogicNet(width: 8, name: 'top_net'));
+      await mod.build();
+
+      final vectors = [
+        Vector({'arr': 0, 'net': 0xff}, {'swizz': 0x00ff}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('hier array sub swizzle', () async {
+      final mod = HierSwizzleArraysSubsTop(
+          LogicArray.net([4, 4], 1, name: 'top_arr'),
           LogicNet(width: 8, name: 'top_net'));
       await mod.build();
 

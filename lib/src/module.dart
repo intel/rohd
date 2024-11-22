@@ -822,12 +822,6 @@ abstract class Module {
       }
     }
 
-    //TODO: need to properly consider all possible ways that sub-arrays might be
-    // packed!! maybe keep track of "has packed" on each struct?
-    if (source is LogicStructure) {}
-
-    //TODO: to properly test this, we need sub-modules with inout arrays...
-
     final inOutArr = LogicArray.net(
       name: name,
       dimensions,
@@ -839,7 +833,9 @@ abstract class Module {
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
 
-    // _inOutDrivers.addAll(inOutArr.srcConnections); //TODO
+    // there may be packed arrays created by the `gets` above, so this makes
+    // sure we catch all of those.
+    _inOutDrivers.addAll(inOutArr.srcConnections);
 
     _inOuts[name] = inOutArr;
 
