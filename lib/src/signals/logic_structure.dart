@@ -187,7 +187,7 @@ class LogicStructure implements Logic {
               // start is within the element
               (modifiedStartIndex >= elementStart &&
                   modifiedStartIndex < elementEnd) ||
-              //element is fully contained
+              // element is fully contained
               (modifiedEndIndex >= elementEnd &&
                   modifiedStartIndex <= elementStart);
 

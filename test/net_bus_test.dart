@@ -38,6 +38,8 @@ class SwizzleSubArrayMod extends Module {
     final reshaped = LogicArray.net([arr.width ~/ 2], 2,
         name: 'reshaped', naming: Naming.mergeable);
 
+    reshaped <= arr;
+
     final swizzled = [reshaped, net].swizzle();
 
     addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
@@ -570,11 +572,9 @@ void main() {
     });
 
     test('array sub swizzle', () async {
-      final mod =
-          SwizzleSubArrayMod(LogicArray.net([4, 4], 1), LogicNet(width: 8));
+      final mod = SwizzleSubArrayMod(LogicArray.net([4, 4], 1, name: 'top_arr'),
+          LogicNet(width: 8, name: 'top_net'));
       await mod.build();
-
-      print(mod.generateSynth());
 
       final vectors = [
         Vector({'arr': 0, 'net': 0xff}, {'swizz': 0x00ff}),
