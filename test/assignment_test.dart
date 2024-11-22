@@ -147,46 +147,48 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
-    test('logic net is multi-assignable', () async {
-      final mod = LogicNetSubsetModule(
-        2,
-        4,
-        LogicNet(width: 4),
-        LogicNet(width: 4),
-        LogicNet(width: 8),
-      );
-      await mod.build();
+    group('logic net is multi-assignable', () {
+      test('forward', () async {
+        final mod = LogicNetSubsetModule(
+          2,
+          4,
+          LogicNet(width: 4),
+          LogicNet(width: 4),
+          LogicNet(width: 8),
+        );
+        await mod.build();
 
-      final vectors = [
-        Vector({'subset1': bin('0000'), 'subset2': bin('1111')},
-            {'result': LogicValue.ofString('11xx00zz')}),
-      ];
+        final vectors = [
+          Vector({'subset1': bin('0000'), 'subset2': bin('1111')},
+              {'result': LogicValue.ofString('11xx00zz')}),
+        ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors);
-    });
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
 
-    test('logic net is multi-assignable reversed', () async {
-      final mod = LogicNetSubsetModule(
-        2,
-        4,
-        LogicNet(width: 4),
-        LogicNet(width: 4),
-        LogicNet(width: 8),
-      );
-      await mod.build();
+      test('reversed', () async {
+        final mod = LogicNetSubsetModule(
+          2,
+          4,
+          LogicNet(width: 4),
+          LogicNet(width: 4),
+          LogicNet(width: 8),
+        );
+        await mod.build();
 
-      final vectors = [
-        Vector({
-          'result': LogicValue.ofString('110100xx')
-        }, {
-          'subset1': LogicValue.ofString('0100'),
-          'subset2': LogicValue.ofString('1101')
-        }),
-      ];
+        final vectors = [
+          Vector({
+            'result': LogicValue.ofString('110100xx')
+          }, {
+            'subset1': LogicValue.ofString('0100'),
+            'subset2': LogicValue.ofString('1101')
+          }),
+        ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors);
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
     });
   });
 }

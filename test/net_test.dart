@@ -554,21 +554,40 @@ void main() {
     expect(dut.logicArrayNetInOut.value.toInt(), 0x5a);
   });
 
-  //TODO: test this in both directions?!
-  test('structures, arrays, and nets driving together', () async {
-    final mod =
-        NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+  group('structures, arrays, and nets driving together', () {
+    test('net driving', () async {
+      final mod =
+          NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
 
-    await mod.build();
+      await mod.build();
 
-    final vectors = [
-      Vector({'logicNetInOut': 0xab},
-          {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
-      //TODO: one more vector?
-    ];
+      final vectors = [
+        Vector({'logicNetInOut': 0xab},
+            {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
+        Vector({'logicNetInOut': 0x14},
+            {'logicArrayNetInOut': 0x14, 'outStruct': 0x14}),
+      ];
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('arr driving', () async {
+      final mod =
+          NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+
+      await mod.build();
+
+      final vectors = [
+        Vector({'logicArrayNetInOut': '00001010'},
+            {'logicNetInOut': 'zzzz1010', 'outStruct': 'zzzz1010'}),
+        Vector({'logicArrayNetInOut': '01101110'},
+            {'logicNetInOut': 'zzzz1110', 'outStruct': 'zzzz1110'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 
   test('hier with intfs for nets', () async {
