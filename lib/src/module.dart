@@ -691,8 +691,10 @@ abstract class Module {
       }
     }
 
-    if (source is LogicArray) {
-      // need to also track the packed version if it's an array
+    if (source is LogicStructure) {
+      // need to also track the packed version if it's a structure, since the
+      // signal that's actually getting connected to the port *is* the packed
+      // one, not the original array/struct.
       _inOutDrivers.add(source.packed);
     }
 

@@ -29,6 +29,22 @@ class SubsetMod extends Module {
   }
 }
 
+class SwizzleSubArrayMod extends Module {
+  SwizzleSubArrayMod(LogicArray arr, LogicNet net) {
+    arr = addInOutArray('arr', arr,
+        dimensions: arr.dimensions, elementWidth: arr.elementWidth);
+    net = addInOut('net', net, width: net.width);
+
+    final reshaped = LogicArray.net([arr.width ~/ 2], 2,
+        name: 'reshaped', naming: Naming.mergeable);
+
+    final swizzled = [reshaped, net].swizzle();
+
+    addInOut('swizz', LogicNet(width: swizzled.width), width: swizzled.width) <=
+        swizzled;
+  }
+}
+
 class SwizzleMod extends Module {
   SwizzleMod(List<Logic> toSwizzle, {bool swapAssign = false}) {
     final innerToSwizzle = <Logic>[];
@@ -551,6 +567,21 @@ void main() {
       a0Driver.put(0);
 
       expect(b0.value, LogicValue.of('0'));
+    });
+
+    test('array sub swizzle', () async {
+      final mod =
+          SwizzleSubArrayMod(LogicArray.net([4, 4], 1), LogicNet(width: 8));
+      await mod.build();
+
+      print(mod.generateSynth());
+
+      final vectors = [
+        Vector({'arr': 0, 'net': 0xff}, {'swizz': 0x00ff}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
     });
 
     for (final swapAssign in [false, true]) {
