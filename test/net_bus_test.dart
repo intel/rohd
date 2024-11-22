@@ -204,15 +204,48 @@ class ShiftTestNetModule extends Module {
   }
 }
 
+class SwizzleToSwizzleNets extends Module {
+  SwizzleToSwizzleNets(LogicNet a0, LogicNet a1, LogicNet b0, LogicNet b1) {
+    a0 = addInOut('a0', a0, width: a0.width);
+    a1 = addInOut('a1', a1, width: a1.width);
+    b0 = addInOut('b0', b0, width: b0.width);
+    b1 = addInOut('b1', b1, width: b1.width);
+
+    [a1, a0].swizzle() <= [b1, b0].swizzle();
+  }
+}
+
+class ArrayToArrayNets extends Module {
+  ArrayToArrayNets(LogicArray a, LogicArray b) {
+    a = addInOutArray('a', a,
+        dimensions: a.dimensions, elementWidth: a.elementWidth);
+    b = addInOutArray('b', b,
+        dimensions: b.dimensions, elementWidth: b.elementWidth);
+
+    a <= b;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
   //TODO: testplan
-  // - multiple connections!
   // - putting on a LogicNet and it propogates throughout (rather than
   //   immediately go back to driver calc)
-  // - sv gen when swizzle assign to swizzle is one assign
+
+  test('array to array assignment', () async {
+    final mod = ArrayToArrayNets(LogicArray.net([2, 2], 2),
+        LogicArray.net([2, 2], 2, name: 'second_arr'));
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0x55aa}, {'b': 0x55aa}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
 
   group('simple', () {
     test('double passthrough', () async {
@@ -596,6 +629,19 @@ void main() {
       a0Driver.put(0);
 
       expect(b0.value, LogicValue.of('0'));
+    });
+
+    test('swizzle to swizzle', () async {
+      final mod =
+          SwizzleToSwizzleNets(LogicNet(), LogicNet(), LogicNet(), LogicNet());
+      await mod.build();
+
+      final vectors = [
+        Vector({'a0': 1, 'b1': 0}, {'a1': 0, 'b0': 1}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
     });
 
     test('array sub swizzle', () async {

@@ -32,7 +32,7 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// End index of the subset.
   final int endIndex;
 
-  //TODO
+  /// Indicates whether this operates bidirectionally on nets.
   final bool _isNet;
 
   @override
