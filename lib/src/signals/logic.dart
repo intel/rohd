@@ -426,17 +426,67 @@ class Logic {
   ///
   /// The upper-most bits of the result will be equal to the upper-most bit of
   /// the original signal.
-  Logic operator >>(dynamic other) => ARShift(this, other).out;
+  Logic operator >>(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          this[-1].replicate(shamt),
+          getRange(shamt),
+        ].swizzle();
+      }
+    }
+
+    return ARShift(this, other).out;
+  }
 
   /// Logical left-shift.
   ///
   /// The lower bits are 0-filled.
-  Logic operator <<(dynamic other) => LShift(this, other).out;
+  Logic operator <<(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          getRange(0, -shamt),
+          Const(0, width: shamt),
+        ].swizzle();
+      }
+    }
+
+    return LShift(this, other).out;
+  }
 
   /// Logical right-shift.
   ///
   /// The upper bits are 0-filled.
-  Logic operator >>>(dynamic other) => RShift(this, other).out;
+  Logic operator >>>(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          Const(0, width: shamt),
+          getRange(shamt),
+        ].swizzle();
+      }
+    }
+
+    return RShift(this, other).out;
+  }
+
+  /// Helper function to extract a constant integer shift amount from [other].
+  static int? _constShiftAmount(dynamic other) {
+    if (other is Const) {
+      return other.value.toInt();
+    } else if (other is Logic) {
+      return null;
+    } else {
+      return LogicValue.ofInferWidth(other).toInt();
+    }
+  }
 
   /// Unary AND.
   Logic and() => AndUnary(this).out;
@@ -788,8 +838,14 @@ class Logic {
   /// width = this.width * [multiplier]
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
-  Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
-  //TODO: does replication handle nets?? no, should this just use swizzle?
+  Logic replicate(int multiplier) {
+    if (isNet) {
+      // many SV simulators don't support replication of nets
+      return List.generate(multiplier, (i) => this).swizzle();
+    }
+
+    return ReplicationOp(this, multiplier).replicated;
+  }
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
   /// [list]. Else `0` (of [width]=1) if not present.

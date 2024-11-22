@@ -839,144 +839,223 @@ void main() {
 
   group('shift', () {
     group('func sim', () {
-      test('right logical', () {
-        final aDriver = Logic(width: 8, name: 'aDriver');
-        final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
+      for (final useOperator in [true, false]) {
+        group('useOperator = $useOperator', () {
+          test('right logical', () {
+            final aDriver = Logic(width: 8, name: 'aDriver');
+            final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
 
-        final a = LogicNet(width: 8)..gets(aDriver);
+            final a = LogicNet(width: 8)..gets(aDriver);
 
-        final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
-          ..gets(aRshiftBDriver)
-          ..gets(a >>> 3);
+            final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
+              ..gets(aRshiftBDriver)
+              ..gets(useOperator ? a >>> 3 : RShift(a, 3).out);
 
-        aDriver.put('00101100');
+            aDriver.put('00101100');
 
-        expect(aRshiftB.value, LogicValue.of('00000101'));
+            expect(aRshiftB.value, LogicValue.of('00000101'));
 
-        aRshiftBDriver.put('11110000');
+            aRshiftBDriver.put('11110000');
 
-        expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
-        expect(a.value, LogicValue.of('x0x0x100'));
+            expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
+            expect(a.value, LogicValue.of('x0x0x100'));
 
-        aDriver.put('zzzzzzzz');
+            aDriver.put('zzzzzzzz');
 
-        expect(a.value, LogicValue.of('10000zzz'));
+            expect(a.value, LogicValue.of('10000zzz'));
 
-        // there should be contention here on upper bits since not 0
-        expect(aRshiftB.value, LogicValue.of('xxx10000'));
+            // there should be contention here on upper bits since not 0
+            expect(aRshiftB.value, LogicValue.of('xxx10000'));
+          });
+
+          test('right arithmetic', () {
+            final aDriver = Logic(width: 8, name: 'aDriver');
+            final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
+
+            final a = LogicNet(width: 8)..gets(aDriver);
+
+            final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
+              ..gets(aRshiftBDriver)
+              ..gets(useOperator ? a >> 3 : ARShift(a, 3).out);
+
+            aDriver.put('00101100');
+
+            expect(aRshiftB.value, LogicValue.of('00000101'));
+
+            aDriver.put('10101100');
+
+            expect(aRshiftB.value, LogicValue.of('11110101'));
+
+            aRshiftBDriver.put('00000000');
+
+            expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
+            expect(a.value, LogicValue.of('x0x0x100'));
+
+            aDriver.put('zzzzzz01');
+
+            expect(a.value, LogicValue.of('00000z01'));
+            expect(aRshiftB.value, LogicValue.of('00000000'));
+
+            aRshiftBDriver.put('10zzzzzz');
+            expect(aRshiftB.value, LogicValue.of('xxxxzzzz'));
+            expect(a.value, LogicValue.of('xzzzzz01'));
+          });
+
+          test('left', () {
+            final aDriver = Logic(width: 8, name: 'aDriver');
+            final aLshiftBDriver = Logic(width: 8, name: 'aLshiftBDriver');
+
+            final a = LogicNet(width: 8)..gets(aDriver);
+
+            final aLshiftB = LogicNet(width: 8, name: 'aLshiftB')
+              ..gets(aLshiftBDriver)
+              ..gets(useOperator ? a << 3 : LShift(a, 3).out);
+
+            aDriver.put('00101100');
+
+            expect(aLshiftB.value, LogicValue.of('01100000'));
+
+            aLshiftBDriver.put('11110010');
+
+            expect(aLshiftB.value, LogicValue.of('x11x00x0'));
+            expect(a.value, LogicValue.of('001x11x0'));
+
+            aDriver.put('zzzzzzzz');
+
+            expect(a.value, LogicValue.of('zzz11110'));
+
+            // there should be contention here on lower bits since not 0
+            expect(aLshiftB.value, LogicValue.of('111100x0'));
+          });
+        });
+      }
+    });
+
+    group('simcompare', () {
+      test('shifted result', () async {
+        final mod = ShiftTestNetModule(LogicNet(width: 8), LogicNet(width: 8));
+        await mod.build();
+
+        final vectors = [
+          Vector({
+            'a': '10011011',
+            'b': 3
+          }, {
+            'a_rshift_b': '00010011',
+            'a_lshift_b': '11011000',
+            'a_arshift_b': '11110011',
+            'a_rshift_const': '00010011',
+            'a_lshift_const': '11011000',
+            'a_arshift_const': '11110011',
+          }),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
 
-      test('right arithmetic', () {
-        final aDriver = Logic(width: 8, name: 'aDriver');
-        final aRshiftBDriver = Logic(width: 8, name: 'aRshiftBDriver');
+      test('shift inputs', () async {
+        final mod = ShiftTestNetModule(LogicNet(width: 8), LogicNet(width: 8));
+        await mod.build();
 
-        final a = LogicNet(width: 8)..gets(aDriver);
+        final vectors = [
+          Vector({'a_arshift_const': '11100000', 'a_rshift_const': 'zzzzzzzz'},
+              {'a': 'x0000zzz'}),
+          Vector({'a_arshift_const': '00000000'}, {'a': '00000zzz'}),
+          Vector({
+            'a_arshift_const': 'zzzzzzzz',
+            'a_rshift_const': '00000000',
+          }, {
+            'a': '00000zzz',
+            'a_lshift_const': '00zzz000',
+          }),
+          Vector({
+            'a_arshift_const': '00000000',
+            'a_rshift_const': '11111111',
+          }, {
+            'a': 'xxxxxzzz'
+          }),
+        ];
 
-        final aRshiftB = LogicNet(width: 8, name: 'aRshiftB')
-          ..gets(aRshiftBDriver)
-          ..gets(a >> 3);
-
-        aDriver.put('00101100');
-
-        expect(aRshiftB.value, LogicValue.of('00000101'));
-
-        aDriver.put('10101100');
-
-        expect(aRshiftB.value, LogicValue.of('11110101'));
-
-        aRshiftBDriver.put('00000000');
-
-        expect(aRshiftB.value, LogicValue.of('xxxx0x0x'));
-        expect(a.value, LogicValue.of('x0x0x100'));
-
-        aDriver.put('zzzzzz01');
-
-        expect(a.value, LogicValue.of('00000z01'));
-        expect(aRshiftB.value, LogicValue.of('00000000'));
-
-        aRshiftBDriver.put('10zzzzzz');
-        expect(aRshiftB.value, LogicValue.of('xxxxzzzz'));
-        expect(a.value, LogicValue.of('xzzzzz01'));
-      });
-
-      test('left', () {
-        final aDriver = Logic(width: 8, name: 'aDriver');
-        final aLshiftBDriver = Logic(width: 8, name: 'aLshiftBDriver');
-
-        final a = LogicNet(width: 8)..gets(aDriver);
-
-        final aLshiftB = LogicNet(width: 8, name: 'aLshiftB')
-          ..gets(aLshiftBDriver)
-          ..gets(a << 3);
-
-        aDriver.put('00101100');
-
-        expect(aLshiftB.value, LogicValue.of('01100000'));
-
-        aLshiftBDriver.put('11110010');
-
-        expect(aLshiftB.value, LogicValue.of('x11x00x0'));
-        expect(a.value, LogicValue.of('001x11x0'));
-
-        aDriver.put('zzzzzzzz');
-
-        expect(a.value, LogicValue.of('zzz11110'));
-
-        // there should be contention here on lower bits since not 0
-        expect(aLshiftB.value, LogicValue.of('111100x0'));
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
     });
   });
 
   group('replicate', () {
-    test('func sim', () {
-      final busDriver = Logic(width: 8);
-      final replicatedDriver = Logic(width: 16);
+    for (final useOp in [true, false]) {
+      test('func sim useOp = $useOp', () {
+        final busDriver = Logic(width: 8);
+        final replicatedDriver = Logic(width: 16);
 
-      final bus = LogicNet(width: 8)..gets(busDriver);
-      final replicated = LogicNet(width: 16)..gets(replicatedDriver);
-      replicated <= bus.replicate(2);
+        final bus = LogicNet(width: 8)..gets(busDriver);
+        final replicated = LogicNet(width: 16)..gets(replicatedDriver);
+        replicated <=
+            (useOp ? bus.replicate(2) : ReplicationOp(bus, 2).replicated);
 
-      busDriver.put('00101100');
+        busDriver.put('00101100');
 
-      expect(replicated.value, LogicValue.of('0010110000101100'));
+        expect(replicated.value, LogicValue.of('0010110000101100'));
 
-      busDriver.put(0xab);
+        busDriver.put(0xab);
 
-      expect(replicated.value.toInt(), 0xabab);
+        expect(replicated.value.toInt(), 0xabab);
 
-      busDriver.put(LogicValue.z);
+        busDriver.put(LogicValue.z);
 
-      replicatedDriver.put('1111000010101010');
+        replicatedDriver.put('1111000010101010');
 
-      expect(bus.value, LogicValue.of('1x1xx0x0'));
+        expect(bus.value, LogicValue.of('1x1xx0x0'));
 
-      busDriver.put('0zzzzzz1');
+        busDriver.put('0zzzzzz1');
 
-      expect(bus.value, LogicValue.of('xx1xx0xx'));
-    });
+        expect(bus.value, LogicValue.of('xx1xx0xx'));
+      });
+    }
 
-    test('simcompare one to many', () async {
-      final mod = ReplicateMod(LogicNet(width: 4), 2);
-      await mod.build();
+    group('simcompare', () {
+      test('one to many', () async {
+        final mod = ReplicateMod(LogicNet(width: 4), 2);
+        await mod.build();
 
-      final sv = mod.generateSynth();
+        final sv = mod.generateSynth();
 
-      expect(
-          sv,
-          contains('net_connect #(.WIDTH(8)) net_connect '
-              '(replicated, ({2{bus}}));'));
+        expect(
+            sv,
+            contains('net_connect #(.WIDTH(8)) net_connect '
+                '(replicated, ({bus,bus}));'));
 
-      final vectors = [
-        Vector({'bus': '0011'}, {'replicated': '00110011'}),
-        Vector({'bus': '1100'}, {'replicated': '11001100'}),
-      ];
+        final vectors = [
+          Vector({'bus': '0011'}, {'replicated': '00110011'}),
+          Vector({'bus': '1100'}, {'replicated': '11001100'}),
+        ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors);
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
 
-      // disabled pending feature support in icarus verilog
-      //  (https://github.com/steveicarus/iverilog/issues/1178)
-      // SimCompare.checkIverilogVector(mod, vectors);
+      test('many to one', () async {
+        final mod = ReplicateMod(LogicNet(width: 4), 2);
+        await mod.build();
+
+        final sv = mod.generateSynth();
+
+        expect(
+            sv,
+            contains('net_connect #(.WIDTH(8)) net_connect '
+                '(replicated, ({bus,bus}));'));
+
+        final vectors = [
+          Vector({'replicated': '00110011'}, {'bus': '0011'}),
+          Vector({'replicated': '11001100'}, {'bus': '1100'}),
+          Vector({'replicated': '11000110'}, {'bus': 'x1x0'}),
+          Vector({'replicated': 'z1z01zz1'}, {'bus': '11zx'}),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
     });
   });
 }
