@@ -898,6 +898,33 @@ void main() {
         expect(aRshiftB.value, LogicValue.of('xxxxzzzz'));
         expect(a.value, LogicValue.of('xzzzzz01'));
       });
+
+      test('left', () {
+        final aDriver = Logic(width: 8, name: 'aDriver');
+        final aLshiftBDriver = Logic(width: 8, name: 'aLshiftBDriver');
+
+        final a = LogicNet(width: 8)..gets(aDriver);
+
+        final aLshiftB = LogicNet(width: 8, name: 'aLshiftB')
+          ..gets(aLshiftBDriver)
+          ..gets(a << 3);
+
+        aDriver.put('00101100');
+
+        expect(aLshiftB.value, LogicValue.of('01100000'));
+
+        aLshiftBDriver.put('11110010');
+
+        expect(aLshiftB.value, LogicValue.of('x11x00x0'));
+        expect(a.value, LogicValue.of('001x11x0'));
+
+        aDriver.put('zzzzzzzz');
+
+        expect(a.value, LogicValue.of('zzz11110'));
+
+        // there should be contention here on lower bits since not 0
+        expect(aLshiftB.value, LogicValue.of('111100x0'));
+      });
     });
   });
 

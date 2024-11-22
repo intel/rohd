@@ -681,7 +681,7 @@ class LShift extends _ShiftGate {
     final shamt = _shiftAmountConstant!.toInt();
     internalOut <=
         [
-          _in.getRange(shamt),
+          _in.getRange(0, -shamt),
           Const(0, width: shamt),
         ].swizzle();
   }
