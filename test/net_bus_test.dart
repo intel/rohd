@@ -159,15 +159,12 @@ class ShiftTestNetModule extends Module {
   }
 }
 
-//TODO: test combinational loops are properly caught!
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
   });
   //TODO: testplan
   // - multiple connections!
-  // - all kinds of shifts (signed arithmetic shift especially!)
   // - putting on a LogicNet and it propogates throughout (rather than
   //   immediately go back to driver calc)
   // - sv gen when swizzle assign to swizzle is one assign
@@ -524,10 +521,6 @@ void main() {
       myNonNet.put(0);
 
       expect(swizzled.value, LogicValue.of('10'));
-
-      myNet.glitch.listen((_) {
-        print('asdf');
-      });
 
       swizzledDriver.put('01');
 

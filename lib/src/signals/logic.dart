@@ -420,8 +420,6 @@ class Logic {
   /// Modulo operation.
   Logic operator %(dynamic other) => Modulo(this, other).out;
 
-  //TODO: shifts for logicnet should be just wires iff they are constant shift
-
   /// Arithmetic right-shift.
   ///
   /// The upper-most bits of the result will be equal to the upper-most bit of
@@ -789,11 +787,10 @@ class Logic {
   /// an exception will be thrown.
   Logic signExtend(int newWidth) {
     if (width == 1) {
-      //TODO: just use `replicate` here?
-      return ReplicationOp(this, newWidth).replicated;
+      return replicate(newWidth);
     } else if (newWidth > width) {
       return [
-        ReplicationOp(this[width - 1], newWidth - width).replicated,
+        this[-1].replicate(newWidth - width),
         this,
       ].swizzle();
     } else if (newWidth == width) {
@@ -834,8 +831,9 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns a replicated signal using [ReplicationOp] with new
-  /// width = this.width * [multiplier]
+  /// Returns a replicated signal using [ReplicationOp] with new width =
+  /// this.width * [multiplier]
+  ///
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
   Logic replicate(int multiplier) {
