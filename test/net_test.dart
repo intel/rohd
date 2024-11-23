@@ -594,8 +594,6 @@ void main() {
     final mod = NetITopMod(Logic(width: 8), NetIntf());
     await mod.build();
 
-    //TODO: this test failed?
-
     // test that internal signals contains myNorm and myNet
     for (final expectedInternal in ['myNorm', 'myNet']) {
       expect(
@@ -612,7 +610,7 @@ void main() {
 
     final vectors = [
       Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a}),
-      //TODO: one more vector?
+      Vector({'x': 0x3c}, {'ana': 0xc3, 'anb': 0x3c}),
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
