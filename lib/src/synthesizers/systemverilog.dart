@@ -837,9 +837,13 @@ class _SynthModuleDefinition {
             ...module.outputs.keys,
             ...module.inOuts.keys,
           },
-        ) {
-    //TODO: can we skip a bunch of stuff if [module] doesn't need to be generated and is custom sv?
-
+        ),
+        assert(
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!') {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -907,10 +911,6 @@ class _SynthModuleDefinition {
           ...receiver.srcConnections,
           ...receiver.dstConnections
         ].where((element) => element.parentModule == module));
-
-        //TODO: what if there is no "receiver" that's a srcConnection at all for
-        // wires? then we need to make the assignment towards a dst to make sure
-        // it generates?
 
         for (final srcConnection in receiver.srcConnections) {
           if (srcConnection.parentModule == module ||
@@ -1264,7 +1264,8 @@ class _SynthModuleDefinition {
 
       final subModResult = subModuleInstantiation.inOutMapping[resultName]!;
 
-      // TODO: is this right? use a dummy just as a placeholder?
+      // use a dummy as a placeholder, it will not really be used since we are
+      // updating the inlineable map
       final dummy =
           _SynthLogic(LogicNet(name: 'DUMMY', width: subModResult.width));
 
