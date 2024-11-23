@@ -248,7 +248,7 @@ class _Wire {
     _updateValue(newValue, signalName: signalName);
   }
 
-  //TODO
+  /// Updates the value of this signal to [newValue].
   void _updateValue(LogicValue newValue, {required String signalName}) {
     final prevValue = value;
 

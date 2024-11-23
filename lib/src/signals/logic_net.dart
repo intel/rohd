@@ -93,8 +93,8 @@ class LogicNet extends Logic {
     (other._wire as _WireNet)._evaluateNewValue(signalName: other.name);
   }
 
+  /// Updates this net's [_wire] to a [_WireNetBlasted].
   void _blastWire() {
-    //TODO: this blasting needs to be broadcast?
     _updateWire((_wire as _WireNet).toBlasted());
   }
 }

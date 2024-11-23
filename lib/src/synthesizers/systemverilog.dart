@@ -300,10 +300,9 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   /// By default, this assumes one [output] port. This should be overridden in
   /// classes which have an [inOut] port as the in-lined symbol.
   String get resultSignalName {
-    // TODO: consider name
     if (outputs.keys.length != 1) {
-      throw Exception(
-          'Inline verilog must have exactly one output, but saw $outputs.');
+      throw Exception('Inline verilog expected to have exactly one output,'
+          ' but saw $outputs.');
     }
 
     return outputs.keys.first;
@@ -647,11 +646,15 @@ class _SynthSubModuleInstantiation {
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
-  String inlineVerilog() =>
-      '(${(module as InlineSystemVerilog).inlineVerilog(_modulePortsMapWithInline({
-        ...inputMapping,
-        ...inOutMapping
-      }..remove((module as InlineSystemVerilog).resultSignalName)))})';
+  String inlineVerilog() {
+    final inlineSvRepresentation =
+        (module as InlineSystemVerilog).inlineVerilog(
+      _modulePortsMapWithInline({...inputMapping, ...inOutMapping}
+        ..remove((module as InlineSystemVerilog).resultSignalName)),
+    );
+
+    return '($inlineSvRepresentation)';
+  }
 
   /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
@@ -700,7 +703,6 @@ class _NetConnect extends Module with SystemVerilog {
           definitionName: _definitionName,
           name: _definitionName,
         ) {
-    //TODO: how to check that we never get an array in here?? might be illegal?
     n0 = addInOut(n0Name, n0, width: width);
     n1 = addInOut(n1Name, n1, width: width);
   }

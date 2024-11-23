@@ -147,7 +147,7 @@ class _WireNetBlasted extends _Wire implements _WireNet {
       // assert(index != -1, 'Wire should be there to replace.');
       _wires[index] = newWire.._addParent(this);
 
-      // old wire parents need to be notified!! //TODO THIS IS THE PIECE THAT WAS MISSING
+      // old wire parents need to be notified!!
       for (final parent in oldWire._parents) {
         parent._replaceWire(oldWire, newWire);
       }
@@ -194,15 +194,14 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
   @override
   set _currentValue(LogicValue newValue) =>
-      throw Exception('Not supported'); //TODO
+      // this is delegated away via calling `value` getter
+      throw UnsupportedError('Unnecessary');
 
-  //TODO: test puts directly on the wire?
   @override
   void _updateValue(LogicValue newValue, {required String signalName}) {
     for (var i = 0; i < width; i++) {
       _wires[i]._updateValue(newValue[i], signalName: signalName);
     }
-    // _evaluateNewValue(signalName: signalName); //TODO: is this needed? no, inf loop
   }
 
   void _adoptSubset(_WireNetBlasted other, {required int start}) {
