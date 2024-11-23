@@ -372,10 +372,10 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
         if (_outputSvWidthExpansion) _shiftAmountName,
       ];
 
-  //TODO doc
+  /// Indicates whether this operates on nets, supporting bidirectionality.
   final bool _isNet;
 
-  //TODO doc
+  /// If the shift amount is a constant, this will be set to that constant.
   late final LogicValue? _shiftAmountConstant;
 
   /// Constructs a two-input shift gate for an abitrary custom functional
@@ -444,7 +444,7 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
     }
   }
 
-  //TODO doc
+  /// A setup function for net functionality.
   void _netSetup(LogicNet internalOut);
 
   /// Performs setup steps for custom functional behavior.
@@ -882,11 +882,13 @@ class IndexGate extends Module with InlineSystemVerilog {
 /// module when it operates on [LogicNet]s. The default [Logic.replicate]
 /// function will instead use swizzling to accomplish equivalent behavior.
 class ReplicationOp extends Module with InlineSystemVerilog {
-  // input component name
+  /// Input name.
   final String _inputName;
-  // output component name
+
+  /// Output name.
   final String _outputName;
-  // Width of the output signal
+
+  /// Number of times to replicate the input in the output.
   final int _multiplier;
 
   /// The primary input to this gate.
@@ -895,7 +897,7 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   /// The output of this gate.
   late final Logic replicated;
 
-  //TODO
+  /// Indicates whether this operates on nets, supporting bidirectionality.
   final bool _isNet;
 
   /// Constructs a ReplicationOp
@@ -915,7 +917,6 @@ class ReplicationOp extends Module with InlineSystemVerilog {
     }
 
     if (_isNet) {
-      //TODO: doc clearly that this might not work in some SV simulators with nets
       original = addInOut(_inputName, original, width: original.width);
 
       replicated =

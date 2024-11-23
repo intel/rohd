@@ -40,7 +40,7 @@ class _WireNet extends _Wire {
   final Set<_WireNetDriver> _drivers = {};
 
   //TODO: is there a way to merge/reduce the number of parents to track?
-  late final Set<_WireNetBlasted> _parents = {}; //TODO review
+  late final Set<_WireNetBlasted> _parents = {};
 
   _WireNet({required super.width});
 
@@ -73,9 +73,10 @@ class _WireNet extends _Wire {
 
     other as _WireNet;
 
-    //TODO
-    assert(!(this is _WireNetBlasted && other is _WireNetBlasted),
-        'not sure if this is handled correctly?');
+    assert(
+        !(this is _WireNetBlasted && other is _WireNetBlasted),
+        'A blasted wire should not need to adopt another blasted wire,'
+        ' and so it is not handled properly (probably) in this logic.');
 
     if (other is _WireNetBlasted) {
       return other._adopt(this);
@@ -131,8 +132,6 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     // need to set up glitch listener for whole wire together
     for (var i = 0; i < width; i++) {
       _wires[i].glitch.listen((wireValueChange) {
-        //TODO: test that glitch properly updates!
-        //TODO: test that reassigning properly migrates glitch listeners!
         //TODO: is there a way to do this more efficiently?
         _glitchController.add(LogicValueChanged(
             value, value.withSet(i, wireValueChange.previousValue)));
