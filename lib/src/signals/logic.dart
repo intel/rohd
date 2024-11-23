@@ -424,6 +424,8 @@ class Logic {
   ///
   /// The upper-most bits of the result will be equal to the upper-most bit of
   /// the original signal.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>(dynamic other) {
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
@@ -442,6 +444,8 @@ class Logic {
   /// Logical left-shift.
   ///
   /// The lower bits are 0-filled.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator <<(dynamic other) {
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
@@ -460,6 +464,8 @@ class Logic {
   /// Logical right-shift.
   ///
   /// The upper bits are 0-filled.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>>(dynamic other) {
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
@@ -657,6 +663,8 @@ class Logic {
   /// invalid (LogicValue.x) value. This behavior is differs in simulation as
   /// compared to the generated SystemVerilog. In the generated SystemVerilog,
   /// [index] will be ignored, and the logic is returned as-is.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic operator [](dynamic index) {
     if (index is Logic) {
       return IndexGate(this, index).selection;
@@ -692,6 +700,7 @@ class Logic {
   /// nextVal <= val.slice(5, 0); // = val.slice(-3, -8) & output: 0b001110, where the output.width=6
   /// ```
   ///
+  /// If [isNet], then the result will also be a net.
   Logic slice(int endIndex, int startIndex) {
     // Given start and end index, if either of them are seen to be -ve index
     // value(s) then convert them to a +ve index value(s)
@@ -735,6 +744,7 @@ class Logic {
   /// nextVal <= val.getRange(-3); // the endIndex will be auto assign to val.width
   /// ```
   ///
+  /// If [isNet], then the result will also be a net.
   Logic getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
     if (endIndex == startIndex) {
@@ -758,6 +768,8 @@ class Logic {
   ///
   /// The [newWidth] must be greater than or equal to the current width or an
   /// exception will be thrown.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
@@ -785,6 +797,8 @@ class Logic {
   ///
   /// The [newWidth] must be greater than or equal to the current width or
   /// an exception will be thrown.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic signExtend(int newWidth) {
     if (width == 1) {
       return replicate(newWidth);
@@ -836,6 +850,8 @@ class Logic {
   ///
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic replicate(int multiplier) {
     if (isNet) {
       // many SV simulators don't support replication of nets
@@ -850,7 +866,6 @@ class Logic {
   ///
   /// The [list] can be [Logic] or [int] or [bool] or [BigInt] or
   /// [list] of [dynamic] i.e combinition of aforementioned types.
-  ///
   Logic isIn(List<dynamic> list) {
     // By default isLogicIn is not present return `0`:
     // Empty list corner-case state
@@ -877,7 +892,6 @@ class Logic {
   /// // ordering matches closer to array indexing with `0` index-based.
   /// selected <= index.selectFrom(busList);
   /// ```
-  ///
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
     final selected = Logic(
         name: 'selectFrom',

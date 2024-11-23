@@ -13,6 +13,8 @@ import 'package:rohd/rohd.dart';
 ///
 /// The returned signal is inclusive of both the [startIndex] and [endIndex].
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
+///
+/// This module also supports nets, allowing subsets to be bidirectional.
 class BusSubset extends Module with InlineSystemVerilog {
   /// Name for the input port of this module.
   late final String _originalName;
@@ -46,9 +48,6 @@ class BusSubset extends Module with InlineSystemVerilog {
   ///
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
   /// in the generated SystemVerilog.
-  ///
-  /// TODO: update doc for nets
-  /// TODO: update doc for reverse if start/end are backwards
   BusSubset(Logic bus, this.startIndex, this.endIndex,
       {super.name = 'bussubset'})
       : _isNet = bus.isNet {
@@ -77,7 +76,6 @@ class BusSubset extends Module with InlineSystemVerilog {
       subset = LogicNet(width: newWidth);
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-      // TODO reverse is BROKEN here
       if (startIndex > endIndex) {
         // reverse case
         for (var i = 0; i < newWidth; i++) {
@@ -166,8 +164,11 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// The concatenation occurs such that index 0 of `signals` is the *most*
 /// significant bit(s).
 ///
-/// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
-/// use this [Module].
+/// You can use convenience functions [List<Logic>.swizzle] or
+/// [List<Logic>.rswizzle] to more easily use this [Module].
+///
+/// This module supports nets, allowing concatenation to be bidirectionally
+/// driven.
 class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
