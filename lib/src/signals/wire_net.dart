@@ -37,18 +37,23 @@ class _WireNetDriver {
 }
 
 class _WireNet extends _Wire {
+  /// Drivers of this wire.
   final Set<_WireNetDriver> _drivers = {};
 
-  //TODO: is there a way to merge/reduce the number of parents to track?
+  /// Parent blasted-wires of this wire.
   late final Set<_WireNetBlasted> _parents = {};
 
+  /// Creates a net wire.
   _WireNet({required super.width});
 
+  /// Adds a [parent] to this wire.
   void _addParent(_WireNetBlasted parent) {
     assert(width == 1, 'Only should be adding parents to blasted wires');
     _parents.add(parent);
   }
 
+  /// Considers all drivers and updates the value of this wire using tristate
+  /// logic.
   void _evaluateNewValue({required String signalName}) {
     var newValue = LogicValue.filled(width, LogicValue.z);
     for (final driver in _drivers) {
@@ -113,8 +118,10 @@ class _WireNet extends _Wire {
 }
 
 class _WireNetBlasted extends _Wire implements _WireNet {
+  /// Wires representing each bit of this blasted wire.
   final List<_WireNet> _wires;
 
+  /// Creates a new [_WireNetBlasted] from a [_WireNet].
   _WireNetBlasted.fromWireNet(_WireNet wire)
       : _wires = List<_WireNet>.generate(wire.width, (i) => _WireNet(width: 1)),
         assert(
@@ -132,13 +139,14 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     // need to set up glitch listener for whole wire together
     for (var i = 0; i < width; i++) {
       _wires[i].glitch.listen((wireValueChange) {
-        //TODO: is there a way to do this more efficiently?
         _glitchController.add(LogicValueChanged(
             value, value.withSet(i, wireValueChange.previousValue)));
       });
     }
   }
 
+  /// Replaces [oldWire] with [newWire] in this blasted wire and notifies all
+  /// parents of [oldWire] to replace it with [newWire].
   void _replaceWire(_WireNet oldWire, _WireNet newWire) {
     final index = _wires.indexOf(oldWire);
 
