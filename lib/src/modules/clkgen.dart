@@ -28,6 +28,9 @@ class SimpleClockGenerator extends Module with SystemVerilog {
   SimpleClockGenerator(this.clockPeriod, {super.name = 'clkgen'}) {
     addOutput('clk');
 
+    clk.makeUnassignable(
+        reason: 'Generated clock from $this cannot be assigned');
+
     clk.glitch.listen((args) {
       Simulator.registerAction(Simulator.time + clockPeriod ~/ 2, () {
         clk.put(~clk.value);

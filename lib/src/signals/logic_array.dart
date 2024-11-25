@@ -145,6 +145,12 @@ class LogicArray extends LogicStructure {
       elementWidth = 0;
     }
 
+    // choose name and naming before creating (and naming) elements
+    final newNaming = Naming.chooseNaming(name, naming);
+    final newName = Naming.chooseName(name, naming, nullStarter: 'a');
+    naming = newNaming;
+    name = newName;
+
     return LogicArray._(
       List.generate(
           dimensions.first,
@@ -180,16 +186,17 @@ class LogicArray extends LogicStructure {
       numUnpackedDimensions: numUnpackedDimensions, name: name ?? this.name);
 
   /// Private constructor for the factory [LogicArray] constructor.
+  ///
+  /// The [name] and [naming] should have been identified before calling this.
   LogicArray._(
     super.elements, {
     required this.dimensions,
     required this.elementWidth,
     required this.numUnpackedDimensions,
-    required String? name,
-    required Naming? naming,
+    required String super.name,
+    required this.naming,
     required this.isNet,
-  })  : naming = Naming.chooseNaming(name, naming),
-        super(name: Naming.chooseName(name, naming, nullStarter: 'a'));
+  });
 
   /// Constructs a new [LogicArray] with a more convenient constructor signature
   /// for when many ports in an interface are declared together.  Also performs

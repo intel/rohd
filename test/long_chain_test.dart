@@ -9,6 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/passthrough.dart';
+import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 class LongChain extends Module {
@@ -16,8 +17,14 @@ class LongChain extends Module {
 
   Logic get chainOut => output('chainOut');
 
-  LongChain(Logic chainIn, {this.length = 1000}) : super(name: 'longChain') {
+  LongChain(
+    Logic chainIn, {
+    this.length =
+        // for some reason, compiled to JS it hits stack limit sooner
+        kIsWeb ? 850 : 1050,
+  }) : super(name: 'longChain') {
     chainIn = addInput('chainIn', chainIn);
+
     var intermediate = chainIn;
     for (var i = 0; i < length; i++) {
       intermediate = ~Passthrough(intermediate).out;

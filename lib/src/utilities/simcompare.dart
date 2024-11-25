@@ -145,12 +145,26 @@ abstract class SimCompare {
   static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
       {bool enableChecking = true}) async {
     var timestamp = 1;
+
+    final ioInputDrivers = <String, Logic>{};
+    Logic getIoInputDriver(String signalName) {
+      if (ioInputDrivers.containsKey(signalName)) {
+        return ioInputDrivers[signalName]!;
+      }
+
+      final signal = module.inOutSource(signalName);
+      final driver = Logic(name: 'driver_of_$signalName', width: signal.width);
+      signal <= driver;
+      ioInputDrivers[signalName] = driver;
+      return driver;
+    }
+
     for (final vector in vectors) {
-      // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
-          (module.tryInput(signalName) ?? module.inOut(signalName)).put(value);
+          (module.tryInput(signalName) ?? getIoInputDriver(signalName))
+              .put(value);
         }
 
         if (enableChecking) {
