@@ -226,9 +226,39 @@ class ArrayToArrayNets extends Module {
   }
 }
 
+class NicePortPassingTop extends Module {
+  NicePortPassingTop(LogicNet a, LogicNet b) {
+    a = addInOut('a', a, width: a.width);
+    b = addInOut('b', b, width: b.width);
+
+    NicePortPassingSub(
+      [a, b].swizzle() as LogicNet,
+      a.getRange(a.width ~/ 2) as LogicNet,
+    );
+  }
+}
+
+class NicePortPassingSub extends Module {
+  NicePortPassingSub(LogicNet swizin, LogicNet subin) : super(name: 'sub') {
+    swizin = addInOut('swizin', swizin, width: swizin.width);
+    subin = addInOut('subin', subin, width: subin.width);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('passing ports with swizzle and subset needs no net_connect', () async {
+    final mod = NicePortPassingTop(LogicNet(width: 8), LogicNet(width: 8));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv.contains('net_connect'), isFalse);
+    expect(sv,
+        contains('NicePortPassingSub  sub(.swizin(({a,b})),.subin((a[7:4])))'));
   });
 
   test('array to array assignment', () async {
