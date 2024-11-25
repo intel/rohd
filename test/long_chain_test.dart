@@ -21,7 +21,7 @@ class LongChain extends Module {
     Logic chainIn, {
     this.length =
         // for some reason, compiled to JS it hits stack limit sooner
-        kIsWeb ? 920 : 1050,
+        kIsWeb ? 850 : 1050,
   }) : super(name: 'longChain') {
     chainIn = addInput('chainIn', chainIn);
 
