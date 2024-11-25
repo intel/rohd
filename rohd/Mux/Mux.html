@@ -65,7 +65,7 @@
       <span class="name ">Mux</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-control"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">control</span>, </span></li>
 <li><span class="parameter" id="-param-d1"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d1</span>, </span></li>
 <li><span class="parameter" id="-param-d0"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">d0</span>, {</span></li>
-<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
+<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;mux&#39;</span>, </span></li>
 </ol>})
     </section>
 
@@ -95,7 +95,8 @@ on if <code>control</code> is 0 or 1, respectively.</p>
   addInput(_controlName, control);
   addInput(_d0Name, d0, width: d0.width);
   addInput(_d1Name, d1, width: d1.width);
-  addOutput(_outName, width: d0.width);
+  addOutput(_outName, width: d0.width)
+      .makeUnassignable(reason: &#39;Output of a gate $this cannot be assigned.&#39;);
 
   _setup();
 }</code></pre>

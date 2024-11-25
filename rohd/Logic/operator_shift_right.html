@@ -73,13 +73,29 @@
     
 <section class="desc markdown">
   <p>Arithmetic right-shift.</p>
+<p>The upper-most bits of the result will be equal to the upper-most bit of
+the original signal.</p>
+<p>If <a href="../../rohd/Logic/isNet.html">isNet</a> and <code>other</code> is constant, then the result will also be a net.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic operator &gt;&gt;(dynamic other) =&gt; ARShift(this, other).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic operator &gt;&gt;(dynamic other) {
+  if (isNet) {
+    &#47;&#47; many SV simulators don&#39;t support shifting of nets, so default this
+    final shamt = _constShiftAmount(other);
+    if (shamt != null) {
+      return [
+        this[-1].replicate(shamt),
+        getRange(shamt),
+      ].swizzle();
+    }
+  }
+
+  return ARShift(this, other).out;
+}</code></pre>
 </section>
 
 

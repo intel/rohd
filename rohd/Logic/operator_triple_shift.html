@@ -73,13 +73,28 @@
     
 <section class="desc markdown">
   <p>Logical right-shift.</p>
+<p>The upper bits are 0-filled.</p>
+<p>If <a href="../../rohd/Logic/isNet.html">isNet</a> and <code>other</code> is constant, then the result will also be a net.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic operator &gt;&gt;&gt;(dynamic other) =&gt; RShift(this, other).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic operator &gt;&gt;&gt;(dynamic other) {
+  if (isNet) {
+    &#47;&#47; many SV simulators don&#39;t support shifting of nets, so default this
+    final shamt = _constShiftAmount(other);
+    if (shamt != null) {
+      return [
+        Const(0, width: shamt),
+        getRange(shamt),
+      ].swizzle();
+    }
+  }
+
+  return RShift(this, other).out;
+}</code></pre>
 </section>
 
 

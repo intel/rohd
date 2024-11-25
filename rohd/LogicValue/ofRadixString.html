@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the ofRadixString method from the LogicValue class, for the Dart programming language.">
+  <title>ofRadixString method - LogicValue class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
+    <li class="self-crumb">ofRadixString static method</li>
+  </ol>
+  <div class="self-name">ofRadixString</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;LogicValue-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">ofRadixString</span> static method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+
+<span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
+<span class="name ">ofRadixString</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="ofRadixString-param-valueString"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">valueString</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Create a <a href="../../rohd/LogicValue-class.html">LogicValue</a> from a length/radix-encoded string of the
+following format:</p>
+<p><code>&lt;length&gt;&lt;format&gt;&lt;value-string&gt;</code>.</p>
+<p><code>&lt;length&gt;</code> is the binary digit length of the <a href="../../rohd/LogicValue-class.html">LogicValue</a> to be
+constructed.</p>
+<p><code>&lt;format&gt;s</code>  supported are <code>'b,'q,'o,'d,'h</code> supporting radixes as follows:</p>
+<ul>
+<li>'b: binary (radix 2)</li>
+<li>'q: quaternary (radix 4)</li>
+<li>'o: octal (radix 8)</li>
+<li>'d: decimal (radix 10)</li>
+<li>'h: hexadecimal (radix 16)</li>
+</ul>
+<p><code>&lt;value-string&gt;</code> contains space-separated digits corresponding to the
+radix format.  Space-separation is for ease of reading and is often
+in chunks of 4 digits.</p>
+<p>Strings created by <a href="../../rohd/LogicValue/toRadixString.html">toRadixString</a> are parsed by <a href="../../rohd/LogicValue/ofRadixString.html">ofRadixString</a>.</p>
+<p>If the LogicValue width is not encoded as round number of radix
+characters, the leading character must be small enough to be encoded
+in the remaining width:</p>
+<ul>
+<li>9'h1AA</li>
+<li>10'h2AA</li>
+<li>11'h4AA</li>
+<li>12'hAAA</li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">static LogicValue ofRadixString(String valueString) {
+  if (RegExp(r&#39;^\d+&#39;).firstMatch(valueString) != null) {
+    final formatStr = RegExp(r&quot;^(\d+)&#39;([bqodh])([0-9aAbBcCdDeEfFzZxX&lt;&gt; ]*)&quot;)
+        .firstMatch(valueString);
+    if (formatStr != null) {
+      final specifiedLength = int.parse(formatStr.group(1)!);
+      final compressedStr = formatStr.group(3)!.replaceAll(&#39; &#39;, &#39;&#39;);
+      &#47;&#47; Extract radix
+      final radixString = formatStr.group(2)!;
+      final radix = switch (radixString) {
+        &#39;b&#39; =&gt; 2,
+        &#39;q&#39; =&gt; 4,
+        &#39;o&#39; =&gt; 8,
+        &#39;d&#39; =&gt; 10,
+        &#39;h&#39; =&gt; 16,
+        _ =&gt; throw Exception(&#39;Unsupported radix: $radixString&#39;),
+      };
+      final span = (math.log(radix) &#47; math.log(2)).ceil();
+
+      final reversedStr = _reverse(compressedStr);
+      &#47;&#47; Find any binary expansions, then extend to the span
+      final binaries = RegExp(&#39;&gt;[^&lt;&gt;]*&lt;&#39;).allMatches(reversedStr).indexed;
+
+      &#47;&#47; At this point, binaryLength has the binary bit count for binaries
+      &#47;&#47; Remove and store expansions of binary fields &#39;&lt;[x0z1]*&gt;.
+      final fullBinaries = RegExp(&#39;&gt;[^&lt;&gt;]*&lt;&#39;);
+      final bitExpandLocs = fullBinaries.allMatches(reversedStr).indexed;
+
+      final numExpanded = bitExpandLocs.length;
+      final numChars = reversedStr.length - numExpanded * (span + 1);
+      final binaryLength = (binaries.isEmpty
+              ? 0
+              : binaries
+                  .map&lt;int&gt;((j) =&gt; j.$2.group(0)!.length - 2)
+                  .reduce((a, b) =&gt; a + b)) +
+          (numChars - numExpanded) * span;
+
+      &#47;&#47; is the binary length shorter than it appears
+      final int shorter;
+      if ((binaries.isNotEmpty) &amp;&amp; compressedStr[0] == &#39;&lt;&#39;) {
+        final binGroup = _reverse(binaries.last.$2.group(0)!);
+        final binaryChunk = binGroup.substring(1, binGroup.length - 1);
+        var cnt = 0;
+        while (cnt &lt; binaryChunk.length - 1 &amp;&amp; binaryChunk[cnt++] == &#39;0&#39;) {}
+        shorter = cnt - 1;
+      } else {
+        final leadChar = compressedStr[0];
+        if (RegExp(&#39;[xXzZ]&#39;).hasMatch(leadChar)) {
+          shorter = span - 1;
+        } else {
+          if (radix == 10) {
+            shorter = binaryLength -
+                BigInt.parse(compressedStr, radix: 10)
+                    .toRadixString(2)
+                    .length;
+          } else {
+            shorter = span -
+                BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
+          }
+        }
+      }
+      if (binaryLength - shorter &gt; specifiedLength) {
+        throw Exception(&#39;ofRadixString: cannot represent &#39;
+            &#39;$compressedStr in $specifiedLength&#39;);
+      }
+      final noBinariesStr = reversedStr.replaceAll(fullBinaries, &#39;0&#39;);
+      final xLocations = RegExp(&#39;x|X&#39;)
+          .allMatches(noBinariesStr)
+          .indexed
+          .map((m) =&gt; List.generate(span, (s) =&gt; m.$2.start * span + s))
+          .expand((xe) =&gt; xe);
+      final zLocations = RegExp(&#39;z|Z&#39;)
+          .allMatches(noBinariesStr)
+          .indexed
+          .map((m) =&gt; List.generate(span, (s) =&gt; m.$2.start * span + s))
+          .expand((ze) =&gt; ze);
+
+      final intValue = BigInt.parse(
+              _reverse(noBinariesStr.replaceAll(RegExp(&#39;[xXzZ]&#39;), &#39;0&#39;)),
+              radix: radix)
+          .toUnsigned(specifiedLength);
+      final logicValList = List&lt;LogicValue&gt;.from(
+          LogicValue.ofString(intValue.toRadixString(2))
+              .zeroExtend(specifiedLength)
+              .toList());
+      &#47;&#47; Put all the X and Z&#39;s back into the list
+      for (final x in xLocations) {
+        if (x &lt; specifiedLength) {
+          logicValList[x] = LogicValue.x;
+        }
+      }
+      for (final z in zLocations) {
+        if (z &lt; specifiedLength) {
+          logicValList[z] = LogicValue.z;
+        }
+      }
+
+      &#47;&#47; Now add back the bitfield expansions stored earlier
+      var lastPos = 0;
+      var lastCpos = 0;
+      for (final i in bitExpandLocs) {
+        var len = i.$2.group(0)!.length;
+        if (i.$1 == bitExpandLocs.last.$1) {
+          final revBitChars = i.$2.group(0)!;
+          while (len &gt; 1 &amp;&amp; revBitChars[len - 2] == &#39;0&#39;) {
+            len--;
+          }
+        }
+        final bitChars = i.$2.group(0)!.substring(1, len - 1);
+        var pos = 0;
+        if (i.$1 &gt; 0) {
+          final nonExpChars = i.$2.start - lastCpos - span - 2;
+          pos = lastPos + span + span * nonExpChars;
+        } else {
+          final nonExpChars = i.$2.start - lastCpos;
+          pos = lastPos + span * nonExpChars;
+        }
+
+        for (var bitPos = 0; bitPos &lt; len - 2; bitPos++) {
+          logicValList[pos + bitPos] = switch (bitChars[bitPos]) {
+            &#39;0&#39; =&gt; LogicValue.zero,
+            &#39;1&#39; =&gt; LogicValue.one,
+            &#39;x&#39; =&gt; LogicValue.x,
+            _ =&gt; LogicValue.z
+          };
+        }
+        lastCpos = i.$2.start;
+        lastPos = pos;
+      }
+      return logicValList.rswizzle();
+    } else {
+      throw Exception(&#39;Invalid LogicValue string $valueString&#39;);
+    }
+  }
+  return LogicValue.zero;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
+    <li class="self-crumb">ofRadixString static method</li>
+</ol>
+
+
+    <h5>LogicValue class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.5.3
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+
+
+</body>
+
+</html>
+

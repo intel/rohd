@@ -64,14 +64,14 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.5.3/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.5.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 
-<span class="returntype"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span>
-<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
-<li><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -102,15 +102,14 @@ String instantiationVerilog(
   String instanceName,
   Map&lt;String, String&gt; ports,
 ) {
-  if (outputs.length != 1) {
-    throw Exception(
-        &#39;Inline verilog must have exactly one output, but saw $outputs.&#39;);
-  }
-  final output = ports[outputs.keys.first];
-  final inputPorts = Map.fromEntries(ports.entries.where((element) =&gt;
-      inputs.containsKey(element.key) || inOuts.containsKey(element.key)));
+  final result = ports[resultSignalName];
+  final inputPorts = Map.fromEntries(
+    ports.entries.where((element) =&gt;
+        inputs.containsKey(element.key) ||
+        (inOuts.containsKey(element.key) &amp;&amp; element.key != resultSignalName)),
+  );
   final inline = inlineVerilog(inputPorts);
-  return &#39;assign $output = $inline;  &#47;&#47; $instanceName&#39;;
+  return &#39;assign $result = $inline;  &#47;&#47; $instanceName&#39;;
 }</code></pre>
 </section>
 

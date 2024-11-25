@@ -64,9 +64,9 @@
       
 
 <span class="returntype"><a href="../../rohd/LogicNet-class.html">LogicNet</a></span>
-<span class="name ">addInOut</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<span class="name ">addInOut</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
 <li><span class="parameter" id="addInOut-param-source"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span></li>
-<li><span class="parameter" id="addInOut-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
+<li><span class="parameter" id="addInOut-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
 </ol>})
 
       
@@ -92,6 +92,30 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
   }
 
   _inOutDrivers.add(source);
+
+  &#47;&#47; we need to properly detect all inout sources, even for arrays
+  if (source.isArrayMember || source is LogicArray) {
+    final sourceElems = TraverseableCollection&lt;Logic&gt;()..add(source);
+    for (var i = 0; i &lt; sourceElems.length; i++) {
+      final sei = sourceElems[i];
+      _inOutDrivers.add(sei);
+
+      if (sei.isArrayMember) {
+        sourceElems.add(sei.parentStructure!);
+      }
+
+      if (sei is LogicArray) {
+        sourceElems.addAll(sei.elements);
+      }
+    }
+  }
+
+  if (source is LogicStructure) {
+    &#47;&#47; need to also track the packed version if it&#39;s a structure, since the
+    &#47;&#47; signal that&#39;s actually getting connected to the port *is* the packed
+    &#47;&#47; one, not the original array&#47;struct.
+    _inOutDrivers.add(source.packed);
+  }
 
   final inOutPort =
       LogicNet(name: name, width: width, naming: Naming.reserved)

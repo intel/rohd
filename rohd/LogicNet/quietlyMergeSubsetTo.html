@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the quietlyMergeSubsetTo method from the LogicNet class, for the Dart programming language.">
+  <title>quietlyMergeSubsetTo method - LogicNet class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/LogicNet-class.html">LogicNet</a></li>
+    <li class="self-crumb">quietlyMergeSubsetTo method</li>
+  </ol>
+  <div class="self-name">quietlyMergeSubsetTo</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;LogicNet-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">quietlyMergeSubsetTo</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/internal-constant.html">internal</a></li>
+    </ol>
+  </div>
+
+<span class="returntype">void</span>
+<span class="name ">quietlyMergeSubsetTo</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="quietlyMergeSubsetTo-param-other"><span class="type-annotation"><a href="../../rohd/LogicNet-class.html">LogicNet</a></span> <span class="parameter-name">other</span>, {</span></li>
+<li><span class="parameter" id="quietlyMergeSubsetTo-param-start"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">start</span> = <span class="default-value">0</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Connects the underlying <code>_Wire</code>s of <code>other</code> to <code>this</code>, starting at
+<code>start</code>. The <code>start</code> index of <code>this</code> up through <code>start + other.width</code> will
+be connected. This operation is "quiet", in that it merges wires without
+building any real traceable connection and is intended only for simulation
+behavior.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@internal
+void quietlyMergeSubsetTo(LogicNet other, {int start = 0}) {
+  _blastWire();
+  other._blastWire();
+
+  (_wire as _WireNetBlasted)
+      ._adoptSubset(other._wire as _WireNetBlasted, start: start);
+
+  (_wire as _WireNet)._evaluateNewValue(signalName: name);
+  (other._wire as _WireNet)._evaluateNewValue(signalName: other.name);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/LogicNet-class.html">LogicNet</a></li>
+    <li class="self-crumb">quietlyMergeSubsetTo method</li>
+</ol>
+
+
+    <h5>LogicNet class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    rohd
+      0.5.3
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+
+
+</body>
+
+</html>
+

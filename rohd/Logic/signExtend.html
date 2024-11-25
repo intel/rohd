@@ -64,7 +64,7 @@
       
 
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">signExtend</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span></li>
+<span class="name ">signExtend</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="signExtend-param-newWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">newWidth</span></span></li>
 </ol>)
 
       
@@ -78,6 +78,7 @@ complement, so it takes the most significant bit of the original signal
 and extends with that.</p>
 <p>The <code>newWidth</code> must be greater than or equal to the current width or
 an exception will be thrown.</p>
+<p>If <a href="../../rohd/Logic/isNet.html">isNet</a>, then the result will also be a net.</p>
 </section>
 
 
@@ -86,10 +87,10 @@ an exception will be thrown.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic signExtend(int newWidth) {
   if (width == 1) {
-    return ReplicationOp(this, newWidth).replicated;
+    return replicate(newWidth);
   } else if (newWidth &gt; width) {
     return [
-      ReplicationOp(this[width - 1], newWidth - width).replicated,
+      this[-1].replicate(newWidth - width),
       this,
     ].swizzle();
   } else if (newWidth == width) {

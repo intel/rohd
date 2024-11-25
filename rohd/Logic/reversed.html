@@ -75,9 +75,9 @@
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">late final Logic reversed =
-    Logic(name: &#39;reversed_$name&#39;, naming: Naming.unnamed, width: width)
-      ..gets(slice(0, width - 1));</code></pre>
+  <pre class="language-dart"><code class="language-dart">late final Logic reversed = (isNet ? LogicNet.new : Logic.new)(
+    name: &#39;reversed_$name&#39;, naming: Naming.unnamed, width: width)
+  ..gets(slice(0, width - 1));</code></pre>
 </section>
 
 

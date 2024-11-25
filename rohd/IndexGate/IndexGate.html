@@ -90,7 +90,8 @@ SystemVerilog.</p>
 
   addInput(_originalName, original, width: original.width);
   addInput(_indexName, index, width: index.width);
-  addOutput(_selectionName);
+  addOutput(_selectionName)
+      .makeUnassignable(reason: &#39;Output of a gate $this cannot be assigned.&#39;);
 
   _setup();
 }</code></pre>

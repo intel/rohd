@@ -63,17 +63,17 @@
     <section class="multi-line-signature">
       
       <span class="name ">BusSubset</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-bus"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">bus</span>, </span></li>
-<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
-<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, {</span></li>
-<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>, </span></li>
+<li><span class="parameter" id="-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span>, </span></li>
+<li><span class="parameter" id="-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, {</span></li>
+<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;bussubset&#39;</span>, </span></li>
 </ol>})
     </section>
 
     
 <section class="desc markdown">
   <p>Constructs a <a href="../../rohd/Module-class.html">Module</a> that accesses a subset from <code>bus</code> which ranges
-from <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> to <a href="../../rohd/BusSubset/endIndex.html">endIndex</a> (inclusive of both).
-When, <code>bus</code> has a width of '1', <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> and <a href="../../rohd/BusSubset/endIndex.html">endIndex</a> are ignored
+from <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> to <a href="../../rohd/BusSubset/endIndex.html">endIndex</a> (inclusive of both).</p>
+<p>When, <code>bus</code> has a width of '1', <a href="../../rohd/BusSubset/startIndex.html">startIndex</a> and <a href="../../rohd/BusSubset/endIndex.html">endIndex</a> are ignored
 in the generated SystemVerilog.</p>
 </section>
 
@@ -82,7 +82,8 @@ in the generated SystemVerilog.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">BusSubset(Logic bus, this.startIndex, this.endIndex,
-    {super.name = &#39;bussubset&#39;}) {
+    {super.name = &#39;bussubset&#39;})
+    : _isNet = bus.isNet {
   &#47;&#47; If a converted index value is still -ve then it&#39;s an Index out of bounds
   &#47;&#47; on a Logic Bus
   if (startIndex &lt; 0 || endIndex &lt; 0) {
@@ -101,14 +102,39 @@ in the generated SystemVerilog.</p>
   _subsetName =
       Naming.unpreferredName(&#39;subset_${endIndex}_${startIndex}_${bus.name}&#39;);
 
-  addInput(_originalName, bus, width: bus.width);
   final newWidth = (endIndex - startIndex).abs() + 1;
-  addOutput(_subsetName, width: newWidth);
 
-  &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
-  subset.makeUnassignable();
+  if (_isNet) {
+    _original = addInOut(_originalName, bus, width: bus.width);
+    subset = LogicNet(width: newWidth);
+    final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-  _setup();
+    if (startIndex &gt; endIndex) {
+      &#47;&#47; reverse case
+      for (var i = 0; i &lt; newWidth; i++) {
+        internalSubset.quietlyMergeSubsetTo(
+          _original[startIndex - i] as LogicNet,
+          start: endIndex + i,
+        );
+      }
+    } else {
+      &#47;&#47; normal case
+      (_original as LogicNet).quietlyMergeSubsetTo(
+        internalSubset,
+        start: startIndex,
+      );
+    }
+  } else {
+    _original = addInput(_originalName, bus, width: bus.width);
+    subset = addOutput(_subsetName, width: newWidth);
+
+    &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented
+    subset.makeUnassignable(
+        reason:
+            &#39;The output of a (non-LogicNet) BusSubset ($this) is read-only.&#39;);
+
+    _setup();
+  }
 }</code></pre>
 </section>
 
