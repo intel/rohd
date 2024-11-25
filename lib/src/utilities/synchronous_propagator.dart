@@ -14,8 +14,7 @@ import 'package:rohd/src/collections/iterable_removable_queue.dart';
 /// adding of events of type [T] to be emitted.
 class SynchronousPropagator<T> {
   /// The [SynchronousEmitter] which sends events added to this.
-  SynchronousEmitter<T> get emitter => _emitter;
-  final SynchronousEmitter<T> _emitter = SynchronousEmitter<T>();
+  final SynchronousEmitter<T> emitter = SynchronousEmitter<T>();
 
   /// When set to `true`, will throw an exception if an event
   /// added is reentrant.
@@ -23,10 +22,10 @@ class SynchronousPropagator<T> {
 
   /// Adds a new event [t] to be emitted from [emitter].
   void add(T t) {
-    if (throwOnReentrance && _emitter.isEmitting) {
+    if (throwOnReentrance && emitter.isEmitting) {
       throw Exception('Disallowed reentrance occurred.');
     }
-    _emitter._propagate(t);
+    emitter._propagate(t);
   }
 }
 

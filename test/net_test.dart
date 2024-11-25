@@ -241,6 +241,9 @@ class NetfulLogicStructure extends LogicStructure {
 }
 
 class NetsStructsArraysDriving extends Module {
+  Logic get outStruct => output('outStruct');
+  Logic get logicArrayNetInOut => inOutSource('logicArrayNetInOut');
+  Logic get logicNetInOut => inOutSource('logicNetInOut');
   NetsStructsArraysDriving(
       LogicNet logicNetInOut, LogicArray logicArrayNetInOut)
       : assert(logicArrayNetInOut.isNet, 'expect a net'),
@@ -308,9 +311,35 @@ class DoubleConnectedPortMod extends Module {
   }
 }
 
+class ModArrToNetTop extends Module {
+  ModArrToNetTop(LogicArray topApple) {
+    topApple =
+        addInOutArray('topApple', topApple, dimensions: [2], elementWidth: 8);
+
+    final sub = ModArrToNetSub(topApple);
+    final banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
+    addInOut('banana', banana, width: 8) <= sub.banana;
+  }
+}
+
+class ModArrToNetSub extends Module {
+  late final LogicNet banana;
+  ModArrToNetSub(LogicArray apple) {
+    apple = addInOutArray('apple', apple, dimensions: [2], elementWidth: 8);
+
+    banana = LogicNet(name: 'banana', width: 8, naming: Naming.mergeable);
+    addInOut('banana', banana, width: 8) <= apple.elements[0];
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('mod array to net hier', () async {
+    final mod = ModArrToNetTop(LogicArray.net([2], 8));
+    await mod.build();
   });
 
   test('basic net connection', () {
@@ -511,19 +540,54 @@ void main() {
     }
   });
 
-  test('structures, arrays, and nets driving together', () async {
-    final mod =
-        NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+  test('structs, arrays, nets, func only', () {
+    final driver = Logic(width: 8)..put(0xab);
+    final dut = NetsStructsArraysDriving(
+        LogicNet(width: 8)..gets(driver), LogicArray.net([4], 2));
 
-    await mod.build();
+    expect(dut.outStruct.value.toInt(), 0xab);
+    expect(dut.logicArrayNetInOut.value.toInt(), 0xab);
 
-    final vectors = [
-      Vector({'logicNetInOut': 0xab},
-          {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
-    ];
+    driver.put(0x5a);
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+    expect(dut.outStruct.value.toInt(), 0x5a);
+    expect(dut.logicArrayNetInOut.value.toInt(), 0x5a);
+  });
+
+  group('structures, arrays, and nets driving together', () {
+    test('net driving', () async {
+      final mod =
+          NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+
+      await mod.build();
+
+      final vectors = [
+        Vector({'logicNetInOut': 0xab},
+            {'logicArrayNetInOut': 0xab, 'outStruct': 0xab}),
+        Vector({'logicNetInOut': 0x14},
+            {'logicArrayNetInOut': 0x14, 'outStruct': 0x14}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('arr driving', () async {
+      final mod =
+          NetsStructsArraysDriving(LogicNet(width: 8), LogicArray.net([4], 2));
+
+      await mod.build();
+
+      final vectors = [
+        Vector({'logicArrayNetInOut': '00001010'},
+            {'logicNetInOut': 'zzzz1010', 'outStruct': 'zzzz1010'}),
+        Vector({'logicArrayNetInOut': '01101110'},
+            {'logicNetInOut': 'zzzz1110', 'outStruct': 'zzzz1110'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 
   test('hier with intfs for nets', () async {
@@ -545,7 +609,8 @@ void main() {
     expect(sv.contains(' _b;'), isFalse);
 
     final vectors = [
-      Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a})
+      Vector({'x': 0xaa}, {'ana': 0xa5, 'anb': 0x5a}),
+      Vector({'x': 0x3c}, {'ana': 0xc3, 'anb': 0x3c}),
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);

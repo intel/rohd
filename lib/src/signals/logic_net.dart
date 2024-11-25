@@ -57,8 +57,13 @@ class LogicNet extends Logic {
 
     if (other is LogicNet) {
       _updateWire(other._wire);
+
+      // also update in the opposite direction in case the swap was reversed
+      other._updateWire(_wire);
+
+      assert(_wire == other._wire, 'Wires should be the same after updates.');
     } else {
-      (_wire as _WireNet)._addDriver(other);
+      (_wire as _WireNet)._addDriver(_WireNetDriver(other));
     }
 
     (_wire as _WireNet)._evaluateNewValue(signalName: name);
@@ -70,4 +75,26 @@ class LogicNet extends Logic {
 
   @override
   String toString() => '${super.toString()}, [Net]';
+
+  /// Connects the underlying [_Wire]s of [other] to `this`, starting at
+  /// [start]. The [start] index of `this` up through `start + other.width` will
+  /// be connected. This operation is "quiet", in that it merges wires without
+  /// building any real traceable connection and is intended only for simulation
+  /// behavior.
+  @internal
+  void quietlyMergeSubsetTo(LogicNet other, {int start = 0}) {
+    _blastWire();
+    other._blastWire();
+
+    (_wire as _WireNetBlasted)
+        ._adoptSubset(other._wire as _WireNetBlasted, start: start);
+
+    (_wire as _WireNet)._evaluateNewValue(signalName: name);
+    (other._wire as _WireNet)._evaluateNewValue(signalName: other.name);
+  }
+
+  /// Updates this net's [_wire] to a [_WireNetBlasted].
+  void _blastWire() {
+    _updateWire((_wire as _WireNet).toBlasted());
+  }
 }

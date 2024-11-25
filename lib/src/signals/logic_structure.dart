@@ -187,7 +187,7 @@ class LogicStructure implements Logic {
               // start is within the element
               (modifiedStartIndex >= elementStart &&
                   modifiedStartIndex < elementEnd) ||
-              //element is fully contained
+              // element is fully contained
               (modifiedEndIndex >= elementEnd &&
                   modifiedStartIndex <= elementStart);
 
@@ -295,9 +295,9 @@ class LogicStructure implements Logic {
   late final bool isPort = isInput || isOutput || isInOut;
 
   @override
-  void makeUnassignable() {
+  void makeUnassignable({String? reason}) {
     for (final element in elements) {
-      element.makeUnassignable();
+      element.makeUnassignable(reason: reason);
     }
   }
 
@@ -608,4 +608,13 @@ class LogicStructure implements Logic {
 
   @override
   set _subsetDriver(LogicArray? _) => throw UnsupportedError('Unnecessary');
+
+  @override
+  String? get _unassignableReason =>
+      throw UnsupportedError('Delegated to elements');
+
+  @override
+  // ignore: unused_element
+  set _unassignableReason(String? _) =>
+      throw UnsupportedError('Delegated to elements');
 }

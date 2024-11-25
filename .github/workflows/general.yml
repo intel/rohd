@@ -58,8 +58,8 @@ jobs:
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
-      - name: Check folder - tmp_test
-        run: tool/gh_actions/check_folder_tmp_test.sh
+      - name: Check temporary test files
+        run: tool/gh_actions/check_tmp_test.sh
       
       # https://github.com/devcontainers/ci/blob/main/docs/github-action.md
       - name: Build dev container and run tests in it

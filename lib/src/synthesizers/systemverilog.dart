@@ -286,12 +286,27 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   ///
   /// The [inputs] are a mapping from the [Module]'s port names to the names of
   /// the signals that are passed into those ports in the generated
-  /// SystemVerilog. It will only contain [input]s and [inOut]s, as there
-  /// should only be one [output] which is driven by the expression.
+  /// SystemVerilog. It will only contain [input]s and [inOut]s, as there should
+  /// only be one [output] (named [resultSignalName]) which is driven by the
+  /// expression.
   ///
   /// The output will be appropriately wrapped with parentheses to guarantee
   /// proper order of operations.
   String inlineVerilog(Map<String, String> inputs);
+
+  /// The name of the [output] (or [inOut]) port which can be the in-lined
+  /// symbol.
+  ///
+  /// By default, this assumes one [output] port. This should be overridden in
+  /// classes which have an [inOut] port as the in-lined symbol.
+  String get resultSignalName {
+    if (outputs.keys.length != 1) {
+      throw Exception('Inline verilog expected to have exactly one output,'
+          ' but saw $outputs.');
+    }
+
+    return outputs.keys.first;
+  }
 
   @override
   String instantiationVerilog(
@@ -299,15 +314,14 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
     String instanceName,
     Map<String, String> ports,
   ) {
-    if (outputs.length != 1) {
-      throw Exception(
-          'Inline verilog must have exactly one output, but saw $outputs.');
-    }
-    final output = ports[outputs.keys.first];
-    final inputPorts = Map.fromEntries(ports.entries.where((element) =>
-        inputs.containsKey(element.key) || inOuts.containsKey(element.key)));
+    final result = ports[resultSignalName];
+    final inputPorts = Map.fromEntries(
+      ports.entries.where((element) =>
+          inputs.containsKey(element.key) ||
+          (inOuts.containsKey(element.key) && element.key != resultSignalName)),
+    );
     final inline = inlineVerilog(inputPorts);
-    return 'assign $output = $inline;  // $instanceName';
+    return 'assign $result = $inline;  // $instanceName';
   }
 
   @override
@@ -590,6 +604,13 @@ class _SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
+  /// If [module] is [InlineSystemVerilog], this will be the [_SynthLogic] that
+  /// is the `result` of that module.  Otherwise, `null`.
+  _SynthLogic? get inlineResultLogic => module is! InlineSystemVerilog
+      ? null
+      : (outputMapping[(module as InlineSystemVerilog).resultSignalName] ??
+          inOutMapping[(module as InlineSystemVerilog).resultSignalName]);
+
   /// Indicates whether this module should be declared.
   bool get needsDeclaration => _needsDeclaration;
   bool _needsDeclaration = true;
@@ -601,7 +622,7 @@ class _SynthSubModuleInstantiation {
 
   /// Mapping from [_SynthLogic]s which are outputs of inlineable SV to those
   /// inlineable modules.
-  late final Map<_SynthLogic, _SynthSubModuleInstantiation>
+  Map<_SynthLogic, _SynthSubModuleInstantiation>?
       _synthLogicToInlineableSynthSubmoduleMap;
 
   /// Creates an instantiation for [module].
@@ -612,20 +633,28 @@ class _SynthSubModuleInstantiation {
       "_SynthSubModuleInstantiation ${_name == null ? 'null' : '"$name"'}, "
       "module name:'${module.name}'";
 
-  /// Provides a mapping from input ports of this module to a string that can
-  /// be fed into that port, which may include inline SV modules as well.
-  Map<String, String> _moduleInputsMap() =>
-      inputMapping.map((name, synthLogic) => MapEntry(
+  /// Provides a mapping from ports of this module to a string that can be fed
+  /// into that port, which may include inline SV modules as well.
+  Map<String, String> _modulePortsMapWithInline(
+          Map<String, _SynthLogic> plainPorts) =>
+      plainPorts.map((name, synthLogic) => MapEntry(
           name,
-          _synthLogicToInlineableSynthSubmoduleMap[synthLogic]
+          _synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
               synthLogic.name));
 
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
-  String inlineVerilog() =>
-      '(${(module as InlineSystemVerilog).inlineVerilog(_moduleInputsMap())})';
+  String inlineVerilog() {
+    final inlineSvRepresentation =
+        (module as InlineSystemVerilog).inlineVerilog(
+      _modulePortsMapWithInline({...inputMapping, ...inOutMapping}
+        ..remove((module as InlineSystemVerilog).resultSignalName)),
+    );
+
+    return '($inlineSvRepresentation)';
+  }
 
   /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
@@ -636,15 +665,11 @@ class _SynthSubModuleInstantiation {
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: {
-          ..._moduleInputsMap(),
-          ...outputMapping.map((name, synthLogic) => MapEntry(
-              name, // port name guaranteed to match
-              synthLogic.name)),
-          ...inOutMapping.map((name, synthLogic) => MapEntry(
-              name, // port name guaranteed to match
-              synthLogic.name)),
-        });
+        ports: _modulePortsMapWithInline({
+          ...inputMapping,
+          ...outputMapping,
+          ...inOutMapping,
+        }));
   }
 }
 
@@ -814,7 +839,13 @@ class _SynthModuleDefinition {
             ...module.outputs.keys,
             ...module.inOuts.keys,
           },
-        ) {
+        ),
+        assert(
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!') {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -983,25 +1014,30 @@ class _SynthModuleDefinition {
     _assignSubmodulePortMapping();
     _replaceNetConnections();
     _collapseChainableModules();
+    _replaceInOutConnectionInlineableModules();
     _pickNames();
   }
 
   /// Creates a new [_NetConnect] module to synthesize assignment between two
   /// [LogicNet]s.
-  void _addNetConnect(_SynthLogic dst, _SynthLogic src) {
+  _SynthSubModuleInstantiation _addNetConnect(
+      _SynthLogic dst, _SynthLogic src) {
     // make an (unconnected) module representing the assignment
     final netConnect =
         _NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
 
     // instantiate the module within the definition
-    _getSynthSubModuleInstantiation(netConnect)
+    final netConnectSynthSubModInst =
+        _getSynthSubModuleInstantiation(netConnect)
 
-      // map inouts to the appropriate `_SynthLogic`s
-      ..setInOutMapping(_NetConnect.n0Name, dst)
-      ..setInOutMapping(_NetConnect.n1Name, src);
+          // map inouts to the appropriate `_SynthLogic`s
+          ..setInOutMapping(_NetConnect.n0Name, dst)
+          ..setInOutMapping(_NetConnect.n1Name, src);
 
     // notify the `SynthBuilder` that it needs declaration
     supportingModules.add(netConnect);
+
+    return netConnectSynthSubModInst;
   }
 
   /// Replace all [assignments] between two [LogicNet]s with a [_NetConnect].
@@ -1128,15 +1164,22 @@ class _SynthModuleDefinition {
 
     for (final subModuleInstantiation
         in moduleToSubModuleInstantiationMap.values) {
-      for (final inputSynthLogic
-          in subModuleInstantiation.inputMapping.values) {
-        if (inputs.contains(inputSynthLogic)) {
+      for (final inSynthLogic in [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values
+      ]) {
+        if (inputs.contains(inSynthLogic) || inOuts.contains(inSynthLogic)) {
           // dont worry about inputs to THIS module
           continue;
         }
 
+        if (subModuleInstantiation.inlineResultLogic == inSynthLogic) {
+          // don't worry about the result signal
+          continue;
+        }
+
         signalUsage.update(
-          inputSynthLogic,
+          inSynthLogic,
           (value) => value + 1,
           ifAbsent: () => 1,
         );
@@ -1154,22 +1197,24 @@ class _SynthModuleDefinition {
     });
 
     final singleUsageInlineableSubmoduleInstantiations =
-        inlineableSubmoduleInstantiations
-            .where((submoduleInstantiation) => singleUseSignals.contains(
-                // inlineable modules have only 1 output
-                submoduleInstantiation.outputMapping.values.first));
+        inlineableSubmoduleInstantiations.where((submoduleInstantiation) {
+      // inlineable modules have only 1 result signal
+      final resultSynthLogic = submoduleInstantiation.inlineResultLogic!;
+
+      return singleUseSignals.contains(resultSynthLogic);
+    });
 
     // remove any inlineability for those that want no expressions
     for (final MapEntry(key: subModule, value: instantiation)
         in moduleToSubModuleInstantiationMap.entries) {
       if (subModule is SystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs
-            .map((e) => instantiation.inputMapping[e]!));
+        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
+            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
       }
       // ignore: deprecated_member_use_from_same_package
       else if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs
-            .map((e) => instantiation.inputMapping[e]!));
+        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
+            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
       }
     }
 
@@ -1177,17 +1222,18 @@ class _SynthModuleDefinition {
         <_SynthLogic, _SynthSubModuleInstantiation>{};
     for (final submoduleInstantiation
         in singleUsageInlineableSubmoduleInstantiations) {
-      final outputSynthLogic =
-          // inlineable modules have only 1 output
-          submoduleInstantiation.outputMapping.values.first;
+      (submoduleInstantiation.module as InlineSystemVerilog).resultSignalName;
+
+      // inlineable modules have only 1 result signal
+      final resultSynthLogic = submoduleInstantiation.inlineResultLogic!;
 
       // clear declaration of intermediate signal replaced by inline
-      internalSignals.remove(outputSynthLogic);
+      internalSignals.remove(resultSynthLogic);
 
       // clear declaration of instantiation for inline module
       submoduleInstantiation.clearDeclaration();
 
-      synthLogicToInlineableSynthSubmoduleMap[outputSynthLogic] =
+      synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
           submoduleInstantiation;
     }
 
@@ -1195,6 +1241,41 @@ class _SynthModuleDefinition {
         in moduleToSubModuleInstantiationMap.values) {
       subModuleInstantiation._synthLogicToInlineableSynthSubmoduleMap =
           synthLogicToInlineableSynthSubmoduleMap;
+    }
+  }
+
+  /// Finds all [InlineSystemVerilog] modules where all ports are [LogicNet]s
+  /// and which have not had their declarations cleared and replaces them with a
+  /// [_NetConnect] assignment instead of a normal assignment.
+  void _replaceInOutConnectionInlineableModules() {
+    for (final subModuleInstantiation
+        in moduleToSubModuleInstantiationMap.values.toList().where((e) =>
+            e.module is InlineSystemVerilog &&
+            e.needsDeclaration &&
+            e.outputMapping.isEmpty &&
+            e.inOutMapping.isNotEmpty)) {
+      // algorithm:
+      // - mark module as not needing declaration
+      // - add a net_connect
+      // - update the net_connect's inlineablesynthsubmodulemap
+
+      subModuleInstantiation.clearDeclaration();
+
+      final resultName = (subModuleInstantiation.module as InlineSystemVerilog)
+          .resultSignalName;
+
+      final subModResult = subModuleInstantiation.inOutMapping[resultName]!;
+
+      // use a dummy as a placeholder, it will not really be used since we are
+      // updating the inlineable map
+      final dummy =
+          _SynthLogic(LogicNet(name: 'DUMMY', width: subModResult.width));
+
+      final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
+        .._synthLogicToInlineableSynthSubmoduleMap ??= {};
+
+      netConnectSynthSubmod._synthLogicToInlineableSynthSubmoduleMap![dummy] =
+          subModuleInstantiation;
     }
   }
 
@@ -1433,8 +1514,7 @@ class _SynthLogic {
   /// Whether this represents a net.
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
-      logics.first is LogicNet ||
-      (isArray && (logics.first as LogicArray).isNet);
+      logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;

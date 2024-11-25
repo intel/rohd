@@ -39,3 +39,14 @@ class ModWithInout extends Module {
   }
 }
 ```
+
+## Subsets, Swizzles, and More with Logic Nets
+
+Any operation on `LogicNet`s which does not imply any logic other than just wire connectivity will behave bidirectionally.  Some examples include:
+
+- Subsets (`getRange`, `slice`, etc.)
+- Swizzling
+- Shifts by constant amounts
+- Reversing
+- Zero and sign extension
+- Replication
