@@ -1,6 +1,6 @@
 ## Next release
 
-- Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers.
+- Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers. Includes support for "wire-only" operations supporting multiple drivers.
 - Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports, and collapses all ports into a single `ports` argument, as well as some other new features like custom definitions and parameter passthroughs.
 - Breaking: `ExternalSystemVerilogModule` and `InlineSystemVerilog` now extend `SystemVerilog` instead of `CustomSystemVerilog`, meaning the `instantiationVerilog` API arguments have been modified.
 - Breaking: Increased minimum Dart SDK version to 3.0.0.
