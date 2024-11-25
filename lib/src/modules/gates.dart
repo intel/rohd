@@ -650,6 +650,7 @@ class RShift extends _ShiftGate {
 
   @override
   void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
     internalOut <= (_in >>> _shiftAmountConstant);
   }
 }
@@ -669,6 +670,7 @@ class ARShift extends _ShiftGate {
 
   @override
   void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
     internalOut <= (_in >> _shiftAmountConstant);
   }
 }
@@ -686,6 +688,7 @@ class LShift extends _ShiftGate {
 
   @override
   void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
     internalOut <= (_in << _shiftAmountConstant);
   }
 }

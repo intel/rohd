@@ -36,6 +36,7 @@ class _WireNetDriver {
   int get hashCode => signal.hashCode ^ index.hashCode;
 }
 
+/// Represents a wire that can have multiple drivers.
 class _WireNet extends _Wire {
   /// Drivers of this wire.
   final Set<_WireNetDriver> _drivers = {};
@@ -128,6 +129,9 @@ class _WireNet extends _Wire {
   String toString() => '${super.toString()} (net)';
 }
 
+/// Represents a blasted wire, which is a wire that is split into multiple
+/// wires, each representing a bit of the original wire. This is useful for
+/// [LogicNet.quietlyMergeSubsetTo] operations.
 class _WireNetBlasted extends _Wire implements _WireNet {
   /// Wires representing each bit of this blasted wire.
   final List<_WireNet> _wires;

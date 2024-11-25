@@ -491,7 +491,6 @@ class Sequential extends _Always {
           clk));
       _preTickClkValues.add(null);
     }
-
     _setup();
   }
 
