@@ -97,16 +97,27 @@ class _WireNet extends _Wire {
       ..forEach((p) => p._replaceWire(other, this))
       ..clear();
 
+    other._glitchListeners
+      ..forEach((listener) => listener.cancel())
+      ..clear();
+
     return this;
   }
 
+  /// A list of listeners of glitches that this wire initiated.
+  ///
+  /// If this wire is adopted/replaced/destroyed, these listeners should be
+  /// cancelled and the list cleared.
+  late final List<SynchronousSubscription<LogicValueChanged>> _glitchListeners =
+      [];
+
   void _addDriver(_WireNetDriver driver) {
     if (_drivers.add(driver)) {
-      //TODO: eliminiate glitch listeners after adoption!? (in all wires)
-      // maybe already taken care of via adoption?
-      driver.signal.glitch.listen((args) {
-        _evaluateNewValue(signalName: driver.signal.name);
-      });
+      _glitchListeners.add(
+        driver.signal.glitch.listen((args) {
+          _evaluateNewValue(signalName: driver.signal.name);
+        }),
+      );
     }
   }
 
@@ -239,4 +250,8 @@ class _WireNetBlasted extends _Wire implements _WireNet {
 
   @override
   String toString() => '${super.toString()} (net blasted)';
+
+  @override
+  List<SynchronousSubscription<LogicValueChanged>> get _glitchListeners =>
+      throw UnimplementedError('Not needed for blasted wires.');
 }
