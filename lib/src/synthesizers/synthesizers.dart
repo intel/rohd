@@ -4,4 +4,4 @@
 export 'synth_builder.dart';
 export 'synthesis_result.dart';
 export 'synthesizer.dart';
-export 'systemverilog.dart';
+export 'systemverilog/systemverilog.dart';
