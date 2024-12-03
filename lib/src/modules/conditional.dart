@@ -527,18 +527,17 @@ class Sequential extends _Always {
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
     List<Logic> negedgeTriggers = const [],
-  }) {
+  }) : super(reset: reset) {
     _registerInputTriggers(posedgeTriggers, isPosedge: true);
     _registerInputTriggers(negedgeTriggers, isPosedge: false);
 
-    if (_triggers.isEmpty) {
-      throw IllegalConfigurationException('Must provide at least one clock.');
+    if (reset != null && asyncReset) {
+      _triggers.add(_SequentialTrigger(_assignedDriverToInputMap[reset]!,
+          isPosedge: true));
     }
 
-    //TODO: trash cleanup
-    if (reset != null) {
-      _clks.add(_assignedDriverToInputMap[reset]!);
-      _preTickClkValues.add(null);
+    if (_triggers.isEmpty) {
+      throw IllegalConfigurationException('Must provide at least one trigger.');
     }
 
     _setup();
@@ -558,7 +557,7 @@ class Sequential extends _Always {
           addInput(
               _portUniquifier.getUniqueName(
                   initialName: Sanitizer.sanitizeSV(
-                      Naming.unpreferredName('clk${i}_${trigger.name}'))),
+                      Naming.unpreferredName('trigger${i}_${trigger.name}'))),
               trigger),
           isPosedge: isPosedge));
     }
