@@ -202,6 +202,8 @@ void main() {
       final pipem = SimplePipelineModule(Logic(width: 8));
       await pipem.build();
 
+      //TODO: test that reset works!
+      //TODO: test that reset value works!
       final vectors = [
         Vector({'a': 1}, {}),
         Vector({'a': 2}, {}),

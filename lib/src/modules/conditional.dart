@@ -433,20 +433,29 @@ class Sequential extends _Always {
   /// [Sequential].
   final bool allowMultipleAssignments;
 
+  /// Indicates whether provided `reset` signals should be treated as an async
+  /// reset. If no `reset` is provided, this will have no effect.
+  final bool asyncReset;
+
   /// Constructs a [Sequential] single-triggered by [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
-  /// conditionally reset when the signal is high.
-  /// The default reset value is to `0`, but if `resetValues` is provided then
-  /// the corresponding value associated with the driven signal will be set to
-  /// that value instead upon reset. If a signal is in `resetValues` but not
-  /// driven by any other [Conditional] in this block, it will be driven to the
-  /// specified reset value.
+  /// conditionally reset when the signal is high. The default reset value is to
+  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// [Conditional] in this block, it will be driven to the specified reset
+  /// value.
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
   Sequential(
     Logic clk,
     List<Conditional> conditionals, {
     Logic? reset,
     Map<Logic, dynamic>? resetValues,
+    bool asyncReset = false,
     bool allowMultipleAssignments = true,
     String name = 'sequential',
   }) : this.multi(
@@ -454,6 +463,7 @@ class Sequential extends _Always {
           conditionals,
           name: name,
           reset: reset,
+          asyncReset: asyncReset,
           resetValues: resetValues,
           allowMultipleAssignments: allowMultipleAssignments,
         );
@@ -461,20 +471,25 @@ class Sequential extends _Always {
   /// Constructs a [Sequential] multi-triggered by any of [clks].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
-  /// conditionally reset when the signal is high.
-  /// The default reset value is to `0`, but if `resetValues` is provided then
-  /// the corresponding value associated with the driven signal will be set to
-  /// that value instead upon reset. If a signal is in `resetValues` but not
-  /// driven by any other [Conditional] in this block, it will be driven to the
-  /// specified reset value.
+  /// conditionally reset when the signal is high. The default reset value is to
+  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// [Conditional] in this block, it will be driven to the specified reset
+  /// value.
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
   Sequential.multi(
     List<Logic> clks,
     super._conditionals, {
-    super.reset,
+    Logic? reset,
     super.resetValues,
+    this.asyncReset = false,
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
-  }) {
+  }) : super(reset: reset) {
     if (clks.isEmpty) {
       throw IllegalConfigurationException('Must provide at least one clock.');
     }
@@ -491,6 +506,12 @@ class Sequential extends _Always {
           clk));
       _preTickClkValues.add(null);
     }
+
+    if (reset != null) {
+      _clks.add(_assignedDriverToInputMap[reset]!);
+      _preTickClkValues.add(null);
+    }
+
     _setup();
   }
 
@@ -1700,6 +1721,10 @@ class FlipFlop extends Module with SystemVerilog {
   /// Only initialized if a constant value is provided.
   late LogicValue _resetValueConst;
 
+  /// Indicates whether provided `reset` signals should be treated as an async
+  /// reset. If no `reset` is provided, this will have no effect.
+  final bool asyncReset;
+
   /// Constructs a flip flop which is positive edge triggered on [clk].
   ///
   /// When optional [en] is provided, an additional input will be created for
@@ -1711,12 +1736,17 @@ class FlipFlop extends Module with SystemVerilog {
   /// it will reset to the provided [resetValue]. The type of [resetValue] must
   /// be a valid driver of a [ConditionalAssign] (e.g. [Logic], [LogicValue],
   /// [int], etc.).
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
   FlipFlop(
     Logic clk,
     Logic d, {
     Logic? en,
     Logic? reset,
     dynamic resetValue,
+    this.asyncReset = false,
     super.name = 'flipflop',
   }) {
     if (clk.width != 1) {
@@ -1756,6 +1786,7 @@ class FlipFlop extends Module with SystemVerilog {
       _clk,
       contents,
       reset: _reset,
+      asyncReset: asyncReset,
       resetValues:
           _reset != null ? {q: _resetValuePort ?? _resetValueConst} : null,
     );
@@ -1781,22 +1812,31 @@ class FlipFlop extends Module with SystemVerilog {
     final clk = ports[_clkName]!;
     final d = ports[_dName]!;
     final q = ports[_qName]!;
+    final en = _en != null ? ports[_enName]! : null;
+    final reset = _reset != null ? ports[_resetName]! : null;
 
-    final svBuffer = StringBuffer('always_ff @(posedge $clk) ');
+    final triggerString = [
+      clk,
+      if (reset != null) reset,
+    ].map((e) => 'posedge $e').join(' or ');
+
+    final svBuffer = StringBuffer('always_ff @($triggerString) ');
 
     if (_reset != null) {
       final resetValueString = _resetValuePort != null
           ? ports[_resetValueName]!
           : _resetValueConst.toString();
-      svBuffer.write('if(${ports[_resetName]}) $q <= $resetValueString; else ');
+      svBuffer.write('if(${reset!}) $q <= $resetValueString; else ');
     }
 
     if (_en != null) {
-      svBuffer.write('if(${ports[_enName]!}) ');
+      svBuffer.write('if(${en!}) ');
     }
 
     svBuffer.write('$q <= $d;  // $instanceName');
 
     return svBuffer.toString();
   }
+
+  //TODO: test sequential, sequential.multi, flipflop, and flop all! SV too!
 }

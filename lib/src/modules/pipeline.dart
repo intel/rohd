@@ -94,6 +94,9 @@ class Pipeline {
   /// An optional reset signal for all pipelined signals.
   final Logic? reset;
 
+  /// If `true`, then [reset] is asynchronous, if provided.
+  final bool asyncReset;
+
   /// All the [_PipeStage]s for this [Pipeline]
   late final List<_PipeStage> _stages;
 
@@ -146,13 +149,15 @@ class Pipeline {
       List<Logic?>? stalls,
       List<Logic> signals = const [],
       Map<Logic, Const> resetValues = const {},
-      Logic? reset})
+      Logic? reset,
+      bool asyncReset = false})
       : this.multi([clk],
             stages: stages,
             stalls: stalls,
             signals: signals,
             resetValues: resetValues,
-            reset: reset);
+            reset: reset,
+            asyncReset: asyncReset);
 
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
   Pipeline.multi(this._clks,
@@ -160,7 +165,8 @@ class Pipeline {
       List<Logic?>? stalls,
       List<Logic> signals = const [],
       Map<Logic, Const> resetValues = const {},
-      this.reset}) {
+      this.reset,
+      this.asyncReset = false}) {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
 
@@ -230,10 +236,10 @@ class Pipeline {
 
   /// Adds a new signal to be pipelined across all stages.
   void _add(Logic newLogic) {
-    dynamic resetValue;
-    if (_resetValues.containsKey(newLogic)) {
-      resetValue = _resetValues[newLogic];
-    }
+    // dynamic resetValue;
+    // if (_resetValues.containsKey(newLogic)) {
+    //   resetValue = _resetValues[newLogic];
+    // }
 
     for (var i = 0; i < _stages.length; i++) {
       _stages[i]._addLogic(newLogic, i);
@@ -245,7 +251,7 @@ class Pipeline {
       ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1));
     }
 
-    var ffAssignsWithStall =
+    final ffAssignsWithStall =
         List<Conditional>.generate(stageCount - 1, (index) {
       final stall = _stages[index].stall;
       final ffAssign = ffAssigns[index] as ConditionalAssign;
@@ -255,21 +261,29 @@ class Pipeline {
       return ffAssign.receiver < driver;
     });
 
-    if (reset != null) {
-      ffAssignsWithStall = <Conditional>[
-        If.block([
-          Iff(
-            reset!,
-            ffAssigns.map((conditional) {
-              conditional as ConditionalAssign;
-              return conditional.receiver < (resetValue ?? 0);
-            }).toList(growable: false),
-          ),
-          Else(ffAssignsWithStall)
-        ])
-      ];
-    }
-    Sequential.multi(_clks, ffAssignsWithStall, name: 'ff_${newLogic.name}');
+    //TODO: can we just delete this??
+    // if (reset != null) {
+    //   ffAssignsWithStall = <Conditional>[
+    //     If.block([
+    //       Iff(
+    //         reset!,
+    //         ffAssigns.map((conditional) {
+    //           conditional as ConditionalAssign;
+    //           return conditional.receiver < (resetValue ?? 0);
+    //         }).toList(growable: false),
+    //       ),
+    //       Else(ffAssignsWithStall)
+    //     ])
+    //   ];
+    // }
+
+    Sequential.multi(
+        _clks,
+        reset: reset,
+        resetValues: _resetValues,
+        asyncReset: asyncReset,
+        ffAssignsWithStall,
+        name: 'ff_${newLogic.name}');
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].

@@ -80,6 +80,9 @@ class FiniteStateMachine<StateIdentifier> {
   /// Width of the state.
   final int _stateWidth;
 
+  /// If `true`, the [reset] signal is asynchronous.
+  final bool asyncReset;
+
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
   /// transitions on positive [clk] edges.
@@ -87,14 +90,18 @@ class FiniteStateMachine<StateIdentifier> {
     Logic clk,
     Logic reset,
     StateIdentifier resetState,
-    List<State<StateIdentifier>> states,
-  ) : this.multi([clk], reset, resetState, states);
+    List<State<StateIdentifier>> states, {
+    bool asyncReset = false,
+  }) : this.multi([clk], reset, resetState, states, asyncReset: asyncReset);
+
+  //TODO: test FSMs with async reset
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
   /// transitions on positive edges of any of [_clks].
   FiniteStateMachine.multi(
-      this._clks, this.reset, this.resetState, this._states)
+      this._clks, this.reset, this.resetState, this._states,
+      {this.asyncReset = false})
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
@@ -147,7 +154,7 @@ class FiniteStateMachine<StateIdentifier> {
           ])
     ]);
 
-    Sequential.multi(_clks, reset: reset, resetValues: {
+    Sequential.multi(_clks, reset: reset, asyncReset: asyncReset, resetValues: {
       currentState: _stateValueLookup[_stateLookup[resetState]]
     }, [
       currentState < nextState,
