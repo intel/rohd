@@ -25,7 +25,7 @@ abstract class _Always extends Module with SystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   List<Conditional> get conditionals =>
       UnmodifiableListView<Conditional>(_conditionals);
-  late List<Conditional> _conditionals;
+  List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap =
@@ -528,13 +528,11 @@ class Sequential extends _Always {
     this.allowMultipleAssignments = true,
     List<Logic> negedgeTriggers = const [],
   }) : super(reset: reset) {
-    _registerInputTriggers(posedgeTriggers, isPosedge: true);
+    _registerInputTriggers([
+      ...posedgeTriggers,
+      if (reset != null && asyncReset) reset,
+    ], isPosedge: true);
     _registerInputTriggers(negedgeTriggers, isPosedge: false);
-
-    if (reset != null && asyncReset) {
-      _triggers.add(_SequentialTrigger(_assignedDriverToInputMap[reset]!,
-          isPosedge: true));
-    }
 
     if (_triggers.isEmpty) {
       throw IllegalConfigurationException('Must provide at least one trigger.');
@@ -551,6 +549,10 @@ class Sequential extends _Always {
       final trigger = providedTriggers[i];
       if (trigger.width != 1) {
         throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
+      }
+
+      if (_assignedDriverToInputMap.containsKey(trigger)) {
+        _driverInputsThatAreTriggers.add(_assignedDriverToInputMap[trigger]!);
       }
 
       _triggers.add(_SequentialTrigger(
@@ -579,6 +581,19 @@ class Sequential extends _Always {
   /// Keeps track of whether values need to be updated post-tick.
   bool _pendingPostUpdate = false;
 
+  /// All [input]s which are also triggers.
+  final Set<Logic> _driverInputsThatAreTriggers = {};
+
+  /// Updates the [_inputToPreTickInputValuesMap], if appropriate.
+  void _updateInputToPreTickInputValue(Logic driverInput) {
+    if (_driverInputsThatAreTriggers.contains(driverInput)) {
+      // triggers should be sampled at the new value, not the previous value
+      return;
+    }
+
+    _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+  }
+
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
     // one time is enough, it's a final map
@@ -590,13 +605,13 @@ class Sequential extends _Always {
     for (final driverInput in _assignedDriverToInputMap.values) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
       // uses values directly
-      _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+      _updateInputToPreTickInputValue(driverInput);
 
       driverInput.glitch.listen((event) async {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
-          _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+          _updateInputToPreTickInputValue(driverInput);
         } else {
           // if this is during stable clocks, it's probably another flop
           // driving it, so hold onto it for later
@@ -607,11 +622,9 @@ class Sequential extends _Always {
                 (value) {
                   // once the tick has completed,
                   // we can update the override maps
-                  for (final driverInput in _driverInputsPendingPostUpdate) {
-                    _inputToPreTickInputValuesMap[driverInput] =
-                        driverInput.value;
-                  }
-                  _driverInputsPendingPostUpdate.clear();
+                  _driverInputsPendingPostUpdate
+                    ..forEach(_updateInputToPreTickInputValue)
+                    ..clear();
                   _pendingPostUpdate = false;
                 },
               ).catchError(

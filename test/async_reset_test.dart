@@ -3,9 +3,11 @@ import 'package:test/test.dart';
 
 void main() {
   test('async reset samples correct reset value', () async {
-    final clk = Logic();
-    final reset = Logic();
-    final val = Logic();
+    final clk = Logic(name: 'clk');
+    final reset = Logic(name: 'reset');
+    final val = Logic(name: 'val');
+
+    reset.glitch.listen((x) => print('reset: $x'));
 
     reset.inject(0);
     clk.inject(0);
@@ -20,11 +22,11 @@ void main() {
     );
 
     Simulator.registerAction(10, () {
-      clk.inject(1);
+      clk.put(1);
     });
 
     Simulator.registerAction(14, () {
-      reset.inject(1);
+      reset.put(1);
     });
 
     Simulator.registerAction(15, () {
