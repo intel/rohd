@@ -1705,12 +1705,17 @@ ${padding}end ''');
 /// When the optional [reset] is provided, the flop will be reset (active-high).
 /// If no [resetValue] is provided, the reset value is always `0`. Otherwise,
 /// it will reset to the provided [resetValue].
+///
+/// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+/// as an async reset. If [asyncReset] is false, the reset signal will be
+/// treated as synchronous.
 Logic flop(
   Logic clk,
   Logic d, {
   Logic? en,
   Logic? reset,
   dynamic resetValue,
+  bool asyncReset = false,
 }) =>
     FlipFlop(
       clk,
@@ -1718,6 +1723,7 @@ Logic flop(
       en: en,
       reset: reset,
       resetValue: resetValue,
+      asyncReset: asyncReset,
     ).q;
 
 /// Represents a single flip-flop with no reset.
