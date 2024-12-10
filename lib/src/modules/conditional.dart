@@ -453,6 +453,37 @@ class _SequentialTrigger {
 
   /// The SystemVerilog keyword for this trigger.
   String get verilogTriggerKeyword => isPosedge ? 'posedge' : 'negedge';
+
+  @override
+  String toString() => '@$verilogTriggerKeyword ${signal.name}';
+}
+
+class _SequentialTriggerRaceTracker {
+  bool _triggerOccurred = false;
+  bool _nonTriggerOccurred = false;
+  bool _registeredPostTick = false;
+
+  void triggered() {
+    _triggerOccurred = true;
+    _registerPostTick();
+  }
+
+  void nonTriggered() {
+    _nonTriggerOccurred = true;
+    _registerPostTick();
+  }
+
+  bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
+
+  void _registerPostTick() async {
+    unawaited(Simulator.postTick.first.then((value) {
+      _registeredPostTick = false;
+      _triggerOccurred = false;
+      _nonTriggerOccurred = false;
+    }));
+
+    _registeredPostTick = true;
+  }
 }
 
 /// Represents a block of sequential logic.
@@ -472,7 +503,6 @@ class Sequential extends _Always {
   /// reset. If no `reset` is provided, this will have no effect.
   final bool asyncReset;
 
-  /// Constructs a [Sequential] single-triggered by [clk].
   /// Constructs a [Sequential] single-triggered by the positive edge of [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
@@ -585,14 +615,22 @@ class Sequential extends _Always {
   final Set<Logic> _driverInputsThatAreTriggers = {};
 
   /// Updates the [_inputToPreTickInputValuesMap], if appropriate.
-  void _updateInputToPreTickInputValue(Logic driverInput) {
+  ///
+  /// Returns `true` only if the map was updated.  If `false`, then the input
+  /// was a trigger.
+  bool _updateInputToPreTickInputValue(Logic driverInput) {
     if (_driverInputsThatAreTriggers.contains(driverInput)) {
       // triggers should be sampled at the new value, not the previous value
-      return;
+      return false;
     }
 
     _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+    return true;
   }
+
+  //TODO: doc, and is this the right line to put this?
+  final _SequentialTriggerRaceTracker _raceTracker =
+      _SequentialTriggerRaceTracker();
 
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
@@ -606,7 +644,25 @@ class Sequential extends _Always {
     // - if any other incoming signal changes (trigger or otherwise), then that's BAD (race condition)
     //    - actually, multiple triggers are ok? that's fine to evaluate?
     // Ok, another attempt:
-    // - if a trigger AND a non-trigger toggle when NOT clksStable
+    // - if a trigger AND a non-trigger toggle when NOT clksStable (in MainTick)
+    // ok, more formally:
+    // - if a non-trigger toggles in !clkStable, AND
+    //   a trigger toggles,
+    //   BEFORE/RESETTING at postTick,
+    //   THEN drive and X on all outputs
+
+    // var glitchedTrigger = false;
+    // var glitchedInput = false;
+    // void checkGlitchRules() {
+    //   if (glitchedInput && glitchedTrigger) {
+    //     print('Both trigger and input glitched in the same tick');
+    //   }
+    // }
+
+    // Simulator.postTick.listen((_) {
+    //   glitchedInput = false;
+    //   glitchedTrigger = false;
+    // });
 
     // listen to every input of this `Sequential` for changes
     for (final driverInput in _assignedDriverToInputMap.values) {
@@ -618,8 +674,24 @@ class Sequential extends _Always {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
-          _updateInputToPreTickInputValue(driverInput);
-          print('non-clock stable change: ${driverInput.name} $event');
+          final didUpdate = _updateInputToPreTickInputValue(driverInput);
+
+          // if (didUpdate && Simulator.phase == SimulatorPhase.mainTick) {
+          //   glitchedInput = true;
+          //   print(
+          //       '@${Simulator.time} input glitch on mainTick: ${driverInput.name} $event');
+          //   checkGlitchRules();
+          // }
+          if (didUpdate) {
+            // print(
+            //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
+            _raceTracker.nonTriggered();
+          }
+
+          // if (_pendingExecute && didUpdate) {
+          //   print(
+          //       'input glitch while pending execute out of clks stable: ${driverInput.name} $event');
+          // }
         } else {
           // if this is during stable clocks, it's probably another flop
           // driving it, so hold onto it for later
@@ -634,6 +706,8 @@ class Sequential extends _Always {
                     ..forEach(_updateInputToPreTickInputValue)
                     ..clear();
                   _pendingPostUpdate = false;
+
+                  // glitchedInput = false;
                 },
               ).catchError(
                 test: (error) => error is Exception,
@@ -654,10 +728,23 @@ class Sequential extends _Always {
       trigger.signal.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
         trigger.preTickValue ??= event.previousValue;
-        print(
-            'trigger glitched: ${trigger.signal.name} $event ${Simulator.phase}');
+
+        // if (_driverInputsPendingPostUpdate.isNotEmpty) {
+        //   print(
+        //       'trigger glitched when pending input changes: ${trigger.signal.name} $event ${Simulator.phase}');
+        // }
+        // glitchedTrigger = true;
+        _raceTracker.triggered();
+
+        // print(
+        //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');
+        // checkGlitchRules();
+
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
+            // checkGlitchRules(); //TODO: this should only be IF TRIGGERED!
+            // glitchedTrigger = false;
+
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
@@ -688,10 +775,15 @@ class Sequential extends _Always {
     final anyTriggerInvalid = _triggers.any((t) => !t.isValid);
 
     if (anyTriggerInvalid) {
+      //TODO: use _driveX here?
       for (final receiverOutput in _assignedReceiverToOutputMap.values) {
         receiverOutput.put(LogicValue.x);
       }
     } else if (anyTriggered) {
+      if (_raceTracker.isInViolation) {
+        print('violation!');
+      }
+
       if (allowMultipleAssignments) {
         for (final element in conditionals) {
           element.execute(null, null);

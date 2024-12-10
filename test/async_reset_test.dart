@@ -14,7 +14,7 @@ class NonIdenticalTriggerSeq extends Module {
     bool invert = false,
     bool triggerAfterSampledUpdate = true,
   }) {
-    final clk = Logic(name: 'clk');
+    final clk = Logic(name: 'clk')..gets(Const(0));
     trigger = addInput('trigger', trigger);
 
     final innerTrigger = Logic(name: 'innerTrigger', naming: Naming.reserved);
@@ -189,7 +189,7 @@ void main() {
         Vector({'trigger': 0}, {'result': 0}),
       ];
 
-      // await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
+      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
@@ -205,7 +205,7 @@ void main() {
         Vector({'trigger': 1}, {'result': 1}),
       ];
 
-      // await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
+      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
       SimCompare.checkIverilogVector(mod, vectors);
     });
 
@@ -221,7 +221,7 @@ void main() {
         Vector({'trigger': 1}, {'result': 1}),
       ];
 
-      // await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
+      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
       SimCompare.checkIverilogVector(mod, vectors);
     });
   });
