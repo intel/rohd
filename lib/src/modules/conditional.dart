@@ -601,6 +601,13 @@ class Sequential extends _Always {
       element._updateOverrideMap(_inputToPreTickInputValuesMap);
     }
 
+    // TODO: Maybe the right recipe:
+    // - keep track of WHAT triggered this flop each time
+    // - if any other incoming signal changes (trigger or otherwise), then that's BAD (race condition)
+    //    - actually, multiple triggers are ok? that's fine to evaluate?
+    // Ok, another attempt:
+    // - if a trigger AND a non-trigger toggle when NOT clksStable
+
     // listen to every input of this `Sequential` for changes
     for (final driverInput in _assignedDriverToInputMap.values) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
@@ -612,6 +619,7 @@ class Sequential extends _Always {
           // if the change happens not when the clocks are stable, immediately
           // update the map
           _updateInputToPreTickInputValue(driverInput);
+          print('non-clock stable change: ${driverInput.name} $event');
         } else {
           // if this is during stable clocks, it's probably another flop
           // driving it, so hold onto it for later
@@ -646,6 +654,8 @@ class Sequential extends _Always {
       trigger.signal.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
         trigger.preTickValue ??= event.previousValue;
+        print(
+            'trigger glitched: ${trigger.signal.name} $event ${Simulator.phase}');
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF

@@ -327,6 +327,12 @@ abstract class Simulator {
     while (_pendingList.isNotEmpty) {
       await _pendingList.removeFirst()();
     }
+
+    //TODO: is this appropriate to do? if so, make it a function!
+    while (_injectedActions.isNotEmpty) {
+      final injectedFunction = _injectedActions.removeFirst();
+      await injectedFunction();
+    }
   }
 
   /// Executes the clkStable phase

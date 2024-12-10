@@ -150,6 +150,32 @@ void main() {
     expect(numPosedges, equals(1));
   });
 
+  test('injection can trigger multiple changed events if post tick', () async {
+    final a = Logic(width: 8)..put(0);
+
+    Simulator.registerAction(10, () {
+      a
+        ..put(1)
+        ..inject(2);
+    });
+
+    a.changed.listen((_) {
+      a.inject(a.value.toInt() | (1 << 4));
+    });
+
+    final seenValues = <LogicValue>[];
+
+    a.changed.listen((_) {
+      seenValues.add(a.value);
+    });
+
+    await Simulator.run();
+
+    expect(seenValues.length, 2);
+    expect(seenValues[0].toInt(), 2);
+    expect(seenValues[1].toInt(), 2 | (1 << 4));
+  });
+
   group('injection triggers flop', () {
     Future<void> injectionTriggersFlop({required bool useArrays}) async {
       final baseClk = SimpleClockGenerator(10).clk;
