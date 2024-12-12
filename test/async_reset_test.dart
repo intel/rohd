@@ -295,11 +295,21 @@ void main() {
         a,
         b
       ], [
-        If.block([
-          Iff(a & ~b, [result < 0xa]),
-          ElseIf(~a & b, [result < 0xb]),
-          Else([result < 0xc]),
-        ]),
+        // this is bad style and possibly won't synthesize properly, but helps
+        // test some of the checking in `Sequential`s
+        If.s(
+          a,
+          If.s(
+            b,
+            result < 0xc,
+            result < 0xa,
+          ),
+          If.s(
+            b,
+            result < 0xb,
+            result < 0xc,
+          ),
+        ),
       ]);
 
       Simulator.registerAction(10, () {
