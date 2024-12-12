@@ -33,7 +33,7 @@ class NonIdenticalTriggerSeq extends Module {
 
 class MultipleTriggerSeq extends Module {
   MultipleTriggerSeq(Logic trigger1, Logic trigger2) {
-    final clk = Logic(); //SimpleClockGenerator(10).clk;
+    final clk = Logic();
     trigger1 = addInput('trigger1', trigger1);
     trigger2 = addInput('trigger2', trigger2);
 
@@ -47,10 +47,9 @@ class MultipleTriggerSeq extends Module {
       If.block([
         Iff(trigger1 & ~trigger2, [result < 0xa]),
         ElseIf(~trigger1 & trigger2, [result < 0xb]),
-        // ElseIf(trigger1 & trigger2, [result < 0xc]),
+        ElseIf(trigger1 & trigger2, [result < 0xc]),
         ElseIf(~trigger1 & ~trigger2, [result < 0xd]),
       ]),
-      // result < (trigger1 & trigger2),
     ]);
   }
 }
@@ -170,13 +169,20 @@ void main() {
 
       await mod.build();
 
-      final vectors = [
+      final vectorsRohd = [
+        Vector({'trigger': 0}, {}),
+        // ROHD catches a bad race condition
+        Vector({'trigger': 1}, {'result': 'x'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectorsRohd);
+
+      final vectorsSv = [
         Vector({'trigger': 0}, {}),
         Vector({'trigger': 1}, {'result': 1}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
-      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectorsSv);
     });
 
     test('inverted', () async {
@@ -184,13 +190,20 @@ void main() {
 
       await mod.build();
 
-      final vectors = [
+      final vectorsRohd = [
+        Vector({'trigger': 1}, {}),
+        // ROHD catches a bad race condition
+        Vector({'trigger': 0}, {'result': 'x'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectorsRohd);
+
+      final vectorsSv = [
         Vector({'trigger': 1}, {}),
         Vector({'trigger': 0}, {'result': 0}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
-      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectorsSv);
     });
 
     test('trigger earlier inverted', () async {
@@ -199,14 +212,21 @@ void main() {
 
       await mod.build();
 
-      final vectors = [
+      final vectorsRohd = [
+        Vector({'trigger': 0}, {}),
+        // ROHD catches a bad race condition
+        Vector({'trigger': 1}, {'result': 'x'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectorsRohd);
+
+      final vectorsSv = [
         Vector({'trigger': 0}, {}),
         // in this case, the trigger happened before the sampled value updated
         Vector({'trigger': 1}, {'result': 1}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
-      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectorsSv);
     });
 
     test('trigger earlier normal', () async {
@@ -215,14 +235,21 @@ void main() {
 
       await mod.build();
 
-      final vectors = [
+      final vectorsRohd = [
+        Vector({'trigger': 0}, {}),
+        // ROHD catches a bad race condition
+        Vector({'trigger': 1}, {'result': 'x'}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectorsRohd); //TODO fix
+
+      final vectorsSv = [
         Vector({'trigger': 0}, {}),
         // in this case, the two signals are "identical", so there is no "later"
         Vector({'trigger': 1}, {'result': 1}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectors); //TODO fix
-      SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectorsSv);
     });
   });
 
@@ -241,13 +268,12 @@ void main() {
 
       final vectors = [
         Vector({'trigger1': 0, 'trigger2': 0}, {}),
-        // Vector({'trigger1': 0, 'trigger2': 0}, {'result': 0xd}),
         Vector({'trigger1': 1, 'trigger2': 1}, {}),
-        Vector({'trigger1': 1, 'trigger2': 1}, {'result': 0xd}),
+        Vector({'trigger1': 1, 'trigger2': 1}, {'result': 0xc}),
       ];
 
       //TODO fix, should this fail?
-      // await SimCompare.checkFunctionalVector(mod, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
 

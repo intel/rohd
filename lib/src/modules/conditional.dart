@@ -476,13 +476,15 @@ class _SequentialTriggerRaceTracker {
   bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
 
   void _registerPostTick() {
-    unawaited(Simulator.postTick.first.then((value) {
-      _registeredPostTick = false;
-      _triggerOccurred = false;
-      _nonTriggerOccurred = false;
-    }));
+    if (!_registeredPostTick) {
+      unawaited(Simulator.postTick.first.then((value) {
+        _registeredPostTick = false;
+        _triggerOccurred = false;
+        _nonTriggerOccurred = false;
+      }));
 
-    _registeredPostTick = true;
+      _registeredPostTick = true;
+    }
   }
 }
 
@@ -779,31 +781,36 @@ class Sequential extends _Always {
     }
   }
 
+  /// Drives [LogicValue.x] on all outputs of this [Sequential].
+  void _driveX() {
+    for (final receiverOutput in _assignedReceiverToOutputMap.values) {
+      receiverOutput.put(LogicValue.x);
+    }
+  }
+
   void _execute() {
     final anyTriggered = _triggers.any((t) => t.isTriggered);
     final anyTriggerInvalid = _triggers.any((t) => !t.isValid);
 
     if (anyTriggerInvalid) {
-      //TODO: use _driveX here?
-      for (final receiverOutput in _assignedReceiverToOutputMap.values) {
-        receiverOutput.put(LogicValue.x);
-      }
+      _driveX();
     } else if (anyTriggered) {
       if (_raceTracker.isInViolation) {
-        print('violation!');
-      }
-
-      if (allowMultipleAssignments) {
-        for (final element in conditionals) {
-          element.execute(null, null);
-        }
+        // print('violation!'); //TODO
+        _driveX();
       } else {
-        final allDrivenSignals = DuplicateDetectionSet<Logic>();
-        for (final element in conditionals) {
-          element.execute(allDrivenSignals, null);
-        }
-        if (allDrivenSignals.hasDuplicates) {
-          throw SignalRedrivenException(allDrivenSignals.duplicates);
+        if (allowMultipleAssignments) {
+          for (final element in conditionals) {
+            element.execute(null, null);
+          }
+        } else {
+          final allDrivenSignals = DuplicateDetectionSet<Logic>();
+          for (final element in conditionals) {
+            element.execute(allDrivenSignals, null);
+          }
+          if (allDrivenSignals.hasDuplicates) {
+            throw SignalRedrivenException(allDrivenSignals.duplicates);
+          }
         }
       }
     }
