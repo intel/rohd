@@ -109,9 +109,6 @@ void main() {
       },
     };
 
-    //TODO: what if there's another (connected) version of that signal that's the trigger?? but not exactly the same logic?
-    //TODO: how to deal with injects that trigger edges??
-
     //TODO: doc clearly the behavior of sampling async triggersl
 
     for (final mechanism in seqMechanism.entries) {
@@ -273,8 +270,6 @@ void main() {
 
           await mod.build();
 
-          WaveDumper(mod);
-
           final vectors = [
             Vector({'trigger1': 0, 'trigger2': 0}, {}),
             Vector({'trigger1': 1, 'trigger2': 1}, {}),
@@ -343,5 +338,29 @@ void main() {
       expect(seenValues[0].toInt(), 0xa);
       expect(seenValues[1].toInt(), 0xb);
     });
+  });
+
+  test('put before trigger changed does not cause race x generation', () async {
+    final d = Logic();
+    final clk = SimpleClockGenerator(10).clk;
+
+    final q = flop(clk, d);
+
+    unawaited(Simulator.run());
+
+    d.put(1);
+
+    await clk.nextPosedge;
+
+    expect(q.value.isValid, isTrue);
+    expect(q.value.toInt(), 1);
+
+    d.put(0);
+
+    await clk.nextPosedge;
+
+    expect(q.value.toInt(), 0);
+
+    await Simulator.endSimulation();
   });
 }

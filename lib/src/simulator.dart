@@ -328,11 +328,8 @@ abstract class Simulator {
       await _pendingList.removeFirst()();
     }
 
-    //TODO: is this appropriate to do? if so, make it a function!
-    while (_injectedActions.isNotEmpty) {
-      final injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
+    //TODO: is this appropriate to do?
+    await _executeInjectedActions();
   }
 
   /// Executes the clkStable phase
@@ -343,15 +340,20 @@ abstract class Simulator {
     _clkStableController.add(null);
   }
 
+  /// Executes all the injected actions.
+  static Future<void> _executeInjectedActions() async {
+    while (_injectedActions.isNotEmpty) {
+      final injectedFunction = _injectedActions.removeFirst();
+      await injectedFunction();
+    }
+  }
+
   /// Executes the outOfTick phase
   ////
   /// Just before we end the current tick, we execute the injected actions,
   /// removing them from [_injectedActions] as we go.
   static Future<void> _outOfTick() async {
-    while (_injectedActions.isNotEmpty) {
-      final injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
+    await _executeInjectedActions();
 
     _phase = SimulatorPhase.outOfTick;
 
@@ -386,6 +388,9 @@ abstract class Simulator {
       throw Exception('Simulation has already been run and ended.'
           '  To run a new simulation, use Simulator.reset().');
     }
+
+    // Yield execution to the event loop before beginning the simulation.
+    await Future(() {});
 
     while (hasStepsRemaining() &&
         _simExceptions.isEmpty &&

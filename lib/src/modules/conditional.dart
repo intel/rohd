@@ -458,6 +458,7 @@ class _SequentialTrigger {
   String toString() => '@$verilogTriggerKeyword ${signal.name}';
 }
 
+//TODO: doc stuff
 class _SequentialTriggerRaceTracker {
   bool _triggerOccurred = false;
   bool _nonTriggerOccurred = false;
@@ -651,31 +652,6 @@ class Sequential extends _Always {
       element._updateOverrideMap(_inputToPreTickInputValuesMap);
     }
 
-    // TODO: Maybe the right recipe:
-    // - keep track of WHAT triggered this flop each time
-    // - if any other incoming signal changes (trigger or otherwise), then that's BAD (race condition)
-    //    - actually, multiple triggers are ok? that's fine to evaluate?
-    // Ok, another attempt:
-    // - if a trigger AND a non-trigger toggle when NOT clksStable (in MainTick)
-    // ok, more formally:
-    // - if a non-trigger toggles in !clkStable, AND
-    //   a trigger toggles,
-    //   BEFORE/RESETTING at postTick,
-    //   THEN drive and X on all outputs
-
-    // var glitchedTrigger = false;
-    // var glitchedInput = false;
-    // void checkGlitchRules() {
-    //   if (glitchedInput && glitchedTrigger) {
-    //     print('Both trigger and input glitched in the same tick');
-    //   }
-    // }
-
-    // Simulator.postTick.listen((_) {
-    //   glitchedInput = false;
-    //   glitchedTrigger = false;
-    // });
-
     // listen to every input of this `Sequential` for changes
     for (final driverInput in _assignedDriverToInputMap.values) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
@@ -688,24 +664,12 @@ class Sequential extends _Always {
           // update the map
           final didUpdate = _updateInputToPreTickInputValue(driverInput);
 
-          // if (didUpdate && Simulator.phase == SimulatorPhase.mainTick) {
-          //   glitchedInput = true;
-          //   print(
-          //       '@${Simulator.time} input glitch on mainTick: ${driverInput.name} $event');
-          //   checkGlitchRules();
-          // }
-          if (didUpdate) {
-            if (Simulator.phase != SimulatorPhase.outOfTick) {
-              print(
-                  '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
-              _raceTracker.nonTriggered();
-            }
+          if (didUpdate && Simulator.phase != SimulatorPhase.outOfTick) {
+            //TODO
+            // print(
+            //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
+            _raceTracker.nonTriggered();
           }
-
-          // if (_pendingExecute && didUpdate) {
-          //   print(
-          //       'input glitch while pending execute out of clks stable: ${driverInput.name} $event');
-          // }
         } else {
           // if this is during stable clocks, it's probably another flop
           // driving it, so hold onto it for later
@@ -720,8 +684,6 @@ class Sequential extends _Always {
                     ..forEach(_updateInputToPreTickInputValue)
                     ..clear();
                   _pendingPostUpdate = false;
-
-                  // glitchedInput = false;
                 },
               ).catchError(
                 test: (error) => error is Exception,
@@ -743,27 +705,15 @@ class Sequential extends _Always {
         // we want the first previousValue from the first glitch of this tick
         trigger.preTickValue ??= event.previousValue;
 
-        // if (_driverInputsPendingPostUpdate.isNotEmpty) {
-        //   print(
-        //       'trigger glitched when pending input changes: ${trigger.signal.name} $event ${Simulator.phase}');
-        // }
-        // glitchedTrigger = true;
-
         if (Simulator.phase != SimulatorPhase.outOfTick) {
+          //TODO
           // print(
           //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');
           _raceTracker.triggered();
         }
 
-        // print(
-        //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');
-        // checkGlitchRules();
-
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
-            // checkGlitchRules(); //TODO: this should only be IF TRIGGERED!
-            // glitchedTrigger = false;
-
             // once the clocks are stable, execute the contents of the FF
             _execute();
             _pendingExecute = false;
