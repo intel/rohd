@@ -32,12 +32,14 @@ class NonIdenticalTriggerSeq extends Module {
 }
 
 class MultipleTriggerSeq extends Module {
-  MultipleTriggerSeq(Logic trigger1, Logic trigger2) {
-    final clk = Logic(name: 'clk')..gets(Const(0));
+  Logic get result => output('result');
+  MultipleTriggerSeq(Logic trigger1, Logic trigger2, {bool withClock = false}) {
+    final clk = Logic(name: 'clk')
+      ..gets(withClock ? SimpleClockGenerator(10).clk : Const(0));
     trigger1 = addInput('trigger1', trigger1);
     trigger2 = addInput('trigger2', trigger2);
 
-    final result = addOutput('result', width: 8);
+    addOutput('result', width: 8);
 
     Sequential.multi([
       clk,
@@ -262,27 +264,32 @@ void main() {
     });
   });
 
-  //TODO: test async reset with clocks too
-
-  //TODO: test if registerAction (same tick) with clk and reset both edges at the same time
-  // what should that even do?? error?? what if two signals other than clk (like different resets)
-  // that need to be mutually exclusive happen?
-  // always@(clk, r1, r2) if(r1 & ~r2) ... if(r2 & ~r1) ... if(r1 & r2) ... if(~r1 & ~r2) ...
-
   group('multiple trigger races', () {
-    test('two resets simulatenously', () async {
-      final mod = MultipleTriggerSeq(Logic(), Logic());
+    group('two resets simulatenously', () {
+      for (final withClock in [true, false]) {
+        test('withClock=$withClock', () async {
+          final mod =
+              MultipleTriggerSeq(Logic(), Logic(), withClock: withClock);
 
-      await mod.build();
+          await mod.build();
 
-      final vectors = [
-        Vector({'trigger1': 0, 'trigger2': 0}, {}),
-        Vector({'trigger1': 1, 'trigger2': 1}, {}),
-        Vector({'trigger1': 1, 'trigger2': 1}, {'result': 0xc}),
-      ];
+          WaveDumper(mod);
 
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors);
+          final vectors = [
+            Vector({'trigger1': 0, 'trigger2': 0}, {}),
+            Vector({'trigger1': 1, 'trigger2': 1}, {}),
+            Vector({'trigger1': 1, 'trigger2': 1}, {'result': 0xc}),
+          ];
+
+          // make sure change happend right on the edges
+          Simulator.registerAction(12, () {
+            expect(mod.result.value.toInt(), 0xc);
+          });
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+      }
     });
 
     test('one then another trigger post-changed', () async {
