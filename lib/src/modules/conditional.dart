@@ -490,10 +490,8 @@ class _SequentialTriggerRaceTracker {
 
 /// Represents a block of sequential logic.
 ///
-/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge
-/// triggered by either one trigger or multiple with [Sequential.multi].
-///
-/// TODO: write about race conditions
+/// This is similar to an `always_ff` block in SystemVerilog. Edge triggered by
+/// either one trigger or multiple with [Sequential.multi].
 class Sequential extends _Always {
   /// The input edge triggers used in this block.
   final List<_SequentialTrigger> _triggers = [];
@@ -552,6 +550,16 @@ class Sequential extends _Always {
   /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
   /// as an async reset. If [asyncReset] is false, the reset signal will be
   /// treated as synchronous.
+  ///
+  /// If a trigger is sampled within the `conditionals`, the value will be the
+  /// "new" value of that trigger. This is meant to help model how an
+  /// asynchronous trigger (e.g. async reset) could affect the behavior of the
+  /// sequential elements implied. One must be careful to describe logic which
+  /// is synthesizable. The [Sequential] will attempt to drive `X` in scenarios
+  /// it can detect may not simulate and synthesize the same way, but it cannot
+  /// guarantee it. If both a trigger and an input that is not a trigger glitch
+  /// simultaneously during the phases of the [Simulator], then all outputs of
+  /// this [Sequential] will be driven to [LogicValue.x].
   Sequential.multi(
     List<Logic> posedgeTriggers,
     super._conditionals, {
@@ -688,8 +696,8 @@ class Sequential extends _Always {
           // }
           if (didUpdate) {
             if (Simulator.phase != SimulatorPhase.outOfTick) {
-              // print(
-              //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
+              print(
+                  '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
               _raceTracker.nonTriggered();
             }
           }
@@ -796,7 +804,7 @@ class Sequential extends _Always {
       _driveX();
     } else if (anyTriggered) {
       if (_raceTracker.isInViolation) {
-        // print('violation!'); //TODO
+        // print('@${Simulator.time} violation!'); //TODO
         _driveX();
       } else {
         if (allowMultipleAssignments) {

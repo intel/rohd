@@ -33,7 +33,7 @@ class NonIdenticalTriggerSeq extends Module {
 
 class MultipleTriggerSeq extends Module {
   MultipleTriggerSeq(Logic trigger1, Logic trigger2) {
-    final clk = Logic();
+    final clk = Logic(name: 'clk')..gets(Const(0));
     trigger1 = addInput('trigger1', trigger1);
     trigger2 = addInput('trigger2', trigger2);
 
@@ -44,11 +44,20 @@ class MultipleTriggerSeq extends Module {
       trigger1,
       trigger2
     ], [
-      If.block([
-        Iff(trigger1 & ~trigger2, [result < 0xa]),
-        ElseIf(~trigger1 & trigger2, [result < 0xb]),
-        ElseIf(trigger1 & trigger2, [result < 0xc]),
-        ElseIf(~trigger1 & ~trigger2, [result < 0xd]),
+      // this is bad style and possibly won't synthesize properly, but helps
+      // test some of the checking in `Sequential`s
+      If(trigger1, then: [
+        If(trigger2, then: [
+          result < 0xc,
+        ], orElse: [
+          result < 0xa,
+        ]),
+      ], orElse: [
+        If(trigger2, then: [
+          result < 0xb,
+        ], orElse: [
+          result < 0xd,
+        ]),
       ]),
     ]);
   }
@@ -272,7 +281,6 @@ void main() {
         Vector({'trigger1': 1, 'trigger2': 1}, {'result': 0xc}),
       ];
 
-      //TODO fix, should this fail?
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
