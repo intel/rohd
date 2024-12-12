@@ -23,9 +23,11 @@ void main() {
   test('counter example', () async {
     await counter.main(noPrint: true);
   });
+
   test('tree example', () async {
     await tree.main(noPrint: true);
   });
+
   test('fir filter example', () async {
     await fir_filter.main(noPrint: true);
   });

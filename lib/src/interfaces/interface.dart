@@ -47,7 +47,7 @@ class Interface<TagType> {
   Logic port(String name) => _ports.containsKey(name)
       ? _ports[name]!
       : throw PortDoesNotExistException(
-          'Port named "$name" not found on this interface.');
+          'Port named "$name" not found on this interface: $this.');
 
   /// Provides the [port] named [name] if it exists, otherwise `null`.
   Logic? tryPort(String name) => _ports[name];

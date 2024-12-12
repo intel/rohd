@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // oven_fsm.dart
@@ -10,6 +10,8 @@
 // ignore_for_file: avoid_print
 
 // Import the ROHD package.
+import 'dart:async';
+
 import 'package:rohd/rohd.dart';
 
 // Import the counter module implement in example.dart.
@@ -58,16 +60,14 @@ class OvenModule extends Module {
   Logic get led => output('led');
 
   // This oven module receives a `button` and a `reset` input from runtime.
-  OvenModule(Logic button, Logic reset) : super(name: 'OvenModule') {
+  OvenModule(Logic button, Logic reset, Logic clk) : super(name: 'OvenModule') {
     // Register inputs and outputs of the module in the constructor.
     // Module logic must consume registered inputs and output to registered
     // outputs. `led` output also added as the output port.
     button = addInput('button', button, width: button.width);
     reset = addInput('reset', reset);
+    clk = addInput('clk', clk);
     final led = addOutput('led', width: button.width);
-
-    // An internal clock generator.
-    final clk = SimpleClockGenerator(10).clk;
 
     // Register local signals, `counterReset` and `en`
     // for Counter module.
@@ -184,16 +184,26 @@ class OvenModule extends Module {
   FiniteStateMachine<OvenState> get ovenStateMachine => _oven;
 }
 
+/// A helper function to wait for a number of cycles.
+Future<void> waitCycles(Logic clk, int numCycles) async {
+  for (var i = 0; i < numCycles; i++) {
+    await clk.nextPosedge;
+  }
+}
+
 Future<void> main({bool noPrint = false}) async {
   // Signals `button` and `reset` that mimic user's behaviour of button pressed
   // and reset.
   //
-  // Width of button is 2 because button is represent by 2-bits signal.
+  // Width of button is 2 because button is represented by a 2-bit signal.
   final button = Logic(name: 'button', width: 2);
   final reset = Logic(name: 'reset');
 
+  // A clock generator.
+  final clk = SimpleClockGenerator(10).clk;
+
   // Build an Oven Module and passed the `button` and `reset`.
-  final oven = OvenModule(button, reset);
+  final oven = OvenModule(button, reset, clk);
 
   // Generate a Mermaid FSM diagram and save as the name `oven_fsm.md`.
   // Note that the extension of the files is recommend as .md or .mmd.
@@ -210,13 +220,21 @@ Future<void> main({bool noPrint = false}) async {
 
   // Now let's try simulating!
 
-  // Let's start off with asserting reset to Oven.
-  reset.inject(1);
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(300);
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
     WaveDumper(oven, outputPath: 'oven.vcd');
   }
+
+  // Kick off the simulation.
+  unawaited(Simulator.run());
+
+  await clk.nextPosedge;
+
+  // Let's start off with asserting reset to Oven.
+  reset.inject(1);
 
   if (!noPrint) {
     // We can listen to the streams on LED light changes based on time.
@@ -227,38 +245,39 @@ Future<void> main({bool noPrint = false}) async {
       // Print the Simulator time when the LED light changes.
       print('@t=${Simulator.time}, LED changed to: $ledVal');
     });
+
+    button.changed.listen((event) {
+      final buttonVal = Button.values[event.newValue.toInt()].name;
+      print('@t=${Simulator.time}, Button changed to: $buttonVal');
+    });
   }
 
-  // Drop reset at time 25.
-  Simulator.registerAction(25, () => reset.put(0));
+  await waitCycles(clk, 2);
 
-  // Press button start => `00` at time 25.
-  Simulator.registerAction(25, () {
-    button.put(Button.start.value);
-  });
+  // Drop reset
+  reset.inject(0);
 
-  // Press button pause => `01` at time 50.
-  Simulator.registerAction(50, () {
-    button.put(Button.pause.value);
-  });
+  // Press button start => `00`
+  button.inject(Button.start.value);
 
-  // Press button resume => `10` at time 70.
-  Simulator.registerAction(70, () {
-    button.put(Button.resume.value);
-  });
+  await waitCycles(clk, 3);
+
+  // Press button pause => `01`
+  button.inject(Button.pause.value);
+
+  await waitCycles(clk, 3);
+
+  // Press button resume => `10`
+  button.inject(Button.resume.value);
+
+  await waitCycles(clk, 8);
+
+  await Simulator.endSimulation();
 
   // Print a message when we're done with the simulation!
-  Simulator.registerAction(120, () {
-    if (!noPrint) {
-      print('Simulation completed!');
-    }
-  });
-
-  // Set a maximum time for the simulation so it doesn't keep running forever.
-  Simulator.setMaxSimTime(120);
-
-  // Kick off the simulation.
-  await Simulator.run();
+  if (!noPrint) {
+    print('Simulation completed!');
+  }
 
   // We can take a look at the waves now
   if (!noPrint) {

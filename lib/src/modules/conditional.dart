@@ -475,7 +475,7 @@ class _SequentialTriggerRaceTracker {
 
   bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
 
-  void _registerPostTick() async {
+  void _registerPostTick() {
     unawaited(Simulator.postTick.first.then((value) {
       _registeredPostTick = false;
       _triggerOccurred = false;
@@ -490,6 +490,8 @@ class _SequentialTriggerRaceTracker {
 ///
 /// This is similar to an `always_ff` block in SystemVerilog.  Positive edge
 /// triggered by either one trigger or multiple with [Sequential.multi].
+///
+/// TODO: write about race conditions
 class Sequential extends _Always {
   /// The input edge triggers used in this block.
   final List<_SequentialTrigger> _triggers = [];
@@ -683,9 +685,11 @@ class Sequential extends _Always {
           //   checkGlitchRules();
           // }
           if (didUpdate) {
-            // print(
-            //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
-            _raceTracker.nonTriggered();
+            if (Simulator.phase != SimulatorPhase.outOfTick) {
+              // print(
+              //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
+              _raceTracker.nonTriggered();
+            }
           }
 
           // if (_pendingExecute && didUpdate) {
@@ -734,7 +738,12 @@ class Sequential extends _Always {
         //       'trigger glitched when pending input changes: ${trigger.signal.name} $event ${Simulator.phase}');
         // }
         // glitchedTrigger = true;
-        _raceTracker.triggered();
+
+        if (Simulator.phase != SimulatorPhase.outOfTick) {
+          // print(
+          //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');
+          _raceTracker.triggered();
+        }
 
         // print(
         //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');

@@ -10,6 +10,7 @@
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
+import 'dart:async';
 import 'dart:io';
 import 'package:rohd/rohd.dart';
 
@@ -85,7 +86,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Generate a simple clock. This will run along by itself as
   // the Simulator goes.
-  final clk = SimpleClockGenerator(5).clk;
+  final clk = SimpleClockGenerator(10).clk;
 
   // 4-cycle delay coefficients.
   final firFilter =
@@ -105,39 +106,43 @@ Future<void> main({bool noPrint = false}) async {
 
   // Now let's try simulating!
 
-  // Let's set the initial setting.
-  en.put(0);
-  resetB.put(0);
-  inputVal.put(1);
-
   // Attach a waveform dumper.
   if (!noPrint) {
     WaveDumper(firFilter);
   }
 
-  // Raise enable at time 5.
-  Simulator.registerAction(5, () => en.put(1));
+  // Let's set the initial setting.
+  en.inject(0);
+  resetB.inject(0);
+  inputVal.inject(1);
 
-  // Raise resetB at time 10.
-  Simulator.registerAction(10, () => resetB.put(1));
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(200);
+
+  // Kick off the simulation.
+  unawaited(Simulator.run());
+
+  await clk.nextPosedge;
+
+  // Raise enable
+  await clk.nextPosedge;
+  en.inject(1);
+
+  // Raise resetB
+  await clk.nextPosedge;
+  resetB.inject(1);
 
   // Plan the input sequence.
   for (var i = 1; i < 10; i++) {
-    Simulator.registerAction(5 + i * 4, () => inputVal.put(i));
+    await clk.nextPosedge;
+    inputVal.inject(i);
   }
 
   // Print a message when we're done with the simulation!
-  Simulator.registerAction(100, () {
-    if (!noPrint) {
-      print('Simulation completed!');
-    }
-  });
-
-  // Set a maximum time for the simulation so it doesn't keep running forever.
-  Simulator.setMaxSimTime(100);
-
-  // Kick off the simulation.
-  await Simulator.run();
+  await Simulator.endSimulation();
+  if (!noPrint) {
+    print('Simulation completed!');
+  }
 
   // We can take a look at the waves now.
   if (!noPrint) {
