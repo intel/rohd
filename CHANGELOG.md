@@ -19,6 +19,7 @@
 - Fixed a bug where asynchronous events could sometimes show up late in generated waveforms from `WaveDumper`.
 - Added support for negative edge triggers to `Sequential.multi` for cases where synthesis may interpret an inverted `posedge` as different from a `negedge`.
 - Fixed a bug where `resetValues` would not take effect in `Pipeline`s.
+- Fixed a bug where a multi-triggered `Sequential` may not generate X's if one trigger is valid and another trigger is invalid.
 
 ## 0.5.3
 

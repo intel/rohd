@@ -259,6 +259,8 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
+
+      verifyMermaidStateDiagram(_simpleFSMPath);
     });
 
     test('default next state fsm', () async {
