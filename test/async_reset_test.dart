@@ -65,6 +65,21 @@ class MultipleTriggerSeq extends Module {
   }
 }
 
+class AsyncResetMod extends Module {
+  Logic get val => output('val');
+  AsyncResetMod({
+    required Logic clk,
+    required Logic reset,
+    required void Function(Logic clk, Logic reset, Logic val) seqBuilder,
+  }) {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    addOutput('val');
+
+    seqBuilder(clk, reset, val);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -94,7 +109,7 @@ void main() {
             FlipFlop(
               clk,
               reset: reset,
-              val,
+              Const(1),
               asyncReset: true,
             ).q;
       },
@@ -103,38 +118,63 @@ void main() {
             flop(
               clk,
               reset: reset,
-              val,
+              Const(1),
               asyncReset: true,
             );
       },
     };
 
-    //TODO: doc clearly the behavior of sampling async triggersl
-
     for (final mechanism in seqMechanism.entries) {
-      test('using ${mechanism.key}', () async {
-        final clk = Logic(name: 'clk');
-        final reset = Logic(name: 'reset');
-        final val = Logic(name: 'val');
+      group('using ${mechanism.key}', () {
+        test('functional', () async {
+          final clk = Logic(name: 'clk');
+          final reset = Logic(name: 'reset');
+          final val = Logic(name: 'val');
 
-        reset.inject(0);
-        clk.inject(0);
+          reset.inject(0);
+          clk.inject(0);
 
-        mechanism.value(clk, reset, val);
+          mechanism.value(clk, reset, val);
 
-        Simulator.registerAction(10, () {
-          clk.put(1);
+          Simulator.registerAction(10, () {
+            clk.put(1);
+          });
+
+          Simulator.registerAction(11, () {
+            expect(val.value.toInt(), 1);
+          });
+
+          Simulator.registerAction(14, () {
+            reset.put(1);
+          });
+
+          Simulator.registerAction(15, () {
+            expect(val.value.toInt(), 0);
+          });
+
+          await Simulator.run();
         });
 
-        Simulator.registerAction(14, () {
-          reset.put(1);
-        });
+        test('simcompare', () async {
+          final mod = AsyncResetMod(
+            clk: Logic(name: 'clk'),
+            reset: Logic(name: 'reset'),
+            seqBuilder: mechanism.value,
+          );
 
-        Simulator.registerAction(15, () {
-          expect(val.value.toInt(), 0);
-        });
+          await mod.build();
 
-        await Simulator.run();
+          final vectors = [
+            Vector({'clk': 0, 'reset': 0}, {}),
+            Vector({'clk': 1, 'reset': 0}, {'val': 1}),
+            Vector({'clk': 1, 'reset': 0}, {'val': 1}),
+            Vector({'clk': 1, 'reset': 1}, {'val': 0}),
+            Vector({'clk': 1, 'reset': 1}, {'val': 0}),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
       });
     }
   });
@@ -154,14 +194,9 @@ void main() {
 
     await clk.nextPosedge;
     await clk.nextPosedge;
-    // reset.inject(1); //TODO
-    Simulator.injectAction(() {
-      // print('asdf1');
-      reset.put(1);
-    });
+    reset.inject(1);
 
     Simulator.registerAction(Simulator.time + 1, () {
-      // print('asdf');
       expect(val.value.toInt(), 0);
     });
 
@@ -249,7 +284,7 @@ void main() {
         Vector({'trigger': 1}, {'result': 'x'}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectorsRohd); //TODO fix
+      await SimCompare.checkFunctionalVector(mod, vectorsRohd);
 
       final vectorsSv = [
         Vector({'trigger': 0}, {}),
@@ -340,7 +375,9 @@ void main() {
     });
   });
 
-  test('put before trigger changed does not cause race x generation', () async {
+  test(
+      'put at simulation start before trigger changed '
+      'does not cause race x generation', () async {
     final d = Logic();
     final clk = SimpleClockGenerator(10).clk;
 

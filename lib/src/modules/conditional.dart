@@ -1965,6 +1965,4 @@ class FlipFlop extends Module with SystemVerilog {
 
     return svBuffer.toString();
   }
-
-  //TODO: test sequential, sequential.multi, flipflop, and flop all! SV too!
 }
