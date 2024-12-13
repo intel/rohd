@@ -11,12 +11,12 @@ import 'package:rohd/src/exceptions/rohd_exception.dart';
 
 /// An exception that thrown when a reserved name is invalid.
 class InvalidReservedNameException extends RohdException {
-  /// Display error [message] on invalid reserved name.
+  /// An exception with an error [message] for an invalid reserved name.
   ///
   /// Creates a [InvalidReservedNameException] with an optional error [message].
-  InvalidReservedNameException(
-      [super.message = 'Reserved Name need to follow proper naming '
-          'convention if reserved'
-          ' name set to true']);
-  //TODO: make this error message better (what's the name, fix grammar)
+  InvalidReservedNameException(String name)
+      : super('The name "$name" was reserved but does not follow'
+            ' safe naming conventions. '
+            'Generally, reserved names should be valid variable identifiers'
+            ' in languages such as Dart and SystemVerilog.');
 }
