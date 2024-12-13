@@ -94,8 +94,6 @@ class FiniteStateMachine<StateIdentifier> {
     bool asyncReset = false,
   }) : this.multi([clk], reset, resetState, states, asyncReset: asyncReset);
 
-  //TODO: test FSMs with async reset
-
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when [reset] is high) and transitions on
   /// positive edges of any of [_clks].

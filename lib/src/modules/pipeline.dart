@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pipeline.dart
@@ -236,11 +236,6 @@ class Pipeline {
 
   /// Adds a new signal to be pipelined across all stages.
   void _add(Logic newLogic) {
-    // dynamic resetValue;
-    // if (_resetValues.containsKey(newLogic)) {
-    //   resetValue = _resetValues[newLogic];
-    // }
-
     for (var i = 0; i < _stages.length; i++) {
       _stages[i]._addLogic(newLogic, i);
     }

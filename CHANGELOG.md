@@ -17,6 +17,7 @@
 - Breaking: `Simulator.run` now yields execution of the Dart event loop prior to beginning the simulation. This makes actions taken before starting the simulation more predictable, but may slightly change behavior in existing testbenches that relied on a potential delay.
 - Improved error and exception messages.
 - Fixed a bug where asynchronous events could sometimes show up late in generated waveforms from `WaveDumper`.
+- Added support for negative edge triggers to `Sequential.multi` for cases where synthesis may interpret an inverted `posedge` as different from a `negedge`.
 
 ## 0.5.3
 
