@@ -203,6 +203,7 @@ void main() {
       await pipem.build();
 
       //TODO: test that reset works!
+      //TODO: test that async reset works!
       //TODO: test that reset value works!
       final vectors = [
         Vector({'a': 1}, {}),

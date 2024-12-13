@@ -11,6 +11,12 @@
 - Breaking: Updated APIs for `Synthesizer.synthesize` and down the stack to use a `Function` to calculate the instance type of a module instead of a `Map` look-up table.
 - Added `srcConnections` API to `Logic` to make it easier to trace drivers of subtypes of `Logic` which contain multiple drivers.
 - Breaking: `Const` constructor updated so that specified `width` takes precedence over the inherent width of a provided `LogicValue` `val`.
+- Added flags to support an `asyncReset` option in places where sequential reset automation was already present.
+- Breaking: `Sequential` has new added strictness checking when triggers and non-triggers change simultaneously (in the same `Simulator` tick) when it may be unpredictable how the hardware would synthesize, driving `X`s on outputs instead of just picking an order. Descriptions that imply asynchronous resets are predictable and therefore unaffected.
+- Breaking: injected actions in the `Simulator` can now occur in either the `mainTick` or `clkStable` phases. This API will generally continue to work as expected and as it always has, but in some scenarios could slightly change the behavior of existing testbenches.
+- Breaking: `Simulator.run` now yields execution of the Dart event loop prior to beginning the simulation. This makes actions taken before starting the simulation more predictable, but may slightly change behavior in existing testbenches that relied on a potential delay.
+- Improved error and exception messages.
+- Fixed a bug where asynchronous events could sometimes show up late in generated waveforms from `WaveDumper`.
 
 ## 0.5.3
 

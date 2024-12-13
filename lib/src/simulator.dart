@@ -328,7 +328,6 @@ abstract class Simulator {
       await _pendingList.removeFirst()();
     }
 
-    //TODO: is this appropriate to do?
     await _executeInjectedActions();
   }
 

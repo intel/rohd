@@ -159,7 +159,6 @@ class Pipeline {
             reset: reset,
             asyncReset: asyncReset);
 
-  // TODO: allow Pipeline to support async reset
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
   Pipeline.multi(this._clks,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
@@ -261,22 +260,6 @@ class Pipeline {
           : ffAssign.driver;
       return ffAssign.receiver < driver;
     });
-
-    //TODO: can we just delete this??
-    // if (reset != null) {
-    //   ffAssignsWithStall = <Conditional>[
-    //     If.block([
-    //       Iff(
-    //         reset!,
-    //         ffAssigns.map((conditional) {
-    //           conditional as ConditionalAssign;
-    //           return conditional.receiver < (resetValue ?? 0);
-    //         }).toList(growable: false),
-    //       ),
-    //       Else(ffAssignsWithStall)
-    //     ])
-    //   ];
-    // }
 
     Sequential.multi(
         _clks,

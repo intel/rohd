@@ -293,6 +293,7 @@ abstract class SimCompare {
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
+            // ignore: prefer_interpolation_to_compose_strings
             packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +
             unpackedDims.map((d) => '[${d - 1}:0]').join();

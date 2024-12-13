@@ -458,24 +458,39 @@ class _SequentialTrigger {
   String toString() => '@$verilogTriggerKeyword ${signal.name}';
 }
 
-//TODO: doc stuff
+/// A tracking construct for potential race conditions between triggers and
+/// non-triggers in [Sequential]s.
+///
+/// In general, if a trigger and non-trigger toggle "simulatneously" during the
+/// same time step, then the outputs of the [Sequential] should be driven to
+/// [LogicValue.x], since it is unpredictable how it will be synthesized.
 class _SequentialTriggerRaceTracker {
+  /// Tracks whether a trigger has occurred in this timestep.
   bool _triggerOccurred = false;
-  bool _nonTriggerOccurred = false;
-  bool _registeredPostTick = false;
 
+  /// Tracks whether a non-trigger has occurred in this timestep.
+  bool _nonTriggerOccurred = false;
+
+  /// Indicates whether the current timestep has violated the rules for the race
+  /// condition.
+  bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
+
+  /// Should be called when a trigger has occurred.
   void triggered() {
     _triggerOccurred = true;
     _registerPostTick();
   }
 
+  /// Should be called when a non-trigger has occurred.
   void nonTriggered() {
     _nonTriggerOccurred = true;
     _registerPostTick();
   }
 
-  bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
+  /// Whether a post-tick has been registered alreayd for this timestep.
+  bool _registeredPostTick = false;
 
+  /// Registers a post-tick event to clear the flags.
   void _registerPostTick() {
     if (!_registeredPostTick) {
       unawaited(Simulator.postTick.first.then((value) {
@@ -641,7 +656,8 @@ class Sequential extends _Always {
     return true;
   }
 
-  //TODO: doc, and is this the right line to put this?
+  /// A tracking construct for potential race conditions between triggers and
+  /// non-triggers.
   final _SequentialTriggerRaceTracker _raceTracker =
       _SequentialTriggerRaceTracker();
 
@@ -665,9 +681,6 @@ class Sequential extends _Always {
           final didUpdate = _updateInputToPreTickInputValue(driverInput);
 
           if (didUpdate && Simulator.phase != SimulatorPhase.outOfTick) {
-            //TODO
-            // print(
-            //     '@${Simulator.time} input glitch: ${driverInput.name} ${Simulator.phase} $event');
             _raceTracker.nonTriggered();
           }
         } else {
@@ -706,9 +719,6 @@ class Sequential extends _Always {
         trigger.preTickValue ??= event.previousValue;
 
         if (Simulator.phase != SimulatorPhase.outOfTick) {
-          //TODO
-          // print(
-          //     '@${Simulator.time} trigger glitch ${trigger.signal.name} ${Simulator.phase} $event');
           _raceTracker.triggered();
         }
 
@@ -754,7 +764,6 @@ class Sequential extends _Always {
       _driveX();
     } else if (anyTriggered) {
       if (_raceTracker.isInViolation) {
-        // print('@${Simulator.time} violation!'); //TODO
         _driveX();
       } else {
         if (allowMultipleAssignments) {
