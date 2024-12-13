@@ -132,21 +132,24 @@ class PipelineInitWithGet extends Module {
 }
 
 class RVPipelineModule extends Module {
-  RVPipelineModule(Logic a, Logic reset, Logic validIn, Logic readyForOut)
+  RVPipelineModule(Logic a, Logic reset, Logic validIn, Logic readyForOut,
+      {bool testingAsyncReset = false})
       : super(name: 'rv_pipeline_module') {
-    final clk = SimpleClockGenerator(10).clk;
+    final clk = testingAsyncReset ? Const(0) : SimpleClockGenerator(10).clk;
     a = addInput('a', a, width: a.width);
     validIn = addInput('validIn', validIn);
     readyForOut = addInput('readyForOut', readyForOut);
     reset = addInput('reset', reset);
     final b = addOutput('b', width: a.width);
 
-    final pipeline =
-        ReadyValidPipeline(clk, validIn, readyForOut, reset: reset, stages: [
-      (p) => [p.get(a) < p.get(a) + 1],
-      (p) => [p.get(a) < p.get(a) + 1],
-      (p) => [p.get(a) < p.get(a) + 1],
-    ]);
+    final pipeline = ReadyValidPipeline(clk, validIn, readyForOut,
+        reset: reset,
+        stages: [
+          (p) => [p.get(a) < p.get(a) + 1],
+          (p) => [p.get(a) < p.get(a) + 1],
+          (p) => [p.get(a) < p.get(a) + 1],
+        ],
+        asyncReset: testingAsyncReset);
     b <= pipeline.get(a);
 
     addOutput('validOut') <= pipeline.validPipeOut;
@@ -202,8 +205,6 @@ void main() {
       final pipem = SimplePipelineModule(Logic(width: 8));
       await pipem.build();
 
-      //TODO: test that reset works!
-      //TODO: test that async reset works!
       //TODO: test that reset value works!
       final vectors = [
         Vector({'a': 1}, {}),
@@ -376,6 +377,19 @@ void main() {
             {'validOut': 0}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
             {'validOut': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('rv pipeline simple async reset', () async {
+      final pipem = RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic(),
+          testingAsyncReset: true);
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 0, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
+        Vector({'reset': 1}, {'validOut': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);

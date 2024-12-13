@@ -356,6 +356,7 @@ class ReadyValidPipeline extends Pipeline {
     Map<Logic, Const> resetValues = const {},
     List<Logic> signals = const [],
     Logic? reset,
+    bool asyncReset = false,
   }) : this.multi(
           [clk],
           validPipeIn,
@@ -364,6 +365,7 @@ class ReadyValidPipeline extends Pipeline {
           resetValues: resetValues,
           signals: signals,
           reset: reset,
+          asyncReset: asyncReset,
         );
 
   /// Creates a [ReadyValidPipeline] with multiple triggers.
@@ -375,6 +377,7 @@ class ReadyValidPipeline extends Pipeline {
     super.resetValues,
     List<Logic> signals = const [],
     super.reset,
+    super.asyncReset,
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],
