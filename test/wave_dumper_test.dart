@@ -24,6 +24,17 @@ class SimpleModule extends Module {
   }
 }
 
+class SimpleModWithSeq extends Module {
+  Logic get val => output('val');
+  SimpleModWithSeq(Logic asyncReset, Logic clk) {
+    clk = addInput('clk', clk);
+    asyncReset = addInput('asyncReset', asyncReset);
+    addOutput('val');
+
+    val <= flop(clk, Const(1), reset: asyncReset, asyncReset: true);
+  }
+}
+
 const tempDumpDir = 'tmp_test';
 
 /// Gets the path of the VCD file based on a name.
@@ -237,5 +248,46 @@ void main() {
     if (File(waveDumper.outputPath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
+  });
+
+  test('async reset shown in waves correctly', () async {
+    final reset = Logic();
+    final clk = SimpleClockGenerator(10).clk;
+    final mod = SimpleModWithSeq(reset, clk);
+
+    await mod.build();
+
+    const dumpName = 'asyncReset';
+
+    Simulator.setMaxSimTime(100);
+    Simulator.registerAction(13, () => reset.put(1));
+    reset.put(0);
+
+    // add wave dumper *after* the put to reset
+    createTemporaryDump(mod, dumpName);
+
+    // check functional matches
+    Simulator.registerAction(0, () => expect(reset.value.toInt(), 0));
+    Simulator.registerAction(6, () => expect(mod.val.value.toInt(), 1));
+    Simulator.registerAction(14, () => expect(mod.val.value.toInt(), 0));
+
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    // reset is 0 initially
+    expect(
+        VcdParser.confirmValue(vcdContents, 'asyncReset', 1, LogicValue.zero),
+        equals(true));
+
+    // 1 after first clock edge
+    expect(VcdParser.confirmValue(vcdContents, 'val', 6, LogicValue.one),
+        equals(true));
+
+    // 0 after async reset
+    expect(VcdParser.confirmValue(vcdContents, 'val', 14, LogicValue.zero),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
   });
 }
