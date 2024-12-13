@@ -109,7 +109,7 @@ class Pipeline {
   int get stageCount => _stages.length;
 
   /// A map of reset values for every signal.
-  late final Map<Logic, dynamic> _resetValues;
+  final Map<Logic, dynamic>? _resetValues;
 
   /// Tracks whether this [Pipeline] is done being constructed to conditionally
   /// run safety checks on API calls.
@@ -121,34 +121,35 @@ class Pipeline {
   /// Each stage in the list [stages] is a function whose sole parameter is a
   /// [PipelineStageInfo] object and which returns a [List] of [Conditional]
   /// objects.  Each stage can be thought of as being the contents of a
-  /// [Combinational] block.  Use the [PipelineStageInfo] object to grab
-  /// signals for a given pipe stage.  Flops are positive edge triggered
-  /// based on [clk].
+  /// [Combinational] block. Use the [PipelineStageInfo] object to grab signals
+  /// for a given pipe stage. Flops are positive edge triggered based on [clk].
   ///
   /// Then `i`th element of [stages] defines the combinational logic driving a
-  /// flop of index `i`. That is, the first entry in [stages] drives the
-  /// first set of flops, so logic defined in the first stage combinationally
-  /// consumes inputs to the [Pipeline]. The output of the [Pipeline] is
-  /// driven by flops driven by the last entry of [stages].
+  /// flop of index `i`. That is, the first entry in [stages] drives the first
+  /// set of flops, so logic defined in the first stage combinationally consumes
+  /// inputs to the [Pipeline]. The output of the [Pipeline] is driven by flops
+  /// driven by the last entry of [stages].
   ///
-  /// Signals to be pipelined can optionally be specified in the [signals]
-  /// list.  Any signal referenced in a stage via the [PipelineStageInfo]
-  /// will automatically be included in the entire pipeline.
+  /// Signals to be pipelined can optionally be specified in the [signals] list.
+  /// Any signal referenced in a stage via the [PipelineStageInfo] will
+  /// automatically be included in the entire pipeline.
   ///
   /// If a [reset] signal is provided, then it will be consumed as an
-  /// active-high reset for every signal through the pipeline.  The default
-  /// reset value is 0 for all signals, but that can be overridden by
-  /// setting [resetValues] to the desired value.  The values specified
-  /// in [resetValues] should be a type acceptable to [Logic]'s `put` function.
+  /// active-high reset for every signal through the pipeline. The default reset
+  /// value is 0 for all signals, but that can be overridden by setting
+  /// [resetValues] to the desired value. Every stage's flops for the keys of
+  /// [resetValues] will be set to the same corresponding value. The values
+  /// specified in [resetValues] should be a type acceptable to [Logic]'s `put`
+  /// function.
   ///
   /// Each stage can be stalled independently using [stalls], where every index
-  /// of [stalls] corresponds to the index of the stage to be stalled.  When
-  /// a stage's stall is asserted, the output of that stage will not change.
+  /// of [stalls] corresponds to the index of the stage to be stalled.  When a
+  /// stage's stall is asserted, the output of that stage will not change.
   Pipeline(Logic clk,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
       List<Logic?>? stalls,
       List<Logic> signals = const [],
-      Map<Logic, Const> resetValues = const {},
+      Map<Logic, dynamic> resetValues = const {},
       Logic? reset,
       bool asyncReset = false})
       : this.multi([clk],
@@ -164,13 +165,12 @@ class Pipeline {
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
       List<Logic?>? stalls,
       List<Logic> signals = const [],
-      Map<Logic, Const> resetValues = const {},
+      Map<Logic, dynamic>? resetValues,
       this.reset,
-      this.asyncReset = false}) {
+      this.asyncReset = false})
+      : _resetValues = resetValues == null ? null : Map.from(resetValues) {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
-
-    _resetValues = Map.from(resetValues);
 
     _setStalls(stalls);
 
@@ -241,25 +241,33 @@ class Pipeline {
     }
 
     _stages[0].input[newLogic]! <= newLogic;
-    final ffAssigns = <Conditional>[];
+    final ffAssigns = <ConditionalAssign>[];
     for (var i = 1; i < _stages.length; i++) {
-      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1));
+      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1) as ConditionalAssign);
     }
 
     final ffAssignsWithStall =
-        List<Conditional>.generate(stageCount - 1, (index) {
+        List<ConditionalAssign>.generate(stageCount - 1, (index) {
       final stall = _stages[index].stall;
-      final ffAssign = ffAssigns[index] as ConditionalAssign;
+      final ffAssign = ffAssigns[index];
       final driver = stall != null
           ? mux(stall, ffAssign.receiver, ffAssign.driver)
           : ffAssign.driver;
-      return ffAssign.receiver < driver;
+      return ffAssign.receiver < driver as ConditionalAssign;
     });
+
+    final stageResetVal = _resetValues?[newLogic];
+    final resetValuesForNewLogic = <Logic, dynamic>{};
+    if (stageResetVal != null) {
+      for (final ffAssign in ffAssignsWithStall) {
+        resetValuesForNewLogic[ffAssign.receiver] = stageResetVal;
+      }
+    }
 
     Sequential.multi(
         _clks,
         reset: reset,
-        resetValues: _resetValues,
+        resetValues: resetValuesForNewLogic,
         asyncReset: asyncReset,
         ffAssignsWithStall,
         name: 'ff_${newLogic.name}');
@@ -333,27 +341,31 @@ class ReadyValidPipeline extends Pipeline {
 
   /// Constructs a pipeline with Ready/Valid protocol at each stage.
   ///
-  /// The [validPipeIn] signal indicates that the input to the pipeline
-  /// is valid.  The [readyPipeOut] signal indicates that the receiver
-  /// of the output of the pipeline is ready to pull out of the pipeline.
+  /// The [validPipeIn] signal indicates that the input to the pipeline is
+  /// valid.  The [readyPipeOut] signal indicates that the receiver of the
+  /// output of the pipeline is ready to pull out of the pipeline.
   ///
-  /// The [validPipeOut] signal indicates that valid contents are ready
-  /// to be received at the output of the pipeline.  The [readyPipeIn]
-  /// signal indicates that the pipeline is ready to accept new content.
+  /// The [validPipeOut] signal indicates that valid contents are ready to be
+  /// received at the output of the pipeline.  The [readyPipeIn] signal
+  /// indicates that the pipeline is ready to accept new content.
   ///
-  /// The pipeline will only progress through any stage, including the
-  /// output, if both valid and ready are asserted at the same time.  This
-  /// pipeline is capable of having bubbles, but they will collapse if
-  /// downstream stages are backpressured.
+  /// The pipeline will only progress through any stage, including the output,
+  /// if both valid and ready are asserted at the same time.  This pipeline is
+  /// capable of having bubbles, but they will collapse if downstream stages are
+  /// backpressured.
   ///
-  /// If contents are pushed in when the pipeline is not ready, they
-  /// will be dropped.
+  /// If contents are pushed in when the pipeline is not ready, they will be
+  /// dropped.
+  ///
+  /// Note that the [resetValues] will take effect the same way as a normal
+  /// [Pipeline], but the valid indication on the output will remain at 0 until
+  /// a valid input has made its way from the input to the output.
   ReadyValidPipeline(
     Logic clk,
     Logic validPipeIn,
     Logic readyPipeOut, {
     List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-    Map<Logic, Const> resetValues = const {},
+    Map<Logic, dynamic>? resetValues,
     List<Logic> signals = const [],
     Logic? reset,
     bool asyncReset = false,
