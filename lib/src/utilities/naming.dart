@@ -41,7 +41,7 @@ enum Naming {
       } else if (name.isEmpty) {
         throw EmptyReservedNameException();
       } else if (!Sanitizer.isSanitary(name)) {
-        throw InvalidReservedNameException();
+        throw InvalidReservedNameException(name);
       }
     }
 

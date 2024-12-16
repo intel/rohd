@@ -1,6 +1,6 @@
 ## Next release
 
-- Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers.
+- Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers. Includes support for "wire-only" operations supporting multiple drivers.
 - Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports, and collapses all ports into a single `ports` argument, as well as some other new features like custom definitions and parameter passthroughs.
 - Breaking: `ExternalSystemVerilogModule` and `InlineSystemVerilog` now extend `SystemVerilog` instead of `CustomSystemVerilog`, meaning the `instantiationVerilog` API arguments have been modified.
 - Breaking: Increased minimum Dart SDK version to 3.0.0.
@@ -10,6 +10,16 @@
 - Added better checking, error handling, and message when module hierarchy cannot be properly resolved (e.g. self-containing modules, modules within multiple hierarchies).
 - Breaking: Updated APIs for `Synthesizer.synthesize` and down the stack to use a `Function` to calculate the instance type of a module instead of a `Map` look-up table.
 - Added `srcConnections` API to `Logic` to make it easier to trace drivers of subtypes of `Logic` which contain multiple drivers.
+- Breaking: `Const` constructor updated so that specified `width` takes precedence over the inherent width of a provided `LogicValue` `val`.
+- Added flags to support an `asyncReset` option in places where sequential reset automation was already present.
+- Breaking: `Sequential` has new added strictness checking when triggers and non-triggers change simultaneously (in the same `Simulator` tick) when it may be unpredictable how the hardware would synthesize, driving `X`s on outputs instead of just picking an order. Descriptions that imply asynchronous resets are predictable and therefore unaffected.
+- Breaking: injected actions in the `Simulator` can now occur in either the `mainTick` or `clkStable` phases. This API will generally continue to work as expected and as it always has, but in some scenarios could slightly change the behavior of existing testbenches.
+- Breaking: `Simulator.run` now yields execution of the Dart event loop prior to beginning the simulation. This makes actions taken before starting the simulation more predictable, but may slightly change behavior in existing testbenches that relied on a potential delay.
+- Improved error and exception messages.
+- Fixed a bug where asynchronous events could sometimes show up late in generated waveforms from `WaveDumper`.
+- Added support for negative edge triggers to `Sequential.multi` for cases where synthesis may interpret an inverted `posedge` as different from a `negedge`.
+- Fixed a bug where `resetValues` would not take effect in `Pipeline`s.
+- Fixed a bug where a multi-triggered `Sequential` may not generate X's if one trigger is valid and another trigger is invalid.
 
 ## 0.5.3
 

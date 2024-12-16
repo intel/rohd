@@ -88,7 +88,7 @@ class SimpleInterface extends PairInterface {
   SimpleInterface()
       : super(
           portsFromConsumer: [Port('rsp')],
-          portsFromProducer: [Port('req')],
+          portsFromProvider: [Port('req')],
           sharedInputPorts: [Port('clk')],
         );
 

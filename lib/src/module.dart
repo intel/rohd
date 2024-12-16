@@ -428,11 +428,12 @@ abstract class Module {
             dontAddSignal: true);
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      for (final subModuleInOutDriver in subModule._inOutDrivers) {
+        final subModDontAddSignal = subModuleInOutDriver.isPort;
+        await _traceInputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
+        await _traceOutputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
       }
     } else {
       if (!dontAddSignal &&
@@ -486,6 +487,7 @@ abstract class Module {
 
       // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
+        await _traceOutputForModuleContents(signal);
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
           await _traceInputForModuleContents(srcConnection);
@@ -545,11 +547,12 @@ abstract class Module {
             dontAddSignal: true);
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      for (final subModuleInOutDriver in subModule._inOutDrivers) {
+        final subModDontAddSignal = subModuleInOutDriver.isPort;
+        await _traceInputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
+        await _traceOutputForModuleContents(subModuleInOutDriver,
+            dontAddSignal: subModDontAddSignal);
       }
     } else {
       if (!dontAddSignal &&
@@ -581,6 +584,7 @@ abstract class Module {
 
       // extra searching in both directions for nets
       if (signal.isNet && !isPort(signal)) {
+        await _traceInputForModuleContents(signal);
         for (final srcConnection
             in signal.srcConnections.where((element) => element.isNet)) {
           await _traceOutputForModuleContents(srcConnection);
@@ -617,7 +621,7 @@ abstract class Module {
         inputs.containsKey(name) ||
         inOuts.containsKey(name)) {
       throw UnavailableReservedNameException.withMessage(
-          'Already defined a port with name "$name".');
+          'Already defined a port with name "$name" in module "${this.name}".');
     }
   }
 
@@ -669,6 +673,30 @@ abstract class Module {
     }
 
     _inOutDrivers.add(source);
+
+    // we need to properly detect all inout sources, even for arrays
+    if (source.isArrayMember || source is LogicArray) {
+      final sourceElems = TraverseableCollection<Logic>()..add(source);
+      for (var i = 0; i < sourceElems.length; i++) {
+        final sei = sourceElems[i];
+        _inOutDrivers.add(sei);
+
+        if (sei.isArrayMember) {
+          sourceElems.add(sei.parentStructure!);
+        }
+
+        if (sei is LogicArray) {
+          sourceElems.addAll(sei.elements);
+        }
+      }
+    }
+
+    if (source is LogicStructure) {
+      // need to also track the packed version if it's a structure, since the
+      // signal that's actually getting connected to the port *is* the packed
+      // one, not the original array/struct.
+      _inOutDrivers.add(source.packed);
+    }
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
@@ -780,12 +808,17 @@ abstract class Module {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
-    final xElems = [source];
-    for (var i = 0; i < xElems.length; i++) {
-      final xi = xElems[i];
-      _inOutDrivers.add(xi);
-      if (xi is LogicArray) {
-        xElems.addAll(xi.elements);
+    final sourceElems = TraverseableCollection<Logic>()..add(source);
+    for (var i = 0; i < sourceElems.length; i++) {
+      final sei = sourceElems[i];
+      _inOutDrivers.add(sei);
+
+      if (sei.isArrayMember) {
+        sourceElems.add(sei.parentStructure!);
+      }
+
+      if (sei is LogicArray) {
+        sourceElems.addAll(sei.elements);
       }
     }
 
@@ -799,6 +832,10 @@ abstract class Module {
       ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
+
+    // there may be packed arrays created by the `gets` above, so this makes
+    // sure we catch all of those.
+    _inOutDrivers.addAll(inOutArr.srcConnections);
 
     _inOuts[name] = inOutArr;
 
