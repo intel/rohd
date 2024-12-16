@@ -71,7 +71,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _parameterString.hashCode;
 
   @override
-  String toFileContents() => _toVerilog(getInstanceTypeOfModule);
+  String toFileContents() => _toVerilog();
 
   /// Representation of all input port declarations in generated SV.
   List<String> _verilogInputs() {
@@ -181,7 +181,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   }
 
   /// The full SV representation of this module.
-  String _toVerilog(String Function(Module module) getInstanceTypeOfModule) {
+  String _toVerilog() {
     final verilogModuleName = getInstanceTypeOfModule(module);
     return [
       [

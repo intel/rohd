@@ -49,6 +49,8 @@ abstract class SynthesisResult {
   @override
   int get hashCode => matchHashCode;
 
+  //TODO: make this so it supports MULTIPLE files
+
   /// Generates what could go into a file
   String toFileContents();
 
