@@ -69,6 +69,11 @@ abstract class VcdParser {
         }
       }
     }
+
+    if (state == _VcdParseState.findSig) {
+      throw Exception('Signal $signalName not found in VCD file');
+    }
+
     return currentValue == value;
   }
 }

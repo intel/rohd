@@ -293,6 +293,21 @@ void main() {
     expect(a.value, LogicValue.zero);
   });
 
+  test('circular blasted connection', () {
+    final a = LogicNet(width: 8);
+
+    final b = a.getRange(0, 4);
+
+    final c = [b, b].swizzle();
+
+    a <= c;
+    c <= a;
+
+    a.put(0x33);
+
+    expect(c.value.toInt(), 0x33);
+  });
+
   group('simple', () {
     test('double passthrough', () async {
       final dut = DoubleNetPassthrough(LogicNet(width: 8), LogicNet(width: 8));

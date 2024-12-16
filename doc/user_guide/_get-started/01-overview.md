@@ -60,6 +60,6 @@ If you're thinking "SystemVerilog is just fine, I don't need something new", it 
 
 Try out Dart instantly from your browser here (it supports ROHD too!): <https://dartpad.dev/?null_safety=true>
 
-See some Dart language samples here: <https://dart.dev/samples>
+See some Dart language samples here: <https://dart.dev/language>
 
 For more information on Dart and tutorials, see <https://dart.dev/> and <https://dart.dev/overview>

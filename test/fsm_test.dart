@@ -21,11 +21,11 @@ const _simpleFSMPath = '$_tmpDir/simple_fsm.md';
 const _trafficFSMPath = '$_tmpDir/traffic_light_fsm.md';
 
 class TestModule extends Module {
-  TestModule(Logic a, Logic c, Logic reset) {
+  TestModule(Logic a, Logic c, Logic reset, {bool testingAsyncReset = false}) {
     a = addInput('a', a);
     c = addInput('c', c, width: c.width);
     final b = addOutput('b', width: c.width);
-    final clk = SimpleClockGenerator(10).clk;
+    final clk = testingAsyncReset ? Const(0) : SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
     final states = [
       State<MyStates>(MyStates.state1, events: {
@@ -45,8 +45,9 @@ class TestModule extends Module {
       ]),
     ];
 
-    final fsm =
-        FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, states);
+    final fsm = FiniteStateMachine<MyStates>(
+        clk, reset, MyStates.state1, states,
+        asyncReset: testingAsyncReset);
 
     if (!kIsWeb) {
       fsm.generateDiagram(outputPath: _simpleFSMPath);
@@ -241,9 +242,23 @@ void main() {
         Vector({'c': 1}, {'b': 0}),
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      final simResult = SimCompare.iverilogVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
 
-      expect(simResult, equals(true));
+      verifyMermaidStateDiagram(_simpleFSMPath);
+    });
+
+    test('simple fsm async reset', () async {
+      final pipem =
+          TestModule(Logic(), Logic(), Logic(), testingAsyncReset: true);
+
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 0, 'a': 0, 'c': 0}, {}),
+        Vector({'reset': 1}, {'b': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
 
       verifyMermaidStateDiagram(_simpleFSMPath);
     });

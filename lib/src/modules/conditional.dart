@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
@@ -25,7 +25,7 @@ abstract class _Always extends Module with SystemVerilog {
   /// A [List] of the [Conditional]s to execute.
   List<Conditional> get conditionals =>
       UnmodifiableListView<Conditional>(_conditionals);
-  late List<Conditional> _conditionals;
+  List<Conditional> _conditionals;
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   final Map<Logic, Logic> _assignedReceiverToOutputMap =
@@ -420,33 +420,126 @@ class Combinational extends _Always {
 @Deprecated('Use Sequential instead')
 typedef FF = Sequential;
 
+/// A tracking construct for triggers of [Sequential]s.
+class _SequentialTrigger {
+  /// The signal for this trigger.
+  final Logic signal;
+
+  /// Whether this triggers on a positive edge (`true`) or a negative edge
+  /// (`false`).
+  final bool isPosedge;
+
+  /// The value of the trigger before the tick.
+  LogicValue? preTickValue;
+
+  /// Creates a tracking object for triggers.
+  _SequentialTrigger(this.signal, {required this.isPosedge})
+      : _edgeCheck = isPosedge ? LogicValue.isPosedge : LogicValue.isNegedge;
+
+  /// The method for checking whether an edge has occurred.
+  final bool Function(LogicValue previousValue, LogicValue newValue) _edgeCheck;
+
+  /// The previous value of the signal.
+  LogicValue get _previousValue =>
+      // if the pre-tick value is null, then it should have the same value as
+      // it currently does
+      preTickValue ?? signal.value;
+
+  /// Whether this trigger has been triggered.
+  bool get isTriggered => isValid && _edgeCheck(_previousValue, signal.value);
+
+  /// Whether this trigger is valid.
+  bool get isValid => signal.value.isValid && _previousValue.isValid;
+
+  /// The SystemVerilog keyword for this trigger.
+  String get verilogTriggerKeyword => isPosedge ? 'posedge' : 'negedge';
+
+  @override
+  String toString() => '@$verilogTriggerKeyword ${signal.name}';
+}
+
+/// A tracking construct for potential race conditions between triggers and
+/// non-triggers in [Sequential]s.
+///
+/// In general, if a trigger and non-trigger toggle "simulatneously" during the
+/// same time step, then the outputs of the [Sequential] should be driven to
+/// [LogicValue.x], since it is unpredictable how it will be synthesized.
+class _SequentialTriggerRaceTracker {
+  /// Tracks whether a trigger has occurred in this timestep.
+  bool _triggerOccurred = false;
+
+  /// Tracks whether a non-trigger has occurred in this timestep.
+  bool _nonTriggerOccurred = false;
+
+  /// Indicates whether the current timestep has violated the rules for the race
+  /// condition.
+  bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
+
+  /// Should be called when a trigger has occurred.
+  void triggered() {
+    _triggerOccurred = true;
+    _registerPostTick();
+  }
+
+  /// Should be called when a non-trigger has occurred.
+  void nonTriggered() {
+    _nonTriggerOccurred = true;
+    _registerPostTick();
+  }
+
+  /// Whether a post-tick has been registered alreayd for this timestep.
+  bool _registeredPostTick = false;
+
+  /// Registers a post-tick event to clear the flags.
+  void _registerPostTick() {
+    if (!_registeredPostTick) {
+      unawaited(Simulator.postTick.first.then((value) {
+        _registeredPostTick = false;
+        _triggerOccurred = false;
+        _nonTriggerOccurred = false;
+      }));
+
+      _registeredPostTick = true;
+    }
+  }
+}
+
 /// Represents a block of sequential logic.
 ///
-/// This is similar to an `always_ff` block in SystemVerilog.  Positive edge
-/// triggered by either one trigger or multiple with [Sequential.multi].
+/// This is similar to an `always_ff` block in SystemVerilog. Edge triggered by
+/// either one trigger or multiple with [Sequential.multi].
 class Sequential extends _Always {
-  /// The input clocks used in this block.
-  final List<Logic> _clks = [];
+  /// The input edge triggers used in this block.
+  final List<_SequentialTrigger> _triggers = [];
 
   /// When `false`, an [SignalRedrivenException] will be thrown during
   /// simulation if the same signal is driven multiple times within this
   /// [Sequential].
   final bool allowMultipleAssignments;
 
-  /// Constructs a [Sequential] single-triggered by [clk].
+  /// Indicates whether provided `reset` signals should be treated as an async
+  /// reset. If no `reset` is provided, this will have no effect.
+  final bool asyncReset;
+
+  /// Constructs a [Sequential] single-triggered by the positive edge of [clk].
   ///
   /// If `reset` is provided, then all signals driven by this block will be
-  /// conditionally reset when the signal is high.
-  /// The default reset value is to `0`, but if `resetValues` is provided then
-  /// the corresponding value associated with the driven signal will be set to
-  /// that value instead upon reset. If a signal is in `resetValues` but not
-  /// driven by any other [Conditional] in this block, it will be driven to the
-  /// specified reset value.
+  /// conditionally reset when the signal is high. The default reset value is to
+  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// [Conditional] in this block, it will be driven to the specified reset
+  /// value.
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
   Sequential(
     Logic clk,
     List<Conditional> conditionals, {
     Logic? reset,
     Map<Logic, dynamic>? resetValues,
+    bool asyncReset = false,
     bool allowMultipleAssignments = true,
     String name = 'sequential',
   }) : this.multi(
@@ -454,53 +547,87 @@ class Sequential extends _Always {
           conditionals,
           name: name,
           reset: reset,
+          asyncReset: asyncReset,
           resetValues: resetValues,
           allowMultipleAssignments: allowMultipleAssignments,
         );
 
-  /// Constructs a [Sequential] multi-triggered by any of [clks].
+  /// Constructs a [Sequential] multi-triggered by any of [posedgeTriggers] and
+  /// [negedgeTriggers] (on positive and negative edges, respectively).
   ///
   /// If `reset` is provided, then all signals driven by this block will be
-  /// conditionally reset when the signal is high.
-  /// The default reset value is to `0`, but if `resetValues` is provided then
-  /// the corresponding value associated with the driven signal will be set to
-  /// that value instead upon reset. If a signal is in `resetValues` but not
-  /// driven by any other [Conditional] in this block, it will be driven to the
-  /// specified reset value.
+  /// conditionally reset when the signal is high. The default reset value is to
+  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// associated with the driven signal will be set to that value instead upon
+  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// [Conditional] in this block, it will be driven to the specified reset
+  /// value.
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
+  ///
+  /// If a trigger signal is sampled within the `conditionals`, the value will
+  /// be the "new" value of that trigger, as opposed to the "old" value as with
+  /// other non-trigger signals. This is meant to help model how an asynchronous
+  /// trigger (e.g. async reset) could affect the behavior of the sequential
+  /// elements implied. One must be careful to describe logic which is
+  /// synthesizable. The [Sequential] will attempt to drive `X` in scenarios it
+  /// can detect may not simulate and synthesize the same way, but it cannot
+  /// guarantee it. If both a trigger and an input that is not a trigger glitch
+  /// simultaneously during the phases of the [Simulator], then all outputs of
+  /// this [Sequential] will be driven to [LogicValue.x].
   Sequential.multi(
-    List<Logic> clks,
+    List<Logic> posedgeTriggers,
     super._conditionals, {
-    super.reset,
+    Logic? reset,
     super.resetValues,
+    this.asyncReset = false,
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
-  }) {
-    if (clks.isEmpty) {
-      throw IllegalConfigurationException('Must provide at least one clock.');
+    List<Logic> negedgeTriggers = const [],
+  }) : super(reset: reset) {
+    _registerInputTriggers([
+      ...posedgeTriggers,
+      if (reset != null && asyncReset) reset,
+    ], isPosedge: true);
+    _registerInputTriggers(negedgeTriggers, isPosedge: false);
+
+    if (_triggers.isEmpty) {
+      throw IllegalConfigurationException('Must provide at least one trigger.');
     }
 
-    for (var i = 0; i < clks.length; i++) {
-      final clk = clks[i];
-      if (clk.width > 1) {
-        throw Exception('Each clk must be 1 bit, but saw $clk.');
-      }
-      _clks.add(addInput(
-          _portUniquifier.getUniqueName(
-              initialName: Sanitizer.sanitizeSV(
-                  Naming.unpreferredName('clk${i}_${clk.name}'))),
-          clk));
-      _preTickClkValues.add(null);
-    }
     _setup();
+  }
+
+  /// Registers either positive or negative edge trigger inputs for
+  /// [providedTriggers] based on [isPosedge].
+  void _registerInputTriggers(List<Logic> providedTriggers,
+      {required bool isPosedge}) {
+    for (var i = 0; i < providedTriggers.length; i++) {
+      final trigger = providedTriggers[i];
+      if (trigger.width != 1) {
+        throw Exception('Each clk or trigger must be 1 bit, but saw $trigger.');
+      }
+
+      if (_assignedDriverToInputMap.containsKey(trigger)) {
+        _driverInputsThatAreTriggers.add(_assignedDriverToInputMap[trigger]!);
+      }
+
+      _triggers.add(_SequentialTrigger(
+          addInput(
+              _portUniquifier.getUniqueName(
+                  initialName: Sanitizer.sanitizeSV(
+                      Naming.unpreferredName('trigger${i}_${trigger.name}'))),
+              trigger),
+          isPosedge: isPosedge));
+    }
   }
 
   /// A map from input [Logic]s to the values that should be used for
   /// computations on the edge.
   final Map<Logic, LogicValue> _inputToPreTickInputValuesMap =
       HashMap<Logic, LogicValue>();
-
-  /// The value of the clock before the tick.
-  final List<LogicValue?> _preTickClkValues = [];
 
   /// Keeps track of whether the clock has glitched and an [_execute] is
   /// necessary.
@@ -513,6 +640,28 @@ class Sequential extends _Always {
   /// Keeps track of whether values need to be updated post-tick.
   bool _pendingPostUpdate = false;
 
+  /// All [input]s which are also triggers.
+  final Set<Logic> _driverInputsThatAreTriggers = {};
+
+  /// Updates the [_inputToPreTickInputValuesMap], if appropriate.
+  ///
+  /// Returns `true` only if the map was updated.  If `false`, then the input
+  /// was a trigger.
+  bool _updateInputToPreTickInputValue(Logic driverInput) {
+    if (_driverInputsThatAreTriggers.contains(driverInput)) {
+      // triggers should be sampled at the new value, not the previous value
+      return false;
+    }
+
+    _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+    return true;
+  }
+
+  /// A tracking construct for potential race conditions between triggers and
+  /// non-triggers.
+  final _SequentialTriggerRaceTracker _raceTracker =
+      _SequentialTriggerRaceTracker();
+
   /// Performs setup steps for custom functional behavior of this block.
   void _setup() {
     // one time is enough, it's a final map
@@ -524,13 +673,17 @@ class Sequential extends _Always {
     for (final driverInput in _assignedDriverToInputMap.values) {
       // pre-fill the _inputToPreTickInputValuesMap so that nothing ever
       // uses values directly
-      _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+      _updateInputToPreTickInputValue(driverInput);
 
       driverInput.glitch.listen((event) async {
         if (Simulator.phase != SimulatorPhase.clkStable) {
           // if the change happens not when the clocks are stable, immediately
           // update the map
-          _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+          final didUpdate = _updateInputToPreTickInputValue(driverInput);
+
+          if (didUpdate && Simulator.phase != SimulatorPhase.outOfTick) {
+            _raceTracker.nonTriggered();
+          }
         } else {
           // if this is during stable clocks, it's probably another flop
           // driving it, so hold onto it for later
@@ -541,11 +694,9 @@ class Sequential extends _Always {
                 (value) {
                   // once the tick has completed,
                   // we can update the override maps
-                  for (final driverInput in _driverInputsPendingPostUpdate) {
-                    _inputToPreTickInputValuesMap[driverInput] =
-                        driverInput.value;
-                  }
-                  _driverInputsPendingPostUpdate.clear();
+                  _driverInputsPendingPostUpdate
+                    ..forEach(_updateInputToPreTickInputValue)
+                    ..clear();
                   _pendingPostUpdate = false;
                 },
               ).catchError(
@@ -563,11 +714,15 @@ class Sequential extends _Always {
     }
 
     // listen to every clock glitch to see if we need to execute
-    for (var i = 0; i < _clks.length; i++) {
-      final clk = _clks[i];
-      clk.glitch.listen((event) async {
+    for (final trigger in _triggers) {
+      trigger.signal.glitch.listen((event) async {
         // we want the first previousValue from the first glitch of this tick
-        _preTickClkValues[i] ??= event.previousValue;
+        trigger.preTickValue ??= event.previousValue;
+
+        if (Simulator.phase != SimulatorPhase.outOfTick) {
+          _raceTracker.triggered();
+        }
+
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
             // once the clocks are stable, execute the contents of the FF
@@ -595,54 +750,52 @@ class Sequential extends _Always {
     }
   }
 
-  void _execute() {
-    var anyClkInvalid = false;
-    var anyClkPosedge = false;
-
-    for (var i = 0; i < _clks.length; i++) {
-      // if the pre-tick value is null, then it should have the same value as
-      // it currently does
-      if (!_clks[i].value.isValid || !(_preTickClkValues[i]?.isValid ?? true)) {
-        anyClkInvalid = true;
-        break;
-      } else if (_preTickClkValues[i] != null &&
-          LogicValue.isPosedge(_preTickClkValues[i]!, _clks[i].value)) {
-        anyClkPosedge = true;
-        break;
-      }
+  /// Drives [LogicValue.x] on all outputs of this [Sequential].
+  void _driveX() {
+    for (final receiverOutput in _assignedReceiverToOutputMap.values) {
+      receiverOutput.put(LogicValue.x);
     }
+  }
 
-    if (anyClkInvalid) {
-      for (final receiverOutput in _assignedReceiverToOutputMap.values) {
-        receiverOutput.put(LogicValue.x);
-      }
-    } else if (anyClkPosedge) {
-      if (allowMultipleAssignments) {
-        for (final element in conditionals) {
-          element.execute(null, null);
-        }
+  void _execute() {
+    final anyTriggered = _triggers.any((t) => t.isTriggered);
+    final anyTriggerInvalid = _triggers.any((t) => !t.isValid);
+
+    if (anyTriggerInvalid) {
+      _driveX();
+    } else if (anyTriggered) {
+      if (_raceTracker.isInViolation) {
+        _driveX();
       } else {
-        final allDrivenSignals = DuplicateDetectionSet<Logic>();
-        for (final element in conditionals) {
-          element.execute(allDrivenSignals, null);
-        }
-        if (allDrivenSignals.hasDuplicates) {
-          throw SignalRedrivenException(allDrivenSignals.duplicates);
+        if (allowMultipleAssignments) {
+          for (final element in conditionals) {
+            element.execute(null, null);
+          }
+        } else {
+          final allDrivenSignals = DuplicateDetectionSet<Logic>();
+          for (final element in conditionals) {
+            element.execute(allDrivenSignals, null);
+          }
+          if (allDrivenSignals.hasDuplicates) {
+            throw SignalRedrivenException(allDrivenSignals.duplicates);
+          }
         }
       }
     }
 
     // clear out all the pre-tick value of clocks
-    for (var i = 0; i < _clks.length; i++) {
-      _preTickClkValues[i] = null;
+    for (final trigger in _triggers) {
+      trigger.preTickValue = null;
     }
   }
 
   @override
   String alwaysVerilogStatement(Map<String, String> inputs) {
-    final triggers =
-        _clks.map((clk) => 'posedge ${inputs[clk.name]}').join(' or ');
-    return 'always_ff @($triggers)';
+    final svTriggers = _triggers
+        .map((trigger) =>
+            '${trigger.verilogTriggerKeyword} ${inputs[trigger.signal.name]}')
+        .join(' or ');
+    return 'always_ff @($svTriggers)';
   }
 
   @override
@@ -1638,12 +1791,17 @@ ${padding}end ''');
 /// When the optional [reset] is provided, the flop will be reset (active-high).
 /// If no [resetValue] is provided, the reset value is always `0`. Otherwise,
 /// it will reset to the provided [resetValue].
+///
+/// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+/// as an async reset. If [asyncReset] is false, the reset signal will be
+/// treated as synchronous.
 Logic flop(
   Logic clk,
   Logic d, {
   Logic? en,
   Logic? reset,
   dynamic resetValue,
+  bool asyncReset = false,
 }) =>
     FlipFlop(
       clk,
@@ -1651,6 +1809,7 @@ Logic flop(
       en: en,
       reset: reset,
       resetValue: resetValue,
+      asyncReset: asyncReset,
     ).q;
 
 /// Represents a single flip-flop with no reset.
@@ -1700,6 +1859,10 @@ class FlipFlop extends Module with SystemVerilog {
   /// Only initialized if a constant value is provided.
   late LogicValue _resetValueConst;
 
+  /// Indicates whether provided `reset` signals should be treated as an async
+  /// reset. If no `reset` is provided, this will have no effect.
+  final bool asyncReset;
+
   /// Constructs a flip flop which is positive edge triggered on [clk].
   ///
   /// When optional [en] is provided, an additional input will be created for
@@ -1711,12 +1874,17 @@ class FlipFlop extends Module with SystemVerilog {
   /// it will reset to the provided [resetValue]. The type of [resetValue] must
   /// be a valid driver of a [ConditionalAssign] (e.g. [Logic], [LogicValue],
   /// [int], etc.).
+  ///
+  /// If [asyncReset] is true, the [reset] signal (if provided) will be treated
+  /// as an async reset. If [asyncReset] is false, the reset signal will be
+  /// treated as synchronous.
   FlipFlop(
     Logic clk,
     Logic d, {
     Logic? en,
     Logic? reset,
     dynamic resetValue,
+    this.asyncReset = false,
     super.name = 'flipflop',
   }) {
     if (clk.width != 1) {
@@ -1756,6 +1924,7 @@ class FlipFlop extends Module with SystemVerilog {
       _clk,
       contents,
       reset: _reset,
+      asyncReset: asyncReset,
       resetValues:
           _reset != null ? {q: _resetValuePort ?? _resetValueConst} : null,
     );
@@ -1781,18 +1950,25 @@ class FlipFlop extends Module with SystemVerilog {
     final clk = ports[_clkName]!;
     final d = ports[_dName]!;
     final q = ports[_qName]!;
+    final en = _en != null ? ports[_enName]! : null;
+    final reset = _reset != null ? ports[_resetName]! : null;
 
-    final svBuffer = StringBuffer('always_ff @(posedge $clk) ');
+    final triggerString = [
+      clk,
+      if (reset != null) reset,
+    ].map((e) => 'posedge $e').join(' or ');
+
+    final svBuffer = StringBuffer('always_ff @($triggerString) ');
 
     if (_reset != null) {
       final resetValueString = _resetValuePort != null
           ? ports[_resetValueName]!
           : _resetValueConst.toString();
-      svBuffer.write('if(${ports[_resetName]}) $q <= $resetValueString; else ');
+      svBuffer.write('if(${reset!}) $q <= $resetValueString; else ');
     }
 
     if (_en != null) {
-      svBuffer.write('if(${ports[_enName]!}) ');
+      svBuffer.write('if(${en!}) ');
     }
 
     svBuffer.write('$q <= $d;  // $instanceName');
