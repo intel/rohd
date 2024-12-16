@@ -567,12 +567,13 @@ class Sequential extends _Always {
   /// as an async reset. If [asyncReset] is false, the reset signal will be
   /// treated as synchronous.
   ///
-  /// If a trigger is sampled within the `conditionals`, the value will be the
-  /// "new" value of that trigger. This is meant to help model how an
-  /// asynchronous trigger (e.g. async reset) could affect the behavior of the
-  /// sequential elements implied. One must be careful to describe logic which
-  /// is synthesizable. The [Sequential] will attempt to drive `X` in scenarios
-  /// it can detect may not simulate and synthesize the same way, but it cannot
+  /// If a trigger signal is sampled within the `conditionals`, the value will
+  /// be the "new" value of that trigger, as opposed to the "old" value as with
+  /// other non-trigger signals. This is meant to help model how an asynchronous
+  /// trigger (e.g. async reset) could affect the behavior of the sequential
+  /// elements implied. One must be careful to describe logic which is
+  /// synthesizable. The [Sequential] will attempt to drive `X` in scenarios it
+  /// can detect may not simulate and synthesize the same way, but it cannot
   /// guarantee it. If both a trigger and an input that is not a trigger glitch
   /// simultaneously during the phases of the [Simulator], then all outputs of
   /// this [Sequential] will be driven to [LogicValue.x].

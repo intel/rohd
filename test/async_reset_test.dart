@@ -1,3 +1,12 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// async_reset_test.dart
+// Tests for asynchronous resets and triggers
+//
+// 2024 December 16
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:async';
 
 import 'package:rohd/rohd.dart';
