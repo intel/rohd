@@ -16,15 +16,11 @@
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
   <link rel="icon" href="../../static-assets/favicon.png?v1">
-
   
 </head>
 
-
 <body data-base-href="../../" data-using-base-href="false" class="light-theme">
-
 <div id="overlay-under-drawer"></div>
-
 <header id="title">
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
@@ -50,7 +46,6 @@
   </div>
 </header>
 <main>
-
   <div
       id="dartdoc-main-content"
       class="main-content"
@@ -63,40 +58,41 @@
     <section class="multi-line-signature">
       
       <span class="name ">Pipeline</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, {</span></li>
-<li><span class="parameter" id="-param-stages"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="-param-stalls"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a>?</span>&gt;</span>?</span> <span class="parameter-name">stalls</span>, </span></li>
-<li><span class="parameter" id="-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span></li>
+<li><span class="parameter" id="-param-stages"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="-param-stalls"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a>?</span>&gt;</span>?</span> <span class="parameter-name">stalls</span>, </span></li>
+<li><span class="parameter" id="-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span></li>
 <li><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
+<li><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
-
     
 <section class="desc markdown">
   <p>Constructs a simple pipeline, separating arbitrary combinational logic by
 flop stages.</p>
 <p>Each stage in the list <code>stages</code> is a function whose sole parameter is a
-<a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> object and which returns a <a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a> of <a href="../../rohd/Conditional-class.html">Conditional</a>
+<a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> object and which returns a <a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a> of <a href="../../rohd/Conditional-class.html">Conditional</a>
 objects.  Each stage can be thought of as being the contents of a
-<a href="../../rohd/Combinational-class.html">Combinational</a> block.  Use the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> object to grab
-signals for a given pipe stage.  Flops are positive edge triggered
-based on <code>clk</code>.</p>
+<a href="../../rohd/Combinational-class.html">Combinational</a> block. Use the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> object to grab signals
+for a given pipe stage. Flops are positive edge triggered based on <code>clk</code>.</p>
 <p>Then <code>i</code>th element of <code>stages</code> defines the combinational logic driving a
-flop of index <code>i</code>. That is, the first entry in <code>stages</code> drives the
-first set of flops, so logic defined in the first stage combinationally
-consumes inputs to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>. The output of the <a href="../../rohd/Pipeline-class.html">Pipeline</a> is
-driven by flops driven by the last entry of <code>stages</code>.</p>
-<p>Signals to be pipelined can optionally be specified in the <code>signals</code>
-list.  Any signal referenced in a stage via the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a>
-will automatically be included in the entire pipeline.</p>
+flop of index <code>i</code>. That is, the first entry in <code>stages</code> drives the first
+set of flops, so logic defined in the first stage combinationally consumes
+inputs to the <a href="../../rohd/Pipeline-class.html">Pipeline</a>. The output of the <a href="../../rohd/Pipeline-class.html">Pipeline</a> is driven by flops
+driven by the last entry of <code>stages</code>.</p>
+<p>Signals to be pipelined can optionally be specified in the <code>signals</code> list.
+Any signal referenced in a stage via the <a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a> will
+automatically be included in the entire pipeline.</p>
 <p>If a <code>reset</code> signal is provided, then it will be consumed as an
-active-high reset for every signal through the pipeline.  The default
-reset value is 0 for all signals, but that can be overridden by
-setting <code>resetValues</code> to the desired value.  The values specified
-in <code>resetValues</code> should be a type acceptable to <a href="../../rohd/Logic-class.html">Logic</a>'s <code>put</code> function.</p>
+active-high reset for every signal through the pipeline. The default reset
+value is 0 for all signals, but that can be overridden by setting
+<code>resetValues</code> to the desired value. Every stage's flops for the keys of
+<code>resetValues</code> will be set to the same corresponding value. The values
+specified in <code>resetValues</code> should be a type acceptable to <a href="../../rohd/Logic-class.html">Logic</a>'s <code>put</code>
+function.</p>
 <p>Each stage can be stalled independently using <code>stalls</code>, where every index
-of <code>stalls</code> corresponds to the index of the stage to be stalled.  When
-a stage's stall is asserted, the output of that stage will not change.</p>
+of <code>stalls</code> corresponds to the index of the stage to be stalled.  When a
+stage's stall is asserted, the output of that stage will not change.</p>
 </section>
 
 
@@ -107,19 +103,20 @@ a stage's stall is asserted, the output of that stage will not change.</p>
     {List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
     List&lt;Logic?&gt;? stalls,
     List&lt;Logic&gt; signals = const [],
-    Map&lt;Logic, Const&gt; resetValues = const {},
-    Logic? reset})
+    Map&lt;Logic, dynamic&gt; resetValues = const {},
+    Logic? reset,
+    bool asyncReset = false})
     : this.multi([clk],
           stages: stages,
           stalls: stalls,
           signals: signals,
           resetValues: resetValues,
-          reset: reset);</code></pre>
+          reset: reset,
+          asyncReset: asyncReset);</code></pre>
 </section>
 
 
   </div> <!-- /.main-content -->
-
   <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
@@ -127,7 +124,6 @@ a stage's stall is asserted, the output of that stage will not change.</p>
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
 </header>
-
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
@@ -135,33 +131,24 @@ a stage's stall is asserted, the output of that stage will not change.</p>
     <li class="self-crumb">Pipeline constructor</li>
 </ol>
 
-
     <h5>Pipeline class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
-
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->
-
 </main>
-
 <footer>
   <span class="no-break">
     rohd
       0.5.3
   </span>
-
   
 </footer>
-
 
 
 <script src="../../static-assets/highlight.pack.js?v1"></script>
 <script src="../../static-assets/docs.dart.js"></script>
 
-
-
 </body>
-
 </html>
 

@@ -16,15 +16,11 @@
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
   <link rel="icon" href="../../static-assets/favicon.png?v1">
-
   
 </head>
 
-
 <body data-base-href="../../" data-using-base-href="false" class="light-theme">
-
 <div id="overlay-under-drawer"></div>
-
 <header id="title">
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
@@ -50,7 +46,6 @@
   </div>
 </header>
 <main>
-
   <div
       id="dartdoc-main-content"
       class="main-content"
@@ -65,28 +60,31 @@
       <span class="name ">ReadyValidPipeline</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span></li>
 <li><span class="parameter" id="-param-validPipeIn"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">validPipeIn</span>, </span></li>
 <li><span class="parameter" id="-param-readyPipeOut"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">readyPipeOut</span>, {</span></li>
-<li><span class="parameter" id="-param-stages"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
-<li><span class="parameter" id="-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../../rohd/Const-class.html">Const</a></span>&gt;</span></span> <span class="parameter-name">resetValues</span> = <span class="default-value">const {}</span>, </span></li>
-<li><span class="parameter" id="-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="-param-stages"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span> Function<span class="signature">(<span class="parameter" id="param-p"><span class="type-annotation"><a href="../../rohd/PipelineStageInfo-class.html">PipelineStageInfo</a></span> <span class="parameter-name">p</span></span>)</span></span>&gt;</span></span> <span class="parameter-name">stages</span> = <span class="default-value">const []</span>, </span></li>
+<li><span class="parameter" id="-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">dynamic</span>&gt;</span>?</span> <span class="parameter-name">resetValues</span>, </span></li>
+<li><span class="parameter" id="-param-signals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">signals</span> = <span class="default-value">const []</span>, </span></li>
 <li><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
+<li><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
     </section>
-
     
 <section class="desc markdown">
   <p>Constructs a pipeline with Ready/Valid protocol at each stage.</p>
-<p>The <code>validPipeIn</code> signal indicates that the input to the pipeline
-is valid.  The <code>readyPipeOut</code> signal indicates that the receiver
-of the output of the pipeline is ready to pull out of the pipeline.</p>
-<p>The <a href="../../rohd/ReadyValidPipeline/validPipeOut.html">validPipeOut</a> signal indicates that valid contents are ready
-to be received at the output of the pipeline.  The <a href="../../rohd/ReadyValidPipeline/readyPipeIn.html">readyPipeIn</a>
-signal indicates that the pipeline is ready to accept new content.</p>
-<p>The pipeline will only progress through any stage, including the
-output, if both valid and ready are asserted at the same time.  This
-pipeline is capable of having bubbles, but they will collapse if
-downstream stages are backpressured.</p>
-<p>If contents are pushed in when the pipeline is not ready, they
-will be dropped.</p>
+<p>The <code>validPipeIn</code> signal indicates that the input to the pipeline is
+valid.  The <code>readyPipeOut</code> signal indicates that the receiver of the
+output of the pipeline is ready to pull out of the pipeline.</p>
+<p>The <a href="../../rohd/ReadyValidPipeline/validPipeOut.html">validPipeOut</a> signal indicates that valid contents are ready to be
+received at the output of the pipeline.  The <a href="../../rohd/ReadyValidPipeline/readyPipeIn.html">readyPipeIn</a> signal
+indicates that the pipeline is ready to accept new content.</p>
+<p>The pipeline will only progress through any stage, including the output,
+if both valid and ready are asserted at the same time.  This pipeline is
+capable of having bubbles, but they will collapse if downstream stages are
+backpressured.</p>
+<p>If contents are pushed in when the pipeline is not ready, they will be
+dropped.</p>
+<p>Note that the <code>resetValues</code> will take effect the same way as a normal
+<a href="../../rohd/Pipeline-class.html">Pipeline</a>, but the valid indication on the output will remain at 0 until
+a valid input has made its way from the input to the output.</p>
 </section>
 
 
@@ -98,9 +96,10 @@ will be dropped.</p>
   Logic validPipeIn,
   Logic readyPipeOut, {
   List&lt;List&lt;Conditional&gt; Function(PipelineStageInfo p)&gt; stages = const [],
-  Map&lt;Logic, Const&gt; resetValues = const {},
+  Map&lt;Logic, dynamic&gt;? resetValues,
   List&lt;Logic&gt; signals = const [],
   Logic? reset,
+  bool asyncReset = false,
 }) : this.multi(
         [clk],
         validPipeIn,
@@ -109,12 +108,12 @@ will be dropped.</p>
         resetValues: resetValues,
         signals: signals,
         reset: reset,
+        asyncReset: asyncReset,
       );</code></pre>
 </section>
 
 
   </div> <!-- /.main-content -->
-
   <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
@@ -122,7 +121,6 @@ will be dropped.</p>
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
 </header>
-
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
@@ -130,33 +128,24 @@ will be dropped.</p>
     <li class="self-crumb">ReadyValidPipeline constructor</li>
 </ol>
 
-
     <h5>ReadyValidPipeline class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
-
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->
-
 </main>
-
 <footer>
   <span class="no-break">
     rohd
       0.5.3
   </span>
-
   
 </footer>
-
 
 
 <script src="../../static-assets/highlight.pack.js?v1"></script>
 <script src="../../static-assets/docs.dart.js"></script>
 
-
-
 </body>
-
 </html>
 

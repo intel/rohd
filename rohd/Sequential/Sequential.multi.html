@@ -16,15 +16,11 @@
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
   <link rel="icon" href="../../static-assets/favicon.png?v1">
-
   
 </head>
 
-
 <body data-base-href="../../" data-using-base-href="false" class="light-theme">
-
 <div id="overlay-under-drawer"></div>
-
 <header id="title">
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
@@ -50,7 +46,6 @@
   </div>
 </header>
 <main>
-
   <div
       id="dartdoc-main-content"
       class="main-content"
@@ -62,25 +57,40 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">Sequential.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">clks</span>, </span></li>
-<li><span class="parameter" id="multi-param-_conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">_conditionals</span>, {</span></li>
+      <span class="name ">Sequential.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-posedgeTriggers"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">posedgeTriggers</span>, </span></li>
+<li><span class="parameter" id="multi-param-_conditionals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">_conditionals</span>, {</span></li>
 <li><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
-<li><span class="parameter" id="multi-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">dynamic</span>&gt;</span>?</span> <span class="parameter-name">resetValues</span>, </span></li>
-<li><span class="parameter" id="multi-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;sequential&#39;</span>, </span></li>
-<li><span class="parameter" id="multi-param-allowMultipleAssignments"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowMultipleAssignments</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="multi-param-resetValues"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter">dynamic</span>&gt;</span>?</span> <span class="parameter-name">resetValues</span>, </span></li>
+<li><span class="parameter" id="multi-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="multi-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;sequential&#39;</span>, </span></li>
+<li><span class="parameter" id="multi-param-allowMultipleAssignments"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">allowMultipleAssignments</span> = <span class="default-value">true</span>, </span></li>
+<li><span class="parameter" id="multi-param-negedgeTriggers"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">negedgeTriggers</span> = <span class="default-value">const []</span>, </span></li>
 </ol>})
     </section>
-
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/Sequential-class.html">Sequential</a> multi-triggered by any of <code>clks</code>.</p>
+  <p>Constructs a <a href="../../rohd/Sequential-class.html">Sequential</a> multi-triggered by any of <code>posedgeTriggers</code> and
+<code>negedgeTriggers</code> (on positive and negative edges, respectively).</p>
 <p>If <code>reset</code> is provided, then all signals driven by this block will be
-conditionally reset when the signal is high.
-The default reset value is to <code>0</code>, but if <code>resetValues</code> is provided then
-the corresponding value associated with the driven signal will be set to
-that value instead upon reset. If a signal is in <code>resetValues</code> but not
-driven by any other <a href="../../rohd/Conditional-class.html">Conditional</a> in this block, it will be driven to the
-specified reset value.</p>
+conditionally reset when the signal is high. The default reset value is to
+<code>0</code>, but if <code>resetValues</code> is provided then the corresponding value
+associated with the driven signal will be set to that value instead upon
+reset. If a signal is in <code>resetValues</code> but not driven by any other
+<a href="../../rohd/Conditional-class.html">Conditional</a> in this block, it will be driven to the specified reset
+value.</p>
+<p>If <code>asyncReset</code> is true, the <code>reset</code> signal (if provided) will be treated
+as an async reset. If <code>asyncReset</code> is false, the reset signal will be
+treated as synchronous.</p>
+<p>If a trigger signal is sampled within the <code>conditionals</code>, the value will
+be the "new" value of that trigger, as opposed to the "old" value as with
+other non-trigger signals. This is meant to help model how an asynchronous
+trigger (e.g. async reset) could affect the behavior of the sequential
+elements implied. One must be careful to describe logic which is
+synthesizable. The <a href="../../rohd/Sequential-class.html">Sequential</a> will attempt to drive <code>X</code> in scenarios it
+can detect may not simulate and synthesize the same way, but it cannot
+guarantee it. If both a trigger and an input that is not a trigger glitch
+simultaneously during the phases of the <a href="../../rohd/Simulator-class.html">Simulator</a>, then all outputs of
+this <a href="../../rohd/Sequential-class.html">Sequential</a> will be driven to <a href="../../rohd/LogicValue/x-constant.html">LogicValue.x</a>.</p>
 </section>
 
 
@@ -88,36 +98,31 @@ specified reset value.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Sequential.multi(
-  List&lt;Logic&gt; clks,
+  List&lt;Logic&gt; posedgeTriggers,
   super._conditionals, {
-  super.reset,
+  Logic? reset,
   super.resetValues,
+  this.asyncReset = false,
   super.name = &#39;sequential&#39;,
   this.allowMultipleAssignments = true,
-}) {
-  if (clks.isEmpty) {
-    throw IllegalConfigurationException(&#39;Must provide at least one clock.&#39;);
+  List&lt;Logic&gt; negedgeTriggers = const [],
+}) : super(reset: reset) {
+  _registerInputTriggers([
+    ...posedgeTriggers,
+    if (reset != null &amp;&amp; asyncReset) reset,
+  ], isPosedge: true);
+  _registerInputTriggers(negedgeTriggers, isPosedge: false);
+
+  if (_triggers.isEmpty) {
+    throw IllegalConfigurationException(&#39;Must provide at least one trigger.&#39;);
   }
 
-  for (var i = 0; i &lt; clks.length; i++) {
-    final clk = clks[i];
-    if (clk.width &gt; 1) {
-      throw Exception(&#39;Each clk must be 1 bit, but saw $clk.&#39;);
-    }
-    _clks.add(addInput(
-        _portUniquifier.getUniqueName(
-            initialName: Sanitizer.sanitizeSV(
-                Naming.unpreferredName(&#39;clk${i}_${clk.name}&#39;))),
-        clk));
-    _preTickClkValues.add(null);
-  }
   _setup();
 }</code></pre>
 </section>
 
 
   </div> <!-- /.main-content -->
-
   <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
@@ -125,7 +130,6 @@ specified reset value.</p>
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
 </header>
-
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
@@ -133,33 +137,24 @@ specified reset value.</p>
     <li class="self-crumb">Sequential.multi constructor</li>
 </ol>
 
-
     <h5>Sequential class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
-
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->
-
 </main>
-
 <footer>
   <span class="no-break">
     rohd
       0.5.3
   </span>
-
   
 </footer>
-
 
 
 <script src="../../static-assets/highlight.pack.js?v1"></script>
 <script src="../../static-assets/docs.dart.js"></script>
 
-
-
 </body>
-
 </html>
 

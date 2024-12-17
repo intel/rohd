@@ -16,15 +16,11 @@
   <link rel="stylesheet" href="../../static-assets/github.css?v1">
   <link rel="stylesheet" href="../../static-assets/styles.css?v1">
   <link rel="icon" href="../../static-assets/favicon.png?v1">
-
   
 </head>
 
-
 <body data-base-href="../../" data-using-base-href="false" class="light-theme">
-
 <div id="overlay-under-drawer"></div>
-
 <header id="title">
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
@@ -50,7 +46,6 @@
   </div>
 </header>
 <main>
-
   <div
       id="dartdoc-main-content"
       class="main-content"
@@ -62,18 +57,19 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
+      <span class="name ">FiniteStateMachine&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;.multi</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span></li>
 <li><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="multi-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span></li>
-<li><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, </span></li>
-</ol>)
+<li><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, {</span></li>
+<li><span class="parameter" id="multi-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+</ol>})
     </section>
-
     
 <section class="desc markdown">
   <p>Creates an finite state machine for the specified list of <code>_states</code>, with
-an initial state of <a href="../../rohd/FiniteStateMachine/resetState.html">resetState</a> (when synchronous <a href="../../rohd/FiniteStateMachine/reset.html">reset</a> is high) and
-transitions on positive edges of any of <code>_clks</code>.</p>
+an initial state of <code>resetState</code> (when <code>reset</code> is high) and transitions on
+positive edges of any of <code>_clks</code>.</p>
+<p>If <code>asyncReset</code> is <code>true</code>, the <code>reset</code> signal is asynchronous.</p>
 </section>
 
 
@@ -81,7 +77,8 @@ transitions on positive edges of any of <code>_clks</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">FiniteStateMachine.multi(
-    this._clks, this.reset, this.resetState, this._states)
+    this._clks, this.reset, this.resetState, this._states,
+    {this.asyncReset = false})
     : _stateWidth = _logBase(_states.length, 2),
       currentState =
           Logic(name: &#39;currentState&#39;, width: _logBase(_states.length, 2)),
@@ -134,7 +131,7 @@ transitions on positive edges of any of <code>_clks</code>.</p>
         ])
   ]);
 
-  Sequential.multi(_clks, reset: reset, resetValues: {
+  Sequential.multi(_clks, reset: reset, asyncReset: asyncReset, resetValues: {
     currentState: _stateValueLookup[_stateLookup[resetState]]
   }, [
     currentState &lt; nextState,
@@ -144,7 +141,6 @@ transitions on positive edges of any of <code>_clks</code>.</p>
 
 
   </div> <!-- /.main-content -->
-
   <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
@@ -152,7 +148,6 @@ transitions on positive edges of any of <code>_clks</code>.</p>
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
 </header>
-
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
@@ -160,33 +155,24 @@ transitions on positive edges of any of <code>_clks</code>.</p>
     <li class="self-crumb">FiniteStateMachine.multi constructor</li>
 </ol>
 
-
     <h5>FiniteStateMachine class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
-
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->
-
 </main>
-
 <footer>
   <span class="no-break">
     rohd
       0.5.3
   </span>
-
   
 </footer>
-
 
 
 <script src="../../static-assets/highlight.pack.js?v1"></script>
 <script src="../../static-assets/docs.dart.js"></script>
 
-
-
 </body>
-
 </html>
 

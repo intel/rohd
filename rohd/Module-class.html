@@ -16,15 +16,11 @@
   <link rel="stylesheet" href="../static-assets/github.css?v1">
   <link rel="stylesheet" href="../static-assets/styles.css?v1">
   <link rel="icon" href="../static-assets/favicon.png?v1">
-
   
 </head>
 
-
 <body data-base-href="../" data-using-base-href="false" class="light-theme">
-
 <div id="overlay-under-drawer"></div>
-
 <header id="title">
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
@@ -49,7 +45,6 @@
   </div>
 </header>
 <main>
-
 <div
     id="dartdoc-main-content"
     class="main-content"
@@ -85,6 +80,7 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
               <li><a href="../rohd/ARShift-class.html">ARShift</a></li>
               <li><a href="../rohd/BusSubset-class.html">BusSubset</a></li>
               <li><a href="../rohd/Combinational-class.html">Combinational</a></li>
+              <li><a class="deprecated" href="../rohd/CustomSystemVerilog-mixin.html">CustomSystemVerilog</a></li>
               <li><a href="../rohd/Divide-class.html">Divide</a></li>
               <li><a href="../rohd/Equals-class.html">Equals</a></li>
               <li><a href="../rohd/ExternalSystemVerilogModule-class.html">ExternalSystemVerilogModule</a></li>
@@ -92,6 +88,7 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
               <li><a href="../rohd/GreaterThan-class.html">GreaterThan</a></li>
               <li><a href="../rohd/GreaterThanOrEqual-class.html">GreaterThanOrEqual</a></li>
               <li><a href="../rohd/IndexGate-class.html">IndexGate</a></li>
+              <li><a href="../rohd/InlineSystemVerilog-mixin.html">InlineSystemVerilog</a></li>
               <li><a href="../rohd/LessThan-class.html">LessThan</a></li>
               <li><a href="../rohd/LessThanOrEqual-class.html">LessThanOrEqual</a></li>
               <li><a href="../rohd/LShift-class.html">LShift</a></li>
@@ -109,12 +106,13 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
               <li><a href="../rohd/SimpleClockGenerator-class.html">SimpleClockGenerator</a></li>
               <li><a href="../rohd/Subtract-class.html">Subtract</a></li>
               <li><a href="../rohd/Swizzle-class.html">Swizzle</a></li>
+              <li><a href="../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
               <li><a href="../rohd/TriStateBuffer-class.html">TriStateBuffer</a></li>
               <li><a href="../rohd/Xor2Gate-class.html">Xor2Gate</a></li>
               <li><a href="../rohd/XorUnary-class.html">XorUnary</a></li>
           </ul></dd>
 
-
+        
         
 
 
@@ -124,13 +122,12 @@ This construct is similar to a SystemVerilog <code>module</code>.</p>
     
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
-
     <dl class="constructor-summary-list">
         <dt id="Module" class="callable">
-          <span class="name"><a href="../rohd/Module/Module.html">Module</a></span><span class="signature">({<span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;unnamed_module&#39;</span>, </span><span class="parameter" id="-param-reserveName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveName</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">definitionName</span>, </span><span class="parameter" id="-param-reserveDefinitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveDefinitionName</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../rohd/Module/Module.html">Module</a></span><span class="signature">({<span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;unnamed_module&#39;</span>, </span><span class="parameter" id="-param-reserveName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveName</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-definitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">definitionName</span>, </span><span class="parameter" id="-param-reserveDefinitionName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">reserveDefinitionName</span> = <span class="default-value">false</span></span>})</span>
         </dt>
         <dd>
-          Constructs a new <a href="../rohd/Module-class.html">Module</a> with instance name <a href="../rohd/Module/name.html">name</a> and definition
+          Constructs a new <a href="../rohd/Module-class.html">Module</a> with instance name <code>name</code> and definition
 name <code>definitionName</code>.
         </dd>
     </dl>
@@ -143,7 +140,7 @@ name <code>definitionName</code>.
     <dl class="properties">
         <dt id="definitionName" class="property">
   <span class="name"><a href="../rohd/Module/definitionName.html">definitionName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   
 
 </dt>
@@ -156,7 +153,7 @@ generated code.
 
         <dt id="hasBuilt" class="property">
   <span class="name"><a href="../rohd/Module/hasBuilt.html">hasBuilt</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   
 
 </dt>
@@ -167,8 +164,8 @@ generated code.
 </dd>
 
         <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span>
   
 
 </dt>
@@ -180,12 +177,12 @@ generated code.
 
         <dt id="inOuts" class="property">
   <span class="name"><a href="../rohd/Module/inOuts.html">inOuts</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  A map from <a href="../rohd/Module/inOut.html">inOut</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
+  A map from <a href="../rohd/Module/inOut.html">inOut</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <a href="../rohd/Logic-class.html">Logic</a>
 signals.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -193,12 +190,12 @@ signals.
 
         <dt id="inputs" class="property">
   <span class="name"><a href="../rohd/Module/inputs.html">inputs</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  A map from <a href="../rohd/Module/input.html">input</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
+  A map from <a href="../rohd/Module/input.html">input</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <a href="../rohd/Logic-class.html">Logic</a>
 signals.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -206,12 +203,12 @@ signals.
 
         <dt id="internalSignals" class="property">
   <span class="name"><a href="../rohd/Module/internalSignals.html">internalSignals</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a> which are
+  An <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a> of all <a href="../rohd/Logic-class.html">Logic</a>s contained within this <a href="../rohd/Module-class.html">Module</a> which are
 <em>not</em> an input or output port of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -219,7 +216,7 @@ signals.
 
         <dt id="name" class="property">
   <span class="name"><a href="../rohd/Module/name.html">name</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   
 
 </dt>
@@ -231,12 +228,12 @@ signals.
 
         <dt id="outputs" class="property">
   <span class="name"><a href="../rohd/Module/outputs.html">outputs</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  A map from <a href="../rohd/Module/output.html">output</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <code>Logic</code>
+  A map from <a href="../rohd/Module/output.html">output</a> port names to this <a href="../rohd/Module-class.html">Module</a> to corresponding <a href="../rohd/Logic-class.html">Logic</a>
 signals.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -256,7 +253,7 @@ signals.
 
         <dt id="reserveDefinitionName" class="property">
   <span class="name"><a href="../rohd/Module/reserveDefinitionName.html">reserveDefinitionName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   
 
 </dt>
@@ -269,7 +266,7 @@ or else it will fail.
 
         <dt id="reserveName" class="property">
   <span class="name"><a href="../rohd/Module/reserveName.html">reserveName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   
 
 </dt>
@@ -281,8 +278,8 @@ or else it will fail.
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Type-class.html">Type</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Type-class.html">Type</a></span>
   
 
 </dt>
@@ -294,12 +291,12 @@ or else it will fail.
 
         <dt id="signals" class="property">
   <span class="name"><a href="../rohd/Module/signals.html">signals</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a> of all <code>Logic</code>s contained within this <a href="../rohd/Module-class.html">Module</a>, including
+  An <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a> of all <a href="../rohd/Logic-class.html">Logic</a>s contained within this <a href="../rohd/Module-class.html">Module</a>, including
 inputs, outputs, and internal signals of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
@@ -307,19 +304,19 @@ inputs, outputs, and internal signals of this <a href="../rohd/Module-class.html
 
         <dt id="subModules" class="property">
   <span class="name"><a href="../rohd/Module/subModules.html">subModules</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>&gt;</span></span>
   
 
 </dt>
 <dd>
-  An <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a> of all <code>Module</code>s contained within this <code>Module</code>.
+  An <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a> of all <a href="../rohd/Module-class.html">Module</a>s contained within this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features"><span class="feature">no setter</span></div>
 
 </dd>
 
         <dt id="uniqueInstanceName" class="property">
   <span class="name"><a href="../rohd/Module/uniqueInstanceName.html">uniqueInstanceName</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   
 
 </dt>
@@ -332,6 +329,7 @@ unique name within its scope.
 
     </dl>
   </section>
+
     
   <section
       class="summary offset-anchor"
@@ -339,7 +337,7 @@ unique name within its scope.
     <h2>Methods</h2>
     <dl class="callables">
         <dt id="addInOut" class="callable">
-  <span class="name"><a href="../rohd/Module/addInOut.html">addInOut</a></span><span class="signature">(<wbr><span class="parameter" id="addInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInOut-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInOut-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
+  <span class="name"><a href="../rohd/Module/addInOut.html">addInOut</a></span><span class="signature">(<wbr><span class="parameter" id="addInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInOut-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInOut-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicNet-class.html">LogicNet</a></span>
   </span>
   
@@ -353,7 +351,7 @@ that can be consumed.
 </dd>
 
         <dt id="addInOutArray" class="callable">
-  <span class="name"><a href="../rohd/Module/addInOutArray.html">addInOutArray</a></span><span class="signature">(<wbr><span class="parameter" id="addInOutArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInOutArray-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInOutArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addInOutArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addInOutArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
+  <span class="name"><a href="../rohd/Module/addInOutArray.html">addInOutArray</a></span><span class="signature">(<wbr><span class="parameter" id="addInOutArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInOutArray-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInOutArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addInOutArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addInOutArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
   </span>
   
@@ -368,7 +366,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="addInput" class="callable">
-  <span class="name"><a href="../rohd/Module/addInput.html">addInput</a></span><span class="signature">(<wbr><span class="parameter" id="addInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInput-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
+  <span class="name"><a href="../rohd/Module/addInput.html">addInput</a></span><span class="signature">(<wbr><span class="parameter" id="addInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInput-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -382,7 +380,7 @@ that can be consumed.
 </dd>
 
         <dt id="addInputArray" class="callable">
-  <span class="name"><a href="../rohd/Module/addInputArray.html">addInputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addInputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInputArray-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInputArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addInputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addInputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
+  <span class="name"><a href="../rohd/Module/addInputArray.html">addInputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addInputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addInputArray-param-source"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInputArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addInputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addInputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
   </span>
   
@@ -397,7 +395,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="addOutput" class="callable">
-  <span class="name"><a href="../rohd/Module/addOutput.html">addOutput</a></span><span class="signature">(<wbr><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="addOutput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
+  <span class="name"><a href="../rohd/Module/addOutput.html">addOutput</a></span><span class="signature">(<wbr><span class="parameter" id="addOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="addOutput-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -411,7 +409,7 @@ can be driven.
 </dd>
 
         <dt id="addOutputArray" class="callable">
-  <span class="name"><a href="../rohd/Module/addOutputArray.html">addOutputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addOutputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="addOutputArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addOutputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addOutputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
+  <span class="name"><a href="../rohd/Module/addOutputArray.html">addOutputArray</a></span><span class="signature">(<wbr><span class="parameter" id="addOutputArray-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="addOutputArray-param-dimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span>&gt;</span></span> <span class="parameter-name">dimensions</span> = <span class="default-value">const [1]</span>, </span><span class="parameter" id="addOutputArray-param-elementWidth"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">elementWidth</span> = <span class="default-value">1</span>, </span><span class="parameter" id="addOutputArray-param-numUnpackedDimensions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">numUnpackedDimensions</span> = <span class="default-value">0</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
   </span>
   
@@ -427,7 +425,7 @@ named <code>name</code>.
 
         <dt id="build" class="callable">
   <span class="name"><a href="../rohd/Module/build.html">build</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter">void</span>&gt;</span></span>
   </span>
   
 
@@ -440,7 +438,7 @@ named <code>name</code>.
 
         <dt id="generateSynth" class="callable">
   <span class="name"><a href="../rohd/Module/generateSynth.html">generateSynth</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -453,34 +451,34 @@ named <code>name</code>.
 
         <dt id="hierarchy" class="callable">
   <span class="name"><a href="../rohd/Module/hierarchy.html">hierarchy</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Module-class.html">Module</a></span>&gt;</span></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns an <a href="https://api.dart.dev/stable/3.5.4/dart-core/Iterable-class.html">Iterable</a> of <a href="../rohd/Module-class.html">Module</a>s representing the hierarchical path to
+  Returns an <a href="https://api.dart.dev/stable/3.6.0/dart-core/Iterable-class.html">Iterable</a> of <a href="../rohd/Module-class.html">Module</a>s representing the hierarchical path to
 this <a href="../rohd/Module-class.html">Module</a>.
   
 
 </dd>
 
         <dt id="hierarchyString" class="callable">
-  <span class="name"><a href="../rohd/Module/hierarchyString.html">hierarchyString</a></span><span class="signature">(<wbr>[<span class="parameter" id="hierarchyString-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span> = <span class="default-value">0</span></span>])
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="../rohd/Module/hierarchyString.html">hierarchyString</a></span><span class="signature">(<wbr>[<span class="parameter" id="hierarchyString-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span> = <span class="default-value">0</span></span>])
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns a pretty-print <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../rohd/Module-class.html">Module</a>s within
+  Returns a pretty-print <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a> of the heirarchy of all <a href="../rohd/Module-class.html">Module</a>s within
 this <a href="../rohd/Module-class.html">Module</a>.
   
 
 </dd>
 
         <dt id="inOut" class="callable">
-  <span class="name"><a href="../rohd/Module/inOut.html">inOut</a></span><span class="signature">(<wbr><span class="parameter" id="inOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/inOut.html">inOut</a></span><span class="signature">(<wbr><span class="parameter" id="inOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -494,7 +492,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="inOutSource" class="callable">
-  <span class="name"><a href="../rohd/Module/inOutSource.html">inOutSource</a></span><span class="signature">(<wbr><span class="parameter" id="inOutSource-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/inOutSource.html">inOutSource</a></span><span class="signature">(<wbr><span class="parameter" id="inOutSource-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -508,7 +506,7 @@ via <a href="../rohd/Module/addInOut.html">addInOut</a> or <a href="../rohd/Modu
 </dd>
 
         <dt id="input" class="callable">
-  <span class="name"><a href="../rohd/Module/input.html">input</a></span><span class="signature">(<wbr><span class="parameter" id="input-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/input.html">input</a></span><span class="signature">(<wbr><span class="parameter" id="input-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -522,7 +520,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="inputSource" class="callable">
-  <span class="name"><a href="../rohd/Module/inputSource.html">inputSource</a></span><span class="signature">(<wbr><span class="parameter" id="inputSource-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/inputSource.html">inputSource</a></span><span class="signature">(<wbr><span class="parameter" id="inputSource-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -537,7 +535,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 
         <dt id="isInOut" class="callable">
   <span class="name"><a href="../rohd/Module/isInOut.html">isInOut</a></span><span class="signature">(<wbr><span class="parameter" id="isInOut-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -551,7 +549,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 
         <dt id="isInput" class="callable">
   <span class="name"><a href="../rohd/Module/isInput.html">isInput</a></span><span class="signature">(<wbr><span class="parameter" id="isInput-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -565,7 +563,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 
         <dt id="isOutput" class="callable">
   <span class="name"><a href="../rohd/Module/isOutput.html">isOutput</a></span><span class="signature">(<wbr><span class="parameter" id="isOutput-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -579,7 +577,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 
         <dt id="isPort" class="callable">
   <span class="name"><a href="../rohd/Module/isPort.html">isPort</a></span><span class="signature">(<wbr><span class="parameter" id="isPort-param-signal"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -592,7 +590,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -605,7 +603,7 @@ via <a href="../rohd/Module/addInput.html">addInput</a> or <a href="../rohd/Modu
 </dd>
 
         <dt id="output" class="callable">
-  <span class="name"><a href="../rohd/Module/output.html">output</a></span><span class="signature">(<wbr><span class="parameter" id="output-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/output.html">output</a></span><span class="signature">(<wbr><span class="parameter" id="output-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
@@ -620,7 +618,7 @@ named <code>name</code>.
 
         <dt id="toString" class="callable">
   <span class="name"><a href="../rohd/Module/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -632,7 +630,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="tryInOut" class="callable">
-  <span class="name"><a href="../rohd/Module/tryInOut.html">tryInOut</a></span><span class="signature">(<wbr><span class="parameter" id="tryInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/tryInOut.html">tryInOut</a></span><span class="signature">(<wbr><span class="parameter" id="tryInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a>?</span>
   </span>
   
@@ -645,7 +643,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="tryInput" class="callable">
-  <span class="name"><a href="../rohd/Module/tryInput.html">tryInput</a></span><span class="signature">(<wbr><span class="parameter" id="tryInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/tryInput.html">tryInput</a></span><span class="signature">(<wbr><span class="parameter" id="tryInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a>?</span>
   </span>
   
@@ -658,7 +656,7 @@ named <code>name</code>.
 </dd>
 
         <dt id="tryOutput" class="callable">
-  <span class="name"><a href="../rohd/Module/tryOutput.html">tryOutput</a></span><span class="signature">(<wbr><span class="parameter" id="tryOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+  <span class="name"><a href="../rohd/Module/tryOutput.html">tryOutput</a></span><span class="signature">(<wbr><span class="parameter" id="tryOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a>?</span>
   </span>
   
@@ -679,8 +677,8 @@ named <code>name</code>.
     <h2>Operators</h2>
     <dl class="callables">
         <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -699,8 +697,8 @@ named <code>name</code>.
     <h2>Static Methods</h2>
     <dl class="callables">
         <dt id="isUnpreferred" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/isUnpreferred.html">isUnpreferred</a></span><span class="signature">(<wbr><span class="parameter" id="isUnpreferred-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/bool-class.html">bool</a></span>
+  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/isUnpreferred.html">isUnpreferred</a></span><span class="signature">(<wbr><span class="parameter" id="isUnpreferred-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -712,8 +710,8 @@ named <code>name</code>.
 </dd>
 
         <dt id="unpreferredName" class="callable">
-  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/unpreferredName.html">unpreferredName</a></span><span class="signature">(<wbr><span class="parameter" id="unpreferredName-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.5.4/dart-core/String-class.html">String</a></span>
+  <span class="name deprecated"><a class="deprecated" href="../rohd/Module/unpreferredName.html">unpreferredName</a></span><span class="signature">(<wbr><span class="parameter" id="unpreferredName-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -729,9 +727,7 @@ possible signal names.
   </section>
     
 
-
   </div> <!-- /.main-content -->
-
   <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
     <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
@@ -739,40 +735,30 @@ possible signal names.
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
 </header>
-
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
     <li class="self-crumb">Module class</li>
 </ol>
 
-
     <h5>rohd library</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div>
-
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
   </div><!--/.sidebar-offcanvas-->
-
 </main>
-
 <footer>
   <span class="no-break">
     rohd
       0.5.3
   </span>
-
   
 </footer>
-
 
 
 <script src="../static-assets/highlight.pack.js?v1"></script>
 <script src="../static-assets/docs.dart.js"></script>
 
-
-
 </body>
-
 </html>
 
