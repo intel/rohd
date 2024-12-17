@@ -395,11 +395,22 @@ abstract class Simulator {
         _simExceptions.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
-      await tick();
+      try {
+        await tick();
+      } catch (_, __) {
+        // trigger the end of simulation if an error occurred
+        _simulationEndedCompleter.complete();
+
+        rethrow;
+      }
     }
 
     for (final err in _simExceptions) {
       logger.severe(err.exception.toString(), err.exception, err.stackTrace);
+
+      // trigger the end of simulation if an error occurred
+      _simulationEndedCompleter.complete();
+
       throw err.exception;
     }
 
@@ -409,7 +420,15 @@ abstract class Simulator {
 
     while (_endOfSimulationActions.isNotEmpty) {
       final endOfSimAction = _endOfSimulationActions.removeFirst();
-      await endOfSimAction();
+
+      try {
+        await endOfSimAction();
+      } catch (_) {
+        // trigger the end of simulation if an error occurred
+        _simulationEndedCompleter.complete();
+
+        rethrow;
+      }
     }
 
     _simulationEndedCompleter.complete();
