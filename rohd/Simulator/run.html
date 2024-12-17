@@ -86,11 +86,22 @@ it finishes or is stopped.</p>
       _simExceptions.isEmpty &amp;&amp;
       !_simulationEndRequested &amp;&amp;
       (_maxSimTime &lt; 0 || _currentTimestamp &lt; _maxSimTime)) {
-    await tick();
+    try {
+      await tick();
+    } catch (_, __) {
+      &#47;&#47; trigger the end of simulation if an error occurred
+      _simulationEndedCompleter.complete();
+
+      rethrow;
+    }
   }
 
   for (final err in _simExceptions) {
     logger.severe(err.exception.toString(), err.exception, err.stackTrace);
+
+    &#47;&#47; trigger the end of simulation if an error occurred
+    _simulationEndedCompleter.complete();
+
     throw err.exception;
   }
 
@@ -100,7 +111,15 @@ it finishes or is stopped.</p>
 
   while (_endOfSimulationActions.isNotEmpty) {
     final endOfSimAction = _endOfSimulationActions.removeFirst();
-    await endOfSimAction();
+
+    try {
+      await endOfSimAction();
+    } catch (_) {
+      &#47;&#47; trigger the end of simulation if an error occurred
+      _simulationEndedCompleter.complete();
+
+      rethrow;
+    }
   }
 
   _simulationEndedCompleter.complete();
