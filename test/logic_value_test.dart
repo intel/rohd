@@ -2067,8 +2067,8 @@ void main() {
     });
 
     test('radixString leading zero', () {
-      final lv = LogicValue.ofRadixString("10'b00 0010 0111");
-      expect(lv.toRadixString(), equals("10'b10 0111"));
+      final lv = LogicValue.ofRadixString("10'b00_0010_0111");
+      expect(lv.toRadixString(), equals("10'b10_0111"));
       expect(lv.toRadixString(radix: 4), equals("10'q213"));
       expect(lv.toRadixString(radix: 8), equals("10'o47"));
       expect(lv.toRadixString(radix: 10), equals("10'd39"));
@@ -2080,8 +2080,8 @@ void main() {
     });
 
     test('radixString leading Z', () {
-      final lv = LogicValue.ofRadixString("10'bzz zzz1 1011");
-      expect(lv.toRadixString(), equals("10'bzz zzz1 1011"));
+      final lv = LogicValue.ofRadixString("10'bzz_zzz1_1011");
+      expect(lv.toRadixString(), equals("10'bzz_zzz1_1011"));
       expect(lv.toRadixString(radix: 4), equals("10'qZZ<z1>23"));
       expect(lv.toRadixString(radix: 8), equals("10'oZZ<z11>3"));
       expect(lv.toRadixString(radix: 16), equals("10'hZ<zzz1>b"));
@@ -2091,8 +2091,8 @@ void main() {
       }
     });
     test('radixString small leading radix character', () {
-      final lv = LogicValue.ofRadixString("10'b10 1010 0111");
-      expect(lv.toRadixString(radix: 4), equals("10'q2 2213"));
+      final lv = LogicValue.ofRadixString("10'b10_1010_0111");
+      expect(lv.toRadixString(radix: 4), equals("10'q2_2213"));
       expect(lv.toRadixString(radix: 8), equals("10'o1247"));
       expect(lv.toRadixString(radix: 10), equals("10'd679"));
       expect(lv.toRadixString(radix: 16), equals("10'h2A7"));

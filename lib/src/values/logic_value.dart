@@ -604,6 +604,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
   }
 
+  /// Legal characters in a radixString representation.
+  static String get radixStringChars => "'0123456789aAbBcCdDeEfFqohzZxX";
+
   /// Reverse a string (helper function)
   static String _reverse(String inString) =>
       String.fromCharCodes(inString.runes.toList().reversed);
@@ -622,7 +625,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// - Decimal: `10'd1492`
   /// - Hex: `15'h05d4`
   ///
-  /// Spaces are output according to [chunkSize] starting from the LSB(right).
+  /// Separators are output according to [chunkSize] starting from the
+  /// LSB(right).  The default separator is '_'.  [sepChar] can be set to
+  /// another character, but not in [radixStringChars].
   ///  - [chunkSize] = default:  `61'h2 9ebc 5f06 5bf7`
   ///  - [chunkSize] = 10: `61'h29e bc5f065bf7`
   ///
@@ -640,8 +645,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// matter what the length. When leading, 'Z' indicates one or more 'z'
   /// bits to fill the first radix character.
   /// - `9'bz zzzz zzz = 9'hZZZ`
-  ///
-  String toRadixString({int radix = 2, int chunkSize = 4}) {
+  String toRadixString(
+      {int radix = 2, int chunkSize = 4, String sepChar = '_'}) {
+    if (radixStringChars.contains(sepChar)) {
+      throw Exception('separation character invalid');
+    }
     final radixStr = switch (radix) {
       2 => "'b",
       4 => "'q",
@@ -688,10 +696,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
     final spaceString = _reverse(reversedStr
         .replaceAllMapped(
             RegExp('((>(.){$chunkSize}<)|([a-zA-Z0-9])){$chunkSize}'),
-            (match) => '${match.group(0)} ')
-        .replaceAll(' <', '<'));
+            (match) => '${match.group(0)}$sepChar')
+        .replaceAll('$sepChar<', '<'));
 
-    final fullString = spaceString[0] == ' '
+    final fullString = spaceString[0] == sepChar
         ? spaceString.substring(1, spaceString.length)
         : spaceString;
     return '$width$radixStr$fullString';
@@ -725,13 +733,17 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///  - 10'h2AA
   ///  - 11'h4AA
   ///  - 12'hAAA
-  static LogicValue ofRadixString(String valueString) {
+  static LogicValue ofRadixString(String valueString, {String sepChar = '_'}) {
+    if (radixStringChars.contains(sepChar)) {
+      throw Exception('separation character invalid');
+    }
     if (RegExp(r'^\d+').firstMatch(valueString) != null) {
-      final formatStr = RegExp(r"^(\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<> ]*)")
-          .firstMatch(valueString);
+      final formatStr =
+          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
+              .firstMatch(valueString);
       if (formatStr != null) {
         final specifiedLength = int.parse(formatStr.group(1)!);
-        final compressedStr = formatStr.group(3)!.replaceAll(' ', '');
+        final compressedStr = formatStr.group(3)!.replaceAll(sepChar, '');
         // Extract radix
         final radixString = formatStr.group(2)!;
         final radix = switch (radixString) {
