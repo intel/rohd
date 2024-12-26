@@ -111,7 +111,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
                 ? _LogicValueEnum.x
                 : this == LogicValue.z
                     ? _LogicValueEnum.z
-                    : throw Exception('Failed to convert.');
+                    : throw LogicValueConversionException('Failed to convert.');
   }
 
   /// Creates a [LogicValue] of [val] using [of], but attempts to infer the
@@ -944,7 +944,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   String _bitString() {
     if (width != 1) {
-      throw Exception(
+      throw LogicValueConversionException(
           'Cannot convert value of width $width to a single bit value.');
     }
     return this == LogicValue.x
@@ -1100,10 +1100,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Throws an exception if the value is invalid.
   bool toBool() {
     if (!isValid) {
-      throw Exception('Cannot convert value "$this" to bool');
+      throw LogicValueConversionException(
+          'Cannot convert value "$this" to bool');
     }
     if (width != 1) {
-      throw Exception('Only single bit values can be converted to a bool,'
+      throw LogicValueConversionException(
+          'Only single bit values can be converted to a bool,'
           ' but found width $width in $this');
     }
     return this == LogicValue.one;
