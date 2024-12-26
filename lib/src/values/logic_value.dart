@@ -1097,7 +1097,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Converts a valid logical value to a boolean.
   ///
-  /// Throws an exception if the value is invalid.
+  /// Throws a LogicValueConversionException if the value is invalid.
   bool toBool() {
     if (!isValid) {
       throw LogicValueConversionException(
