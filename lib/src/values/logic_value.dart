@@ -605,7 +605,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   }
 
   /// Legal characters in a radixString representation.
-  static String get radixStringChars => "'0123456789aAbBcCdDeEfFqohzZxX";
+  static const String radixStringChars = "'0123456789aAbBcCdDeEfFqohzZxX";
 
   /// Reverse a string (helper function)
   static String _reverse(String inString) =>
@@ -619,17 +619,18 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// construct a [LogicValue].
   ///
   /// Here is the number 1492 printed as a radix string:
-  /// - Binary: `15'b101 1101 0100`
-  /// - Quaternary: `15'q11 3110`
+  /// - Binary: `15'b101_1101_0100`
+  /// - Quaternary: `15'q11_3110`
   /// - Octal: `15'o2724`
   /// - Decimal: `10'd1492`
   /// - Hex: `15'h05d4`
   ///
   /// Separators are output according to [chunkSize] starting from the
-  /// LSB(right).  The default separator is '_'.  [sepChar] can be set to
-  /// another character, but not in [radixStringChars].
-  ///  - [chunkSize] = default:  `61'h2 9ebc 5f06 5bf7`
-  ///  - [chunkSize] = 10: `61'h29e bc5f065bf7`
+  /// LSB(right), default is 4 characters.  The default separator is '_'.
+  /// [sepChar] can be set to another character, but not in [radixStringChars],
+  /// otherwise it will throw an exception.
+  ///  - [chunkSize] = default: `61'h2_9ebc_5f06_5bf7`
+  ///  - [chunkSize] = 10: `61'h29e_bc5f065bf7`
   ///
   /// Leading 0s are omitted in the output string:
   /// - `25'h1`
@@ -637,18 +638,19 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// When a [LogicValue] has 'x' or 'z' bits, then the radix characters those
   /// bits overlap will be expanded into binary form with '<' '>' bracketing
   /// them as follows:
-  ///   - `35'h7 ZZZZ Z<zzz0><100z>Z`
+  ///   - `35'h7_ZZZZ_Z<zzz0><100z>Z`
   /// Such a [LogicValue] cannot be converted to a Decimal (10) radix string
   /// and will throw an exception.
   ///
   /// If the leading bits are 'z', then the output radix character is 'Z' no
   /// matter what the length. When leading, 'Z' indicates one or more 'z'
   /// bits to fill the first radix character.
-  /// - `9'bz zzzz zzz = 9'hZZZ`
+  /// - `9'bz_zzzz_zzzz = 9'hZZZ`
+  ///
   String toRadixString(
       {int radix = 2, int chunkSize = 4, String sepChar = '_'}) {
     if (radixStringChars.contains(sepChar)) {
-      throw Exception('separation character invalid');
+      throw LogicValueConversionException('separation character invalid');
     }
     final radixStr = switch (radix) {
       2 => "'b",
@@ -656,7 +658,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
       8 => "'o",
       10 => "'d",
       16 => "'h",
-      _ => throw Exception('Unsupported radix: $radix')
+      _ => throw LogicValueConversionException('Unsupported radix: $radix')
     };
     final String reversedStr;
     if (isValid) {
@@ -665,7 +667,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
       reversedStr = _reverse(radixString);
     } else {
       if (radix == 10) {
-        throw Exception('Cannot support decimal strings with invalid bits');
+        throw LogicValueConversionException(
+            'Cannot support decimal strings with invalid bits');
       }
       final span = (math.log(radix) / math.log(2)).ceil();
       final extendedStr =
@@ -724,6 +727,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// radix format.  Space-separation is for ease of reading and is often
   /// in chunks of 4 digits.
   ///
+  /// If the format of then length/radix-encoded string is not completely parsed
+  /// an exception will be thrown.  This can be caused by illegal characters
+  /// in the string or too short or too long of a value string.
+  ///
   ///  Strings created by [toRadixString] are parsed by [ofRadixString].
   ///
   /// If the LogicValue width is not encoded as round number of radix
@@ -735,13 +742,17 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///  - 12'hAAA
   static LogicValue ofRadixString(String valueString, {String sepChar = '_'}) {
     if (radixStringChars.contains(sepChar)) {
-      throw Exception('separation character invalid');
+      throw LogicValueConstructionException('separation character invalid');
     }
     if (RegExp(r'^\d+').firstMatch(valueString) != null) {
       final formatStr =
           RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
               .firstMatch(valueString);
       if (formatStr != null) {
+        if (valueString.length != formatStr.group(0)!.length) {
+          throw LogicValueConstructionException('radix string stopped '
+              'parsing at character position ${formatStr.group(0)!.length}');
+        }
         final specifiedLength = int.parse(formatStr.group(1)!);
         final compressedStr = formatStr.group(3)!.replaceAll(sepChar, '');
         // Extract radix
@@ -752,7 +763,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
           'o' => 8,
           'd' => 10,
           'h' => 16,
-          _ => throw Exception('Unsupported radix: $radixString'),
+          _ => throw LogicValueConstructionException(
+              'Unsupported radix: $radixString'),
         };
         final span = (math.log(radix) / math.log(2)).ceil();
 
@@ -799,7 +811,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
           }
         }
         if (binaryLength - shorter > specifiedLength) {
-          throw Exception('ofRadixString: cannot represent '
+          throw LogicValueConstructionException(
+              'ofRadixString: cannot represent '
               '$compressedStr in $specifiedLength');
         }
         final noBinariesStr = reversedStr.replaceAll(fullBinaries, '0');
@@ -868,7 +881,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
         }
         return logicValList.rswizzle();
       } else {
-        throw Exception('Invalid LogicValue string $valueString');
+        throw LogicValueConstructionException(
+            'Invalid LogicValue string $valueString');
       }
     }
     return LogicValue.zero;

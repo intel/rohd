@@ -2079,6 +2079,44 @@ void main() {
       }
     });
 
+    test('radixString round trip with alternate separation character', () {
+      final lv = LogicValue.ofRadixString("10'b00.0010.0111", sepChar: '.');
+
+      for (final i in [2, 4, 8, 10, 16]) {
+        expect(
+            LogicValue.ofRadixString(lv.toRadixString(radix: i, sepChar: '.'),
+                sepChar: '.'),
+            equals(lv));
+      }
+    });
+    test('radixString space separators', () {
+      final lv = LogicValue.ofRadixString("10'b10 0010 0111", sepChar: ' ');
+      expect(lv.toInt(), equals(551));
+    });
+    test('radixString bad separator', () {
+      try {
+        LogicValue.ofRadixString("10'b10 0010_0111");
+      } on Exception catch (e) {
+        expect(e.runtimeType, LogicValueConstructionException);
+      }
+    });
+
+    test('radixString illegal separator', () {
+      try {
+        LogicValue.ofRadixString("10'b10q0010q0111", sepChar: 'q');
+      } on Exception catch (e) {
+        expect(e.runtimeType, LogicValueConstructionException);
+      }
+    });
+
+    test('radixString bad length', () {
+      try {
+        LogicValue.ofRadixString("10'b10_0010_0111_0000");
+      } on Exception catch (e) {
+        expect(e.runtimeType, LogicValueConstructionException);
+      }
+    });
+
     test('radixString leading Z', () {
       final lv = LogicValue.ofRadixString("10'bzz_zzz1_1011");
       expect(lv.toRadixString(), equals("10'bzz_zzz1_1011"));
