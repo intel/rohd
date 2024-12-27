@@ -2088,6 +2088,16 @@ void main() {
                 sepChar: '.'),
             equals(lv));
       }
+      try {
+        lv.toRadixString(sepChar: 'q');
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConversionException>());
+      }
+      try {
+        lv.toRadixString(radix: 14);
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConversionException>());
+      }
     });
     test('radixString space separators', () {
       final lv = LogicValue.ofRadixString("10'b10 0010 0111", sepChar: ' ');
@@ -2097,7 +2107,7 @@ void main() {
       try {
         LogicValue.ofRadixString("10'b10 0010_0111");
       } on Exception catch (e) {
-        expect(e.runtimeType, LogicValueConstructionException);
+        expect(e, isA<LogicValueConstructionException>());
       }
     });
 
@@ -2105,7 +2115,7 @@ void main() {
       try {
         LogicValue.ofRadixString("10'b10q0010q0111", sepChar: 'q');
       } on Exception catch (e) {
-        expect(e.runtimeType, LogicValueConstructionException);
+        expect(e, isA<LogicValueConstructionException>());
       }
     });
 
@@ -2113,8 +2123,10 @@ void main() {
       try {
         LogicValue.ofRadixString("10'b10_0010_0111_0000");
       } on Exception catch (e) {
-        expect(e.runtimeType, LogicValueConstructionException);
+        expect(e, isA<LogicValueConstructionException>());
       }
+      // Try the shortest possible input
+      LogicValue.ofRadixString("10'b");
     });
 
     test('radixString leading Z', () {

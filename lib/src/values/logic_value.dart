@@ -729,7 +729,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// If the format of then length/radix-encoded string is not completely parsed
   /// an exception will be thrown.  This can be caused by illegal characters
-  /// in the string or too short or too long of a value string.
+  /// in the string or too long of a value string.
   ///
   ///  Strings created by [toRadixString] are parsed by [ofRadixString].
   ///
@@ -795,19 +795,25 @@ abstract class LogicValue implements Comparable<LogicValue> {
           while (cnt < binaryChunk.length - 1 && binaryChunk[cnt++] == '0') {}
           shorter = cnt - 1;
         } else {
-          final leadChar = compressedStr[0];
-          if (RegExp('[xXzZ]').hasMatch(leadChar)) {
-            shorter = span - 1;
-          } else {
-            if (radix == 10) {
-              shorter = binaryLength -
-                  BigInt.parse(compressedStr, radix: 10)
-                      .toRadixString(2)
-                      .length;
+          if (compressedStr.isNotEmpty) {
+            final leadChar = compressedStr[0];
+            if (RegExp('[xXzZ]').hasMatch(leadChar)) {
+              shorter = span - 1;
             } else {
-              shorter = span -
-                  BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
+              if (radix == 10) {
+                shorter = binaryLength -
+                    BigInt.parse(compressedStr, radix: 10)
+                        .toRadixString(2)
+                        .length;
+              } else {
+                shorter = span -
+                    BigInt.parse(leadChar, radix: radix)
+                        .toRadixString(2)
+                        .length;
+              }
             }
+          } else {
+            shorter = 0;
           }
         }
         if (binaryLength - shorter > specifiedLength) {
@@ -827,10 +833,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
             .map((m) => List.generate(span, (s) => m.$2.start * span + s))
             .expand((ze) => ze);
 
-        final intValue = BigInt.parse(
-                _reverse(noBinariesStr.replaceAll(RegExp('[xXzZ]'), '0')),
-                radix: radix)
-            .toUnsigned(specifiedLength);
+        final BigInt intValue;
+        if (noBinariesStr.isNotEmpty) {
+          intValue = BigInt.parse(
+                  _reverse(noBinariesStr.replaceAll(RegExp('[xXzZ]'), '0')),
+                  radix: radix)
+              .toUnsigned(specifiedLength);
+        } else {
+          intValue = BigInt.zero;
+        }
         final logicValList = List<LogicValue>.from(
             LogicValue.ofString(intValue.toRadixString(2))
                 .zeroExtend(specifiedLength)
