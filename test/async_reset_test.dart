@@ -409,4 +409,51 @@ void main() {
 
     await Simulator.endSimulation();
   });
+
+  test('async trigger and inputs change but does not affect result, no x',
+      () async {
+    final trigger1 = Logic()..put(0);
+    final trigger2 = Logic()..put(0);
+    final otherInput = Logic(width: 8)..put(0xcd);
+    final result = Logic(width: 8);
+
+    Sequential.multi([
+      trigger1,
+      trigger2,
+    ], [
+      If(trigger1, then: [
+        result < 0xab,
+      ], orElse: [
+        result < otherInput,
+      ]),
+    ]);
+
+    Simulator.registerAction(10, () {
+      otherInput.put(0xef);
+      trigger1.put(1);
+    });
+
+    Simulator.registerAction(11, () {
+      // this trigger should be *fine* because the value of `result` is not
+      // dependent on any of the other changing inputs
+      expect(result.value.toInt(), 0xab);
+    });
+
+    Simulator.registerAction(20, () {
+      trigger1.put(0);
+    });
+
+    Simulator.registerAction(30, () {
+      trigger2.put(1);
+      otherInput.put(0x34);
+    });
+
+    Simulator.registerAction(31, () {
+      // this trigger is bad because otherInput and trigger2 changed
+      // simultaneously, so its ambiguous what should be done
+      expect(result.value, LogicValue.of('xxxxxxxx'));
+    });
+
+    await Simulator.run();
+  });
 }
