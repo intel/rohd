@@ -454,6 +454,67 @@ void main() {
       expect(result.value, LogicValue.of('xxxxxxxx'));
     });
 
+    Simulator.registerAction(40, () {
+      trigger2.put(0);
+    });
+
+    Simulator.registerAction(50, () {
+      // now otherInput doesn't change at all, make sure it recovers
+      trigger1.put(1);
+    });
+
+    Simulator.registerAction(51, () {
+      expect(result.value.toInt(), 0xab);
+    });
+
+    await Simulator.run();
+  });
+
+  test('async input x injection is cleaned up next edge', () async {
+    final reset = Logic()..put(0);
+    final clk = Logic()..put(1);
+    final nextResult = Logic(width: 8)..put(0x11);
+    final result = Logic(width: 8);
+
+    Sequential.multi([
+      clk,
+      reset
+    ], [
+      If(reset, then: [
+        result < 0,
+      ], orElse: [
+        result < nextResult,
+      ]),
+    ]);
+
+    Simulator.registerAction(10, () {
+      // trigger an X generation due to trigger & non-trigger simultaneous
+      reset.put(1);
+      nextResult.put(0x22);
+    });
+
+    Simulator.registerAction(11, () {
+      expect(result.value.toInt(), 0);
+    });
+
+    Simulator.registerAction(20, () {
+      reset.put(0);
+    });
+
+    Simulator.registerAction(30, () {
+      clk.put(0);
+    });
+
+    Simulator.registerAction(40, () {
+      // trigger the flop, but don't change the inputs
+      clk.put(1);
+    });
+
+    Simulator.registerAction(41, () {
+      // should get the new value (NOT X)
+      expect(result.value.toInt(), 0x22);
+    });
+
     await Simulator.run();
   });
 }

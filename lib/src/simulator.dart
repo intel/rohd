@@ -352,7 +352,7 @@ abstract class Simulator {
   /// Just before we end the current tick, we execute the injected actions,
   /// removing them from [_injectedActions] as we go.
   static Future<void> _outOfTick() async {
-    await _executeInjectedActions();
+    // await _executeInjectedActions(); //TODO: make test that fails when this is here! (rohd-vf test fails)
 
     _phase = SimulatorPhase.outOfTick;
 

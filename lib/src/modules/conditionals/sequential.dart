@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/duplicate_detection_set.dart';
+import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
@@ -65,6 +66,10 @@ class _SequentialTriggerRaceTracker {
   /// condition.
   bool get isInViolation => _triggerOccurred && _nonTriggerOccurred;
 
+  /// A collection of non-trigger inputs that have changed this tick.
+  final TraverseableCollection<Logic> _nonTriggeredInputs =
+      TraverseableCollection();
+
   /// Should be called when a trigger has occurred.
   void triggered() {
     _triggerOccurred = true;
@@ -72,9 +77,21 @@ class _SequentialTriggerRaceTracker {
   }
 
   /// Should be called when a non-trigger has occurred.
-  void nonTriggered() {
+  void nonTriggered(Logic input) {
     _nonTriggerOccurred = true;
+    _nonTriggeredInputs.add(input);
     _registerPostTick();
+  }
+
+  /// Applies [action] to all [nonTriggered] inputs.
+  void applyToNonTriggeredInputs(void Function(Logic input) action) {
+    _nonTriggeredInputs.forEach(action);
+  }
+
+  void Function()? _preNonTriggerClearAction;
+  void registerPreNonTriggerClearAction(void Function() action) {
+    _registerPostTick();
+    _preNonTriggerClearAction = action;
   }
 
   /// Whether a post-tick has been registered alreayd for this timestep.
@@ -87,6 +104,8 @@ class _SequentialTriggerRaceTracker {
         _registeredPostTick = false;
         _triggerOccurred = false;
         _nonTriggerOccurred = false;
+        _preNonTriggerClearAction?.call();
+        _nonTriggeredInputs.clear();
       }));
 
       _registeredPostTick = true;
@@ -237,13 +256,15 @@ class Sequential extends Always {
   ///
   /// Returns `true` only if the map was updated.  If `false`, then the input
   /// was a trigger.
-  bool _updateInputToPreTickInputValue(Logic driverInput) {
+  bool _updateInputToPreTickInputValue(Logic driverInput,
+      {LogicValue? overrideValue}) {
     if (_driverInputsThatAreTriggers.contains(driverInput)) {
       // triggers should be sampled at the new value, not the previous value
       return false;
     }
 
-    _inputToPreTickInputValuesMap[driverInput] = driverInput.value;
+    _inputToPreTickInputValuesMap[driverInput] =
+        overrideValue ?? driverInput.value;
     return true;
   }
 
@@ -272,7 +293,7 @@ class Sequential extends Always {
           final didUpdate = _updateInputToPreTickInputValue(driverInput);
 
           if (didUpdate && Simulator.phase != SimulatorPhase.outOfTick) {
-            _raceTracker.nonTriggered();
+            _raceTracker.nonTriggered(driverInput);
           }
         } else {
           // if this is during stable clocks, it's probably another flop
@@ -315,7 +336,7 @@ class Sequential extends Always {
 
         if (!_pendingExecute) {
           unawaited(Simulator.clkStable.first.then((value) {
-            // once the clocks are stable, execute the contents of the FF
+            // once the clocks are stable, execute the contents of the seq
             _execute();
             _pendingExecute = false;
           }).catchError(test: (error) => error is Exception,
@@ -355,22 +376,29 @@ class Sequential extends Always {
       _driveX();
     } else if (anyTriggered) {
       if (_raceTracker.isInViolation) {
-        _driveX();
+        _raceTracker
+          // update affected inputs to have an overridden value of X
+          ..applyToNonTriggeredInputs((nti) =>
+              _updateInputToPreTickInputValue(nti, overrideValue: LogicValue.x))
+
+          // now, remember to change the values back to safe values after exec
+          ..registerPreNonTriggerClearAction(() => _raceTracker
+              .applyToNonTriggeredInputs(_updateInputToPreTickInputValue));
+      }
+
+      if (allowMultipleAssignments) {
+        for (final element in conditionals) {
+          // ignore: invalid_use_of_protected_member
+          element.execute(null, null);
+        }
       } else {
-        if (allowMultipleAssignments) {
-          for (final element in conditionals) {
-            // ignore: invalid_use_of_protected_member
-            element.execute(null, null);
-          }
-        } else {
-          final allDrivenSignals = DuplicateDetectionSet<Logic>();
-          for (final element in conditionals) {
-            // ignore: invalid_use_of_protected_member
-            element.execute(allDrivenSignals, null);
-          }
-          if (allDrivenSignals.hasDuplicates) {
-            throw SignalRedrivenException(allDrivenSignals.duplicates);
-          }
+        final allDrivenSignals = DuplicateDetectionSet<Logic>();
+        for (final element in conditionals) {
+          // ignore: invalid_use_of_protected_member
+          element.execute(allDrivenSignals, null);
+        }
+        if (allDrivenSignals.hasDuplicates) {
+          throw SignalRedrivenException(allDrivenSignals.duplicates);
         }
       }
     }

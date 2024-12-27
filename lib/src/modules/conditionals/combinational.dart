@@ -223,6 +223,7 @@ class Combinational extends Always {
 
   @override
   String alwaysVerilogStatement(Map<String, String> inputs) => 'always_comb';
+
   @override
   String assignOperator() => '=';
 }

@@ -58,4 +58,6 @@ void main() {
     expect(v[0], 1);
     expect(v.contains(2), isTrue);
   });
+
+  //TODO: test clear
 }

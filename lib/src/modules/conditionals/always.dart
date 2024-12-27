@@ -16,14 +16,17 @@ abstract class Always extends Module with SystemVerilog {
 
   /// A mapping from internal receiver signals to designated [Module] outputs.
   @protected
+  @internal
   final Map<Logic, Logic> assignedReceiverToOutputMap = HashMap<Logic, Logic>();
 
   /// A mapping from internal driver signals to designated [Module] inputs.
   @protected
+  @internal
   final Map<Logic, Logic> assignedDriverToInputMap = HashMap<Logic, Logic>();
 
   /// A uniquifier for ports generated on this [Always].
   @protected
+  @internal
   final Uniquifier portUniquifier = Uniquifier();
 
   /// Executes provided [conditionals] at the appropriate time (specified by
@@ -145,12 +148,14 @@ abstract class Always extends Module with SystemVerilog {
   ///
   /// For example, `always_comb` or `always_ff`.
   @protected
+  @visibleForOverriding
   String alwaysVerilogStatement(Map<String, String> inputs);
 
   /// The assignment operator to use when generating SystemVerilog.
   ///
   /// For example `=` or `<=`.
   @protected
+  @visibleForOverriding
   String assignOperator();
 
   @override
