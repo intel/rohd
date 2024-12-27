@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_builder_test.dart
@@ -66,7 +66,8 @@ void main() {
 
       for (final submod in mod.subModules) {
         final synth = SynthBuilder(submod, SystemVerilogSynthesizer());
-        expect(synth.getFileContents()[0], contains(submod.definitionName));
+        expect(synth.getFileContents()[0].contents,
+            contains(submod.definitionName));
       }
     });
   });

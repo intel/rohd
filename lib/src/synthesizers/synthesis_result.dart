@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synthesis_result.dart
@@ -10,7 +10,7 @@
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
-/// An object representing the output of a Synthesizer
+/// An object representing the output of a Synthesizer for one [module].
 @immutable
 abstract class SynthesisResult {
   /// The top level [Module] associated with this result.
@@ -52,7 +52,7 @@ abstract class SynthesisResult {
   //TODO: make this so it supports MULTIPLE files
 
   /// Generates what could go into a file
-  String toFileContents();
+  List<SynthFileContents> toFileContents();
 
   /// If provided, a [List] of additional [Module]s that should be included in
   /// the generated results.

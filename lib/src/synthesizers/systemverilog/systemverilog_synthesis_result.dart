@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/synthesizers/systemverilog/systemverilog_mixins.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
@@ -27,8 +26,12 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
 
   @override
-  String toFileContents() => (module as SystemVerilog)
-      .definitionVerilog(getInstanceTypeOfModule(module))!;
+  List<SynthFileContents> toFileContents() => List.unmodifiable([
+        SynthFileContents(
+            name: instanceTypeName,
+            contents: (module as SystemVerilog)
+                .definitionVerilog(getInstanceTypeOfModule(module))!)
+      ]);
 }
 
 /// A [SynthesisResult] representing a conversion of a [Module] to
@@ -71,7 +74,12 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _parameterString.hashCode;
 
   @override
-  String toFileContents() => _toVerilog();
+  List<SynthFileContents> toFileContents() => List.unmodifiable([
+        SynthFileContents(
+          name: instanceTypeName,
+          contents: _toVerilog(),
+        )
+      ]);
 
   /// Representation of all input port declarations in generated SV.
   List<String> _verilogInputs() {
