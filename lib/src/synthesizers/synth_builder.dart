@@ -35,6 +35,8 @@ class SynthBuilder {
   /// [Uniquifier] for instance type names.
   final Uniquifier _instanceTypeUniquifier = Uniquifier();
 
+  //TODO: consider https://github.com/intel/rohd/issues/434
+
   /// Constructs a [SynthBuilder] based on the [top] module and
   /// using [synthesizer] for generating outputs.
   SynthBuilder(this.top, this.synthesizer) {
