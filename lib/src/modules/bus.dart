@@ -164,8 +164,8 @@ class BusSubset extends Module with InlineSystemVerilog {
 /// The concatenation occurs such that index 0 of `signals` is the *most*
 /// significant bit(s).
 ///
-/// You can use convenience functions [List<Logic>.swizzle] or
-/// [List<Logic>.rswizzle] to more easily use this [Module].
+/// You can use convenience functions from [LogicSwizzle] to more easily use
+/// this [Module].
 ///
 /// This module supports nets, allowing concatenation to be bidirectionally
 /// driven.

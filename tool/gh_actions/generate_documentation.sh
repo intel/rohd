@@ -17,7 +17,9 @@ set -euo pipefail
 #   https://github.com/dart-lang/dartdoc/issues/2907
 #   https://github.com/dart-lang/dartdoc/issues/1959
 
-# Disabling --validate-links due to https://github.com/dart-lang/dartdoc/issues/3584
+# Disabling --validate-links due to
+#   https://github.com/dart-lang/dartdoc/issues/3584
+#   https://github.com/dart-lang/dartdoc/issues/3939
 # output=$(dart doc --validate-links 2>&1 | tee)
 output=$(dart doc 2>&1 | tee)
 

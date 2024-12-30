@@ -10,17 +10,26 @@
 - Added better checking, error handling, and message when module hierarchy cannot be properly resolved (e.g. self-containing modules, modules within multiple hierarchies).
 - Breaking: Updated APIs for `Synthesizer.synthesize` and down the stack to use a `Function` to calculate the instance type of a module instead of a `Map` look-up table.
 - Added `srcConnections` API to `Logic` to make it easier to trace drivers of subtypes of `Logic` which contain multiple drivers.
+- Improved SystemVerilog generation to be more succinct for array to array assignments.
 - Breaking: `Const` constructor updated so that specified `width` takes precedence over the inherent width of a provided `LogicValue` `val`.
 - Added flags to support an `asyncReset` option in places where sequential reset automation was already present.
-- Breaking: `Sequential` has new added strictness checking when triggers and non-triggers change simultaneously (in the same `Simulator` tick) when it may be unpredictable how the hardware would synthesize, driving `X`s on outputs instead of just picking an order. Descriptions that imply asynchronous resets are predictable and therefore unaffected.
+- Breaking: `Sequential` has new added strictness checking when triggers and non-triggers change simultaneously (in the same `Simulator` tick) when it may be unpredictable how the hardware would synthesize or sample the inputs. In these scenarios, `Sequential` will interpret affected inputs as `X`, thus driving `X`s on affected outputs instead of just picking an order. Descriptions that properly imply asynchronous resets are predictable and therefore unaffected.
 - Breaking: injected actions in the `Simulator` now occur in the `mainTick` phase. This API will generally continue to work as expected and as it always has, but in some scenarios could slightly change the behavior of existing testbenches.
 - Added a new API `Simulator.injectEndOfTickAction` which behaves similarly to `Simulator.injectAction`, except it registers the event to occur at the end of the tick rather than in the main phase. This is useful for some specific simulation situations like cosimulation, but not generally expected to be used for "normal" testbench development.
 - Breaking: `Simulator.run` now yields execution of the Dart event loop prior to beginning the simulation. This makes actions taken before starting the simulation more predictable, but may slightly change behavior in existing testbenches that relied on a potential delay.
 - Improved error and exception messages.
+- Various performance enhancements.
 - Fixed a bug where asynchronous events could sometimes show up late in generated waveforms from `WaveDumper`.
 - Added support for negative edge triggers to `Sequential.multi` for cases where synthesis may interpret an inverted `posedge` as different from a `negedge`.
 - Fixed a bug where `resetValues` would not take effect in `Pipeline`s.
 - Fixed a bug where a multi-triggered `Sequential` may not generate X's if one trigger is valid and another trigger is invalid.
+- Fixed bugs related to array signal discovery during the build process that, while they do not affect functionality or generated SystemVerilog, could provide incomplete information related to the contents of Modules from an API perspective.
+- Fixed bugs where generated SystemVerilog could have parameter declaration or assignment sections that were empty, which is illegal SystemVerilog and would cause build errors (<https://github.com/intel/rohd/pull/498>).
+- Fixed a bug where sometimes `getRange` on `LogicStructure`s and `LogicArray`s could access the wrong set of signals (<https://github.com/intel/rohd/pull/499>).
+- Add the `assignSubset` API to `Logic` and `LogicStructure` which behave similarly to the already-present API in `LogicArray` (<https://github.com/intel/rohd/pull/502>).
+- Added convenience APIs for accessing the original sources external to a `Module` for `input`s and `inOut`s (<https://github.com/intel/rohd/pull/503>).
+- Added functionality to `LogicValue` to enable conversion to and from various different radix strings.
+- Fixed bugs related to the handling of errors which cause the `Simulator` to halt (<https://github.com/intel/rohd/pull/515>).
 
 ## 0.5.3
 
