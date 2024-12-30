@@ -62,8 +62,9 @@ class _SequentialTrigger {
 /// non-triggers in [Sequential]s.
 ///
 /// In general, if a trigger and non-trigger toggle "simulatneously" during the
-/// same time step, then the outputs of the [Sequential] should be driven to
-/// [LogicValue.x], since it is unpredictable how it will be synthesized.
+/// same time step, then the relevant inputs of the [Sequential] should be
+/// treated as [LogicValue.x], since it is unpredictable how those inputs will
+/// be sampled.
 class _SequentialTriggerRaceTracker {
   /// Tracks whether a trigger has occurred in this timestep.
   bool _triggerOccurred = false;
@@ -97,7 +98,10 @@ class _SequentialTriggerRaceTracker {
     _nonTriggeredInputs.forEach(action);
   }
 
+  /// An action to be taken before clearing [_nonTriggeredInputs].
   void Function()? _preNonTriggerClearAction;
+
+  /// Registers an action to be taken before clearing [_nonTriggeredInputs].
   void registerPreNonTriggerClearAction(void Function() action) {
     _registerPostTick();
     _preNonTriggerClearAction = action;
@@ -115,6 +119,7 @@ class _SequentialTriggerRaceTracker {
         _nonTriggerOccurred = false;
         _preNonTriggerClearAction?.call();
         _nonTriggeredInputs.clear();
+        _preNonTriggerClearAction = null;
       }));
 
       _registeredPostTick = true;
@@ -173,11 +178,11 @@ class Sequential extends Always {
   /// Constructs a [Sequential] multi-triggered by any of [posedgeTriggers] and
   /// [negedgeTriggers] (on positive and negative edges, respectively).
   ///
-  /// If `reset` is provided, then all signals driven by this block will be
+  /// If [reset] is provided, then all signals driven by this block will be
   /// conditionally reset when the signal is high. The default reset value is to
-  /// `0`, but if `resetValues` is provided then the corresponding value
+  /// `0`, but if [resetValues] is provided then the corresponding value
   /// associated with the driven signal will be set to that value instead upon
-  /// reset. If a signal is in `resetValues` but not driven by any other
+  /// reset. If a signal is in [resetValues] but not driven by any other
   /// [Conditional] in this block, it will be driven to the specified reset
   /// value.
   ///
@@ -193,8 +198,9 @@ class Sequential extends Always {
   /// synthesizable. The [Sequential] will attempt to drive `X` in scenarios it
   /// can detect may not simulate and synthesize the same way, but it cannot
   /// guarantee it. If both a trigger and an input that is not a trigger glitch
-  /// simultaneously during the phases of the [Simulator], then all outputs of
-  /// this [Sequential] will be driven to [LogicValue.x].
+  /// simultaneously during the phases of the [Simulator], then applicable
+  /// inputs will be treated as [LogicValue.x] since it is unpredictable which
+  /// value would be sampled.
   Sequential.multi(
     List<Logic> posedgeTriggers,
     super._conditionals, {
