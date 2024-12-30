@@ -88,6 +88,13 @@ abstract class Simulator {
   static final Queue<dynamic Function()> _injectedActions =
       Queue<dynamic Function()>();
 
+  /// Functions to be executed at the end of a tick, the current one if
+  /// possible.
+  ///
+  /// Actions may return [Future]s, which will be `await`ed.
+  static final Queue<dynamic Function()> _injectedEndOfTickActions =
+      Queue<dynamic Function()>();
+
   /// Functions to be executed at the end of the simulation.
   ///
   /// Actions may return [Future]s, which will be `await`ed.
@@ -245,6 +252,18 @@ abstract class Simulator {
     _injectedActions.addLast(action);
   }
 
+  /// Adds an arbitrary [action] to be executed at the end of a tick, the
+  /// current one if possible.
+  // TODO: clarify this function and the original
+  // TODO: make sure we don't leave these dangling if they show up out of tick (TEST!)
+  static void injectEndOfTickAction(dynamic Function() action) {
+    _injectedEndOfTickActions.add(action);
+  }
+
+  //TODO doc
+  static bool get _injectedActionsPending =>
+      _injectedActions.isNotEmpty || _injectedEndOfTickActions.isNotEmpty;
+
   /// A single simulation tick.
   ///
   /// Takes the simulator through all actions within the next pending
@@ -252,7 +271,7 @@ abstract class Simulator {
   ///
   /// If there are no timestamps pending to execute, nothing will execute.
   static Future<void> tick() async {
-    if (_injectedActions.isNotEmpty) {
+    if (_injectedActionsPending) {
       // case 1 : ( the usual Rohd case )
       // The previous delta cycle did NOT do
       // 'registerAction( _currentTimeStamp );'.
@@ -342,8 +361,17 @@ abstract class Simulator {
   /// Executes all the injected actions.
   static Future<void> _executeInjectedActions() async {
     while (_injectedActions.isNotEmpty) {
-      final injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
+      final injectedAction = _injectedActions.removeFirst();
+      await injectedAction();
+    }
+  }
+
+  //TODO doc
+  static Future<void> _executeEndOfTickActions() async {
+    //TODO
+    while (_injectedEndOfTickActions.isNotEmpty) {
+      final injectedAction = _injectedEndOfTickActions.removeFirst();
+      await injectedAction();
     }
   }
 
@@ -352,7 +380,9 @@ abstract class Simulator {
   /// Just before we end the current tick, we execute the injected actions,
   /// removing them from [_injectedActions] as we go.
   static Future<void> _outOfTick() async {
-    // await _executeInjectedActions(); //TODO: make test that fails when this is here! (rohd-vf test fails)
+    // await _executeInjectedActions(); // TODO: should this be here? needed for cosim!
+    // await Future(() {});
+    await _executeEndOfTickActions();
 
     _phase = SimulatorPhase.outOfTick;
 
