@@ -409,4 +409,112 @@ void main() {
 
     await Simulator.endSimulation();
   });
+
+  test('async trigger and inputs change but does not affect result, no x',
+      () async {
+    final trigger1 = Logic()..put(0);
+    final trigger2 = Logic()..put(0);
+    final otherInput = Logic(width: 8)..put(0xcd);
+    final result = Logic(width: 8);
+
+    Sequential.multi([
+      trigger1,
+      trigger2,
+    ], [
+      If(trigger1, then: [
+        result < 0xab,
+      ], orElse: [
+        result < otherInput,
+      ]),
+    ]);
+
+    Simulator.registerAction(10, () {
+      otherInput.put(0xef);
+      trigger1.put(1);
+    });
+
+    Simulator.registerAction(11, () {
+      // this trigger should be *fine* because the value of `result` is not
+      // dependent on any of the other changing inputs
+      expect(result.value.toInt(), 0xab);
+    });
+
+    Simulator.registerAction(20, () {
+      trigger1.put(0);
+    });
+
+    Simulator.registerAction(30, () {
+      trigger2.put(1);
+      otherInput.put(0x34);
+    });
+
+    Simulator.registerAction(31, () {
+      // this trigger is bad because otherInput and trigger2 changed
+      // simultaneously, so its ambiguous what should be done
+      expect(result.value, LogicValue.of('xxxxxxxx'));
+    });
+
+    Simulator.registerAction(40, () {
+      trigger2.put(0);
+    });
+
+    Simulator.registerAction(50, () {
+      // now otherInput doesn't change at all, make sure it recovers
+      trigger1.put(1);
+    });
+
+    Simulator.registerAction(51, () {
+      expect(result.value.toInt(), 0xab);
+    });
+
+    await Simulator.run();
+  });
+
+  test('async input x injection is cleaned up next edge', () async {
+    final reset = Logic()..put(0);
+    final clk = Logic()..put(1);
+    final nextResult = Logic(width: 8)..put(0x11);
+    final result = Logic(width: 8);
+
+    Sequential.multi([
+      clk,
+      reset
+    ], [
+      If(reset, then: [
+        result < 0,
+      ], orElse: [
+        result < nextResult,
+      ]),
+    ]);
+
+    Simulator.registerAction(10, () {
+      // trigger an X generation due to trigger & non-trigger simultaneous
+      reset.put(1);
+      nextResult.put(0x22);
+    });
+
+    Simulator.registerAction(11, () {
+      expect(result.value.toInt(), 0);
+    });
+
+    Simulator.registerAction(20, () {
+      reset.put(0);
+    });
+
+    Simulator.registerAction(30, () {
+      clk.put(0);
+    });
+
+    Simulator.registerAction(40, () {
+      // trigger the flop, but don't change the inputs
+      clk.put(1);
+    });
+
+    Simulator.registerAction(41, () {
+      // should get the new value (NOT X)
+      expect(result.value.toInt(), 0x22);
+    });
+
+    await Simulator.run();
+  });
 }

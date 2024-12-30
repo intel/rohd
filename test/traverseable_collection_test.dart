@@ -42,6 +42,11 @@ void main() {
     }
 
     expect(c.isEmpty, isFalse);
+
+    c.clear();
+
+    expect(c.isEmpty, isTrue);
+    expect(c.length, 0);
   });
 
   test('unmodifiable traverseable collection cannot be changed', () {
