@@ -66,10 +66,11 @@
     </section>
     
 <section class="desc markdown">
-  <p>Adds an arbitrary <code>action</code> to be executed as soon as possible, during the
-current simulation tick if possible.</p>
-<p>If the injection occurs outside of a tick (<a href="../../src_simulator/SimulatorPhase.html">SimulatorPhase.outOfTick</a>),
-it will execute in a new tick in the same timestamp.</p>
+  <p>Adds an arbitrary <code>action</code> to be executed as soon as possible in the
+<a href="../../src_simulator/SimulatorPhase.html">SimulatorPhase.mainTick</a> phase, during the current simulation tick, if
+possible.</p>
+<p>If the injection occurs too late to occur in the current tick, it will
+execute in a new tick in the same timestamp.</p>
 <p>If <code>action</code> returns a <a href="https://api.dart.dev/stable/3.6.0/dart-core/Future-class.html">Future</a>, it will be <code>await</code>ed.</p>
 </section>
 

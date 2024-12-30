@@ -76,8 +76,8 @@ timestamp, and passes through all events and phases on the way.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">static Future&lt;void&gt; tick() async {
-  if (_injectedActions.isNotEmpty) {
-    &#47;&#47; case 1 : ( the usual Rohd case )
+  if (_injectedActionsPending) {
+    &#47;&#47; case 1 : ( the usual ROHD case )
     &#47;&#47; The previous delta cycle did NOT do
     &#47;&#47; &#39;registerAction( _currentTimeStamp );&#39;.
     &#47;&#47; In that case, _pendingTimestamps[_currentTimestamp] is null so we will

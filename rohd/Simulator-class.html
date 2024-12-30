@@ -360,8 +360,23 @@ is one.
 
 </dt>
 <dd>
-  Adds an arbitrary <code>action</code> to be executed as soon as possible, during the
-current simulation tick if possible.
+  Adds an arbitrary <code>action</code> to be executed as soon as possible in the
+<a href="../src_simulator/SimulatorPhase.html">SimulatorPhase.mainTick</a> phase, during the current simulation tick, if
+possible.
+  
+
+</dd>
+
+        <dt id="injectEndOfTickAction" class="callable">
+  <span class="name"><a href="../rohd/Simulator/injectEndOfTickAction.html">injectEndOfTickAction</a></span><span class="signature">(<wbr><span class="parameter" id="injectEndOfTickAction-param-action"><span class="type-annotation">dynamic</span> <span class="parameter-name">action</span>()</span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Adds an arbitrary <code>action</code> to be executed at the end of a tick in the
+<a href="../src_simulator/SimulatorPhase.html">SimulatorPhase.clkStable</a> phase, the current one if possible.
   
 
 </dd>

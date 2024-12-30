@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the execute method from the If class, for the Dart programming language.">
-  <title>execute method - If class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the driveX method from the Conditional class, for the Dart programming language.">
+  <title>driveX method - Conditional class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/If-class.html">If</a></li>
-    <li class="self-crumb">execute method</li>
+    <li><a href="../../rohd/Conditional-class.html">Conditional</a></li>
+    <li class="self-crumb">driveX method</li>
   </ol>
-  <div class="self-name">execute</div>
+  <div class="self-name">driveX</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,64 +49,43 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;If-class-sidebar.html"
+    data-above-sidebar="rohd&#47;Conditional-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">execute</span> method 
+<h1><span class="kind-method">driveX</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.6.0/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/protected-constant.html">protected</a></li>
     </ol>
   </div>
 <span class="returntype">void</span>
-<span class="name ">execute</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, [</span></li>
-<li><span class="parameter" id="execute-param-guard"><span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span></span></li>
-</ol>)?</span></li>
-</ol>])
+<span class="name ">driveX</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="driveX-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span></span></li>
+</ol>)
 
-      <div class="features"><span class="feature">override</span></div>
+      
 
     </section>
     
 <section class="desc markdown">
-  <p>Executes the functionality of this <a href="../../rohd/Conditional-class.html">Conditional</a> and
-populates <code>drivenSignals</code> with all <a href="../../rohd/Logic-class.html">Logic</a>s that were driven
-during execution.</p>
-<p>The <code>drivenSignals</code> are used by the caller to determine if signals
-were driven an appropriate number of times.</p>
-<p>The <code>guard</code> function should be called on drivers <em>prior</em> to any execution
-which consumes the current value of those drivers.  It is used to check
-that signals are not "written after read", for example.</p>
+  <p>Drives X to all receivers.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
-  if (guard != null) {
-    for (final iff in iffs) {
-      guard(iff.condition);
+  <pre class="language-dart"><code class="language-dart">@protected
+void driveX(Set&lt;Logic&gt;? drivenSignals) {
+  for (final receiver in receivers) {
+    receiverOutput(receiver).put(LogicValue.x);
+    if (drivenSignals != null &amp;&amp;
+        (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
+      drivenSignals.add(receiver);
     }
-  }
-
-  for (final iff in iffs) {
-    if (driverValue(iff.condition) == LogicValue.one) {
-      for (final conditional in iff.then) {
-        conditional.execute(drivenSignals, guard);
-      }
-      break;
-    } else if (driverValue(iff.condition) != LogicValue.zero) {
-      &#47;&#47; x and z propagation
-      driveX(drivenSignals);
-      break;
-    }
-    &#47;&#47; if it&#39;s 0, then continue searching down the path
   }
 }</code></pre>
 </section>
@@ -123,11 +102,11 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/If-class.html">If</a></li>
-    <li class="self-crumb">execute method</li>
+    <li><a href="../../rohd/Conditional-class.html">Conditional</a></li>
+    <li class="self-crumb">driveX method</li>
 </ol>
 
-    <h5>If class</h5>
+    <h5>Conditional class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

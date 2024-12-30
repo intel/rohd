@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the execute method from the If class, for the Dart programming language.">
-  <title>execute method - If class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the connectSsaDriverFromMappings method from the Conditional class, for the Dart programming language.">
+  <title>connectSsaDriverFromMappings method - Conditional class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/If-class.html">If</a></li>
-    <li class="self-crumb">execute method</li>
+    <li><a href="../../rohd/Conditional-class.html">Conditional</a></li>
+    <li class="self-crumb">connectSsaDriverFromMappings static method</li>
   </ol>
-  <div class="self-name">execute</div>
+  <div class="self-name">connectSsaDriverFromMappings</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,64 +49,62 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;If-class-sidebar.html"
+    data-above-sidebar="rohd&#47;Conditional-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">execute</span> method 
+<h1><span class="kind-method">connectSsaDriverFromMappings</span> static method 
 </h1></div>
 
     <section class="multi-line-signature">
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.6.0/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/protected-constant.html">protected</a></li>
     </ol>
   </div>
 <span class="returntype">void</span>
-<span class="name ">execute</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, [</span></li>
-<li><span class="parameter" id="execute-param-guard"><span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span></span></li>
-</ol>)?</span></li>
-</ol>])
+<span class="name ">connectSsaDriverFromMappings</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="connectSsaDriverFromMappings-param-driver"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">driver</span>, </span></li>
+<li><span class="parameter" id="connectSsaDriverFromMappings-param-mappings"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">mappings</span>, {</span></li>
+<li><span class="parameter" id="connectSsaDriverFromMappings-param-context"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">context</span>, </span></li>
+</ol>})
 
-      <div class="features"><span class="feature">override</span></div>
+      
 
     </section>
     
 <section class="desc markdown">
-  <p>Executes the functionality of this <a href="../../rohd/Conditional-class.html">Conditional</a> and
-populates <code>drivenSignals</code> with all <a href="../../rohd/Logic-class.html">Logic</a>s that were driven
-during execution.</p>
-<p>The <code>drivenSignals</code> are used by the caller to determine if signals
-were driven an appropriate number of times.</p>
-<p>The <code>guard</code> function should be called on drivers <em>prior</em> to any execution
-which consumes the current value of those drivers.  It is used to check
-that signals are not "written after read", for example.</p>
+  <p>Connects <code>driver</code> to drive all appropriate SSA nodes based on <code>mappings</code>
+which match the provided <code>context</code>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
-  if (guard != null) {
-    for (final iff in iffs) {
-      guard(iff.condition);
-    }
-  }
+  <pre class="language-dart"><code class="language-dart">@protected
+static void connectSsaDriverFromMappings(
+    Logic driver, Map&lt;Logic, Logic&gt; mappings,
+    {required int context}) {
+  final ssaDrivers = Conditional._findSsaDriversFrom(driver, context);
 
-  for (final iff in iffs) {
-    if (driverValue(iff.condition) == LogicValue.one) {
-      for (final conditional in iff.then) {
-        conditional.execute(drivenSignals, guard);
-      }
-      break;
-    } else if (driverValue(iff.condition) != LogicValue.zero) {
-      &#47;&#47; x and z propagation
-      driveX(drivenSignals);
-      break;
+  &#47;&#47; take all the &quot;current&quot; names for these signals
+  for (final ssaDriver in ssaDrivers) {
+    if (!mappings.containsKey(ssaDriver.ref)) {
+      throw UninitializedSignalException(ssaDriver.ref.name);
     }
-    &#47;&#47; if it&#39;s 0, then continue searching down the path
+
+    &#47;&#47; if these are already connected, just skip it, we&#39;re fine already
+    if (ssaDriver.srcConnection != null &amp;&amp;
+        ssaDriver.srcConnection == mappings[ssaDriver.ref]!) {
+      continue;
+    }
+
+    &#47;&#47; if these are the same signal, also just skip it
+    if (ssaDriver == mappings[ssaDriver.ref]!) {
+      continue;
+    }
+
+    ssaDriver &lt;= mappings[ssaDriver.ref]!;
   }
 }</code></pre>
 </section>
@@ -123,11 +121,11 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/If-class.html">If</a></li>
-    <li class="self-crumb">execute method</li>
+    <li><a href="../../rohd/Conditional-class.html">Conditional</a></li>
+    <li class="self-crumb">connectSsaDriverFromMappings static method</li>
 </ol>
 
-    <h5>If class</h5>
+    <h5>Conditional class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

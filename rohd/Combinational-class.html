@@ -115,6 +115,30 @@ Wikipedia article has a good explanation:
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
+        <dt id="assignedDriverToInputMap" class="property inherited">
+  <span class="name"><a href="../rohd/Combinational/assignedDriverToInputMap.html">assignedDriverToInputMap</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd class="inherited">
+  A mapping from internal driver signals to designated <a href="../rohd/Module-class.html">Module</a> inputs.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="assignedReceiverToOutputMap" class="property inherited">
+  <span class="name"><a href="../rohd/Combinational/assignedReceiverToOutputMap.html">assignedReceiverToOutputMap</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd class="inherited">
+  A mapping from internal receiver signals to designated <a href="../rohd/Module-class.html">Module</a> outputs.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="conditionals" class="property inherited">
   <span class="name"><a href="../rohd/Combinational/conditionals.html">conditionals</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
@@ -278,6 +302,18 @@ signals.
 <dd class="inherited">
   The parent <a href="../rohd/Module-class.html">Module</a> of this <a href="../rohd/Module-class.html">Module</a>.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="portUniquifier" class="property inherited">
+  <span class="name"><a href="../rohd/Combinational/portUniquifier.html">portUniquifier</a></span>
+  <span class="signature">&#8594; Uniquifier</span>
+  
+
+</dt>
+<dd class="inherited">
+  A uniquifier for ports generated on this <code>Always</code>.
+  <div class="features"><span class="feature">final</span><span class="feature">inherited</span></div>
 
 </dd>
 
@@ -775,6 +811,23 @@ named <code>name</code>.
     </dl>
   </section>
     
+  <section class="summary offset-anchor" id="static-properties">
+    <h2>Static Properties</h2>
+    <dl class="properties">
+        <dt id="signalToSsaDrivers" class="property">
+  <span class="name"><a href="../rohd/Combinational/signalToSsaDrivers.html">signalToSsaDrivers</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">SsaLogic</span>&gt;</span></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  A map from <code>SsaLogic</code>s to signals that they drive.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+    </dl>
+  </section>
     
     
 

@@ -199,6 +199,21 @@ receivers.
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
+        <dt id="calculateReceivers" class="callable">
+  <span class="name"><a href="../rohd/ConditionalAssign/calculateReceivers.html">calculateReceivers</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  The same as <a href="../rohd/ConditionalAssign/receivers.html">receivers</a>, but uncached for situations where the list of
+<a href="../rohd/ConditionalAssign/conditionals.html">conditionals</a> may still be modified or to compute the cached result
+for <a href="../rohd/ConditionalAssign/receivers.html">receivers</a> itself.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
         <dt id="driverInput" class="callable inherited">
   <span class="name"><a href="../rohd/Conditional/driverInput.html">driverInput</a></span><span class="signature">(<wbr><span class="parameter" id="driverInput-param-driver"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">driver</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
@@ -222,6 +237,19 @@ receivers.
 <dd class="inherited">
   Gets the value that should be used for execution for the input port
 associated with <code>driver</code>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="driveX" class="callable inherited">
+  <span class="name"><a href="../rohd/Conditional/driveX.html">driveX</a></span><span class="signature">(<wbr><span class="parameter" id="driveX-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Drives X to all receivers.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
@@ -295,6 +323,20 @@ receivers.
 
 </dd>
 
+        <dt id="processSsa" class="callable">
+  <span class="name"><a href="../rohd/ConditionalAssign/processSsa.html">processSsa</a></span><span class="signature">(<wbr><span class="parameter" id="processSsa-param-currentMappings"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">currentMappings</span>, {</span><span class="parameter" id="processSsa-param-context"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">context</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Given existing <code>currentMappings</code>, connects <a href="../rohd/ConditionalAssign/drivers.html">drivers</a> and <a href="../rohd/ConditionalAssign/receivers.html">receivers</a>
+accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
         <dt id="receiverOutput" class="callable inherited">
   <span class="name"><a href="../rohd/Conditional/receiverOutput.html">receiverOutput</a></span><span class="signature">(<wbr><span class="parameter" id="receiverOutput-param-receiver"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">receiver</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
@@ -318,6 +360,35 @@ receivers.
 <dd>
   A string representation of this object.
   <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="updateAssignmentMaps" class="callable inherited">
+  <span class="name"><a href="../rohd/Conditional/updateAssignmentMaps.html">updateAssignmentMaps</a></span><span class="signature">(<wbr><span class="parameter" id="updateAssignmentMaps-param-assignedReceiverToOutputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedReceiverToOutputMap</span>, </span><span class="parameter" id="updateAssignmentMaps-param-assignedDriverToInputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedDriverToInputMap</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Updates the values of <code>_assignedReceiverToOutputMap</code> and
+<code>_assignedDriverToInputMap</code> and passes them down to all sub-<a href="../rohd/Conditional-class.html">Conditional</a>s
+as well.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="updateOverrideMap" class="callable inherited">
+  <span class="name"><a href="../rohd/Conditional/updateOverrideMap.html">updateOverrideMap</a></span><span class="signature">(<wbr><span class="parameter" id="updateOverrideMap-param-driverValueOverrideMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">driverValueOverrideMap</span></span>)
+    <span class="returntype parameter">&#8594; void</span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Updates the value of <code>_driverValueOverrideMap</code> and passes it down to all
+sub-<a href="../rohd/Conditional-class.html">Conditional</a>s as well.
+  <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
 

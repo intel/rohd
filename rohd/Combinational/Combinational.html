@@ -76,7 +76,7 @@ synthesis.  See <a href="../../rohd/Combinational/Combinational.ssa.html">Combin
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Combinational(super._conditionals, {super.name = &#39;combinational&#39;}) {
   _execute(); &#47;&#47; for initial values
-  for (final driver in _assignedDriverToInputMap.keys) {
+  for (final driver in assignedDriverToInputMap.keys) {
     driver.glitch.listen((args) {
       _execute();
     });

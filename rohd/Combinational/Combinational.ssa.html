@@ -116,10 +116,10 @@ that it will not be noticeable.</p>
     {String name = &#39;combinational_ssa&#39;}) {
   final context = _ssaContextCounter++;
 
-  final ssas = &lt;_SsaLogic&gt;[];
+  final ssas = &lt;SsaLogic&gt;[];
 
   Logic getSsa(Logic ref) {
-    final newSsa = _SsaLogic(ref, context);
+    final newSsa = SsaLogic(ref, context);
     ssas.add(newSsa);
     return newSsa;
   }
@@ -131,7 +131,7 @@ that it will not be noticeable.</p>
   _processSsa(conditionals, context: context);
 
   &#47;&#47; no need to keep any of this old info around anymore
-  _signalToSsaDrivers.clear();
+  signalToSsaDrivers.clear();
 
   return Combinational(conditionals, name: name);
 }</code></pre>

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the hasStepsRemaining method from the Simulator class, for the Dart programming language.">
-  <title>hasStepsRemaining method - Simulator class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the signalToSsaDrivers property from the Combinational class, for the Dart programming language.">
+  <title>signalToSsaDrivers property - Combinational class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-    <li class="self-crumb">hasStepsRemaining static method</li>
+    <li><a href="../../rohd/Combinational-class.html">Combinational</a></li>
+    <li class="self-crumb">signalToSsaDrivers property</li>
   </ol>
-  <div class="self-name">hasStepsRemaining</div>
+  <div class="self-name">signalToSsaDrivers</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,37 +49,44 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;Simulator-class-sidebar.html"
+    data-above-sidebar="rohd&#47;Combinational-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">hasStepsRemaining</span> static method 
+<h1><span class="kind-property">signalToSsaDrivers</span> property 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
-<span class="name ">hasStepsRemaining</span>(<wbr>)
-
-      
-
-    </section>
     
+      <section class="multi-line-signature">
+        
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/internal-constant.html">internal</a></li>
+    </ol>
+  </div>
+        <a href="https://api.dart.dev/stable/3.6.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.0/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter">SsaLogic</span>&gt;</span></span>&gt;</span>
+        <span class="name ">signalToSsaDrivers</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
 <section class="desc markdown">
-  <p>Returns true iff there are more steps for the <a href="../../rohd/Simulator-class.html">Simulator</a> to tick through.</p>
+  <p>A map from <code>SsaLogic</code>s to signals that they drive.</p>
+<p>This only stores information temporarily during construction of a
+<a href="../../rohd/Combinational/Combinational.ssa.html">Combinational.ssa</a> and clears afterwards.</p>
 </section>
 
-
-    
+      
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static bool hasStepsRemaining() =&gt;
-    _pendingTimestamps.isNotEmpty || _injectedActionsPending;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@internal
+static final Map&lt;Logic, Set&lt;SsaLogic&gt;&gt; signalToSsaDrivers = {};</code></pre>
 </section>
 
 
-  </div> <!-- /.main-content -->
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -88,14 +95,14 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/Simulator-class.html">Simulator</a></li>
-    <li class="self-crumb">hasStepsRemaining static method</li>
+    <li><a href="../../rohd/Combinational-class.html">Combinational</a></li>
+    <li class="self-crumb">signalToSsaDrivers property</li>
 </ol>
 
-    <h5>Simulator class</h5>
-    <div id="dartdoc-sidebar-left-content"></div>
-  </div><!--/.sidebar-offcanvas-->
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  <h5>Combinational class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
 </div><!--/.sidebar-offcanvas-->
 </main>
 <footer>

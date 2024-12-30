@@ -89,8 +89,9 @@ elements implied. One must be careful to describe logic which is
 synthesizable. The <a href="../../rohd/Sequential-class.html">Sequential</a> will attempt to drive <code>X</code> in scenarios it
 can detect may not simulate and synthesize the same way, but it cannot
 guarantee it. If both a trigger and an input that is not a trigger glitch
-simultaneously during the phases of the <a href="../../rohd/Simulator-class.html">Simulator</a>, then all outputs of
-this <a href="../../rohd/Sequential-class.html">Sequential</a> will be driven to <a href="../../rohd/LogicValue/x-constant.html">LogicValue.x</a>.</p>
+simultaneously during the phases of the <a href="../../rohd/Simulator-class.html">Simulator</a>, then applicable
+inputs will be treated as <a href="../../rohd/LogicValue/x-constant.html">LogicValue.x</a> since it is unpredictable which
+value would be sampled.</p>
 </section>
 
 
