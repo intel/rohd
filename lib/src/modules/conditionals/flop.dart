@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// flop.dart
+// Definition for flip flops.
+//
+// 2024 December
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 
 /// Constructs a positive edge triggered flip flop on [clk].

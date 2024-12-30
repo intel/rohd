@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
-// Definitions of conditionallly executed hardware constructs
-// (if/else statements, always_comb, always_ff, etc.)
+// Definition for conditionallly executed hardware constructs
 //
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>

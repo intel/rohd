@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// if.dart
+// Definition for if statements and blocks.
+//
+// 2024 December
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';

@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// conditional_assign.dart
+// Definition for conditional assignment.
+//
+// 2024 December
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';

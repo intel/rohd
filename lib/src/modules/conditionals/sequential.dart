@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// sequential.dart
+// Definition for sequential blocks.
+//
+// 2024 December
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:async';
 import 'dart:collection';
 

@@ -1,4 +1,11 @@
-//TODO: HEADERS
+// Copyright (C) 2021-2024 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// always.dart
+// Definition for base class for combinational and sequential blocks.
+//
+// 2024 December
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:collection';
 
