@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the toBool method from the LogicValue class, for the Dart programming language.">
-  <title>toBool method - LogicValue class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the radixStringChars constant from the LogicValue class, for the Dart programming language.">
+  <title>radixStringChars constant - LogicValue class - rohd library - Dart API</title>
 
 
   
@@ -27,9 +27,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">toBool method</li>
+    <li class="self-crumb">radixStringChars constant</li>
   </ol>
-  <div class="self-name">toBool</div>
+  <div class="self-name">radixStringChars</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -52,45 +52,33 @@
     data-above-sidebar="rohd&#47;LogicValue-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">toBool</span> method 
+<h1><span class="kind-property">radixStringChars</span> constant 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.0/dart-core/bool-class.html">bool</a></span>
-<span class="name ">toBool</span>(<wbr>)
-
-      
-
-    </section>
     
+      <section class="multi-line-signature">
+        
+        <a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a>
+        const <span class="name ">radixStringChars</span>
+        
+
+      </section>
+      
 <section class="desc markdown">
-  <p>Converts a valid logical value to a boolean.</p>
-<p>Throws a LogicValueConversionException if the value is invalid.</p>
+  <p>Legal characters in a radixString representation.</p>
 </section>
 
-
-    
+      
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool toBool() {
-  if (!isValid) {
-    throw LogicValueConversionException(
-        &#39;Cannot convert value &quot;$this&quot; to bool&#39;);
-  }
-  if (width != 1) {
-    throw LogicValueConversionException(
-        &#39;Only single bit values can be converted to a bool,&#39;
-        &#39; but found width $width in $this&#39;);
-  }
-  return this == LogicValue.one;
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">static const String radixStringChars = &quot;&#39;0123456789aAbBcCdDeEfFqohzZxX&quot;;</code></pre>
 </section>
 
 
-  </div> <!-- /.main-content -->
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -100,13 +88,13 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/LogicValue-class.html">LogicValue</a></li>
-    <li class="self-crumb">toBool method</li>
+    <li class="self-crumb">radixStringChars constant</li>
 </ol>
 
-    <h5>LogicValue class</h5>
-    <div id="dartdoc-sidebar-left-content"></div>
-  </div><!--/.sidebar-offcanvas-->
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  <h5>LogicValue class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
 </div><!--/.sidebar-offcanvas-->
 </main>
 <footer>

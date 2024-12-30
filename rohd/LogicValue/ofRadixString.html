@@ -58,8 +58,9 @@
     <section class="multi-line-signature">
       
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">ofRadixString</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="ofRadixString-param-valueString"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">valueString</span></span></li>
-</ol>)
+<span class="name ">ofRadixString</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="ofRadixString-param-valueString"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">valueString</span>, {</span></li>
+<li><span class="parameter" id="ofRadixString-param-sepChar"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">sepChar</span> = <span class="default-value">&#39;_&#39;</span>, </span></li>
+</ol>})
 
       
 
@@ -82,6 +83,9 @@ constructed.</p>
 <p><code>&lt;value-string&gt;</code> contains space-separated digits corresponding to the
 radix format.  Space-separation is for ease of reading and is often
 in chunks of 4 digits.</p>
+<p>If the format of then length/radix-encoded string is not completely parsed
+an exception will be thrown.  This can be caused by illegal characters
+in the string or too long of a value string.</p>
 <p>Strings created by <a href="../../rohd/LogicValue/toRadixString.html">toRadixString</a> are parsed by <a href="../../rohd/LogicValue/ofRadixString.html">ofRadixString</a>.</p>
 <p>If the LogicValue width is not encoded as round number of radix
 characters, the leading character must be small enough to be encoded
@@ -98,13 +102,21 @@ in the remaining width:</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static LogicValue ofRadixString(String valueString) {
+  <pre class="language-dart"><code class="language-dart">static LogicValue ofRadixString(String valueString, {String sepChar = &#39;_&#39;}) {
+  if (radixStringChars.contains(sepChar)) {
+    throw LogicValueConstructionException(&#39;separation character invalid&#39;);
+  }
   if (RegExp(r&#39;^\d+&#39;).firstMatch(valueString) != null) {
-    final formatStr = RegExp(r&quot;^(\d+)&#39;([bqodh])([0-9aAbBcCdDeEfFzZxX&lt;&gt; ]*)&quot;)
-        .firstMatch(valueString);
+    final formatStr =
+        RegExp(&quot;^(\\d+)&#39;([bqodh])([0-9aAbBcCdDeEfFzZxX&lt;&gt;$sepChar]*)&quot;)
+            .firstMatch(valueString);
     if (formatStr != null) {
+      if (valueString.length != formatStr.group(0)!.length) {
+        throw LogicValueConstructionException(&#39;radix string stopped &#39;
+            &#39;parsing at character position ${formatStr.group(0)!.length}&#39;);
+      }
       final specifiedLength = int.parse(formatStr.group(1)!);
-      final compressedStr = formatStr.group(3)!.replaceAll(&#39; &#39;, &#39;&#39;);
+      final compressedStr = formatStr.group(3)!.replaceAll(sepChar, &#39;&#39;);
       &#47;&#47; Extract radix
       final radixString = formatStr.group(2)!;
       final radix = switch (radixString) {
@@ -113,7 +125,8 @@ in the remaining width:</p>
         &#39;o&#39; =&gt; 8,
         &#39;d&#39; =&gt; 10,
         &#39;h&#39; =&gt; 16,
-        _ =&gt; throw Exception(&#39;Unsupported radix: $radixString&#39;),
+        _ =&gt; throw LogicValueConstructionException(
+            &#39;Unsupported radix: $radixString&#39;),
       };
       final span = (math.log(radix) &#47; math.log(2)).ceil();
 
@@ -144,23 +157,30 @@ in the remaining width:</p>
         while (cnt &lt; binaryChunk.length - 1 &amp;&amp; binaryChunk[cnt++] == &#39;0&#39;) {}
         shorter = cnt - 1;
       } else {
-        final leadChar = compressedStr[0];
-        if (RegExp(&#39;[xXzZ]&#39;).hasMatch(leadChar)) {
-          shorter = span - 1;
-        } else {
-          if (radix == 10) {
-            shorter = binaryLength -
-                BigInt.parse(compressedStr, radix: 10)
-                    .toRadixString(2)
-                    .length;
+        if (compressedStr.isNotEmpty) {
+          final leadChar = compressedStr[0];
+          if (RegExp(&#39;[xXzZ]&#39;).hasMatch(leadChar)) {
+            shorter = span - 1;
           } else {
-            shorter = span -
-                BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
+            if (radix == 10) {
+              shorter = binaryLength -
+                  BigInt.parse(compressedStr, radix: 10)
+                      .toRadixString(2)
+                      .length;
+            } else {
+              shorter = span -
+                  BigInt.parse(leadChar, radix: radix)
+                      .toRadixString(2)
+                      .length;
+            }
           }
+        } else {
+          shorter = 0;
         }
       }
       if (binaryLength - shorter &gt; specifiedLength) {
-        throw Exception(&#39;ofRadixString: cannot represent &#39;
+        throw LogicValueConstructionException(
+            &#39;ofRadixString: cannot represent &#39;
             &#39;$compressedStr in $specifiedLength&#39;);
       }
       final noBinariesStr = reversedStr.replaceAll(fullBinaries, &#39;0&#39;);
@@ -175,10 +195,15 @@ in the remaining width:</p>
           .map((m) =&gt; List.generate(span, (s) =&gt; m.$2.start * span + s))
           .expand((ze) =&gt; ze);
 
-      final intValue = BigInt.parse(
-              _reverse(noBinariesStr.replaceAll(RegExp(&#39;[xXzZ]&#39;), &#39;0&#39;)),
-              radix: radix)
-          .toUnsigned(specifiedLength);
+      final BigInt intValue;
+      if (noBinariesStr.isNotEmpty) {
+        intValue = BigInt.parse(
+                _reverse(noBinariesStr.replaceAll(RegExp(&#39;[xXzZ]&#39;), &#39;0&#39;)),
+                radix: radix)
+            .toUnsigned(specifiedLength);
+      } else {
+        intValue = BigInt.zero;
+      }
       final logicValList = List&lt;LogicValue&gt;.from(
           LogicValue.ofString(intValue.toRadixString(2))
               .zeroExtend(specifiedLength)
@@ -229,7 +254,8 @@ in the remaining width:</p>
       }
       return logicValList.rswizzle();
     } else {
-      throw Exception(&#39;Invalid LogicValue string $valueString&#39;);
+      throw LogicValueConstructionException(
+          &#39;Invalid LogicValue string $valueString&#39;);
     }
   }
   return LogicValue.zero;
