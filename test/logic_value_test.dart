@@ -2067,8 +2067,8 @@ void main() {
     });
 
     test('radixString leading zero', () {
-      final lv = LogicValue.ofRadixString("10'b00 0010 0111");
-      expect(lv.toRadixString(), equals("10'b10 0111"));
+      final lv = LogicValue.ofRadixString("10'b00_0010_0111");
+      expect(lv.toRadixString(), equals("10'b10_0111"));
       expect(lv.toRadixString(radix: 4), equals("10'q213"));
       expect(lv.toRadixString(radix: 8), equals("10'o47"));
       expect(lv.toRadixString(radix: 10), equals("10'd39"));
@@ -2079,9 +2079,59 @@ void main() {
       }
     });
 
+    test('radixString round trip with alternate separation character', () {
+      final lv = LogicValue.ofRadixString("10'b00.0010.0111", sepChar: '.');
+
+      for (final i in [2, 4, 8, 10, 16]) {
+        expect(
+            LogicValue.ofRadixString(lv.toRadixString(radix: i, sepChar: '.'),
+                sepChar: '.'),
+            equals(lv));
+      }
+      try {
+        lv.toRadixString(sepChar: 'q');
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConversionException>());
+      }
+      try {
+        lv.toRadixString(radix: 14);
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConversionException>());
+      }
+    });
+    test('radixString space separators', () {
+      final lv = LogicValue.ofRadixString("10'b10 0010 0111", sepChar: ' ');
+      expect(lv.toInt(), equals(551));
+    });
+    test('radixString bad separator', () {
+      try {
+        LogicValue.ofRadixString("10'b10 0010_0111");
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConstructionException>());
+      }
+    });
+
+    test('radixString illegal separator', () {
+      try {
+        LogicValue.ofRadixString("10'b10q0010q0111", sepChar: 'q');
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConstructionException>());
+      }
+    });
+
+    test('radixString bad length', () {
+      try {
+        LogicValue.ofRadixString("10'b10_0010_0111_0000");
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConstructionException>());
+      }
+      // Try the shortest possible input
+      LogicValue.ofRadixString("10'b");
+    });
+
     test('radixString leading Z', () {
-      final lv = LogicValue.ofRadixString("10'bzz zzz1 1011");
-      expect(lv.toRadixString(), equals("10'bzz zzz1 1011"));
+      final lv = LogicValue.ofRadixString("10'bzz_zzz1_1011");
+      expect(lv.toRadixString(), equals("10'bzz_zzz1_1011"));
       expect(lv.toRadixString(radix: 4), equals("10'qZZ<z1>23"));
       expect(lv.toRadixString(radix: 8), equals("10'oZZ<z11>3"));
       expect(lv.toRadixString(radix: 16), equals("10'hZ<zzz1>b"));
@@ -2091,8 +2141,8 @@ void main() {
       }
     });
     test('radixString small leading radix character', () {
-      final lv = LogicValue.ofRadixString("10'b10 1010 0111");
-      expect(lv.toRadixString(radix: 4), equals("10'q2 2213"));
+      final lv = LogicValue.ofRadixString("10'b10_1010_0111");
+      expect(lv.toRadixString(radix: 4), equals("10'q2_2213"));
       expect(lv.toRadixString(radix: 8), equals("10'o1247"));
       expect(lv.toRadixString(radix: 10), equals("10'd679"));
       expect(lv.toRadixString(radix: 16), equals("10'h2A7"));
