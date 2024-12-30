@@ -292,4 +292,50 @@ void main() {
       expect(testLog, expectedLog);
     });
   });
+
+  test('end of tick action happens at end of tick', () async {
+    var injectedActionTaken = false;
+    var endOfTickActionTaken = false;
+
+    Simulator.registerAction(100, () {
+      Simulator.injectAction(() {
+        expect(Simulator.phase, equals(SimulatorPhase.mainTick));
+        expect(injectedActionTaken, isFalse);
+        expect(endOfTickActionTaken, isFalse);
+        injectedActionTaken = true;
+      });
+      Simulator.injectEndOfTickAction(() {
+        expect(Simulator.phase, equals(SimulatorPhase.clkStable));
+        expect(injectedActionTaken, isTrue);
+        expect(endOfTickActionTaken, isFalse);
+        endOfTickActionTaken = true;
+      });
+    });
+
+    await Simulator.run();
+
+    expect(injectedActionTaken, isTrue);
+    expect(endOfTickActionTaken, isTrue);
+  });
+
+  test('end of tick makes a re-tick if it was missed', () async {
+    var endOfTickActionTaken = false;
+
+    Simulator.registerAction(100, () {
+      Simulator.postTick.first.then((_) {
+        Simulator.injectEndOfTickAction(() => endOfTickActionTaken = true);
+      });
+    });
+
+    var numStartTicks = 0;
+    Simulator.startTick.listen((_) {
+      expect(Simulator.time, 100);
+      numStartTicks++;
+    });
+
+    await Simulator.run();
+
+    expect(endOfTickActionTaken, isTrue);
+    expect(numStartTicks, equals(2));
+  });
 }

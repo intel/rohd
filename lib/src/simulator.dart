@@ -73,7 +73,7 @@ abstract class Simulator {
 
   /// Returns true iff there are more steps for the [Simulator] to tick through.
   static bool hasStepsRemaining() =>
-      _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
+      _pendingTimestamps.isNotEmpty || _injectedActionsPending;
 
   /// Sorted storage for pending functions to execute at appropriate times.
   static final SplayTreeMap<int, ListQueue<dynamic Function()>>
