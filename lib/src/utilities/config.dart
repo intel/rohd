@@ -10,5 +10,5 @@
 /// A utility for ROHD configuration file.
 class Config {
   /// The version of the ROHD framework.
-  static const String version = '0.5.3';
+  static const String version = '0.6.0';
 }
