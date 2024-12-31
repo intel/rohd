@@ -1,4 +1,4 @@
-## Next release
+## 0.6.0
 
 - Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers. Includes support for "wire-only" operations supporting multiple drivers.
 - Deprecated `CustomSystemVerilog` in favor of `SystemVerilog`, which has similar functionality but supports `inOut` ports, and collapses all ports into a single `ports` argument, as well as some other new features like custom definitions and parameter passthroughs.
