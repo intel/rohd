@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // ssa_test.dart
@@ -26,10 +26,10 @@ class SimpleStruct extends LogicStructure {
       : super([Logic(width: 4), Logic(width: 4)], name: 'simple_struct');
 }
 
-class StructOp extends Module {
+class StructOpRepack extends Module {
   late final SimpleStruct x = SimpleStruct()..gets(output('x'));
 
-  StructOp(SimpleStruct a) {
+  StructOpRepack(SimpleStruct a) {
     a = SimpleStruct()..gets(addInput('a', a, width: 8));
     final x_ = SimpleStruct();
 
@@ -47,17 +47,13 @@ class SsaModWithStructElements extends SsaTestModule {
 
     final s1 = SimpleStruct();
 
-    // final intermediate = Logic(width: 4);
-
     final sx = SimpleStruct();
 
     Combinational.ssa((s) => [
           s(s1) < a,
-          s(sx) < StructOp(SimpleStruct()..gets(s(s1))).x,
+          s(sx) < StructOpRepack(SimpleStruct()..gets(s(s1))).x,
         ]);
 
-    // sx.elements[0] <= intermediate;
-    // sx.elements[1] <= a.getRange(4); //TODO cleanup
     x <= sx;
   }
 
@@ -68,6 +64,44 @@ class SsaModWithStructElements extends SsaTestModule {
       orig.getRange(0, 4) + 1,
       orig.getRange(4, 8) + 2,
     ].rswizzle().toInt();
+  }
+}
+
+class StructOpSplit extends Module {
+  Logic get x0 => output('x0');
+  Logic get x1 => output('x1');
+
+  StructOpSplit(SimpleStruct a) {
+    a = SimpleStruct()..gets(addInput('a', a, width: 8));
+    final x0 = addOutput('x0', width: 4);
+    final x1 = addOutput('x1', width: 4);
+
+    x0 <= a.elements[0] + 1;
+    x1 <= a.elements[1] + 2;
+  }
+}
+
+class SsaModWithStructSplit extends SsaTestModule {
+  SsaModWithStructSplit(Logic a) : super(name: 'struct_split') {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+
+    final s1 = SimpleStruct();
+
+    Combinational.ssa((s) => [
+          s(s1) < a,
+          s(x) <
+              () {
+                final splitMod = StructOpSplit(SimpleStruct()..gets(s(s1)));
+                return (splitMod.x0 + splitMod.x1).zeroExtend(8);
+              }(),
+        ]);
+  }
+
+  @override
+  int model(int a) {
+    final orig = LogicValue.ofInt(a, 8);
+    return (orig.getRange(0, 4) + 1 + orig.getRange(4, 8) + 2).toInt();
   }
 }
 
@@ -378,14 +412,6 @@ void main() {
     await Simulator.reset();
   });
 
-  test('tmp', () async {
-    //TODO cleanup
-    final mod = SsaModWithStructElements(Logic(width: 8));
-    await mod.build();
-
-    print(mod.generateSynth());
-  });
-
   group('ssa_test_module', () {
     final aInput = Logic(width: 8, name: 'a');
     final mods = [
@@ -397,6 +423,7 @@ void main() {
       SsaNested(aInput),
       SsaMultiDep(aInput),
       SsaModWithStructElements(aInput),
+      SsaModWithStructSplit(aInput),
     ];
 
     for (final mod in mods) {

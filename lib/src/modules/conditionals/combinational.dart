@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // combinational.dart
@@ -138,12 +138,16 @@ class Combinational extends Always {
         toParse.addAll(tpi.dstConnections);
       }
 
-      //TODO: this fixes a BUG!  Need to make tests that reproduce!
+      // This is critical to make sure we are notifying downstream SSA's even
+      // if they are driven as a result of being a part of a modified structure.
       if (tpi.parentStructure != null) {
         toParse.add(tpi.parentStructure!);
       }
 
-      //TODO: is this necessary to fix a similar bug?
+      // This is probably unnecessary, as the SSA would not allow someone to
+      // reference an element of a structure without separately SSA'ing it.
+      // However, leaving this in here just in case (probably negligible perf
+      // impact).
       if (tpi is LogicStructure) {
         toParse.addAll(tpi.elements);
       }
