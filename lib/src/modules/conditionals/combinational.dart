@@ -137,6 +137,16 @@ class Combinational extends Always {
       } else {
         toParse.addAll(tpi.dstConnections);
       }
+
+      //TODO: this fixes a BUG!  Need to make tests that reproduce!
+      if (tpi.parentStructure != null) {
+        toParse.add(tpi.parentStructure!);
+      }
+
+      //TODO: is this necessary to fix a similar bug?
+      if (tpi is LogicStructure) {
+        toParse.addAll(tpi.elements);
+      }
     }
   }
 

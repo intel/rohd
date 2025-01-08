@@ -21,6 +21,56 @@ abstract class SsaTestModule extends Module {
   int model(int a);
 }
 
+class SimpleStruct extends LogicStructure {
+  SimpleStruct()
+      : super([Logic(width: 4), Logic(width: 4)], name: 'simple_struct');
+}
+
+class StructOp extends Module {
+  late final SimpleStruct x = SimpleStruct()..gets(output('x'));
+
+  StructOp(SimpleStruct a) {
+    a = SimpleStruct()..gets(addInput('a', a, width: 8));
+    final x_ = SimpleStruct();
+
+    x_.elements[0] <= a.elements[0] + 1;
+    x_.elements[1] <= a.elements[1] + 2;
+
+    addOutput('x', width: 8) <= x_;
+  }
+}
+
+class SsaModWithStructElements extends SsaTestModule {
+  SsaModWithStructElements(Logic a) : super(name: 'struct_elements') {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+
+    final s1 = SimpleStruct();
+
+    // final intermediate = Logic(width: 4);
+
+    final sx = SimpleStruct();
+
+    Combinational.ssa((s) => [
+          s(s1) < a,
+          s(sx) < StructOp(SimpleStruct()..gets(s(s1))).x,
+        ]);
+
+    // sx.elements[0] <= intermediate;
+    // sx.elements[1] <= a.getRange(4); //TODO cleanup
+    x <= sx;
+  }
+
+  @override
+  int model(int a) {
+    final orig = LogicValue.ofInt(a, 8);
+    return [
+      orig.getRange(0, 4) + 1,
+      orig.getRange(4, 8) + 2,
+    ].rswizzle().toInt();
+  }
+}
+
 class SsaModAssignsOnly extends SsaTestModule {
   SsaModAssignsOnly(Logic a) : super(name: 'assigns_only') {
     a = addInput('a', a, width: 8);
@@ -328,6 +378,14 @@ void main() {
     await Simulator.reset();
   });
 
+  test('tmp', () async {
+    //TODO cleanup
+    final mod = SsaModWithStructElements(Logic(width: 8));
+    await mod.build();
+
+    print(mod.generateSynth());
+  });
+
   group('ssa_test_module', () {
     final aInput = Logic(width: 8, name: 'a');
     final mods = [
@@ -338,6 +396,7 @@ void main() {
       SsaMix(aInput),
       SsaNested(aInput),
       SsaMultiDep(aInput),
+      SsaModWithStructElements(aInput),
     ];
 
     for (final mod in mods) {
