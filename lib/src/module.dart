@@ -448,16 +448,16 @@ abstract class Module {
           // handle expanding the search for arrays
           if (signal.parentStructure != null) {
             await _traceInputForModuleContents(signal.parentStructure!,
-                dontAddSignal: dontAddSignal);
+                dontAddSignal: signal.isPort);
             await _traceOutputForModuleContents(signal.parentStructure!,
                 dontAddSignal: signal.isPort);
           }
           if (signal is LogicStructure) {
             for (final elem in signal.elements) {
               await _traceInputForModuleContents(elem,
-                  dontAddSignal: dontAddSignal);
+                  dontAddSignal: elem.isPort);
               await _traceOutputForModuleContents(elem,
-                  dontAddSignal: signal.isPort);
+                  dontAddSignal: elem.isPort);
             }
           }
 
@@ -507,7 +507,10 @@ abstract class Module {
       // print('Trace: $this $signal (${signal.parentModule})');
       // rethrow;
       throw PortRulesViolationException.trace(
-          module: this, signal: signal, lowerException: e);
+          module: this,
+          signal: signal,
+          lowerException: e,
+          traceDirection: 'from inputs');
     }
   }
 
@@ -530,8 +533,8 @@ abstract class Module {
       final subModuleParent = subModule?.parent;
 
       if (!dontAddSignal && signal.isInput) {
-        // somehow we have reached the input of a module which is not a submodule
-        // nor this module, bad!
+        // somehow we have reached the input of a module which is not a
+        // submodule nor this module, bad!
         throw PortRulesViolationException(this, signal.toString());
       }
 
@@ -574,16 +577,16 @@ abstract class Module {
           // handle expanding the search for arrays
           if (signal.parentStructure != null) {
             await _traceOutputForModuleContents(signal.parentStructure!,
-                dontAddSignal: dontAddSignal);
+                dontAddSignal: signal.isPort);
             await _traceInputForModuleContents(signal.parentStructure!,
                 dontAddSignal: signal.isPort);
           }
           if (signal is LogicStructure) {
             for (final elem in signal.elements) {
               await _traceOutputForModuleContents(elem,
-                  dontAddSignal: dontAddSignal);
+                  dontAddSignal: elem.isPort);
               await _traceInputForModuleContents(elem,
-                  dontAddSignal: signal.isPort);
+                  dontAddSignal: elem.isPort);
             }
           }
 
@@ -615,7 +618,10 @@ abstract class Module {
       // print('Trace: $this $signal (${signal.parentModule})');
       // rethrow;
       throw PortRulesViolationException.trace(
-          module: this, signal: signal, lowerException: e);
+          module: this,
+          signal: signal,
+          lowerException: e,
+          traceDirection: 'from outputs');
     }
   }
 

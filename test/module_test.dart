@@ -114,7 +114,8 @@ class SimpleLogicStructure extends LogicStructure {
 
 class StructWithPortAsElementMod extends Module {
   Logic get o => SimpleLogicStructure()..gets(output('o'));
-  StructWithPortAsElementMod(Logic a, Logic b) {
+  StructWithPortAsElementMod(Logic a, Logic b)
+      : super(name: 'structwportaselem') {
     a = addInput('a', a);
     b = addInput('b', b);
 
@@ -127,8 +128,8 @@ class StructWithPortAsElementMod extends Module {
   }
 }
 
-class TopStructyWrap extends Module {
-  TopStructyWrap(Logic a, Logic b) {
+class TopStructWrap extends Module {
+  TopStructWrap(Logic a, Logic b) : super(name: 'top_struct_wrap') {
     a = addInput('a', a);
     b = addInput('b', b);
 
@@ -206,11 +207,13 @@ void main() {
   });
 
   test('logic structure with output port as element trace', () async {
-    final mod = TopStructyWrap(Logic(), Logic());
+    final mod = TopStructWrap(Logic(), Logic());
     await mod.build();
 
     final sv = mod.generateSynth();
     print(sv);
+    //TODO: add some checking!
+
     // expect(sv, contains('assign o1 = mux_out;'));
     // expect(sv, contains('assign o2 = b;'));
   });
