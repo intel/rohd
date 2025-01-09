@@ -20,8 +20,6 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
-//TODO: BUG! an *output* of a module (e.g. mux) which is an ELEMENT of a LogicStructure
-
 /// Represents a synthesizable hardware entity with clearly defined interface
 /// boundaries.
 ///
@@ -404,8 +402,8 @@ abstract class Module {
       final subModuleParent = subModule?.parent;
 
       if (!dontAddSignal && signal.isOutput) {
-        // somehow we have reached the output of a module which is not a submodule
-        // nor this module, bad!
+        // somehow we have reached the output of a module which is not a
+        // submodule nor this module, bad!
         throw PortRulesViolationException(this, signal.toString());
       }
 
@@ -866,7 +864,6 @@ abstract class Module {
     return inOutArr;
   }
 
-  //TODO: test the print looks good in different scenarios
   @override
   String toString() => [
         '"$name" ($definitionName)  : ',

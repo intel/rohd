@@ -137,6 +137,23 @@ class TopStructWrap extends Module {
   }
 }
 
+class MissingInputRegistrationModule extends Module {
+  Logic get b => output('b');
+  MissingInputRegistrationModule(Logic a) : super(name: 'missing_input_mod') {
+    addOutput('b');
+
+    b <= ~a;
+  }
+}
+
+class MissingInputRegistrationTopModule extends Module {
+  MissingInputRegistrationTopModule(Logic a) : super(name: 'top') {
+    a = addInput('a', a);
+    final b = MissingInputRegistrationModule(a).b;
+    addOutput('b') <= b;
+  }
+}
+
 void main() {
   group('try ports', () {
     test('tryInput, exists', () {
@@ -235,5 +252,23 @@ void main() {
 
     final sv = mod.generateSynth();
     expect(sv, contains('assign a_arr[1] = unconnected;'));
+  });
+
+  group('trace errors', () {
+    test('correct description of path', () async {
+      final mod = MissingInputRegistrationTopModule(Logic());
+
+      try {
+        await mod.build();
+        fail('Expected an exception');
+      } on PortRulesViolationException catch (e) {
+        expect(
+            e.message,
+            contains(RegExp(
+                r'Module "missing_input_mod".*\n.*'
+                r'input\s*port.*: a.*\n.*of sub-module\s*"top"',
+                multiLine: true)));
+      }
+    });
   });
 }
