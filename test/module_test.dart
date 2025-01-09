@@ -162,6 +162,34 @@ class TopStructInputWrap extends Module {
   }
 }
 
+class StructWithInoutAsElementMod extends Module {
+  Logic get o => SimpleLogicStructure()..gets(output('o'));
+  StructWithInoutAsElementMod(LogicNet a, LogicNet b, LogicNet o)
+      : super(name: 'structwportaselem_inout') {
+    a = addInOut('a', a);
+    b = addInOut('b', b);
+
+    final s = SimpleLogicStructure(
+      a,
+      LogicNet(name: 'floaty_mc_float_face'), // floating net
+    );
+
+    addInOut('o', o, width: s.width) <= s;
+  }
+}
+
+class TopStructInoutWrap extends Module {
+  TopStructInoutWrap(LogicNet a, LogicNet b, LogicNet o)
+      : super(name: 'top_struct_wrap_inout') {
+    a = addInOut('a', a);
+    b = addInOut('b', b);
+
+    o = addInOut('o', o, width: 2);
+
+    StructWithInoutAsElementMod(a, b, o);
+  }
+}
+
 class MissingInputRegistrationModule extends Module {
   Logic get b => output('b');
   MissingInputRegistrationModule(Logic a) : super(name: 'missing_input_mod') {
@@ -267,6 +295,16 @@ void main() {
       final sv = mod.generateSynth();
 
       expect(sv, contains("assign o = {1'h1,a}"));
+    });
+
+    test('inout port as struct element trace', () async {
+      final mod =
+          TopStructInoutWrap(LogicNet(), LogicNet(), LogicNet(width: 2));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(sv, contains('net_connect (o, ({floaty_mc_float_face,a}));'));
     });
   });
 
