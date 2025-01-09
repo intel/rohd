@@ -211,11 +211,8 @@ void main() {
     await mod.build();
 
     final sv = mod.generateSynth();
-    print(sv);
-    //TODO: add some checking!
 
-    // expect(sv, contains('assign o1 = mux_out;'));
-    // expect(sv, contains('assign o2 = b;'));
+    expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
   });
 
   test('array concat per element builds and finds sigs', () async {
