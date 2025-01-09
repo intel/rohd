@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pipeline_test.dart
@@ -247,7 +247,7 @@ void main() {
           throwsRangeError);
     });
 
-    test('getting unregisterd signal on pipeline is error', () {
+    test('getting unregistered signal on pipeline is error', () {
       expect(
           () => Pipeline(Logic(), signals: [
                 Logic()
