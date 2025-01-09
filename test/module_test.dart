@@ -112,10 +112,10 @@ class SimpleLogicStructure extends LogicStructure {
       : super([a ?? Logic(), b ?? Logic()], name: 'simple_logic_structure');
 }
 
-class StructWithPortAsElementMod extends Module {
+class StructWithOutputAsElementMod extends Module {
   Logic get o => SimpleLogicStructure()..gets(output('o'));
-  StructWithPortAsElementMod(Logic a, Logic b)
-      : super(name: 'structwportaselem') {
+  StructWithOutputAsElementMod(Logic a, Logic b)
+      : super(name: 'structwportaselem_outp') {
     a = addInput('a', a);
     b = addInput('b', b);
 
@@ -128,12 +128,37 @@ class StructWithPortAsElementMod extends Module {
   }
 }
 
-class TopStructWrap extends Module {
-  TopStructWrap(Logic a, Logic b) : super(name: 'top_struct_wrap') {
+class TopStructOutputWrap extends Module {
+  TopStructOutputWrap(Logic a, Logic b) : super(name: 'top_struct_wrap_outp') {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    addOutput('o', width: 2) <= StructWithPortAsElementMod(a, b).o;
+    addOutput('o', width: 2) <= StructWithOutputAsElementMod(a, b).o;
+  }
+}
+
+class StructWithInputAsElementMod extends Module {
+  Logic get o => SimpleLogicStructure()..gets(output('o'));
+  StructWithInputAsElementMod(Logic a, Logic b)
+      : super(name: 'structwportaselem_inp') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    final s = SimpleLogicStructure(
+      a,
+      Const(1),
+    );
+
+    addOutput('o', width: s.width) <= s;
+  }
+}
+
+class TopStructInputWrap extends Module {
+  TopStructInputWrap(Logic a, Logic b) : super(name: 'top_struct_wrap_inp') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    addOutput('o', width: 2) <= StructWithInputAsElementMod(a, b).o;
   }
 }
 
@@ -223,13 +248,26 @@ void main() {
     expect(mod.build, throwsA(isA<PortRulesViolationException>()));
   });
 
-  test('logic structure with output port as element trace', () async {
-    final mod = TopStructWrap(Logic(), Logic());
-    await mod.build();
+  //TODO: what about logic structure with inout or input as element??
+  group('logic structure with ports', () {
+    //TODO: test where the output is not connected also (so it traces from inputs)
+    test('output port as struct element trace', () async {
+      final mod = TopStructOutputWrap(Logic(), Logic());
+      await mod.build();
 
-    final sv = mod.generateSynth();
+      final sv = mod.generateSynth();
 
-    expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
+      expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
+    });
+
+    test('input port as struct element trace', () async {
+      final mod = TopStructInputWrap(Logic(), Logic());
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(sv, contains("assign o = {1'h1,a}"));
+    });
   });
 
   test('array concat per element builds and finds sigs', () async {

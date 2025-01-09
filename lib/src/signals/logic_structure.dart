@@ -282,6 +282,7 @@ class LogicStructure implements Logic {
   @override
   LogicStructure? _parentStructure;
 
+  //TODO: should structs which contain part of a port indicate they are ports?
   @override
   late final bool isInput = parentModule?.isInput(this) ?? false;
 

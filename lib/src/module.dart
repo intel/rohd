@@ -502,8 +502,10 @@ abstract class Module {
         }
       }
     } on PortRulesViolationException catch (e) {
+      //TODO: cleanup these
       // print('Trace: $this $signal (${signal.parentModule})');
       // rethrow;
+
       throw PortRulesViolationException.trace(
           module: this,
           signal: signal,
@@ -608,11 +610,19 @@ abstract class Module {
           }
         }
 
-        for (final srcConnection in signal.srcConnections) {
-          await _traceOutputForModuleContents(srcConnection);
+        if (signal is LogicStructure) {
+          for (final elem in signal.elements) {
+            await _traceOutputForModuleContents(elem,
+                dontAddSignal: elem.isPort);
+          }
+        } else {
+          for (final srcConnection in signal.srcConnections) {
+            await _traceOutputForModuleContents(srcConnection);
+          }
         }
       }
     } on PortRulesViolationException catch (e) {
+      //TODO cleanup
       // print('Trace: $this $signal (${signal.parentModule})');
       // rethrow;
       throw PortRulesViolationException.trace(
