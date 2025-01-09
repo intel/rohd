@@ -107,6 +107,35 @@ class SubModWithArray extends Module {
   }
 }
 
+class SimpleLogicStructure extends LogicStructure {
+  SimpleLogicStructure([Logic? a, Logic? b])
+      : super([a ?? Logic(), b ?? Logic()], name: 'simple_logic_structure');
+}
+
+class StructWithPortAsElementMod extends Module {
+  Logic get o => SimpleLogicStructure()..gets(output('o'));
+  StructWithPortAsElementMod(Logic a, Logic b) {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    final s = SimpleLogicStructure(
+      mux(a, Const(0), Const(1)),
+      Const(1),
+    );
+
+    addOutput('o', width: s.width) <= s;
+  }
+}
+
+class TopStructyWrap extends Module {
+  TopStructyWrap(Logic a, Logic b) {
+    a = addInput('a', a);
+    b = addInput('b', b);
+
+    addOutput('o', width: 2) <= StructWithPortAsElementMod(a, b).o;
+  }
+}
+
 void main() {
   group('try ports', () {
     test('tryInput, exists', () {
@@ -174,6 +203,16 @@ void main() {
   test('multiple location hierarchy', () async {
     final mod = MultipleLocation();
     expect(mod.build, throwsA(isA<PortRulesViolationException>()));
+  });
+
+  test('logic structure with output port as element trace', () async {
+    final mod = TopStructyWrap(Logic(), Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    print(sv);
+    // expect(sv, contains('assign o1 = mux_out;'));
+    // expect(sv, contains('assign o2 = b;'));
   });
 
   test('array concat per element builds and finds sigs', () async {
