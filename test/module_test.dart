@@ -114,7 +114,8 @@ class SimpleLogicStructure extends LogicStructure {
 
 class StructWithOutputAsElementMod extends Module {
   Logic get o => SimpleLogicStructure()..gets(output('o'));
-  StructWithOutputAsElementMod(Logic a, Logic b)
+  StructWithOutputAsElementMod(Logic a, Logic b,
+      {bool disconnectOutputs = false})
       : super(name: 'structwportaselem_outp') {
     a = addInput('a', a);
     b = addInput('b', b);
@@ -124,22 +125,30 @@ class StructWithOutputAsElementMod extends Module {
       Const(1),
     );
 
-    addOutput('o', width: s.width) <= s;
+    final o_ = addOutput('o', width: s.width);
+
+    if (!disconnectOutputs) {
+      o_ <= s;
+    }
   }
 }
 
 class TopStructOutputWrap extends Module {
-  TopStructOutputWrap(Logic a, Logic b) : super(name: 'top_struct_wrap_outp') {
+  TopStructOutputWrap(Logic a, Logic b, {bool disconnectOutputs = false})
+      : super(name: 'top_struct_wrap_outp') {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    addOutput('o', width: 2) <= StructWithOutputAsElementMod(a, b).o;
+    addOutput('o', width: 2) <=
+        StructWithOutputAsElementMod(a, b, disconnectOutputs: disconnectOutputs)
+            .o;
   }
 }
 
 class StructWithInputAsElementMod extends Module {
   Logic get o => SimpleLogicStructure()..gets(output('o'));
-  StructWithInputAsElementMod(Logic a, Logic b)
+  StructWithInputAsElementMod(Logic a, Logic b,
+      {bool disconnectOutputs = false})
       : super(name: 'structwportaselem_inp') {
     a = addInput('a', a);
     b = addInput('b', b);
@@ -149,16 +158,25 @@ class StructWithInputAsElementMod extends Module {
       Const(1),
     );
 
-    addOutput('o', width: s.width) <= s;
+    final o_ = addOutput('o', width: s.width);
+
+    if (!disconnectOutputs) {
+      o_ <= s;
+    } else {
+      Logic(name: 'bogus').gets(s.and());
+    }
   }
 }
 
 class TopStructInputWrap extends Module {
-  TopStructInputWrap(Logic a, Logic b) : super(name: 'top_struct_wrap_inp') {
+  TopStructInputWrap(Logic a, Logic b, {bool disconnectOutputs = false})
+      : super(name: 'top_struct_wrap_inp') {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    addOutput('o', width: 2) <= StructWithInputAsElementMod(a, b).o;
+    addOutput('o', width: 2) <=
+        StructWithInputAsElementMod(a, b, disconnectOutputs: disconnectOutputs)
+            .o;
   }
 }
 
@@ -276,26 +294,40 @@ void main() {
     expect(mod.build, throwsA(isA<PortRulesViolationException>()));
   });
 
-  //TODO: what about logic structure with inout or input as element??
   group('logic structure with ports', () {
-    //TODO: test where the output is not connected also (so it traces from inputs)
-    test('output port as struct element trace', () async {
-      final mod = TopStructOutputWrap(Logic(), Logic());
-      await mod.build();
+    for (final disconnectOutputs in [false, true]) {
+      test(
+          'output port as struct element trace,'
+          ' disconnectOutputs=$disconnectOutputs', () async {
+        final mod = TopStructOutputWrap(Logic(), Logic(),
+            disconnectOutputs: disconnectOutputs);
+        await mod.build();
 
-      final sv = mod.generateSynth();
+        final sv = mod.generateSynth();
 
-      expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
-    });
+        if (!disconnectOutputs) {
+          expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
+        } else {
+          expect(sv, contains("assign _out = a ? 1'h0 : 1'h1;"));
+        }
+      });
 
-    test('input port as struct element trace', () async {
-      final mod = TopStructInputWrap(Logic(), Logic());
-      await mod.build();
+      test(
+          'input port as struct element trace,'
+          ' disconnectOutputs=$disconnectOutputs', () async {
+        final mod = TopStructInputWrap(Logic(), Logic(),
+            disconnectOutputs: disconnectOutputs);
+        await mod.build();
 
-      final sv = mod.generateSynth();
+        final sv = mod.generateSynth();
 
-      expect(sv, contains("assign o = {1'h1,a}"));
-    });
+        if (!disconnectOutputs) {
+          expect(sv, contains("assign o = {1'h1,a}"));
+        } else {
+          expect(sv, contains("bogus = &({1'h1,a});"));
+        }
+      });
+    }
 
     test('inout port as struct element trace', () async {
       final mod =
