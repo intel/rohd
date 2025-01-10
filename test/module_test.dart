@@ -289,11 +289,6 @@ void main() {
     expect(mod.build, throwsA(isA<InvalidHierarchyException>()));
   });
 
-  test('multiple location hierarchy', () async {
-    final mod = MultipleLocation();
-    expect(mod.build, throwsA(isA<PortRulesViolationException>()));
-  });
-
   group('logic structure with ports', () {
     for (final disconnectOutputs in [false, true]) {
       test(
@@ -363,6 +358,11 @@ void main() {
   });
 
   group('trace errors', () {
+    test('multiple location hierarchy', () async {
+      final mod = MultipleLocation();
+      expect(mod.build, throwsA(isA<PortRulesViolationException>()));
+    });
+
     test('correct description of path', () async {
       final mod = MissingInputRegistrationTopModule(Logic());
 
