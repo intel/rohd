@@ -880,8 +880,7 @@ abstract class Module {
   String toString() => [
         '"$name" ($definitionName)  : ',
         if (_inputs.isNotEmpty) '${_inputs.keys}',
-        if (_inputs.isNotEmpty && _outputs.isNotEmpty) '=>',
-        if (_outputs.isNotEmpty) '${_outputs.keys}',
+        if (_outputs.isNotEmpty) '=> ${_outputs.keys}',
         if (_inOuts.isNotEmpty) '; ${_inOuts.keys}'
       ].join(' ');
 
