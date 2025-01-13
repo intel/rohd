@@ -2140,6 +2140,25 @@ void main() {
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
       }
     });
+    test('radixString decimal case', () {
+      {
+        final lv = LogicValue.ofRadixString("12'bzz_zzz1_1011");
+        final ds = lv.toRadixString(radix: 10);
+        final dlv = LogicValue.ofRadixString(ds);
+        final ds2 = dlv.toRadixString(radix: 10);
+        expect(ds, equals(ds2));
+        expect(ds, equals("12'dZZZ"));
+      }
+      {
+        final lv = LogicValue.ofRadixString("12'bzz_zzx1_1011");
+        final ds = lv.toRadixString(radix: 10);
+        final dlv = LogicValue.ofRadixString(ds);
+        final ds2 = dlv.toRadixString(radix: 10);
+        expect(ds, equals(ds2));
+        expect(ds, equals("12'dXXX"));
+      }
+    });
+
     test('radixString small leading radix character', () {
       final lv = LogicValue.ofRadixString("10'b10_1010_0111");
       expect(lv.toRadixString(radix: 4), equals("10'q2_2213"));
