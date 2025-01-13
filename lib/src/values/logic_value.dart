@@ -666,8 +666,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
           toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
       reversedStr = _reverse(radixString);
     } else if (radix == 10) {
-      // throw LogicValueConversionException(
-      //     'Cannot support decimal strings with invalid bits');
       final span = (width * math.log(2) / math.log(radix)).floor();
       if (toRadixString().contains(RegExp('[xX]'))) {
         reversedStr = 'X' * span;
@@ -805,21 +803,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
             if (RegExp('[xXzZ]').hasMatch(leadChar)) {
               shorter = span - 1;
             } else {
-              if (radix == 10) {
-                // shorter = binaryLength -
-                //     BigInt.parse(compressedStr, radix: 10)
-                //         .toRadixString(2)
-                //         .length;
-                shorter = span -
-                    BigInt.parse(leadChar, radix: radix)
-                        .toRadixString(2)
-                        .length;
-              } else {
-                shorter = span -
-                    BigInt.parse(leadChar, radix: radix)
-                        .toRadixString(2)
-                        .length;
-              }
+              shorter = span -
+                  BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
             }
           } else {
             shorter = 0;
