@@ -131,11 +131,14 @@ bits to fill the first radix character.</p>
     final radixString =
         toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
     reversedStr = _reverse(radixString);
-  } else {
-    if (radix == 10) {
-      throw LogicValueConversionException(
-          &#39;Cannot support decimal strings with invalid bits&#39;);
+  } else if (radix == 10) {
+    final span = (width * math.log(2) &#47; math.log(radix)).floor();
+    if (toRadixString().contains(RegExp(&#39;[xX]&#39;))) {
+      reversedStr = &#39;X&#39; * span;
+    } else {
+      reversedStr = &#39;Z&#39; * span;
     }
+  } else {
     final span = (math.log(radix) &#47; math.log(2)).ceil();
     final extendedStr =
         LogicValue.of(this, width: span * (width &#47; span).ceil());

@@ -162,23 +162,14 @@ in the remaining width:</p>
           if (RegExp(&#39;[xXzZ]&#39;).hasMatch(leadChar)) {
             shorter = span - 1;
           } else {
-            if (radix == 10) {
-              shorter = binaryLength -
-                  BigInt.parse(compressedStr, radix: 10)
-                      .toRadixString(2)
-                      .length;
-            } else {
-              shorter = span -
-                  BigInt.parse(leadChar, radix: radix)
-                      .toRadixString(2)
-                      .length;
-            }
+            shorter = span -
+                BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
           }
         } else {
           shorter = 0;
         }
       }
-      if (binaryLength - shorter &gt; specifiedLength) {
+      if ((radix != 10) &amp; (binaryLength - shorter &gt; specifiedLength)) {
         throw LogicValueConstructionException(
             &#39;ofRadixString: cannot represent &#39;
             &#39;$compressedStr in $specifiedLength&#39;);
