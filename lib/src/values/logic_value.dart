@@ -665,11 +665,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
       final radixString =
           toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
       reversedStr = _reverse(radixString);
-    } else {
-      if (radix == 10) {
-        throw LogicValueConversionException(
-            'Cannot support decimal strings with invalid bits');
+    } else if (radix == 10) {
+      final span = (width * math.log(2) / math.log(radix)).floor();
+      if (toRadixString().contains(RegExp('[xX]'))) {
+        reversedStr = 'X' * span;
+      } else {
+        reversedStr = 'Z' * span;
       }
+    } else {
       final span = (math.log(radix) / math.log(2)).ceil();
       final extendedStr =
           LogicValue.of(this, width: span * (width / span).ceil());
@@ -800,23 +803,14 @@ abstract class LogicValue implements Comparable<LogicValue> {
             if (RegExp('[xXzZ]').hasMatch(leadChar)) {
               shorter = span - 1;
             } else {
-              if (radix == 10) {
-                shorter = binaryLength -
-                    BigInt.parse(compressedStr, radix: 10)
-                        .toRadixString(2)
-                        .length;
-              } else {
-                shorter = span -
-                    BigInt.parse(leadChar, radix: radix)
-                        .toRadixString(2)
-                        .length;
-              }
+              shorter = span -
+                  BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
             }
           } else {
             shorter = 0;
           }
         }
-        if (binaryLength - shorter > specifiedLength) {
+        if ((radix != 10) & (binaryLength - shorter > specifiedLength)) {
           throw LogicValueConstructionException(
               'ofRadixString: cannot represent '
               '$compressedStr in $specifiedLength');
