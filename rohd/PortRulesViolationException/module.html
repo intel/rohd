@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the isInOut method from the Module class, for the Dart programming language.">
-  <title>isInOut method - Module class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the module property from the PortRulesViolationException class, for the Dart programming language.">
+  <title>module property - PortRulesViolationException class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/Module-class.html">Module</a></li>
-    <li class="self-crumb">isInOut method</li>
+    <li><a href="../../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></li>
+    <li class="self-crumb">module property</li>
   </ol>
-  <div class="self-name">isInOut</div>
+  <div class="self-name">module</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,42 +49,36 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;Module-class-sidebar.html"
+    data-above-sidebar="rohd&#47;PortRulesViolationException-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">isInOut</span> method 
+<h1><span class="kind-property">module</span> property 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
-<span class="returntype"><a href="https://api.dart.dev/stable/3.6.1/dart-core/bool-class.html">bool</a></span>
-<span class="name ">isInOut</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="isInOut-param-signal"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span></span></li>
-</ol>)
-
-      
-
-    </section>
     
+      <section class="multi-line-signature">
+        
+        <a href="../../rohd/Module-class.html">Module</a>
+        <span class="name ">module</span>
+        <div class="features"><span class="feature">final</span></div>
+
+      </section>
+      
 <section class="desc markdown">
-  <p>Returns true iff <code>signal</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as the <a href="../../rohd/Module/inOut.html">inOut</a> port of this
-<a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
-<p>Note that if signal is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> which contains an <a href="../../rohd/Module/inOut.html">inOut</a> port,
-but is not itself a port, this will return false.</p>
+  <p>The <a href="../../rohd/PortRulesViolationException/module.html">module</a> where the violation occurred during build.</p>
 </section>
 
-
-    
+      
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">bool isInOut(Logic signal) =&gt;
-    _inOuts[signal.name] == signal ||
-    (signal.isArrayMember &amp;&amp; isInOut(signal.parentStructure!));</code></pre>
+  <pre class="language-dart"><code class="language-dart">final Module module;</code></pre>
 </section>
 
 
-  </div> <!-- /.main-content -->
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -93,14 +87,14 @@ but is not itself a port, this will return false.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/Module-class.html">Module</a></li>
-    <li class="self-crumb">isInOut method</li>
+    <li><a href="../../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></li>
+    <li class="self-crumb">module property</li>
 </ol>
 
-    <h5>Module class</h5>
-    <div id="dartdoc-sidebar-left-content"></div>
-  </div><!--/.sidebar-offcanvas-->
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  <h5>PortRulesViolationException class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
 </div><!--/.sidebar-offcanvas-->
 </main>
 <footer>

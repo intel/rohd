@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the PortRulesViolationException constructor from Class PortRulesViolationException from the rohd library, for the Dart programming language.">
-  <title>PortRulesViolationException constructor - PortRulesViolationException - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the PortRulesViolationException.trace constructor from Class PortRulesViolationException from the rohd library, for the Dart programming language.">
+  <title>PortRulesViolationException.trace constructor - PortRulesViolationException - rohd library - Dart API</title>
 
 
   
@@ -27,9 +27,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></li>
-    <li class="self-crumb">PortRulesViolationException constructor</li>
+    <li class="self-crumb">PortRulesViolationException.trace constructor</li>
   </ol>
-  <div class="self-name">PortRulesViolationException</div>
+  <div class="self-name">PortRulesViolationException.trace</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -52,35 +52,50 @@
       data-above-sidebar="rohd&#47;PortRulesViolationException-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">PortRulesViolationException</span> constructor 
+<h1><span class="kind-constructor">PortRulesViolationException.trace</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       
-      <span class="name ">PortRulesViolationException</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="-param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
-<li><span class="parameter" id="-param-signal"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">signal</span>, [</span></li>
-<li><span class="parameter" id="-param-additionalMessage"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">additionalMessage</span> = <span class="default-value">&#39;&#39;</span></span></li>
-</ol>])
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/internal-constant.html">internal</a></li>
+    </ol>
+  </div>
+      <span class="name ">PortRulesViolationException.trace</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="trace-param-module"><span>required</span> <span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
+<li><span class="parameter" id="trace-param-signal"><span>required</span> <span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">signal</span>, </span></li>
+<li><span class="parameter" id="trace-param-lowerException"><span>required</span> <span class="type-annotation"><a href="../../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></span> <span class="parameter-name">lowerException</span>, </span></li>
+<li><span class="parameter" id="trace-param-traceDirection"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">traceDirection</span>, </span></li>
+</ol>})
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a new <a href="https://api.dart.dev/stable/3.6.1/dart-core/Exception-class.html">Exception</a> for when port rules are not present on
-<code>module</code> for <code>signal</code>.</p>
+  <p>Generates a traceable stack of messages from an previous <code>lowerException</code>
+to help debug the issue.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">PortRulesViolationException(this.module, String signal,
-    [String additionalMessage = &#39;&#39;])
-    : super(&#39;Violation of input&#47;output rules&#39;
-          &#39; in module $module on signal $signal.&#39;
-          &#39; Logic within a Module should only communicate outside of itself&#39;
-          &#39; by consuming inputs&#47;inouts and&#39;
-          &#39; driving outputs&#47;inouts of that itself.&#39;
-          &#39; See https:&#47;&#47;intel.github.io&#47;rohd-website&#47;docs&#47;modules&#47;&#39;
-          &#39; for more information. $additionalMessage&#39;);</code></pre>
+  <pre class="language-dart"><code class="language-dart">@internal
+PortRulesViolationException.trace({
+  required this.module,
+  required Logic signal,
+  required PortRulesViolationException lowerException,
+  required String traceDirection,
+}) : super([
+        &#39;$lowerException&#39;,
+        if (module != lowerException.module)
+          &#47;&#47; only update with the full `toString` of the module when its new
+          &#39;@ Module $module \t [tracing $traceDirection]&#39;
+        else
+          &#39;= Module &quot;${module.name}&quot; \t [tracing $traceDirection]&#39;,
+        &#39;  on ${_getSignalDescription(signal)} \t $signal&#39;,
+        if (signal.parentModule != module)
+          &#47;&#47; only call it a sub-module if it&#39;s not itself
+          &#39;  of ${_getSubModuleDescription(signal.parentModule)}&#39;,
+      ].join(&#39;\n&#39;));</code></pre>
 </section>
 
 
@@ -96,7 +111,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/PortRulesViolationException-class.html">PortRulesViolationException</a></li>
-    <li class="self-crumb">PortRulesViolationException constructor</li>
+    <li class="self-crumb">PortRulesViolationException.trace constructor</li>
 </ol>
 
     <h5>PortRulesViolationException class</h5>

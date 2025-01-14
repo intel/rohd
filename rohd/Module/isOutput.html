@@ -68,6 +68,8 @@
 <section class="desc markdown">
   <p>Returns true iff <code>signal</code> is the same <a href="../../rohd/Logic-class.html">Logic</a> as the <a href="../../rohd/Module/output.html">output</a> port of this
 <a href="../../rohd/Module-class.html">Module</a> with the same name.</p>
+<p>Note that if signal is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> which contains an <a href="../../rohd/Module/output.html">output</a> port,
+but is not itself a port, this will return false.</p>
 </section>
 
 

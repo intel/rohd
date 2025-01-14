@@ -87,8 +87,12 @@ mainly for debugging or logging.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String toString() =&gt; &#39;&quot;$name&quot; ($runtimeType)  :&#39;
-    &#39;  ${_inputs.keys} =&gt; ${_outputs.keys}; ${_inOuts.keys}&#39;;</code></pre>
+String toString() =&gt; [
+      &#39;&quot;$name&quot; ($definitionName)  : &#39;,
+      if (_inputs.isNotEmpty) &#39;${_inputs.keys}&#39;,
+      if (_outputs.isNotEmpty) &#39;=&gt; ${_outputs.keys}&#39;,
+      if (_inOuts.isNotEmpty) &#39;; ${_inOuts.keys}&#39;
+    ].join(&#39; &#39;);</code></pre>
 </section>
 
 
