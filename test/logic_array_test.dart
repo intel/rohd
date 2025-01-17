@@ -957,12 +957,11 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
+      final sv = mod.generateSynth();
+
       // make sure we're reassigning both times it overlaps!
       expect(
-          RegExp('assign laIn.*=.*swizzled')
-              .allMatches(mod.generateSynth())
-              .length,
-          2);
+          RegExp(r'assign laOut\[1\].*=.*swizzled').allMatches(sv).length, 2);
     });
   });
 

@@ -186,11 +186,11 @@ void main() {
       expect(copy.width, orig.width);
       expect(copy.elements[0], isA<LogicArray>());
       expect(copy.elements[0].name, orig.elements[0].name);
-      expect(copy.elements[0].naming, Naming.mergeable);
+      expect(copy.elements[0].naming, Naming.renameable);
 
       expect(copy.elements[1], isA<Logic>());
       expect(copy.elements[1].name, orig.elements[1].name);
-      expect(copy.elements[1].naming, Naming.mergeable);
+      expect(copy.elements[1].naming, Naming.renameable);
 
       expect(copy.elements[2], isA<MyStruct>());
       expect(copy.elements[2].name, orig.elements[2].name);

@@ -56,13 +56,7 @@ class LogicStructure implements Logic {
   @override
   LogicStructure _clone({String? name, Naming? naming}) =>
       // naming is not used for LogicStructure
-      LogicStructure(
-          elements.map((e) => e._clone(
-                name: e.name,
-
-                // for generic structure, maintain prior naming
-                naming: e.naming,
-              )),
+      LogicStructure(elements.map((e) => e.clone(name: e.name)),
           name: name ?? this.name);
 
   /// Creates a new [LogicStructure] with the same structure as `this` and
