@@ -77,6 +77,8 @@ enum Naming {
               : Naming.renameable
           : Naming.unnamed);
 
+  /// Picks a [Naming] for a clone based on its original conditions and
+  /// optionally provided new conditions.
   static Naming chooseCloneNaming({
     required String originalName,
     required String? newName,
@@ -89,10 +91,12 @@ enum Naming {
     }
 
     if (newName == null && newNaming == null) {
-      // if not provided, we always want mergeable, since we clone the old name
+      // if not provided, we can default to mergeable, since we clone the old
+      // name and don't necessarily need the duplicate around
       return Naming.mergeable;
     }
 
+    // otherwise, use default
     return Naming.chooseNaming(newName, newNaming);
   }
 

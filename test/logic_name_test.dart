@@ -11,6 +11,18 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
 
+class MyStruct extends LogicStructure {
+  final Logic ready;
+  final Logic valid;
+
+  factory MyStruct() => MyStruct._(
+        Logic(name: 'ready'),
+        Logic(name: 'valid'),
+      );
+
+  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+}
+
 class LogicTestModule extends Module {
   LogicTestModule(String logicName) {
     addInput(logicName, Logic());
@@ -212,8 +224,8 @@ void main() {
             '.portB_1(portB_1),.portB(portB))'));
   });
 
-  group('named and cloning', () {
-    test('clone naming generally', () {
+  group('clone', () {
+    test('name selection', () {
       const originalName = 'original';
       for (final newName in ['new', null]) {
         for (final originalNaming in Naming.values) {
@@ -245,13 +257,61 @@ void main() {
     });
 
     group('logic', () {
-      test('clone name null', () {
+      test('name null', () {
         final c = Logic(name: 'a').clone();
         expect(c.name, 'a');
         expect(c.naming, Naming.mergeable);
       });
 
-      test('clone name provided', () {});
+      test('name provided', () {
+        final c = Logic(name: 'a').clone(name: 'b');
+        expect(c.name, 'b');
+        expect(c.naming, Naming.renameable);
+      });
+
+      test('net', () {
+        final c = LogicNet(name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+        expect(c, isA<LogicNet>());
+      });
+    });
+
+    group('logic structure', () {
+      test('name null', () {
+        final c = MyStruct().clone();
+        expect(c.name, 'myStruct');
+        expect(c.naming, Naming.unnamed);
+      });
+
+      test('name provided', () {
+        final c = MyStruct().clone(name: 'newName');
+        expect(c.name, 'newName');
+        expect(c.naming, Naming.unnamed);
+      });
+    });
+
+    group('logic array', () {
+      test('name null', () {
+        final c = LogicArray([1, 2], 3, name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+      });
+
+      test('name provided', () {
+        final c = LogicArray([1, 2], 3, name: 'a').clone(name: 'b');
+        expect(c.name, 'b');
+        expect(c.naming, Naming.renameable);
+      });
+
+      test('net', () {
+        final c = LogicArray.net([1, 2], 3, name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+        expect(c.isNet, true);
+      });
     });
   });
+
+  group('named', () {});
 }
