@@ -1078,4 +1078,33 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
   });
+
+  group('array clone', () {
+    for (final isNet in [true, false]) {
+      test('isNet = $isNet', () {
+        final la = (isNet ? LogicArray.net : LogicArray.new)(
+          [3, 2, 4],
+          8,
+          numUnpackedDimensions: 1,
+          name: 'myarray',
+          naming: Naming.reserved,
+        );
+        final clone = la.clone();
+        expect(la.dimensions, clone.dimensions);
+        expect(la.elementWidth, clone.elementWidth);
+        expect(la.numUnpackedDimensions, clone.numUnpackedDimensions);
+        expect(la.width, clone.width);
+        expect(la.elements.length, clone.elements.length);
+        for (var i = 0; i < la.elements.length; i++) {
+          expect(la.elements[i].width, clone.elements[i].width);
+        }
+        expect(la.name, clone.name);
+        expect(la.isNet, clone.isNet);
+        expect(clone.elements[0].elements[1].isNet, isNet);
+        expect(
+            clone.elements[1].elements[1].elements[1] is LogicArray, isFalse);
+        expect(clone.elements[1].elements[1].elements[1].isNet, isNet);
+      });
+    }
+  });
 }

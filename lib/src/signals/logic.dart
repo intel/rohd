@@ -255,6 +255,24 @@ class Logic {
           naming: naming,
         );
 
+  Logic _clone({String? name, Naming? naming}) =>
+      (isNet ? LogicNet.new : Logic.new)(
+          name: name ?? this.name,
+          naming: Naming.chooseCloneNaming(
+              originalName: this.name,
+              newName: name,
+              originalNaming: this.naming,
+              newNaming: naming),
+          width: width);
+
+  /// Makes a copy of `this`, optionally with the specified [name] and [naming],
+  /// but the same [width].
+  Logic clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming].
+  Logic named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming); //TODO: NETS!
+
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
   Logic._({

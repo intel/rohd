@@ -77,6 +77,25 @@ enum Naming {
               : Naming.renameable
           : Naming.unnamed);
 
+  static Naming chooseCloneNaming({
+    required String originalName,
+    required String? newName,
+    required Naming originalNaming,
+    required Naming? newNaming,
+  }) {
+    if (newNaming != null) {
+      // if provided, then use that
+      return newNaming;
+    }
+
+    if (newName == null && newNaming == null) {
+      // if not provided, we always want mergeable, since we clone the old name
+      return Naming.mergeable;
+    }
+
+    return Naming.chooseNaming(newName, newNaming);
+  }
+
   /// Picks a [String] name based on an initial [name] and [naming].
   ///
   /// If [name] is null, the name will be based on [nullStarter].

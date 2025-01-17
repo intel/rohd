@@ -177,13 +177,30 @@ class LogicArray extends LogicStructure {
     );
   }
 
+  @override
+  LogicArray _clone({String? name, Naming? naming}) => LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name ?? this.name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.chooseNaming(name, naming),
+        logicBuilder: isNet ? LogicNet.new : Logic.new,
+        logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+        isNet: isNet,
+      );
+  //TODO: test nets too!
+
   /// Creates a new [LogicArray] which has the same [dimensions],
   /// [elementWidth], [numUnpackedDimensions] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
   @override
-  LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions, name: name ?? this.name);
+  LogicArray clone({String? name}) => _clone(name: name);
+
+  /// Makes a copy of `this`, optionally with the specified [name] and [naming].
+  @override
+  LogicStructure named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming);
 
   /// Private constructor for the factory [LogicArray] constructor.
   ///

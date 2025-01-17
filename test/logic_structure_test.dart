@@ -185,6 +185,8 @@ void main() {
       expect(copy.width, orig.width);
       expect(copy.elements[0], isA<LogicArray>());
       expect(copy.elements[2], isA<MyStruct>());
+
+      //TODO: name of sub-elements!
     });
   });
 

@@ -53,12 +53,25 @@ class LogicStructure implements Logic {
       });
   }
 
-  /// Creates a new [LogicStructure] with the same structure as `this`.
-  LogicStructure clone({String? name}) => LogicStructure(
-      elements.map((e) => e is LogicStructure
-          ? e.clone()
-          : Logic(name: e.name, width: e.width, naming: e.naming)),
-      name: name ?? this.name);
+  @override
+  LogicStructure _clone({String? name, Naming? naming}) =>
+      // naming is not used for LogicStructure
+      LogicStructure(elements.map((e) => e._clone(name: e.name)),
+          name: name ?? this.name);
+
+  /// Creates a new [LogicStructure] with the same structure as `this` and
+  /// [clone]d [elements], optionally with the provided [name].
+  @override
+  LogicStructure clone({String? name}) =>
+      LogicStructure(elements.map((e) => e.clone()), name: name ?? this.name);
+
+  /// Makes a copy of `this`, optionally with the specified [name].
+  ///
+  /// The [naming] argument will not have any effect on a generic
+  /// [LogicStructure].
+  @override
+  LogicStructure named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming);
 
   @override
   String get structureName {

@@ -211,4 +211,47 @@ void main() {
             '.o(o),'
             '.portB_1(portB_1),.portB(portB))'));
   });
+
+  group('named and cloning', () {
+    test('clone naming generally', () {
+      const originalName = 'original';
+      for (final newName in ['new', null]) {
+        for (final originalNaming in Naming.values) {
+          for (final newNaming in [...Naming.values, null]) {
+            final selectedName = newName ?? originalName;
+            final selectedNaming = Naming.chooseCloneNaming(
+              originalName: originalName,
+              newName: newName,
+              originalNaming: originalNaming,
+              newNaming: newNaming,
+            );
+
+            final reason = 'original: ($originalName, ${originalNaming.name}),'
+                ' new: ($newName, ${newNaming?.name})'
+                ' => ($selectedName, ${selectedNaming.name})';
+
+            if (newNaming != null) {
+              expect(selectedNaming, newNaming, reason: reason);
+            } else if (newName == null && newNaming == null) {
+              expect(selectedNaming, Naming.mergeable, reason: reason);
+            } else if (newName != null && newNaming == null) {
+              expect(selectedNaming, Naming.renameable, reason: reason);
+            } else {
+              fail('Undefined scenario: $reason');
+            }
+          }
+        }
+      }
+    });
+
+    group('logic', () {
+      test('clone name null', () {
+        final c = Logic(name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+      });
+
+      test('clone name provided', () {});
+    });
+  });
 }
