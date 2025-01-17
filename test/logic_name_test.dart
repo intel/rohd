@@ -313,5 +313,18 @@ void main() {
     });
   });
 
-  group('named', () {});
+  group('named', () {
+    test('logic', () {
+      final a = Logic(name: 'a');
+      final b = a.named('b');
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+    });
+
+    //TODO: array, array net, net, struct
+  });
 }
