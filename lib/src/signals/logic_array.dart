@@ -137,8 +137,7 @@ class LogicArray extends LogicStructure {
     // calculate the next layer's dimensions
     final nextDimensions = dimensions.length == 1
         ? null
-        : UnmodifiableListView(
-            dimensions.getRange(1, dimensions.length).toList(growable: false));
+        : List<int>.unmodifiable(dimensions.getRange(1, dimensions.length));
 
     // if the total width will eventually be 0, then force element width to 0
     if (elementWidth != 0 && dimensions.reduce((a, b) => a * b) == 0) {
@@ -168,7 +167,7 @@ class LogicArray extends LogicStructure {
                 ))
             .._arrayIndex = index,
           growable: false),
-      dimensions: UnmodifiableListView(dimensions),
+      dimensions: List<int>.unmodifiable(dimensions),
       elementWidth: elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       name: name,
@@ -177,13 +176,38 @@ class LogicArray extends LogicStructure {
     );
   }
 
+  @override
+  LogicArray _clone({String? name, Naming? naming}) => LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name ?? this.name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.chooseCloneNaming(
+            originalName: this.name,
+            newName: name,
+            originalNaming: this.naming,
+            newNaming: naming),
+        logicBuilder: isNet ? LogicNet.new : Logic.new,
+        logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+        isNet: isNet,
+      );
+
   /// Creates a new [LogicArray] which has the same [dimensions],
-  /// [elementWidth], [numUnpackedDimensions] as `this`.
+  /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
   @override
-  LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions, name: name ?? this.name);
+  LogicArray clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// assigns it to be driven by `this`.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.
+  @override
+  LogicArray named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming)..gets(this);
 
   /// Private constructor for the factory [LogicArray] constructor.
   ///

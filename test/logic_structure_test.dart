@@ -182,9 +182,23 @@ void main() {
       final copy = orig.clone();
 
       expect(copy.name, orig.name);
+
       expect(copy.width, orig.width);
       expect(copy.elements[0], isA<LogicArray>());
+      expect(copy.elements[0].name, orig.elements[0].name);
+      expect(copy.elements[0].naming, Naming.renameable);
+
+      expect(copy.elements[1], isA<Logic>());
+      expect(copy.elements[1].name, orig.elements[1].name);
+      expect(copy.elements[1].naming, Naming.renameable);
+
       expect(copy.elements[2], isA<MyStruct>());
+      expect(copy.elements[2].name, orig.elements[2].name);
+      expect(copy.elements[2].naming, orig.elements[2].naming);
+      expect(
+          copy.elements[2].elements[0].name, orig.elements[2].elements[0].name);
+
+      expect(orig.clone(name: 'newName').name, 'newName');
     });
   });
 
