@@ -75,7 +75,7 @@ class LogicStructure implements Logic {
   /// assigning.
   @override
   LogicStructure named(String name, {Naming? naming}) =>
-      _clone(name: name, naming: naming)..gets(this);
+      clone(name: name)..gets(this);
 
   @override
   String get structureName {

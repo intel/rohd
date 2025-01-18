@@ -7,9 +7,11 @@
 // 2022 October 26
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
+import 'logic_structure_test.dart' as logic_structure_test;
 
 class MyStruct extends LogicStructure {
   final Logic ready;
@@ -325,6 +327,90 @@ void main() {
       expect(b.naming, Naming.renameable);
     });
 
-    //TODO: array, array net, net, struct
+    test('logic with naming', () {
+      final a = Logic(name: 'a');
+      final b = a.named('b', naming: Naming.reserved);
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.reserved);
+    });
+
+    test('net', () {
+      final a = LogicNet(name: 'a');
+      final b = a.named('b');
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+      expect(b.isNet, true);
+      expect(b, isA<LogicNet>());
+    });
+
+    test('array', () {
+      final a = LogicArray([1, 2], 3, name: 'a', numUnpackedDimensions: 1);
+      final b = a.named('b');
+
+      a.elements[0].elements[0].put(1);
+
+      final listEq = const ListEquality<int>().equals;
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+      expect(listEq(b.dimensions, a.dimensions), true);
+      expect(b.numUnpackedDimensions, a.numUnpackedDimensions);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+    });
+
+    test('array net with naming', () {
+      final a = LogicArray.net([1, 2], 3, name: 'a', numUnpackedDimensions: 1);
+      final b = a.named('b', naming: Naming.reserved);
+
+      a.elements[0].elements[0].put(1);
+
+      final listEq = const ListEquality<int>().equals;
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+      expect(listEq(b.dimensions, a.dimensions), true);
+      expect(b.numUnpackedDimensions, a.numUnpackedDimensions);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.reserved);
+      expect(b.isNet, true);
+      expect(b, isA<LogicArray>());
+    });
+
+    test('structure', () {
+      final a = logic_structure_test.MyFancyStruct();
+      final b = a.named(
+        'b',
+
+        // naming should have no effect
+        naming: Naming.reserved,
+      );
+
+      expect(b.name, 'b');
+
+      expect(b.width, a.width);
+      expect(b.elements[0], isA<LogicArray>());
+      expect(b.elements[0].name, a.elements[0].name);
+      expect(b.elements[0].naming, Naming.renameable);
+
+      expect(b.elements[1], isA<Logic>());
+      expect(b.elements[1].name, a.elements[1].name);
+      expect(b.elements[1].naming, Naming.renameable);
+
+      expect(b.elements[2], isA<logic_structure_test.MyStruct>());
+      expect(b.elements[2].name, a.elements[2].name);
+      expect(b.elements[2].naming, a.elements[2].naming);
+      expect(b.elements[2].elements[0].name, a.elements[2].elements[0].name);
+
+      a.arr.elements[0].put(1);
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+    });
   });
 }
