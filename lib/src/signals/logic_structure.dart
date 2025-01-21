@@ -53,12 +53,29 @@ class LogicStructure implements Logic {
       });
   }
 
-  /// Creates a new [LogicStructure] with the same structure as `this`.
-  LogicStructure clone({String? name}) => LogicStructure(
-      elements.map((e) => e is LogicStructure
-          ? e.clone()
-          : Logic(name: e.name, width: e.width, naming: e.naming)),
-      name: name ?? this.name);
+  @override
+  LogicStructure _clone({String? name, Naming? naming}) =>
+      // naming is not used for LogicStructure
+      LogicStructure(elements.map((e) => e.clone(name: e.name)),
+          name: name ?? this.name);
+
+  /// Creates a new [LogicStructure] with the same structure as `this` and
+  /// [clone]d [elements], optionally with the provided [name].
+  @override
+  LogicStructure clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone], optionally with the specified [name], then assigns it to
+  /// be driven by `this`.
+  ///
+  /// The [naming] argument will not have any effect on a generic
+  /// [LogicStructure], but behavior may be overridden by implementers.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.
+  @override
+  LogicStructure named(String name, {Naming? naming}) =>
+      clone(name: name)..gets(this);
 
   @override
   String get structureName {

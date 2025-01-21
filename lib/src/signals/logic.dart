@@ -255,6 +255,35 @@ class Logic {
           naming: naming,
         );
 
+  /// A cloning utility for [clone] and [named].
+  Logic _clone({String? name, Naming? naming}) =>
+      (isNet ? LogicNet.new : Logic.new)(
+          name: name ?? this.name,
+          naming: Naming.chooseCloneNaming(
+              originalName: this.name,
+              newName: name,
+              originalNaming: this.naming,
+              newNaming: naming),
+          width: width);
+
+  /// Makes a copy of `this`, optionally with the specified [name], but the same
+  /// [width].
+  Logic clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// assigns it to be driven by `this`.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.  For example:
+  ///
+  /// ```dart
+  /// // named "myImportantNode" instead of a generated name like "a_xor_b"
+  /// final myImportantNode = (a ^ b).named('myImportantNode');
+  /// ```
+  Logic named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming)..gets(this);
+
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
   Logic._({
