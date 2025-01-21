@@ -657,7 +657,7 @@ the corresponding index, plus <code>start</code>, of this signal.
 </dt>
 <dd>
   Creates a new <a href="../rohd/LogicArray-class.html">LogicArray</a> which has the same <a href="../rohd/LogicArray/dimensions.html">dimensions</a>,
-<a href="../rohd/LogicArray/elementWidth.html">elementWidth</a>, <a href="../rohd/LogicArray/numUnpackedDimensions.html">numUnpackedDimensions</a> as <code>this</code>.
+<a href="../rohd/LogicArray/elementWidth.html">elementWidth</a>, <a href="../rohd/LogicArray/numUnpackedDimensions.html">numUnpackedDimensions</a>, and <a href="../rohd/LogicArray/isNet.html">isNet</a> as <code>this</code>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -870,6 +870,20 @@ conditional (<code>&lt;</code>) assignment.
 <dd class="inherited">
   Multiply-assigns each element of <a href="../rohd/LogicStructure/elements.html">elements</a> using <a href="../rohd/Logic/mulAssign.html">Logic.mulAssign</a>.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="named" class="callable">
+  <span class="name"><a href="../rohd/LogicArray/named.html">named</a></span><span class="signature">(<wbr><span class="parameter" id="named-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="named-param-naming"><span class="type-annotation"><a href="../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicArray-class.html">LogicArray</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Makes a <a href="../rohd/LogicArray/clone.html">clone</a> with the provided <code>name</code> and optionally <code>naming</code>, then
+assigns it to be driven by <code>this</code>.
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 

@@ -592,8 +592,9 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dt>
 <dd>
-  Creates a new <a href="../rohd/LogicStructure-class.html">LogicStructure</a> with the same structure as <code>this</code>.
-  
+  Creates a new <a href="../rohd/LogicStructure-class.html">LogicStructure</a> with the same structure as <code>this</code> and
+<a href="../rohd/LogicStructure/clone.html">clone</a>d <a href="../rohd/LogicStructure/elements.html">elements</a>, optionally with the provided <code>name</code>.
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -804,6 +805,20 @@ conditional (<code>&lt;</code>) assignment.
 </dt>
 <dd>
   Multiply-assigns each element of <a href="../rohd/LogicStructure/elements.html">elements</a> using <a href="../rohd/Logic/mulAssign.html">Logic.mulAssign</a>.
+  <div class="features"><span class="feature">override</span></div>
+
+</dd>
+
+        <dt id="named" class="callable">
+  <span class="name"><a href="../rohd/LogicStructure/named.html">named</a></span><span class="signature">(<wbr><span class="parameter" id="named-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="named-param-naming"><span class="type-annotation"><a href="../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicStructure-class.html">LogicStructure</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Makes a <a href="../rohd/LogicStructure/clone.html">clone</a>, optionally with the specified <code>name</code>, then assigns it to
+be driven by <code>this</code>.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>

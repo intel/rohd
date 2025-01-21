@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the clone method from the LogicArray class, for the Dart programming language.">
-  <title>clone method - LogicArray class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the chooseCloneNaming method from the Naming enum, for the Dart programming language.">
+  <title>chooseCloneNaming method - Naming enum - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">clone method</li>
+    <li><a href="../../rohd/Naming.html">Naming</a></li>
+    <li class="self-crumb">chooseCloneNaming static method</li>
   </ol>
-  <div class="self-name">clone</div>
+  <div class="self-name">chooseCloneNaming</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,39 +49,54 @@
 <div
     id="dartdoc-main-content"
     class="main-content"
-    data-above-sidebar="rohd&#47;LogicArray-class-sidebar.html"
+    data-above-sidebar="rohd&#47;Naming-enum-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">clone</span> method 
+<h1><span class="kind-method">chooseCloneNaming</span> static method 
 </h1></div>
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.6.1/dart-core/override-constant.html">override</a></li>
-    </ol>
-  </div>
-<span class="returntype"><a href="../../rohd/LogicArray-class.html">LogicArray</a></span>
-<span class="name ">clone</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="clone-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span>, </span></li>
+<span class="returntype"><a href="../../rohd/Naming.html">Naming</a></span>
+<span class="name ">chooseCloneNaming</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="chooseCloneNaming-param-originalName"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">originalName</span>, </span></li>
+<li><span class="parameter" id="chooseCloneNaming-param-newName"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">newName</span>, </span></li>
+<li><span class="parameter" id="chooseCloneNaming-param-originalNaming"><span>required</span> <span class="type-annotation"><a href="../../rohd/Naming.html">Naming</a></span> <span class="parameter-name">originalNaming</span>, </span></li>
+<li><span class="parameter" id="chooseCloneNaming-param-newNaming"><span>required</span> <span class="type-annotation"><a href="../../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">newNaming</span>, </span></li>
 </ol>})
 
-      <div class="features"><span class="feature">override</span></div>
+      
 
     </section>
     
 <section class="desc markdown">
-  <p>Creates a new <a href="../../rohd/LogicArray-class.html">LogicArray</a> which has the same <a href="../../rohd/LogicArray/dimensions.html">dimensions</a>,
-<a href="../../rohd/LogicArray/elementWidth.html">elementWidth</a>, <a href="../../rohd/LogicArray/numUnpackedDimensions.html">numUnpackedDimensions</a>, and <a href="../../rohd/LogicArray/isNet.html">isNet</a> as <code>this</code>.</p>
-<p>If no new <code>name</code> is specified, then it will also have the same name.</p>
+  <p>Picks a <a href="../../rohd/Naming.html">Naming</a> for a clone based on its original conditions and
+optionally provided new conditions.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@override
-LogicArray clone({String? name}) =&gt; _clone(name: name);</code></pre>
+  <pre class="language-dart"><code class="language-dart">static Naming chooseCloneNaming({
+  required String originalName,
+  required String? newName,
+  required Naming originalNaming,
+  required Naming? newNaming,
+}) {
+  if (newNaming != null) {
+    &#47;&#47; if provided, then use that
+    return newNaming;
+  }
+
+  if (newName == null &amp;&amp; newNaming == null) {
+    &#47;&#47; if not provided, we can default to mergeable, since we clone the old
+    &#47;&#47; name and don&#39;t necessarily need the duplicate around
+    return Naming.mergeable;
+  }
+
+  &#47;&#47; otherwise, use default
+  return Naming.chooseNaming(newName, newNaming);
+}</code></pre>
 </section>
 
 
@@ -96,11 +111,11 @@ LogicArray clone({String? name}) =&gt; _clone(name: name);</code></pre>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/LogicArray-class.html">LogicArray</a></li>
-    <li class="self-crumb">clone method</li>
+    <li><a href="../../rohd/Naming.html">Naming</a></li>
+    <li class="self-crumb">chooseCloneNaming static method</li>
 </ol>
 
-    <h5>LogicArray class</h5>
+    <h5>Naming enum</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">

@@ -565,6 +565,20 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dd>
 
+        <dt id="clone" class="callable inherited">
+  <span class="name"><a href="../rohd/Logic/clone.html">clone</a></span><span class="signature">(<wbr>{<span class="parameter" id="clone-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Makes a copy of <code>this</code>, optionally with the specified <code>name</code>, but the same
+<a href="../rohd/Logic/width.html">width</a>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="decr" class="callable inherited">
   <span class="name"><a href="../rohd/Logic/decr.html">decr</a></span><span class="signature">(<wbr>{<span class="parameter" id="decr-param-s"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">s</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?, </span><span class="parameter" id="decr-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span> = <span class="default-value">1</span></span>})
     <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
@@ -772,6 +786,20 @@ conditional (<code>&lt;</code>) assignment.
 </dt>
 <dd class="inherited">
   Shorthand for a <a href="../rohd/Conditional-class.html">Conditional</a> which increments this by <code>val</code>.
+  <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="named" class="callable inherited">
+  <span class="name"><a href="../rohd/Logic/named.html">named</a></span><span class="signature">(<wbr><span class="parameter" id="named-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, {</span><span class="parameter" id="named-param-naming"><span class="type-annotation"><a href="../rohd/Naming.html">Naming</a>?</span> <span class="parameter-name">naming</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  </span>
+  
+
+</dt>
+<dd class="inherited">
+  Makes a <a href="../rohd/Logic/clone.html">clone</a> with the provided <code>name</code> and optionally <code>naming</code>, then
+assigns it to be driven by <code>this</code>.
   <div class="features"><span class="feature">inherited</span></div>
 
 </dd>
