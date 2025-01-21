@@ -81,13 +81,12 @@ class ShiftTestModule extends Module {
     final aLshiftConst = addOutput('a_lshift_const', width: a.width);
     final aArshiftConst = addOutput('a_arshift_const', width: a.width);
 
-    final c = Const(constant, width: b.width);
     aRshiftB <= a >>> b;
     aLshiftB <= a << b;
     aArshiftB <= a >> b;
-    aRshiftConst <= a >>> c;
-    aLshiftConst <= a << c;
-    aArshiftConst <= a >> c;
+    aRshiftConst <= a >>> constant;
+    aLshiftConst <= a << constant;
+    aArshiftConst <= a >> constant;
   }
 }
 
@@ -632,6 +631,27 @@ void main() {
         await gtm.build();
         final vectors = [
           Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
+        ];
+        await SimCompare.checkFunctionalVector(gtm, vectors);
+        SimCompare.checkIverilogVector(gtm, vectors);
+      });
+
+      test('shift by const zero', () async {
+        final gtm =
+            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 0);
+        await gtm.build();
+        final sv = gtm.generateSynth();
+
+        expect(sv, isNot(contains("0'h0")));
+
+        final vectors = [
+          Vector({
+            'a': bin('010')
+          }, {
+            'a_arshift_const': bin('010'),
+            'a_lshift_const': bin('010'),
+            'a_rshift_const': bin('010')
+          }),
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);

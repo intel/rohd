@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 //
 // sequential_test.dart
 // Unit test for Sequential
@@ -125,6 +125,35 @@ class SeqResetValTypes extends Module {
   }
 }
 
+class NegedgeTriggeredSeq extends Module {
+  NegedgeTriggeredSeq(Logic a) {
+    a = addInput('a', a);
+    final b = addOutput('b');
+    final clk = SimpleClockGenerator(10).clk;
+
+    Sequential.multi(
+      [],
+      negedgeTriggers: [~clk],
+      [b < a],
+    );
+  }
+}
+
+class BothTriggeredSeq extends Module {
+  BothTriggeredSeq(Logic reset) {
+    reset = addInput('reset', reset);
+    final b = addOutput('b', width: 8);
+    final clk = SimpleClockGenerator(10).clk;
+
+    Sequential.multi(
+      [clk],
+      reset: reset,
+      negedgeTriggers: [clk],
+      [b < b + 1],
+    );
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -152,8 +181,7 @@ void main() {
       Vector({}, {'out': 5}),
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
-    final simResult = SimCompare.iverilogVector(dut, vectors);
-    expect(simResult, equals(true));
+    SimCompare.checkIverilogVector(dut, vectors);
   });
 
   group('shorthand with sequential', () {
@@ -207,5 +235,74 @@ void main() {
 
     await SimCompare.checkFunctionalVector(dut, vectors);
     SimCompare.checkIverilogVector(dut, vectors);
+  });
+
+  test('negedge triggered flop', () async {
+    final mod = NegedgeTriggeredSeq(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('always_ff @(negedge'));
+
+    final vectors = [
+      Vector({'a': 0}, {}),
+      Vector({'a': 1}, {'b': 0}),
+      Vector({'a': 0}, {'b': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('multiple triggers, both edges', () async {
+    final mod = BothTriggeredSeq(Logic());
+    await mod.build();
+
+    final vectors = [
+      Vector({'reset': 1}, {}),
+      Vector({'reset': 1}, {'b': 0}),
+      Vector({'reset': 0}, {'b': 0}),
+      Vector({}, {'b': 2}),
+      Vector({}, {'b': 4}),
+      Vector({}, {'b': 6}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('negedge trigger actually occurs on negedge', () async {
+    final clk = Logic()..put(0);
+
+    final a = Logic()..put(1);
+    final b = Logic();
+
+    Sequential.multi([], negedgeTriggers: [clk], [b < a]);
+
+    Simulator.registerAction(20, () => clk.put(1));
+
+    Simulator.registerAction(30, () => expect(b.value, LogicValue.z));
+
+    Simulator.registerAction(40, () => clk.put(0));
+
+    Simulator.registerAction(50, () => expect(b.value, LogicValue.one));
+
+    await Simulator.run();
+  });
+
+  test('invalid trigger after valid trigger still causes x prop', () async {
+    final c1 = Logic()..put(0);
+    final c2 = Logic()..put(LogicValue.x);
+
+    final a = Logic()..put(1);
+    final b = Logic();
+
+    Sequential.multi([c1, c2], [b < a]);
+
+    Simulator.registerAction(20, () => c1.put(1));
+
+    Simulator.registerAction(30, () => expect(b.value, LogicValue.x));
+
+    await Simulator.run();
   });
 }

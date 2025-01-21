@@ -47,7 +47,7 @@ class Interface<TagType> {
   Logic port(String name) => _ports.containsKey(name)
       ? _ports[name]!
       : throw PortDoesNotExistException(
-          'Port named "$name" not found on this interface.');
+          'Port named "$name" not found on this interface: $this.');
 
   /// Provides the [port] named [name] if it exists, otherwise `null`.
   Logic? tryPort(String name) => _ports[name];
@@ -85,7 +85,6 @@ class Interface<TagType> {
       for (final port in getPorts(inputTags).values) {
         port <=
             (port is LogicArray
-                // ignore: invalid_use_of_protected_member
                 ? module.addInputArray(
                     uniquify(port.name),
                     srcInterface.port(port.name),
@@ -93,7 +92,6 @@ class Interface<TagType> {
                     elementWidth: port.elementWidth,
                     numUnpackedDimensions: port.numUnpackedDimensions,
                   )
-                // ignore: invalid_use_of_protected_member
                 : module.addInput(
                     uniquify(port.name),
                     srcInterface.port(port.name),
@@ -105,14 +103,12 @@ class Interface<TagType> {
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
         final output = (port is LogicArray
-            // ignore: invalid_use_of_protected_member
             ? module.addOutputArray(
                 uniquify(port.name),
                 dimensions: port.dimensions,
                 elementWidth: port.elementWidth,
                 numUnpackedDimensions: port.numUnpackedDimensions,
               )
-            // ignore: invalid_use_of_protected_member
             : module.addOutput(
                 uniquify(port.name),
                 width: port.width,
@@ -136,7 +132,6 @@ class Interface<TagType> {
 
         port <=
             (port is LogicArray
-                // ignore: invalid_use_of_protected_member
                 ? module.addInOutArray(
                     uniquify(port.name),
                     srcInterface.port(port.name),
@@ -144,7 +139,6 @@ class Interface<TagType> {
                     elementWidth: port.elementWidth,
                     numUnpackedDimensions: port.numUnpackedDimensions,
                   )
-                // ignore: invalid_use_of_protected_member
                 : module.addInOut(
                     uniquify(port.name),
                     srcInterface.port(port.name),

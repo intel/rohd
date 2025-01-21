@@ -137,13 +137,18 @@ class LogicArray extends LogicStructure {
     // calculate the next layer's dimensions
     final nextDimensions = dimensions.length == 1
         ? null
-        : UnmodifiableListView(
-            dimensions.getRange(1, dimensions.length).toList(growable: false));
+        : List<int>.unmodifiable(dimensions.getRange(1, dimensions.length));
 
     // if the total width will eventually be 0, then force element width to 0
     if (elementWidth != 0 && dimensions.reduce((a, b) => a * b) == 0) {
       elementWidth = 0;
     }
+
+    // choose name and naming before creating (and naming) elements
+    final newNaming = Naming.chooseNaming(name, naming);
+    final newName = Naming.chooseName(name, naming, nullStarter: 'a');
+    naming = newNaming;
+    name = newName;
 
     return LogicArray._(
       List.generate(
@@ -162,7 +167,7 @@ class LogicArray extends LogicStructure {
                 ))
             .._arrayIndex = index,
           growable: false),
-      dimensions: UnmodifiableListView(dimensions),
+      dimensions: List<int>.unmodifiable(dimensions),
       elementWidth: elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       name: name,
@@ -171,25 +176,51 @@ class LogicArray extends LogicStructure {
     );
   }
 
+  @override
+  LogicArray _clone({String? name, Naming? naming}) => LogicArray._factory(
+        dimensions,
+        elementWidth,
+        name: name ?? this.name,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.chooseCloneNaming(
+            originalName: this.name,
+            newName: name,
+            originalNaming: this.naming,
+            newNaming: naming),
+        logicBuilder: isNet ? LogicNet.new : Logic.new,
+        logicArrayBuilder: isNet ? LogicArray.net : LogicArray.new,
+        isNet: isNet,
+      );
+
   /// Creates a new [LogicArray] which has the same [dimensions],
-  /// [elementWidth], [numUnpackedDimensions] as `this`.
+  /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
   @override
-  LogicArray clone({String? name}) => LogicArray(dimensions, elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions, name: name ?? this.name);
+  LogicArray clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// assigns it to be driven by `this`.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.
+  @override
+  LogicArray named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming)..gets(this);
 
   /// Private constructor for the factory [LogicArray] constructor.
+  ///
+  /// The [name] and [naming] should have been identified before calling this.
   LogicArray._(
     super.elements, {
     required this.dimensions,
     required this.elementWidth,
     required this.numUnpackedDimensions,
-    required String? name,
-    required Naming? naming,
+    required String super.name,
+    required this.naming,
     required this.isNet,
-  })  : naming = Naming.chooseNaming(name, naming),
-        super(name: Naming.chooseName(name, naming, nullStarter: 'a'));
+  });
 
   /// Constructs a new [LogicArray] with a more convenient constructor signature
   /// for when many ports in an interface are declared together.  Also performs
@@ -233,34 +264,5 @@ class LogicArray extends LogicStructure {
       // when calling connectIO
       naming: Naming.mergeable,
     );
-  }
-
-  /// Perform Assign operation on a Logic subset or slice
-  ///
-  /// Assigns part of this LogicArray with a given [updatedSubset] of type
-  /// [List<Logic>]. The update is performed from a given [start] position
-  /// to the length of the [updatedSubset].
-  ///
-  /// Example:
-  /// ```dart
-  /// LogicArray sampleLogic;
-  /// // Note: updatedSubset.length < (sampleLogic.length - start)
-  /// List<Logic> updatedSubset;
-  /// // Assign part of sampleLogic as [updatedSubset]
-  /// sampleLogic.assignSubset(updatedSubset); // start = 0 by default
-  /// // assign updated subset to sampleLogic[10:10+updatedSubset.length]
-  /// sampleLogic.assignSubset(updatedSubset, 10);
-  /// ```
-  ///
-  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
-    if (updatedSubset.length > elements.length - start) {
-      throw SignalWidthMismatchException.forWidthOverflow(
-          updatedSubset.length, elements.length - start);
-    }
-
-    // Assign Logic array from `start` index to `start+updatedSubset.length`
-    for (var i = 0; i < updatedSubset.length; i++) {
-      elements[start + i] <= updatedSubset[i];
-    }
   }
 }

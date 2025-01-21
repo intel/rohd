@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module.dart
@@ -40,14 +40,20 @@ abstract class Module {
   final TraverseableCollection<Logic> _internalSignals =
       TraverseableCollection();
 
-  /// An internal list of inputs to this [Module].
-  final Map<String, Logic> _inputs = {};
+  /// An internal mapping of inputs to this [Module].
+  late final Map<String, Logic> _inputs = {};
 
-  /// An internal list of outputs to this [Module].
-  final Map<String, Logic> _outputs = {};
+  /// An internal mapping of outputs to this [Module].
+  late final Map<String, Logic> _outputs = {};
 
-  /// An internal list of inouts to this [Module].
-  final Map<String, Logic> _inOuts = {};
+  /// An internal mapping of inOuts to this [Module].
+  late final Map<String, Logic> _inOuts = {};
+
+  /// An internal mapping of input names to their sources to this [Module].
+  late final Map<String, Logic> _inputSources = {};
+
+  /// An internal mapping of inOut names to their sources to this [Module].
+  late final Map<String, Logic> _inOutSources = {};
 
   /// The parent [Module] of this [Module].
   ///
@@ -60,7 +66,10 @@ abstract class Module {
 
   /// A map from [input] port names to this [Module] to corresponding [Logic]
   /// signals.
-  @protected
+  ///
+  /// Note that [inputs] should only be used to drive hardware *within* a
+  /// [Module]. To access the signal that drives these inputs, use
+  /// [inputSource].
   Map<String, Logic> get inputs => UnmodifiableMapView<String, Logic>(_inputs);
 
   /// A map from [output] port names to this [Module] to corresponding [Logic]
@@ -70,7 +79,10 @@ abstract class Module {
 
   /// A map from [inOut] port names to this [Module] to corresponding [Logic]
   /// signals.
-  @protected
+  ///
+  /// Note that [inOuts] should only be used for hardware *within* a [Module].
+  /// To access the signal that drives/received these inOuts from outside of
+  /// this [Module], use [inOutSource].
   Map<String, Logic> get inOuts => UnmodifiableMapView<String, Logic>(_inOuts);
 
   /// An [Iterable] of all [Module]s contained within this [Module].
@@ -101,16 +113,21 @@ abstract class Module {
   /// named [name].
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic input(String name) => _inputs.containsKey(name)
       ? _inputs[name]!
       : throw PortDoesNotExistException(
           'Input name "$name" not found as an input to this Module.');
 
+  /// The original `source` provided to the creation of the [input] port [name]
+  /// via [addInput] or [addInputArray].
+  Logic inputSource(String name) =>
+      _inputSources[name] ??
+      (throw PortDoesNotExistException(
+          '$name is not an input of this Module.'));
+
   /// Provides the [input] named [name] if it exists, otherwise `null`.
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic? tryInput(String name) => _inputs[name];
 
   /// Accesses the [Logic] associated with this [Module]s output port
@@ -130,30 +147,44 @@ abstract class Module {
   /// named [name].
   ///
   /// Only logic within this [Module] should consume this signal.
-  @protected
   Logic inOut(String name) => _inOuts.containsKey(name)
       ? _inOuts[name]!
       : throw PortDoesNotExistException(
           'InOut name "$name" not found as an in/out of this Module.');
 
+  /// The original `source` provided to the creation of the [inOut] port [name]
+  /// via [addInOut] or [addInOutArray].
+  Logic inOutSource(String name) =>
+      _inOutSources[name] ??
+      (throw PortDoesNotExistException(
+          '$name is not an inOut of this Module.'));
+
   /// Provides the [inOut] named [name] if it exists, otherwise `null`.
-  @protected
   Logic? tryInOut(String name) => _inOuts[name];
 
   /// Returns true iff [signal] is the same [Logic] as the [input] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [input] port,
+  /// but is not itself a port, this will return false.
   bool isInput(Logic signal) =>
       _inputs[signal.name] == signal ||
       (signal.isArrayMember && isInput(signal.parentStructure!));
 
   /// Returns true iff [signal] is the same [Logic] as the [output] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [output] port,
+  /// but is not itself a port, this will return false.
   bool isOutput(Logic signal) =>
       _outputs[signal.name] == signal ||
       (signal.isArrayMember && isOutput(signal.parentStructure!));
 
   /// Returns true iff [signal] is the same [Logic] as the [inOut] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [inOut] port,
+  /// but is not itself a port, this will return false.
   bool isInOut(Logic signal) =>
       _inOuts[signal.name] == signal ||
       (signal.isArrayMember && isInOut(signal.parentStructure!));
@@ -373,108 +404,118 @@ abstract class Module {
       return;
     }
 
-    final subModule =
-        (signal.isInput || signal.isInOut) ? signal.parentModule : null;
+    try {
+      final subModule =
+          (signal.isInput || signal.isInOut) ? signal.parentModule : null;
 
-    final subModuleParent = subModule?.parent;
+      final subModuleParent = subModule?.parent;
 
-    if (!dontAddSignal && signal.isOutput) {
-      // somehow we have reached the output of a module which is not a submodule
-      // nor this module, bad!
-      throw PortRulesViolationException(this, signal.toString());
-    }
-
-    if (subModule != this && subModuleParent != null) {
-      // we've already parsed down this path
-      return;
-    }
-
-    if (subModule != null &&
-        subModule != this &&
-        (subModuleParent == null || subModuleParent == this)) {
-      // if the subModuleParent hasn't been set, or it is the current module,
-      // then trace it
-      if (subModuleParent != this) {
-        await _addAndBuildModule(subModule);
-      }
-      for (final subModuleOutput in subModule._outputs.values) {
-        await _traceInputForModuleContents(subModuleOutput,
-            dontAddSignal: true);
-      }
-      for (final subModuleInput in subModule._inputs.values) {
-        await _traceOutputForModuleContents(subModuleInput,
-            dontAddSignal: true);
+      if (!dontAddSignal && signal.isOutput) {
+        // somehow we have reached the output of a module which is not a
+        // submodule nor this module, bad!
+        throw PortRulesViolationException(this, signal.toString());
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      if (subModule != this && subModuleParent != null) {
+        // we've already parsed down this path
+        return;
       }
-    } else {
-      if (!dontAddSignal &&
-          !isInput(signal) &&
-          !isInOut(signal) &&
-          subModule == null) {
-        _addInternalSignal(signal);
 
-        // handle expanding the search for arrays
-        if (signal.parentStructure != null) {
-          await _traceInputForModuleContents(signal.parentStructure!,
-              dontAddSignal: dontAddSignal);
-          await _traceOutputForModuleContents(signal.parentStructure!,
-              dontAddSignal: signal.isPort);
+      if (subModule != null &&
+          subModule != this &&
+          (subModuleParent == null || subModuleParent == this)) {
+        // if the subModuleParent hasn't been set, or it is the current module,
+        // then trace it
+        if (subModuleParent != this) {
+          await _addAndBuildModule(subModule);
         }
-        if (signal is LogicStructure) {
-          for (final elem in signal.elements) {
-            await _traceInputForModuleContents(elem,
-                dontAddSignal: dontAddSignal);
-            await _traceOutputForModuleContents(elem,
+        for (final subModuleOutput in subModule._outputs.values) {
+          await _traceInputForModuleContents(subModuleOutput,
+              dontAddSignal: true);
+        }
+        for (final subModuleInput in subModule._inputs.values) {
+          await _traceOutputForModuleContents(subModuleInput,
+              dontAddSignal: true);
+        }
+
+        for (final subModuleInOutDriver in subModule._inOutDrivers) {
+          final subModDontAddSignal = subModuleInOutDriver.isPort;
+          await _traceInputForModuleContents(subModuleInOutDriver,
+              dontAddSignal: subModDontAddSignal);
+          await _traceOutputForModuleContents(subModuleInOutDriver,
+              dontAddSignal: subModDontAddSignal);
+        }
+      } else {
+        if (!dontAddSignal &&
+            !isInput(signal) &&
+            !isInOut(signal) &&
+            subModule == null) {
+          _addInternalSignal(signal);
+
+          // handle expanding the search for arrays
+          if (signal.parentStructure != null) {
+            await _traceInputForModuleContents(signal.parentStructure!,
                 dontAddSignal: signal.isPort);
+            await _traceOutputForModuleContents(signal.parentStructure!,
+                dontAddSignal: signal.isPort);
+          }
+          if (signal is LogicStructure) {
+            for (final elem in signal.elements) {
+              await _traceInputForModuleContents(elem,
+                  dontAddSignal: elem.isPort);
+              await _traceOutputForModuleContents(elem,
+                  dontAddSignal: elem.isPort);
+            }
+          }
+
+          for (final srcConnection in signal.srcConnections) {
+            await _traceOutputForModuleContents(srcConnection);
           }
         }
 
-        for (final srcConnection in signal.srcConnections) {
-          await _traceOutputForModuleContents(srcConnection);
-        }
-      }
-
-      if (!dontAddSignal && isInput(signal)) {
-        throw PortRulesViolationException(
-            this,
-            signal.name,
-            'Input $signal of module $this is dependent on'
-            ' another input of the same module.');
-      }
-
-      for (final dstConnection in signal.dstConnections) {
-        if (signal.isOutput &&
-            dstConnection.isOutput &&
-            signal.parentModule! == dstConnection.parentModule!) {
-          // since both are outputs, we can't easily use them to
-          // check if they have already been traversed, so we must
-          // explicitly check that we're not running them back-to-back.
-          // another iteration will take care of continuing the trace
-          continue;
+        if (!dontAddSignal && isInput(signal)) {
+          throw PortRulesViolationException(
+              this,
+              signal.name,
+              'Input $signal of module $this is dependent on'
+              ' another input of the same module.');
         }
 
-        await _traceInputForModuleContents(dstConnection);
-      }
+        for (final dstConnection in signal.dstConnections) {
+          if (signal.isOutput &&
+              dstConnection.isOutput &&
+              signal.parentModule! == dstConnection.parentModule!) {
+            // since both are outputs, we can't easily use them to
+            // check if they have already been traversed, so we must
+            // explicitly check that we're not running them back-to-back.
+            // another iteration will take care of continuing the trace
+            continue;
+          }
 
-      // extra searching in both directions for nets
-      if (signal.isNet && !isPort(signal)) {
-        for (final srcConnection
-            in signal.srcConnections.where((element) => element.isNet)) {
-          await _traceInputForModuleContents(srcConnection);
-          await _traceOutputForModuleContents(srcConnection);
-        }
-        for (final dstConnection
-            in signal.dstConnections.where((element) => element.isNet)) {
           await _traceInputForModuleContents(dstConnection);
-          await _traceOutputForModuleContents(dstConnection);
+        }
+
+        // extra searching in both directions for nets
+        if (signal.isNet && !isPort(signal)) {
+          await _traceOutputForModuleContents(signal);
+          for (final srcConnection
+              in signal.srcConnections.where((element) => element.isNet)) {
+            await _traceInputForModuleContents(srcConnection);
+            await _traceOutputForModuleContents(srcConnection);
+          }
+          for (final dstConnection
+              in signal.dstConnections.where((element) => element.isNet)) {
+            await _traceInputForModuleContents(dstConnection);
+            await _traceOutputForModuleContents(dstConnection);
+          }
         }
       }
+    } on PortRulesViolationException catch (e) {
+      throw PortRulesViolationException.trace(
+          module: this,
+          signal: signal,
+          lowerException: e,
+          traceDirection: 'from inputs');
     }
   }
 
@@ -490,90 +531,107 @@ abstract class Module {
       return;
     }
 
-    final subModule =
-        (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
+    try {
+      final subModule =
+          (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
 
-    final subModuleParent = subModule?.parent;
+      final subModuleParent = subModule?.parent;
 
-    if (!dontAddSignal && signal.isInput) {
-      // somehow we have reached the input of a module which is not a submodule
-      // nor this module, bad!
-      throw PortRulesViolationException(this, signal.toString());
-    }
-
-    if (subModule != this && subModuleParent != null) {
-      // we've already parsed down this path
-      return;
-    }
-
-    if (subModule != null &&
-        subModule != this &&
-        (subModuleParent == null || subModuleParent == this)) {
-      // if the subModuleParent hasn't been set, or it is the current module,
-      // then trace it
-      if (subModuleParent != this) {
-        await _addAndBuildModule(subModule);
-      }
-      for (final subModuleInput in subModule._inputs.values) {
-        await _traceOutputForModuleContents(subModuleInput,
-            dontAddSignal: true);
-      }
-      for (final subModuleOutput in subModule._outputs.values) {
-        await _traceInputForModuleContents(subModuleOutput,
-            dontAddSignal: true);
+      if (!dontAddSignal && signal.isInput) {
+        // somehow we have reached the input of a module which is not a
+        // submodule nor this module, bad!
+        throw PortRulesViolationException(this, signal.toString());
       }
 
-      for (final subModuleInOutDriver in [
-        ...subModule._inOutDrivers,
-      ]) {
-        await _traceInputForModuleContents(subModuleInOutDriver);
-        await _traceOutputForModuleContents(subModuleInOutDriver);
+      if (subModule != this && subModuleParent != null) {
+        // we've already parsed down this path
+        return;
       }
-    } else {
-      if (!dontAddSignal &&
-          !isOutput(signal) &&
-          !isInOut(signal) &&
-          subModule == null) {
-        _addInternalSignal(signal);
 
-        // handle expanding the search for arrays
-        if (signal.parentStructure != null) {
-          await _traceOutputForModuleContents(signal.parentStructure!,
-              dontAddSignal: dontAddSignal);
-          await _traceInputForModuleContents(signal.parentStructure!,
-              dontAddSignal: signal.isPort);
+      if (subModule != null &&
+          subModule != this &&
+          (subModuleParent == null || subModuleParent == this)) {
+        // if the subModuleParent hasn't been set, or it is the current module,
+        // then trace it
+        if (subModuleParent != this) {
+          await _addAndBuildModule(subModule);
         }
-        if (signal is LogicStructure) {
-          for (final elem in signal.elements) {
-            await _traceOutputForModuleContents(elem,
-                dontAddSignal: dontAddSignal);
-            await _traceInputForModuleContents(elem,
+        for (final subModuleInput in subModule._inputs.values) {
+          await _traceOutputForModuleContents(subModuleInput,
+              dontAddSignal: true);
+        }
+        for (final subModuleOutput in subModule._outputs.values) {
+          await _traceInputForModuleContents(subModuleOutput,
+              dontAddSignal: true);
+        }
+
+        for (final subModuleInOutDriver in subModule._inOutDrivers) {
+          final subModDontAddSignal = subModuleInOutDriver.isPort;
+          await _traceInputForModuleContents(subModuleInOutDriver,
+              dontAddSignal: subModDontAddSignal);
+          await _traceOutputForModuleContents(subModuleInOutDriver,
+              dontAddSignal: subModDontAddSignal);
+        }
+      } else {
+        if (!dontAddSignal &&
+            !isOutput(signal) &&
+            !isInOut(signal) &&
+            subModule == null) {
+          _addInternalSignal(signal);
+
+          // handle expanding the search for arrays
+          if (signal.parentStructure != null) {
+            await _traceOutputForModuleContents(signal.parentStructure!,
                 dontAddSignal: signal.isPort);
+            await _traceInputForModuleContents(signal.parentStructure!,
+                dontAddSignal: signal.isPort);
+          }
+          if (signal is LogicStructure) {
+            for (final elem in signal.elements) {
+              await _traceOutputForModuleContents(elem,
+                  dontAddSignal: elem.isPort);
+              await _traceInputForModuleContents(elem,
+                  dontAddSignal: elem.isPort);
+            }
+          }
+
+          for (final dstConnection in signal.dstConnections) {
+            await _traceInputForModuleContents(dstConnection);
           }
         }
 
-        for (final dstConnection in signal.dstConnections) {
-          await _traceInputForModuleContents(dstConnection);
+        // extra searching in both directions for nets
+        if (signal.isNet && !isPort(signal)) {
+          await _traceInputForModuleContents(signal);
+          for (final srcConnection
+              in signal.srcConnections.where((element) => element.isNet)) {
+            await _traceOutputForModuleContents(srcConnection);
+            await _traceInputForModuleContents(srcConnection);
+          }
+          for (final dstConnection
+              in signal.dstConnections.where((element) => element.isNet)) {
+            await _traceOutputForModuleContents(dstConnection);
+            await _traceInputForModuleContents(dstConnection);
+          }
         }
-      }
 
-      // extra searching in both directions for nets
-      if (signal.isNet && !isPort(signal)) {
-        for (final srcConnection
-            in signal.srcConnections.where((element) => element.isNet)) {
-          await _traceOutputForModuleContents(srcConnection);
-          await _traceInputForModuleContents(srcConnection);
-        }
-        for (final dstConnection
-            in signal.dstConnections.where((element) => element.isNet)) {
-          await _traceOutputForModuleContents(dstConnection);
-          await _traceInputForModuleContents(dstConnection);
+        if (signal is LogicStructure) {
+          for (final elem in signal.elements) {
+            await _traceOutputForModuleContents(elem,
+                dontAddSignal: elem.isPort);
+          }
+        } else {
+          for (final srcConnection in signal.srcConnections) {
+            await _traceOutputForModuleContents(srcConnection);
+          }
         }
       }
-
-      for (final srcConnection in signal.srcConnections) {
-        await _traceOutputForModuleContents(srcConnection);
-      }
+    } on PortRulesViolationException catch (e) {
+      throw PortRulesViolationException.trace(
+          module: this,
+          signal: signal,
+          lowerException: e,
+          traceDirection: 'from outputs');
     }
   }
 
@@ -595,32 +653,35 @@ abstract class Module {
         inputs.containsKey(name) ||
         inOuts.containsKey(name)) {
       throw UnavailableReservedNameException.withMessage(
-          'Already defined a port with name "$name".');
+          'Already defined a port with name "$name" in module "${this.name}".');
     }
   }
 
   /// Registers a signal as an input to this [Module] and returns an input port
   /// that can be consumed.
   ///
-  /// The return value is the same as what is returned by [input].
-  @protected
-  Logic addInput(String name, Logic x, {int width = 1}) {
+  /// The return value is the same as what is returned by [input] and should
+  /// only be used within this [Module]. The provided [source] is accessible via
+  /// [inputSource].
+  Logic addInput(String name, Logic source, {int width = 1}) {
     _checkForSafePortName(name);
-    if (x.width != width) {
-      throw PortWidthMismatchException(x, width);
+    if (source.width != width) {
+      throw PortWidthMismatchException(source, width);
     }
 
-    if (x is LogicStructure) {
+    if (source is LogicStructure) {
       // ignore: parameter_assignments
-      x = x.packed;
+      source = source.packed;
     }
 
     final inPort = Logic(name: name, width: width, naming: Naming.reserved)
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..parentModule = this;
 
     _inputs[name] = inPort;
+
+    _inputSources[name] = source;
 
     return inPort;
   }
@@ -634,23 +695,50 @@ abstract class Module {
   /// Registers a signal as an inOut to this [Module] and returns an inOut port
   /// that can be consumed.
   ///
-  /// The return value is the same as what is returned by [inOut].
-  @protected
-  LogicNet addInOut(String name, Logic x, {int width = 1}) {
+  /// The return value is the same as what is returned by [inOut] and should
+  /// only be used within this [Module]. The provided [source] is accessible via
+  /// [inOutSource].
+  LogicNet addInOut(String name, Logic source, {int width = 1}) {
     _checkForSafePortName(name);
-    if (x.width != width) {
-      throw PortWidthMismatchException(x, width);
+    if (source.width != width) {
+      throw PortWidthMismatchException(source, width);
     }
 
-    _inOutDrivers.add(x);
+    _inOutDrivers.add(source);
+
+    // we need to properly detect all inout sources, even for arrays
+    if (source.isArrayMember || source is LogicArray) {
+      final sourceElems = TraverseableCollection<Logic>()..add(source);
+      for (var i = 0; i < sourceElems.length; i++) {
+        final sei = sourceElems[i];
+        _inOutDrivers.add(sei);
+
+        if (sei.isArrayMember) {
+          sourceElems.add(sei.parentStructure!);
+        }
+
+        if (sei is LogicArray) {
+          sourceElems.addAll(sei.elements);
+        }
+      }
+    }
+
+    if (source is LogicStructure) {
+      // need to also track the packed version if it's a structure, since the
+      // signal that's actually getting connected to the port *is* the packed
+      // one, not the original array/struct.
+      _inOutDrivers.add(source.packed);
+    }
 
     final inOutPort =
         LogicNet(name: name, width: width, naming: Naming.reserved)
           // ignore: invalid_use_of_protected_member
           ..parentModule = this
-          ..gets(x);
+          ..gets(source);
 
     _inOuts[name] = inOutPort;
+
+    _inOutSources[name] = source;
 
     return inOutPort;
   }
@@ -661,12 +749,11 @@ abstract class Module {
   ///
   /// This is very similar to [addInput], except for [LogicArray]s.
   ///
-  /// Performs validation on overall width matching for [x], but not on
+  /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  @protected
   LogicArray addInputArray(
     String name,
-    Logic x, {
+    Logic source, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
@@ -680,11 +767,13 @@ abstract class Module {
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
     )
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
 
     _inputs[name] = inArr;
+
+    _inputSources[name] = source;
 
     return inArr;
   }
@@ -693,7 +782,6 @@ abstract class Module {
   /// can be driven.
   ///
   /// The return value is the same as what is returned by [output].
-  @protected
   Logic addOutput(String name, {int width = 1}) {
     _checkForSafePortName(name);
 
@@ -711,7 +799,6 @@ abstract class Module {
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
-  @protected
   LogicArray addOutputArray(
     String name, {
     List<int> dimensions = const [1],
@@ -741,12 +828,11 @@ abstract class Module {
   ///
   /// This is very similar to [addInOut], except for [LogicArray]s.
   ///
-  /// Performs validation on overall width matching for [x], but not on
+  /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  @protected
   LogicArray addInOutArray(
     String name,
-    Logic x, {
+    Logic source, {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
@@ -754,12 +840,17 @@ abstract class Module {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
-    final xElems = [x];
-    for (var i = 0; i < xElems.length; i++) {
-      final xi = xElems[i];
-      _inOutDrivers.add(xi);
-      if (xi is LogicArray) {
-        xElems.addAll(xi.elements);
+    final sourceElems = TraverseableCollection<Logic>()..add(source);
+    for (var i = 0; i < sourceElems.length; i++) {
+      final sei = sourceElems[i];
+      _inOutDrivers.add(sei);
+
+      if (sei.isArrayMember) {
+        sourceElems.add(sei.parentStructure!);
+      }
+
+      if (sei is LogicArray) {
+        sourceElems.addAll(sei.elements);
       }
     }
 
@@ -770,18 +861,28 @@ abstract class Module {
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
     )
-      ..gets(x)
+      ..gets(source)
       // ignore: invalid_use_of_protected_member
       ..setAllParentModule(this);
 
+    // there may be packed arrays created by the `gets` above, so this makes
+    // sure we catch all of those.
+    _inOutDrivers.addAll(inOutArr.srcConnections);
+
     _inOuts[name] = inOutArr;
+
+    _inOutSources[name] = source;
 
     return inOutArr;
   }
 
   @override
-  String toString() => '"$name" ($runtimeType)  :'
-      '  ${_inputs.keys} => ${_outputs.keys}; ${_inOuts.keys}';
+  String toString() => [
+        '"$name" ($definitionName)  : ',
+        if (_inputs.isNotEmpty) '${_inputs.keys}',
+        if (_outputs.isNotEmpty) '=> ${_outputs.keys}',
+        if (_inOuts.isNotEmpty) '; ${_inOuts.keys}'
+      ].join(' ');
 
   /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
   /// this [Module].

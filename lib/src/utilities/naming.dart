@@ -41,7 +41,7 @@ enum Naming {
       } else if (name.isEmpty) {
         throw EmptyReservedNameException();
       } else if (!Sanitizer.isSanitary(name)) {
-        throw InvalidReservedNameException();
+        throw InvalidReservedNameException(name);
       }
     }
 
@@ -76,6 +76,29 @@ enum Naming {
               ? Naming.mergeable
               : Naming.renameable
           : Naming.unnamed);
+
+  /// Picks a [Naming] for a clone based on its original conditions and
+  /// optionally provided new conditions.
+  static Naming chooseCloneNaming({
+    required String originalName,
+    required String? newName,
+    required Naming originalNaming,
+    required Naming? newNaming,
+  }) {
+    if (newNaming != null) {
+      // if provided, then use that
+      return newNaming;
+    }
+
+    if (newName == null && newNaming == null) {
+      // if not provided, we can default to mergeable, since we clone the old
+      // name and don't necessarily need the duplicate around
+      return Naming.mergeable;
+    }
+
+    // otherwise, use default
+    return Naming.chooseNaming(newName, newNaming);
+  }
 
   /// Picks a [String] name based on an initial [name] and [naming].
   ///

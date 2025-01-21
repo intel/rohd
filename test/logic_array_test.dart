@@ -957,12 +957,11 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
+      final sv = mod.generateSynth();
+
       // make sure we're reassigning both times it overlaps!
       expect(
-          RegExp('assign laIn.*=.*swizzled')
-              .allMatches(mod.generateSynth())
-              .length,
-          2);
+          RegExp(r'assign laOut\[1\].*=.*swizzled').allMatches(sv).length, 2);
     });
   });
 
@@ -1077,5 +1076,34 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  group('array clone', () {
+    for (final isNet in [true, false]) {
+      test('isNet = $isNet', () {
+        final la = (isNet ? LogicArray.net : LogicArray.new)(
+          [3, 2, 4],
+          8,
+          numUnpackedDimensions: 1,
+          name: 'myarray',
+          naming: Naming.reserved,
+        );
+        final clone = la.clone();
+        expect(la.dimensions, clone.dimensions);
+        expect(la.elementWidth, clone.elementWidth);
+        expect(la.numUnpackedDimensions, clone.numUnpackedDimensions);
+        expect(la.width, clone.width);
+        expect(la.elements.length, clone.elements.length);
+        for (var i = 0; i < la.elements.length; i++) {
+          expect(la.elements[i].width, clone.elements[i].width);
+        }
+        expect(la.name, clone.name);
+        expect(la.isNet, clone.isNet);
+        expect(clone.elements[0].elements[1].isNet, isNet);
+        expect(
+            clone.elements[1].elements[1].elements[1] is LogicArray, isFalse);
+        expect(clone.elements[1].elements[1].elements[1].isNet, isNet);
+      });
+    }
   });
 }
