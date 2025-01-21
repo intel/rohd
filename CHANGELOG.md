@@ -1,3 +1,11 @@
+## 0.6.1
+
+- Added `Logic.named` and broadened API for `clone` to make duplicating and naming signals more convenient and succinct (<https://github.com/intel/rohd/pull/550>).
+- Updated `LogicValue.toRadixString` to gracefully handle invalid values (`x` and `z`) for radix-10 strings, rather than throwing an exception (<https://github.com/intel/rohd/pull/543>).
+- Greatly improved error messaging when `Module.build` fails due to a `PortRulesViolationException` (<https://github.com/intel/rohd/pull/541>).
+- Fixed a bug where `Module.build` could sometimes fail to properly trace hierarchy through `LogicStructure`s, cause false build failures (<https://github.com/intel/rohd/pull/541>).
+- Fixed a bug where `Combinational.ssa` could sometimes fail to properly identify driver logic when `LogicStructure`s were used (<https://github.com/intel/rohd/pull/540>).
+
 ## 0.6.0
 
 - Added `LogicNet`, `inOut`s, and `TriStateBuffer` to enable multi-directional wires, ports, and drivers. Includes support for "wire-only" operations supporting multiple drivers.
