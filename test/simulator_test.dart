@@ -81,25 +81,101 @@ void main() {
     await Simulator.run();
   });
 
-  test('simulator end of action waits before ending', () async {
-    var endOfSimActionExecuted = false;
-    Simulator.registerAction(100, () => true);
-    Simulator.registerEndOfSimulationAction(
-        () => endOfSimActionExecuted = true);
-    unawaited(Simulator.simulationEnded
-        .then((value) => expect(endOfSimActionExecuted, isTrue)));
-    await Simulator.run();
+  group('simulator end of', () {
+    test('action waits before ending', () async {
+      var endOfSimActionExecuted = false;
+      Simulator.registerAction(100, () => true);
+      Simulator.registerEndOfSimulationAction(
+          () => endOfSimActionExecuted = true);
+      unawaited(Simulator.simulationEnded
+          .then((value) => expect(endOfSimActionExecuted, isTrue)));
+      await Simulator.run();
+    });
+
+    test('action waits async before ending', () async {
+      var endOfSimActionExecuted = false;
+      Simulator.registerAction(100, () => true);
+      Simulator.registerEndOfSimulationAction(() async {
+        await Future<void>.delayed(const Duration(microseconds: 10));
+        endOfSimActionExecuted = true;
+      });
+      await Simulator.run();
+      expect(endOfSimActionExecuted, isTrue);
+    });
+
+    test('action throws', () async {
+      var endOfSimActionExecuted = false;
+      var errorThrown = false;
+
+      Simulator.registerAction(100, () => true);
+      Simulator.registerEndOfSimulationAction(() {
+        endOfSimActionExecuted = true;
+        throw Exception('End of sim action failed');
+      });
+
+      // the Future will hang if we don't properly trigger the completion
+      unawaited(Simulator.run().onError((_, __) {
+        errorThrown = true;
+      }));
+      await Simulator.simulationEnded;
+
+      expect(endOfSimActionExecuted, isTrue);
+      expect(errorThrown, isTrue);
+    });
+
+    test('action async throws', () async {
+      var endOfSimActionExecuted = false;
+      var errorThrown = false;
+
+      Simulator.registerAction(100, () => true);
+      Simulator.registerEndOfSimulationAction(() async {
+        await Future<void>.delayed(const Duration(microseconds: 10));
+        endOfSimActionExecuted = true;
+        throw Exception('End of sim action failed');
+      });
+
+      // the Future will hang if we don't properly trigger the completion
+      unawaited(Simulator.run().onError((_, __) {
+        errorThrown = true;
+      }));
+      await Simulator.simulationEnded;
+
+      expect(endOfSimActionExecuted, isTrue);
+      expect(errorThrown, isTrue);
+    });
   });
 
-  test('simulator end of action waits async before ending', () async {
-    var endOfSimActionExecuted = false;
-    Simulator.registerAction(100, () => true);
-    Simulator.registerEndOfSimulationAction(() async {
-      await Future<void>.delayed(const Duration(microseconds: 10));
-      endOfSimActionExecuted = true;
-    });
-    await Simulator.run();
-    expect(endOfSimActionExecuted, isTrue);
+  test('registered action exception in simulator ends simulation', () async {
+    var errorThrown = false;
+
+    Simulator.registerAction(100, () => throw Exception('failed action'));
+    Simulator.registerAction(200, () => true);
+
+    unawaited(Simulator.run().onError((_, __) {
+      errorThrown = true;
+    }));
+
+    await Simulator.simulationEnded;
+
+    expect(errorThrown, isTrue);
+  });
+
+  test('simulator thrown exception ends simulation', () async {
+    var errorThrown = false;
+
+    Simulator.registerAction(
+        100,
+        () => Simulator.throwException(
+            Exception('simulator thrown exception'), StackTrace.current));
+    Simulator.registerAction(200, () => true);
+
+    unawaited(Simulator.run().onError((_, __) {
+      errorThrown = true;
+    }));
+
+    await Simulator.simulationEnded;
+
+    expect(errorThrown, isTrue);
   });
 
   test('simulator end simulation waits for simulation to end', () async {
@@ -215,5 +291,51 @@ void main() {
 
       expect(testLog, expectedLog);
     });
+  });
+
+  test('end of tick action happens at end of tick', () async {
+    var injectedActionTaken = false;
+    var endOfTickActionTaken = false;
+
+    Simulator.registerAction(100, () {
+      Simulator.injectAction(() {
+        expect(Simulator.phase, equals(SimulatorPhase.mainTick));
+        expect(injectedActionTaken, isFalse);
+        expect(endOfTickActionTaken, isFalse);
+        injectedActionTaken = true;
+      });
+      Simulator.injectEndOfTickAction(() {
+        expect(Simulator.phase, equals(SimulatorPhase.clkStable));
+        expect(injectedActionTaken, isTrue);
+        expect(endOfTickActionTaken, isFalse);
+        endOfTickActionTaken = true;
+      });
+    });
+
+    await Simulator.run();
+
+    expect(injectedActionTaken, isTrue);
+    expect(endOfTickActionTaken, isTrue);
+  });
+
+  test('end of tick makes a re-tick if it was missed', () async {
+    var endOfTickActionTaken = false;
+
+    Simulator.registerAction(100, () {
+      Simulator.postTick.first.then((_) {
+        Simulator.injectEndOfTickAction(() => endOfTickActionTaken = true);
+      });
+    });
+
+    var numStartTicks = 0;
+    Simulator.startTick.listen((_) {
+      expect(Simulator.time, 100);
+      numStartTicks++;
+    });
+
+    await Simulator.run();
+
+    expect(endOfTickActionTaken, isTrue);
+    expect(numStartTicks, equals(2));
   });
 }

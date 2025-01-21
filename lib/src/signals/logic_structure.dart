@@ -53,12 +53,29 @@ class LogicStructure implements Logic {
       });
   }
 
-  /// Creates a new [LogicStructure] with the same structure as `this`.
-  LogicStructure clone({String? name}) => LogicStructure(
-      elements.map((e) => e is LogicStructure
-          ? e.clone()
-          : Logic(name: e.name, width: e.width, naming: e.naming)),
-      name: name ?? this.name);
+  @override
+  LogicStructure _clone({String? name, Naming? naming}) =>
+      // naming is not used for LogicStructure
+      LogicStructure(elements.map((e) => e.clone(name: e.name)),
+          name: name ?? this.name);
+
+  /// Creates a new [LogicStructure] with the same structure as `this` and
+  /// [clone]d [elements], optionally with the provided [name].
+  @override
+  LogicStructure clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone], optionally with the specified [name], then assigns it to
+  /// be driven by `this`.
+  ///
+  /// The [naming] argument will not have any effect on a generic
+  /// [LogicStructure], but behavior may be overridden by implementers.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.
+  @override
+  LogicStructure named(String name, {Naming? naming}) =>
+      clone(name: name)..gets(this);
 
   @override
   String get structureName {
@@ -179,10 +196,17 @@ class LogicStructure implements Logic {
       final elementStart = index;
       final elementEnd = index + element.width;
 
-      final elementInRange = ((elementStart >= modifiedStartIndex) &&
-              (elementStart < modifiedEndIndex)) ||
-          ((elementEnd > modifiedStartIndex) &&
-              (elementEnd <= modifiedEndIndex));
+      // if the element is even partially within the range, then include it
+      // OR, if it is wholly contained within the range, include it
+      final elementInRange =
+          // end is within the element
+          (modifiedEndIndex > elementStart && modifiedEndIndex < elementEnd) ||
+              // start is within the element
+              (modifiedStartIndex >= elementStart &&
+                  modifiedStartIndex < elementEnd) ||
+              // element is fully contained
+              (modifiedEndIndex >= elementEnd &&
+                  modifiedStartIndex <= elementStart);
 
       if (elementInRange) {
         // figure out the subset of `element` that needs to be included
@@ -255,6 +279,9 @@ class LogicStructure implements Logic {
 
   /// Performs a recursive call of setting [parentModule] on all of [elements]
   /// and their [elements] for any sub-[LogicStructure]s.
+  ///
+  /// This should *only* be called by [Module.build].  It is used to optimize
+  /// search.
   @protected
   void setAllParentModule(Module? newParentModule) {
     parentModule = newParentModule;
@@ -285,9 +312,9 @@ class LogicStructure implements Logic {
   late final bool isPort = isInput || isOutput || isInOut;
 
   @override
-  void makeUnassignable() {
+  void makeUnassignable({String? reason}) {
     for (final element in elements) {
-      element.makeUnassignable();
+      element.makeUnassignable(reason: reason);
     }
   }
 
@@ -355,6 +382,19 @@ class LogicStructure implements Logic {
     }
 
     return newWithSet;
+  }
+
+  @override
+  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
+    if (updatedSubset.length > elements.length - start) {
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, elements.length - start);
+    }
+
+    // Assign Logic array from `start` index to `start+updatedSubset.length`
+    for (var i = 0; i < updatedSubset.length; i++) {
+      elements[start + i] <= updatedSubset[i];
+    }
   }
 
   @override
@@ -579,4 +619,19 @@ class LogicStructure implements Logic {
 
   @override
   List<Logic> get _srcConnections => throw UnsupportedError('Unnecessary');
+
+  @override
+  LogicArray? get _subsetDriver => throw UnsupportedError('Unnecessary');
+
+  @override
+  set _subsetDriver(LogicArray? _) => throw UnsupportedError('Unnecessary');
+
+  @override
+  String? get _unassignableReason =>
+      throw UnsupportedError('Delegated to elements');
+
+  @override
+  // ignore: unused_element
+  set _unassignableReason(String? _) =>
+      throw UnsupportedError('Delegated to elements');
 }

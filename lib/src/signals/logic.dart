@@ -16,9 +16,19 @@ class Logic {
   // A special quiet flag to prevent `<=` and `<` where inappropriate
   bool _unassignable = false;
 
+  /// The reason why a signal is unassignable, if provided when
+  /// [makeUnassignable] is set.
+  String? _unassignableReason;
+
   /// Makes it so that this signal cannot be assigned by any full (`<=`) or
   /// conditional (`<`) assignment.
-  void makeUnassignable() => _unassignable = true;
+  ///
+  /// Optionally, a [reason] may be provided for why it cannot be assigned. If a
+  /// prior reason had been provided, this will overwrite it.
+  void makeUnassignable({String? reason}) {
+    _unassignable = true;
+    _unassignableReason = reason;
+  }
 
   /// The name of this signal.
   final String name;
@@ -32,7 +42,7 @@ class Logic {
   int get width => _wire.width;
 
   /// The current active value of this signal.
-  LogicValue get value => _wire._currentValue;
+  LogicValue get value => _wire.value;
 
   /// The current active value of this signal if it has width 1, as
   /// a [LogicValue].
@@ -245,6 +255,35 @@ class Logic {
           naming: naming,
         );
 
+  /// A cloning utility for [clone] and [named].
+  Logic _clone({String? name, Naming? naming}) =>
+      (isNet ? LogicNet.new : Logic.new)(
+          name: name ?? this.name,
+          naming: Naming.chooseCloneNaming(
+              originalName: this.name,
+              newName: name,
+              originalNaming: this.naming,
+              newNaming: naming),
+          width: width);
+
+  /// Makes a copy of `this`, optionally with the specified [name], but the same
+  /// [width].
+  Logic clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// assigns it to be driven by `this`.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.  For example:
+  ///
+  /// ```dart
+  /// // named "myImportantNode" instead of a generated name like "a_xor_b"
+  /// final myImportantNode = (a ^ b).named('myImportantNode');
+  /// ```
+  Logic named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming)..gets(this);
+
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
   Logic._({
@@ -276,9 +315,7 @@ class Logic {
     }
 
     if (_unassignable) {
-      throw Exception('This signal "$this" has been marked as unassignable.  '
-          'It may be a constant expression or otherwise should'
-          ' not be assigned.');
+      throw UnassignableException(this, reason: _unassignableReason);
     }
 
     if (other.width != width) {
@@ -332,6 +369,7 @@ class Logic {
   void _connect(Logic other) {
     _unassignable = true;
     if (other is LogicNet) {
+      put(other.value);
       other.glitch.listen((args) {
         put(other.value);
       });
@@ -357,15 +395,14 @@ class Logic {
     _wire.put(newWire.value, signalName: name);
 
     // then, replace the wire
-    newWire._adopt(_wire);
-    _wire = newWire;
+    _wire = newWire._adopt(_wire);
 
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
       toUpdateWire = [
         ...dstConnections,
-        ...(this as LogicNet).srcConnections,
+        ...srcConnections,
       ].where(
           (connection) => connection._wire != _wire && connection is LogicNet);
     } else {
@@ -373,13 +410,13 @@ class Logic {
     }
 
     for (final dstConnection in toUpdateWire) {
-      dstConnection._updateWire(newWire);
+      dstConnection._updateWire(_wire);
     }
   }
 
   /// Connects this [Logic] directly to another [Logic].
   ///
-  /// This is shorthand for [gets()].
+  /// This is shorthand for [gets].
   void operator <=(Logic other) => gets(other);
 
   /// Logical bitwise NOT.
@@ -459,13 +496,76 @@ class Logic {
   Logic operator %(dynamic other) => Modulo(this, other).out;
 
   /// Arithmetic right-shift.
-  Logic operator >>(dynamic other) => ARShift(this, other).out;
+  ///
+  /// The upper-most bits of the result will be equal to the upper-most bit of
+  /// the original signal.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
+  Logic operator >>(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          this[-1].replicate(shamt),
+          getRange(shamt),
+        ].swizzle();
+      }
+    }
+
+    return ARShift(this, other).out;
+  }
 
   /// Logical left-shift.
-  Logic operator <<(dynamic other) => LShift(this, other).out;
+  ///
+  /// The lower bits are 0-filled.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
+  Logic operator <<(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          getRange(0, -shamt),
+          Const(0, width: shamt),
+        ].swizzle();
+      }
+    }
+
+    return LShift(this, other).out;
+  }
 
   /// Logical right-shift.
-  Logic operator >>>(dynamic other) => RShift(this, other).out;
+  ///
+  /// The upper bits are 0-filled.
+  ///
+  /// If [isNet] and [other] is constant, then the result will also be a net.
+  Logic operator >>>(dynamic other) {
+    if (isNet) {
+      // many SV simulators don't support shifting of nets, so default this
+      final shamt = _constShiftAmount(other);
+      if (shamt != null) {
+        return [
+          Const(0, width: shamt),
+          getRange(shamt),
+        ].swizzle();
+      }
+    }
+
+    return RShift(this, other).out;
+  }
+
+  /// Helper function to extract a constant integer shift amount from [other].
+  static int? _constShiftAmount(dynamic other) {
+    if (other is Const) {
+      return other.value.toInt();
+    } else if (other is Logic) {
+      return null;
+    } else {
+      return LogicValue.ofInferWidth(other).toInt();
+    }
+  }
 
   /// Unary AND.
   Logic and() => AndUnary(this).out;
@@ -638,6 +738,8 @@ class Logic {
   /// invalid (LogicValue.x) value. This behavior is differs in simulation as
   /// compared to the generated SystemVerilog. In the generated SystemVerilog,
   /// [index] will be ignored, and the logic is returned as-is.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic operator [](dynamic index) {
     if (index is Logic) {
       return IndexGate(this, index).selection;
@@ -673,6 +775,7 @@ class Logic {
   /// nextVal <= val.slice(5, 0); // = val.slice(-3, -8) & output: 0b001110, where the output.width=6
   /// ```
   ///
+  /// If [isNet], then the result will also be a net.
   Logic slice(int endIndex, int startIndex) {
     // Given start and end index, if either of them are seen to be -ve index
     // value(s) then convert them to a +ve index value(s)
@@ -689,9 +792,9 @@ class Logic {
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
-  late final Logic reversed =
-      Logic(name: 'reversed_$name', naming: Naming.unnamed, width: width)
-        ..gets(slice(0, width - 1));
+  late final Logic reversed = (isNet ? LogicNet.new : Logic.new)(
+      name: 'reversed_$name', naming: Naming.unnamed, width: width)
+    ..gets(slice(0, width - 1));
 
   /// Returns a subset [Logic].  It is inclusive of [startIndex], exclusive of
   /// [endIndex].
@@ -716,6 +819,7 @@ class Logic {
   /// nextVal <= val.getRange(-3); // the endIndex will be auto assign to val.width
   /// ```
   ///
+  /// If [isNet], then the result will also be a net.
   Logic getRange(int startIndex, [int? endIndex]) {
     endIndex ??= width;
     if (endIndex == startIndex) {
@@ -739,6 +843,8 @@ class Logic {
   ///
   /// The [newWidth] must be greater than or equal to the current width or an
   /// exception will be thrown.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic zeroExtend(int newWidth) {
     if (newWidth < width) {
       throw Exception(
@@ -766,12 +872,14 @@ class Logic {
   ///
   /// The [newWidth] must be greater than or equal to the current width or
   /// an exception will be thrown.
+  ///
+  /// If [isNet], then the result will also be a net.
   Logic signExtend(int newWidth) {
     if (width == 1) {
-      return ReplicationOp(this, newWidth).replicated;
+      return replicate(newWidth);
     } else if (newWidth > width) {
       return [
-        ReplicationOp(this[width - 1], newWidth - width).replicated,
+        this[-1].replicate(newWidth - width),
         this,
       ].swizzle();
     } else if (newWidth == width) {
@@ -812,18 +920,27 @@ class Logic {
     ].swizzle();
   }
 
-  /// Returns a replicated signal using [ReplicationOp] with new
-  /// width = this.width * [multiplier]
+  /// Returns a replicated signal using [ReplicationOp] with new width =
+  /// this.width * [multiplier]
+  ///
   /// The input [multiplier] cannot be negative or 0; an exception will be
   /// thrown, otherwise.
-  Logic replicate(int multiplier) => ReplicationOp(this, multiplier).replicated;
+  ///
+  /// If [isNet], then the result will also be a net.
+  Logic replicate(int multiplier) {
+    if (isNet) {
+      // many SV simulators don't support replication of nets
+      return List.generate(multiplier, (i) => this).swizzle();
+    }
+
+    return ReplicationOp(this, multiplier).replicated;
+  }
 
   /// Returns `1` (of [width]=1) if the [Logic] calling this function is in
   /// [list]. Else `0` (of [width]=1) if not present.
   ///
   /// The [list] can be [Logic] or [int] or [bool] or [BigInt] or
   /// [list] of [dynamic] i.e combinition of aforementioned types.
-  ///
   Logic isIn(List<dynamic> list) {
     // By default isLogicIn is not present return `0`:
     // Empty list corner-case state
@@ -850,7 +967,6 @@ class Logic {
   /// // ordering matches closer to array indexing with `0` index-based.
   /// selected <= index.selectFrom(busList);
   /// ```
-  ///
   Logic selectFrom(List<Logic> busList, {Logic? defaultValue}) {
     final selected = Logic(
         name: 'selectFrom',
@@ -871,5 +987,40 @@ class Logic {
     );
 
     return selected;
+  }
+
+  /// If [assignSubset] has been used on this signal, a reference to the
+  /// [LogicArray] that is usd to drive `this`.
+  LogicArray? _subsetDriver;
+
+  /// Performs an assignment operation on a portion this signal to be driven by
+  /// [updatedSubset].  Each index of [updatedSubset] will be assigned to drive
+  /// the corresponding index, plus [start], of this signal.
+  ///
+  /// Each of the elements of [updatedSubset] must have the same [width] as the
+  /// corresponding member of [elements] of this signal.
+  ///
+  /// Example:
+  /// ```dart
+  /// // assign elements 2 and 3 of receiverLogic to sig1 and sig2, respectively
+  /// receiverLogic.assignSubset([sig1, sig2], start: 2);
+  /// ```
+  void assignSubset(List<Logic> updatedSubset, {int start = 0}) {
+    if (updatedSubset.length > width - start) {
+      throw SignalWidthMismatchException.forWidthOverflow(
+          updatedSubset.length, width - start);
+    }
+
+    if (_subsetDriver == null) {
+      _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
+        [width],
+        1,
+        name: '${name}_subset',
+        naming: Naming.unnamed,
+      );
+      this <= _subsetDriver!;
+    }
+
+    _subsetDriver!.assignSubset(updatedSubset, start: start);
   }
 }

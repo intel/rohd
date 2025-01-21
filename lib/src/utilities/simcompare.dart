@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -77,7 +77,6 @@ class Vector {
   /// Converts this vector into a SystemVerilog check.
   String toTbVerilog(Module module) {
     final assignments = inputValues.keys.map((signalName) {
-      // ignore: invalid_use_of_protected_member
       final signal = module.tryInOut(signalName) ?? module.input(signalName);
 
       if (signal is LogicArray) {
@@ -102,7 +101,6 @@ class Vector {
     for (final expectedOutput in expectedOutputValues.entries) {
       final outputName = expectedOutput.key;
       final outputPort =
-          // ignore: invalid_use_of_protected_member
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
       final expectedValue = LogicValue.of(
@@ -147,13 +145,26 @@ abstract class SimCompare {
   static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
       {bool enableChecking = true}) async {
     var timestamp = 1;
+
+    final ioInputDrivers = <String, Logic>{};
+    Logic getIoInputDriver(String signalName) {
+      if (ioInputDrivers.containsKey(signalName)) {
+        return ioInputDrivers[signalName]!;
+      }
+
+      final signal = module.inOutSource(signalName);
+      final driver = Logic(name: 'driver_of_$signalName', width: signal.width);
+      signal <= driver;
+      ioInputDrivers[signalName] = driver;
+      return driver;
+    }
+
     for (final vector in vectors) {
-      // print('Running vector: $vector');
       Simulator.registerAction(timestamp, () {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
-          // ignore: invalid_use_of_protected_member
-          (module.tryInput(signalName) ?? module.inOut(signalName)).put(value);
+          (module.tryInput(signalName) ?? getIoInputDriver(signalName))
+              .put(value);
         }
 
         if (enableChecking) {
@@ -161,7 +172,6 @@ abstract class SimCompare {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o =
-                  // ignore: invalid_use_of_protected_member
                   module.tryOutput(signalName) ?? module.inOut(signalName);
 
               final errorReason =
@@ -283,6 +293,7 @@ abstract class SimCompare {
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
+            // ignore: prefer_interpolation_to_compose_strings
             packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +
             unpackedDims.map((d) => '[${d - 1}:0]').join();
@@ -307,7 +318,6 @@ abstract class SimCompare {
     final logicToWireMapping = Map.fromEntries(vectors
         .map((v) => v.inputValues.keys)
         .flattened
-        // ignore: invalid_use_of_protected_member
         .where((name) => module.tryInOut(name) != null)
         .map((name) => MapEntry(name, toTbWireName(name))));
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_array_test.dart
@@ -579,6 +579,70 @@ void main() {
     });
   });
 
+  group('access logicarray', () {
+    test('slice one bit of 1d array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(9, 9);
+      expect(slice.width, 1);
+      la.elements[1].put(bin('00000010'));
+      expect(slice.value.toInt(), 1);
+    });
+
+    test('slice 2 bits of one element of 1d array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(10, 9);
+      expect(slice.width, 2);
+      la.elements[1].put(bin('00000110'));
+      expect(slice.value.toInt(), bin('11'));
+    });
+
+    test('slice 2 bits spanning two elements of 1d array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(8, 7);
+      expect(slice.width, 2);
+      la.elements[1].put(1, fill: true);
+      la.elements[0].put(0, fill: true);
+      expect(slice.value.toInt(), bin('10'));
+    });
+
+    test('slice 2 bits spanning 2 arrays of 2d array', () async {
+      final la = LogicArray([3, 2], 8);
+      final slice = la.slice(16, 15);
+      expect(slice.width, 2);
+      la.elements[1].elements[0].put(1, fill: true);
+      la.elements[0].elements[1].put(0, fill: true);
+      expect(slice.value.toInt(), bin('10'));
+    });
+
+    test('slice more than one element of array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(19, 4);
+      expect(slice.width, 16);
+      la.elements[2].put(LogicValue.x);
+      la.elements[1].put(0);
+      la.elements[0].put(1, fill: true);
+      expect(slice.value, LogicValue.of('xxxx000000001111'));
+    });
+
+    test('slice more than one element of array at the edges', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(16, 7);
+      expect(slice.width, 10);
+      la.elements[2].put(LogicValue.x);
+      la.elements[1].put(0);
+      la.elements[0].put(1, fill: true);
+      expect(slice.value, LogicValue.of('x000000001'));
+    });
+
+    test('slice exactly one element of array', () async {
+      final la = LogicArray([3], 8);
+      final slice = la.slice(15, 8);
+      expect(slice.width, 8);
+      la.elements[1].put(1, fill: true);
+      expect(slice.value, LogicValue.of('11111111'));
+    });
+  });
+
   group('logicarray passthrough', () {
     Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
         {bool checkNoSwizzle = true,
@@ -893,12 +957,11 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
+      final sv = mod.generateSynth();
+
       // make sure we're reassigning both times it overlaps!
       expect(
-          RegExp('assign laIn.*=.*swizzled')
-              .allMatches(mod.generateSynth())
-              .length,
-          2);
+          RegExp(r'assign laOut\[1\].*=.*swizzled').allMatches(sv).length, 2);
     });
   });
 
@@ -1013,5 +1076,34 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  group('array clone', () {
+    for (final isNet in [true, false]) {
+      test('isNet = $isNet', () {
+        final la = (isNet ? LogicArray.net : LogicArray.new)(
+          [3, 2, 4],
+          8,
+          numUnpackedDimensions: 1,
+          name: 'myarray',
+          naming: Naming.reserved,
+        );
+        final clone = la.clone();
+        expect(la.dimensions, clone.dimensions);
+        expect(la.elementWidth, clone.elementWidth);
+        expect(la.numUnpackedDimensions, clone.numUnpackedDimensions);
+        expect(la.width, clone.width);
+        expect(la.elements.length, clone.elements.length);
+        for (var i = 0; i < la.elements.length; i++) {
+          expect(la.elements[i].width, clone.elements[i].width);
+        }
+        expect(la.name, clone.name);
+        expect(la.isNet, clone.isNet);
+        expect(clone.elements[0].elements[1].isNet, isNet);
+        expect(
+            clone.elements[1].elements[1].elements[1] is LogicArray, isFalse);
+        expect(clone.elements[1].elements[1].elements[1].isNet, isNet);
+      });
+    }
   });
 }

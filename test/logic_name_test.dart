@@ -7,9 +7,23 @@
 // 2022 October 26
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:test/test.dart';
+import 'logic_structure_test.dart' as logic_structure_test;
+
+class MyStruct extends LogicStructure {
+  final Logic ready;
+  final Logic valid;
+
+  factory MyStruct() => MyStruct._(
+        Logic(name: 'ready'),
+        Logic(name: 'valid'),
+      );
+
+  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+}
 
 class LogicTestModule extends Module {
   LogicTestModule(String logicName) {
@@ -210,5 +224,193 @@ void main() {
         contains('submod(.portA_2(portA_2),.portA(portA),'
             '.o(o),'
             '.portB_1(portB_1),.portB(portB))'));
+  });
+
+  group('clone', () {
+    test('name selection', () {
+      const originalName = 'original';
+      for (final newName in ['new', null]) {
+        for (final originalNaming in Naming.values) {
+          for (final newNaming in [...Naming.values, null]) {
+            final selectedName = newName ?? originalName;
+            final selectedNaming = Naming.chooseCloneNaming(
+              originalName: originalName,
+              newName: newName,
+              originalNaming: originalNaming,
+              newNaming: newNaming,
+            );
+
+            final reason = 'original: ($originalName, ${originalNaming.name}),'
+                ' new: ($newName, ${newNaming?.name})'
+                ' => ($selectedName, ${selectedNaming.name})';
+
+            if (newNaming != null) {
+              expect(selectedNaming, newNaming, reason: reason);
+            } else if (newName == null && newNaming == null) {
+              expect(selectedNaming, Naming.mergeable, reason: reason);
+            } else if (newName != null && newNaming == null) {
+              expect(selectedNaming, Naming.renameable, reason: reason);
+            } else {
+              fail('Undefined scenario: $reason');
+            }
+          }
+        }
+      }
+    });
+
+    group('logic', () {
+      test('name null', () {
+        final c = Logic(name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+      });
+
+      test('name provided', () {
+        final c = Logic(name: 'a').clone(name: 'b');
+        expect(c.name, 'b');
+        expect(c.naming, Naming.renameable);
+      });
+
+      test('net', () {
+        final c = LogicNet(name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+        expect(c, isA<LogicNet>());
+      });
+    });
+
+    group('logic structure', () {
+      test('name null', () {
+        final c = MyStruct().clone();
+        expect(c.name, 'myStruct');
+        expect(c.naming, Naming.unnamed);
+      });
+
+      test('name provided', () {
+        final c = MyStruct().clone(name: 'newName');
+        expect(c.name, 'newName');
+        expect(c.naming, Naming.unnamed);
+      });
+    });
+
+    group('logic array', () {
+      test('name null', () {
+        final c = LogicArray([1, 2], 3, name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+      });
+
+      test('name provided', () {
+        final c = LogicArray([1, 2], 3, name: 'a').clone(name: 'b');
+        expect(c.name, 'b');
+        expect(c.naming, Naming.renameable);
+      });
+
+      test('net', () {
+        final c = LogicArray.net([1, 2], 3, name: 'a').clone();
+        expect(c.name, 'a');
+        expect(c.naming, Naming.mergeable);
+        expect(c.isNet, true);
+      });
+    });
+  });
+
+  group('named', () {
+    test('logic', () {
+      final a = Logic(name: 'a');
+      final b = a.named('b');
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+    });
+
+    test('logic with naming', () {
+      final a = Logic(name: 'a');
+      final b = a.named('b', naming: Naming.reserved);
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.reserved);
+    });
+
+    test('net', () {
+      final a = LogicNet(name: 'a');
+      final b = a.named('b');
+
+      a.put(1);
+
+      expect(b.value.toInt(), 1);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+      expect(b.isNet, true);
+      expect(b, isA<LogicNet>());
+    });
+
+    test('array', () {
+      final a = LogicArray([1, 2], 3, name: 'a', numUnpackedDimensions: 1);
+      final b = a.named('b');
+
+      a.elements[0].elements[0].put(1);
+
+      final listEq = const ListEquality<int>().equals;
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+      expect(listEq(b.dimensions, a.dimensions), true);
+      expect(b.numUnpackedDimensions, a.numUnpackedDimensions);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.renameable);
+    });
+
+    test('array net with naming', () {
+      final a = LogicArray.net([1, 2], 3, name: 'a', numUnpackedDimensions: 1);
+      final b = a.named('b', naming: Naming.reserved);
+
+      a.elements[0].elements[0].put(1);
+
+      final listEq = const ListEquality<int>().equals;
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+      expect(listEq(b.dimensions, a.dimensions), true);
+      expect(b.numUnpackedDimensions, a.numUnpackedDimensions);
+      expect(b.name, 'b');
+      expect(b.naming, Naming.reserved);
+      expect(b.isNet, true);
+      expect(b, isA<LogicArray>());
+    });
+
+    test('structure', () {
+      final a = logic_structure_test.MyFancyStruct();
+      final b = a.named(
+        'b',
+
+        // naming should have no effect
+        naming: Naming.reserved,
+      );
+
+      expect(b.name, 'b');
+
+      expect(b.width, a.width);
+      expect(b.elements[0], isA<LogicArray>());
+      expect(b.elements[0].name, a.elements[0].name);
+      expect(b.elements[0].naming, Naming.renameable);
+
+      expect(b.elements[1], isA<Logic>());
+      expect(b.elements[1].name, a.elements[1].name);
+      expect(b.elements[1].naming, Naming.renameable);
+
+      expect(b.elements[2], isA<logic_structure_test.MyStruct>());
+      expect(b.elements[2].name, a.elements[2].name);
+      expect(b.elements[2].naming, a.elements[2].naming);
+      expect(b.elements[2].elements[0].name, a.elements[2].elements[0].name);
+
+      a.arr.elements[0].put(1);
+
+      expect(b.elements[0].elements[0].value.toInt(), 1);
+    });
   });
 }
