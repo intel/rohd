@@ -515,7 +515,7 @@ class Power extends _TwoInputBitwiseGate {
 }
 
 /// A two-input addition module.
-class Add extends Module with CustomSystemVerilog {
+class Add extends Module with SystemVerilog {
   /// Name for a first input port of this module.
   late final String _in0Name;
 
@@ -523,7 +523,7 @@ class Add extends Module with CustomSystemVerilog {
   late final String _in1Name;
 
   /// Name for the output port of this module.
-  late final String _outName;
+  late final String _sumName;
 
   /// Name for the carry bit.
   ///
@@ -538,20 +538,29 @@ class Add extends Module with CustomSystemVerilog {
   /// An input to this gate.
   late final Logic _in1 = input(_in1Name);
 
+  /// The calculated sum output of this addition.
+  late final Logic sum = output(_sumName);
+
+  /// The calculated carry output of this addition.
+  late final Logic carry = output(_carryName);
+
   /// The output of this gate.
-  late final Logic out = output(_outName);
+  ///
+  /// Deprecated: use [sum] instead.
+  @Deprecated('Use `sum` instead.')
+  Logic get out => sum;
 
   /// The output of this gate.
   ///
   /// Deprecated: use [out] instead.
-  @Deprecated('Use `out` instead.')
-  Logic get y => out;
+  @Deprecated('Use `sum` instead.')
+  Logic get y => sum;
 
   /// The functional operation to perform for this gate.
-  LogicValue _op(LogicValue in0, LogicValue in1) => in0 + in1;
+  LogicValue _addOp(LogicValue in0, LogicValue in1) => in0 + in1;
 
   /// The `String` representing the operation to perform in generated code.
-  final String _opStr = '+';
+  final String _addOpStr = '+';
 
   /// The width of the inputs and outputs for this operation.
   final int width;
@@ -568,13 +577,13 @@ class Add extends Module with CustomSystemVerilog {
 
     _in0Name = Naming.unpreferredName('in0_${in0.name}');
     _in1Name = Naming.unpreferredName('in1_${in1Logic.name}');
-    _outName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
-    _carryName = Naming.unpreferredName('carry_$_outName');
+    _sumName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
+    _carryName = Naming.unpreferredName('carry_$_sumName');
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width);
-    addOutput(_carryName); // just for SV generation, not used
+    addOutput(_sumName, width: width);
+    addOutput(_carryName);
 
     _setup();
   }
@@ -592,21 +601,27 @@ class Add extends Module with CustomSystemVerilog {
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    out.put(_op(_in0.value, _in1.value));
+    final fullSum = _addOp(
+      _in0.value.zeroExtend(width + 1),
+      _in1.value.zeroExtend(width + 1),
+    );
+
+    sum.put(fullSum.getRange(0, width));
+    carry.put(fullSum[width]);
   }
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
+  String instantiationVerilog(
+      String instanceType, String instanceName, Map<String, String> ports) {
     assert(inputs.length == 2, 'Gate has exactly two inputs');
     assert(outputs.length == 2, 'Gate has exactly two outputs');
 
-    final in0 = inputs[_in0Name]!;
-    final in1 = inputs[_in1Name]!;
-    final out = outputs[_outName]!;
-    final carry = outputs[_carryName]!;
+    final in0 = ports[_in0Name]!;
+    final in1 = ports[_in1Name]!;
+    final out = ports[_sumName]!;
+    final carry = ports[_carryName]!;
 
-    return 'assign {$carry, $out} = $in0 $_opStr $in1;';
+    return 'assign {$carry, $out} = $in0 $_addOpStr $in1;';
   }
 }
 
