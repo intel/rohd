@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // translations_test.dart
@@ -8,12 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 // ignore_for_file: avoid_multiple_declarations_per_line
-
-// TODO(mkorbel1): reenable this test on JavaScript pending dart sdk issue,
-//  https://github.com/dart-lang/sdk/issues/54329.
-
-@TestOn('vm')
-library;
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';

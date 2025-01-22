@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pipeline_test.dart
@@ -132,21 +132,25 @@ class PipelineInitWithGet extends Module {
 }
 
 class RVPipelineModule extends Module {
-  RVPipelineModule(Logic a, Logic reset, Logic validIn, Logic readyForOut)
+  RVPipelineModule(Logic a, Logic reset, Logic validIn, Logic readyForOut,
+      {bool testingAsyncReset = false, dynamic aResetVal})
       : super(name: 'rv_pipeline_module') {
-    final clk = SimpleClockGenerator(10).clk;
+    final clk = testingAsyncReset ? Const(0) : SimpleClockGenerator(10).clk;
     a = addInput('a', a, width: a.width);
     validIn = addInput('validIn', validIn);
     readyForOut = addInput('readyForOut', readyForOut);
     reset = addInput('reset', reset);
     final b = addOutput('b', width: a.width);
 
-    final pipeline =
-        ReadyValidPipeline(clk, validIn, readyForOut, reset: reset, stages: [
-      (p) => [p.get(a) < p.get(a) + 1],
-      (p) => [p.get(a) < p.get(a) + 1],
-      (p) => [p.get(a) < p.get(a) + 1],
-    ]);
+    final pipeline = ReadyValidPipeline(clk, validIn, readyForOut,
+        reset: reset,
+        stages: [
+          (p) => [p.get(a) < p.get(a) + 1],
+          (p) => [p.get(a) < p.get(a) + 1],
+          (p) => [p.get(a) < p.get(a) + 1],
+        ],
+        asyncReset: testingAsyncReset,
+        resetValues: aResetVal != null ? {a: aResetVal} : null);
     b <= pipeline.get(a);
 
     addOutput('validOut') <= pipeline.validPipeOut;
@@ -243,7 +247,7 @@ void main() {
           throwsRangeError);
     });
 
-    test('getting unregisterd signal on pipeline is error', () {
+    test('getting unregistered signal on pipeline is error', () {
       expect(
           () => Pipeline(Logic(), signals: [
                 Logic()
@@ -361,6 +365,51 @@ void main() {
             {'validOut': 0}),
         Vector({'reset': 0, 'a': 3, 'validIn': 1, 'readyForOut': 1},
             {'validOut': 0}),
+        Vector({'reset': 0, 'a': 4, 'validIn': 1, 'readyForOut': 1},
+            {'validOut': 1, 'b': 4}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
+            {'validOut': 1, 'b': 5}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
+            {'validOut': 1, 'b': 6}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
+            {'validOut': 1, 'b': 7}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
+            {'validOut': 0}),
+        Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},
+            {'validOut': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('rv pipeline simple async reset', () async {
+      final pipem = RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic(),
+          testingAsyncReset: true);
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 0, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
+        Vector({'reset': 1}, {'validOut': 0}),
+      ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('rv pipeline simple reset vals', () async {
+      final pipem = RVPipelineModule(Logic(width: 8), Logic(), Logic(), Logic(),
+          aResetVal: 5);
+      await pipem.build();
+
+      final vectors = [
+        Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
+        Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
+        Vector({'reset': 1, 'a': 1, 'validIn': 0, 'readyForOut': 1}, {}),
+        Vector({'reset': 0, 'a': 1, 'validIn': 1, 'readyForOut': 1},
+            {'validOut': 0, 'b': 5}),
+        Vector({'reset': 0, 'a': 2, 'validIn': 1, 'readyForOut': 1},
+            {'validOut': 0, 'b': 6}),
+        Vector({'reset': 0, 'a': 3, 'validIn': 1, 'readyForOut': 1},
+            {'validOut': 0, 'b': 7}),
         Vector({'reset': 0, 'a': 4, 'validIn': 1, 'readyForOut': 1},
             {'validOut': 1, 'b': 4}),
         Vector({'reset': 0, 'a': 0, 'validIn': 0, 'readyForOut': 1},

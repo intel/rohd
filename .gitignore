@@ -1,3 +1,5 @@
+# NOTE: Be sure to update .pubignore as well!
+
 # Files and directories created by pub
 .dart_tool/
 .packages
@@ -15,7 +17,9 @@ tmp_test/
 *.vcd
 *_fsm.md
 .vscode/*
+./devtools_options.yaml
 
 # Exceptions
 !.vscode/extensions.json
 !test/example_icarus_waves.vcd
+!test/sv_param_passthrough.sv

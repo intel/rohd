@@ -18,14 +18,14 @@ abstract class SynthesisResult {
 
   /// A [Map] from [Module] instances to synthesis instance type names.
   @protected
-  final Map<Module, String> moduleToInstanceTypeMap;
+  final String Function(Module module) getInstanceTypeOfModule;
 
   /// The name of the definition type for this module instance.
-  String get instanceTypeName => moduleToInstanceTypeMap[module]!;
+  String get instanceTypeName => getInstanceTypeOfModule(module);
 
   /// Represents a constant computed synthesis result for [module] given
-  /// the provided type mapping in [moduleToInstanceTypeMap].
-  const SynthesisResult(this.module, this.moduleToInstanceTypeMap);
+  /// the provided type mapping in [getInstanceTypeOfModule].
+  const SynthesisResult(this.module, this.getInstanceTypeOfModule);
 
   /// Whether two implementations are identical or not
   ///
@@ -51,4 +51,11 @@ abstract class SynthesisResult {
 
   /// Generates what could go into a file
   String toFileContents();
+
+  /// If provided, a [List] of additional [Module]s that should be included in
+  /// the generated results.
+  ///
+  /// This is intended for cases where a supporting additional module
+  /// declaration is required for functionality of the generated output.
+  List<Module>? get supportingModules => null;
 }

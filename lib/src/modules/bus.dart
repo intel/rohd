@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus.dart
@@ -13,18 +13,20 @@ import 'package:rohd/rohd.dart';
 ///
 /// The returned signal is inclusive of both the [startIndex] and [endIndex].
 /// The output [subset] will have width equal to `|endIndex - startIndex| + 1`.
+///
+/// This module also supports nets, allowing subsets to be bidirectional.
 class BusSubset extends Module with InlineSystemVerilog {
   /// Name for the input port of this module.
-  late final String _original;
+  late final String _originalName;
 
   /// Name for the output port of this module.
-  late final String _subset;
+  late final String _subsetName;
 
   /// The input to get a subset of.
-  late final Logic original = input(_original);
+  late final Logic _original;
 
-  /// The output, a subset of [original].
-  late final Logic subset = output(_subset);
+  /// The output, a subset of [_original].
+  late final Logic subset;
 
   /// Start index of the subset.
   final int startIndex;
@@ -32,15 +34,23 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// End index of the subset.
   final int endIndex;
 
+  /// Indicates whether this operates bidirectionally on nets.
+  final bool _isNet;
+
   @override
-  List<String> get expressionlessInputs => [_original];
+  String get resultSignalName => _subsetName;
+
+  @override
+  List<String> get expressionlessInputs => [_originalName];
 
   /// Constructs a [Module] that accesses a subset from [bus] which ranges
   /// from [startIndex] to [endIndex] (inclusive of both).
+  ///
   /// When, [bus] has a width of '1', [startIndex] and [endIndex] are ignored
   /// in the generated SystemVerilog.
   BusSubset(Logic bus, this.startIndex, this.endIndex,
-      {super.name = 'bussubset'}) {
+      {super.name = 'bussubset'})
+      : _isNet = bus.isNet {
     // If a converted index value is still -ve then it's an Index out of bounds
     // on a Logic Bus
     if (startIndex < 0 || endIndex < 0) {
@@ -55,39 +65,64 @@ class BusSubset extends Module with InlineSystemVerilog {
           ' than ${bus.width}');
     }
 
-    _original = Naming.unpreferredName('original_${bus.name}');
-    _subset =
+    _originalName = Naming.unpreferredName('original_${bus.name}');
+    _subsetName =
         Naming.unpreferredName('subset_${endIndex}_${startIndex}_${bus.name}');
 
-    addInput(_original, bus, width: bus.width);
     final newWidth = (endIndex - startIndex).abs() + 1;
-    addOutput(_subset, width: newWidth);
 
-    // so that people can't do a slice assign, not (yet?) implemented
-    subset.makeUnassignable();
+    if (_isNet) {
+      _original = addInOut(_originalName, bus, width: bus.width);
+      subset = LogicNet(width: newWidth);
+      final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
-    _setup();
+      if (startIndex > endIndex) {
+        // reverse case
+        for (var i = 0; i < newWidth; i++) {
+          internalSubset.quietlyMergeSubsetTo(
+            _original[startIndex - i] as LogicNet,
+            start: endIndex + i,
+          );
+        }
+      } else {
+        // normal case
+        (_original as LogicNet).quietlyMergeSubsetTo(
+          internalSubset,
+          start: startIndex,
+        );
+      }
+    } else {
+      _original = addInput(_originalName, bus, width: bus.width);
+      subset = addOutput(_subsetName, width: newWidth);
+
+      // so that people can't do a slice assign, not (yet?) implemented
+      subset.makeUnassignable(
+          reason:
+              'The output of a (non-LogicNet) BusSubset ($this) is read-only.');
+
+      _setup();
+    }
   }
 
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-    original.glitch.listen((args) {
+    _original.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (original.width == 1) {
-      subset.put(original.value);
+    if (_original.width == 1) {
+      subset.put(_original.value);
       return;
     }
 
     if (endIndex < startIndex) {
-      subset.put(original.value.getRange(endIndex, startIndex + 1).reversed);
+      subset.put(_original.value.getRange(endIndex, startIndex + 1).reversed);
     } else {
-      subset.put(original.value.getRange(startIndex, endIndex + 1));
+      subset.put(_original.value.getRange(startIndex, endIndex + 1));
     }
   }
 
@@ -96,16 +131,16 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('BusSubset has exactly one input, but saw $inputs.');
-    }
-    final a = inputs[_original]!;
+    assert(inputs.length == 1 || (inputs.length == 2 && _isNet),
+        'BusSubset has exactly one input, but saw $inputs.');
+
+    final a = inputs[_originalName]!;
 
     assert(!a.contains(_expressionRegex),
         'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
-    if (original.width == 1) {
+    if (_original.width == 1) {
       return a;
     }
 
@@ -126,38 +161,65 @@ class BusSubset extends Module with InlineSystemVerilog {
 
 /// A [Module] that performs concatenation of signals into one bigger [Logic].
 ///
-/// The concatenation occurs such that index 0 of [signals] is the *most*
+/// The concatenation occurs such that index 0 of `signals` is the *most*
 /// significant bit(s).
 ///
-/// You can use convenience functions [swizzle()] or [rswizzle()] to more easily
-/// use this [Module].
+/// You can use convenience functions from [LogicSwizzle] to more easily use
+/// this [Module].
+///
+/// This module supports nets, allowing concatenation to be bidirectionally
+/// driven.
 class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
   /// The output port containing concatenated signals.
-  late final Logic out = output(_out);
+  late final Logic out;
 
   final List<Logic> _swizzleInputs = [];
 
+  /// Whether this [Swizzle] is for [LogicNet]s.
+  final bool _isNet;
+
   /// Constructs a [Module] which concatenates [signals] into one large [out].
-  Swizzle(List<Logic> signals, {super.name = 'swizzle'}) {
-    var idx = 0;
+  Swizzle(List<Logic> signals, {super.name = 'swizzle'})
+      : _isNet = signals.any((e) => e.isNet) {
     var outputWidth = 0;
+
+    final inputCreator = _isNet ? addInOut : addInput;
+
+    var idx = 0;
     for (final signal in signals.reversed) {
       //reverse so bit 0 is the last thing in the input list
       final inputName = Naming.unpreferredName('in${idx++}');
       _swizzleInputs.add(
-        addInput(inputName, signal, width: signal.width),
+        inputCreator(inputName, signal, width: signal.width),
       );
       outputWidth += signal.width;
     }
-    addOutput(_out, width: outputWidth);
 
-    _execute(); // for initial values
-    for (final swizzleInput in _swizzleInputs) {
-      swizzleInput.glitch.listen((args) {
-        _execute();
-      });
+    if (_isNet) {
+      out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
+      final internalOut = addInOut(_out, out, width: outputWidth);
+
+      var idx = 0;
+      for (final swizzleInput in _swizzleInputs) {
+        internalOut.quietlyMergeSubsetTo(swizzleInput as LogicNet, start: idx);
+        idx += swizzleInput.width;
+      }
+    } else {
+      out = addOutput(_out, width: outputWidth);
+
+      // so that you can't assign the output of a (Logic) swizzle
+      out.makeUnassignable(
+          reason:
+              'The output of a (non-LogicNet) Swizzle ($this) is read-only.');
+
+      _execute(); // for initial values
+      for (final swizzleInput in _swizzleInputs) {
+        swizzleInput.glitch.listen((args) {
+          _execute();
+        });
+      }
     }
   }
 
@@ -169,11 +231,16 @@ class Swizzle extends Module with InlineSystemVerilog {
   }
 
   @override
+  String get resultSignalName => _out;
+
+  @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != _swizzleInputs.length) {
-      throw Exception('This swizzle has ${_swizzleInputs.length} inputs,'
-          ' but saw $inputs with ${inputs.length} values.');
-    }
+    assert(
+        inputs.length == _swizzleInputs.length ||
+            (inputs.length == _swizzleInputs.length + 1 && _isNet),
+        'This swizzle has ${_swizzleInputs.length} inputs,'
+        ' but saw $inputs with ${inputs.length} values.');
+
     final inputStr = _swizzleInputs.reversed
         .where((e) => e.width > 0)
         .map((e) => inputs[e.name])

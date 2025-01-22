@@ -111,7 +111,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
                 ? _LogicValueEnum.x
                 : this == LogicValue.z
                     ? _LogicValueEnum.z
-                    : throw Exception('Failed to convert.');
+                    : throw LogicValueConversionException('Failed to convert.');
   }
 
   /// Creates a [LogicValue] of [val] using [of], but attempts to infer the
@@ -604,6 +604,295 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
   }
 
+  /// Legal characters in a radixString representation.
+  static const String radixStringChars = "'0123456789aAbBcCdDeEfFqohzZxX";
+
+  /// Reverse a string (helper function)
+  static String _reverse(String inString) =>
+      String.fromCharCodes(inString.runes.toList().reversed);
+
+  /// Return the radix encoding of the current [LogicValue] as a sequence
+  /// of radix characters prefixed by the length and encoding format.
+  /// Output format is: `<len>'<format><encoded-value>`.
+  ///
+  /// [ofRadixString] can parse a [String] produced by [toRadixString] and
+  /// construct a [LogicValue].
+  ///
+  /// Here is the number 1492 printed as a radix string:
+  /// - Binary: `15'b101_1101_0100`
+  /// - Quaternary: `15'q11_3110`
+  /// - Octal: `15'o2724`
+  /// - Decimal: `10'd1492`
+  /// - Hex: `15'h05d4`
+  ///
+  /// Separators are output according to [chunkSize] starting from the
+  /// LSB(right), default is 4 characters.  The default separator is '_'.
+  /// [sepChar] can be set to another character, but not in [radixStringChars],
+  /// otherwise it will throw an exception.
+  ///  - [chunkSize] = default: `61'h2_9ebc_5f06_5bf7`
+  ///  - [chunkSize] = 10: `61'h29e_bc5f065bf7`
+  ///
+  /// Leading 0s are omitted in the output string:
+  /// - `25'h1`
+  ///
+  /// When a [LogicValue] has 'x' or 'z' bits, then the radix characters those
+  /// bits overlap will be expanded into binary form with '<' '>' bracketing
+  /// them as follows:
+  ///   - `35'h7_ZZZZ_Z<zzz0><100z>Z`
+  /// Such a [LogicValue] cannot be converted to a Decimal (10) radix string
+  /// and will throw an exception.
+  ///
+  /// If the leading bits are 'z', then the output radix character is 'Z' no
+  /// matter what the length. When leading, 'Z' indicates one or more 'z'
+  /// bits to fill the first radix character.
+  /// - `9'bz_zzzz_zzzz = 9'hZZZ`
+  ///
+  String toRadixString(
+      {int radix = 2, int chunkSize = 4, String sepChar = '_'}) {
+    if (radixStringChars.contains(sepChar)) {
+      throw LogicValueConversionException('separation character invalid');
+    }
+    final radixStr = switch (radix) {
+      2 => "'b",
+      4 => "'q",
+      8 => "'o",
+      10 => "'d",
+      16 => "'h",
+      _ => throw LogicValueConversionException('Unsupported radix: $radix')
+    };
+    final String reversedStr;
+    if (isValid) {
+      final radixString =
+          toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
+      reversedStr = _reverse(radixString);
+    } else if (radix == 10) {
+      final span = (width * math.log(2) / math.log(radix)).floor();
+      if (toRadixString().contains(RegExp('[xX]'))) {
+        reversedStr = 'X' * span;
+      } else {
+        reversedStr = 'Z' * span;
+      }
+    } else {
+      final span = (math.log(radix) / math.log(2)).ceil();
+      final extendedStr =
+          LogicValue.of(this, width: span * (width / span).ceil());
+      final buf = StringBuffer();
+      for (var i = (extendedStr.width ~/ span) - 1; i >= 0; i--) {
+        final binaryChunk = extendedStr.slice((i + 1) * span - 1, i * span);
+        var chunkString = binaryChunk.toString(includeWidth: false);
+        if (i == extendedStr.width ~/ span - 1) {
+          final chunkWidth = chunkString.length;
+          chunkString = chunkString.substring(
+              chunkWidth - (width - i * span), chunkWidth);
+        }
+        final s = [
+          if (chunkString == 'z' * chunkString.length)
+            (span == 1 ? 'z' : 'Z')
+          else if (chunkString == 'x' * chunkString.length)
+            (span == 1 ? 'x' : 'X')
+          else if (chunkString.contains('z') | chunkString.contains('x'))
+            '>${_reverse(chunkString)}<'
+          else
+            binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix)
+        ].first;
+        buf.write(_reverse(s));
+      }
+      reversedStr = _reverse(buf.toString());
+    }
+    final spaceString = _reverse(reversedStr
+        .replaceAllMapped(
+            RegExp('((>(.){$chunkSize}<)|([a-zA-Z0-9])){$chunkSize}'),
+            (match) => '${match.group(0)}$sepChar')
+        .replaceAll('$sepChar<', '<'));
+
+    final fullString = spaceString[0] == sepChar
+        ? spaceString.substring(1, spaceString.length)
+        : spaceString;
+    return '$width$radixStr$fullString';
+  }
+
+  /// Create a [LogicValue] from a length/radix-encoded string of the
+  /// following format:
+  ///
+  ///  `<length><format><value-string>`.
+  ///
+  /// `<length>` is the binary digit length of the [LogicValue] to be
+  /// constructed.
+  ///
+  /// `<format>s`  supported are `'b,'q,'o,'d,'h` supporting radixes as follows:
+  ///  - 'b: binary (radix 2)
+  ///  - 'q: quaternary (radix 4)
+  ///  - 'o: octal (radix 8)
+  ///  - 'd: decimal (radix 10)
+  ///  - 'h: hexadecimal (radix 16)
+  ///
+  /// `<value-string>` contains space-separated digits corresponding to the
+  /// radix format.  Space-separation is for ease of reading and is often
+  /// in chunks of 4 digits.
+  ///
+  /// If the format of then length/radix-encoded string is not completely parsed
+  /// an exception will be thrown.  This can be caused by illegal characters
+  /// in the string or too long of a value string.
+  ///
+  ///  Strings created by [toRadixString] are parsed by [ofRadixString].
+  ///
+  /// If the LogicValue width is not encoded as round number of radix
+  /// characters, the leading character must be small enough to be encoded
+  /// in the remaining width:
+  ///  - 9'h1AA
+  ///  - 10'h2AA
+  ///  - 11'h4AA
+  ///  - 12'hAAA
+  static LogicValue ofRadixString(String valueString, {String sepChar = '_'}) {
+    if (radixStringChars.contains(sepChar)) {
+      throw LogicValueConstructionException('separation character invalid');
+    }
+    if (RegExp(r'^\d+').firstMatch(valueString) != null) {
+      final formatStr =
+          RegExp("^(\\d+)'([bqodh])([0-9aAbBcCdDeEfFzZxX<>$sepChar]*)")
+              .firstMatch(valueString);
+      if (formatStr != null) {
+        if (valueString.length != formatStr.group(0)!.length) {
+          throw LogicValueConstructionException('radix string stopped '
+              'parsing at character position ${formatStr.group(0)!.length}');
+        }
+        final specifiedLength = int.parse(formatStr.group(1)!);
+        final compressedStr = formatStr.group(3)!.replaceAll(sepChar, '');
+        // Extract radix
+        final radixString = formatStr.group(2)!;
+        final radix = switch (radixString) {
+          'b' => 2,
+          'q' => 4,
+          'o' => 8,
+          'd' => 10,
+          'h' => 16,
+          _ => throw LogicValueConstructionException(
+              'Unsupported radix: $radixString'),
+        };
+        final span = (math.log(radix) / math.log(2)).ceil();
+
+        final reversedStr = _reverse(compressedStr);
+        // Find any binary expansions, then extend to the span
+        final binaries = RegExp('>[^<>]*<').allMatches(reversedStr).indexed;
+
+        // At this point, binaryLength has the binary bit count for binaries
+        // Remove and store expansions of binary fields '<[x0z1]*>.
+        final fullBinaries = RegExp('>[^<>]*<');
+        final bitExpandLocs = fullBinaries.allMatches(reversedStr).indexed;
+
+        final numExpanded = bitExpandLocs.length;
+        final numChars = reversedStr.length - numExpanded * (span + 1);
+        final binaryLength = (binaries.isEmpty
+                ? 0
+                : binaries
+                    .map<int>((j) => j.$2.group(0)!.length - 2)
+                    .reduce((a, b) => a + b)) +
+            (numChars - numExpanded) * span;
+
+        // is the binary length shorter than it appears
+        final int shorter;
+        if ((binaries.isNotEmpty) && compressedStr[0] == '<') {
+          final binGroup = _reverse(binaries.last.$2.group(0)!);
+          final binaryChunk = binGroup.substring(1, binGroup.length - 1);
+          var cnt = 0;
+          while (cnt < binaryChunk.length - 1 && binaryChunk[cnt++] == '0') {}
+          shorter = cnt - 1;
+        } else {
+          if (compressedStr.isNotEmpty) {
+            final leadChar = compressedStr[0];
+            if (RegExp('[xXzZ]').hasMatch(leadChar)) {
+              shorter = span - 1;
+            } else {
+              shorter = span -
+                  BigInt.parse(leadChar, radix: radix).toRadixString(2).length;
+            }
+          } else {
+            shorter = 0;
+          }
+        }
+        if ((radix != 10) & (binaryLength - shorter > specifiedLength)) {
+          throw LogicValueConstructionException(
+              'ofRadixString: cannot represent '
+              '$compressedStr in $specifiedLength');
+        }
+        final noBinariesStr = reversedStr.replaceAll(fullBinaries, '0');
+        final xLocations = RegExp('x|X')
+            .allMatches(noBinariesStr)
+            .indexed
+            .map((m) => List.generate(span, (s) => m.$2.start * span + s))
+            .expand((xe) => xe);
+        final zLocations = RegExp('z|Z')
+            .allMatches(noBinariesStr)
+            .indexed
+            .map((m) => List.generate(span, (s) => m.$2.start * span + s))
+            .expand((ze) => ze);
+
+        final BigInt intValue;
+        if (noBinariesStr.isNotEmpty) {
+          intValue = BigInt.parse(
+                  _reverse(noBinariesStr.replaceAll(RegExp('[xXzZ]'), '0')),
+                  radix: radix)
+              .toUnsigned(specifiedLength);
+        } else {
+          intValue = BigInt.zero;
+        }
+        final logicValList = List<LogicValue>.from(
+            LogicValue.ofString(intValue.toRadixString(2))
+                .zeroExtend(specifiedLength)
+                .toList());
+        // Put all the X and Z's back into the list
+        for (final x in xLocations) {
+          if (x < specifiedLength) {
+            logicValList[x] = LogicValue.x;
+          }
+        }
+        for (final z in zLocations) {
+          if (z < specifiedLength) {
+            logicValList[z] = LogicValue.z;
+          }
+        }
+
+        // Now add back the bitfield expansions stored earlier
+        var lastPos = 0;
+        var lastCpos = 0;
+        for (final i in bitExpandLocs) {
+          var len = i.$2.group(0)!.length;
+          if (i.$1 == bitExpandLocs.last.$1) {
+            final revBitChars = i.$2.group(0)!;
+            while (len > 1 && revBitChars[len - 2] == '0') {
+              len--;
+            }
+          }
+          final bitChars = i.$2.group(0)!.substring(1, len - 1);
+          var pos = 0;
+          if (i.$1 > 0) {
+            final nonExpChars = i.$2.start - lastCpos - span - 2;
+            pos = lastPos + span + span * nonExpChars;
+          } else {
+            final nonExpChars = i.$2.start - lastCpos;
+            pos = lastPos + span * nonExpChars;
+          }
+
+          for (var bitPos = 0; bitPos < len - 2; bitPos++) {
+            logicValList[pos + bitPos] = switch (bitChars[bitPos]) {
+              '0' => LogicValue.zero,
+              '1' => LogicValue.one,
+              'x' => LogicValue.x,
+              _ => LogicValue.z
+            };
+          }
+          lastCpos = i.$2.start;
+          lastPos = pos;
+        }
+        return logicValList.rswizzle();
+      } else {
+        throw LogicValueConstructionException(
+            'Invalid LogicValue string $valueString');
+      }
+    }
+    return LogicValue.zero;
+  }
+
   /// Compares this to `other`.
   ///
   /// Returns a negative number if `this` is less than `other`, zero if they are
@@ -660,7 +949,7 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   String _bitString() {
     if (width != 1) {
-      throw Exception(
+      throw LogicValueConversionException(
           'Cannot convert value of width $width to a single bit value.');
     }
     return this == LogicValue.x
@@ -813,13 +1102,15 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Converts a valid logical value to a boolean.
   ///
-  /// Throws an exception if the value is invalid.
+  /// Throws a LogicValueConversionException if the value is invalid.
   bool toBool() {
     if (!isValid) {
-      throw Exception('Cannot convert value "$this" to bool');
+      throw LogicValueConversionException(
+          'Cannot convert value "$this" to bool');
     }
     if (width != 1) {
-      throw Exception('Only single bit values can be converted to a bool,'
+      throw LogicValueConversionException(
+          'Only single bit values can be converted to a bool,'
           ' but found width $width in $this');
     }
     return this == LogicValue.one;
@@ -842,6 +1133,22 @@ abstract class LogicValue implements Comparable<LogicValue> {
   LogicValue operator ^(LogicValue other) =>
       _twoInputBitwiseOp(other, (a, b) => a._xor2(b));
 
+  /// Bitwise tristate merge of this value with [other].
+  ///
+  /// Per bit:
+  /// - tristate(0, 0) == 0
+  /// - tristate(0, 1) == x
+  /// - tristate(0, x) == x
+  /// - tristate(0, z) == 0
+  /// - tristate(1, 1) == 1
+  /// - tristate(1, x) == x
+  /// - tristate(1, z) == 1
+  /// - tristate(z, x) == x
+  /// - tristate(z, z) == z
+  /// - tristate(x, x) == x
+  LogicValue triState(LogicValue other) =>
+      _twoInputBitwiseOp(other, (a, b) => a._triState2(b));
+
   /// Bitwise AND operation.  No width comparison.
   LogicValue _and2(LogicValue other);
 
@@ -850,6 +1157,24 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
   /// Bitwise XOR operation.  No width comparison.
   LogicValue _xor2(LogicValue other);
+
+  /// Bitwise tristate merge.  No width comparison.
+  ///
+  /// Truth table for reference:
+  /// ```csv
+  /// s0	value0	invalid0	s1	value1	invalid1	result	value	invalid
+  /// 0	0	0	0	0	0	0	0	0
+  /// 0	0	0	1	1	0	x	0	1
+  /// 0	0	0	x	0	1	x	0	1
+  /// 0	0	0	z	1	1	0	0	0
+  /// 1	1	0	1	1	0	1	1	0
+  /// 1	1	0	x	0	1	x	0	1
+  /// 1	1	0	z	1	1	1	1	0
+  /// x	0	1	x	0	1	x	0	1
+  /// z	1	1	x	0	1	x	0	1
+  /// z	1	1	z	1	1	z	1	1
+  /// ```
+  LogicValue _triState2(LogicValue other);
 
   LogicValue _twoInputBitwiseOp(
       LogicValue other, LogicValue Function(LogicValue, LogicValue) op) {

@@ -1,13 +1,12 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // traverseable_collection.dart
 // Efficient implementation of a set-like datastructure that also has fast
-// index access
+// index access.
 //
 // 2021 July 13
 // Author: Max Korbel <max.korbel@intel.com>
-//
 
 import 'dart:collection';
 
@@ -16,19 +15,23 @@ import 'dart:collection';
 /// This collection stores all data twice: once in a [Set] and once in a [List].
 /// For index access, it uses the [List].  For [contains], it uses the [Set].
 /// Other operations like [add] and [remove] pay the penalty of performing
-/// the operation twice, once oneach collection.
+/// the operation twice, once on each collection.
 ///
 /// In situations where it is necessary to iterate through and frequently access
 /// elements by index, but also check whether a certain element is contained
 /// wihin it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
-class TraverseableCollection<T> {
-  final Set<T> _set = HashSet<T>();
-  final List<T> _list = <T>[];
+class TraverseableCollection<T> with IterableMixin<T> {
+  /// The underlying [Set] that stores the data.
+  late final Set<T> _set = HashSet<T>();
+
+  /// The underlying [List] that stores the data.
+  late final List<T> _list = <T>[];
 
   /// The number of objects in this collection.
   ///
   /// The valid indices are 0 through [length] - 1.
+  @override
   int get length => _list.length;
 
   /// Adds an element to the collection if it is not already present.
@@ -60,5 +63,33 @@ class TraverseableCollection<T> {
   T operator [](int index) => _list[index];
 
   /// Whether [item] is in the collection.
-  bool contains(T item) => _set.contains(item);
+  @override
+  bool contains(Object? item) => item is T && _set.contains(item);
+
+  @override
+  Iterator<T> get iterator => _list.iterator;
+
+  /// Removes all elements from the collection.
+  void clear() {
+    _set.clear();
+    _list.clear();
+  }
+}
+
+/// An unmodifiable view of a [TraverseableCollection], similar to
+/// [UnmodifiableListView] and [UnmodifiableSetView].
+class UnmodifiableTraverseableCollectionView<T>
+    extends TraverseableCollection<T> {
+  /// The source [TraverseableCollection] that this view is looking at.
+  final TraverseableCollection<T> _source;
+
+  /// Creates an unmodifiable view of [source].
+  UnmodifiableTraverseableCollectionView(TraverseableCollection<T> source)
+      : _source = source;
+
+  @override
+  Set<T> get _set => UnmodifiableSetView(_source._set);
+
+  @override
+  List<T> get _list => UnmodifiableListView(_source._list);
 }

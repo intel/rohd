@@ -127,12 +127,13 @@ class _Wire {
   /// Only non-null if [_changedBeingWatched] is true.
   StreamSubscription<void>? _postTickSubscription;
 
-  /// Cancels all [Simulator] subscriptions and uses [newChanged] as the
+  /// Cancels all [Simulator] subscriptions and uses [other]'s [changed] as the
   /// source to replace all [changed] events for this [_Wire].
-  void _migrateChangedTriggers(Stream<LogicValueChanged> newChanged) {
+  void _migrateChangedTriggers(_Wire other) {
     unawaited(_preTickSubscription?.cancel());
 
     if (_changedBeingWatched) {
+      final newChanged = other.changed;
       unawaited(_postTickSubscription?.cancel());
       newChanged.listen(_changedController.add);
       _changedBeingWatched = false;
@@ -140,10 +141,13 @@ class _Wire {
   }
 
   /// Tells this [_Wire] to adopt all the behavior of [other] so that
-  /// it can replace [other].
-  void _adopt(_Wire other) {
+  /// it can replace [other]. Returns the [_Wire] that has adopted everything.
+  _Wire _adopt(_Wire other) {
     _glitchController.emitter.adopt(other._glitchController.emitter);
-    other._migrateChangedTriggers(changed);
+    other._migrateChangedTriggers(this);
+
+    // ignore: avoid_returning_this
+    return this;
   }
 
   /// Store the [negedge] stream to avoid creating multiple copies
@@ -241,14 +245,23 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
-    final prevValue = _currentValue;
+    _updateValue(newValue, signalName: signalName);
+  }
+
+  /// Updates the value of this signal to [newValue].
+  void _updateValue(LogicValue newValue, {required String signalName}) {
+    final prevValue = value;
+
     _currentValue = newValue;
 
     // sends out a glitch if the value deposited has changed
-    if (_currentValue != prevValue) {
+    if (value != prevValue) {
       _isPutting = true;
-      _glitchController.add(LogicValueChanged(_currentValue, prevValue));
+      _glitchController.add(LogicValueChanged(value, prevValue));
       _isPutting = false;
     }
   }
+
+  @override
+  String toString() => 'wire $hashCode';
 }

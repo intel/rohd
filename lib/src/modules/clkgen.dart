@@ -11,7 +11,7 @@ import 'package:rohd/rohd.dart';
 
 /// A very simple clock generator.  Generates a non-synthesizable SystemVerilog
 /// representation.
-class SimpleClockGenerator extends Module with CustomSystemVerilog {
+class SimpleClockGenerator extends Module with SystemVerilog {
   /// The number of time units between repetitions of this clock.
   ///
   /// For example, if the [clockPeriod] is 10, then the frequency is 1/10,
@@ -28,6 +28,9 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
   SimpleClockGenerator(this.clockPeriod, {super.name = 'clkgen'}) {
     addOutput('clk');
 
+    clk.makeUnassignable(
+        reason: 'Generated clock from $this cannot be assigned');
+
     clk.glitch.listen((args) {
       Simulator.registerAction(Simulator.time + clockPeriod ~/ 2, () {
         clk.put(~clk.value);
@@ -37,14 +40,12 @@ class SimpleClockGenerator extends Module with CustomSystemVerilog {
   }
 
   @override
-  String instantiationVerilog(String instanceType, String instanceName,
-      Map<String, String> inputs, Map<String, String> outputs) {
-    if (inputs.isNotEmpty || outputs.length != 1) {
-      throw Exception(
-          'SimpleClockGenerator has exactly one output and no inputs,'
-          ' but saw inputs $inputs and outputs $outputs.');
-    }
-    final clk = outputs['clk']!;
+  String instantiationVerilog(
+      String instanceType, String instanceName, Map<String, String> ports) {
+    assert(ports.length == 1,
+        'SimpleClockGenerator has exactly one output and no inputs.');
+
+    final clk = ports['clk']!;
     return '''
 // $instanceName
 initial begin

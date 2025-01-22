@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_value_construction_exception.dart
-// An exception that thrown when a signal failes to `put`.
+// An exception that is thrown when a signal fails to `put`.
 //
 // 2023 May 1
 // Author: Max Korbel <max.korbel@intel.com>

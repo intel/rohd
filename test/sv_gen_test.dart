@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_gen_test.dart
@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class AlphabeticalModule extends Module {
@@ -94,16 +95,29 @@ class ModuleWithFloatingSignals extends Module {
 }
 
 class TopCustomSvWrap extends Module {
-  TopCustomSvWrap(Logic a, Logic b) {
+  TopCustomSvWrap(Logic a, Logic b,
+      {bool useOld = false, bool banExpressions = false}) {
     a = addInput('a', a);
     b = addInput('b', b);
 
-    SubCustomSv([a, b]);
+    if (useOld) {
+      SubCustomSv([a, b], banExpressions: banExpressions);
+    } else {
+      SubSv([a, b], banExpressions: banExpressions);
+    }
   }
 }
 
+/// This is for legacy deprecated testing.
+// ignore: deprecated_member_use_from_same_package
 class SubCustomSv extends Module with CustomSystemVerilog {
-  SubCustomSv(List<Logic> toSwizzle) {
+  final bool banExpressions;
+
+  @override
+  List<String> get expressionlessInputs =>
+      banExpressions ? inputs.keys.toList() : const [];
+
+  SubCustomSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
     addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
   }
 
@@ -114,6 +128,58 @@ class SubCustomSv extends Module with CustomSystemVerilog {
 logic my_fancy_new_signal; // $instanceName (of type $instanceType)
 assign my_fancy_new_signal <= ^${inputs['fer_swizzle']};
 ''';
+}
+
+class SubSv extends Module with SystemVerilog {
+  final bool banExpressions;
+
+  @override
+  List<String> get expressionlessInputs =>
+      banExpressions ? inputs.keys.toList() : const [];
+
+  SubSv(List<Logic> toSwizzle, {this.banExpressions = false}) {
+    addInput('fer_swizzle', toSwizzle.swizzle(), width: toSwizzle.length);
+  }
+
+  @override
+  String instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> ports) =>
+      '''
+logic my_fancy_new_signal; // $instanceName (of type $instanceType)
+assign my_fancy_new_signal <= ^${ports['fer_swizzle']};
+''';
+}
+
+class CustomDefinitionModule extends Module with SystemVerilog {
+  late final Logic b;
+  CustomDefinitionModule(Logic a) {
+    a = addInput('a', a);
+    b = addOutput('b')..gets(a);
+  }
+
+  @override
+  String? instantiationVerilog(String instanceType, String instanceName,
+          Map<String, String> ports) =>
+      null;
+
+  @override
+  String? definitionVerilog(String definitionType) => '''
+module $definitionType (
+  input logic a,
+  output logic b
+);
+// this is a custom definition!
+assign b = a;
+endmodule
+''';
+}
+
+class TopWithCustomDef extends Module {
+  TopWithCustomDef(Logic a) {
+    a = addInput('a', a);
+    final sub = CustomDefinitionModule(a);
+    addOutput('b') <= sub.b;
+  }
 }
 
 void main() {
@@ -197,10 +263,39 @@ void main() {
     expect('assign xylophone'.allMatches(sv).length, 1);
   });
 
-  test('properly drops in custom systemveri;og', () async {
-    final mod = TopCustomSvWrap(Logic(), Logic());
+  group('properly drops in custom systemverilog', () {
+    for (final useOld in [true, false]) {
+      for (final banExpressions in [true, false]) {
+        test('(useOld=$useOld, banExpressions=$banExpressions)', () async {
+          final mod = TopCustomSvWrap(Logic(), Logic(),
+              useOld: useOld, banExpressions: banExpressions);
+          await mod.build();
+          final sv = mod.generateSynth();
+
+          if (banExpressions) {
+            expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
+          } else {
+            expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+          }
+        });
+      }
+    }
+  });
+
+  test('custom definition', () async {
+    final mod = TopWithCustomDef(Logic());
     await mod.build();
     final sv = mod.generateSynth();
-    expect(sv, contains('assign my_fancy_new_signal <= ^({a,b});'));
+
+    expect(sv, contains('module CustomDefinitionModule ('));
+    expect(sv, contains('// this is a custom definition!'));
+
+    final vectors = [
+      Vector({'a': 1}, {'b': 1}),
+      Vector({'a': 0}, {'b': 0}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }

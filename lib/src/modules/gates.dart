@@ -30,7 +30,8 @@ class NotGate extends Module with InlineSystemVerilog {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${in_.name}_b');
     addInput(_inName, in_, width: in_.width);
-    addOutput(_outName, width: in_.width);
+    addOutput(_outName, width: in_.width)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
@@ -49,9 +50,8 @@ class NotGate extends Module with InlineSystemVerilog {
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
-    if (inputs.length != 1) {
-      throw Exception('Gate has exactly one input.');
-    }
+    assert(inputs.length == 1, 'Gate has exactly one input.');
+
     final a = inputs[_inName]!;
     return '~$a';
   }
@@ -93,7 +93,8 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
     _inName = Naming.unpreferredName(in_.name);
     _outName = Naming.unpreferredName('${name}_${in_.name}');
     addInput(_inName, in_, width: in_.width);
-    addOutput(_outName);
+    addOutput(_outName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
     _setup();
   }
 
@@ -197,7 +198,8 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
-    addOutput(_outName, width: width + _outputSvWidthExpansion);
+    addOutput(_outName, width: width + _outputSvWidthExpansion)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -290,7 +292,8 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 
     addInput(_in0Name, in0, width: in0.width);
     addInput(_in1Name, in1Logic, width: in1Logic.width);
-    addOutput(_outName);
+    addOutput(_outName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -326,7 +329,7 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
 ///
 /// It always takes two inputs and has one output of equal width to the primary
 /// of the input.
-class _ShiftGate extends Module with InlineSystemVerilog {
+abstract class _ShiftGate extends Module with InlineSystemVerilog {
   /// Name for the main input port of this module.
   late final String _inName;
 
@@ -336,14 +339,17 @@ class _ShiftGate extends Module with InlineSystemVerilog {
   /// Name for the output port of this module.
   late final String _outName;
 
+  @override
+  String get resultSignalName => _outName;
+
   /// The primary input to this gate.
-  late final Logic _in = input(_inName);
+  late final Logic _in;
 
   /// The shift amount for this gate.
-  late final Logic _shiftAmount = input(_shiftAmountName);
+  late final Logic _shiftAmount;
 
   /// The output of this gate.
-  late final Logic out = output(_outName);
+  late final Logic out;
 
   /// The functional operation to perform for this gate.
   final LogicValue Function(LogicValue in_, LogicValue shiftAmount) _op;
@@ -366,6 +372,12 @@ class _ShiftGate extends Module with InlineSystemVerilog {
         if (_outputSvWidthExpansion) _shiftAmountName,
       ];
 
+  /// Indicates whether this operates on nets, supporting bidirectionality.
+  final bool _isNet;
+
+  /// If the shift amount is a constant, this will be set to that constant.
+  late final LogicValue? _shiftAmountConstant;
+
   /// Constructs a two-input shift gate for an abitrary custom functional
   /// implementation.
   ///
@@ -379,12 +391,30 @@ class _ShiftGate extends Module with InlineSystemVerilog {
       bool outputSvWidthExpansion = false})
       : width = in_.width,
         _outputSvWidthExpansion = outputSvWidthExpansion,
+        _isNet = in_.isNet &&
+            // if it's a Logic, then we can't treat this like a net
+            shiftAmount is! Logic,
         super(name: name) {
-    final shiftAmountLogic = shiftAmount is Logic
-        ? shiftAmount
-        : Const(_outputSvWidthExpansion
-            ? LogicValue.of(shiftAmount, width: width)
-            : LogicValue.ofInferWidth(shiftAmount));
+    final Logic shiftAmountLogic;
+    if (shiftAmount is Const) {
+      shiftAmountLogic = shiftAmount;
+      _shiftAmountConstant = shiftAmount.value;
+    } else if (shiftAmount is Logic) {
+      shiftAmountLogic = shiftAmount;
+      _shiftAmountConstant = null;
+    } else {
+      if (_outputSvWidthExpansion) {
+        _shiftAmountConstant = LogicValue.of(shiftAmount, width: width);
+        shiftAmountLogic = Const(_shiftAmountConstant);
+      } else {
+        _shiftAmountConstant = LogicValue.ofInferWidth(shiftAmount);
+        if (_shiftAmountConstant!.isZero) {
+          shiftAmountLogic = Const(_shiftAmountConstant, width: 1);
+        } else {
+          shiftAmountLogic = Const(_shiftAmountConstant);
+        }
+      }
+    }
 
     _inName = Naming.unpreferredName('in_${in_.name}');
 
@@ -394,12 +424,28 @@ class _ShiftGate extends Module with InlineSystemVerilog {
     _outName =
         Naming.unpreferredName('${in_.name}_${name}_${shiftAmountLogic.name}');
 
-    addInput(_inName, in_, width: in_.width);
-    addInput(_shiftAmountName, shiftAmountLogic, width: shiftAmountLogic.width);
-    addOutput(_outName, width: width);
+    final inputCreator = _isNet ? addInOut : addInput;
 
-    _setup();
+    _in = inputCreator(_inName, in_, width: in_.width);
+    _shiftAmount = inputCreator(_shiftAmountName, shiftAmountLogic,
+        width: shiftAmountLogic.width);
+
+    if (_isNet) {
+      out = LogicNet(name: _outName, width: width, naming: Naming.unnamed);
+      final internalOut = addInOut(_outName, out, width: width);
+
+      _netSetup(internalOut);
+    } else {
+      out = addOutput(_outName, width: width)
+        ..makeUnassignable(
+            reason: 'Output of a gate $this cannot be assigned.');
+
+      _setup();
+    }
   }
+
+  /// A setup function for net functionality.
+  void _netSetup(LogicNet internalOut);
 
   /// Performs setup steps for custom functional behavior.
   void _setup() {
@@ -678,14 +724,28 @@ class XorUnary extends _OneInputUnaryGate {
 }
 
 /// A logical right-shift module.
+///
+/// Note that many simulators do not support the SystemVerilog generated by this
+/// module when it operates on [LogicNet]s. The default shift operators on
+/// [Logic] will instead use swizzling to accomplish equivalent behavior.
 class RShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (logically) by [shiftAmount].
   RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
+    internalOut <= (_in >>> _shiftAmountConstant);
+  }
 }
 
 /// An arithmetic right-shift module.
+///
+/// Note that many simulators do not support the SystemVerilog generated by this
+/// module when it operates on [LogicNet]s. The default shift operators on
+/// [Logic] will instead use swizzling to accomplish equivalent behavior.
 class ARShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (arithmetically) by
   /// [shiftAmount].
@@ -693,20 +753,36 @@ class ARShift extends _ShiftGate {
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
             name: name, signed: true);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
+    internalOut <= (_in >> _shiftAmountConstant);
+  }
 }
 
 /// A logical left-shift module.
+///
+/// Note that many simulators do not support the SystemVerilog generated by this
+/// module when it operates on [LogicNet]s. The default shift operators on
+/// [Logic] will instead use swizzling to accomplish equivalent behavior.
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
   LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
             name: name, outputSvWidthExpansion: true);
+
+  @override
+  void _netSetup(LogicNet internalOut) {
+    assert(_shiftAmountConstant != null, 'Shift amount must be constant.');
+    internalOut <= (_in << _shiftAmountConstant);
+  }
 }
 
 /// Performs a multiplexer/ternary operation.
 ///
 /// This is equivalent to something like:
-/// ```
+/// ```SystemVerilog
 /// control ? d1 : d0
 /// ```
 Logic mux(Logic control, Logic d1, Logic d0) => Mux(control, d1, d0).out;
@@ -764,7 +840,8 @@ class Mux extends Module with InlineSystemVerilog {
     addInput(_controlName, control);
     addInput(_d0Name, d0, width: d0.width);
     addInput(_d1Name, d1, width: d1.width);
-    addOutput(_outName, width: d0.width);
+    addOutput(_outName, width: d0.width)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -840,7 +917,8 @@ class IndexGate extends Module with InlineSystemVerilog {
 
     addInput(_originalName, original, width: original.width);
     addInput(_indexName, index, width: index.width);
-    addOutput(_selectionName);
+    addOutput(_selectionName)
+        .makeUnassignable(reason: 'Output of a gate $this cannot be assigned.');
 
     _setup();
   }
@@ -886,21 +964,30 @@ class IndexGate extends Module with InlineSystemVerilog {
 
 /// A Replication Operator [Module].
 ///
-/// It takes two inputs (bit and width) and outputs a [Logic] representing
-/// the input bit repeated over the input width
+/// It takes two inputs (original and multiplier) and outputs a [Logic]
+/// representing the input repeated over the multiple.
+///
+/// Note that many simulators do not support the SystemVerilog generated by this
+/// module when it operates on [LogicNet]s. The default [Logic.replicate]
+/// function will instead use swizzling to accomplish equivalent behavior.
 class ReplicationOp extends Module with InlineSystemVerilog {
-  // input component name
+  /// Input name.
   final String _inputName;
-  // output component name
+
+  /// Output name.
   final String _outputName;
-  // Width of the output signal
+
+  /// Number of times to replicate the input in the output.
   final int _multiplier;
 
   /// The primary input to this gate.
   late final Logic _input = input(_inputName);
 
   /// The output of this gate.
-  late final Logic replicated = output(_outputName);
+  late final Logic replicated;
+
+  /// Indicates whether this operates on nets, supporting bidirectionality.
+  final bool _isNet;
 
   /// Constructs a ReplicationOp
   ///
@@ -911,15 +998,31 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   /// [Module] is in-lined as SystemVerilog, it will use {width{bit}}
   ReplicationOp(Logic original, this._multiplier)
       : _inputName = Naming.unpreferredName(original.name),
-        _outputName = Naming.unpreferredName('replicated_${original.name}') {
+        _outputName = Naming.unpreferredName('replicated_${original.name}'),
+        _isNet = original.isNet {
     final newWidth = original.width * _multiplier;
     if (newWidth < 1) {
       throw InvalidMultiplierException(newWidth);
     }
 
-    addInput(_inputName, original, width: original.width);
-    addOutput(_outputName, width: original.width * _multiplier);
-    _setup();
+    if (_isNet) {
+      original = addInOut(_inputName, original, width: original.width);
+
+      replicated =
+          LogicNet(name: _outputName, width: newWidth, naming: Naming.unnamed);
+      final internalOut = addInOut(_outputName, replicated, width: newWidth);
+
+      for (var i = 0; i < _multiplier; i++) {
+        internalOut.quietlyMergeSubsetTo(original as LogicNet,
+            start: i * original.width);
+      }
+    } else {
+      addInput(_inputName, original, width: original.width);
+      replicated = addOutput(_outputName, width: original.width * _multiplier)
+        ..makeUnassignable(
+            reason: 'Output of a gate $this cannot be assigned.');
+      _setup();
+    }
   }
 
   /// Performs setup steps for custom functional behavior.
@@ -934,6 +1037,9 @@ class ReplicationOp extends Module with InlineSystemVerilog {
   void _execute() {
     replicated.put(_input.value.replicate(_multiplier));
   }
+
+  @override
+  String get resultSignalName => _outputName;
 
   @override
   String inlineVerilog(Map<String, String> inputs) {
