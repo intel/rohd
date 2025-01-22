@@ -435,7 +435,7 @@ class Logic {
   Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
-  Logic operator +(dynamic other) => Add(this, other).out;
+  Logic operator +(dynamic other) => Add(this, other).sum;
 
   /// Subtraction.
   Logic operator -(dynamic other) => Subtract(this, other).out;

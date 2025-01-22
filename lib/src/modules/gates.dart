@@ -526,10 +526,6 @@ class Add extends Module with SystemVerilog {
   late final String _sumName;
 
   /// Name for the carry bit.
-  ///
-  /// Note that the carry bit is *not* actually driven by anything, this is just
-  /// a signal generated for lint avoidance as ROHD makes output width the same
-  /// as input width for addition operations.
   late final String _carryName;
 
   /// An input to this gate.
