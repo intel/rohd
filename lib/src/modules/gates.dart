@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // gates.dart
@@ -508,7 +508,7 @@ class Xor2Gate extends _TwoInputBitwiseGate {
 class Power extends _TwoInputBitwiseGate {
   /// Calculates [in0] raise to power of [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by [LogicValue.of].
   Power(Logic in0, dynamic in1, {String name = 'power'})
       : super((a, b) => a.pow(b), '**', in0, in1,
             name: name, makeSelfDetermined: true);
@@ -563,7 +563,7 @@ class Add extends Module with SystemVerilog {
 
   /// Calculates the sum of [in0] and [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by [LogicValue.of].
   Add(Logic in0, dynamic in1, {super.name = 'add'}) : width = in0.width {
     if (in1 is Logic && in0.width != in1.width) {
       throw PortWidthMismatchException.equalWidth(in0, in1);
@@ -625,7 +625,8 @@ class Add extends Module with SystemVerilog {
 class Subtract extends _TwoInputBitwiseGate {
   /// Calculates the difference between [in0] and [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Subtract(Logic in0, dynamic in1, {String name = 'subtract'})
       : super((a, b) => a - b, '-', in0, in1, name: name);
 }
@@ -634,7 +635,8 @@ class Subtract extends _TwoInputBitwiseGate {
 class Multiply extends _TwoInputBitwiseGate {
   /// Calculates the product of [in0] and [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Multiply(Logic in0, dynamic in1, {String name = 'multiply'})
       : super((a, b) => a * b, '*', in0, in1,
             name: name, makeSelfDetermined: true);
@@ -644,7 +646,8 @@ class Multiply extends _TwoInputBitwiseGate {
 class Divide extends _TwoInputBitwiseGate {
   /// Calculates [in0] divided by [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Divide(Logic in0, dynamic in1, {String name = 'divide'})
       : super((a, b) => a / b, '/', in0, in1, name: name);
 }
@@ -653,7 +656,8 @@ class Divide extends _TwoInputBitwiseGate {
 class Modulo extends _TwoInputBitwiseGate {
   /// Calculates the module of [in0] % [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Modulo(Logic in0, dynamic in1, {String name = 'modulo'})
       : super((a, b) => a % b, '%', in0, in1, name: name);
 }
@@ -662,7 +666,8 @@ class Modulo extends _TwoInputBitwiseGate {
 class Equals extends _TwoInputComparisonGate {
   /// Calculates whether [in0] and [in1] are equal.
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Equals(Logic in0, dynamic in1, {String name = 'equals'})
       : super((a, b) => a.eq(b), '==', in0, in1, name: name);
 }
@@ -671,7 +676,8 @@ class Equals extends _TwoInputComparisonGate {
 class NotEquals extends _TwoInputComparisonGate {
   /// Calculates whether [in0] and [in1] are not-equal.
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   NotEquals(Logic in0, dynamic in1, {String name = 'notEquals'})
       : super((a, b) => a.neq(b), '!=', in0, in1, name: name);
 }
@@ -680,7 +686,8 @@ class NotEquals extends _TwoInputComparisonGate {
 class LessThan extends _TwoInputComparisonGate {
   /// Calculates whether [in0] is less than [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   LessThan(Logic in0, dynamic in1, {String name = 'lessthan'})
       : super((a, b) => a < b, '<', in0, in1, name: name);
 }
@@ -689,7 +696,8 @@ class LessThan extends _TwoInputComparisonGate {
 class GreaterThan extends _TwoInputComparisonGate {
   /// Calculates whether [in0] is greater than [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   GreaterThan(Logic in0, dynamic in1, {String name = 'greaterThan'})
       : super((a, b) => a > b, '>', in0, in1, name: name);
 }
@@ -698,7 +706,8 @@ class GreaterThan extends _TwoInputComparisonGate {
 class LessThanOrEqual extends _TwoInputComparisonGate {
   /// Calculates whether [in0] is less than or equal to [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   LessThanOrEqual(Logic in0, dynamic in1, {String name = 'lessThanOrEqual'})
       : super((a, b) => a <= b, '<=', in0, in1, name: name);
 }
@@ -707,7 +716,8 @@ class LessThanOrEqual extends _TwoInputComparisonGate {
 class GreaterThanOrEqual extends _TwoInputComparisonGate {
   /// Calculates whether [in0] is greater than or equal to [in1].
   ///
-  /// [in1] can be either a [Logic] or [int].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   GreaterThanOrEqual(Logic in0, dynamic in1,
       {String name = 'greaterThanOrEqual'})
       : super((a, b) => a >= b, '>=', in0, in1, name: name);
@@ -741,6 +751,9 @@ class XorUnary extends _OneInputUnaryGate {
 /// [Logic] will instead use swizzling to accomplish equivalent behavior.
 class RShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (logically) by [shiftAmount].
+  ///
+  /// [shiftAmount] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   RShift(Logic in_, dynamic shiftAmount, {String name = 'rshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >>> shamt, '>>', in_, shiftAmount, name: name);
@@ -760,6 +773,9 @@ class RShift extends _ShiftGate {
 class ARShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted right (arithmetically) by
   /// [shiftAmount].
+  ///
+  /// [shiftAmount] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   ARShift(Logic in_, dynamic shiftAmount, {String name = 'arshift'})
       : // Note: >>> vs >> is backwards for SystemVerilog and Dart
         super((a, shamt) => a >> shamt, '>>>', in_, shiftAmount,
@@ -777,8 +793,12 @@ class ARShift extends _ShiftGate {
 /// Note that many simulators do not support the SystemVerilog generated by this
 /// module when it operates on [LogicNet]s. The default shift operators on
 /// [Logic] will instead use swizzling to accomplish equivalent behavior.
+
 class LShift extends _ShiftGate {
   /// Calculates the value of [in_] shifted left by [shiftAmount].
+  ///
+  /// [shiftAmount] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   LShift(Logic in_, dynamic shiftAmount, {String name = 'lshift'})
       : super((a, shamt) => a << shamt, '<<', in_, shiftAmount,
             name: name, outputSvWidthExpansion: true);
