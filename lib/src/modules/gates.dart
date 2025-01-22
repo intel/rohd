@@ -504,7 +504,8 @@ class Xor2Gate extends _TwoInputBitwiseGate {
 class Power extends _TwoInputBitwiseGate {
   /// Calculates [in0] raise to power of [in1].
   ///
-  /// [in1] can be either a [Logic] or a constant be processable by [LogicValue.of].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Power(Logic in0, dynamic in1, {String name = 'power'})
       : super((a, b) => a.pow(b), '**', in0, in1,
             name: name, makeSelfDetermined: true);
@@ -559,7 +560,8 @@ class Add extends Module with SystemVerilog {
 
   /// Calculates the sum of [in0] and [in1].
   ///
-  /// [in1] can be either a [Logic] or a constant be processable by [LogicValue.of].
+  /// [in1] can be either a [Logic] or a constant be processable by
+  /// [LogicValue.of].
   Add(Logic in0, dynamic in1, {super.name = 'add'}) : width = in0.width {
     if (in1 is Logic && in0.width != in1.width) {
       throw PortWidthMismatchException.equalWidth(in0, in1);
