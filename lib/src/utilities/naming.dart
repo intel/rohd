@@ -61,7 +61,8 @@ enum Naming {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
-  static String unpreferredName(String name) => _unpreferredPrefix + name;
+  static String unpreferredName(String name) =>
+      name.startsWith(_unpreferredPrefix) ? name : _unpreferredPrefix + name;
 
   /// Returns true iff the signal name is "unpreferred".
   ///

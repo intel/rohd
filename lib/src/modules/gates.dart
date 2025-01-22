@@ -537,7 +537,7 @@ class Add extends Module with SystemVerilog {
   /// The calculated sum output of this addition.
   late final Logic sum = output(_sumName);
 
-  /// The calculated carry output of this addition.
+  /// The calculated carry bit output of this addition.
   late final Logic carry = output(_carryName);
 
   /// The output of this gate.
@@ -548,7 +548,7 @@ class Add extends Module with SystemVerilog {
 
   /// The output of this gate.
   ///
-  /// Deprecated: use [out] instead.
+  /// Deprecated: use [sum] instead.
   @Deprecated('Use `sum` instead.')
   Logic get y => sum;
 
@@ -558,7 +558,7 @@ class Add extends Module with SystemVerilog {
   /// The `String` representing the operation to perform in generated code.
   final String _addOpStr = '+';
 
-  /// The width of the inputs and outputs for this operation.
+  /// The width of the inputs and [sum] for this operation.
   final int width;
 
   /// Calculates the sum of [in0] and [in1].
@@ -574,7 +574,7 @@ class Add extends Module with SystemVerilog {
     _in0Name = Naming.unpreferredName('in0_${in0.name}');
     _in1Name = Naming.unpreferredName('in1_${in1Logic.name}');
     _sumName = Naming.unpreferredName('${in0.name}_${name}_${in1Logic.name}');
-    _carryName = Naming.unpreferredName('carry_$_sumName');
+    _carryName = Naming.unpreferredName('${_sumName}_carry');
 
     addInput(_in0Name, in0, width: width);
     addInput(_in1Name, in1Logic, width: width);
@@ -614,10 +614,10 @@ class Add extends Module with SystemVerilog {
 
     final in0 = ports[_in0Name]!;
     final in1 = ports[_in1Name]!;
-    final out = ports[_sumName]!;
+    final sum = ports[_sumName]!;
     final carry = ports[_carryName]!;
 
-    return 'assign {$carry, $out} = $in0 $_addOpStr $in1;';
+    return 'assign {$carry, $sum} = $in0 $_addOpStr $in1;';
   }
 }
 
