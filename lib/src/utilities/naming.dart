@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // name_validator.dart
@@ -61,7 +61,8 @@ enum Naming {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
-  static String unpreferredName(String name) => _unpreferredPrefix + name;
+  static String unpreferredName(String name) =>
+      name.startsWith(_unpreferredPrefix) ? name : _unpreferredPrefix + name;
 
   /// Returns true iff the signal name is "unpreferred".
   ///

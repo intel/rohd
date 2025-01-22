@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic.dart
@@ -435,7 +435,7 @@ class Logic {
   Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
-  Logic operator +(dynamic other) => Add(this, other).out;
+  Logic operator +(dynamic other) => Add(this, other).sum;
 
   /// Subtraction.
   Logic operator -(dynamic other) => Subtract(this, other).out;
