@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the inlineVerilog method from the Add class, for the Dart programming language.">
-  <title>inlineVerilog method - Add class - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the instantiationVerilog method from the Add class, for the Dart programming language.">
+  <title>instantiationVerilog method - Add class - rohd library - Dart API</title>
 
 
   
@@ -27,9 +27,9 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Add-class.html">Add</a></li>
-    <li class="self-crumb">inlineVerilog method</li>
+    <li class="self-crumb">instantiationVerilog method</li>
   </ol>
-  <div class="self-name">inlineVerilog</div>
+  <div class="self-name">instantiationVerilog</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -52,7 +52,7 @@
     data-above-sidebar="rohd&#47;Add-class-sidebar.html"
     data-below-sidebar="">
     <div>
-<h1><span class="kind-method">inlineVerilog</span> method 
+<h1><span class="kind-method">instantiationVerilog</span> method 
 </h1></div>
 
     <section class="multi-line-signature">
@@ -63,23 +63,27 @@
     </ol>
   </div>
 <span class="returntype"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span>
-<span class="name ">inlineVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
+<span class="name ">instantiationVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="instantiationVerilog-param-instanceType"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceType</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-instanceName"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">instanceName</span>, </span></li>
+<li><span class="parameter" id="instantiationVerilog-param-ports"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">ports</span></span></li>
 </ol>)
 
-      <div class="features"><span class="feature">inherited</span></div>
+      <div class="features"><span class="feature">override</span></div>
 
     </section>
     
 <section class="desc markdown">
-  <p>Generates custom SystemVerilog to be injected in place of the output
-port's corresponding signal name.</p>
-<p>The <code>inputs</code> are a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to the names of
-the signals that are passed into those ports in the generated
-SystemVerilog. It will only contain <a href="../../rohd/Module/input.html">input</a>s and <a href="../../rohd/Module/inOut.html">inOut</a>s, as there should
-only be one <a href="../../rohd/Module/output.html">output</a> (named <a href="../../rohd/InlineSystemVerilog/resultSignalName.html">resultSignalName</a>) which is driven by the
-expression.</p>
-<p>The output will be appropriately wrapped with parentheses to guarantee
-proper order of operations.</p>
+  <p>Generates custom SystemVerilog to be injected in place of a <code>module</code>
+instantiation.</p>
+<p>The <code>instanceType</code> and <code>instanceName</code> represent the type and name,
+respectively of the module that would have been instantiated had it not
+been overridden.  <code>ports</code> is a mapping from the <a href="../../rohd/Module-class.html">Module</a>'s port names to
+the names of the signals that are passed into those ports in the generated
+SystemVerilog.</p>
+<p>If a standard instantiation is desired, either return <code>null</code> or use
+<a href="../../rohd/SystemVerilogSynthesizer/instantiationVerilogFor.html">SystemVerilogSynthesizer.instantiationVerilogFor</a> with
+<code>forceStandardInstantiation</code> set to <code>true</code>.  By default, <code>null</code> is
+returned and thus a standard instantiation is used.</p>
 </section>
 
 
@@ -87,17 +91,17 @@ proper order of operations.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 2) {
-    throw Exception(&#39;Gate has exactly two inputs.&#39;);
-  }
-  final in0 = inputs[_in0Name]!;
-  final in1 = inputs[_in1Name]!;
-  var sv = &#39;$in0 $_opStr $in1&#39;;
-  if (_makeSelfDetermined) {
-    sv = &#39;{$sv}&#39;;
-  }
-  return sv;
+String instantiationVerilog(
+    String instanceType, String instanceName, Map&lt;String, String&gt; ports) {
+  assert(inputs.length == 2, &#39;Gate has exactly two inputs&#39;);
+  assert(outputs.length == 2, &#39;Gate has exactly two outputs&#39;);
+
+  final in0 = ports[_in0Name]!;
+  final in1 = ports[_in1Name]!;
+  final sum = ports[_sumName]!;
+  final carry = ports[_carryName]!;
+
+  return &#39;assign {$carry, $sum} = $in0 $_addOpStr $in1;&#39;;
 }</code></pre>
 </section>
 
@@ -114,7 +118,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Add-class.html">Add</a></li>
-    <li class="self-crumb">inlineVerilog method</li>
+    <li class="self-crumb">instantiationVerilog method</li>
 </ol>
 
     <h5>Add class</h5>

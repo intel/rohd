@@ -65,16 +65,33 @@
     
 <section class="desc markdown">
   <p>Calculates the sum of <code>in0</code> and <code>in1</code>.</p>
-<p><code>in1</code> can be either a <a href="../../rohd/Logic-class.html">Logic</a> or <a href="https://api.dart.dev/stable/3.6.1/dart-core/int-class.html">int</a>.</p>
+<p><code>in1</code> can be either a <a href="../../rohd/Logic-class.html">Logic</a> or a constant be processable by
+<a href="../../rohd/LogicValue/of.html">LogicValue.of</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Add(Logic in0, dynamic in1, {String name = &#39;add&#39;})
-    : super((a, b) =&gt; a + b, &#39;+&#39;, in0, in1,
-          name: name, outputSvWidthExpansion: 1);</code></pre>
+  <pre class="language-dart"><code class="language-dart">Add(Logic in0, dynamic in1, {super.name = &#39;add&#39;}) : width = in0.width {
+  if (in1 is Logic &amp;&amp; in0.width != in1.width) {
+    throw PortWidthMismatchException.equalWidth(in0, in1);
+  }
+
+  final in1Logic = in1 is Logic ? in1 : Const(in1, width: width);
+
+  _in0Name = Naming.unpreferredName(&#39;in0_${in0.name}&#39;);
+  _in1Name = Naming.unpreferredName(&#39;in1_${in1Logic.name}&#39;);
+  _sumName = Naming.unpreferredName(&#39;${in0.name}_${name}_${in1Logic.name}&#39;);
+  _carryName = Naming.unpreferredName(&#39;${_sumName}_carry&#39;);
+
+  addInput(_in0Name, in0, width: width);
+  addInput(_in1Name, in1Logic, width: width);
+  addOutput(_sumName, width: width);
+  addOutput(_carryName);
+
+  _setup();
+}</code></pre>
 </section>
 
 

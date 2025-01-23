@@ -81,7 +81,8 @@ read.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">static String unpreferredName(String name) =&gt; _unpreferredPrefix + name;</code></pre>
+  <pre class="language-dart"><code class="language-dart">static String unpreferredName(String name) =&gt;
+    name.startsWith(_unpreferredPrefix) ? name : _unpreferredPrefix + name;</code></pre>
 </section>
 
 

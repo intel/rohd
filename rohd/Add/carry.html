@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the Multiply constructor from Class Multiply from the rohd library, for the Dart programming language.">
-  <title>Multiply constructor - Multiply - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the carry property from the Add class, for the Dart programming language.">
+  <title>carry property - Add class - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/Multiply-class.html">Multiply</a></li>
-    <li class="self-crumb">Multiply constructor</li>
+    <li><a href="../../rohd/Add-class.html">Add</a></li>
+    <li class="self-crumb">carry property</li>
   </ol>
-  <div class="self-name">Multiply</div>
+  <div class="self-name">carry</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -46,42 +46,39 @@
   </div>
 </header>
 <main>
-  <div
-      id="dartdoc-main-content"
-      class="main-content"
-      data-above-sidebar="rohd&#47;Multiply-class-sidebar.html"
-      data-below-sidebar="">
-      <div>
-<h1><span class="kind-constructor">Multiply</span> constructor 
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Add-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-property">carry</span> property 
 </h1></div>
 
-    <section class="multi-line-signature">
-      
-      <span class="name ">Multiply</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="-param-in0"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">in0</span>, </span></li>
-<li><span class="parameter" id="-param-in1"><span class="type-annotation">dynamic</span> <span class="parameter-name">in1</span>, {</span></li>
-<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.1/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;multiply&#39;</span>, </span></li>
-</ol>})
-    </section>
     
+      <section class="multi-line-signature">
+        
+        <a href="../../rohd/Logic-class.html">Logic</a>
+        <span class="name ">carry</span>
+        <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+      </section>
+      
 <section class="desc markdown">
-  <p>Calculates the product of <code>in0</code> and <code>in1</code>.</p>
-<p><code>in1</code> can be either a <a href="../../rohd/Logic-class.html">Logic</a> or a constant be processable by
-<a href="../../rohd/LogicValue/of.html">LogicValue.of</a>.</p>
+  <p>The calculated carry bit output of this addition.</p>
 </section>
 
-
-    
+      
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Multiply(Logic in0, dynamic in1, {String name = &#39;multiply&#39;})
-    : super((a, b) =&gt; a * b, &#39;*&#39;, in0, in1,
-          name: name, makeSelfDetermined: true);</code></pre>
+  <pre class="language-dart"><code class="language-dart">late final Logic carry = output(_carryName);</code></pre>
 </section>
 
 
-  </div> <!-- /.main-content -->
-  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
-    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+    
+</div> <!-- /.main-content -->
+<div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+  <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
 <header id="header-search-sidebar" class="hidden-l">
   <form class="search-sidebar" role="search">
     <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
@@ -90,15 +87,15 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/Multiply-class.html">Multiply</a></li>
-    <li class="self-crumb">Multiply constructor</li>
+    <li><a href="../../rohd/Add-class.html">Add</a></li>
+    <li class="self-crumb">carry property</li>
 </ol>
 
-    <h5>Multiply class</h5>
-    <div id="dartdoc-sidebar-left-content"></div>
-  </div><!--/.sidebar-offcanvas-left-->
-  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
-  </div><!--/.sidebar-offcanvas-->
+  <h5>Add class</h5>
+  <div id="dartdoc-sidebar-left-content"></div>
+</div><!--/.sidebar-offcanvas-->
+<div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
 </main>
 <footer>
   <span class="no-break">

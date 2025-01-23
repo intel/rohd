@@ -88,9 +88,8 @@ proper order of operations.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 2) {
-    throw Exception(&#39;Gate has exactly two inputs.&#39;);
-  }
+  assert(inputs.length == 2, &#39;Gate has exactly two inputs.&#39;);
+
   final in0 = inputs[_in0Name]!;
   final in1 = inputs[_in1Name]!;
   return &#39;$in0 $_opStr $in1&#39;;

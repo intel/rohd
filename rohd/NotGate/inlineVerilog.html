@@ -90,8 +90,8 @@ proper order of operations.</p>
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
   assert(inputs.length == 1, &#39;Gate has exactly one input.&#39;);
 
-  final a = inputs[_inName]!;
-  return &#39;~$a&#39;;
+  final in_ = inputs[_inName]!;
+  return &#39;~$in_&#39;;
 }</code></pre>
 </section>
 

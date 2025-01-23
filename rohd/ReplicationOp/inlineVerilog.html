@@ -88,9 +88,7 @@ proper order of operations.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 1) {
-    throw Exception(&#39;Gate has exactly one input.&#39;);
-  }
+  assert(inputs.length == 1, &#39;Gate has exactly one input.&#39;);
 
   final target = inputs[_inputName]!;
   final width = _multiplier;

@@ -88,9 +88,8 @@ proper order of operations.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
 String inlineVerilog(Map&lt;String, String&gt; inputs) {
-  if (inputs.length != 3) {
-    throw Exception(&#39;Mux2 has exactly three inputs.&#39;);
-  }
+  assert(inputs.length == 3, &#39;Mux2 has exactly three inputs.&#39;);
+
   final d0 = inputs[_d0Name]!;
   final d1 = inputs[_d1Name]!;
   final control = inputs[_controlName]!;

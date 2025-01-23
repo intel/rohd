@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/Add-class.html">Add</a></li>
-    <li class="self-crumb">out property</li>
+    <li class="self-crumb"><span class="deprecated">out</span> property</li>
   </ol>
   <div class="self-name">out</div>
   <form class="search navbar-right" role="search">
@@ -56,29 +56,39 @@
 </h1></div>
 
     
-      <section class="multi-line-signature">
-        
-        <a href="../../rohd/Logic-class.html">Logic</a>
-        <span class="name ">out</span>
-        <div class="features"><span class="feature">late</span><span class="feature">final</span><span class="feature">inherited</span></div>
-
-      </section>
-      
-<section class="desc markdown">
-  <p>The output of this gate.</p>
-</section>
-
-      
-<section class="summary source-code" id="source">
-  <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">late final Logic out = _outputSvWidthExpansion != 0
-    &#47;&#47; this is sub-optimal, but it&#39;s tricky to make special SV for it
-    ? BusSubset(output(_outName), 0, width - _outputSvWidthExpansion).subset
-    : output(_outName);</code></pre>
-</section>
-
 
     
+        
+  <section id="getter">
+    <section class="multi-line-signature">
+      
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.6.1/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `sum` instead.&#39;)</li>
+    </ol>
+  </div>
+      <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
+      get
+      <span class="name deprecated">out</span>
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>The output of this gate.</p>
+<p>Deprecated: use <a href="../../rohd/Add/sum.html">sum</a> instead.</p>
+</section>
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `sum` instead.&#39;)
+Logic get out =&gt; sum;</code></pre>
+</section>
+
+  </section>
+
+
 </div> <!-- /.main-content -->
 <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
   <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
@@ -91,7 +101,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/Add-class.html">Add</a></li>
-    <li class="self-crumb">out property</li>
+    <li class="self-crumb"><span class="deprecated">out</span> property</li>
 </ol>
 
   <h5>Add class</h5>
