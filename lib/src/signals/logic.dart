@@ -431,18 +431,18 @@ class Logic {
     Logic? otherOperand;
 
     if (this is Const && value.isValid) {
-      constOperand = Const(this);
+      constOperand = this as Const;
     } else if (other is Const && other.value.isValid) {
       constOperand = other;
       otherOperand = this;
     }
 
-    if (constOperand != null) {
+    if (constOperand != null && otherOperand != null) {
       if (constOperand.value == LogicValue.filled(width, LogicValue.zero)) {
-        return Const(LogicValue.filled(width, LogicValue.zero));
+        return constOperand;
       } else if (constOperand.value ==
           LogicValue.filled(width, LogicValue.one)) {
-        return otherOperand!;
+        return otherOperand;
       }
     }
     return And2Gate(this, other).out;
@@ -457,18 +457,18 @@ class Logic {
     Logic? otherOperand;
 
     if (this is Const && value.isValid) {
-      constOperand = Const(this);
+      constOperand = this as Const;
     } else if (other is Const && other.value.isValid) {
       constOperand = other;
       otherOperand = this;
     }
 
-    if (constOperand != null) {
+    if (constOperand != null && otherOperand != null) {
       if (constOperand.value == LogicValue.filled(width, LogicValue.one)) {
-        return Const(LogicValue.filled(width, LogicValue.one));
+        return constOperand;
       } else if (constOperand.value ==
           LogicValue.filled(width, LogicValue.zero)) {
-        return otherOperand!;
+        return otherOperand;
       }
     }
     return Or2Gate(this, other).out;

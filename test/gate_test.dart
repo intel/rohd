@@ -368,6 +368,9 @@ void main() {
 
       expect(~const1, isA<Const>());
       expect((~const1).value, equals(LogicValue.zero));
+
+      expect(~normalLogic, isA<Logic>());
+      expect((~normalLogic).value, equals(LogicValue.zero));
     });
 
     test('NotGate Multi bit Constant input', () async {
@@ -375,7 +378,7 @@ void main() {
       final const4 = Const(bin('0100'), width: 4);
 
       expect(~const1, isA<Const>());
-      expect((~const1).value, equals(LogicValue.of(LogicValue.zero, width: 4)));
+      expect((~const1).value, equals(LogicValue.of(0, width: 4)));
 
       expect(~const4, isA<Logic>());
       expect((~const4).value, equals(LogicValue.of(11, width: 4)));
@@ -391,13 +394,18 @@ void main() {
 
       expect(normalLogic & const0, isA<Const>());
       expect((normalLogic & const0).value, equals(LogicValue.zero));
+
       expect(logicX & const0, isA<Const>());
       expect((logicX & const0).value, equals(LogicValue.zero));
+
       expect(normalLogic & const1, isA<Logic>());
       expect((normalLogic & const1).value, equals(normalLogic.value));
+
       expect(normalLogic & logicX, isA<Logic>());
       expect((normalLogic & logicX).value, equals(LogicValue.x));
+
       expect(const0 & const1, isA<Const>());
+      expect((const0 & const1).value, equals(const0.value));
     });
 
     test('And2Gate Multi bit Constant input', () async {
@@ -421,37 +429,47 @@ void main() {
     });
 
     test('OR2Gate Single bit Constant input', () async {
-      final a = Logic();
-      final b = Const(LogicValue.zero, width: 1);
-      final c = Const(LogicValue.x, width: 1);
-      final d = Const(LogicValue.one, width: 1);
-      final z = Const('11111', width: 5);
-      final y = Const(LogicValue.of('11x01', width: 5));
-      a.put(LogicValue.one);
+      final normalLogic = Logic();
+      final const0 = Const(LogicValue.zero);
+      final logicX = Logic();
+      final const1 = Const(LogicValue.one);
+      normalLogic.put(LogicValue.one);
+      logicX.put(LogicValue.x);
 
-      expect(a | b, isA<Logic>());
-      expect((a | b).value, equals(a.value));
+      expect(normalLogic | const0, isA<Logic>());
+      expect((normalLogic | const0).value, equals(normalLogic.value));
 
-      expect(a | c, isA<Logic>());
-      expect((a | c).value, equals(LogicValue.one));
+      expect(logicX | const0, isA<Logic>());
+      expect((logicX | const0).value, equals(logicX.value));
 
-      expect(a | d, isA<Logic>());
-      expect((a | d).value, equals(LogicValue.one));
+      expect(normalLogic | const1, isA<Const>());
+      expect((normalLogic | const1).value, equals(LogicValue.one));
 
-      expect(y | z, isA<Logic>());
-      expect((y | z).value, equals(LogicValue.of('11111', width: 5)));
+      expect(normalLogic | logicX, isA<Logic>());
+      expect((normalLogic | logicX).value, equals(LogicValue.one));
+
+      expect(const0 | const1, isA<Const>());
+      expect((const0 | const1).value, equals(LogicValue.one));
     });
 
     test('OR2Gate Multi bit Constant input', () async {
-      final a = Const(LogicValue.of(LogicValue.zero, width: 4));
-      final b = Const(bin('1111'), width: 4);
-      final c = Const(bin('0100'), width: 4);
+      final const1 = Const(bin('1101'), width: 4);
+      final const4 = Const(bin('0100'), width: 4);
+      final logic0 = Logic(width: 4)..put(LogicValue.zero);
+      final logic1 = Logic(width: 4)..put(LogicValue.one);
+      final logicX = Logic(width: 4)..put(LogicValue.x);
 
-      expect(a | c, isA<Logic>());
-      expect((a | c).value, equals(c.value));
+      expect(const1 | const4, isA<Const>());
+      expect((const1 | const4).value, equals(LogicValue.of('1101', width: 4)));
 
-      expect(b | c, isA<Const>());
-      expect((b | c).value, equals(LogicValue.filled(4, LogicValue.one)));
+      expect(logic0 | const1, isA<Logic>());
+      expect((logic0 | const1).value, equals(const1.value));
+
+      expect(logic1 | const1, isA<Logic>());
+      expect((logic1 | const1).value, equals(const1.value));
+
+      expect(logicX | const1, isA<Logic>());
+      expect((logicX | const1).value, equals(LogicValue.of('11x1', width: 4)));
     });
   });
 
