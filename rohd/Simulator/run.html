@@ -96,13 +96,9 @@ it finishes or is stopped.</p>
     }
   }
 
+  &#47;&#47; initially, just log the exceptions
   for (final err in _simExceptions) {
     logger.severe(err.exception.toString(), err.exception, err.stackTrace);
-
-    &#47;&#47; trigger the end of simulation if an error occurred
-    _simulationEndedCompleter.complete();
-
-    throw err.exception;
   }
 
   if (_currentTimestamp &gt;= _maxSimTime &amp;&amp; _maxSimTime &gt; 0) {
@@ -123,6 +119,13 @@ it finishes or is stopped.</p>
   }
 
   _simulationEndedCompleter.complete();
+
+  &#47;&#47; now, rethrow any exceptions now that sim is over and end of sim actions
+  &#47;&#47; have all executed
+  for (final err in _simExceptions) {
+    throw err.exception;
+  }
+
   await simulationEnded;
 }</code></pre>
 </section>
