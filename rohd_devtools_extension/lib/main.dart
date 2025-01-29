@@ -1,18 +1,20 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // main.dart
 // Entry point for main application.
 //
-// 2024 January 5
-// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+// 2025 January 28
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'src/modules/rohd_devtools_module.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/app.dart';
+import 'package:rohd_devtools_extension/rohd_devtools_observer.dart';
+// import 'src/modules/rohd_devtools_module.dart';
 
 void main() {
-  runApp(const ProviderScope(
-    child: RohdDevToolsModule(),
-  ));
+  /// Initializing the [BlocObserver] created and calling runApp
+  Bloc.observer = const RohdDevToolsObserver();
+
+  runApp(const RohdDevToolsApp());
 }
