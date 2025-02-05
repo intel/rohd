@@ -8,12 +8,13 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/signal_service.dart';
 
-class SignalTable extends ConsumerStatefulWidget {
+class SignalTable extends StatefulWidget {
   final TreeModel selectedModule;
   final String? searchTerm;
   final bool inputSelectedVal;
@@ -27,10 +28,10 @@ class SignalTable extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _SignalTableState();
+  State<StatefulWidget> createState() => _SignalTableState();
 }
 
-class _SignalTableState extends ConsumerState<SignalTable> {
+class _SignalTableState extends State<SignalTable> {
   @override
   Widget build(BuildContext context) {
     final tableHeaders = ['Name', 'Direction', 'Value', 'Width'];
@@ -70,16 +71,11 @@ class _SignalTableState extends ConsumerState<SignalTable> {
 
     // Filter signals
     List<SignalModel> inputSignals = inputSelected
-        ? ref
-            .read(signalServiceProvider)
-            .filterSignals(module.inputs, searchTerm ?? '')
+        ? SignalService.filterSignals(module.inputs, searchTerm ?? '')
         : [];
     List<SignalModel> outputSignals = outputSelected
-        ? ref
-            .read(signalServiceProvider)
-            .filterSignals(module.outputs, searchTerm ?? '')
+        ? SignalService.filterSignals(module.outputs, searchTerm ?? '')
         : [];
-
     // Add input from signal model list to row
     for (var signal in inputSignals) {
       rows.add(_generateSignalRow(signal));

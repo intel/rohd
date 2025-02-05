@@ -7,10 +7,10 @@
 // 2024 January 5
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 
-class SignalService {
-  List<SignalModel> filterSignals(
+abstract class SignalService {
+  static List<SignalModel> filterSignals(
     List<SignalModel> signals,
     String searchTerm,
   ) {

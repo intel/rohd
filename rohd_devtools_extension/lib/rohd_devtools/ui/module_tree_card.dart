@@ -8,15 +8,15 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/selected_module_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_search_term_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/services/tree_service.dart';
 
-class ModuleTreeCard extends ConsumerStatefulWidget {
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/selected_module_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
+
+class ModuleTreeCard extends StatefulWidget {
   final TreeModel futureModuleTree;
   const ModuleTreeCard({
     super.key,
@@ -24,10 +24,10 @@ class ModuleTreeCard extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _ModuleTreeCardState();
+  State<ModuleTreeCard> createState() => _ModuleTreeCardState();
 }
 
-class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
+class _ModuleTreeCardState extends State<ModuleTreeCard> {
   _ModuleTreeCardState();
 
   @override
@@ -38,11 +38,10 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
   }
 
   TreeNode? buildNode(TreeModel module) {
-    final TreeService treeService = ref.read(treeServiceProvider);
-    final treeSearchTerm = ref.watch(treeSearchTermProvider);
+    final treeSearchTerm = context.watch<TreeSearchTermCubit>().state;
     // If there's a search term, ensure that either this node or a descendant node matches it.
     if (treeSearchTerm != null &&
-        !treeService.isNodeOrDescendentMatching(module, treeSearchTerm)) {
+        !TreeService.isNodeOrDescendentMatching(module, treeSearchTerm)) {
       return null;
     }
 
@@ -54,7 +53,7 @@ class _ModuleTreeCardState extends ConsumerState<ModuleTreeCard> {
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () {
-            ref.read(selectedModuleProvider.notifier).setModule(module);
+            context.read<SelectedModuleCubit>().setModule(module);
           },
           child: getNodeContent(module),
         ),

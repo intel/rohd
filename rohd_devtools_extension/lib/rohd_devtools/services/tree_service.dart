@@ -10,7 +10,7 @@
 import 'dart:convert';
 
 import 'package:devtools_app_shared/service.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 class TreeService {
   final invokeFunc = 'ModuleTree.instance.hierarchyJSON';
@@ -36,7 +36,8 @@ class TreeService {
     }
   }
 
-  bool isNodeOrDescendentMatching(TreeModel module, String? treeSearchTerm) {
+  static bool isNodeOrDescendentMatching(
+      TreeModel module, String? treeSearchTerm) {
     if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
       return true;
     }

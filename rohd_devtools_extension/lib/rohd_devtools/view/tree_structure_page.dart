@@ -9,32 +9,26 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/rohd_service_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_search_term_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_details_card.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_details_navbar.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_details_navbar.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
 
-class TreeStructurePage extends ConsumerWidget {
+class TreeStructurePage extends StatelessWidget {
   TreeStructurePage({
     super.key,
     required this.screenSize,
-    required this.futureModuleTree,
-    required this.selectedModule,
   });
 
   final Size screenSize;
-  final AsyncValue<TreeModel?> futureModuleTree;
-  final TreeModel? selectedModule;
 
   final ScrollController _horizontal = ScrollController();
   final ScrollController _vertical = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: SingleChildScrollView(
@@ -66,8 +60,8 @@ class TreeStructurePage extends ConsumerWidget {
                                   width: 200,
                                   child: TextField(
                                     onChanged: (value) {
-                                      ref
-                                          .read(treeSearchTermProvider.notifier)
+                                      context
+                                          .read<TreeSearchTermCubit>()
                                           .setTerm(value);
                                     },
                                     decoration: const InputDecoration(
@@ -77,8 +71,8 @@ class TreeStructurePage extends ConsumerWidget {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.refresh),
-                                  onPressed: () => ref
-                                      .read(rohdModuleTreeProvider.notifier)
+                                  onPressed: () => context
+                                      .read<RohdServiceCubit>()
                                       .refreshModuleTree(),
                                 ),
                               ],
@@ -102,51 +96,54 @@ class TreeStructurePage extends ConsumerWidget {
                                   thumbVisibility: true,
                                   controller: _horizontal,
                                   child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      controller: _horizontal,
-                                      child: Builder(builder: (context) {
-                                        // if (futureModuleTree) {
-                                        //   return const Text(
-                                        //     'please build your model!',
-                                        //   );
-                                        // } else {
-                                        //   return ModuleTreeCard(
-                                        //     futureModuleTree: futureModuleTree,
-                                        //   );
-                                        // }
-
-                                        return futureModuleTree.when(
-                                          data: (data) {
-                                            if (data == null) {
-                                              return Expanded(
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.all(20),
-                                                  child: const Text(
-                                                    'Friendly Notice: Please make '
-                                                    'sure that you use build() method '
-                                                    'to build your module and put '
-                                                    'the breakpoint at the '
-                                                    'simulation time.',
-                                                    style:
-                                                        TextStyle(fontSize: 20),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              return ModuleTreeCard(
-                                                futureModuleTree: data,
-                                              );
-                                            }
-                                          },
-                                          error: (error, stackTrace) =>
-                                              Text('Error: $error'),
-                                          loading: () => const Center(
+                                    scrollDirection: Axis.horizontal,
+                                    controller: _horizontal,
+                                    child: BlocBuilder<RohdServiceCubit,
+                                        RohdServiceState>(
+                                      builder: (context, state) {
+                                        if (state is RohdServiceLoading) {
+                                          return const Center(
                                             child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      })),
+                                          );
+                                        } else if (state is RohdServiceLoaded) {
+                                          final futureModuleTree =
+                                              state.treeModel;
+                                          if (futureModuleTree == null) {
+                                            return Expanded(
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.all(20),
+                                                child: const Text(
+                                                  'Friendly Notice: Please make '
+                                                  'sure that you use build() method '
+                                                  'to build your module and put '
+                                                  'the breakpoint at the '
+                                                  'simulation time.',
+                                                  style:
+                                                      TextStyle(fontSize: 20),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            return ModuleTreeCard(
+                                              futureModuleTree:
+                                                  futureModuleTree,
+                                            );
+                                          }
+                                        } else if (state is RohdServiceError) {
+                                          return Center(
+                                            child:
+                                                Text('Error: ${state.error}'),
+                                          );
+                                        } else {
+                                          return const Center(
+                                            child: Text('Unknown state'),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -178,9 +175,20 @@ class TreeStructurePage extends ConsumerWidget {
                         padding: const EdgeInsets.only(left: 20, right: 20),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
-                          child: SignalDetailsCard(
-                            module: selectedModule,
-                            signalService: ref.watch(signalServiceProvider),
+                          child:
+                              BlocBuilder<RohdServiceCubit, RohdServiceState>(
+                            builder: (context, state) {
+                              if (state is RohdServiceLoaded) {
+                                final selectedModule = state.treeModel;
+                                return SignalDetailsCard(
+                                  module: selectedModule,
+                                );
+                              } else {
+                                return const Center(
+                                  child: Text('No module selected'),
+                                );
+                              }
+                            },
                           ),
                         ),
                       ),
