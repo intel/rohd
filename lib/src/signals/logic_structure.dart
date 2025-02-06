@@ -372,7 +372,7 @@ class LogicStructure implements Logic {
                 max(startIndex - index, 0),
                 update.getRange(
                   max(index - startIndex, 0),
-                  min(index - startIndex + elementWidth, elementWidth),
+                  min(index - startIndex + elementWidth, update.width),
                 ));
       } else {
         newElement <= element;
