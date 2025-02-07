@@ -8,8 +8,6 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/signal_service.dart';

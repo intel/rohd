@@ -9,54 +9,154 @@
 
 @TestOn('browser')
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/signal_service_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/providers/tree_service_provider.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/module_tree_card.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_details_card.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/view/tree_structure_page.dart';
-
-import 'fixtures/tree_model.stub.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_details_navbar.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
 import 'rohd_devtools_mocks.dart';
 
 void main() {
-  final mockTreeService = MockTreeService();
-  final mockSignalService = MockSignalService();
+  group('TreeStructurePage', () {
+    late RohdServiceCubit rohdServiceCubit;
+    late TreeSearchTermCubit treeSearchTermCubit;
 
-  final container = ProviderContainer(overrides: [
-    treeServiceProvider.overrideWith((ref) => mockTreeService),
-    signalServiceProvider.overrideWith((ref) => mockSignalService),
-  ]);
+    setUp(() {
+      rohdServiceCubit = MockRohdServiceCubit();
+      treeSearchTermCubit = MockTreeSearchTermCubit();
+    });
 
-  testWidgets('TreeStructurePage contains expected widgets',
-      (WidgetTester tester) async {
-    // Build your app for testing.
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          home: TreeStructurePage(
-            screenSize: const Size(2225, 1000),
-            futureModuleTree: AsyncValue.data(
-              TreeModelStub.simpleTreeModel,
-            ), // Provide a mock tree model
-            selectedModule: null,
+    testWidgets('renders Module Tree and Signal Details sections',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TreeStructurePage(screenSize: const Size(800, 600)),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      expect(find.text('Module Tree'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+      expect(find.byType(ModuleTreeDetailsNavbar), findsOneWidget);
+    });
 
-    // Verify the presence of widgets in TreeStructurePage
-    expect(find.byType(ModuleTreeCard), findsOneWidget,
-        reason: 'No ModuleTreeCard!');
-    expect(find.byType(SignalDetailsCard), findsOneWidget,
-        reason: 'No SignalDetailsCard!');
-  });
+    testWidgets('calls setTerm on TreeSearchTermCubit when text changes',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: treeSearchTermCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
 
-  tearDown(() {
-    container.dispose();
+      await tester.enterText(find.byType(TextField), 'search term');
+      verify(() => treeSearchTermCubit.setTerm('search term')).called(1);
+    });
+
+    testWidgets(
+        'calls refreshModuleTree on RohdServiceCubit when refresh button is pressed',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: rohdServiceCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.refresh));
+      verify(() => rohdServiceCubit.refreshModuleTree()).called(1);
+    });
+
+    testWidgets(
+        'displays CircularProgressIndicator when state is RohdServiceLoading',
+        (tester) async {
+      when(() => rohdServiceCubit.state).thenReturn(RohdServiceLoading());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: rohdServiceCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('displays error message when state is RohdServiceError',
+        (tester) async {
+      when(() => rohdServiceCubit.state)
+          .thenReturn(RohdServiceError('error message', StackTrace.current));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: rohdServiceCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Error: error message'), findsOneWidget);
+    });
+
+    testWidgets(
+        'displays ModuleTreeCard when state is RohdServiceLoaded with treeModel',
+        (tester) async {
+      final treeModel = MockTreeModel();
+      when(() => rohdServiceCubit.state)
+          .thenReturn(RohdServiceLoaded(treeModel));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: rohdServiceCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ModuleTreeCard), findsOneWidget);
+    });
+
+    testWidgets(
+        'displays SignalDetailsCard when state is RohdServiceLoaded with selected module',
+        (tester) async {
+      final treeModel = MockTreeModel();
+      when(() => rohdServiceCubit.state)
+          .thenReturn(RohdServiceLoaded(treeModel));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: rohdServiceCubit,
+              child: TreeStructurePage(screenSize: const Size(800, 600)),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(SignalDetailsCard), findsOneWidget);
+    });
   });
 }

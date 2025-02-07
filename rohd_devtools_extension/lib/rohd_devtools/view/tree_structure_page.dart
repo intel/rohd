@@ -8,7 +8,6 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
