@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // model_tree_card_test.dart
@@ -11,22 +11,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/cubit/selected_module_cubit.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
 
 import 'fixtures/tree_model.stub.dart';
 import 'rohd_devtools_mocks.dart';
 
 void main() {
-  // final mockTreeService = MockTreeService();
   final mockSelectedModuleCubit = MockSelectedModuleCubit();
   final mockRohdServiceCubit = MockRohdServiceCubit();
-
-  // final container = ProviderContainer(overrides: [
-  //   treeServiceProvider.overrideWith((ref) => mockTreeService),
-  //   selectedModuleProvider.overrideWith(() => mockSelectedModule),
-  // ]);
+  final mockTreeSearchTermCubit = MockTreeSearchTermCubit();
 
   setUpAll(() {
     // Register a fallback value for TreeModel
@@ -43,6 +37,9 @@ void main() {
         .thenReturn(SelectedModuleInitial());
     when(() => mockRohdServiceCubit.state)
         .thenReturn(RohdServiceLoaded(futureModuleTree));
+    when(() => mockTreeSearchTermCubit.state).thenReturn(null);
+    when(() => mockTreeSearchTermCubit.stream)
+        .thenAnswer((_) => Stream.value(null));
 
     // Wrap the ModuleTreeCard widget in MultiBlocProvider for Bloc Providers
     await tester.pumpWidget(
@@ -51,6 +48,8 @@ void main() {
           BlocProvider<SelectedModuleCubit>.value(
               value: mockSelectedModuleCubit),
           BlocProvider<RohdServiceCubit>.value(value: mockRohdServiceCubit),
+          BlocProvider<TreeSearchTermCubit>.value(
+              value: mockTreeSearchTermCubit),
         ],
         child: MaterialApp(
           home: Scaffold(
