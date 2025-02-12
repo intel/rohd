@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // async_reset_test.dart
@@ -74,14 +74,14 @@ class MultipleTriggerSeq extends Module {
   }
 }
 
-class AsyncResetMod extends Module {
+class ResetMod extends Module {
   Logic get val => output('val');
-  AsyncResetMod({
-    required Logic clk,
+  ResetMod({
+    required Logic? clk,
     required Logic reset,
     required void Function(Logic clk, Logic reset, Logic val) seqBuilder,
   }) {
-    clk = addInput('clk', clk);
+    clk = clk == null ? SimpleClockGenerator(10).clk : addInput('clk', clk);
     reset = addInput('reset', reset);
     addOutput('val');
 
@@ -92,6 +92,89 @@ class AsyncResetMod extends Module {
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  group('non-async reset samples non-async-ly', () {
+    final seqMechanism = {
+      'Sequential.multi no asyncReset': (Logic clk, Logic reset, Logic val) =>
+          Sequential.multi(
+            [clk],
+            reset: reset,
+            [
+              val < 1,
+            ],
+          ),
+      'Sequential with no asyncReset': (Logic clk, Logic reset, Logic val) =>
+          Sequential(
+            clk,
+            reset: reset,
+            [
+              val < 1,
+            ],
+          ),
+      'FlipFlop with no asyncReset': (Logic clk, Logic reset, Logic val) {
+        val <=
+            FlipFlop(
+              clk,
+              reset: reset,
+              Const(1),
+            ).q;
+      },
+      'flop with no asyncReset': (Logic clk, Logic reset, Logic val) {
+        val <=
+            flop(
+              clk,
+              reset: reset,
+              Const(1),
+            );
+      },
+    };
+
+    for (final mechanism in seqMechanism.entries) {
+      group('using ${mechanism.key}', () {
+        test('simcompare no clk sync reset', () async {
+          final mod = ResetMod(
+            clk: Logic(name: 'clk'),
+            reset: Logic(name: 'reset'),
+            seqBuilder: mechanism.value,
+          );
+
+          await mod.build();
+
+          final vectors = [
+            Vector({'clk': 0, 'reset': 0}, {}),
+            Vector({'clk': 1, 'reset': 0}, {'val': 1}),
+            Vector({'clk': 1, 'reset': 0}, {'val': 1}),
+            Vector({'clk': 1, 'reset': 1}, {'val': 1}),
+            Vector({'clk': 1, 'reset': 1}, {'val': 1}),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+
+        test('simcompare with clk sync reset', () async {
+          final mod = ResetMod(
+            clk: null,
+            reset: Logic(name: 'reset'),
+            seqBuilder: mechanism.value,
+          );
+
+          await mod.build();
+
+          final vectors = [
+            Vector({'reset': 0}, {}),
+            Vector({'reset': 0}, {'val': 1}),
+            Vector({'reset': 0}, {'val': 1}),
+            Vector({'reset': 1}, {'val': 1}),
+            Vector({'reset': 1}, {'val': 0}),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+      });
+    }
   });
 
   group('async reset samples correct reset value', () {
@@ -165,7 +248,7 @@ void main() {
         });
 
         test('simcompare', () async {
-          final mod = AsyncResetMod(
+          final mod = ResetMod(
             clk: Logic(name: 'clk'),
             reset: Logic(name: 'reset'),
             seqBuilder: mechanism.value,
