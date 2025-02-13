@@ -115,7 +115,7 @@ String instantiationVerilog(
 
   final triggerString = [
     clk,
-    if (reset != null) reset,
+    if (reset != null &amp;&amp; asyncReset) reset,
   ].map((e) =&gt; &#39;posedge $e&#39;).join(&#39; or &#39;);
 
   final svBuffer = StringBuffer(&#39;always_ff @($triggerString) &#39;);
