@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v11
@@ -34,6 +34,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.6.2 # downgrade pending https://github.com/dart-lang/dartdoc/issues/3996
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -81,6 +83,8 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.6.2 # downgrade pending https://github.com/dart-lang/dartdoc/issues/3996
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
