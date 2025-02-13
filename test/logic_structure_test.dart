@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure_test.dart
@@ -199,6 +199,13 @@ void main() {
           copy.elements[2].elements[0].name, orig.elements[2].elements[0].name);
 
       expect(orig.clone(name: 'newName').name, 'newName');
+    });
+
+    test('tricky withSet', () async {
+      // first field has width of 72 so this is the starting point
+      // second field has a width of 12
+      // try a withSet of a subset of the second field
+      MyFancyStruct().withSet(72, Logic(width: 4));
     });
   });
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // flop.dart
@@ -184,7 +184,7 @@ class FlipFlop extends Module with SystemVerilog {
 
     final triggerString = [
       clk,
-      if (reset != null) reset,
+      if (reset != null && asyncReset) reset,
     ].map((e) => 'posedge $e').join(' or ');
 
     final svBuffer = StringBuffer('always_ff @($triggerString) ');

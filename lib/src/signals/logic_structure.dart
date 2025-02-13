@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure.dart
@@ -372,7 +372,7 @@ class LogicStructure implements Logic {
                 max(startIndex - index, 0),
                 update.getRange(
                   max(index - startIndex, 0),
-                  min(index - startIndex + elementWidth, elementWidth),
+                  min(index - startIndex + elementWidth, update.width),
                 ));
       } else {
         newElement <= element;

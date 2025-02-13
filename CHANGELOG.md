@@ -1,3 +1,9 @@
+## 0.6.2
+
+- Changed addition syntax for generated SystemVerilog to be prettier, while remaining lint-clean (<https://github.com/intel/rohd/issues/444>).
+- Fixed a problem where end-of-simulation actions were not executed if an exception occurred during simulation (<https://github.com/intel/rohd/pull/558>).
+- Fixed a bug where end-of-simulation actions were not cleared by `Simulator.reset` (<https://github.com/intel/rohd/issues/556>).
+
 ## 0.6.1
 
 - Added `Logic.named` and broadened API for `clone` to make duplicating and naming signals more convenient and succinct (<https://github.com/intel/rohd/pull/550>).
