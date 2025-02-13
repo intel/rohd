@@ -1,3 +1,12 @@
+// Copyright (C) 2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// rohd_devtools_view.dart
+// Main view for the app.
+//
+// 2025 January 28
+// Author: Roberto Torres <roberto.torres@intel.com>
+
 part of 'rohd_service_cubit.dart';
 
 abstract class RohdServiceState extends Equatable {

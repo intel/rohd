@@ -1,10 +1,11 @@
 // Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// main.dart
-// Entry point for main application.
+// rohd_devtools_view.dart
+// Main view for the app.
 //
 // 2025 January 28
+// Author: Roberto Torres <roberto.torres@intel.com>
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/widgets.dart';

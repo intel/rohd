@@ -5,6 +5,7 @@
 // Main view for the app.
 //
 // 2025 January 28
+// Author: Roberto Torres <roberto.torres@intel.com>
 
 import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';

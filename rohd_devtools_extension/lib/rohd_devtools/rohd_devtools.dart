@@ -3,8 +3,8 @@
 //
 // rohd_devtools.dart
 //
-//
 // 2025 January 28
+// Author: Roberto Torres <roberto.torres@intel.com>
 
 export 'cubit/rohd_service_cubit.dart';
 export 'cubit/selected_module_cubit.dart';
