@@ -155,9 +155,9 @@ class TreeStructurePage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(
-              width: 20,
-            ),
+            // const SizedBox(
+            //   width: 20,
+            // ),
 
             // Signal Table Right Section Module
             SizedBox(
