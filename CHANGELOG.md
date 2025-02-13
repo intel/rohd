@@ -1,6 +1,7 @@
 ## 0.6.3
 
 - Fixed a bug where `withSet` on `LogicStructure`s could sometimes attempt to access the wrong range, causing unexpected exceptions (<https://github.com/intel/rohd/pull/561>).
+- Fixed a bug where `flop` and `FlipFlop` would generate SystemVerilog with an asynchronous reset even if `asyncReset` was set to `false` (<https://github.com/intel/rohd/pull/564>).
 
 ## 0.6.2
 
