@@ -1,18 +1,32 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // main.dart
-// Entry point for main application.
+// Main entry for the app.
 //
-// 2024 January 5
-// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+// 2025 January 28
+// Author: Roberto Torres <roberto.torres@intel.com>
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'src/modules/rohd_devtools_module.dart';
+import 'package:devtools_extensions/devtools_extensions.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/view/rohd_devtools_page.dart';
+
+import 'package:rohd_devtools_extension/rohd_devtools_observer.dart';
 
 void main() {
-  runApp(const ProviderScope(
-    child: RohdDevToolsModule(),
-  ));
+  /// Initializing the [BlocObserver] created and calling runApp
+  Bloc.observer = const RohdDevToolsObserver();
+
+  runApp(const RohdDevToolsApp());
+}
+
+class RohdDevToolsApp extends StatelessWidget {
+  const RohdDevToolsApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const DevToolsExtension(
+      child: RohdDevToolsPage(),
+    );
+  }
 }

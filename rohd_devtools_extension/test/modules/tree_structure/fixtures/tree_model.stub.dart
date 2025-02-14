@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_model.stub.dart
@@ -7,8 +7,8 @@
 // 2024 January 9
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/signal_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 final class TreeModelStub {
   // Private named constructor
