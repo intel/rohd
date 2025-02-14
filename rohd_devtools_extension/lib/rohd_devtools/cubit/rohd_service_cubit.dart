@@ -1,8 +1,8 @@
 // Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// rohd_devtools_view.dart
-// Main view for the app.
+// rohd_service_cubit.dart
+// Cubit for the ROHD service.
 //
 // 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>
@@ -38,6 +38,27 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
         Disposable(),
       );
       final treeModel = await treeService!.evalModuleTree();
+      emit(RohdServiceLoaded(treeModel));
+    } catch (error, trace) {
+      emit(RohdServiceError(error.toString(), trace));
+    }
+  }
+
+  void refreshModuleTree() async {
+    try {
+      emit(RohdServiceLoading());
+      if (serviceManager.service == null) {
+        throw Exception('ServiceManager is not initialized');
+      }
+      treeService ??= TreeService(
+        EvalOnDartLibrary(
+          'package:rohd/src/diagnostics/inspector_service.dart',
+          serviceManager.service!,
+          serviceManager: serviceManager,
+        ),
+        Disposable(),
+      );
+      final treeModel = await treeService!.refreshModuleTree();
       emit(RohdServiceLoaded(treeModel));
     } catch (error, trace) {
       emit(RohdServiceError(error.toString(), trace));

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_structure_page.dart
-// Page for TreeStructure.
+// Page for the tree structure.
 //
 // 2024 January 5
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>

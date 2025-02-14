@@ -1,8 +1,8 @@
 // Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// rohd_devtools_view.dart
-// Main view for the app.
+// selected_module_cubit.dart
+// Cubit for the selected module.
 //
 // 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>

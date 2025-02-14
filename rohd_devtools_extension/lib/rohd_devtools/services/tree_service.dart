@@ -1,7 +1,7 @@
 // Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// tree_services.dart
+// tree_service.dart
 // Services for tree logic.
 //
 // 2024 January 5
