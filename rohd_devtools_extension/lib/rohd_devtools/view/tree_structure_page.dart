@@ -72,7 +72,7 @@ class TreeStructurePage extends StatelessWidget {
                                   icon: const Icon(Icons.refresh),
                                   onPressed: () => context
                                       .read<RohdServiceCubit>()
-                                      .refreshModuleTree(),
+                                      .evalModuleTree(),
                                 ),
                               ],
                             ),
@@ -154,10 +154,6 @@ class TreeStructurePage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // const SizedBox(
-            //   width: 20,
-            // ),
 
             // Signal Table Right Section Module
             SizedBox(
