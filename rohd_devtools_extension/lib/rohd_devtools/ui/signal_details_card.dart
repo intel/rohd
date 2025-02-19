@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_details_card.dart
@@ -8,19 +8,17 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/models/tree_model.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/services/signal_service.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_table_text_field.dart';
-import 'package:rohd_devtools_extension/src/modules/tree_structure/ui/signal_table.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+
+import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table_text_field.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
 
 class SignalDetailsCard extends StatefulWidget {
   final TreeModel? module;
-  final SignalService signalService;
 
   const SignalDetailsCard({
     Key? key,
     this.module,
-    required this.signalService,
   }) : super(key: key);
 
   @override
