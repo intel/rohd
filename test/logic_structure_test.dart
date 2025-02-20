@@ -261,4 +261,29 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
   });
+
+  test('logicstructure value and previous value', () async {
+    final s = MyStruct();
+
+    final val1 = LogicValue.ofInt(1, 2);
+    final val2 = LogicValue.ofInt(2, 2);
+
+    s.put(val1);
+
+    expect(s.value, val1);
+    expect(s.previousValue, isNull);
+
+    var checkRan = false;
+
+    Simulator.registerAction(10, () {
+      s.put(val2);
+      expect(s.value, val2);
+      expect(s.previousValue, val1);
+      checkRan = true;
+    });
+
+    await Simulator.run();
+
+    expect(checkRan, isTrue);
+  });
 }

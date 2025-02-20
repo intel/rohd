@@ -328,8 +328,12 @@ class LogicStructure implements Logic {
       elements.map((e) => e.value).toList(growable: false).rswizzle();
 
   @override
-  LogicValue? get previousValue =>
-      elements.map((e) => e.value).toList(growable: false).rswizzle();
+  LogicValue? get previousValue => elements.any((e) => e.previousValue == null)
+      ? null
+      : elements
+          .map((e) => e.previousValue!)
+          .toList(growable: false)
+          .rswizzle();
 
   @override
   late final int width = elements.map((e) => e.width).sum;
