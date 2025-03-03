@@ -91,7 +91,7 @@ class PairInterface extends Interface<PairDirection> {
               case LogicNet():
                 return LogicNet.port(name, p.width);
               default:
-                return Port(name, p.width);
+                return Logic.port(name, p.width);
             }
           })
           .toList(growable: false);

@@ -17,7 +17,7 @@ Interfaces make it easier to define port connections of a module in a reusable w
 
 `Interface` takes a generic parameter for direction type. This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
 
-The `Port` class extends `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
+The `Logic.port` factory returns a `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor. Modifying the same `Interface` as was passed would have negative consequences if multiple `Modules` were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
@@ -97,15 +97,15 @@ class CounterInterface extends Interface<CounterDirection> {
 
   final int width;
   CounterInterface({this.width = 8}) {
-    setPorts([Port('en'), Port('reset')], [CounterDirection.inward]);
+    setPorts([Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
 
     setPorts([
-      Port('val', width),
+      Logic.port('val', width),
     ], [
       CounterDirection.outward
     ]);
 
-    setPorts([Port('clk')], [CounterDirection.misc]);
+    setPorts([Logic.port('clk')], [CounterDirection.misc]);
   }
 }
 ```

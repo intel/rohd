@@ -14,9 +14,11 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 /// inputs and outputs of [Module]s.
 ///
 /// Useful for [Interface] definitions.
+@Deprecated('Use `Logic.port` instead.')
 class Port extends Logic {
   /// Constructs a [Logic] intended to be used for ports of a [Module] or
   /// in an [Interface].
+  @Deprecated('Use `Logic.port` instead.')
   Port(String name, [int width = 1])
       : super(
           name: name,

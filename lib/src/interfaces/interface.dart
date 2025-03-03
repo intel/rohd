@@ -25,13 +25,14 @@ import 'package:rohd/rohd.dart';
 /// [Module] input and output connectivity.
 class Interface<TagType> {
   /// Internal map from the [Interface]'s defined port name to an instance
-  /// of a [Port].
+  /// of a [Logic.port].
   ///
   /// Note that each port's name (`port.name`) does not necessarily match the
   /// keys of [_ports] if they have been uniquified.
   final Map<String, Logic> _ports = {};
 
-  /// Maps from the [Interface]'s defined port name to an instance of a [Port].
+  /// Maps from the [Interface]'s defined port name to an instance
+  /// of a [Logic.port].
   ///
   /// Note that each port's name (`port.name`) does not necessarily match the
   /// keys of [_ports] if they have been uniquified.

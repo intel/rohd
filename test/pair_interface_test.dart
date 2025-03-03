@@ -20,9 +20,9 @@ class SimpleInterface extends PairInterface {
 
   SimpleInterface()
       : super(
-          portsFromConsumer: [Port('rsp')],
+          portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
-          sharedInputPorts: [Port('clk')],
+          sharedInputPorts: [Logic.port('clk')],
           commonInOutPorts: [
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])

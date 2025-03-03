@@ -19,16 +19,16 @@ class SPIInterface extends Interface<SPIDirection> {
   SPIInterface() {
     // Output from Controller, Input to Peripheral
     setPorts([
-      Port('sck'),
-      Port('sdi'),
-      Port('cs'),
+      Logic.port('sck'),
+      Logic.port('sdi'),
+      Logic.port('cs'),
     ], [
       SPIDirection.controllerOutput
     ]);
 
     // Output from Peripheral, Input to Controller
     setPorts([
-      Port('sdo'),
+      Logic.port('sdo'),
     ], [
       SPIDirection.peripheralOutput
     ]);

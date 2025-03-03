@@ -300,6 +300,25 @@ class Logic {
     }
   }
 
+  /// Constructs a [Logic] with some additional validation for ports of
+  /// [Module]s.
+  ///
+  /// Useful for [Interface] definitions.
+  factory Logic.port(String name, [int width = 1]) {
+    if (!Sanitizer.isSanitary(name)) {
+      throw InvalidPortNameException(name);
+    }
+
+    return Logic(
+      name: name,
+      width: width,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
+  }
+
   @override
   String toString() => [
         'Logic($width): $name',

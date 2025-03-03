@@ -18,8 +18,8 @@ class DataInterface extends PairInterface {
 
   DataInterface({String? prefix})
       : super(
-            portsFromProvider: [Port('data', 32), Port('valid')],
-            portsFromConsumer: [Port('ready')],
+            portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
+            portsFromConsumer: [Logic.port('ready')],
             modify: (original) => [
                   if (prefix != null) prefix,
                   original,

@@ -14,7 +14,7 @@ enum MyDirection { dir1, dir2 }
 
 class MyModuleInterface extends Interface<MyDirection> {
   MyModuleInterface() {
-    setPorts([Port('p1'), LogicArray.port('p1arr')], [MyDirection.dir1]);
+    setPorts([Logic.port('p1'), LogicArray.port('p1arr')], [MyDirection.dir1]);
     setPorts(
         [LogicNet.port('p2'), LogicArray.netPort('p2arr')], [MyDirection.dir2]);
   }
@@ -35,7 +35,7 @@ class MyModule extends Module {
 
 class UncleanPortInterface extends Interface<MyDirection> {
   UncleanPortInterface() {
-    setPorts([Port('end')], [MyDirection.dir1]);
+    setPorts([Logic.port('end')], [MyDirection.dir1]);
   }
 }
 
@@ -44,14 +44,14 @@ class MaybePortInterface extends Interface<MyDirection> {
 
   MaybePortInterface({required bool includePort}) {
     if (includePort) {
-      setPorts([Port('p')], {MyDirection.dir1});
+      setPorts([Logic.port('p')], {MyDirection.dir1});
     }
   }
 }
 
 class BadNetInterface extends Interface<MyDirection> {
   BadNetInterface() {
-    setPorts([Port('p')], [MyDirection.dir1]);
+    setPorts([Logic.port('p')], [MyDirection.dir1]);
     setPorts([LogicArray.port('a')], [MyDirection.dir2]);
   }
 }
