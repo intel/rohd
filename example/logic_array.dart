@@ -48,7 +48,7 @@ Future<void> main({bool noPrint = false}) async {
   // Define local signals
   final arrayA =
       LogicArray([4], 8, name: 'arrayA'); // A 1D array with 4 8-bit elements
-  final id = Logic(name: 'id', width: 2);
+  final id = Logic(name: 'id', width: 3);
   final selectIndexValue = Logic(name: 'selectIndexValue', width: 8);
   final selectFromValue = Logic(name: 'selectFromValue', width: 8);
 
@@ -89,7 +89,7 @@ Future<void> main({bool noPrint = false}) async {
   Simulator.registerAction(37, () => id.put(1));
   Simulator.registerAction(47, () => id.put(2));
   Simulator.registerAction(57, () => id.put(3));
-  Simulator.registerAction(57, () => id.put(4));
+  Simulator.registerAction(67, () => id.put(4));
 
   // Set a maximum time for the simulation so it doesn't keep running forever.
   Simulator.setMaxSimTime(100);
