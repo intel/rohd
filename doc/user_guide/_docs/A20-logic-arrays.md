@@ -65,7 +65,7 @@ selectIndexValueArrayA <= arrayA.selectIndex(id, defaultValue: defaultValue);
 selectFromValueArrayA <= id.selectFrom(arrayA, defaultValue: defaultValue);
 ```
 An example code is given to demostrate a usage of selectIndex and selectFrom for logic list.
-Please see code here: [example/mux.dart](../../../example/mux.dart)
+Please see code here: [example/mux.dart](https://github.com/intel/rohd/blob/main/example/mux.dart)
 
 ### 2. Using a `LogicArray` type
 
@@ -77,4 +77,4 @@ selectIndexValueArrayB <= arrayB.elements.selectIndex(id, defaultValue: defaultV
 selectFromValueArrayB <= id.selectFrom(arrayB.elements, defaultValue: defaultValue);
 ```
 An example code is given to demostrate a usage of selectIndex and selectFrom for logic arrays.
-Please see code here: [example/logic_array.dart](../../../example/logic_array.dart)
+Please see code here: [example/logic_array.dart](https://github.com/intel/rohd/blob/main/example/logic_array.dart)
