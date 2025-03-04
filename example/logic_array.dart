@@ -1,161 +1,117 @@
+// Copyright (C) 2021-2023 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// logic_array.dart
+// A very basic example of a Logic Array module
+// to show case the selectIndex and selectFrom
+//
+// 2025 March 04
+// Author: Ramli, Nurul Izziany <nurul.izziany.ramli@intel.com>
+
 // Though we usually avoid them, for this example,
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
+// Import necessary dart pacakges for this file.
+import 'dart:async';
+
+// Import the ROHD package.
 import 'package:rohd/rohd.dart';
-import 'package:test/test.dart';
 
-class ArrayIndexExample extends Module {
-  Logic get selectIndexValueArrayA => output('selectIndexValueArrayA');
-  Logic get selectFromValueArrayA => output('selectFromValueArrayA');
-  Logic get selectIndexValueArrayB => output('selectIndexValueArrayB');
-  Logic get selectFromValueArrayB => output('selectFromValueArrayB');
+class LogicArrayExample extends Module {
+  Logic get index => input('index');
+  Logic get selectIndexValue => output('selectIndexValue');
+  Logic get selectFromValue => output('selectFromValue');
 
-  ArrayIndexExample(
-      Logic in1, // first example using Logic
-      Logic in2, // first example using Logic
-      Logic in3, // first example using Logic
-      Logic index,
-      Logic defaultValue,
-      Logic selectIndexValueArrayA,
-      Logic selectFromValueArrayA,
-      LogicArray arrayB, // second example using LogicArray
-      Logic selectIndexValueArrayB,
-      Logic selectFromValueArrayB)
-      : super(name: 'array_index_example') {
-    // First example using Logic
-    in1 = addInput(in1.name, in1, width: in1.width);
-    in2 = addInput(in2.name, in2, width: in2.width);
-    in3 = addInput(in3.name, in3, width: in3.width);
-    index = addInput(index.name, index, width: index.width);
-    defaultValue =
-        addInput(defaultValue.name, defaultValue, width: defaultValue.width);
-    selectIndexValueArrayA =
-        addOutput('selectIndexValueArrayA', width: in1.width);
-    selectFromValueArrayA =
-        addOutput('selectFromValueArrayA', width: in1.width);
+  LogicArrayExample(LogicArray arrayA, Logic index, Logic selectIndexValue,
+      Logic selectFromValue)
+      : super(name: 'logic_array_example') {
+    //
+    arrayA = addInputArray('arrayA', arrayA,
+        dimensions: arrayA.dimensions, elementWidth: arrayA.elementWidth);
+    index = addInput('index', index, width: index.width);
+    selectIndexValue =
+        addOutput('selectIndexValue', width: arrayA.elementWidth);
+    selectFromValue = addOutput('selectFromValue', width: arrayA.elementWidth);
 
-    final arrayA = <Logic>[in1, in2, in3];
+    final defaultValue = Const(0, width: arrayA.elementWidth);
 
-    selectIndexValueArrayA <=
-        arrayA.selectIndex(index, defaultValue: defaultValue);
-    selectFromValueArrayA <=
-        index.selectFrom(arrayA, defaultValue: defaultValue);
-
-    // Second example using LogicArray
-    arrayB = addInputArray('arrayB', arrayB,
-        dimensions: arrayB.dimensions, elementWidth: arrayB.elementWidth);
-    selectIndexValueArrayB =
-        addOutput('selectIndexValueArrayB', width: arrayB.elementWidth);
-    selectFromValueArrayB =
-        addOutput('selectFromValueArrayB', width: arrayB.elementWidth);
-
-    selectIndexValueArrayB <=
-        arrayB.elements.selectIndex(index, defaultValue: defaultValue);
-    selectFromValueArrayB <=
-        index.selectFrom(arrayB.elements, defaultValue: defaultValue);
+    // Use selectIndex or selectFrom to select a value from an array
+    selectIndexValue <=
+        arrayA.elements.selectIndex(index, defaultValue: defaultValue);
+    selectFromValue <=
+        index.selectFrom(arrayA.elements, defaultValue: defaultValue);
   }
 }
 
 Future<void> main({bool noPrint = false}) async {
-  // First example using Logic
-  final inputA = Logic(name: 'inputA', width: 8); // id = 0
-  final inputB = Logic(name: 'inputB', width: 8); // id = 1
-  final inputC = Logic(name: 'inputC', width: 8); // id = 2
-  final id = Logic(name: 'id', width: 3);
-  final defaultValue = Const(0, width: 8);
-  final selectIndexValueArrayA =
-      Logic(name: 'selectIndexValueArrayA', width: 8);
-  final selectFromValueArrayA = Logic(name: 'selectFromValueArrayA', width: 8);
+  // Define local signals
+  final arrayA =
+      LogicArray([4], 8, name: 'arrayA'); // A 1D array with 4 8-bit elements
+  final id = Logic(name: 'id', width: 2);
+  final selectIndexValue = Logic(name: 'selectIndexValue', width: 8);
+  final selectFromValue = Logic(name: 'selectFromValue', width: 8);
 
-  // Second example using LogicArray
-  final arrayB =
-      LogicArray([4], 8, name: 'arrayB'); // A 1D array with 4 8-bit elements
-  final selectIndexValueArrayB =
-      Logic(name: 'selectIndexValueArrayB', width: 8);
-  final selectFromValueArrayB = Logic(name: 'selectFromValueArrayB', width: 8);
-
-  final arrayIndexExample = ArrayIndexExample(
-      inputA,
-      inputB,
-      inputC,
-      id,
-      defaultValue,
-      selectIndexValueArrayA,
-      selectFromValueArrayA,
-      arrayB,
-      selectIndexValueArrayB,
-      selectFromValueArrayB);
+  final logicArrayExample =
+      LogicArrayExample(arrayA, id, selectIndexValue, selectFromValue);
 
   // Build the module
-  await arrayIndexExample.build();
+  await logicArrayExample.build();
 
-  // Set the Index value
-  id.put(2);
+  final systemVerilogCode = logicArrayExample.generateSynth();
   if (!noPrint) {
-    print('id : ${id.value}');
+    print(systemVerilogCode);
   }
-  // Set the input values for the first example
-  inputA.put(1);
-  inputB.put(2);
-  inputC.put(3);
+
+  // Simulate the module
   if (!noPrint) {
-    print('inputA: ${inputA.value}');
-    print('inputB: ${inputB.value}');
-    print('inputC: ${inputC.value}');
+    WaveDumper(logicArrayExample);
   }
 
-  // Set the input values for the second example
-  final listVal = <Logic>[
-    Const(0, width: 8),
-    Const(1, width: 8),
-    Const(2, width: 8),
-    Const(3, width: 8)
-  ];
+  // Set the input values
+  arrayA.elements[0].inject(1);
+  arrayA.elements[1].inject(2);
+  arrayA.elements[2].inject(3);
+  arrayA.elements[3].inject(4);
 
-  for (var i = 0; i < 4; i++) {
-    arrayB.elements[i] <= listVal[i];
-  }
-
+  // Print a message when the id and the outputs value changes
   if (!noPrint) {
-    print('arrayB: ${arrayB.value}');
+    logicArrayExample.index.changed
+        .listen((e) => print('@${Simulator.time}: ID Value changed: $e'));
+    logicArrayExample.selectIndexValue.changed.listen(
+        (e) => print('@${Simulator.time}: SelectIndex Value changed: $e'));
+    logicArrayExample.selectFromValue.changed.listen(
+        (e) => print('@${Simulator.time}: SelectFrom Value changed: $e'));
   }
 
-  // Generate SystemVerilog code
-  if (!noPrint) {
-    print(arrayIndexExample.generateSynth());
-  }
+  // Set the index value to 0, 1, 2, 3 over time
+  Simulator.registerAction(27, () => id.put(0));
+  Simulator.registerAction(37, () => id.put(1));
+  Simulator.registerAction(47, () => id.put(2));
+  Simulator.registerAction(57, () => id.put(3));
+  Simulator.registerAction(57, () => id.put(4));
 
-  // print the output values
-  if (!noPrint) {
-    print('${arrayIndexExample.selectIndexValueArrayA.value.toInt()}');
-    print('${arrayIndexExample.selectFromValueArrayA.value.toInt()}');
-    print('${arrayIndexExample.selectIndexValueArrayB.value.toInt()}');
-    print('${arrayIndexExample.selectFromValueArrayB.value.toInt()}');
-  }
+  // Set a maximum time for the simulation so it doesn't keep running forever.
+  Simulator.setMaxSimTime(100);
 
-  test('Test first example using Logic', () async {
-    int expectedValue;
-    switch (id.value.toInt()) {
-      case 0:
-        expectedValue = inputA.value.toInt();
-      case 1:
-        expectedValue = inputB.value.toInt();
-      case 2:
-        expectedValue = inputC.value.toInt();
-      default:
-        expectedValue = defaultValue.value.toInt();
+  // Print a message when we're done with the simulation, too!
+  Simulator.registerAction(100, () {
+    if (!noPrint) {
+      print('Simulation completed!');
     }
-    expect(arrayIndexExample.selectIndexValueArrayA.value.toInt(),
-        equals(expectedValue));
-    expect(arrayIndexExample.selectFromValueArrayA.value.toInt(),
-        equals(expectedValue));
   });
 
-  test('Test second example using LogicArray', () async {
-    expect(arrayIndexExample.selectIndexValueArrayB.value.toInt(),
-        equals(listVal[id.value.toInt()].value.toInt()));
-    expect(arrayIndexExample.selectFromValueArrayB.value.toInt(),
-        equals(listVal[id.value.toInt()].value.toInt()));
-  });
+  // Kick off the simulator (but don't await it)!
+  if (!noPrint) {
+    print('Starting simulation...');
+  }
+  unawaited(Simulator.run());
+
+  await Simulator.simulationEnded;
+
+  // We can take a look at the waves now.
+  if (!noPrint) {
+    print('To view waves, check out waves.vcd with a waveform viewer'
+        ' (e.g. `gtkwave waves.vcd`).');
+  }
 }
