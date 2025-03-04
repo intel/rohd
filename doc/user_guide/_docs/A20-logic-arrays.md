@@ -51,7 +51,7 @@ To iterate through or access elements of a `LogicArray` (or bits of a simple `Lo
 
 The [`selectIndex`](https://intel.github.io/rohd/rohd/IndexedLogic/selectIndex.html) and [`selectFrom`](https://intel.github.io/rohd/rohd/Logic/selectFrom.html) methods are used to select values from a list of `Logic` elements or from a `LogicArray` type based on an index. These methods are useful for creating dynamic selection logic in hardware design. They can be used in 2 ways as shown below. 
 
-# 1. Using a list of `Logic` elements
+### 1. Using a list of `Logic` elements
 
 ```dart
 final inputA = Logic(name: 'inputA', width: 8);
@@ -65,7 +65,7 @@ selectIndexValueArrayA <= arrayA.selectIndex(id, defaultValue: defaultValue);
 selectFromValueArrayA <= id.selectFrom(arrayA, defaultValue: defaultValue);
 ```
 
-# 2. Using a `LogicArray` type
+### 2. Using a `LogicArray` type
 
 ```dart
 final arrayB = LogicArray([4], 8, name: 'arrayB'); // A 1D array with four 8-bit element
@@ -78,4 +78,4 @@ selectFromValueArrayB <= id.selectFrom(arrayB.elements, defaultValue: defaultVal
 ## Example usage of selectIndex and selectFrom
 
 An example code is given to demostrate a usage of selectIndex and selectFrom. 
-Please see code here: example/logic_array.dart
+Please see code here: [example/logic_array.dart](../../../example/logic_array.dart)
