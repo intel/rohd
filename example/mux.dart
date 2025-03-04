@@ -31,11 +31,11 @@ class MuxExample extends Module {
     out = addOutput('out', width: out.width);
 
     final defaultValue = Const(0, width: out.width);
-    final arrayA = <Logic>[in0, in1, in2];
+    final inputList = <Logic>[in0, in1, in2];
 
     // Use selectIndex or selectFrom to select a value from an array
-    out <= arrayA.selectIndex(select, defaultValue: defaultValue);
-    // out <= select.selectFrom(arrayA, defaultValue: defaultValue);
+    out <= inputList.selectIndex(select, defaultValue: defaultValue);
+    // out <= select.selectFrom(inputList, defaultValue: defaultValue);
   }
 }
 

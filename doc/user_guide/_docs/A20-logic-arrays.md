@@ -49,32 +49,33 @@ To iterate through or access elements of a `LogicArray` (or bits of a simple `Lo
 
 ## Index-based Selection in an Array
 
-The [`selectIndex`](https://intel.github.io/rohd/rohd/IndexedLogic/selectIndex.html) and [`selectFrom`](https://intel.github.io/rohd/rohd/Logic/selectFrom.html) methods are used to select values from a list of `Logic` elements or from a `LogicArray` type based on an index. These methods are useful for creating dynamic selection logic in hardware design. They can be used in 2 ways as shown below. 
+The [`selectIndex`](https://intel.github.io/rohd/rohd/IndexedLogic/selectIndex.html) and [`selectFrom`](https://intel.github.io/rohd/rohd/Logic/selectFrom.html) methods are used to select a value from a `LogicArray` or from a list of `Logic` elements based on an index. These methods are useful for creating dynamic selection logic in hardware design. They can be used in 2 ways as shown below. 
 
-### 1. Using a list of `Logic` elements
+### 1. Using a `LogicArray` type
+
+```dart
+final arrayA = LogicArray([4], 8, name: 'arrayA'); // A 1D array with four 8-bit element
+final id = Logic(name: 'id', width: 3);
+
+selectIndexValueArrayA <= arrayA.elements.selectIndex(id, defaultValue: defaultValue);
+selectFromValueArrayA <= id.selectFrom(arrayA.elements, defaultValue: defaultValue);
+```
+An example code is given to demostrate a usage of selectIndex and selectFrom for logic arrays.
+Please see code here: [example/logic_array.dart](https://github.com/intel/rohd/blob/main/example/logic_array.dart)
+
+### 2. Using a list of `Logic` elements
 
 ```dart
 final inputA = Logic(name: 'inputA', width: 8);
 final inputB = Logic(name: 'inputB', width: 8);
 final inputC = Logic(name: 'inputC', width: 8);
-final arrayA = <Logic>[inputA, inputB, inputC];
+final listA = <Logic>[inputA, inputB, inputC];
 
 final id = Logic(name: 'id', width: 3);
 
-selectIndexValueArrayA <= arrayA.selectIndex(id, defaultValue: defaultValue);
-selectFromValueArrayA <= id.selectFrom(arrayA, defaultValue: defaultValue);
+selectIndexValueListA <= listA.selectIndex(id, defaultValue: defaultValue);
+selectFromValueListA <= id.selectFrom(listA, defaultValue: defaultValue);
 ```
 An example code is given to demostrate a usage of selectIndex and selectFrom for logic list.
 Please see code here: [example/mux.dart](https://github.com/intel/rohd/blob/main/example/mux.dart)
 
-### 2. Using a `LogicArray` type
-
-```dart
-final arrayB = LogicArray([4], 8, name: 'arrayB'); // A 1D array with four 8-bit element
-final id = Logic(name: 'id', width: 3);
-
-selectIndexValueArrayB <= arrayB.elements.selectIndex(id, defaultValue: defaultValue);
-selectFromValueArrayB <= id.selectFrom(arrayB.elements, defaultValue: defaultValue);
-```
-An example code is given to demostrate a usage of selectIndex and selectFrom for logic arrays.
-Please see code here: [example/logic_array.dart](https://github.com/intel/rohd/blob/main/example/logic_array.dart)
