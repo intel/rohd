@@ -13,7 +13,6 @@ import 'package:test/test.dart';
 import '../example/example.dart' as counter;
 import '../example/fir_filter.dart' as fir_filter;
 import '../example/logic_array.dart' as logic_array;
-import '../example/mux.dart' as mux;
 import '../example/oven_fsm.dart' as fsm;
 import '../example/tree.dart' as tree;
 
@@ -40,9 +39,5 @@ void main() {
 
   test('logic array example', () async {
     await logic_array.main(noPrint: true);
-  });
-
-  test('mux example', () async {
-    await mux.main(noPrint: true);
   });
 }
