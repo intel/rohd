@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // counter_wintf_test.dart
@@ -21,10 +21,11 @@ class CounterInterface extends Interface<CounterDirection> {
 
   final int width;
   CounterInterface(this.width) {
-    setPorts([Port('en'), Port('reset')], [CounterDirection.inward]);
+    setPorts(
+        [Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
 
     setPorts([
-      Port('val', width),
+      Logic.port('val', width),
     ], [
       CounterDirection.outward
     ]);
