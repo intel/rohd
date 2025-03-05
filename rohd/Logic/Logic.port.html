@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the Port constructor from Class Port from the rohd library, for the Dart programming language.">
-  <title>Port constructor - Port - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the Logic.port constructor from Class Logic from the rohd library, for the Dart programming language.">
+  <title>Logic.port constructor - Logic - rohd library - Dart API</title>
 
 
   
@@ -26,10 +26,10 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/Port-class.html">Port</a></li>
-    <li class="self-crumb"><span class="deprecated">Port</span> constructor</li>
+    <li><a href="../../rohd/Logic-class.html">Logic</a></li>
+    <li class="self-crumb">Logic.port factory constructor</li>
   </ol>
-  <div class="self-name">Port</div>
+  <div class="self-name">Logic.port</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -49,46 +49,42 @@
   <div
       id="dartdoc-main-content"
       class="main-content"
-      data-above-sidebar="rohd&#47;Port-class-sidebar.html"
+      data-above-sidebar="rohd&#47;Logic-class-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-constructor">Port</span> constructor 
+<h1><span class="kind-constructor">Logic.port</span> constructor 
 </h1></div>
 
     <section class="multi-line-signature">
       
-  <div>
-    <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `Logic.port` instead.&#39;)</li>
-    </ol>
-  </div>
-      <span class="name deprecated">Port</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, [</span></li>
-<li><span class="parameter" id="-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span></li>
+      <span class="name ">Logic.port</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="port-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, [</span></li>
+<li><span class="parameter" id="port-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span></span></li>
 </ol>])
     </section>
     
 <section class="desc markdown">
-  <p>Constructs a <a href="../../rohd/Logic-class.html">Logic</a> intended to be used for ports of a <a href="../../rohd/Module-class.html">Module</a> or
-in an <a href="../../rohd/Interface-class.html">Interface</a>.</p>
+  <p>Constructs a <a href="../../rohd/Logic-class.html">Logic</a> with some additional validation for ports of
+<a href="../../rohd/Module-class.html">Module</a>s.</p>
+<p>Useful for <a href="../../rohd/Interface-class.html">Interface</a> definitions.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `Logic.port` instead.&#39;)
-Port(String name, [int width = 1])
-    : super(
-        name: name,
-        width: width,
-
-        &#47;&#47; make port names mergeable so we don&#39;t duplicate the ports
-        &#47;&#47; when calling connectIO
-        naming: Naming.mergeable,
-      ) {
+  <pre class="language-dart"><code class="language-dart">factory Logic.port(String name, [int width = 1]) {
   if (!Sanitizer.isSanitary(name)) {
     throw InvalidPortNameException(name);
   }
+
+  return Logic(
+    name: name,
+    width: width,
+
+    &#47;&#47; make port names mergeable so we don&#39;t duplicate the ports
+    &#47;&#47; when calling connectIO
+    naming: Naming.mergeable,
+  );
 }</code></pre>
 </section>
 
@@ -104,11 +100,11 @@ Port(String name, [int width = 1])
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/Port-class.html">Port</a></li>
-    <li class="self-crumb"><span class="deprecated">Port</span> constructor</li>
+    <li><a href="../../rohd/Logic-class.html">Logic</a></li>
+    <li class="self-crumb">Logic.port factory constructor</li>
 </ol>
 
-    <h5>Port class</h5>
+    <h5>Logic class</h5>
     <div id="dartdoc-sidebar-left-content"></div>
   </div><!--/.sidebar-offcanvas-left-->
   <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
