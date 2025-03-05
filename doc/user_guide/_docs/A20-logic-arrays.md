@@ -46,3 +46,34 @@ Array ports in generated SystemVerilog will match dimensions (including unpacked
 ## Elements of arrays
 
 To iterate through or access elements of a `LogicArray` (or bits of a simple `Logic`), use [`elements`](https://intel.github.io/rohd/rohd/Logic/elements.html).  Using the normal `[n]` accessors will return the `n`th bit regardless for `LogicArray` and `Logic` to maintain API consistency.
+
+## Index-based Selection in an Array
+
+The [`selectIndex`](https://intel.github.io/rohd/rohd/IndexedLogic/selectIndex.html) and [`selectFrom`](https://intel.github.io/rohd/rohd/Logic/selectFrom.html) methods are used to select a value from a `LogicArray` or from a list of `Logic` elements based on an index. These methods are useful for creating dynamic selection logic in hardware design. They can be used in 2 ways as shown below.
+
+### 1. Using a `LogicArray` type
+
+```dart
+final arrayA = LogicArray([4], 8, name: 'arrayA'); // A 1D array with four 8-bit element
+final id = Logic(name: 'id', width: 3);
+
+selectIndexValueArrayA <= arrayA.elements.selectIndex(id, defaultValue: defaultValue);
+selectFromValueArrayA <= id.selectFrom(arrayA.elements, defaultValue: defaultValue);
+```
+
+An example code is given to demonstrate a usage of selectIndex and selectFrom for logic arrays.
+Please see code here: [logic_array.dart](https://github.com/intel/rohd/blob/main/example)
+
+### 2. Using a list of `Logic` elements
+
+```dart
+final inputA = Logic(name: 'inputA', width: 8);
+final inputB = Logic(name: 'inputB', width: 8);
+final inputC = Logic(name: 'inputC', width: 8);
+final listA = <Logic>[inputA, inputB, inputC];
+
+final id = Logic(name: 'id', width: 3);
+
+selectIndexValueListA <= listA.selectIndex(id, defaultValue: defaultValue);
+selectFromValueListA <= id.selectFrom(listA, defaultValue: defaultValue);
+```
