@@ -11,11 +11,11 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/redundancy_handler.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -913,9 +913,9 @@ abstract class Module {
  */
 
 ''';
-    return synthHeader +
+    return RedundancyHandler.removeRedundancies(synthHeader +
         SynthBuilder(this, SystemVerilogSynthesizer())
             .getFileContents()
-            .join('\n\n////////////////////\n\n');
+            .join('\n\n////////////////////\n\n'));
   }
 }
