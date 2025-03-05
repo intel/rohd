@@ -10,7 +10,7 @@ Interfaces make it easier to define port connections of a module in a reusable w
 
 [`Interface`](https://intel.github.io/rohd/rohd/Interface-class.html) takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
 
-The [`Logic.port`](https://intel.github.io/rohd/rohd/Logic/Logic.port.html) facory returns `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
+The [`Logic.port`](https://intel.github.io/rohd/rohd/Logic-class.html) constructor makes interface port definitions a little cleaner by taking the width as a positional argument.
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor.  Modifying the same `Interface` as was passed would have negative consequences if multiple `Module`s were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
