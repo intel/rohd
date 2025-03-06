@@ -34,7 +34,8 @@ class RedundancyHandler {
     final parenthesesPatterns = [
       RegExp(r'\((\w+)\s*([\+\-\*\/])\s*(\w+)\)'), // Arithmetic
       RegExp(r'\((\w+)\s*(&&|\|\|)\s*(\w+)\)'), // Logical
-      RegExp(r'\(\(([^)]+)\)\s*\?\s*([^)]+)\s*:\s*([^)]+)\)'), // Conditional
+      RegExp(
+          r'\(\(([^()]+)\)\s*\?\s*\(([^()]+)\)\s*:\s*\(([^()]+)\)\)'), // Conditional
       RegExp(r'\((\w+)\s*([&\|^~])\s*(\w+)\)'), // Bitwise
       RegExp(r'\(\{([^}]+)\}\)'), // Concatenation & replication
       RegExp(r'(\w+)\(\(([^)]+)\)\)'), // Function call
