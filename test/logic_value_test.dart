@@ -2052,9 +2052,28 @@ void main() {
   group('RadixString', () {
     test('radixString roundTrip', () {
       final lv = LogicValue.ofBigInt(BigInt.from(737481838713847), 61);
+      LogicValue.ofRadixString(lv.toRadixString());
+      LogicValue.ofRadixString(lv.toRadixString(radix: 4));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 8));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 10));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 16));
       for (final i in [2, 4, 8, 10, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
+      }
+    });
+    test('radixString roundTrip with leading zeros', () {
+      final lv = LogicValue.ofBigInt(BigInt.from(737481838713847), 61);
+      LogicValue.ofRadixString(lv.toRadixString(leadingZeros: true));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 4, leadingZeros: true));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 8, leadingZeros: true));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 10, leadingZeros: true));
+      LogicValue.ofRadixString(lv.toRadixString(radix: 16, leadingZeros: true));
+      for (final i in [2, 4, 8, 10, 16]) {
+        expect(
+            LogicValue.ofRadixString(
+                lv.toRadixString(radix: i, leadingZeros: true)),
+            equals(lv));
       }
     });
     test('radixString binary expansion', () {
@@ -2069,10 +2088,15 @@ void main() {
     test('radixString leading zero', () {
       final lv = LogicValue.ofRadixString("10'b00_0010_0111");
       expect(lv.toRadixString(), equals("10'b10_0111"));
+      expect(lv.toRadixString(leadingZeros: true), equals("10'b00_0010_0111"));
       expect(lv.toRadixString(radix: 4), equals("10'q213"));
       expect(lv.toRadixString(radix: 8), equals("10'o47"));
       expect(lv.toRadixString(radix: 10), equals("10'd39"));
+      expect(
+          lv.toRadixString(radix: 10, leadingZeros: true), equals("10'd0039"));
       expect(lv.toRadixString(radix: 16), equals("10'h27"));
+      expect(
+          lv.toRadixString(radix: 16, leadingZeros: true), equals("10'h027"));
       for (final i in [2, 4, 8, 10, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
@@ -2164,7 +2188,7 @@ void main() {
       expect(lv.toRadixString(radix: 4), equals("10'q2_2213"));
       expect(lv.toRadixString(radix: 8), equals("10'o1247"));
       expect(lv.toRadixString(radix: 10), equals("10'd679"));
-      expect(lv.toRadixString(radix: 16), equals("10'h2A7"));
+      expect(lv.toRadixString(radix: 16), equals("10'h2a7"));
       for (final i in [2, 4, 8, 10, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
@@ -2178,7 +2202,6 @@ void main() {
         for (var setWidth = 1; setWidth < 12; setWidth++) {
           for (var iterations = 0; iterations < 10; iterations++) {
             final ii = random.nextInt((1 << (setWidth + 1)) - 1);
-
             for (var pos = 0; pos < inL.width - setWidth; pos++) {
               final l = Logic(width: width);
               l <= inL.withSet(pos, Const(ii, width: setWidth));
