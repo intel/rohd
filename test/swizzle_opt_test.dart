@@ -1,9 +1,18 @@
+// Copyright (C) 2022-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// swizzle_opt_test.dart
+// Unit tests for swizzle optimization.
+//
+// 2025 March 6
+// Author: Gustavo A. Bonilla Gonzalez <gustavo.bonilla.gonzalez@intel.com>
+//         Adan Baltazar Ortiz         <adan.baltazar.ortiz@intel.com>
+
 import 'package:rohd/src/utilities/swizzle_opt.dart'; // Adjust the import path as necessary
 import 'package:test/test.dart';
 
 void main() {
   group('SystemVerilogOptimizer', () {
-
     test('optimizes simple swizzle conversion', () {
       const input = '''
 module example1;
@@ -27,7 +36,8 @@ module example1;
 endmodule
 ''';
 
-      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input), equals(expectedOutput));
+      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input),
+          equals(expectedOutput));
     });
 
     test('does not optimize when widths do not match', () {
@@ -43,7 +53,8 @@ endmodule
 ''';
 
       // Expect no change since widths do not match
-      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input), equals(input));
+      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input),
+          equals(input));
     });
 
     test('handles complex expressions without change', () {
@@ -59,7 +70,8 @@ endmodule
 ''';
 
       // Expect no change for complex expressions
-      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input), equals(input));
+      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input),
+          equals(input));
     });
 
     test('optimizes multiple assignments', () {
@@ -91,7 +103,8 @@ module example4;
 endmodule
 ''';
 
-      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input), equals(expectedOutput));
+      expect(SystemVerilogSwizzleOptimizer.optimizeAssignments(input),
+          equals(expectedOutput));
     });
   });
 }
