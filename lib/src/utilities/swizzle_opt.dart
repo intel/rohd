@@ -52,10 +52,12 @@ class SystemVerilogSwizzleOptimizer {
 
   /// Method to optimize a single line of SystemVerilog code
   static String _optimizeLine(String line, Map<String, int> variableWidths) {
-    final optimizedLine = line;
+    var optimizedLine = line;
+    var unnecesarySwizzleDetected = false;
+
     // Example logic to identify and optimize swizzle conversions
-    return optimizedLine.replaceAllMapped(RegExp(r'(\w+)\s*=\s*{\s*(\w+)\s*};'),
-        (match) {
+    optimizedLine = optimizedLine
+        .replaceAllMapped(RegExp(r'(\w+)\s*=\s*{\s*(\w+)\s*};'), (match) {
       final lhs = match.group(1)!;
       final rhs = match.group(2)!;
 
@@ -63,12 +65,17 @@ class SystemVerilogSwizzleOptimizer {
       if (variableWidths.containsKey(lhs) &&
           variableWidths.containsKey(rhs) &&
           variableWidths[lhs] == variableWidths[rhs]) {
-        // Transform swizzle conversion to direct assignment
-        return '$lhs = $rhs;';
+        unnecesarySwizzleDetected = true;
       }
 
-      // Return the original line if widths do not match
-      return line.trimLeft();
+      // Transform swizzle conversion to direct assignment
+      return '$lhs = $rhs;';
     });
+
+    if (unnecesarySwizzleDetected) {
+      return optimizedLine;
+    } else {
+      return line;
+    }
   }
 }

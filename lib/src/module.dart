@@ -914,7 +914,6 @@ abstract class Module {
  */
 
 ''';
-    // return synthHeader +
     return SystemVerilogSwizzleOptimizer.optimizeAssignments(synthHeader +
         SynthBuilder(this, SystemVerilogSynthesizer())
             .getFileContents()
