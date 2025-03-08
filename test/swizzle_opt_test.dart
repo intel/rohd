@@ -8,7 +8,7 @@
 // Author: Gustavo A. Bonilla Gonzalez <gustavo.bonilla.gonzalez@intel.com>
 //         Adan Baltazar Ortiz         <adan.baltazar.ortiz@intel.com>
 
-import 'package:rohd/src/utilities/swizzle_opt.dart'; // Adjust the import path as necessary
+import 'package:rohd/src/utilities/swizzle_opt.dart';
 import 'package:test/test.dart';
 
 void main() {
