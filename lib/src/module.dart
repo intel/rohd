@@ -17,6 +17,7 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/swizzle_opt.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -913,9 +914,9 @@ abstract class Module {
  */
 
 ''';
-    return synthHeader +
+    return SystemVerilogSwizzleOptimizer.optimizeAssignments(synthHeader +
         SynthBuilder(this, SystemVerilogSynthesizer())
             .getFileContents()
-            .join('\n\n////////////////////\n\n');
+            .join('\n\n/////////////////////\n\n'));
   }
 }
