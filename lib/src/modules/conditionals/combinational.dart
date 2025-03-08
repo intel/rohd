@@ -26,7 +26,8 @@ class Combinational extends Always {
   /// If any "write after read" occurs, then a [WriteAfterReadException] will
   /// be thrown since it could lead to a mismatch between simulation and
   /// synthesis.  See [Combinational.ssa] for more details.
-  Combinational(super._conditionals, {super.name = 'combinational'}) {
+  Combinational(super._conditionals,
+      {super.name = 'combinational', super.label}) {
     _execute(); // for initial values
     for (final driver in assignedDriverToInputMap.keys) {
       driver.glitch.listen((args) {
@@ -89,7 +90,8 @@ class Combinational extends Always {
   /// that it will not be noticeable.
   factory Combinational.ssa(
       List<Conditional> Function(Logic Function(Logic signal) s) construct,
-      {String name = 'combinational_ssa'}) {
+      {String name = 'combinational_ssa',
+      String? label}) {
     final context = _ssaContextCounter++;
 
     final ssas = <SsaLogic>[];
@@ -109,7 +111,7 @@ class Combinational extends Always {
     // no need to keep any of this old info around anymore
     signalToSsaDrivers.clear();
 
-    return Combinational(conditionals, name: name);
+    return Combinational(conditionals, name: name, label: label);
   }
 
   /// A map from [SsaLogic]s to signals that they drive.

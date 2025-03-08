@@ -165,6 +165,7 @@ class Sequential extends Always {
     bool asyncReset = false,
     bool allowMultipleAssignments = true,
     String name = 'sequential',
+    String? label,
   }) : this.multi(
           [clk],
           conditionals,
@@ -173,6 +174,7 @@ class Sequential extends Always {
           asyncReset: asyncReset,
           resetValues: resetValues,
           allowMultipleAssignments: allowMultipleAssignments,
+          label: label,
         );
 
   /// Constructs a [Sequential] multi-triggered by any of [posedgeTriggers] and
@@ -210,6 +212,7 @@ class Sequential extends Always {
     super.name = 'sequential',
     this.allowMultipleAssignments = true,
     List<Logic> negedgeTriggers = const [],
+    super.label,
   }) : super(reset: reset) {
     _registerInputTriggers([
       ...posedgeTriggers,
