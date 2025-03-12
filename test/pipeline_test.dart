@@ -64,6 +64,53 @@ class SimplePipelineModuleLateAdd extends Module {
   }
 }
 
+class PipelineModuleWithPipelinedSub extends Module {
+  final _clk = SimpleClockGenerator(10).clk;
+
+  PipelineModuleWithPipelinedSub(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final opResult = Logic(name: 'opResult', width: a.width);
+    final pipeline = Pipeline(_clk, stages: [
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [
+            p.get(opResult) < _pipedOperation(p.get(a)).named('pipedResult'),
+            p.get(a) < p.get(a) + 1
+          ],
+      (p) => [
+            p.get(opResult) < p.get(opResult, -1), // -1 to skip a cycle
+            p.get(a) < p.get(a) + 1,
+          ],
+      (p) => [
+            p.get(a) < p.get(a) + p.get(opResult),
+          ]
+    ]);
+
+    b <= pipeline.get(a);
+  }
+
+  Logic _pipedOperation(Logic a) => flop(_clk, a + 4);
+}
+
+class PipelineModuleWithAbsRef extends Module {
+  final _clk = SimpleClockGenerator(10).clk;
+
+  PipelineModuleWithAbsRef(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+
+    final pipeline = Pipeline(_clk, stages: [
+      (p) => [p.get(a) < p.get(a) + 1],
+      (p) => [p.get(a) < p.get(a) + 4],
+      (p) => [p.get(a) < p.get(a) + 8],
+      (p) => [p.get(a) < p.getAbs(a, 0) + 16],
+    ]);
+
+    b <= pipeline.get(a);
+  }
+}
+
 class EmptyPipe extends Module {
   Logic get b => output('b');
   EmptyPipe(Logic a) : super(name: 'pipeline_uninit') {
@@ -231,6 +278,38 @@ void main() {
         Vector({'a': 5}, {'a0': 6, 'a1': 6, 'a2': 6, 'a3': 5, 'b': 5}),
         Vector({'a': 6}, {'b': 6}),
       ];
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('pipeline with pipelined sub-operation', () async {
+      final pipem = PipelineModuleWithPipelinedSub(Logic(width: 8));
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {}),
+        Vector({'a': 3}, {}),
+        Vector({'a': 4}, {}),
+        Vector({'a': 5}, {'b': 1 + 3 + (4 + 1 + 1)}),
+        Vector({'a': 4}, {'b': 2 + 3 + (4 + 2 + 1)}),
+      ];
+
+      await SimCompare.checkFunctionalVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors);
+    });
+
+    test('pipeline with abs reference', () async {
+      final pipem = PipelineModuleWithAbsRef(Logic(width: 8));
+
+      await pipem.build();
+
+      final vectors = [
+        Vector({'a': 1}, {}),
+        Vector({'a': 2}, {'b': 1 + 1 + 16}),
+        Vector({'a': 3}, {'b': 2 + 1 + 16}),
+      ];
+
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
     });

@@ -24,20 +24,26 @@ class PipelineStageInfo {
   /// Constructs a new instance of information for this stage.
   PipelineStageInfo._(this._pipeline, this.stage, this._ssa);
 
-  /// Returns a staged version of [identifier] at the current stage, adjusted
-  /// by the amount of [stageAdjustment].
+  /// Returns a staged version of [identifier] at the current stage, adjusted by
+  /// the amount of [stageAdjustment].
   ///
   /// Typically, your pipeline will consist of a lot of `p.get(x)` type calls,
   /// but if you want to combinationally access a value of a signal from another
-  /// stage, you can access it relatively using [stageAdjustment].  For
-  /// example, `p.get(x, -1)` will access the value of `x` one stage prior.
-  Logic get(Logic identifier, [int stageAdjustment = 0]) =>
-      _ssa(_pipeline.get(identifier, stage + stageAdjustment));
+  /// stage, you can access it relatively using [stageAdjustment].  For example,
+  /// `p.get(x, -1)` will access the value of `x` at the output of one stage
+  /// prior.
+  Logic get(Logic identifier, [int stageAdjustment = 0]) {
+    final l = _pipeline.get(identifier, stage + stageAdjustment);
+    return stageAdjustment == 0 ? _ssa(l) : l;
+  }
 
-  /// Returns a staged version of [identifier] at the specified
-  /// absolute [stageIndex].
-  Logic getAbs(Logic identifier, int stageIndex) =>
-      _ssa(_pipeline.get(identifier, stageIndex));
+  /// Returns the output of [identifier] at the specified absolute [stageIndex]
+  /// stage, if other than the current [stage].  Otherwise, returns the same
+  /// thing as [get], for the current [stage].
+  Logic getAbs(Logic identifier, int stageIndex) {
+    final l = _pipeline.get(identifier, stageIndex);
+    return stageIndex == stage ? _ssa(l) : l;
+  }
 }
 
 /// A container for signals and combinational content generation for a stage.
