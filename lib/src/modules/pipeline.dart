@@ -32,10 +32,8 @@ class PipelineStageInfo {
   /// stage, you can access it relatively using [stageAdjustment].  For example,
   /// `p.get(x, -1)` will access the value of `x` at the output of one stage
   /// prior.
-  Logic get(Logic identifier, [int stageAdjustment = 0]) {
-    final l = _pipeline.get(identifier, stage + stageAdjustment);
-    return stageAdjustment == 0 ? _ssa(l) : l;
-  }
+  Logic get(Logic identifier, [int stageAdjustment = 0]) =>
+      getAbs(identifier, stage + stageAdjustment);
 
   /// Returns the output of [identifier] at the specified absolute [stageIndex]
   /// stage, if other than the current [stage].  Otherwise, returns the same
