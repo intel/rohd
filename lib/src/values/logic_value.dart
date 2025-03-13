@@ -721,8 +721,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
         buf.write(_reverse(s));
       }
       reversedStr = _reverse(buf.toString());
-      // }
     }
+
     final spaceString = _reverse(reversedStr
         .replaceAllMapped(
             RegExp('((>(.){$chunkSize}<)|([a-zA-Z0-9])){$chunkSize}'),

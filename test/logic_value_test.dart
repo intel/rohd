@@ -2052,11 +2052,6 @@ void main() {
   group('RadixString', () {
     test('radixString roundTrip', () {
       final lv = LogicValue.ofBigInt(BigInt.from(737481838713847), 61);
-      LogicValue.ofRadixString(lv.toRadixString());
-      LogicValue.ofRadixString(lv.toRadixString(radix: 4));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 8));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 10));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 16));
       for (final i in [2, 4, 8, 10, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
@@ -2064,11 +2059,6 @@ void main() {
     });
     test('radixString roundTrip with leading zeros', () {
       final lv = LogicValue.ofBigInt(BigInt.from(737481838713847), 61);
-      LogicValue.ofRadixString(lv.toRadixString(leadingZeros: true));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 4, leadingZeros: true));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 8, leadingZeros: true));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 10, leadingZeros: true));
-      LogicValue.ofRadixString(lv.toRadixString(radix: 16, leadingZeros: true));
       for (final i in [2, 4, 8, 10, 16]) {
         expect(
             LogicValue.ofRadixString(
