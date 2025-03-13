@@ -67,16 +67,19 @@
     </section>
     
 <section class="desc markdown">
-  <p>Returns a staged version of <code>identifier</code> at the specified
-absolute <code>stageIndex</code>.</p>
+  <p>Returns the output of <code>identifier</code> at the specified absolute <code>stageIndex</code>
+stage, if other than the current <a href="../../rohd/PipelineStageInfo/stage.html">stage</a>.  Otherwise, returns the same
+thing as <a href="../../rohd/PipelineStageInfo/get.html">get</a>, for the current <a href="../../rohd/PipelineStageInfo/stage.html">stage</a>.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic getAbs(Logic identifier, int stageIndex) =&gt;
-    _ssa(_pipeline.get(identifier, stageIndex));</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic getAbs(Logic identifier, int stageIndex) {
+  final l = _pipeline.get(identifier, stageIndex);
+  return stageIndex == stage ? _ssa(l) : l;
+}</code></pre>
 </section>
 
 
