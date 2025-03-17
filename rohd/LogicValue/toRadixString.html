@@ -60,6 +60,7 @@
 <span class="returntype"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>
 <span class="name ">toRadixString</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="toRadixString-param-radix"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">radix</span> = <span class="default-value">2</span>, </span></li>
 <li><span class="parameter" id="toRadixString-param-chunkSize"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">chunkSize</span> = <span class="default-value">4</span>, </span></li>
+<li><span class="parameter" id="toRadixString-param-leadingZeros"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">leadingZeros</span> = <span class="default-value">false</span>, </span></li>
 <li><span class="parameter" id="toRadixString-param-sepChar"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">sepChar</span> = <span class="default-value">&#39;_&#39;</span>, </span></li>
 </ol>})
 
@@ -89,9 +90,12 @@ otherwise it will throw an exception.</p>
 <li><code>chunkSize</code> = default: <code>61'h2_9ebc_5f06_5bf7</code></li>
 <li><code>chunkSize</code> = 10: <code>61'h29e_bc5f065bf7</code></li>
 </ul>
-<p>Leading 0s are omitted in the output string:</p>
+<p><code>leadingZeros</code> defaults to false, so leading 0s are omitted in
+the output string:</p>
 <ul>
-<li><code>25'h1</code></li>
+<li><code>25'h1</code>
+otherwise if <code>leadingZeros</code> is set to true then the output string is:</li>
+<li><code>25'h000_0001</code></li>
 </ul>
 <p>When a <a href="../../rohd/LogicValue-class.html">LogicValue</a> has 'x' or 'z' bits, then the radix characters those
 bits overlap will be expanded into binary form with '&lt;' '&gt;' bracketing
@@ -114,7 +118,10 @@ bits to fill the first radix character.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">String toRadixString(
-    {int radix = 2, int chunkSize = 4, String sepChar = &#39;_&#39;}) {
+    {int radix = 2,
+    int chunkSize = 4,
+    bool leadingZeros = false,
+    String sepChar = &#39;_&#39;}) {
   if (radixStringChars.contains(sepChar)) {
     throw LogicValueConversionException(&#39;separation character invalid&#39;);
   }
@@ -127,22 +134,33 @@ bits to fill the first radix character.</p>
     _ =&gt; throw LogicValueConversionException(&#39;Unsupported radix: $radix&#39;)
   };
   final String reversedStr;
-  if (isValid) {
-    final radixString =
-        toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
-    reversedStr = _reverse(radixString);
-  } else if (radix == 10) {
-    final span = (width * math.log(2) &#47; math.log(radix)).floor();
-    if (toRadixString().contains(RegExp(&#39;[xX]&#39;))) {
-      reversedStr = &#39;X&#39; * span;
+  if (radix == 10) {
+    if (isValid) {
+      var radixString =
+          toBigInt().toUnsigned(width).toRadixString(radix).toUpperCase();
+      if (leadingZeros) {
+        final span =
+            math.max(1, (width * math.log(2) &#47; math.log(radix)).floor());
+        for (var i = radixString.length; i &lt; (width &#47; span).ceil(); i++) {
+          radixString = &#39;0$radixString&#39;;
+        }
+      }
+      reversedStr = _reverse(radixString);
     } else {
-      reversedStr = &#39;Z&#39; * span;
+      final span =
+          math.max(1, (width * math.log(2) &#47; math.log(radix)).floor());
+      if (toRadixString().contains(RegExp(&#39;[xX]&#39;))) {
+        reversedStr = &#39;X&#39; * span;
+      } else {
+        reversedStr = &#39;Z&#39; * span;
+      }
     }
   } else {
     final span = (math.log(radix) &#47; math.log(2)).ceil();
     final extendedStr =
         LogicValue.of(this, width: span * (width &#47; span).ceil());
     final buf = StringBuffer();
+    var haveLeadingZeros = true;
     for (var i = (extendedStr.width ~&#47; span) - 1; i &gt;= 0; i--) {
       final binaryChunk = extendedStr.slice((i + 1) * span - 1, i * span);
       var chunkString = binaryChunk.toString(includeWidth: false);
@@ -161,10 +179,17 @@ bits to fill the first radix character.</p>
         else
           binaryChunk.toBigInt().toUnsigned(span).toRadixString(radix)
       ].first;
+      if (s != &#39;0&#39;) {
+        haveLeadingZeros = false;
+      }
+      if ((s == &#39;0&#39;) &amp; !leadingZeros &amp; haveLeadingZeros) {
+        continue;
+      }
       buf.write(_reverse(s));
     }
     reversedStr = _reverse(buf.toString());
   }
+
   final spaceString = _reverse(reversedStr
       .replaceAllMapped(
           RegExp(&#39;((&gt;(.){$chunkSize}&lt;)|([a-zA-Z0-9])){$chunkSize}&#39;),
