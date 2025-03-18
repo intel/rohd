@@ -8,7 +8,7 @@ toc: true
 
 ## Describing Hardware in Dart with ROHD
 
-ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
+ROHD (pronounced like "road") is a silicon-proven framework for describing and verifying hardware in the Dart programming language.
 
 Features of ROHD include:
 
@@ -63,3 +63,36 @@ Try out Dart instantly from your browser here (it supports ROHD too!): <https://
 See some Dart language samples here: <https://dart.dev/language>
 
 For more information on Dart and tutorials, see <https://dart.dev/> and <https://dart.dev/overview>
+
+## Trusting ROHD
+
+A common initial concern when adopting ROHD is the matter of trust.  How can one trust that there is equivalence between what was developed and simulated in ROHD and what gets generated in the output SystemVerilog?
+
+### Unoptimized, simple, one-to-one mapping
+
+ROHD generates outputs one-to-one with the objects constructed in the original Dart.  There is no magic compiler under the hood that's transforming or optimizing your design.  A module instantiated in a ROHD model will directly map to a piece of equivalent generated SystemVerilog.  This is key to generating logically equivalent, structurally similar outputs with instance and signal names and hierarchy maintained.  This means there are two somewhat independent pieces of ROHD generation:
+
+1. How to generate an output based on an instance in the ROHD model.
+2. How to compose and connect instances together in the generated output.
+
+These two steps are a thin layer between the original design intent and the generated output.  More complex abstractions are created by composing together lower-level building blocks.  One can always trace exactly how an output was created.
+
+### Extensive unit testing across simulators
+
+Generation and composition are extensively tested in the ROHD test suite. Every feature, argument, and composition mechanism is unit-tested before it can be merged in.  Most of these tests are written using test vectors which are then run on both the ROHD simulator and in a SystemVerilog simulator on the generated outputs, ensuring identical behavior between the two simulators.
+
+Generally speaking, the ROHD simulations are *stricter* and *more predictable* than SystemVerilog simulators can be. For example, in SystemVerilog, transitions between invalid signal states (`x` and `z`) can trigger as edges in sequential logic, whereas in ROHD they cannot, and in fact would propagate an `x` instead.  In SystemVerilog, if you violate a `unique` on a `case`, you get a *warning printed in the logs*, whereas in ROHD you get an `x` out of that block.
+
+ROHD is also both more flexible in design intent and more restrictive in SystemVerilog generation.  It is easy in SystemVerilog to describe non-synthesizable logic, but ROHD makes it very difficult to generate SystemVerilog which would imply an ambiguous design.  ROHD also helps ensure lint-clean SystemVerilog generation, even if that means it would become more verbose. Since ROHD does not generate everything that SystemVerilog *could* do, it means the surface area to test is dramatically reduced for equivalence of simulator behavior.
+
+### Trusting EDA tools in general
+
+How does anyone trust any EDA tool in general?  Usually a combination of
+
+- testing methodologies to ensure the tool works (and doesn't break with new versions),
+- a history of real-world usage, and
+- sanity checking the results.
+
+Bugs are still found regularly in "industry-standard" EDA tools, including between simulators and synthesis tools from the same developer and in formal analysis tools. Even if you run formal tools (equivalence, verification, etc.) on a design, those tools themselves were not formally proven. There's a lot of human-written software between the source code you wrote and the design you tape out. It's not a bad thing to do some sanity checking on critical designs for *any* EDA tool (e.g. reviewing outputs manually, paranoia checks, running other tools to compare results, formal analysis, etc.).
+
+ROHD's thin generation layer, real-world usage, and open-source, well-tested implementation should inspire a good amount of confidence. In the end, it's up to you, the user, to decide how much you trust the tools you're using and what additional steps are worth taking to mitigate risk.
