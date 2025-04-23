@@ -2,11 +2,11 @@
 title: "Comparison with Alternatives"
 permalink: /docs/comparison-with-alternatives/
 excerpt: "Comparison with Alternatives"
-last_modified_at: 2024-01-04
+last_modified_at: 2025-03-19
 toc: true
 ---
 
-There are a lot of options for developing hardware.  This section briefly discusses popular alternatives to ROHD and some of their strengths and weaknesses.
+There are a lot of options for developing hardware.  This section briefly discusses some popular alternatives to ROHD and some of their strengths and weaknesses.
 
 ### SystemVerilog
 
@@ -15,26 +15,31 @@ SystemVerilog is the most popular HDL (hardware descriptive language).  It is ba
 - SystemVerilog is old, verbose, and limited, which makes code more bug-prone
 - Integration of IPs at SOC level with SystemVerilog is very difficult and time-consuming.
 - Validation collateral is hard to develop, debug, share, and reuse when it is written in SystemVerilog.
-- Building requires building packages with proper `include ordering based on dependencies, ordering of files read by compilers in .f files, correctly specifiying order of package and library dependencies, and correct analysis and elaboration options.  This is an area that drains many engineers' time debugging.
-- Build and simulation are dependent on expensive EDA vendor tools or incomplete open-source alternatives.  Every tool has its own intricacies, dependencies, licensing, switches, etc. and different tools may synthesize or simulate the same code in a functionally inequivalent way.
+- Building requires building packages and libraries with proper `include ordering based on dependencies, ordering of files read by compilers in .f files, correctly specifiying order of package and library dependencies, and correct analysis and elaboration options.  This is an area that drains many engineers' time debugging.
+- Build and simulation are dependent on expensive EDA vendor tools or incomplete open-source alternatives.  Every tool has its own intricacies, dependencies, licensing, switches, etc. and different tools may synthesize or simulate the same code in a functionally different way.
 - Designing configurable and flexible modules in pure SystemVerilog usually requires parameterization, compile-time defines, and "generate" blocks, which can be challenging to use, difficult to debug, and restrictive on approaches.
-  - People often rely on perl scripts to bridge the gap for iteratively generating more complex hardware or stitching together large numbers of modules.
-- Testbenches are, at the end of the day, software.  SystemVerilog is arguably a terrible programming language, since it is primarily focused at hardware description, which makes developing testbenches excessively challenging.  Basic software quality-of-life features are missing in SystemVerilog.
+  - Engineers often rely on perl or python scripts to bridge the gap for iteratively generating more complex hardware or stitching together large numbers of modules.
+- Testbenches are, at the end of the day, software.  SystemVerilog is arguably a poor programming language, since it is primarily focused at hardware description, which makes developing testbenches excessively challenging.  Basic software quality-of-life features are missing in SystemVerilog.
   - Mitigating the problem by connecting to other languages through DPI calls (e.g. C++ or SystemC) has it's own complexities with extra header files, difficulty modelling parallel execution and edge events, passing callbacks, etc.
-  - UVM throws macros and boilerplate at the problem, which doesn't resolve the underlying limitations.
+  - [UVM](https://en.wikipedia.org/wiki/Universal_Verification_Methodology) throws macros and boilerplate at the problem, which doesn't resolve the underlying limitations.
 
 ROHD aims to enable all the best parts of SystemVerilog, while completely eliminating each of the above issues.  Build is automatic and part of Dart, packages and files can just be imported as needed, no vendor tools are required, hardware can be constructed using all available software constructs, and Dart is a fully-featured modern software language with modern features.
 
-You can read more about SystemVerilog here: <https://en.wikipedia.org/wiki/SystemVerilog>
+You can read more about SystemVerilog here: <https://en.wikipedia.org/wiki/SystemVerilog>.
+
+VHDL is another of the most popular HDLs, with many similar characteristics to Verilog <https://en.wikipedia.org/wiki/VHDL>.
 
 ### Chisel
 
 Chisel is a domain specific language (DSL) built on top of [Scala](https://www.scala-lang.org/), which is built on top of the Java virtual machine (JVM).  The goals of Chisel are somewhat aligned with the goals of ROHD.  Chisel can also convert to SystemVerilog.
 
 - The syntax of Scala (and thus Chisel) is probably less familiar-feeling to most hardware engineers, and it can be more verbose than ROHD with Dart.
-- Scala and the JVM are arguably less user friendly to debug than Dart code.
+- Scala and the JVM are arguably less user-friendly to debug than Dart code.
 - Chisel is focused mostly on the hardware *designer* rather than the *validator*.  Many of the design choices for the language are centered around making it easier to parameterize and synthesize logic.  ROHD was created with validators in mind.
 - Chisel generates logic that's closer to a netlist than what a similar implementation in SystemVerilog would look like.  This can make it difficult to debug or validate generated code.  ROHD generates structurally similar SystemVerilog that looks close to how you might write it.
+- Chisel does not have a native hardware simulator in the same way that ROHD does.  A variety of simulation approaches exist for Chisel.  Some operate on the intermediate representations between the source code into the compiler stack.  Most teams rely on other simulators (e.g. Verilator) to simulate the generated SystemVerilog, which leaves validation to the most of the same problems as verifying any other SystemVerilog design.
+- Chisel has some amount of code reflection, meaning the structure of the generator code you write in Chisel (e.g. variable names) has an impact on the generated output.  Conversely, in ROHD, the Dart code written is completely independent of the model which the code generates.  This means that sometimes simpler designs can be a little more succinct in Chisel, but ROHD excels at scaling configurability.
+- Parameterization and configuration of hardware in Chisel is often determined prior to module construction, similar to how SystemVerilog does it.  In ROHD, you can dynamically determine port widths, module contents, etc. based on introspecting the signals connected to it (or anything else).  This provides a lot more flexibility and reusability for hardware developed with ROHD.
 
 Read more about Chisel here: <https://www.chisel-lang.org/>
 
@@ -43,8 +48,8 @@ Read more about Chisel here: <https://www.chisel-lang.org/>
 There have been a number of attempts to create a HDL on top of Python, but it appears the MyHDL is one of the most mature options.  MyHDL has many similar goals to ROHD, but chose to develop in Python instead of Dart.  MyHDL can also convert to SystemVerilog.
 
 - MyHDL uses "generators" and decorators to help model concurrent behavior of hardware, which is arguably less user-friendly and intuitive than async/await and event based simulation in ROHD.
-- While Python is a great programming langauge for the right purposes, some language features of Dart make it better for representing hardware.  Above is already mentioned Dart's isolates and async/await, which don't exist in the same way in Python.  Dart is statically typed with null safety while Python is dynamically typed, which can make static analysis (including intellisense, type safety, etc.) more challenging in Python.  Python can also be challenging to scale to large programs without careful architecting.
-- Python is inherently slower to execute than Dart.
+- While Python is a great programming langauge for the right purposes, some language features of Dart make it better for representing hardware.  Above is already mentioned Dart's asynchronous programming capabilities, which don't exist in the same way in Python.  Dart is statically typed with null safety while Python is dynamically typed, which can make static analysis (including IDE integration, type safety, etc.) more challenging in Python.  Python can also be challenging to scale to large programs without careful architecting.
+- Python is generally slower to execute than Dart.
 - MyHDL has support for cosimulation via VPI calls to SystemVerilog simulators.
 
 Read more about MyHDL here: <http://www.myhdl.org/>
@@ -74,6 +79,7 @@ Read more about TL-Verilog here: <https://www.redwoodeda.com/tl-verilog>
 PyMTL is another attempt at creating an HDL in Python.  It is developed at Cornell University and the third version (PyMTL 3) is currently in Beta.  PyMTL aims to resolve a lot of the same things as ROHD, but with Python.  It supports conversion to SystemVerilog and simulation.
 
 - The Python language trade-offs described in the above section on MyHDL apply to PyMTL as well.
+- The general approach is similar to Chisel, described above, but with Python.
 
 Read more about PyMTL here: <https://github.com/pymtl/pymtl3> or <https://pymtl3.readthedocs.io/en/latest/>
 
@@ -84,3 +90,12 @@ cocotb is a Python-based testbench framework for testing SystemVerilog and VHDL 
 The cosimulation capabilities of cocotb are gratefully leveraged within the [ROHD Cosim](https://github.com/intel/rohd-cosim) package for cosimulation with SystemVerilog simulators.
 
 Read more about cocotb here: <https://github.com/cocotb/cocotb> or <https://docs.cocotb.org/en/stable/>
+
+
+### Spade
+
+### PipelineC
+
+### Sus
+
+### DFiant HDL
