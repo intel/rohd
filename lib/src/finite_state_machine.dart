@@ -68,6 +68,11 @@ class FiniteStateMachine<StateIdentifier> {
   /// bus.
   final Logic currentState;
 
+  /// A [List] of [Conditional] actions to perform at the beginning of the
+  /// evaluation of actions for the [FiniteStateMachine].  This is useful for
+  /// things like setting up default values for signals across all states.
+  final List<Conditional> setupActions;
+
   /// The next state of the FSM.
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
@@ -92,7 +97,9 @@ class FiniteStateMachine<StateIdentifier> {
     StateIdentifier resetState,
     List<State<StateIdentifier>> states, {
     bool asyncReset = false,
-  }) : this.multi([clk], reset, resetState, states, asyncReset: asyncReset);
+    List<Conditional> setupActions = const [],
+  }) : this.multi([clk], reset, resetState, states,
+            asyncReset: asyncReset, setupActions: setupActions);
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when [reset] is high) and transitions on
@@ -100,9 +107,13 @@ class FiniteStateMachine<StateIdentifier> {
   ///
   /// If [asyncReset] is `true`, the [reset] signal is asynchronous.
   FiniteStateMachine.multi(
-      this._clks, this.reset, this.resetState, this._states, //TODO: defaults
-      {this.asyncReset = false})
-      : _stateWidth = _logBase(_states.length, 2),
+    this._clks,
+    this.reset,
+    this.resetState,
+    this._states, {
+    this.asyncReset = false,
+    this.setupActions = const [],
+  })  : _stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
@@ -116,6 +127,7 @@ class FiniteStateMachine<StateIdentifier> {
     }
 
     Combinational([
+      ...setupActions,
       Case(
           currentState,
           _states
