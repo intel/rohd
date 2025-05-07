@@ -100,7 +100,7 @@ class FiniteStateMachine<StateIdentifier> {
   ///
   /// If [asyncReset] is `true`, the [reset] signal is asynchronous.
   FiniteStateMachine.multi(
-      this._clks, this.reset, this.resetState, this._states,
+      this._clks, this.reset, this.resetState, this._states, //TODO: defaults
       {this.asyncReset = false})
       : _stateWidth = _logBase(_states.length, 2),
         currentState =
@@ -120,22 +120,25 @@ class FiniteStateMachine<StateIdentifier> {
           currentState,
           _states
               .map((state) => CaseItem(
-                      Const(_stateValueLookup[state], width: _stateWidth), [
-                    ...state.actions,
-                    Case(
-                        Const(1),
-                        state.events.entries
-                            .map((entry) => CaseItem(entry.key, [
-                                  nextState <
-                                      _stateValueLookup[
-                                          _stateLookup[entry.value]]
-                                ]))
-                            .toList(growable: false),
-                        conditionalType: state.conditionalType,
-                        defaultItem: [
-                          nextState < getStateIndex(state.defaultNextState),
-                        ])
-                  ]))
+                      label: state.identifier.toString(),
+                      Const(_stateValueLookup[state], width: _stateWidth)
+                          .named(state.identifier.toString()),
+                      [
+                        ...state.actions,
+                        Case(
+                            Const(1),
+                            state.events.entries
+                                .map((entry) => CaseItem(entry.key, [
+                                      nextState <
+                                          _stateValueLookup[
+                                              _stateLookup[entry.value]]
+                                    ]))
+                                .toList(growable: false),
+                            conditionalType: state.conditionalType,
+                            defaultItem: [
+                              nextState < getStateIndex(state.defaultNextState),
+                            ])
+                      ]))
               .toList(growable: false),
           conditionalType: ConditionalType.unique,
           defaultItem: [

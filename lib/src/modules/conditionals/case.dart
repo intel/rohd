@@ -20,8 +20,11 @@ class CaseItem {
   /// A [List] of [Conditional]s to execute when [value] is matched.
   final List<Conditional> then;
 
+  /// An optional label for this case body.
+  final String? label;
+
   /// Executes [then] when [value] matches.
-  CaseItem(this.value, this.then);
+  CaseItem(this.value, this.then, {this.label});
 
   @override
   String toString() => '$value : $then';
@@ -267,14 +270,15 @@ class Case extends Conditional {
     final subPadding = Conditional.calcPadding(indent + 2);
     for (final item in items) {
       final conditionName = inputsNameMap[driverInput(item.value).name];
+      final caseLabel = item.label == null ? '' : ' // ${item.label!}';
       final caseContents = item.then
           .map((conditional) => conditional.verilogContents(
               indent + 4, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
       verilog.write('''
-$subPadding$conditionName : begin
+$subPadding$conditionName : begin$caseLabel
 $caseContents
-${subPadding}end
+${subPadding}end$caseLabel
 ''');
     }
     if (defaultItem != null) {
