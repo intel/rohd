@@ -46,6 +46,12 @@ class FiniteStateMachine<StateIdentifier> {
     return _stateValueLookup[_stateLookup[id]];
   }
 
+  /// A [Map] from the [StateIdentifier]s to the internal index used to
+  /// represent that state in the state machine.
+  // TODO: should this be overrideable?
+  late final Map<StateIdentifier, int> stateIndexLookup = UnmodifiableMapView(
+      _stateValueLookup.map((key, value) => MapEntry(key.identifier, value)));
+
   /// The clock signal to the FSM (when only single-triggered). Otherwise, the
   /// first clock.
   ///
@@ -83,7 +89,7 @@ class FiniteStateMachine<StateIdentifier> {
   static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
 
   /// Width of the state.
-  final int _stateWidth;
+  final int stateWidth;
 
   /// If `true`, the [reset] signal is asynchronous.
   final bool asyncReset;
@@ -113,7 +119,7 @@ class FiniteStateMachine<StateIdentifier> {
     this._states, {
     this.asyncReset = false,
     this.setupActions = const [],
-  })  : _stateWidth = _logBase(_states.length, 2),
+  })  : stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
@@ -133,7 +139,7 @@ class FiniteStateMachine<StateIdentifier> {
           _states
               .map((state) => CaseItem(
                       label: state.identifier.toString(),
-                      Const(_stateValueLookup[state], width: _stateWidth)
+                      Const(_stateValueLookup[state], width: stateWidth)
                           .named(state.identifier.toString()),
                       [
                         ...state.actions,
