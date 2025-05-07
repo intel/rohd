@@ -109,3 +109,9 @@ Read more about cocotb here: <https://github.com/cocotb/cocotb> or <https://docs
 ### Sus
 
 ### DFiant HDL
+
+### BlueSpec
+
+### Clash
+
+### Lava?
