@@ -122,7 +122,6 @@ class TrafficTestModule extends Module {
         TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
       }, actions: [
         northLight < LightColor.green.value,
-        eastLight < LightColor.red.value,
       ]),
       State(
         LightStates.northSlowing,
@@ -130,7 +129,6 @@ class TrafficTestModule extends Module {
         defaultNextState: LightStates.eastFlowing,
         actions: [
           northLight < LightColor.yellow.value,
-          eastLight < LightColor.red.value,
         ],
       ),
       State(
@@ -139,7 +137,6 @@ class TrafficTestModule extends Module {
           TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
         },
         actions: [
-          northLight < LightColor.red.value,
           eastLight < LightColor.green.value,
         ],
       ),
@@ -148,7 +145,6 @@ class TrafficTestModule extends Module {
         events: {},
         defaultNextState: LightStates.northFlowing,
         actions: [
-          northLight < LightColor.red.value,
           eastLight < LightColor.yellow.value,
         ],
       ),
@@ -159,6 +155,11 @@ class TrafficTestModule extends Module {
       reset,
       LightStates.northFlowing,
       states,
+      setupActions: [
+        // by default, lights should be red
+        northLight < LightColor.red.value,
+        eastLight < LightColor.red.value,
+      ],
     );
 
     if (!kIsWeb) {
@@ -316,7 +317,7 @@ void main() {
         })
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors);
+      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });
