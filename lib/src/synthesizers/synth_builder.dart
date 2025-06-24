@@ -16,7 +16,12 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// a [Synthesizer].
 class SynthBuilder {
   /// The top-level [Module] to be synthesized.
-  final Module top;
+  @Deprecated('Use `tops` instead.')
+  Module get top =>
+      tops.length != 1 ? throw Exception('TODO') : tops.first; //TODO exception
+
+  /// The top-level [Module]s to be synthesized.
+  final List<Module> tops;
 
   /// The [Synthesizer] to use for generating an output.
   final Synthesizer synthesizer;
@@ -39,12 +44,20 @@ class SynthBuilder {
 
   /// Constructs a [SynthBuilder] based on the [top] module and
   /// using [synthesizer] for generating outputs.
-  SynthBuilder(this.top, this.synthesizer) {
-    if (!top.hasBuilt) {
-      throw ModuleNotBuiltException();
+  SynthBuilder(Module top, Synthesizer synthesizer)
+      : this.multi([top], synthesizer);
+
+  /// Constructs a [SynthBuilder] based on the provided [tops] modules and
+  /// using [synthesizer] for generating outputs.
+  SynthBuilder.multi(List<Module> tops, this.synthesizer)
+      : tops = List.unmodifiable(tops) {
+    for (final top in tops) {
+      if (!top.hasBuilt) {
+        throw ModuleNotBuiltException(top);
+      }
     }
 
-    final modulesToParse = <Module>[top];
+    final modulesToParse = <Module>[...tops];
     for (var i = 0; i < modulesToParse.length; i++) {
       final moduleI = modulesToParse[i];
       if (!synthesizer.generatesDefinition(moduleI)) {
@@ -52,6 +65,8 @@ class SynthBuilder {
       }
       modulesToParse.addAll(moduleI.subModules);
     }
+
+    //TODO: test that multiple mods with same module definition name doesn't conflict
 
     // go backwards to start from the bottom (...now we're here)
     // critical to go in this order for caching to work properly
