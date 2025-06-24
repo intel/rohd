@@ -23,3 +23,4 @@ part 'wire_net.dart';
 part 'logic_structure.dart';
 part 'logic_array.dart';
 part 'logic_net.dart';
+part 'logic_enum.dart';
