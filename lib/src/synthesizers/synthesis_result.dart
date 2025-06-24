@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synthesis_result.dart
@@ -49,10 +49,12 @@ abstract class SynthesisResult {
   @override
   int get hashCode => matchHashCode;
 
-  //TODO: make this so it supports MULTIPLE files
+  /// Generates what could go into a file.
+  @Deprecated('Use `toSynthFileContents()` instead.')
+  String toFileContents();
 
-  /// Generates what could go into a file
-  List<SynthFileContents> toFileContents();
+  /// Generates contents for a number of files.
+  List<SynthFileContents> toSynthFileContents();
 
   /// If provided, a [List] of additional [Module]s that should be included in
   /// the generated results.

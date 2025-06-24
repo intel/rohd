@@ -26,7 +26,11 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
           (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
 
   @override
-  List<SynthFileContents> toFileContents() => List.unmodifiable([
+  String toFileContents() => (module as SystemVerilog)
+      .definitionVerilog(getInstanceTypeOfModule(module))!;
+
+  @override
+  List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
             name: instanceTypeName,
             contents: (module as SystemVerilog)
@@ -74,9 +78,13 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _parameterString.hashCode;
 
   @override
-  List<SynthFileContents> toFileContents() => List.unmodifiable([
+  String toFileContents() => _toVerilog();
+
+  @override
+  List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
           name: instanceTypeName,
+          description: 'SystemVerilog module definition for $instanceTypeName',
           contents: _toVerilog(),
         )
       ]);
