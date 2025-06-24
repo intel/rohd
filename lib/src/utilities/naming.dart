@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // name_validator.dart
@@ -41,7 +41,7 @@ enum Naming {
       } else if (name.isEmpty) {
         throw EmptyReservedNameException();
       } else if (!Sanitizer.isSanitary(name)) {
-        throw InvalidReservedNameException();
+        throw InvalidReservedNameException(name);
       }
     }
 
@@ -61,7 +61,8 @@ enum Naming {
   /// choose the other one for the final signal name.  Marking signals as
   /// "unpreferred" can have the effect of making generated output easier to
   /// read.
-  static String unpreferredName(String name) => _unpreferredPrefix + name;
+  static String unpreferredName(String name) =>
+      name.startsWith(_unpreferredPrefix) ? name : _unpreferredPrefix + name;
 
   /// Returns true iff the signal name is "unpreferred".
   ///
@@ -76,6 +77,29 @@ enum Naming {
               ? Naming.mergeable
               : Naming.renameable
           : Naming.unnamed);
+
+  /// Picks a [Naming] for a clone based on its original conditions and
+  /// optionally provided new conditions.
+  static Naming chooseCloneNaming({
+    required String originalName,
+    required String? newName,
+    required Naming originalNaming,
+    required Naming? newNaming,
+  }) {
+    if (newNaming != null) {
+      // if provided, then use that
+      return newNaming;
+    }
+
+    if (newName == null && newNaming == null) {
+      // if not provided, we can default to mergeable, since we clone the old
+      // name and don't necessarily need the duplicate around
+      return Naming.mergeable;
+    }
+
+    // otherwise, use default
+    return Naming.chooseNaming(newName, newNaming);
+  }
 
   /// Picks a [String] name based on an initial [name] and [naming].
   ///

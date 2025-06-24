@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_test.dart
@@ -20,9 +20,9 @@ class SimpleInterface extends PairInterface {
 
   SimpleInterface()
       : super(
-          portsFromConsumer: [Port('rsp')],
+          portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
-          sharedInputPorts: [Port('clk')],
+          sharedInputPorts: [Logic.port('clk')],
           commonInOutPorts: [
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])

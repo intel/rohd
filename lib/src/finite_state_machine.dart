@@ -46,6 +46,11 @@ class FiniteStateMachine<StateIdentifier> {
     return _stateValueLookup[_stateLookup[id]];
   }
 
+  /// A [Map] from the [StateIdentifier]s to the internal index used to
+  /// represent that state in the state machine.
+  late final Map<StateIdentifier, int> stateIndexLookup = UnmodifiableMapView(
+      _stateValueLookup.map((key, value) => MapEntry(key.identifier, value)));
+
   /// The clock signal to the FSM (when only single-triggered). Otherwise, the
   /// first clock.
   ///
@@ -68,6 +73,11 @@ class FiniteStateMachine<StateIdentifier> {
   /// bus.
   final Logic currentState;
 
+  /// A [List] of [Conditional] actions to perform at the beginning of the
+  /// evaluation of actions for the [FiniteStateMachine].  This is useful for
+  /// things like setting up default values for signals across all states.
+  final List<Conditional> setupActions;
+
   /// The next state of the FSM.
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
@@ -78,7 +88,10 @@ class FiniteStateMachine<StateIdentifier> {
   static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
 
   /// Width of the state.
-  final int _stateWidth;
+  final int stateWidth;
+
+  /// If `true`, the [reset] signal is asynchronous.
+  final bool asyncReset;
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
@@ -87,15 +100,26 @@ class FiniteStateMachine<StateIdentifier> {
     Logic clk,
     Logic reset,
     StateIdentifier resetState,
-    List<State<StateIdentifier>> states,
-  ) : this.multi([clk], reset, resetState, states);
+    List<State<StateIdentifier>> states, {
+    bool asyncReset = false,
+    List<Conditional> setupActions = const [],
+  }) : this.multi([clk], reset, resetState, states,
+            asyncReset: asyncReset, setupActions: setupActions);
 
   /// Creates an finite state machine for the specified list of [_states], with
-  /// an initial state of [resetState] (when synchronous [reset] is high) and
-  /// transitions on positive edges of any of [_clks].
+  /// an initial state of [resetState] (when [reset] is high) and transitions on
+  /// positive edges of any of [_clks].
+  ///
+  /// If [asyncReset] is `true`, the [reset] signal is asynchronous.
   FiniteStateMachine.multi(
-      this._clks, this.reset, this.resetState, this._states)
-      : _stateWidth = _logBase(_states.length, 2),
+    this._clks,
+    this.reset,
+    this.resetState,
+    this._states, {
+    this.asyncReset = false,
+    List<Conditional> setupActions = const [],
+  })  : setupActions = List.unmodifiable(setupActions),
+        stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
@@ -109,26 +133,29 @@ class FiniteStateMachine<StateIdentifier> {
     }
 
     Combinational([
+      ...setupActions,
       Case(
           currentState,
           _states
               .map((state) => CaseItem(
-                      Const(_stateValueLookup[state], width: _stateWidth), [
-                    ...state.actions,
-                    Case(
-                        Const(1),
-                        state.events.entries
-                            .map((entry) => CaseItem(entry.key, [
-                                  nextState <
-                                      _stateValueLookup[
-                                          _stateLookup[entry.value]]
-                                ]))
-                            .toList(growable: false),
-                        conditionalType: state.conditionalType,
-                        defaultItem: [
-                          nextState < getStateIndex(state.defaultNextState),
-                        ])
-                  ]))
+                      Const(_stateValueLookup[state], width: stateWidth)
+                          .named(state.identifier.toString()),
+                      [
+                        ...state.actions,
+                        Case(
+                            Const(1),
+                            state.events.entries
+                                .map((entry) => CaseItem(entry.key, [
+                                      nextState <
+                                          _stateValueLookup[
+                                              _stateLookup[entry.value]]
+                                    ]))
+                                .toList(growable: false),
+                            conditionalType: state.conditionalType,
+                            defaultItem: [
+                              nextState < getStateIndex(state.defaultNextState),
+                            ])
+                      ]))
               .toList(growable: false),
           conditionalType: ConditionalType.unique,
           defaultItem: [
@@ -147,7 +174,7 @@ class FiniteStateMachine<StateIdentifier> {
           ])
     ]);
 
-    Sequential.multi(_clks, reset: reset, resetValues: {
+    Sequential.multi(_clks, reset: reset, asyncReset: asyncReset, resetValues: {
       currentState: _stateValueLookup[_stateLookup[resetState]]
     }, [
       currentState < nextState,

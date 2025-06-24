@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure.dart
@@ -53,12 +53,29 @@ class LogicStructure implements Logic {
       });
   }
 
-  /// Creates a new [LogicStructure] with the same structure as `this`.
-  LogicStructure clone({String? name}) => LogicStructure(
-      elements.map((e) => e is LogicStructure
-          ? e.clone()
-          : Logic(name: e.name, width: e.width, naming: e.naming)),
-      name: name ?? this.name);
+  @override
+  LogicStructure _clone({String? name, Naming? naming}) =>
+      // naming is not used for LogicStructure
+      LogicStructure(elements.map((e) => e.clone(name: e.name)),
+          name: name ?? this.name);
+
+  /// Creates a new [LogicStructure] with the same structure as `this` and
+  /// [clone]d [elements], optionally with the provided [name].
+  @override
+  LogicStructure clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone], optionally with the specified [name], then assigns it to
+  /// be driven by `this`.
+  ///
+  /// The [naming] argument will not have any effect on a generic
+  /// [LogicStructure], but behavior may be overridden by implementers.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.
+  @override
+  LogicStructure named(String name, {Naming? naming}) =>
+      clone(name: name)..gets(this);
 
   @override
   String get structureName {
@@ -311,8 +328,12 @@ class LogicStructure implements Logic {
       elements.map((e) => e.value).toList(growable: false).rswizzle();
 
   @override
-  LogicValue? get previousValue =>
-      elements.map((e) => e.value).toList(growable: false).rswizzle();
+  LogicValue? get previousValue => elements.any((e) => e.previousValue == null)
+      ? null
+      : elements
+          .map((e) => e.previousValue!)
+          .toList(growable: false)
+          .rswizzle();
 
   @override
   late final int width = elements.map((e) => e.width).sum;
@@ -355,7 +376,7 @@ class LogicStructure implements Logic {
                 max(startIndex - index, 0),
                 update.getRange(
                   max(index - startIndex, 0),
-                  min(index - startIndex + elementWidth, elementWidth),
+                  min(index - startIndex + elementWidth, update.width),
                 ));
       } else {
         newElement <= element;

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
@@ -10,7 +10,7 @@
 //
 // 2024 Feb 28th
 // Amended by Adam Rose <adam.david.rose@gmail.com> for Rohme compatibility
-//
+
 import 'dart:async';
 import 'dart:collection';
 
@@ -61,7 +61,7 @@ abstract class Simulator {
   static bool _simulationEndRequested = false;
 
   /// Tracks for [_SimulatorException] that are thrown during the simulation.
-  static List<_SimulatorException> _simExceptions = [];
+  static final List<_SimulatorException> _simExceptions = [];
 
   /// The maximum time the simulation can run.
   ///
@@ -73,7 +73,7 @@ abstract class Simulator {
 
   /// Returns true iff there are more steps for the [Simulator] to tick through.
   static bool hasStepsRemaining() =>
-      _pendingTimestamps.isNotEmpty || _injectedActions.isNotEmpty;
+      _pendingTimestamps.isNotEmpty || _injectedActionsPending;
 
   /// Sorted storage for pending functions to execute at appropriate times.
   static final SplayTreeMap<int, ListQueue<dynamic Function()>>
@@ -86,6 +86,13 @@ abstract class Simulator {
   ///
   /// Actions may return [Future]s, which will be `await`ed.
   static final Queue<dynamic Function()> _injectedActions =
+      Queue<dynamic Function()>();
+
+  /// Functions to be executed at the end of a tick, the current one if
+  /// possible.
+  ///
+  /// Actions may return [Future]s, which will be `await`ed.
+  static final Queue<dynamic Function()> _injectedEndOfTickActions =
       Queue<dynamic Function()>();
 
   /// Functions to be executed at the end of the simulation.
@@ -141,8 +148,6 @@ abstract class Simulator {
     _currentTimestamp = 0;
     _simulationEndRequested = false;
 
-    _simExceptions = [];
-
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -167,6 +172,9 @@ abstract class Simulator {
     _pendingTimestamps.clear();
     _phase = SimulatorPhase.outOfTick;
     _injectedActions.clear();
+    _endOfSimulationActions.clear();
+    _simExceptions.clear();
+    _pendingList = ListQueue();
 
     // make sure we've already passed the new completer so that listeners can
     // get the latest
@@ -233,17 +241,37 @@ abstract class Simulator {
     _endOfSimulationActions.add(action);
   }
 
-  /// Adds an arbitrary [action] to be executed as soon as possible, during the
-  /// current simulation tick if possible.
+  /// Adds an arbitrary [action] to be executed as soon as possible in the
+  /// [SimulatorPhase.mainTick] phase, during the current simulation tick, if
+  /// possible.
   ///
-  /// If the injection occurs outside of a tick ([SimulatorPhase.outOfTick]),
-  /// it will execute in a new tick in the same timestamp.
+  /// If the injection occurs too late to occur in the current tick, it will
+  /// execute in a new tick in the same timestamp.
   ///
   /// If [action] returns a [Future], it will be `await`ed.
   static void injectAction(dynamic Function() action) {
     // adds an action to be executed in the current timestamp
     _injectedActions.addLast(action);
   }
+
+  /// Adds an arbitrary [action] to be executed at the end of a tick in the
+  /// [SimulatorPhase.clkStable] phase, the current one if possible.
+  ///
+  /// If the injection occurs too late to occur in the current tick, it will
+  /// execute in a new tick in the same timestamp.
+  ///
+  /// If [action] returns a [Future], it will be `await`ed.
+  ///
+  /// This function is useful for some scenarios such as cosimulation, but is
+  /// not generally expected to be used for "normal" testbench development.
+  static void injectEndOfTickAction(dynamic Function() action) {
+    _injectedEndOfTickActions.add(action);
+  }
+
+  /// Indicates if there are pending actions to execute that are injected rather
+  /// than registered.
+  static bool get _injectedActionsPending =>
+      _injectedActions.isNotEmpty || _injectedEndOfTickActions.isNotEmpty;
 
   /// A single simulation tick.
   ///
@@ -252,8 +280,8 @@ abstract class Simulator {
   ///
   /// If there are no timestamps pending to execute, nothing will execute.
   static Future<void> tick() async {
-    if (_injectedActions.isNotEmpty) {
-      // case 1 : ( the usual Rohd case )
+    if (_injectedActionsPending) {
+      // case 1 : ( the usual ROHD case )
       // The previous delta cycle did NOT do
       // 'registerAction( _currentTimeStamp );'.
       // In that case, _pendingTimestamps[_currentTimestamp] is null so we will
@@ -327,6 +355,8 @@ abstract class Simulator {
     while (_pendingList.isNotEmpty) {
       await _pendingList.removeFirst()();
     }
+
+    await _executeInjectedActions();
   }
 
   /// Executes the clkStable phase
@@ -337,15 +367,28 @@ abstract class Simulator {
     _clkStableController.add(null);
   }
 
+  /// Executes all the injected actions.
+  static Future<void> _executeInjectedActions() async {
+    while (_injectedActions.isNotEmpty) {
+      final injectedAction = _injectedActions.removeFirst();
+      await injectedAction();
+    }
+  }
+
+  /// Executes all the end-of-tick injected actions.
+  static Future<void> _executeEndOfTickActions() async {
+    while (_injectedEndOfTickActions.isNotEmpty) {
+      final injectedAction = _injectedEndOfTickActions.removeFirst();
+      await injectedAction();
+    }
+  }
+
   /// Executes the outOfTick phase
   ////
   /// Just before we end the current tick, we execute the injected actions,
   /// removing them from [_injectedActions] as we go.
   static Future<void> _outOfTick() async {
-    while (_injectedActions.isNotEmpty) {
-      final injectedFunction = _injectedActions.removeFirst();
-      await injectedFunction();
-    }
+    await _executeEndOfTickActions();
 
     _phase = SimulatorPhase.outOfTick;
 
@@ -381,16 +424,26 @@ abstract class Simulator {
           '  To run a new simulation, use Simulator.reset().');
     }
 
+    // Yield execution to the event loop before beginning the simulation.
+    await Future(() {});
+
     while (hasStepsRemaining() &&
         _simExceptions.isEmpty &&
         !_simulationEndRequested &&
         (_maxSimTime < 0 || _currentTimestamp < _maxSimTime)) {
-      await tick();
+      try {
+        await tick();
+      } catch (_, __) {
+        // trigger the end of simulation if an error occurred
+        _simulationEndedCompleter.complete();
+
+        rethrow;
+      }
     }
 
+    // initially, just log the exceptions
     for (final err in _simExceptions) {
       logger.severe(err.exception.toString(), err.exception, err.stackTrace);
-      throw err.exception;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
@@ -399,10 +452,25 @@ abstract class Simulator {
 
     while (_endOfSimulationActions.isNotEmpty) {
       final endOfSimAction = _endOfSimulationActions.removeFirst();
-      await endOfSimAction();
+
+      try {
+        await endOfSimAction();
+      } catch (_) {
+        // trigger the end of simulation if an error occurred
+        _simulationEndedCompleter.complete();
+
+        rethrow;
+      }
     }
 
     _simulationEndedCompleter.complete();
+
+    // now, rethrow any exceptions now that sim is over and end of sim actions
+    // have all executed
+    for (final err in _simExceptions) {
+      throw err.exception;
+    }
+
     await simulationEnded;
   }
 }

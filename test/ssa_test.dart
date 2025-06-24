@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // ssa_test.dart
@@ -19,6 +19,90 @@ abstract class SsaTestModule extends Module {
 
   /// Calculates the expected output [x] given value [a].
   int model(int a);
+}
+
+class SimpleStruct extends LogicStructure {
+  SimpleStruct()
+      : super([Logic(width: 4), Logic(width: 4)], name: 'simple_struct');
+}
+
+class StructOpRepack extends Module {
+  late final SimpleStruct x = SimpleStruct()..gets(output('x'));
+
+  StructOpRepack(SimpleStruct a) {
+    a = SimpleStruct()..gets(addInput('a', a, width: 8));
+    final x_ = SimpleStruct();
+
+    x_.elements[0] <= a.elements[0] + 1;
+    x_.elements[1] <= a.elements[1] + 2;
+
+    addOutput('x', width: 8) <= x_;
+  }
+}
+
+class SsaModWithStructElements extends SsaTestModule {
+  SsaModWithStructElements(Logic a) : super(name: 'struct_elements') {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+
+    final s1 = SimpleStruct();
+
+    final sx = SimpleStruct();
+
+    Combinational.ssa((s) => [
+          s(s1) < a,
+          s(sx) < StructOpRepack(SimpleStruct()..gets(s(s1))).x,
+        ]);
+
+    x <= sx;
+  }
+
+  @override
+  int model(int a) {
+    final orig = LogicValue.ofInt(a, 8);
+    return [
+      orig.getRange(0, 4) + 1,
+      orig.getRange(4, 8) + 2,
+    ].rswizzle().toInt();
+  }
+}
+
+class StructOpSplit extends Module {
+  Logic get x0 => output('x0');
+  Logic get x1 => output('x1');
+
+  StructOpSplit(SimpleStruct a) {
+    a = SimpleStruct()..gets(addInput('a', a, width: 8));
+    final x0 = addOutput('x0', width: 4);
+    final x1 = addOutput('x1', width: 4);
+
+    x0 <= a.elements[0] + 1;
+    x1 <= a.elements[1] + 2;
+  }
+}
+
+class SsaModWithStructSplit extends SsaTestModule {
+  SsaModWithStructSplit(Logic a) : super(name: 'struct_split') {
+    a = addInput('a', a, width: 8);
+    final x = addOutput('x', width: 8);
+
+    final s1 = SimpleStruct();
+
+    Combinational.ssa((s) => [
+          s(s1) < a,
+          s(x) <
+              () {
+                final splitMod = StructOpSplit(SimpleStruct()..gets(s(s1)));
+                return (splitMod.x0 + splitMod.x1).zeroExtend(8);
+              }(),
+        ]);
+  }
+
+  @override
+  int model(int a) {
+    final orig = LogicValue.ofInt(a, 8);
+    return (orig.getRange(0, 4) + 1 + orig.getRange(4, 8) + 2).toInt();
+  }
 }
 
 class SsaModAssignsOnly extends SsaTestModule {
@@ -323,9 +407,48 @@ class SsaSequenceOfCases extends Module {
   }
 }
 
+class SsaPipeJump extends Module {
+  SsaPipeJump(Logic a) : super(name: 'seqofifs') {
+    a = addInput('a', a, width: 8);
+    final clk = SimpleClockGenerator(10).clk;
+    final x = addOutput('x', width: 8);
+
+    final i1 = Logic(name: 'i1', width: 8);
+
+    Combinational.ssa((s) => [
+          s(i1) < a + 1,
+        ]);
+
+    final i1ff = Logic(name: 'i1ff', width: 8);
+    i1ff <= flop(clk, i1);
+
+    final i2 = Logic(name: 'i2', width: 8);
+
+    Combinational.ssa((s) => [
+          s(i2) < i1ff + i1,
+        ]);
+
+    x <= i2;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('ssa pipe jump', () async {
+    final mod = SsaPipeJump(Logic(name: 'a', width: 8));
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 3}, {}),
+      Vector({'a': 4}, {'x': 9}),
+      Vector({'a': 5}, {'x': 11}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('ssa_test_module', () {
@@ -338,6 +461,8 @@ void main() {
       SsaMix(aInput),
       SsaNested(aInput),
       SsaMultiDep(aInput),
+      SsaModWithStructElements(aInput),
+      SsaModWithStructSplit(aInput),
     ];
 
     for (final mod in mods) {

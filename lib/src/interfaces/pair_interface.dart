@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface.dart
@@ -91,7 +91,7 @@ class PairInterface extends Interface<PairDirection> {
               case LogicNet():
                 return LogicNet.port(name, p.width);
               default:
-                return Port(name, p.width);
+                return Logic.port(name, p.width);
             }
           })
           .toList(growable: false);

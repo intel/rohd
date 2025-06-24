@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2024 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pipeline.dart
@@ -24,20 +24,24 @@ class PipelineStageInfo {
   /// Constructs a new instance of information for this stage.
   PipelineStageInfo._(this._pipeline, this.stage, this._ssa);
 
-  /// Returns a staged version of [identifier] at the current stage, adjusted
-  /// by the amount of [stageAdjustment].
+  /// Returns a staged version of [identifier] at the current stage, adjusted by
+  /// the amount of [stageAdjustment].
   ///
   /// Typically, your pipeline will consist of a lot of `p.get(x)` type calls,
   /// but if you want to combinationally access a value of a signal from another
-  /// stage, you can access it relatively using [stageAdjustment].  For
-  /// example, `p.get(x, -1)` will access the value of `x` one stage prior.
+  /// stage, you can access it relatively using [stageAdjustment].  For example,
+  /// `p.get(x, -1)` will access the value of `x` at the output of one stage
+  /// prior.
   Logic get(Logic identifier, [int stageAdjustment = 0]) =>
-      _ssa(_pipeline.get(identifier, stage + stageAdjustment));
+      getAbs(identifier, stage + stageAdjustment);
 
-  /// Returns a staged version of [identifier] at the specified
-  /// absolute [stageIndex].
-  Logic getAbs(Logic identifier, int stageIndex) =>
-      _ssa(_pipeline.get(identifier, stageIndex));
+  /// Returns the output of [identifier] at the specified absolute [stageIndex]
+  /// stage, if other than the current [stage].  Otherwise, returns the same
+  /// thing as [get], for the current [stage].
+  Logic getAbs(Logic identifier, int stageIndex) {
+    final l = _pipeline.get(identifier, stageIndex);
+    return stageIndex == stage ? _ssa(l) : l;
+  }
 }
 
 /// A container for signals and combinational content generation for a stage.
@@ -94,6 +98,9 @@ class Pipeline {
   /// An optional reset signal for all pipelined signals.
   final Logic? reset;
 
+  /// If `true`, then [reset] is asynchronous, if provided.
+  final bool asyncReset;
+
   /// All the [_PipeStage]s for this [Pipeline]
   late final List<_PipeStage> _stages;
 
@@ -106,7 +113,7 @@ class Pipeline {
   int get stageCount => _stages.length;
 
   /// A map of reset values for every signal.
-  late final Map<Logic, dynamic> _resetValues;
+  final Map<Logic, dynamic>? _resetValues;
 
   /// Tracks whether this [Pipeline] is done being constructed to conditionally
   /// run safety checks on API calls.
@@ -118,53 +125,56 @@ class Pipeline {
   /// Each stage in the list [stages] is a function whose sole parameter is a
   /// [PipelineStageInfo] object and which returns a [List] of [Conditional]
   /// objects.  Each stage can be thought of as being the contents of a
-  /// [Combinational] block.  Use the [PipelineStageInfo] object to grab
-  /// signals for a given pipe stage.  Flops are positive edge triggered
-  /// based on [clk].
+  /// [Combinational] block. Use the [PipelineStageInfo] object to grab signals
+  /// for a given pipe stage. Flops are positive edge triggered based on [clk].
   ///
   /// Then `i`th element of [stages] defines the combinational logic driving a
-  /// flop of index `i`. That is, the first entry in [stages] drives the
-  /// first set of flops, so logic defined in the first stage combinationally
-  /// consumes inputs to the [Pipeline]. The output of the [Pipeline] is
-  /// driven by flops driven by the last entry of [stages].
+  /// flop of index `i`. That is, the first entry in [stages] drives the first
+  /// set of flops, so logic defined in the first stage combinationally consumes
+  /// inputs to the [Pipeline]. The output of the [Pipeline] is driven by flops
+  /// driven by the last entry of [stages].
   ///
-  /// Signals to be pipelined can optionally be specified in the [signals]
-  /// list.  Any signal referenced in a stage via the [PipelineStageInfo]
-  /// will automatically be included in the entire pipeline.
+  /// Signals to be pipelined can optionally be specified in the [signals] list.
+  /// Any signal referenced in a stage via the [PipelineStageInfo] will
+  /// automatically be included in the entire pipeline.
   ///
   /// If a [reset] signal is provided, then it will be consumed as an
-  /// active-high reset for every signal through the pipeline.  The default
-  /// reset value is 0 for all signals, but that can be overridden by
-  /// setting [resetValues] to the desired value.  The values specified
-  /// in [resetValues] should be a type acceptable to [Logic]'s `put` function.
+  /// active-high reset for every signal through the pipeline. The default reset
+  /// value is 0 for all signals, but that can be overridden by setting
+  /// [resetValues] to the desired value. Every stage's flops for the keys of
+  /// [resetValues] will be set to the same corresponding value. The values
+  /// specified in [resetValues] should be a type acceptable to [Logic]'s `put`
+  /// function.
   ///
   /// Each stage can be stalled independently using [stalls], where every index
-  /// of [stalls] corresponds to the index of the stage to be stalled.  When
-  /// a stage's stall is asserted, the output of that stage will not change.
+  /// of [stalls] corresponds to the index of the stage to be stalled.  When a
+  /// stage's stall is asserted, the output of that stage will not change.
   Pipeline(Logic clk,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
       List<Logic?>? stalls,
       List<Logic> signals = const [],
-      Map<Logic, Const> resetValues = const {},
-      Logic? reset})
+      Map<Logic, dynamic> resetValues = const {},
+      Logic? reset,
+      bool asyncReset = false})
       : this.multi([clk],
             stages: stages,
             stalls: stalls,
             signals: signals,
             resetValues: resetValues,
-            reset: reset);
+            reset: reset,
+            asyncReset: asyncReset);
 
   /// Constructs a [Pipeline] with multiple triggers on any of [_clks].
   Pipeline.multi(this._clks,
       {List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
       List<Logic?>? stalls,
       List<Logic> signals = const [],
-      Map<Logic, Const> resetValues = const {},
-      this.reset}) {
+      Map<Logic, dynamic>? resetValues,
+      this.reset,
+      this.asyncReset = false})
+      : _resetValues = resetValues == null ? null : Map.from(resetValues) {
     _stages = stages.map(_PipeStage.new).toList();
     _stages.add(_PipeStage((p) => [])); // output stage
-
-    _resetValues = Map.from(resetValues);
 
     _setStalls(stalls);
 
@@ -230,46 +240,41 @@ class Pipeline {
 
   /// Adds a new signal to be pipelined across all stages.
   void _add(Logic newLogic) {
-    dynamic resetValue;
-    if (_resetValues.containsKey(newLogic)) {
-      resetValue = _resetValues[newLogic];
-    }
-
     for (var i = 0; i < _stages.length; i++) {
       _stages[i]._addLogic(newLogic, i);
     }
 
     _stages[0].input[newLogic]! <= newLogic;
-    final ffAssigns = <Conditional>[];
+    final ffAssigns = <ConditionalAssign>[];
     for (var i = 1; i < _stages.length; i++) {
-      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1));
+      ffAssigns.add(_i(newLogic, i) < _o(newLogic, i - 1) as ConditionalAssign);
     }
 
-    var ffAssignsWithStall =
-        List<Conditional>.generate(stageCount - 1, (index) {
+    final ffAssignsWithStall =
+        List<ConditionalAssign>.generate(stageCount - 1, (index) {
       final stall = _stages[index].stall;
-      final ffAssign = ffAssigns[index] as ConditionalAssign;
+      final ffAssign = ffAssigns[index];
       final driver = stall != null
           ? mux(stall, ffAssign.receiver, ffAssign.driver)
           : ffAssign.driver;
-      return ffAssign.receiver < driver;
+      return ffAssign.receiver < driver as ConditionalAssign;
     });
 
-    if (reset != null) {
-      ffAssignsWithStall = <Conditional>[
-        If.block([
-          Iff(
-            reset!,
-            ffAssigns.map((conditional) {
-              conditional as ConditionalAssign;
-              return conditional.receiver < (resetValue ?? 0);
-            }).toList(growable: false),
-          ),
-          Else(ffAssignsWithStall)
-        ])
-      ];
+    final stageResetVal = _resetValues?[newLogic];
+    final resetValuesForNewLogic = <Logic, dynamic>{};
+    if (stageResetVal != null) {
+      for (final ffAssign in ffAssignsWithStall) {
+        resetValuesForNewLogic[ffAssign.receiver] = stageResetVal;
+      }
     }
-    Sequential.multi(_clks, ffAssignsWithStall, name: 'ff_${newLogic.name}');
+
+    Sequential.multi(
+        _clks,
+        reset: reset,
+        resetValues: resetValuesForNewLogic,
+        asyncReset: asyncReset,
+        ffAssignsWithStall,
+        name: 'ff_${newLogic.name}');
   }
 
   /// The stage input for a signal associated with [logic] to [stageIndex].
@@ -340,29 +345,34 @@ class ReadyValidPipeline extends Pipeline {
 
   /// Constructs a pipeline with Ready/Valid protocol at each stage.
   ///
-  /// The [validPipeIn] signal indicates that the input to the pipeline
-  /// is valid.  The [readyPipeOut] signal indicates that the receiver
-  /// of the output of the pipeline is ready to pull out of the pipeline.
+  /// The [validPipeIn] signal indicates that the input to the pipeline is
+  /// valid.  The [readyPipeOut] signal indicates that the receiver of the
+  /// output of the pipeline is ready to pull out of the pipeline.
   ///
-  /// The [validPipeOut] signal indicates that valid contents are ready
-  /// to be received at the output of the pipeline.  The [readyPipeIn]
-  /// signal indicates that the pipeline is ready to accept new content.
+  /// The [validPipeOut] signal indicates that valid contents are ready to be
+  /// received at the output of the pipeline.  The [readyPipeIn] signal
+  /// indicates that the pipeline is ready to accept new content.
   ///
-  /// The pipeline will only progress through any stage, including the
-  /// output, if both valid and ready are asserted at the same time.  This
-  /// pipeline is capable of having bubbles, but they will collapse if
-  /// downstream stages are backpressured.
+  /// The pipeline will only progress through any stage, including the output,
+  /// if both valid and ready are asserted at the same time.  This pipeline is
+  /// capable of having bubbles, but they will collapse if downstream stages are
+  /// backpressured.
   ///
-  /// If contents are pushed in when the pipeline is not ready, they
-  /// will be dropped.
+  /// If contents are pushed in when the pipeline is not ready, they will be
+  /// dropped.
+  ///
+  /// Note that the [resetValues] will take effect the same way as a normal
+  /// [Pipeline], but the valid indication on the output will remain at 0 until
+  /// a valid input has made its way from the input to the output.
   ReadyValidPipeline(
     Logic clk,
     Logic validPipeIn,
     Logic readyPipeOut, {
     List<List<Conditional> Function(PipelineStageInfo p)> stages = const [],
-    Map<Logic, Const> resetValues = const {},
+    Map<Logic, dynamic>? resetValues,
     List<Logic> signals = const [],
     Logic? reset,
+    bool asyncReset = false,
   }) : this.multi(
           [clk],
           validPipeIn,
@@ -371,6 +381,7 @@ class ReadyValidPipeline extends Pipeline {
           resetValues: resetValues,
           signals: signals,
           reset: reset,
+          asyncReset: asyncReset,
         );
 
   /// Creates a [ReadyValidPipeline] with multiple triggers.
@@ -382,6 +393,7 @@ class ReadyValidPipeline extends Pipeline {
     super.resetValues,
     List<Logic> signals = const [],
     super.reset,
+    super.asyncReset,
   }) : super.multi(
           stages: stages,
           signals: [validPipeIn, ...signals],

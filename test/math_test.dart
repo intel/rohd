@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // math_test.dart
@@ -68,9 +68,51 @@ class MathTestModule extends Module {
   }
 }
 
+class AddWithCarryMod extends Module {
+  AddWithCarryMod(Logic a, Logic b) {
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: a.width);
+    final sum = addOutput('sum', width: a.width);
+    final carry = addOutput('carry');
+
+    final adder = Add(a, b);
+    sum <= adder.sum;
+    carry <= adder.carry;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  group('add with carry', () {
+    test('sv gen', () async {
+      final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(sv, contains('assign {carry, sum} = a + b'));
+    });
+
+    test('simcompare', () async {
+      final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
+      await mod.build();
+
+      final vectors = [
+        Vector({'a': 0, 'b': 0}, {'sum': 0, 'carry': 0}),
+        Vector({'a': 0, 'b': 1}, {'sum': 1, 'carry': 0}),
+        Vector({'a': 1, 'b': 0}, {'sum': 1, 'carry': 0}),
+        Vector({'a': 0xff, 'b': 1}, {'sum': 0, 'carry': 1}),
+        Vector({'a': 0xff, 'b': 0xff}, {'sum': 0xfe, 'carry': 1}),
+        Vector({'a': 0xfe, 'b': 0xff}, {'sum': 0xfd, 'carry': 1}),
+        Vector({'a': 0xff, 'b': 0xfe}, {'sum': 0xfd, 'carry': 1}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 
   test('sv expansion handles lint issues', () async {
@@ -79,16 +121,6 @@ void main() {
 
     final sv = gtm.generateSynth();
     final lines = sv.split('\n');
-
-    // should never assign directly off a +
-    expect(lines.where(RegExp(r'plus.*\+').hasMatch), isEmpty);
-
-    // ensure the width of intermediate signals appropriate for add
-    for (final line in lines) {
-      if (RegExp('logic.*a_add').hasMatch(line)) {
-        expect(line, contains('8:0'));
-      }
-    }
 
     // ensure we never lshift by a constant directly
     for (final line in lines) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic.dart
@@ -255,6 +255,35 @@ class Logic {
           naming: naming,
         );
 
+  /// A cloning utility for [clone] and [named].
+  Logic _clone({String? name, Naming? naming}) =>
+      (isNet ? LogicNet.new : Logic.new)(
+          name: name ?? this.name,
+          naming: Naming.chooseCloneNaming(
+              originalName: this.name,
+              newName: name,
+              originalNaming: this.naming,
+              newNaming: naming),
+          width: width);
+
+  /// Makes a copy of `this`, optionally with the specified [name], but the same
+  /// [width].
+  Logic clone({String? name}) => _clone(name: name);
+
+  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// assigns it to be driven by `this`.
+  ///
+  /// This is a useful utility for naming the result of some hardware
+  /// construction without separately declaring a new named signal and then
+  /// assigning.  For example:
+  ///
+  /// ```dart
+  /// // named "myImportantNode" instead of a generated name like "a_xor_b"
+  /// final myImportantNode = (a ^ b).named('myImportantNode');
+  /// ```
+  Logic named(String name, {Naming? naming}) =>
+      _clone(name: name, naming: naming)..gets(this);
+
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
   Logic._({
@@ -269,6 +298,25 @@ class Logic {
       throw LogicConstructionException(
           'Logic width must be greater than or equal to 0.');
     }
+  }
+
+  /// Constructs a [Logic] with some additional validation for ports of
+  /// [Module]s.
+  ///
+  /// Useful for [Interface] definitions.
+  factory Logic.port(String name, [int width = 1]) {
+    if (!Sanitizer.isSanitary(name)) {
+      throw InvalidPortNameException(name);
+    }
+
+    return Logic(
+      name: name,
+      width: width,
+
+      // make port names mergeable so we don't duplicate the ports
+      // when calling connectIO
+      naming: Naming.mergeable,
+    );
   }
 
   @override
@@ -406,7 +454,7 @@ class Logic {
   Logic pow(dynamic exponent) => Power(this, exponent).out;
 
   /// Addition.
-  Logic operator +(dynamic other) => Add(this, other).out;
+  Logic operator +(dynamic other) => Add(this, other).sum;
 
   /// Subtraction.
   Logic operator -(dynamic other) => Subtract(this, other).out;

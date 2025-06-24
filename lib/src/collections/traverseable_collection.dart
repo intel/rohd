@@ -68,6 +68,12 @@ class TraverseableCollection<T> with IterableMixin<T> {
 
   @override
   Iterator<T> get iterator => _list.iterator;
+
+  /// Removes all elements from the collection.
+  void clear() {
+    _set.clear();
+    _list.clear();
+  }
 }
 
 /// An unmodifiable view of a [TraverseableCollection], similar to

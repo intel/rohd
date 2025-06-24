@@ -160,7 +160,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () {
+      Simulator.registerAction(timestamp, () async {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))
@@ -168,7 +168,7 @@ abstract class SimCompare {
         }
 
         if (enableChecking) {
-          Simulator.postTick.first.then((value) {
+          unawaited(Simulator.postTick.first.then((value) {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o =
@@ -207,7 +207,7 @@ abstract class SimCompare {
             (Object err, StackTrace stackTrace) {
               Simulator.throwException(err as Exception, stackTrace);
             },
-          );
+          ));
         }
       });
       timestamp += Vector._period;
@@ -293,6 +293,7 @@ abstract class SimCompare {
         // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
+            // ignore: prefer_interpolation_to_compose_strings
             packedDims.map((d) => '[${d - 1}:0]').join() +
             ' [${signal.elementWidth - 1}:0] $signalName' +
             unpackedDims.map((d) => '[${d - 1}:0]').join();

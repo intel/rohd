@@ -10,7 +10,7 @@ Interfaces make it easier to define port connections of a module in a reusable w
 
 [`Interface`](https://intel.github.io/rohd/rohd/Interface-class.html) takes a generic parameter for direction type.  This enables you to group signals so make adding them as inputs/outputs easier for different modules sharing this interface.
 
-The [`Port`](https://intel.github.io/rohd/rohd/Port-class.html) class extends `Logic`, but has a constructor that takes width as a positional argument to make interface port definitions a little cleaner.
+The [`Logic.port`](https://intel.github.io/rohd/rohd/Logic-class.html) constructor makes interface port definitions a little cleaner by taking the width as a positional argument.
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor.  Modifying the same `Interface` as was passed would have negative consequences if multiple `Module`s were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
@@ -30,12 +30,12 @@ class CounterInterface extends Interface<CounterDirection> {
   CounterInterface(this.width) {
     // register ports to a specific direction
     setPorts([
-      Port('en'), // Port extends Logic
-      Port('reset')
+      Logic.port('en'), // Logic.port factory returns Logic
+      Logic.port('reset')
     ], [CounterDirection.IN]);  // inputs to the counter
 
     setPorts([
-      Port('val', width),
+      Logic.port('val', width),
     ], [CounterDirection.OUT]); // outputs from the counter
   }
 
@@ -87,9 +87,9 @@ class SimpleInterface extends PairInterface {
 
   SimpleInterface()
       : super(
-          portsFromConsumer: [Port('rsp')],
-          portsFromProvider: [Port('req')],
-          sharedInputPorts: [Port('clk')],
+          portsFromConsumer: [Logic.port('rsp')],
+          portsFromProvider: [Logic.port('req')],
+          sharedInputPorts: [Logic.port('clk')],
         );
 
   SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
@@ -145,8 +145,8 @@ class SubInterface extends PairInterface {
 
   SubInterface()
       : super(
-          portsFromConsumer: [Port('rsp')],
-          portsFromProvider: [Port('req')],
+          portsFromConsumer: [Logic.port('rsp')],
+          portsFromProvider: [Logic.port('req')],
         );
   SubInterface.clone(SubInterface super.otherInterface) : super.clone();
 }
@@ -160,7 +160,7 @@ class TopLevelInterface extends PairInterface {
 
   TopLevelInterface(this.numSubInterfaces)
       : super(
-          sharedInputPorts: [Port('clk')],
+          sharedInputPorts: [Logic.port('clk')],
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
       subIntfs.add(addSubInterface('sub$i', SubInterface()));

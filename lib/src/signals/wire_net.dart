@@ -215,6 +215,9 @@ class _WireNetBlasted extends _Wire implements _WireNet {
   LogicValue get value => LogicValue.ofIterable(_wires.map((e) => e.value));
 
   @override
+  LogicValue get _currentValue => throw UnsupportedError('Unnecessary');
+
+  @override
   set _currentValue(LogicValue newValue) =>
       // this is delegated away via calling `value` getter
       throw UnsupportedError('Unnecessary');
