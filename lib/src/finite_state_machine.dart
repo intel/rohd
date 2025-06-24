@@ -138,7 +138,6 @@ class FiniteStateMachine<StateIdentifier> {
           currentState,
           _states
               .map((state) => CaseItem(
-                      label: state.identifier.toString(),
                       Const(_stateValueLookup[state], width: stateWidth)
                           .named(state.identifier.toString()),
                       [
