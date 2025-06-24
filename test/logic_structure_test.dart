@@ -93,7 +93,6 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      ..nextChanged
       // ignore: deprecated_member_use_from_same_package
       ..hasValidValue()
       // ignore: deprecated_member_use_from_same_package
@@ -102,6 +101,8 @@ class StructModuleWithInstrumentation extends Module {
       ..valueBigInt
       // ignore: deprecated_member_use_from_same_package
       ..valueInt;
+
+    unawaited(MyStruct().nextChanged);
   }
 }
 

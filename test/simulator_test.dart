@@ -377,10 +377,10 @@ void main() {
   test('end of tick makes a re-tick if it was missed', () async {
     var endOfTickActionTaken = false;
 
-    Simulator.registerAction(100, () {
-      Simulator.postTick.first.then((_) {
+    Simulator.registerAction(100, () async {
+      unawaited(Simulator.postTick.first.then((_) {
         Simulator.injectEndOfTickAction(() => endOfTickActionTaken = true);
-      });
+      }));
     });
 
     var numStartTicks = 0;

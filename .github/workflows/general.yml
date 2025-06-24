@@ -34,8 +34,6 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          sdk: 3.6.2 # downgrade pending https://github.com/dart-lang/dartdoc/issues/3996
 
       - name: Setup Node
         uses: actions/setup-node@v4
