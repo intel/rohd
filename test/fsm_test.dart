@@ -180,21 +180,47 @@ void main() {
   });
 
   test('zero-out receivers in default case', () async {
-    final pipem = TestModule(Logic(), Logic(), Logic());
-    await pipem.build();
+    final mod = TestModule(Logic(), Logic(), Logic());
+    await mod.build();
 
-    final sv = pipem.generateSynth();
+    final sv = mod.generateSynth();
 
     expect(sv, contains("b = 1'h0;"));
   });
 
   test('conditional type is used', () async {
-    final pipem = TestModule(Logic(), Logic(), Logic());
-    await pipem.build();
+    final mod = TestModule(Logic(), Logic(), Logic());
+    await mod.build();
 
-    final sv = pipem.generateSynth();
+    final sv = mod.generateSynth();
 
     expect(sv, contains('priority case'));
+  });
+
+  test('label name included in generated SV', () async {
+    final mod = TestModule(Logic(), Logic(), Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('MyStates_state1 : begin'));
+  });
+
+  test('state value lookup is correct', () async {
+    final mod = DefaultStateFsmMod(Logic());
+    await mod.build();
+
+    expect(mod._fsm.stateWidth, 2);
+
+    expect(mod._fsm.stateIndexLookup.length, MyStates.values.length);
+    expect(
+        MyStates.values.every((e) => mod._fsm.stateIndexLookup.containsKey(e)),
+        isTrue);
+    for (var i = 0; i < MyStates.values.length; i++) {
+      final stateEnum = MyStates.values[i];
+      expect(mod._fsm.getStateIndex(stateEnum), i);
+      expect(mod._fsm.stateIndexLookup[stateEnum], i);
+    }
   });
 
   group('fsm validation', () {
@@ -232,9 +258,9 @@ void main() {
 
   group('simcompare', () {
     test('simple fsm', () async {
-      final pipem = TestModule(Logic(), Logic(), Logic());
+      final mod = TestModule(Logic(), Logic(), Logic());
 
-      await pipem.build();
+      await mod.build();
 
       final vectors = [
         Vector({'reset': 1, 'a': 0, 'c': 0}, {}),
@@ -242,32 +268,32 @@ void main() {
         Vector({}, {'b': 1}),
         Vector({'c': 1}, {'b': 0}),
       ];
-      await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
 
       verifyMermaidStateDiagram(_simpleFSMPath);
     });
 
     test('simple fsm async reset', () async {
-      final pipem =
+      final mod =
           TestModule(Logic(), Logic(), Logic(), testingAsyncReset: true);
 
-      await pipem.build();
+      await mod.build();
 
       final vectors = [
         Vector({'reset': 0, 'a': 0, 'c': 0}, {}),
         Vector({'reset': 1}, {'b': 0}),
       ];
-      await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
 
       verifyMermaidStateDiagram(_simpleFSMPath);
     });
 
     test('default next state fsm', () async {
-      final pipem = DefaultStateFsmMod(Logic());
+      final mod = DefaultStateFsmMod(Logic());
 
-      await pipem.build();
+      await mod.build();
 
       final vectors = [
         Vector({'reset': 1}, {}),
@@ -276,12 +302,12 @@ void main() {
         Vector({'reset': 0}, {'b': 4}),
         Vector({'reset': 0}, {'b': 4}),
       ];
-      await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
 
       if (!kIsWeb) {
         const fsmPath = '$_tmpDir/default_next_state_fsm.md';
-        pipem._fsm.generateDiagram(outputPath: fsmPath);
+        mod._fsm.generateDiagram(outputPath: fsmPath);
 
         final mermaid = File(fsmPath).readAsStringSync();
         expect(mermaid, contains('state2'));
@@ -294,8 +320,8 @@ void main() {
     });
 
     test('traffic light fsm', () async {
-      final pipem = TrafficTestModule(Logic(width: 2), Logic());
-      await pipem.build();
+      final mod = TrafficTestModule(Logic(width: 2), Logic());
+      await mod.build();
 
       final vectors = [
         Vector({'reset': 1, 'traffic': 00}, {}),
@@ -316,8 +342,8 @@ void main() {
           'eastLight': LightColor.green.value
         })
       ];
-      await SimCompare.checkFunctionalVector(pipem, vectors);
-      SimCompare.checkIverilogVector(pipem, vectors, dontDeleteTmpFiles: true);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });

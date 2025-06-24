@@ -48,7 +48,6 @@ class FiniteStateMachine<StateIdentifier> {
 
   /// A [Map] from the [StateIdentifier]s to the internal index used to
   /// represent that state in the state machine.
-  // TODO: should this be overrideable?
   late final Map<StateIdentifier, int> stateIndexLookup = UnmodifiableMapView(
       _stateValueLookup.map((key, value) => MapEntry(key.identifier, value)));
 
@@ -118,8 +117,9 @@ class FiniteStateMachine<StateIdentifier> {
     this.resetState,
     this._states, {
     this.asyncReset = false,
-    this.setupActions = const [],
-  })  : stateWidth = _logBase(_states.length, 2),
+    List<Conditional> setupActions = const [],
+  })  : setupActions = List.unmodifiable(setupActions),
+        stateWidth = _logBase(_states.length, 2),
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
