@@ -67,8 +67,23 @@ void main() {
 
       for (final submod in mod.subModules) {
         final synth = SynthBuilder(submod, SystemVerilogSynthesizer());
-        expect(synth.getSynthFileContents()[0].contents,
+        final firstSynthFileContents = synth.getSynthFileContents()[0];
+        expect(
+            firstSynthFileContents.contents, contains(submod.definitionName));
+        expect(firstSynthFileContents.name, submod.definitionName);
+
+        expect(
+            synth.synthesisResults.first.toSynthFileContents().first.contents,
+            firstSynthFileContents.contents);
+
+        expect(firstSynthFileContents.description,
             contains(submod.definitionName));
+
+        // test backwards compatibility
+        expect(
+            // ignore: deprecated_member_use_from_same_package
+            synth.getFileContents().first,
+            firstSynthFileContents.toString());
       }
     });
 
