@@ -31,10 +31,11 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
+  /// The direct replacement of this [SynthLogic].
+  SynthLogic? _replacement;
+
   /// The width of any/all of the [logics].
   int get width => logics.first.width;
-
-  SynthLogic? _replacement;
 
   /// Indicates that this has a reserved name.
   bool get isReserved => _reservedLogic != null;
@@ -95,6 +96,7 @@ class SynthLogic {
     return _name!;
   }
 
+  /// The name of this, if it has been picked.
   String? _name;
 
   /// Picks a [name].

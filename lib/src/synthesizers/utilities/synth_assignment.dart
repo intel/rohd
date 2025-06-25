@@ -11,6 +11,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents an assignment between two signals.
 class SynthAssignment {
+  /// The initial destination.
   SynthLogic _dst;
 
   /// The destination being driven by this assignment.
@@ -24,6 +25,7 @@ class SynthAssignment {
     return _dst;
   }
 
+  /// The initial source.
   SynthLogic _src;
 
   /// The source driving in this assignment.

@@ -61,8 +61,8 @@ selectIndexValueArrayA <= arrayA.elements.selectIndex(id, defaultValue: defaultV
 selectFromValueArrayA <= id.selectFrom(arrayA.elements, defaultValue: defaultValue);
 ```
 
-An example code is given to demonstrate a usage of selectIndex and selectFrom for logic arrays.
-Please see code here: [logic_array.dart](https://github.com/intel/rohd/blob/main/example)
+An example code is given to demonstrate a usage of `selectIndex` and `selectFrom` for logic arrays.
+Please see code here: [logic_array.dart](https://github.com/intel/rohd/blob/main/example/logic_array.dart)
 
 ### 2. Using a list of `Logic` elements
 
