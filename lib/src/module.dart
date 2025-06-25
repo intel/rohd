@@ -199,8 +199,7 @@ abstract class Module {
   String get uniqueInstanceName => hasBuilt || reserveName
       ? _uniqueInstanceName
       : throw ModuleNotBuiltException(
-          'Module must be built to access uniquified name.'
-          '  Call build() before accessing this.');
+          this, 'Module must be built to access uniquified name.');
   String _uniqueInstanceName;
 
   /// If true, guarantees [uniqueInstanceName] matches [name] or else the
@@ -251,8 +250,7 @@ abstract class Module {
   Iterable<Module> hierarchy() {
     if (!hasBuilt) {
       throw ModuleNotBuiltException(
-          'Module must be built before accessing hierarchy.'
-          '  Call build() before executing this.');
+          this, 'Module must be built before accessing hierarchy.');
     }
     Module? pModule = this;
     final hierarchyQueue = Queue<Module>();
@@ -902,7 +900,7 @@ abstract class Module {
   /// may have other output formats, languages, files, etc.
   String generateSynth() {
     if (!_hasBuilt) {
-      throw ModuleNotBuiltException();
+      throw ModuleNotBuiltException(this);
     }
 
     final synthHeader = '''
@@ -915,7 +913,7 @@ abstract class Module {
 ''';
     return synthHeader +
         SynthBuilder(this, SystemVerilogSynthesizer())
-            .getFileContents()
+            .getSynthFileContents()
             .join('\n\n////////////////////\n\n');
   }
 }
