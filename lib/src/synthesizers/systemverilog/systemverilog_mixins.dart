@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_mixins.dart
+// Definition for SystemVerilog Mixins and supporting stuff
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 

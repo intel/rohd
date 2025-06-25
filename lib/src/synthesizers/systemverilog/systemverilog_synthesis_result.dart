@@ -1,12 +1,29 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_synthesis_result.dart
+// Definition for SystemVerilogCustomDefinitionSynthesisResult
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
+/// Extra utilities on [SynthLogic] to help with SystemVerilog synthesis.
+extension on SynthLogic {
+  /// Gets the SystemVerilog type for this signal.
+  String definitionType() => isNet ? 'wire' : 'logic';
+}
+
 /// A [SynthesisResult] representing a [Module] that provides a custom
 /// SystemVerilog definition.
 class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
+  /// Creates a new [SystemVerilogCustomDefinitionSynthesisResult] for the given
+  /// [module].
   SystemVerilogCustomDefinitionSynthesisResult(
       super.module, super.getInstanceTypeOfModule)
       : assert(
@@ -57,6 +74,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   List<Module> get supportingModules =>
       _synthModuleDefinition.supportingModules;
 
+  /// Creates a new [SystemVerilogSynthesisResult] for the given [module].
   SystemVerilogSynthesisResult(super.module, super.getInstanceTypeOfModule)
       : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
     _portsString = _verilogPorts();

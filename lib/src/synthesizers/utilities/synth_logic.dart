@@ -1,4 +1,11 @@
-import 'dart:collection';
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_logic.dart
+// Definitions for signal representations during generation
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
@@ -260,8 +267,6 @@ class SynthLogic {
       return '';
     }
   }
-
-  String definitionType() => isNet ? 'wire' : 'logic';
 
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.

@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_assignment.dart
+// Definition for assignments
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Represents an assignment between two signals.

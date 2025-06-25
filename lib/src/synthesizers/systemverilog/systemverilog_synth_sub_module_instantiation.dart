@@ -1,6 +1,16 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_synth_sub_module_instantiation.dart
+// Definition for SystemVerilogSynthSubModuleInstantiation
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
+/// Represents a submodule instantiation for SystemVerilog.
 class SystemVerilogSynthSubModuleInstantiation
     extends SynthSubModuleInstantiation {
   /// If [module] is [InlineSystemVerilog], this will be the [SynthLogic] that
@@ -10,6 +20,8 @@ class SystemVerilogSynthSubModuleInstantiation
       : (outputMapping[(module as InlineSystemVerilog).resultSignalName] ??
           inOutMapping[(module as InlineSystemVerilog).resultSignalName]);
 
+  /// Creates a new [SystemVerilogSynthSubModuleInstantiation] for the given
+  /// [module].
   SystemVerilogSynthSubModuleInstantiation(super.module);
 
   /// Mapping from [SynthLogic]s which are outputs of inlineable SV to those

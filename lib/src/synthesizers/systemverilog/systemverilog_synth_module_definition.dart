@@ -1,11 +1,21 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_synth_module_definition.dart
+// Definition for SystemVerilogSynthModuleDefinition
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
+/// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
+  /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
   SystemVerilogSynthModuleDefinition(super.module);
 
-  //TODO
   @override
   void process() {
     _replaceNetConnections();

@@ -1,4 +1,11 @@
-//TODO: headers!
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_synthesizer.dart
+// Definition for SystemVerilog Synthesizer
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_result.dart';

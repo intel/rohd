@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_module_definition.dart
+// Definitions for a module definition
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
@@ -11,6 +20,7 @@ class SynthModuleDefinition {
   /// The [Module] being defined.
   final Module module;
 
+  /// All the assignments that are part of this definition.
   final List<SynthAssignment> assignments = [];
 
   /// All other internal signals that are not ports.
@@ -55,6 +65,11 @@ class SynthModuleDefinition {
     }
   }
 
+  /// Creates a [SynthSubModuleInstantiation] representing the instantiation of
+  /// [m].
+  ///
+  /// This can be overridden to provide custom types for sub-module
+  /// instantiation.
   @visibleForOverriding
   SynthSubModuleInstantiation createSubModuleInstantiation(Module m) =>
       SynthSubModuleInstantiation(m);
@@ -300,7 +315,8 @@ class SynthModuleDefinition {
     _pickNames();
   }
 
-  //TODO is this name good?
+  /// Performs additional processing on the current definition to simplify,
+  /// reduce, etc.
   @protected
   @visibleForOverriding
   void process() {

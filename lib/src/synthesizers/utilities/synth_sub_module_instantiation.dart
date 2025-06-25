@@ -1,3 +1,12 @@
+// Copyright (C) 2021-2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// synth_sub_module_instantiation.dart
+// Definitions for a submodule instantiations.
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
@@ -67,6 +76,7 @@ class SynthSubModuleInstantiation {
       UnmodifiableMapView(_inOutMapping);
   final Map<String, SynthLogic> _inOutMapping = {};
 
+  /// Adds an inOut mapping from [name] to [synthLogic].
   void setInOutMapping(String name, SynthLogic synthLogic,
       {bool replace = false}) {
     assert(module.inOuts.containsKey(name),

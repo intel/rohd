@@ -17,8 +17,9 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 class SynthBuilder {
   /// The top-level [Module] to be synthesized.
   @Deprecated('Use `tops` instead.')
-  Module get top =>
-      tops.length != 1 ? throw Exception('TODO') : tops.first; //TODO exception
+  Module get top => tops.length != 1
+      ? throw SynthException('There must be exactly one top to use this API.')
+      : tops.first;
 
   /// The top-level [Module]s to be synthesized.
   final List<Module> tops;
@@ -39,8 +40,6 @@ class SynthBuilder {
 
   /// [Uniquifier] for instance type names.
   final Uniquifier _instanceTypeUniquifier = Uniquifier();
-
-  //TODO: consider https://github.com/intel/rohd/issues/434
 
   /// Constructs a [SynthBuilder] based on the [top] module and
   /// using [synthesizer] for generating outputs.
@@ -65,8 +64,6 @@ class SynthBuilder {
       }
       modulesToParse.addAll(moduleI.subModules);
     }
-
-    //TODO: test that multiple mods with same module definition name doesn't conflict
 
     // go backwards to start from the bottom (...now we're here)
     // critical to go in this order for caching to work properly
