@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_builder_test.dart
@@ -14,6 +14,7 @@ class TopModule extends Module {
   TopModule(Logic a, Logic b) : super(name: 'topmodule') {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
+
     final y = addOutput('y', width: a.width);
     final z = addOutput('z', width: b.width);
     final z2 = addOutput('z2', width: b.width);
@@ -66,8 +67,41 @@ void main() {
 
       for (final submod in mod.subModules) {
         final synth = SynthBuilder(submod, SystemVerilogSynthesizer());
-        expect(synth.getFileContents()[0], contains(submod.definitionName));
+        final firstSynthFileContents = synth.getSynthFileContents()[0];
+        expect(
+            firstSynthFileContents.contents, contains(submod.definitionName));
+        expect(firstSynthFileContents.name, submod.definitionName);
+
+        expect(
+            synth.synthesisResults.first.toSynthFileContents().first.contents,
+            firstSynthFileContents.contents);
+
+        expect(firstSynthFileContents.description,
+            contains(submod.definitionName));
+
+        // test backwards compatibility
+        expect(
+            // ignore: deprecated_member_use_from_same_package
+            synth.getFileContents().first,
+            firstSynthFileContents.toString());
       }
+    });
+
+    test('multi-top synthbuilder works', () async {
+      final top1 = TopModule(Logic(), Logic());
+      final top2 = TopModule(Logic(width: 8), Logic());
+
+      await top1.build();
+      await top2.build();
+
+      final synthBuilder =
+          SynthBuilder.multi([top1, top2], SystemVerilogSynthesizer());
+      final synthResults = synthBuilder.synthesisResults;
+
+      expect(synthResults.where((e) => e.module == top1).length, 1);
+      expect(synthResults.where((e) => e.module == top2).length, 1);
+      expect(synthResults.where((e) => e.module is AModule).length, 2);
+      expect(synthResults.where((e) => e.module is BModule).length, 1);
     });
   });
 }

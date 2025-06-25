@@ -14,6 +14,9 @@ import 'package:rohd/rohd.dart';
 class ModuleNotBuiltException extends RohdException {
   /// Constructs a new [Exception] for when a [Module] should have been built
   /// before some action was taken.
-  ModuleNotBuiltException(
-      [super.message = 'Module has not yet built!  Must call build() first.']);
+  ModuleNotBuiltException(Module module, [String? additionalInformation])
+      : super([
+          'Module $module has not yet built! Must call build() first.',
+          additionalInformation
+        ].nonNulls.join(' '));
 }
