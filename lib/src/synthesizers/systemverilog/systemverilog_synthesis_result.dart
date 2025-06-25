@@ -17,6 +17,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 extension on SynthLogic {
   /// Gets the SystemVerilog type for this signal.
   String definitionType() => isNet ? 'wire' : 'logic';
+  //TODO: what about typedef types here?
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -177,6 +178,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     }
     return subModuleLines.join('\n');
   }
+
+  /// Internal `typedef` definitions for this module.
+  String _verilogTypedefs() {}
 
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.

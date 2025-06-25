@@ -4,6 +4,8 @@ part of 'signals.dart';
 //  - by default, throw an exception if assignment between enums of different mappings?
 // TODO: should we support enum ports? then where does the typedef live?
 
+//TODO: do we need to support arrays of enums?
+
 class LogicEnum<T extends Enum> extends Logic {
   //TODO: if a `put` has an illegal value prop X
 
