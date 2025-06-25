@@ -8,6 +8,9 @@
     },
     {
       "pattern":"^https://stackoverflow.com"
+    },
+    {
+      "pattern":"^https://github.com"
     }
   ]
 }
