@@ -69,7 +69,7 @@ Contains the logic for performing the state transitions.</p>
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="FiniteStateMachine" class="callable">
-          <span class="name"><a href="../rohd/FiniteStateMachine/FiniteStateMachine.html">FiniteStateMachine</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span><span class="parameter" id="-param-states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">states</span>, {</span><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../rohd/FiniteStateMachine/FiniteStateMachine.html">FiniteStateMachine</a></span><span class="signature">(<span class="parameter" id="-param-clk"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">clk</span>, </span><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span><span class="parameter" id="-param-states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">states</span>, {</span><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="-param-setupActions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">setupActions</span> = <span class="default-value">const []</span></span>})</span>
         </dt>
         <dd>
           Creates an finite state machine for the specified list of <code>_states</code>, with
@@ -77,7 +77,7 @@ an initial state of <code>resetState</code> (when synchronous <code>reset</code>
 transitions on positive <code>clk</code> edges.
         </dd>
         <dt id="FiniteStateMachine.multi" class="callable">
-          <span class="name"><a href="../rohd/FiniteStateMachine/FiniteStateMachine.multi.html">FiniteStateMachine.multi</a></span><span class="signature">(<span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="multi-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, {</span><span class="parameter" id="multi-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../rohd/FiniteStateMachine/FiniteStateMachine.multi.html">FiniteStateMachine.multi</a></span><span class="signature">(<span class="parameter" id="multi-param-_clks"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">_clks</span>, </span><span class="parameter" id="multi-param-reset"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">reset</span>, </span><span class="parameter" id="multi-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, {</span><span class="parameter" id="multi-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span><span class="parameter" id="multi-param-setupActions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">setupActions</span> = <span class="default-value">const []</span></span>})</span>
         </dt>
         <dd>
           Creates an finite state machine for the specified list of <code>_states</code>, with
@@ -189,6 +189,33 @@ first clock.
 
 </dd>
 
+        <dt id="setupActions" class="property">
+  <span class="name"><a href="../rohd/FiniteStateMachine/setupActions.html">setupActions</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  A <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a> of <a href="../rohd/Conditional-class.html">Conditional</a> actions to perform at the beginning of the
+evaluation of actions for the <a href="../rohd/FiniteStateMachine-class.html">FiniteStateMachine</a>.  This is useful for
+things like setting up default values for signals across all states.
+  <div class="features"><span class="feature">final</span></div>
+
+</dd>
+
+        <dt id="stateIndexLookup" class="property">
+  <span class="name"><a href="../rohd/FiniteStateMachine/stateIndexLookup.html">stateIndexLookup</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span>&gt;</span></span>
+  
+
+</dt>
+<dd>
+  A <a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a> from the <code>StateIdentifier</code>s to the internal index used to
+represent that state in the state machine.
+  <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+
+</dd>
+
         <dt id="states" class="property">
   <span class="name"><a href="../rohd/FiniteStateMachine/states.html">states</a></span>
   <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span>
@@ -198,6 +225,18 @@ first clock.
 <dd>
   List of all the <a href="../rohd/State-class.html">State</a>s in this machine.
   <div class="features"><span class="feature">no setter</span></div>
+
+</dd>
+
+        <dt id="stateWidth" class="property">
+  <span class="name"><a href="../rohd/FiniteStateMachine/stateWidth.html">stateWidth</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span>
+  
+
+</dt>
+<dd>
+  Width of the state.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 

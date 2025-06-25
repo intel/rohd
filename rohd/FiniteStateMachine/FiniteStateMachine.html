@@ -62,6 +62,7 @@
 <li><span class="parameter" id="-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span></li>
 <li><span class="parameter" id="-param-states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">states</span>, {</span></li>
 <li><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="-param-setupActions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">setupActions</span> = <span class="default-value">const []</span>, </span></li>
 </ol>})
     </section>
     
@@ -81,7 +82,9 @@ transitions on positive <code>clk</code> edges.</p>
   StateIdentifier resetState,
   List&lt;State&lt;StateIdentifier&gt;&gt; states, {
   bool asyncReset = false,
-}) : this.multi([clk], reset, resetState, states, asyncReset: asyncReset);</code></pre>
+  List&lt;Conditional&gt; setupActions = const [],
+}) : this.multi([clk], reset, resetState, states,
+          asyncReset: asyncReset, setupActions: setupActions);</code></pre>
 </section>
 
 

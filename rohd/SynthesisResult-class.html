@@ -58,7 +58,7 @@
 
     
 <section class="desc markdown">
-  <p>An object representing the output of a Synthesizer</p>
+  <p>An object representing the output of a Synthesizer for one <a href="../rohd/SynthesisResult/module.html">module</a>.</p>
 </section>
 
 
@@ -75,7 +75,7 @@
   <dt>Annotations</dt>
   <dd>
     <ul class="annotation-list clazz-relationships">
-        <li>@<a href="https://pub.dev/documentation/meta/1.16.0/meta/immutable-constant.html">immutable</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.17.0/meta/immutable-constant.html">immutable</a></li>
     </ul>
   </dd>
 
@@ -224,14 +224,14 @@ the generated results.
 </dd>
 
         <dt id="toFileContents" class="callable">
-  <span class="name"><a href="../rohd/SynthesisResult/toFileContents.html">toFileContents</a></span><span class="signature">(<wbr>)
+  <span class="name deprecated"><a class="deprecated" href="../rohd/SynthesisResult/toFileContents.html">toFileContents</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Generates what could go into a file
+  Generates what could go into a file.
   
 
 </dd>
@@ -246,6 +246,19 @@ the generated results.
 <dd class="inherited">
   A string representation of this object.
   <div class="features"><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="toSynthFileContents" class="callable">
+  <span class="name"><a href="../rohd/SynthesisResult/toSynthFileContents.html">toSynthFileContents</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/SynthFileContents-class.html">SynthFileContents</a></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Generates contents for a number of files.
+  
 
 </dd>
 

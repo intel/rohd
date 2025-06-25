@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
-    <li class="self-crumb">top property</li>
+    <li class="self-crumb"><span class="deprecated">top</span> property</li>
   </ol>
   <div class="self-name">top</div>
   <form class="search navbar-right" role="search">
@@ -56,26 +56,40 @@
 </h1></div>
 
     
-      <section class="multi-line-signature">
-        
-        <a href="../../rohd/Module-class.html">Module</a>
-        <span class="name ">top</span>
-        <div class="features"><span class="feature">final</span></div>
 
-      </section>
+    
+        
+  <section id="getter">
+    <section class="multi-line-signature">
       
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `tops` instead.&#39;)</li>
+    </ol>
+  </div>
+      <span class="returntype"><a href="../../rohd/Module-class.html">Module</a></span>
+      get
+      <span class="name deprecated">top</span>
+      
+
+    </section>
+    
 <section class="desc markdown">
   <p>The top-level <a href="../../rohd/Module-class.html">Module</a> to be synthesized.</p>
 </section>
 
-      
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">final Module top;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `tops` instead.&#39;)
+Module get top =&gt; tops.length != 1
+    ? throw SynthException(&#39;There must be exactly one top to use this API.&#39;)
+    : tops.first;</code></pre>
 </section>
 
+  </section>
 
-    
+
 </div> <!-- /.main-content -->
 <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
   <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
@@ -88,7 +102,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/SynthBuilder-class.html">SynthBuilder</a></li>
-    <li class="self-crumb">top property</li>
+    <li class="self-crumb"><span class="deprecated">top</span> property</li>
 </ol>
 
   <h5>SynthBuilder class</h5>

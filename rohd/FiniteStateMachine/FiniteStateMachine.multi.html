@@ -62,6 +62,7 @@
 <li><span class="parameter" id="multi-param-resetState"><span class="type-annotation">StateIdentifier</span> <span class="parameter-name">resetState</span>, </span></li>
 <li><span class="parameter" id="multi-param-_states"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/State-class.html">State</a><span class="signature">&lt;<wbr><span class="type-parameter">StateIdentifier</span>&gt;</span></span>&gt;</span></span> <span class="parameter-name">_states</span>, {</span></li>
 <li><span class="parameter" id="multi-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="multi-param-setupActions"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span> <span class="parameter-name">setupActions</span> = <span class="default-value">const []</span>, </span></li>
 </ol>})
     </section>
     
@@ -77,9 +78,14 @@ positive edges of any of <code>_clks</code>.</p>
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">FiniteStateMachine.multi(
-    this._clks, this.reset, this.resetState, this._states,
-    {this.asyncReset = false})
-    : _stateWidth = _logBase(_states.length, 2),
+  this._clks,
+  this.reset,
+  this.resetState,
+  this._states, {
+  this.asyncReset = false,
+  List&lt;Conditional&gt; setupActions = const [],
+})  : setupActions = List.unmodifiable(setupActions),
+      stateWidth = _logBase(_states.length, 2),
       currentState =
           Logic(name: &#39;currentState&#39;, width: _logBase(_states.length, 2)),
       nextState =
@@ -93,26 +99,29 @@ positive edges of any of <code>_clks</code>.</p>
   }
 
   Combinational([
+    ...setupActions,
     Case(
         currentState,
         _states
             .map((state) =&gt; CaseItem(
-                    Const(_stateValueLookup[state], width: _stateWidth), [
-                  ...state.actions,
-                  Case(
-                      Const(1),
-                      state.events.entries
-                          .map((entry) =&gt; CaseItem(entry.key, [
-                                nextState &lt;
-                                    _stateValueLookup[
-                                        _stateLookup[entry.value]]
-                              ]))
-                          .toList(growable: false),
-                      conditionalType: state.conditionalType,
-                      defaultItem: [
-                        nextState &lt; getStateIndex(state.defaultNextState),
-                      ])
-                ]))
+                    Const(_stateValueLookup[state], width: stateWidth)
+                        .named(state.identifier.toString()),
+                    [
+                      ...state.actions,
+                      Case(
+                          Const(1),
+                          state.events.entries
+                              .map((entry) =&gt; CaseItem(entry.key, [
+                                    nextState &lt;
+                                        _stateValueLookup[
+                                            _stateLookup[entry.value]]
+                                  ]))
+                              .toList(growable: false),
+                          conditionalType: state.conditionalType,
+                          defaultItem: [
+                            nextState &lt; getStateIndex(state.defaultNextState),
+                          ])
+                    ]))
             .toList(growable: false),
         conditionalType: ConditionalType.unique,
         defaultItem: [
