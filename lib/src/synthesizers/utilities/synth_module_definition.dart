@@ -79,7 +79,7 @@ class SynthModuleDefinition {
 
   /// Used to uniquify any identifiers, including signal names
   /// and module instances.
-  final Uniquifier _synthInstantiationNameUniquifier;
+  final Uniquifier _synthIdentifierUniquifier;
 
   /// Either accesses a previously created [SynthLogic] corresponding to
   /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
@@ -132,7 +132,7 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : _synthInstantiationNameUniquifier = Uniquifier(
+      : _synthIdentifierUniquifier = Uniquifier(
           reservedNames: {
             ...module.inputs.keys,
             ...module.outputs.keys,
@@ -355,20 +355,20 @@ class SynthModuleDefinition {
   void _pickNames() {
     // first ports get priority
     for (final input in inputs) {
-      input.pickName(_synthInstantiationNameUniquifier);
+      input.pickName(_synthIdentifierUniquifier);
     }
     for (final output in outputs) {
-      output.pickName(_synthInstantiationNameUniquifier);
+      output.pickName(_synthIdentifierUniquifier);
     }
     for (final inOut in inOuts) {
-      inOut.pickName(_synthInstantiationNameUniquifier);
+      inOut.pickName(_synthIdentifierUniquifier);
     }
 
     // pick names of *reserved* submodule instances
     final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
     for (final submodule in moduleToSubModuleInstantiationMap.values) {
       if (submodule.module.reserveName) {
-        submodule.pickName(_synthInstantiationNameUniquifier);
+        submodule.pickName(_synthIdentifierUniquifier);
         assert(submodule.module.name == submodule.name,
             'Expect reserved names to retain their name.');
       } else {
@@ -380,7 +380,7 @@ class SynthModuleDefinition {
     final nonReservedSignals = <SynthLogic>[];
     for (final signal in internalSignals) {
       if (signal.isReserved) {
-        signal.pickName(_synthInstantiationNameUniquifier);
+        signal.pickName(_synthIdentifierUniquifier);
       } else {
         nonReservedSignals.add(signal);
       }
@@ -389,12 +389,12 @@ class SynthModuleDefinition {
     // then submodule instances
     for (final submodule
         in nonReservedSubmodules.where((element) => element.needsDeclaration)) {
-      submodule.pickName(_synthInstantiationNameUniquifier);
+      submodule.pickName(_synthIdentifierUniquifier);
     }
 
     // then the rest of the internal signals
     for (final signal in nonReservedSignals) {
-      signal.pickName(_synthInstantiationNameUniquifier);
+      signal.pickName(_synthIdentifierUniquifier);
     }
   }
 

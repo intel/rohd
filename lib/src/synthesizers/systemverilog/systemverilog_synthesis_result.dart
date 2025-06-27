@@ -17,6 +17,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 extension on SynthLogic {
   /// Gets the SystemVerilog type for this signal.
   String definitionType() => isNet ? 'wire' : 'logic';
+  //TODO: what about typedef types here?
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -152,6 +153,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
+      // TODO: if we have an enum assigned to a constant, then use enum!
       assignmentLines
           .add('assign ${assignment.dst.name} = ${assignment.src.name};');
     }
@@ -177,6 +179,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     }
     return subModuleLines.join('\n');
   }
+
+  /// Internal `typedef` definitions for this module.
+  // String _verilogTypedefs() {} // TODO typedef stuff
 
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.

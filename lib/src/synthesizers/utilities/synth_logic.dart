@@ -46,6 +46,12 @@ class SynthLogic {
   /// The [Logic] whose name is renameable, if there is one.
   Logic? _renameableLogic;
 
+  /// A [LogicEnum] that is characteristic of any merged [LogicEnum]s into this.
+  LogicEnum? get characteristicEnum => _firstEnum;
+
+  /// The first [LogicEnum] merged into this [SynthLogic], if there is one.
+  LogicEnum? _firstEnum;
+
   /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
 
@@ -67,6 +73,11 @@ class SynthLogic {
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
       logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
+
+  /// Whether this represents an enum.
+  bool get isEnum =>
+      // can just look at the first since enums and non-enums cannot be merged
+      logics.first is LogicEnum;
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -106,14 +117,20 @@ class SynthLogic {
     assert(_name == null, 'Should only pick a name once.');
 
     _name = _findName(uniquifier);
+    //TODO: dont allow merge after name picked?
   }
 
   /// Finds the best name from the collection of [Logic]s.
   String _findName(Uniquifier uniquifier) {
     // check for const
-    if (_constLogic != null) {
+    if (isConstant) {
       if (!_constNameDisallowed) {
-        return _constLogic!.value.toString();
+        if (isEnum) {
+          // TODO: here is where we need to pring name of enum!
+          // return charachteristicEnum!.mapping[_constLogic]
+        } else {
+          return _constLogic!.value.toString();
+        }
       } else {
         assert(
             logics.length > 1,
@@ -121,6 +138,8 @@ class SynthLogic {
             'there needs to be another option');
       }
     }
+
+    //TODO: for enums, all the value names must be unique in the scope as well!
 
     // check for reserved
     if (_reservedLogic != null) {
@@ -199,6 +218,44 @@ class SynthLogic {
       return null;
     }
 
+    if (a.isEnum || b.isEnum) {
+      // do not merge enums with non-enums (except for constants)
+      final oneIsConst = a.isConstant || b.isConstant;
+
+      if (oneIsConst) {
+        // check to make sure the constant is legal for the enum, otherwise it
+        // will generate illegal verilog
+        //TODO: test this scenario!
+
+        final theConst = a.isConstant ? a : b;
+        final theEnum = a.isEnum ? a : b;
+        assert(theConst != theEnum,
+            'Const and enum should be different SynthLogics.');
+
+        final constVal = theConst._constLogic!.value;
+        final enumMapping = theEnum.characteristicEnum!.mapping;
+        if (!enumMapping.values.contains(constVal)) {
+          //TODO: better exceptions
+          throw Exception('Assignment of $constVal to enum'
+              ' with mapping $enumMapping is not legal.');
+        }
+      } else {
+        // if not a const scenario, check enum rules
+        if (a.isEnum != b.isEnum) {
+          return null;
+        }
+
+        final aEnum = a.logics.first as LogicEnum;
+        final bEnum = b.logics.first as LogicEnum;
+        // if the enums are incompatible, do not merge
+        if (!aEnum.isEquivalentTypeTo(bEnum)) {
+          return null;
+        }
+      }
+
+      // otherwise, continue on with normal merging flow
+    }
+
     if (b.mergeable) {
       a.adopt(b);
       return b;
@@ -222,6 +279,10 @@ class SynthLogic {
     assert(other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
+    assert(
+        _name == null, 'Cannot merge into this after a name has been picked.');
+    assert(other._name == null,
+        'Cannot merge into other after a name has been picked.');
 
     _constNameDisallowed |= other._constNameDisallowed;
 
@@ -229,6 +290,7 @@ class SynthLogic {
     _constLogic ??= other._constLogic;
     _reservedLogic ??= other._reservedLogic;
     _renameableLogic ??= other._renameableLogic;
+    _firstEnum ??= other._firstEnum;
 
     // the rest, take them all
     _mergeableLogics.addAll(other._mergeableLogics);
@@ -254,6 +316,13 @@ class SynthLogic {
         case Naming.unnamed:
           _unnamedLogics.add(logic);
       }
+    }
+
+    if (logic is LogicEnum) {
+      assert(characteristicEnum?.isEquivalentTypeTo(logic) ?? true,
+          'Cannot add a LogicEnum that is not equivalent to the existing one.');
+
+      _firstEnum ??= logic;
     }
   }
 
