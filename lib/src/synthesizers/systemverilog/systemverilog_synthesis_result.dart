@@ -153,6 +153,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
+      // TODO: if we have an enum assigned to a constant, then use enum!
       assignmentLines
           .add('assign ${assignment.dst.name} = ${assignment.src.name};');
     }
@@ -180,7 +181,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   }
 
   /// Internal `typedef` definitions for this module.
-  String _verilogTypedefs() {}
+  // String _verilogTypedefs() {} // TODO typedef stuff
 
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.

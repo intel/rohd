@@ -6,7 +6,9 @@ part of 'signals.dart';
 
 //TODO: do we need to support arrays of enums?
 
-class LogicEnum<T extends Enum> extends Logic {
+//TODO: how do you define a constant version of an enum?
+
+class LogicEnum<T extends Enum> extends LogicDef {
   //TODO: if a `put` has an illegal value prop X
 
   late final Map<T, LogicValue> mapping;
@@ -16,7 +18,8 @@ class LogicEnum<T extends Enum> extends Logic {
 
   T get valueEnum => mapping.entries
       .firstWhere((entry) => entry.value == value,
-          orElse: () => throw StateError('Value $value does not co.'))
+          orElse: () => throw StateError(
+              'Value $value does not correspond to any enum in $mapping'))
       .key;
 
   static Map<T, LogicValue> _computeMapping<T extends Enum>(
@@ -95,9 +98,21 @@ class LogicEnum<T extends Enum> extends Logic {
     return width;
   }
 
-  LogicEnum.withMapping(Map<T, dynamic> mapping,
-      {int? width, super.name, super.naming})
-      : super(width: _computeWidth(requestedWidth: width, mapping: mapping)) {
+  /// TODO
+  ///
+  /// If [reserveDefinitionName] is true, then the enum names will be reserved
+  /// as well.
+  LogicEnum.withMapping(
+    Map<T, dynamic> mapping, {
+    int? width,
+    super.name,
+    super.naming,
+    String? definitionName,
+    super.reserveDefinitionName,
+  }) : super(
+            width: _computeWidth(requestedWidth: width, mapping: mapping),
+            definitionName: Naming.validatedName(T.runtimeType.toString(),
+                reserveName: reserveDefinitionName)) {
     this.mapping =
         Map.unmodifiable(_computeMapping(mapping: mapping, width: this.width));
 
@@ -115,13 +130,43 @@ class LogicEnum<T extends Enum> extends Logic {
     });
   }
 
-  LogicEnum(List<T> values, {int? width, String? name, Naming? naming})
+  LogicEnum(List<T> values,
+      {int? width,
+      String? name,
+      Naming? naming,
+      String? definitionName,
+      bool reserveDefinitionName = false})
       : this.withMapping(
             Map.fromEntries(
                 values.mapIndexed((index, value) => MapEntry(value, index))),
             width: width,
             name: name,
-            naming: naming);
+            naming: naming,
+            definitionName: definitionName,
+            reserveDefinitionName: reserveDefinitionName);
+
+  // TODO: do we really need to track this isConst?
+  bool _isConst = false;
+  bool get isConst => _isConst;
+
+  /// Drives this [LogicEnum] with a constant value matching the enum [value].
+  void getsEnum(T value) {
+    gets(Const(mapping[value]));
+  }
+
+  @override
+  void gets(Logic other) {
+    if (other is Const) {
+      if (!mapping.containsValue(other.value)) {
+        throw Exception(
+            'Value ${other.value} is not mapped in $mapping for enum $T.');
+      }
+
+      _isConst = true;
+    }
+
+    super.gets(other);
+  }
 
   @override
   void put(dynamic val, {bool fill = false}) {
@@ -139,6 +184,23 @@ class LogicEnum<T extends Enum> extends Logic {
     } else {
       super.put(val, fill: fill);
     }
+  }
+
+  bool isEquivalentTypeTo(Logic other) {
+    if (other is! LogicEnum<T>) {
+      return false;
+    }
+
+    final mappingsEqual = const DeepCollectionEquality.unordered().equals(
+      mapping,
+      other.mapping,
+    );
+
+    if (!mappingsEqual) {
+      return false;
+    }
+
+    return true;
   }
 
   //TODO: clone

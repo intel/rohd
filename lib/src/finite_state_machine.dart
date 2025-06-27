@@ -15,13 +15,13 @@ import 'package:rohd/rohd.dart';
 
 /// Deprecated: use [FiniteStateMachine] instead.
 @Deprecated('Use FiniteStateMachine instead')
-typedef StateMachine<T> = FiniteStateMachine<T>;
+typedef StateMachine<T extends Enum> = FiniteStateMachine<T>;
 
 /// Simple class for FSM [FiniteStateMachine].
 ///
 /// Abstraction for representing Finite state machines (FSM).
 /// Contains the logic for performing the state transitions.
-class FiniteStateMachine<StateIdentifier> {
+class FiniteStateMachine<StateIdentifier extends Enum> {
   /// List of all the [State]s in this machine.
   List<State<StateIdentifier>> get states => UnmodifiableListView(_states);
   final List<State<StateIdentifier>> _states;
@@ -93,6 +93,10 @@ class FiniteStateMachine<StateIdentifier> {
   /// If `true`, the [reset] signal is asynchronous.
   final bool asyncReset;
 
+  LogicEnum<StateIdentifier> stateEnum({String? name}) =>
+      LogicEnum<StateIdentifier>.withMapping(stateIndexLookup,
+          name: name, definitionName: StateIdentifier.runtimeType.toString());
+
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
   /// transitions on positive [clk] edges.
@@ -120,6 +124,7 @@ class FiniteStateMachine<StateIdentifier> {
     List<Conditional> setupActions = const [],
   })  : setupActions = List.unmodifiable(setupActions),
         stateWidth = _logBase(_states.length, 2),
+        //TODO currentState and nextState should be LogicEnum<StateIdentifier>
         currentState =
             Logic(name: 'currentState', width: _logBase(_states.length, 2)),
         nextState =
@@ -138,8 +143,9 @@ class FiniteStateMachine<StateIdentifier> {
           currentState,
           _states
               .map((state) => CaseItem(
-                      Const(_stateValueLookup[state], width: stateWidth)
-                          .named(state.identifier.toString()),
+                      stateEnum()..getsEnum(state.identifier),
+                      // Const(_stateValueLookup[state], width: stateWidth)
+                      //     .named(state.identifier.toString()),
                       [
                         ...state.actions,
                         Case(
@@ -226,7 +232,7 @@ class FiniteStateMachine<StateIdentifier> {
 }
 
 /// Simple class to initialize each state of the FSM.
-class State<StateIdentifier> {
+class State<StateIdentifier extends Enum> {
   /// Identifier or name of the state.
   final StateIdentifier identifier;
 
