@@ -11,6 +11,7 @@ class SynthEnumDefinition<T extends Enum> {
   final Map<T, String> enumToNameMapping;
 
   SynthEnumDefinition(this.characteristicEnum, Uniquifier identifierUniquifier)
+      //TODO: sanitization!
       : definitionName = identifierUniquifier.getUniqueName(
             initialName: characteristicEnum.definitionName,
             reserved: characteristicEnum.reserveDefinitionName),
@@ -27,7 +28,27 @@ class SynthEnumDefinition<T extends Enum> {
 @immutable
 class SynthEnumDefinitionKey {
   //TODO: finish up this key as a lookup key for SynthEnumDefinition
-  final Map<Enum, String> enumMapping;
+  final Map<Enum, LogicValue> enumMapping;
+  final String? reservedName;
   SynthEnumDefinitionKey(LogicEnum characteristicEnum)
-      : enumMapping = Map.unmodifiable(characteristicEnum.mapping);
+      : enumMapping = characteristicEnum.mapping,
+        reservedName = characteristicEnum.reserveDefinitionName
+            ? characteristicEnum.definitionName
+            : null;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+
+    return other is SynthEnumDefinitionKey &&
+        const MapEquality<Enum, LogicValue>()
+            .equals(other.enumMapping, enumMapping) &&
+        other.reservedName == reservedName;
+  }
+
+  @override
+  int get hashCode =>
+      const MapEquality<Enum, LogicValue>().hash(enumMapping) ^
+      reservedName.hashCode;
 }

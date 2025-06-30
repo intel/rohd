@@ -12,6 +12,7 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -351,6 +352,29 @@ class SynthModuleDefinition {
     }
   }
 
+  final Map<SynthEnumDefinitionKey, SynthEnumDefinition> _enumDefinitions =
+      <SynthEnumDefinitionKey, SynthEnumDefinition>{};
+
+  List<SynthEnumDefinition> get enumDefinitions =>
+      _enumDefinitions.values.toList(growable: false);
+
+  void _pickDefinitionEnumName(SynthLogic synthEnum) {
+    assert(synthEnum.isEnum, 'Only call this on SynthLogic that is an enum.');
+    final key = SynthEnumDefinitionKey(synthEnum.characteristicEnum!);
+    if (_enumDefinitions.containsKey(key)) {
+      // already have a definition for this enum
+      synthEnum.enumDefinition = _enumDefinitions[key];
+    } else {
+      // create a new definition for this enum
+      final newDefinition = SynthEnumDefinition(
+        synthEnum.characteristicEnum!,
+        _synthIdentifierUniquifier,
+      );
+      _enumDefinitions[key] = newDefinition;
+      synthEnum.enumDefinition = newDefinition;
+    }
+  }
+
   /// Picks names of signals and sub-modules.
   void _pickNames() {
     // first ports get priority
@@ -362,6 +386,16 @@ class SynthModuleDefinition {
     }
     for (final inOut in inOuts) {
       inOut.pickName(_synthIdentifierUniquifier);
+    }
+
+    // pick names of *reserved* definition-type enums
+    final nonReservedEnumDefs = <SynthLogic>[];
+    for (final signal in internalSignals.where((e) => e.isEnum)) {
+      if (signal.characteristicEnum!.reserveDefinitionName) {
+        _pickDefinitionEnumName(signal);
+      } else {
+        nonReservedEnumDefs.add(signal);
+      }
     }
 
     // pick names of *reserved* submodule instances
@@ -385,6 +419,9 @@ class SynthModuleDefinition {
         nonReservedSignals.add(signal);
       }
     }
+
+    // then enum definitions that are not reserved
+    nonReservedEnumDefs.forEach(_pickDefinitionEnumName);
 
     // then submodule instances
     for (final submodule

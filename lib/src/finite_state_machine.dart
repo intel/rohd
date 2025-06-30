@@ -71,7 +71,8 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
   /// bus.
-  final Logic currentState;
+  late final LogicEnum<StateIdentifier> currentState =
+      stateEnum(name: 'currentState');
 
   /// A [List] of [Conditional] actions to perform at the beginning of the
   /// evaluation of actions for the [FiniteStateMachine].  This is useful for
@@ -82,7 +83,8 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   ///
   /// Use [getStateIndex] to map from a [StateIdentifier] to the value on this
   /// bus.
-  final Logic nextState;
+  late final LogicEnum<StateIdentifier> nextState =
+      stateEnum(name: 'nextState');
 
   /// Returns a ceiling on the log of [x] base [base].
   static int _logBase(num x, num base) => (log(x) / log(base)).ceil();
@@ -95,7 +97,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
 
   LogicEnum<StateIdentifier> stateEnum({String? name}) =>
       LogicEnum<StateIdentifier>.withMapping(stateIndexLookup,
-          name: name, definitionName: StateIdentifier.runtimeType.toString());
+          name: name, definitionName: StateIdentifier.toString());
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and
@@ -123,12 +125,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
     this.asyncReset = false,
     List<Conditional> setupActions = const [],
   })  : setupActions = List.unmodifiable(setupActions),
-        stateWidth = _logBase(_states.length, 2),
-        //TODO currentState and nextState should be LogicEnum<StateIdentifier>
-        currentState =
-            Logic(name: 'currentState', width: _logBase(_states.length, 2)),
-        nextState =
-            Logic(name: 'nextState', width: _logBase(_states.length, 2)) {
+        stateWidth = _logBase(_states.length, 2) {
     _validate();
 
     var stateCounter = 0;

@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -47,10 +48,20 @@ class SynthLogic {
   Logic? _renameableLogic;
 
   /// A [LogicEnum] that is characteristic of any merged [LogicEnum]s into this.
-  LogicEnum? get characteristicEnum => _firstEnum;
+  LogicEnum? get characteristicEnum => _characteristicEnum;
 
   /// The first [LogicEnum] merged into this [SynthLogic], if there is one.
-  LogicEnum? _firstEnum;
+  LogicEnum? _characteristicEnum;
+
+  SynthEnumDefinition? get enumDefinition => _enumDefinition;
+  set enumDefinition(SynthEnumDefinition? definition) {
+    assert(definition != null, 'Cannot set enum definition to null.');
+    assert(
+        _enumDefinition == null, 'Cannot set enum definition more than once.');
+    _enumDefinition = definition;
+  }
+
+  SynthEnumDefinition? _enumDefinition;
 
   /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
@@ -251,6 +262,14 @@ class SynthLogic {
         if (!aEnum.isEquivalentTypeTo(bEnum)) {
           return null;
         }
+
+        if (aEnum.reserveDefinitionName &&
+            bEnum.reserveDefinitionName &&
+            aEnum.definitionName != bEnum.definitionName) {
+          // if both enums reserve their definition names, and they are
+          // different, then we cannot merge
+          return null;
+        }
       }
 
       // otherwise, continue on with normal merging flow
@@ -290,7 +309,7 @@ class SynthLogic {
     _constLogic ??= other._constLogic;
     _reservedLogic ??= other._reservedLogic;
     _renameableLogic ??= other._renameableLogic;
-    _firstEnum ??= other._firstEnum;
+    _characteristicEnum ??= other._characteristicEnum;
 
     // the rest, take them all
     _mergeableLogics.addAll(other._mergeableLogics);
@@ -322,7 +341,20 @@ class SynthLogic {
       assert(characteristicEnum?.isEquivalentTypeTo(logic) ?? true,
           'Cannot add a LogicEnum that is not equivalent to the existing one.');
 
-      _firstEnum ??= logic;
+      if (logic.reserveDefinitionName) {
+        // if the added `logic` reserves its definition name, then we
+        // should use it as the characteristic enum
+        assert(
+          _characteristicEnum == null ||
+              !_characteristicEnum!.reserveDefinitionName ||
+              logic.definitionName == _characteristicEnum!.definitionName,
+          'Cannot add a LogicEnum that reserves its definition name, but has a '
+          'different definition name than the existing characteristic enum.',
+        );
+        _characteristicEnum = logic;
+      }
+
+      _characteristicEnum ??= logic;
     }
   }
 
@@ -342,6 +374,10 @@ class SynthLogic {
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.
   String definitionName() {
+    if (isEnum) {
+      return name;
+    }
+
     String packedDims;
     String unpackedDims;
 

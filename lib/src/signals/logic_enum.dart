@@ -151,6 +151,10 @@ class LogicEnum<T extends Enum> extends LogicDef {
 
   /// Drives this [LogicEnum] with a constant value matching the enum [value].
   void getsEnum(T value) {
+    if (!mapping.containsKey(value)) {
+      //TODO exception
+      throw Exception('Value $value is not mapped in $mapping for enum $T.');
+    }
     gets(Const(mapping[value]));
   }
 
@@ -191,7 +195,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
       return false;
     }
 
-    final mappingsEqual = const DeepCollectionEquality.unordered().equals(
+    final mappingsEqual = const MapEquality<Enum, LogicValue>().equals(
       mapping,
       other.mapping,
     );
