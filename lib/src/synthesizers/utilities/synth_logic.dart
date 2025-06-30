@@ -86,9 +86,7 @@ class SynthLogic {
       logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
 
   /// Whether this represents an enum.
-  bool get isEnum =>
-      // can just look at the first since enums and non-enums cannot be merged
-      logics.first is LogicEnum;
+  bool get isEnum => characteristicEnum != null;
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -137,8 +135,10 @@ class SynthLogic {
     if (isConstant) {
       if (!_constNameDisallowed) {
         if (isEnum) {
-          // TODO: here is where we need to pring name of enum!
-          // return charachteristicEnum!.mapping[_constLogic]
+          return enumDefinition!.enumToNameMapping[characteristicEnum!
+              .mapping.entries
+              .firstWhere((e) => e.value == _constLogic!.value)
+              .key]!;
         } else {
           return _constLogic!.value.toString();
         }
@@ -214,14 +214,12 @@ class SynthLogic {
 
   /// Returns the [SynthLogic] that should be *removed*.
   static SynthLogic? tryMerge(SynthLogic a, SynthLogic b) {
+    assert(a != b, 'Cannot merge a SynthLogic with itself.');
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
       return b;
-    }
-
-    if (!a.mergeable && !b.mergeable) {
-      return null;
     }
 
     if (a.isNet != b.isNet) {
@@ -229,50 +227,13 @@ class SynthLogic {
       return null;
     }
 
-    if (a.isEnum || b.isEnum) {
-      // do not merge enums with non-enums (except for constants)
-      final oneIsConst = a.isConstant || b.isConstant;
+    if (_enumAndConstMergeable(a, b)) {
+      a.adopt(b);
+      return b;
+    }
 
-      if (oneIsConst) {
-        // check to make sure the constant is legal for the enum, otherwise it
-        // will generate illegal verilog
-        //TODO: test this scenario!
-
-        final theConst = a.isConstant ? a : b;
-        final theEnum = a.isEnum ? a : b;
-        assert(theConst != theEnum,
-            'Const and enum should be different SynthLogics.');
-
-        final constVal = theConst._constLogic!.value;
-        final enumMapping = theEnum.characteristicEnum!.mapping;
-        if (!enumMapping.values.contains(constVal)) {
-          //TODO: better exceptions
-          throw Exception('Assignment of $constVal to enum'
-              ' with mapping $enumMapping is not legal.');
-        }
-      } else {
-        // if not a const scenario, check enum rules
-        if (a.isEnum != b.isEnum) {
-          return null;
-        }
-
-        final aEnum = a.logics.first as LogicEnum;
-        final bEnum = b.logics.first as LogicEnum;
-        // if the enums are incompatible, do not merge
-        if (!aEnum.isEquivalentTypeTo(bEnum)) {
-          return null;
-        }
-
-        if (aEnum.reserveDefinitionName &&
-            bEnum.reserveDefinitionName &&
-            aEnum.definitionName != bEnum.definitionName) {
-          // if both enums reserve their definition names, and they are
-          // different, then we cannot merge
-          return null;
-        }
-      }
-
-      // otherwise, continue on with normal merging flow
+    if (!a.mergeable && !b.mergeable) {
+      return null;
     }
 
     if (b.mergeable) {
@@ -292,10 +253,61 @@ class SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
+  /// Indicates whether [a] and [b] represent one enum and one constant which
+  /// can be merged.
+  static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
+    final enums = [a, b].where((e) => e.isEnum).toList(growable: false);
+    final constants = [a, b].where((e) => e.isConstant).toList(growable: false);
+
+    // if no enums, then this is not a reason to merge
+    if (enums.isEmpty) {
+      return false;
+    }
+
+    // if we have two enums, make sure they are compatible
+    if (enums.length == 2) {
+      if (!enums[0]
+          .characteristicEnum!
+          .isEquivalentTypeTo(enums[1].characteristicEnum!)) {
+        return false;
+      }
+
+      if (enums[0].characteristicEnum!.reserveDefinitionName &&
+          enums[1].characteristicEnum!.reserveDefinitionName &&
+          enums[0].characteristicEnum!.definitionName !=
+              enums[1].characteristicEnum!.definitionName) {
+        return false;
+      }
+
+      for (final e in enums) {
+        if (!e.mergeable) {
+          return false;
+        }
+      }
+    }
+
+    // if one is constant, then ensure the constant is legal
+    if (constants.isNotEmpty) {
+      for (final c in constants) {
+        for (final e in enums) {
+          final enumMapping = e.characteristicEnum!.mapping;
+          if (!enumMapping.values.contains(c._constLogic!.value)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
   void adopt(SynthLogic other) {
-    assert(other.mergeable || _constantsMergeable(this, other),
+    assert(
+        other.mergeable ||
+            _constantsMergeable(this, other) ||
+            _enumAndConstMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
     assert(

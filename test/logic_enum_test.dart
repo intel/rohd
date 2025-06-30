@@ -35,6 +35,14 @@ class ConflictingEnumMod extends Module {
   }
 }
 
+class ModWithEnumConstAssignment extends Module {
+  ModWithEnumConstAssignment(Logic carrot) {
+    carrot = addInput('carrot', carrot, width: 2);
+    final e = MyListLogicEnum(name: 'elephant')..getsEnum(TestEnum.b);
+    addOutput('banana', width: 2) <= carrot & e;
+  }
+}
+
 void main() {
   test('enum populates based on list of values', () {
     final e = MyListLogicEnum();
@@ -73,30 +81,50 @@ void main() {
     expect(e.valueEnum, TestEnum.b);
   });
 
-  test('simple mod with enum gen good sv', () async {
-    final mod = SimpleModWithEnum(Logic(width: 3));
-    await mod.build();
+  group('enum sv gen', () {
+    test('simple mod with enum gen good sv', () async {
+      final mod = SimpleModWithEnum(Logic(width: 3));
+      await mod.build();
 
-    final sv = mod.generateSynth();
+      final sv = mod.generateSynth();
 
-    expect(sv,
-        contains("typedef enum logic [2:0] { a = 3'h1, c = 3'h7 } TestEnum;"));
-    expect(sv, contains('TestEnum elephant;'));
-  });
+      expect(
+          sv,
+          contains(
+              "typedef enum logic [2:0] { a = 3'h1, c = 3'h7 } TestEnum;"));
+      expect(sv, contains('TestEnum elephant;'));
+    });
 
-  test('conflicting enum mod gen good sv', () async {
-    final mod = ConflictingEnumMod(Logic(width: 3));
-    await mod.build();
+    test('conflicting enum mod gen good sv', () async {
+      final mod = ConflictingEnumMod(Logic(width: 3));
+      await mod.build();
 
-    final sv = mod.generateSynth();
+      final sv = mod.generateSynth();
 
-    expect(
-        sv,
-        contains('typedef enum logic [1:0]'
-            " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
-    expect(
-        sv,
-        contains('typedef enum logic [2:0]'
-            " { a_0 = 3'h1, c_0 = 3'h7 } TestEnum_0;"));
+      print(sv);
+
+      // don't care which one has _0, but one of the does!
+      expect(
+          sv,
+          contains(
+              'typedef enum logic [2:0]' " { a = 3'h1, c = 3'h7 } TestEnum;"));
+      expect(
+          sv,
+          contains('typedef enum logic [1:0]'
+              " { a_0 = 2'h0, b = 2'h1, c_0 = 2'h2 } TestEnum_0;"));
+    });
+
+    test('enum constant assignment uses enum name', () async {
+      final mod = ModWithEnumConstAssignment(Logic(width: 2));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(
+          sv,
+          contains('typedef enum logic [1:0]'
+              " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
+      expect(sv, contains('assign banana = carrot & b;'));
+    });
   });
 }
