@@ -96,8 +96,7 @@ class FiniteStateMachine<StateIdentifier extends Enum> {
   final bool asyncReset;
 
   LogicEnum<StateIdentifier> stateEnum({String? name}) =>
-      LogicEnum<StateIdentifier>.withMapping(stateIndexLookup,
-          name: name, definitionName: StateIdentifier.toString());
+      LogicEnum<StateIdentifier>.withMapping(stateIndexLookup, name: name);
 
   /// Creates an finite state machine for the specified list of [_states], with
   /// an initial state of [resetState] (when synchronous [reset] is high) and

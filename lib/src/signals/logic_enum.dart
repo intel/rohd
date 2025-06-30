@@ -111,8 +111,9 @@ class LogicEnum<T extends Enum> extends LogicDef {
     super.reserveDefinitionName,
   }) : super(
             width: _computeWidth(requestedWidth: width, mapping: mapping),
-            definitionName: Naming.validatedName(T.runtimeType.toString(),
-                reserveName: reserveDefinitionName)) {
+            definitionName: definitionName ??
+                Naming.validatedName(T.toString(),
+                    reserveName: reserveDefinitionName)) {
     this.mapping =
         Map.unmodifiable(_computeMapping(mapping: mapping, width: this.width));
 

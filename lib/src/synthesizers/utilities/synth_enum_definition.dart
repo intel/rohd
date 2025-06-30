@@ -38,8 +38,12 @@ class SynthEnumDefinitionKey {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other.runtimeType != runtimeType) return false;
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
 
     return other is SynthEnumDefinitionKey &&
         const MapEquality<Enum, LogicValue>()

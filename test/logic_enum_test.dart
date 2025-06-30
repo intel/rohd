@@ -5,16 +5,34 @@ import 'package:test/test.dart';
 enum TestEnum { a, b, c }
 
 class MyListLogicEnum extends LogicEnum<TestEnum> {
-  MyListLogicEnum() : super(TestEnum.values);
+  MyListLogicEnum({super.name}) : super(TestEnum.values);
 }
 
 class MyMapLogicEnum extends LogicEnum<TestEnum> {
-  MyMapLogicEnum()
+  MyMapLogicEnum({super.name})
       : super.withMapping({
           TestEnum.a: 1,
           // TestEnum.b: 5, // `b` is not mapped!
           TestEnum.c: 7,
         }, width: 3);
+}
+
+class SimpleModWithEnum extends Module {
+  SimpleModWithEnum(Logic carrot) {
+    carrot = addInput('carrot', carrot, width: 3);
+    final e = MyMapLogicEnum(name: 'elephant');
+    addOutput('banana', width: 3) <= carrot & e;
+  }
+}
+
+class ConflictingEnumMod extends Module {
+  ConflictingEnumMod(Logic carrot) {
+    carrot = addInput('carrot', carrot, width: 3);
+    final e1 = MyListLogicEnum(name: 'elephantList');
+    final e2 = MyMapLogicEnum(name: 'elephantMap');
+
+    addOutput('banana', width: 3) <= carrot & (e1.zeroExtend(3) ^ e2);
+  }
 }
 
 void main() {
@@ -50,9 +68,35 @@ void main() {
   });
 
   test('enum puts with enums', () {
-    final e = MyListLogicEnum();
-    e.put(TestEnum.b);
+    final e = MyListLogicEnum()..put(TestEnum.b);
     expect(e.value.toInt(), TestEnum.b.index);
     expect(e.valueEnum, TestEnum.b);
+  });
+
+  test('simple mod with enum gen good sv', () async {
+    final mod = SimpleModWithEnum(Logic(width: 3));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv,
+        contains("typedef enum logic [2:0] { a = 3'h1, c = 3'h7 } TestEnum;"));
+    expect(sv, contains('TestEnum elephant;'));
+  });
+
+  test('conflicting enum mod gen good sv', () async {
+    final mod = ConflictingEnumMod(Logic(width: 3));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(
+        sv,
+        contains('typedef enum logic [1:0]'
+            " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
+    expect(
+        sv,
+        contains('typedef enum logic [2:0]'
+            " { a_0 = 3'h1, c_0 = 3'h7 } TestEnum_0;"));
   });
 }
