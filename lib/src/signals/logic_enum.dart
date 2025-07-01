@@ -208,7 +208,12 @@ class LogicEnum<T extends Enum> extends LogicDef {
     return true;
   }
 
-  //TODO: clone
-
-  //TODO need to update the Wire to have "restrictions" on legal values
+  @override
+  LogicEnum<T> clone({String? name}) => LogicEnum<T>.withMapping(mapping,
+      width: width,
+      name: name ?? this.name,
+      naming:
+          naming, //TODO: use same mechanism as Logic for naming determination
+      definitionName: definitionName,
+      reserveDefinitionName: reserveDefinitionName);
 }

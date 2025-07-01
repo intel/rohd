@@ -139,13 +139,7 @@ class SynthModuleDefinition {
             ...module.outputs.keys,
             ...module.inOuts.keys,
           },
-        ),
-        assert(
-            !(module is SystemVerilog &&
-                module.generatedDefinitionType ==
-                    DefinitionGenerationType.none),
-            'Do not build a definition for a module'
-            ' which generates no definition!') {
+        ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -312,6 +306,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    _adjustTypePairs();
     process();
     _pickNames();
   }
@@ -349,6 +344,13 @@ class SynthModuleDefinition {
             inOutName, orig.replacement ?? orig,
             replace: true);
       }
+    }
+  }
+
+  void _adjustTypePairs() {
+    for (final submoduleInstantiation
+        in moduleToSubModuleInstantiationMap.values) {
+      submoduleInstantiation.adjustTypePairs();
     }
   }
 

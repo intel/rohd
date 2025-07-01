@@ -43,6 +43,29 @@ class ModWithEnumConstAssignment extends Module {
   }
 }
 
+class ModWithCaseAndEnumCondAssign extends Module {
+  ModWithCaseAndEnumCondAssign(Logic durian) {
+    durian = addInput('durian', durian);
+
+    final currState = MyListLogicEnum(name: 'currState');
+    final nextState = MyListLogicEnum(name: 'nextState');
+
+    nextState <=
+        cases(
+            currState,
+            {
+              0: 0,
+              // MyListLogicEnum()..getsEnum(TestEnum.b): MyListLogicEnum()
+              //   ..getsEnum(TestEnum.b),
+              // TestEnum.c: TestEnum.c,
+              //TODO: get all these working nicely
+            },
+            width: 2);
+
+    addOutput('pineapple') <= durian & nextState.xor();
+  }
+}
+
 void main() {
   test('enum populates based on list of values', () {
     final e = MyListLogicEnum();
@@ -88,6 +111,8 @@ void main() {
 
       final sv = mod.generateSynth();
 
+      print(sv);
+
       expect(
           sv,
           contains(
@@ -101,9 +126,7 @@ void main() {
 
       final sv = mod.generateSynth();
 
-      print(sv);
-
-      // don't care which one has _0, but one of the does!
+      // don't care which one has _0, but one of them does!
       expect(
           sv,
           contains(
@@ -125,6 +148,14 @@ void main() {
           contains('typedef enum logic [1:0]'
               " { a = 2'h0, b = 2'h1, c = 2'h2 } TestEnum;"));
       expect(sv, contains('assign banana = carrot & b;'));
+    });
+
+    test('enum with case and cond assignments', () async {
+      final mod = ModWithCaseAndEnumCondAssign(Logic());
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      print(sv);
     });
   });
 }

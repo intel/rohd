@@ -230,7 +230,14 @@ class SynthLogic {
     if (_enumAndConstMergeable(a, b)) {
       a.adopt(b);
       return b;
+    } else if (a.isEnum && b.isEnum) {
+      //TODO: test this scenario
+
+      // don't merge enums if they are not mergeable
+      return null;
     }
+
+    //TODO: should enum and non-enum be mergeable?
 
     if (!a.mergeable && !b.mergeable) {
       return null;
@@ -253,7 +260,7 @@ class SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
-  /// Indicates whether [a] and [b] represent one enum and one constant which
+  /// Indicates whether [a] and [b] represent enum(s) and constant(s) that
   /// can be merged.
   static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
     final enums = [a, b].where((e) => e.isEnum).toList(growable: false);
