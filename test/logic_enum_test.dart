@@ -55,8 +55,8 @@ class ModWithCaseAndEnumCondAssign extends Module {
             currState,
             {
               0: 0,
-              // MyListLogicEnum()..getsEnum(TestEnum.b): MyListLogicEnum()
-              //   ..getsEnum(TestEnum.b),
+              MyListLogicEnum()..getsEnum(TestEnum.b): MyListLogicEnum()
+                ..getsEnum(TestEnum.b),
               // TestEnum.c: TestEnum.c,
               //TODO: get all these working nicely
             },

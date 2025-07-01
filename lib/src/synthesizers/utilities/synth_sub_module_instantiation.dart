@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -102,9 +103,18 @@ class SynthSubModuleInstantiation {
           inOutMapping[reference.name]!;
 
       if (referenceSynth.isEnum) {
+        if (toUpdateSynth.isEnum &&
+            SynthEnumDefinitionKey(toUpdateSynth.characteristicEnum!) ==
+                SynthEnumDefinitionKey(referenceSynth.characteristicEnum!)) {
+          // If the types are equivalent, we can just use the original, no need
+          // to do any additional merging.
+          continue;
+        }
+
         final mergeResult = SynthLogic.tryMerge(
           toUpdateSynth,
-          SynthLogic(referenceSynth.characteristicEnum!.clone()),
+          SynthLogic(
+              referenceSynth.characteristicEnum!.clone(name: 'reference')),
         );
         if (mergeResult == null) {
           //TODO

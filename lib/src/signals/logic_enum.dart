@@ -137,6 +137,7 @@ class LogicEnum<T extends Enum> extends LogicDef {
       Naming? naming,
       String? definitionName,
       bool reserveDefinitionName = false})
+      //TODO: add an optional function arg to remap values
       : this.withMapping(
             Map.fromEntries(
                 values.mapIndexed((index, value) => MapEntry(value, index))),
