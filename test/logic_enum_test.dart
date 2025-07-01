@@ -156,6 +156,9 @@ void main() {
 
       final sv = mod.generateSynth();
       print(sv);
+
+      expect(sv, contains(' a : begin'));
+      expect(sv, contains('nextState = a;'));
     });
   });
 }
