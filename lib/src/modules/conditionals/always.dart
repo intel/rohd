@@ -137,6 +137,11 @@ abstract class Always extends Module with SystemVerilog {
       // share the registration information down
       conditional.updateAssignmentMaps(
           assignedReceiverToOutputMap, assignedDriverToInputMap);
+
+      portTypePairs.addAll(conditional.portTypePairs.map((k, v) => MapEntry(
+            conditional.driverOrReceiverPort(k),
+            conditional.driverOrReceiverPort(v),
+          )));
     }
   }
 
@@ -176,6 +181,9 @@ abstract class Always extends Module with SystemVerilog {
         ports.entries.where((element) => this.inputs.containsKey(element.key)));
     final outputs = Map.fromEntries(ports.entries
         .where((element) => this.outputs.containsKey(element.key)));
+
+    assert(ports.length == inputs.length + outputs.length,
+        'All ports of an always should be inputs or outputs');
 
     var verilog = '';
     verilog += '//  $instanceName\n';
