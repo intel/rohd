@@ -174,6 +174,22 @@ class LogicEnum<T extends Enum> extends LogicDef {
     super.gets(other);
   }
 
+  /// Conditional assignment operator, with added support for [T] enums.
+  @override
+  Conditional operator <(dynamic other) {
+    if (_unassignable) {
+      throw UnassignableException(this, reason: _unassignableReason);
+    }
+
+    //TODO: test this!
+
+    if (other is T) {
+      return super < (clone()..getsEnum(other));
+    } else {
+      return super < other;
+    }
+  }
+
   @override
   void put(dynamic val, {bool fill = false}) {
     if (val is T) {

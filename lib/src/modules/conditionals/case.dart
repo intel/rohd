@@ -88,9 +88,11 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
         [
           for (final condition in conditions.entries)
             CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
+                (expression is LogicEnum && condition.key is Enum)
+                    ? (expression.clone()..getsEnum(condition.key as Enum))
+                    : condition.key is Logic
+                        ? condition.key as Logic
+                        : Const(condition.key, width: expression.width),
                 [result < condition.value])
         ],
         conditionalType: conditionalType,

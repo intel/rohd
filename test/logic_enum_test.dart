@@ -58,6 +58,7 @@ class ModWithCaseAndEnumCondAssign extends Module {
               MyListLogicEnum()..getsEnum(TestEnum.b): MyListLogicEnum()
                 ..getsEnum(TestEnum.b),
               // TestEnum.c: TestEnum.c,
+              TestEnum.c: 2,
               //TODO: get all these working nicely
             },
             width: 2);
