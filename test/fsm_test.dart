@@ -115,6 +115,9 @@ class TrafficTestModule extends Module {
     final northLight = addOutput('northLight', width: traffic.width);
     final eastLight = addOutput('eastLight', width: traffic.width);
 
+    //TODO: can we use lightcolor as an enum also in here?
+    // TODO: make sure ports and enums don't merge badly!
+
     final clk = SimpleClockGenerator(10).clk;
 
     final states = <State<LightStates>>[

@@ -227,6 +227,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         return null;
       }
 
+      //TODO: throw error if there are multiple definitionParameters with the
+      // same name
+
       return [
         '#(',
         defParams
