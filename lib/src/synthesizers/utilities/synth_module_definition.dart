@@ -403,6 +403,7 @@ class SynthModuleDefinition {
     // pick names of *reserved* submodule instances
     final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
     for (final submodule in moduleToSubModuleInstantiationMap.values) {
+      //TODO: should ensure that uniqueInstanceName is usable!
       if (submodule.module.reserveName) {
         submodule.pickName(_synthIdentifierUniquifier);
         assert(submodule.module.name == submodule.name,
