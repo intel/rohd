@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // iterable_removable_queue.dart
@@ -7,8 +7,6 @@
 //
 // 2023 April 21
 // Author: Max Korbel <max.korbel@intel.com>
-
-int _biggestSize = 0; //TODO RM
 
 /// A queue that can be easily iterated through and remove items during
 /// iteration.
@@ -24,24 +22,27 @@ class IterableRemovableQueue<T> {
   _IterableRemovableElement<T>? _last;
 
   /// A pointer to the current element being patrolled for removal.
+  ///
+  /// On each [add], this pointer will either move forward by one element or
+  /// (including wrap-around to [_first]), or will remove a contiguous set of
+  /// elements that should be removed according to the [removeWhere] function.
   _IterableRemovableElement<T>? _patrol;
 
+  /// The number of items in this queue.
   int get size => _size;
   int _size = 0;
 
+  /// A function that determines whether an item should be removed from the
+  /// queue.
   final bool Function(T item)? removeWhere;
 
+  /// Constructs a new [IterableRemovableQueue] with an optional [removeWhere]
+  /// function that determines whether an item should be removed from the queue.
   IterableRemovableQueue({this.removeWhere});
 
-  void _checkSize() {
-    if (size > _biggestSize) {
-      _biggestSize = size;
-      print('New biggest size: $_biggestSize');
-    }
-  }
-
   /// Removes all elements that should be removed up until the first element
-  /// that should not be, then leaves the [_patrol] pointer there.
+  /// that should not be, then leaves the [_patrol] pointer there. Otherwise,
+  /// increments the [_patrol] pointer by one element.
   void _runPatrol() {
     if (isEmpty) {
       return;
@@ -92,6 +93,9 @@ class IterableRemovableQueue<T> {
   }
 
   /// Adds a new item to the end of the queue.
+  ///
+  /// Also may remove items from the queue if they are indicated by
+  /// [removeWhere].
   void add(T item) {
     if (removeWhere != null && removeWhere!(item)) {
       // If the item should be removed, we don't add it.
@@ -110,8 +114,6 @@ class IterableRemovableQueue<T> {
 
     // every time we add, we should do some patrol work
     _runPatrol();
-
-    // _checkSize();
   }
 
   /// Indicates whether there are no items in the queue.
@@ -140,7 +142,6 @@ class IterableRemovableQueue<T> {
     }
 
     _size += other.size;
-    // _checkSize();
 
     other.clear();
   }
@@ -148,8 +149,6 @@ class IterableRemovableQueue<T> {
   /// Iterates through all items in the queue, removing any which are indicated
   /// by [removeWhere], and performing [action] on the rest.
   void iterate({void Function(T item)? action}) {
-    // print('initial size: $size');
-
     // Reset patrol pointer if we are iterating through all.
     _patrol = null;
 
@@ -184,8 +183,6 @@ class IterableRemovableQueue<T> {
 
       element = element.next;
     }
-
-    // print('final size: $size');
   }
 }
 
