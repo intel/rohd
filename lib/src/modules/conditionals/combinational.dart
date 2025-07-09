@@ -196,6 +196,7 @@ class Combinational extends Always {
   /// are consuming.
   void _guard(Logic toGuard) {
     if (_guarded.add(toGuard)) {
+      print('guarding $toGuard');
       _guardListeners.add(toGuard.glitch.listen(_writeAfterRead));
     }
   }
@@ -234,6 +235,7 @@ class Combinational extends Always {
     }
 
     // clean up after execution
+    print('cancelling ${_guardListeners.length}');
     for (final guardListener in _guardListeners) {
       guardListener.cancel();
     }

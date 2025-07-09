@@ -80,6 +80,7 @@ class IterableRemovableQueue<T> {
   /// by [removeWhere], and performing [action] on the rest.
   void iterate(
       {void Function(T item)? action, bool Function(T item)? removeWhere}) {
+    print('initial size: $size');
     if (isEmpty) {
       return;
     }
@@ -106,6 +107,8 @@ class IterableRemovableQueue<T> {
 
       element = element.next;
     }
+
+    print('final size: $size');
   }
 }
 
