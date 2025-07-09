@@ -70,19 +70,27 @@ class IterableRemovableQueue<T> {
       if (removeWhere!(_patrol!.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
 
+        if (_patrol == _first && _first == _last) {
+          // if size is 1, then we clear the queue and be done with it
+          clear();
+          break;
+        }
+
         previous?.next = _patrol!.next;
 
         if (_patrol == _first) {
           _first = _patrol!.next;
           _patrol = _first;
+        } else if (_patrol == _last) {
+          _last = previous;
+          _patrol = null;
         }
 
-        if (_patrol == _last) {
-          _last = previous;
-        }
+        assert((_first == null) == (_last == null),
+            'First and last should be both null or both non-null.');
 
         // Move the patrol pointer to the next element.
-        _patrol = _patrol!.next;
+        _patrol = _patrol?.next;
 
         _size--;
       } else {
@@ -144,6 +152,9 @@ class IterableRemovableQueue<T> {
     _size += other.size;
 
     other.clear();
+
+    // Reset patrol to be safe, so we don't have a stale pointer.
+    _patrol = null;
   }
 
   /// Iterates through all items in the queue, removing any which are indicated
@@ -164,13 +175,23 @@ class IterableRemovableQueue<T> {
 
         previous?.next = element.next;
 
-        if (element == _first) {
-          _first = element.next;
+        if (element == _first && _first == _last) {
+          // if size is 1, then we clear the queue and be done with it
+          clear();
+          break;
         }
 
-        if (element == _last) {
+        if (element == _first) {
+          _first = element.next;
+        } else if (element == _last) {
           _last = previous;
         }
+
+        assert((_first == null) == (_last == null),
+            'First and last should be both null or both non-null.');
+
+        // Reset patrol to be safe, so we don't have a stale pointer.
+        _patrol = null;
 
         _size--;
       } else {
