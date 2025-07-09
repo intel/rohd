@@ -8,6 +8,8 @@
 // 2023 April 21
 // Author: Max Korbel <max.korbel@intel.com>
 
+int _biggestSize = 0; //TODO RM
+
 /// A queue that can be easily iterated through and remove items during
 /// iteration.
 class IterableRemovableQueue<T> {
@@ -31,6 +33,13 @@ class IterableRemovableQueue<T> {
 
   IterableRemovableQueue({this.removeWhere});
 
+  void _checkSize() {
+    if (size > _biggestSize) {
+      _biggestSize = size;
+      print('New biggest size: $_biggestSize');
+    }
+  }
+
   /// Removes all elements that should be removed up until the first element
   /// that should not be, then leaves the [_patrol] pointer there.
   void _runPatrol() {
@@ -43,28 +52,42 @@ class IterableRemovableQueue<T> {
       return;
     }
 
-    _patrol ??= _first;
+    _IterableRemovableElement<T>? previous;
+    if (_patrol == null) {
+      // If we have no patrol pointer, we start at the first element.
+      previous = null;
+      _patrol = _first;
+    } else {
+      // If we have a patrol pointer, we start at the next element.
+      previous = _patrol;
+      _patrol = _patrol!.next;
+    }
 
     assert(_patrol != null, 'Patrol pointer should not be null by here.');
 
-    _IterableRemovableElement<T>? previous;
     while (_patrol != null) {
-      if (removeWhere != null && removeWhere!(_patrol!.item)) {
+      if (removeWhere!(_patrol!.item)) {
+        assert(size > 0, 'Should not be removing if size is already 0.');
+
         previous?.next = _patrol!.next;
 
         if (_patrol == _first) {
           _first = _patrol!.next;
-        } else if (_patrol == _last) {
+          _patrol = _first;
+        }
+
+        if (_patrol == _last) {
           _last = previous;
         }
+
+        // Move the patrol pointer to the next element.
+        _patrol = _patrol!.next;
+
         _size--;
       } else {
         // stop patrolling once we find an element that should not be removed
-        _patrol = _patrol!.next;
         break;
       }
-
-      _patrol = _patrol!.next;
     }
   }
 
@@ -87,6 +110,8 @@ class IterableRemovableQueue<T> {
 
     // every time we add, we should do some patrol work
     _runPatrol();
+
+    // _checkSize();
   }
 
   /// Indicates whether there are no items in the queue.
@@ -115,6 +140,7 @@ class IterableRemovableQueue<T> {
     }
 
     _size += other.size;
+    // _checkSize();
 
     other.clear();
   }
@@ -122,6 +148,8 @@ class IterableRemovableQueue<T> {
   /// Iterates through all items in the queue, removing any which are indicated
   /// by [removeWhere], and performing [action] on the rest.
   void iterate({void Function(T item)? action}) {
+    // print('initial size: $size');
+
     // Reset patrol pointer if we are iterating through all.
     _patrol = null;
 
@@ -133,11 +161,15 @@ class IterableRemovableQueue<T> {
     _IterableRemovableElement<T>? previous;
     while (element != null) {
       if (removeWhere != null && removeWhere!(element.item)) {
+        assert(size > 0, 'Should not be removing if size is already 0.');
+
         previous?.next = element.next;
 
         if (element == _first) {
           _first = element.next;
-        } else if (element == _last) {
+        }
+
+        if (element == _last) {
           _last = previous;
         }
 
@@ -152,6 +184,8 @@ class IterableRemovableQueue<T> {
 
       element = element.next;
     }
+
+    // print('final size: $size');
   }
 }
 

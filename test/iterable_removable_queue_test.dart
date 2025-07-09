@@ -127,7 +127,7 @@ void main() {
         q.iterate();
 
         expect(q.isEmpty, false);
-        expect(q.size, numItems + numItems ~/ 3);
+        expect(q.size, numItems + 2 * numItems ~/ 3);
       });
     });
   });
