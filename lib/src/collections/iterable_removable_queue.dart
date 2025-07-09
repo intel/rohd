@@ -8,6 +8,8 @@
 // 2023 April 21
 // Author: Max Korbel <max.korbel@intel.com>
 
+int _biggestSize = 0;
+
 /// A queue that can be easily iterated through and remove items during
 /// iteration.
 class IterableRemovableQueue<T> {
@@ -21,6 +23,15 @@ class IterableRemovableQueue<T> {
   /// Null if the queue is empty.
   _IterableRemovableElement<T>? _last;
 
+  int size = 0;
+
+  void _checkSize() {
+    if (size > _biggestSize) {
+      _biggestSize = size;
+      print('New biggest size: $_biggestSize');
+    }
+  }
+
   /// Adds a new item to the end of the queue.
   void add(T item) {
     final newElement = _IterableRemovableElement<T>(item);
@@ -31,6 +42,8 @@ class IterableRemovableQueue<T> {
       _last!.next = newElement;
       _last = newElement;
     }
+    size++;
+    _checkSize();
   }
 
   /// Indicates whether there are no items in the queue.
@@ -40,6 +53,7 @@ class IterableRemovableQueue<T> {
   void clear() {
     _first = null;
     _last = null;
+    size = 0;
   }
 
   /// Appends [other] to this without copying any elements and [clear]s [other].
@@ -55,6 +69,9 @@ class IterableRemovableQueue<T> {
       _last!.next = other._first;
       _last = other._last;
     }
+
+    size += other.size;
+    _checkSize();
 
     other.clear();
   }
@@ -78,6 +95,7 @@ class IterableRemovableQueue<T> {
         } else if (element == _last) {
           _last = previous;
         }
+        size--;
       } else {
         if (action != null) {
           action(element.item);
