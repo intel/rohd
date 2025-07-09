@@ -40,7 +40,7 @@ class IterableRemovableQueueBenchmark extends BenchmarkBase {
         queue
           ..iterate(
             action: (item) => item.value + 1,
-            removeWhere: (item) => item.value == i,
+            // removeWhere: (item) => item.value == i, //TODO
           )
           ..add(DummyElement(i));
       }

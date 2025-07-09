@@ -44,7 +44,8 @@ class SynchronousEmitter<T> {
 
   /// A [List] of actions to perform for each event.
   final IterableRemovableQueue<SynchronousSubscription<T>> _subscriptions =
-      IterableRemovableQueue<SynchronousSubscription<T>>();
+      IterableRemovableQueue<SynchronousSubscription<T>>(
+          removeWhere: _doRemove);
 
   /// Returns `true` iff this is currently emitting.
   ///
@@ -63,7 +64,6 @@ class SynchronousEmitter<T> {
 
     _subscriptions.iterate(
       action: (subscription) => subscription.func(t),
-      removeWhere: _doRemove,
     );
 
     _isEmitting = false;
