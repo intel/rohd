@@ -88,9 +88,11 @@ Logic cases(Logic expression, Map<dynamic, dynamic> conditions,
         [
           for (final condition in conditions.entries)
             CaseItem(
-                condition.key is Logic
-                    ? condition.key as Logic
-                    : Const(condition.key, width: expression.width),
+                (expression is LogicEnum && condition.key is Enum)
+                    ? (expression.clone()..getsEnum(condition.key as Enum))
+                    : condition.key is Logic
+                        ? condition.key as Logic
+                        : Const(condition.key, width: expression.width),
                 [result < condition.value])
         ],
         conditionalType: conditionalType,
@@ -125,6 +127,15 @@ class Case extends Conditional {
   /// See [ConditionalType] for more details.
   final ConditionalType conditionalType;
 
+  @override
+  Map<Logic, Logic> get portTypePairs => {
+        ...super.portTypePairs,
+        ..._itemTypePortPairs,
+      };
+
+  //TODO doc
+  final Map<Logic, Logic> _itemTypePortPairs = {};
+
   /// Whenever an item in [items] matches [expression], it will be executed.
   ///
   /// If none of [items] match, then [defaultItem] is executed.
@@ -136,6 +147,8 @@ class Case extends Conditional {
       if (item.value.width != expression.width) {
         throw PortWidthMismatchException.equalWidth(expression, item.value);
       }
+
+      _itemTypePortPairs[item.value] = expression;
     }
   }
 

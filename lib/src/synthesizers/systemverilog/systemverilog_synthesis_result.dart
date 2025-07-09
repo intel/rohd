@@ -11,12 +11,28 @@ import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
 import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Extra utilities on [SynthLogic] to help with SystemVerilog synthesis.
 extension on SynthLogic {
   /// Gets the SystemVerilog type for this signal.
-  String definitionType() => isNet ? 'wire' : 'logic';
+  String definitionType() => isEnum
+      ? enumDefinition!.definitionName
+      : isNet
+          ? 'wire'
+          : 'logic';
+}
+
+extension on SynthEnumDefinition {
+  String toSystemVerilogTypedef() {
+    final enumName = definitionName;
+    final enumType = 'logic [${characteristicEnum.width - 1}:0]';
+    final enumValues = enumToNameMapping.entries
+        .map((e) => '${e.value} = ${characteristicEnum.mapping[e.key]}')
+        .join(', ');
+    return 'typedef enum $enumType { $enumValues } $enumName;';
+  }
 }
 
 /// A [SynthesisResult] representing a [Module] that provides a custom
@@ -152,6 +168,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
+      // TODO: if we have an enum assigned to a constant, then use enum!
       assignmentLines
           .add('assign ${assignment.dst.name} = ${assignment.src.name};');
     }
@@ -178,11 +195,19 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
     return subModuleLines.join('\n');
   }
 
+  /// Internal `typedef` definitions for this module.
+  String _verilogTypedefs() => _enumTypeDefs();
+
+  String _enumTypeDefs() => _synthModuleDefinition.enumDefinitions
+      .map((e) => e.toSystemVerilogTypedef())
+      .join('\n');
+
   /// The contents of this module converted to SystemVerilog without module
   /// declaration, ports, etc.
   String _verilogModuleContents(
           String Function(Module module) getInstanceTypeOfModule) =>
       [
+        _verilogTypedefs(),
         _verilogInternalSignals(),
         _verilogAssignments(), // order matters!
         _verilogSubModuleInstantiations(getInstanceTypeOfModule),
@@ -201,6 +226,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       if (defParams == null || defParams.isEmpty) {
         return null;
       }
+
+      //TODO: throw error if there are multiple definitionParameters with the
+      // same name
 
       return [
         '#(',

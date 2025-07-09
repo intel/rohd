@@ -12,6 +12,7 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -79,7 +80,7 @@ class SynthModuleDefinition {
 
   /// Used to uniquify any identifiers, including signal names
   /// and module instances.
-  final Uniquifier _synthInstantiationNameUniquifier;
+  final Uniquifier _synthIdentifierUniquifier;
 
   /// Either accesses a previously created [SynthLogic] corresponding to
   /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
@@ -132,19 +133,13 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : _synthInstantiationNameUniquifier = Uniquifier(
+      : _synthIdentifierUniquifier = Uniquifier(
           reservedNames: {
             ...module.inputs.keys,
             ...module.outputs.keys,
             ...module.inOuts.keys,
           },
-        ),
-        assert(
-            !(module is SystemVerilog &&
-                module.generatedDefinitionType ==
-                    DefinitionGenerationType.none),
-            'Do not build a definition for a module'
-            ' which generates no definition!') {
+        ) {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -311,6 +306,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    _adjustTypePairs();
     process();
     _pickNames();
   }
@@ -351,24 +347,65 @@ class SynthModuleDefinition {
     }
   }
 
+  void _adjustTypePairs() {
+    for (final submoduleInstantiation
+        in moduleToSubModuleInstantiationMap.values) {
+      submoduleInstantiation.adjustTypePairs();
+    }
+  }
+
+  final Map<SynthEnumDefinitionKey, SynthEnumDefinition> _enumDefinitions =
+      <SynthEnumDefinitionKey, SynthEnumDefinition>{};
+
+  List<SynthEnumDefinition> get enumDefinitions =>
+      _enumDefinitions.values.toList(growable: false);
+
+  void _pickDefinitionEnumName(SynthLogic synthEnum) {
+    assert(synthEnum.isEnum, 'Only call this on SynthLogic that is an enum.');
+    final key = SynthEnumDefinitionKey(synthEnum.characteristicEnum!);
+    if (_enumDefinitions.containsKey(key)) {
+      // already have a definition for this enum
+      synthEnum.enumDefinition = _enumDefinitions[key];
+    } else {
+      // create a new definition for this enum
+      final newDefinition = SynthEnumDefinition(
+        synthEnum.characteristicEnum!,
+        _synthIdentifierUniquifier,
+      );
+      _enumDefinitions[key] = newDefinition;
+      synthEnum.enumDefinition = newDefinition;
+    }
+  }
+
   /// Picks names of signals and sub-modules.
   void _pickNames() {
     // first ports get priority
     for (final input in inputs) {
-      input.pickName(_synthInstantiationNameUniquifier);
+      input.pickName(_synthIdentifierUniquifier);
     }
     for (final output in outputs) {
-      output.pickName(_synthInstantiationNameUniquifier);
+      output.pickName(_synthIdentifierUniquifier);
     }
     for (final inOut in inOuts) {
-      inOut.pickName(_synthInstantiationNameUniquifier);
+      inOut.pickName(_synthIdentifierUniquifier);
+    }
+
+    // pick names of *reserved* definition-type enums
+    final nonReservedEnumDefs = <SynthLogic>[];
+    for (final signal in internalSignals.where((e) => e.isEnum)) {
+      if (signal.characteristicEnum!.reserveDefinitionName) {
+        _pickDefinitionEnumName(signal);
+      } else {
+        nonReservedEnumDefs.add(signal);
+      }
     }
 
     // pick names of *reserved* submodule instances
     final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
     for (final submodule in moduleToSubModuleInstantiationMap.values) {
+      //TODO: should ensure that uniqueInstanceName is usable!
       if (submodule.module.reserveName) {
-        submodule.pickName(_synthInstantiationNameUniquifier);
+        submodule.pickName(_synthIdentifierUniquifier);
         assert(submodule.module.name == submodule.name,
             'Expect reserved names to retain their name.');
       } else {
@@ -380,21 +417,24 @@ class SynthModuleDefinition {
     final nonReservedSignals = <SynthLogic>[];
     for (final signal in internalSignals) {
       if (signal.isReserved) {
-        signal.pickName(_synthInstantiationNameUniquifier);
+        signal.pickName(_synthIdentifierUniquifier);
       } else {
         nonReservedSignals.add(signal);
       }
     }
 
+    // then enum definitions that are not reserved
+    nonReservedEnumDefs.forEach(_pickDefinitionEnumName);
+
     // then submodule instances
     for (final submodule
         in nonReservedSubmodules.where((element) => element.needsDeclaration)) {
-      submodule.pickName(_synthInstantiationNameUniquifier);
+      submodule.pickName(_synthIdentifierUniquifier);
     }
 
     // then the rest of the internal signals
     for (final signal in nonReservedSignals) {
-      signal.pickName(_synthInstantiationNameUniquifier);
+      signal.pickName(_synthIdentifierUniquifier);
     }
   }
 

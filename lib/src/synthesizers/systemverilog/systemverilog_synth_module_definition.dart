@@ -14,7 +14,13 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 /// A special [SynthModuleDefinition] for SystemVerilog modules.
 class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
-  SystemVerilogSynthModuleDefinition(super.module);
+  SystemVerilogSynthModuleDefinition(super.module)
+      : assert(
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!');
 
   @override
   void process() {
