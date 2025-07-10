@@ -8,8 +8,6 @@
 // 2023 April 21
 // Author: Max Korbel <max.korbel@intel.com>
 
-int _biggestSize = 0;
-
 /// A queue that can be easily iterated through and remove items during
 /// iteration.
 class IterableRemovableQueue<T> {
@@ -33,15 +31,6 @@ class IterableRemovableQueue<T> {
   /// The number of items in this queue.
   int get size => _size;
   int _size = 0;
-
-  void _checkSize() {
-    if (size > _biggestSize) {
-      _biggestSize = size;
-      if (_biggestSize > 100) {
-        print('Biggest size is now $_biggestSize');
-      }
-    }
-  }
 
   /// A function that determines whether an item should be removed from the
   /// queue.
@@ -82,7 +71,6 @@ class IterableRemovableQueue<T> {
       _patrol = _patrol!.next;
     }
 
-    int numRemoved = 0;
     while (_patrol != null) {
       if (removeWhere!(_patrol!.item)) {
         assert(size > 0, 'Should not be removing if size is already 0.');
@@ -113,15 +101,10 @@ class IterableRemovableQueue<T> {
         _patrol ??= _first;
 
         _size--;
-        numRemoved++;
       } else {
         // stop patrolling once we find an element that should not be removed
         break;
       }
-    }
-
-    if (numRemoved > 0) {
-      // print('Patrol removed $numRemoved items.');
     }
   }
 
@@ -130,7 +113,6 @@ class IterableRemovableQueue<T> {
   /// Also may remove items from the queue if they are indicated by
   /// [removeWhere].
   void add(T item) {
-    // _runPatrol();
     if (removeWhere != null && removeWhere!(item)) {
       // If the item should be removed, we don't add it.
       return;
@@ -150,12 +132,6 @@ class IterableRemovableQueue<T> {
       _last = newElement;
     }
     _size++;
-
-    // every time we add, we should do some patrol work
-    // _runPatrol();
-    // iterate();
-
-    _checkSize();
   }
 
   /// Indicates whether there are no items in the queue.
@@ -232,8 +208,6 @@ class IterableRemovableQueue<T> {
 
       element = element.next;
     }
-
-    _checkSize();
   }
 }
 
