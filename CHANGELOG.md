@@ -1,7 +1,7 @@
 ## 0.6.4
 
 - Added `setupActions` to `FiniteStateMachine` so that "common" or "default" actions can be grouped in one place instead of repeated in each `State` (<https://github.com/intel/rohd/pull/593>).
-- Fixed a bug where `LogicStructure.previousValue` would actually return the _current_ `value` instead of the previous one (<https://github.com/intel/rohd/pull/565>).
+- Fixed a bug where `LogicStructure.previousValue` would actually return the *current* `value` instead of the previous one (<https://github.com/intel/rohd/pull/565>).
 - Fixed a bug in `Pipeline` where cross-stage references could be incorrectly resolved (<https://github.com/intel/rohd/pull/588>).
 - Added `SynthBuilder.multi` to generate outputs (e.g. SystemVerilog) for multiple top-level modules simultaneously, with shared uniquification across them. Deprecated `getFileContents` in favor of `getSynthFileContents` which provides `SynthFileContents` objects with more context than just the `String` contents.  Also, improved modularity and organization of the "synth" infrastructure to make extension to additional generated outputs easier (<https://github.com/intel/rohd/pull/598>).
 - Fixed a bug where simulation memory usage could grow unboundedly when `Combinational`s are used (<https://github.com/intel/rohd/pull/602>).
