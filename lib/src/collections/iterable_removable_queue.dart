@@ -108,6 +108,10 @@ class IterableRemovableQueue<T> {
         // Move the patrol pointer to the next element.
         _patrol = _patrol?.next;
 
+        // If we reached the end of the queue, we should wrap around to the
+        // first element.
+        _patrol ??= _first;
+
         _size--;
         numRemoved++;
       } else {
@@ -126,11 +130,16 @@ class IterableRemovableQueue<T> {
   /// Also may remove items from the queue if they are indicated by
   /// [removeWhere].
   void add(T item) {
-    _runPatrol();
+    // _runPatrol();
     if (removeWhere != null && removeWhere!(item)) {
       // If the item should be removed, we don't add it.
       return;
     }
+
+    // every time we add, we should do some patrol work
+    // note: important to do this *before* adding the new element so that we
+    // don't just look at `last` again, since we won't be removing that!
+    _runPatrol();
 
     final newElement = _IterableRemovableElement<T>(item);
     if (isEmpty) {
