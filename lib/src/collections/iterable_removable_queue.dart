@@ -118,9 +118,11 @@ class IterableRemovableQueue<T> {
       return;
     }
 
-    // every time we add, we should do some patrol work
-    // note: important to do this *before* adding the new element so that we
-    // don't just look at `last` again, since we won't be removing that!
+    // every time we add, we should do some patrol work. note: important to do
+    // this *before* adding the new element so that we don't just look at `last`
+    // again, since we won't be removing that! also, run it twice so that we are
+    // patrolling faster than adding no matter what!
+    _runPatrol();
     _runPatrol();
 
     final newElement = _IterableRemovableElement<T>(item);
