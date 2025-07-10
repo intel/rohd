@@ -129,6 +129,49 @@ void main() {
         expect(q.isEmpty, false);
         expect(q.size, numItems + 2 * numItems ~/ 3);
       });
+
+      test('never iterated but adds', () {
+        final q = IterableRemovableQueue<LateRemovable>(
+          removeWhere: (item) => item.doRemove,
+        );
+
+        var biggestQueueSize = 0;
+
+        // keep a bunch in queue permanently
+        final keepItems = <LateRemovable>[];
+        for (var i = 0; i < 35; i++) {
+          final item = LateRemovable(i);
+          keepItems.add(item);
+          q.add(item);
+        }
+
+        biggestQueueSize = q.size;
+
+        // for many iterations, add batches of them, then mark them all for
+        // removal
+        for (var iter = 0; iter < 1000; iter++) {
+          final newItems = <LateRemovable>[];
+          for (var x = 0; x < 10; x++) {
+            final newItem = LateRemovable(x);
+            newItems.add(newItem);
+            q.add(newItem);
+
+            if (q.size > biggestQueueSize) {
+              biggestQueueSize = q.size;
+            }
+          }
+
+          for (final item in newItems) {
+            item.doRemove = true;
+          }
+
+          if (q.size > biggestQueueSize) {
+            biggestQueueSize = q.size;
+          }
+        }
+
+        expect(biggestQueueSize, lessThan(100));
+      });
     });
   });
 }
