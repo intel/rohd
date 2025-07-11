@@ -2066,6 +2066,17 @@ void main() {
             equals(lv));
       }
     });
+    test('radixString roundTrip zero corner case', () {
+      final lv = LogicValue.ofBigInt(BigInt.from(0), 61);
+      for (final i in [2, 4, 8, 10, 16]) {
+        expect(
+            LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
+        expect(
+            LogicValue.ofRadixString(
+                lv.toRadixString(radix: i, leadingZeros: true)),
+            equals(lv));
+      }
+    });
     test('radixString binary expansion', () {
       final lv = LogicValue.ofRadixString("12'b10z111011z00");
       expect(lv.toRadixString(radix: 16), equals("12'h<10z1>d<1z00>"));
