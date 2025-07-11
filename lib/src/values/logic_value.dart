@@ -729,9 +729,11 @@ abstract class LogicValue implements Comparable<LogicValue> {
             (match) => '${match.group(0)}$sepChar')
         .replaceAll('$sepChar<', '<'));
 
-    final fullString = spaceString[0] == sepChar
-        ? spaceString.substring(1, spaceString.length)
-        : spaceString;
+    final fullString = (spaceString.isNotEmpty)
+        ? (spaceString[0] == sepChar)
+            ? spaceString.substring(1, spaceString.length)
+            : spaceString
+        : '0';
     return '$width$radixStr$fullString';
   }
 
