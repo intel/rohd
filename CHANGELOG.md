@@ -1,3 +1,7 @@
+## 0.6.5
+
+- Fixed a bug where zero-value `LogicValue`s could result in `toRadixString()` returning output an empty `String` instead of "0" (<https://github.com/intel/rohd/pull/606>).
+
 ## 0.6.4
 
 - Added `setupActions` to `FiniteStateMachine` so that "common" or "default" actions can be grouped in one place instead of repeated in each `State` (<https://github.com/intel/rohd/pull/593>).
