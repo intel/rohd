@@ -196,9 +196,11 @@ bits to fill the first radix character.</p>
           (match) =&gt; &#39;${match.group(0)}$sepChar&#39;)
       .replaceAll(&#39;$sepChar&lt;&#39;, &#39;&lt;&#39;));
 
-  final fullString = spaceString[0] == sepChar
-      ? spaceString.substring(1, spaceString.length)
-      : spaceString;
+  final fullString = (spaceString.isNotEmpty)
+      ? (spaceString[0] == sepChar)
+          ? spaceString.substring(1, spaceString.length)
+          : spaceString
+      : &#39;0&#39;;
   return &#39;$width$radixStr$fullString&#39;;
 }</code></pre>
 </section>
