@@ -31,6 +31,10 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
+  bool get isStructPortElement =>
+      (this is! SynthLogicArrayElement) &&
+      logics.any((e) => e.isPort && e.parentStructure != null);
+
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
 
@@ -79,7 +83,10 @@ class SynthLogic {
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements
   /// from the other.
   bool get mergeable =>
-      _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+      _reservedLogic == null &&
+      _constLogic == null &&
+      _renameableLogic == null &&
+      !isStructPortElement;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;

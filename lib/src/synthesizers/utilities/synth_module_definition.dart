@@ -112,11 +112,27 @@ class SynthModuleDefinition {
                         .expressionlessInputs
                         .contains(logic.name)));
 
+        final Naming? namingOverride;
+        if (logic.isPort) {
+          if (logic.parentModule != module) {
+            // this is a submodule port, so it doesn't need to reserve the name
+            namingOverride = Naming.mergeable;
+          } else if (logic.parentStructure == null) {
+            // this is not a sub-element of an array or structure
+            namingOverride = Naming.reserved;
+          } else {
+            // this might be some sub-element that doesn't need a reserved port
+            // name
+            namingOverride = null;
+          }
+        } else {
+          // non-port, don't override the name
+          namingOverride = null;
+        }
+
         newSynth = SynthLogic(
           logic,
-          namingOverride: (logic.isPort && logic.parentModule != module)
-              ? Naming.mergeable
-              : null,
+          namingOverride: namingOverride,
           constNameDisallowed: disallowConstName,
         );
       }
@@ -135,6 +151,7 @@ class SynthModuleDefinition {
   // - when receiving an input struct (not array) from inside a module, just do `... = myIn[5:3]`
   // - when receiving from a submodule output struct (not array), just do `... = mySubmodule.myOut[5:3]`
   // - when driving a submodule input struct (not array), just do `myIn[5:3] = ...` but force a new intermediate signal to be driven
+  // HOWEVER: we cannot assume expressions can go anywhere, due to expressionless inputs, so we should reassign to the struct members?
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
@@ -261,7 +278,8 @@ class SynthModuleDefinition {
       if (receiverIsSubmoduleInOut) {
         final subModule = receiver.parentModule!;
 
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setInOutMapping(receiver.name, synthReceiver);
         }
@@ -275,7 +293,8 @@ class SynthModuleDefinition {
         final subModule = receiver.parentModule!;
 
         // array elements are not named ports, just contained in array
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setOutputMapping(receiver.name, synthReceiver);
         }
@@ -306,7 +325,8 @@ class SynthModuleDefinition {
         final subModule = receiver.parentModule!;
 
         // array elements are not named ports, just contained in array
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setInputMapping(receiver.name, synthReceiver);
         }
