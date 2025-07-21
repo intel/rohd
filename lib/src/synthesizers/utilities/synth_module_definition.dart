@@ -15,6 +15,13 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+class _BusSubsetForStructSlice extends BusSubset {
+  _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex);
+
+  @override
+  bool get hasBuilt => true;
+}
+
 /// Represents the definition of a module.
 class SynthModuleDefinition {
   /// The [Module] being defined.
@@ -195,7 +202,29 @@ class SynthModuleDefinition {
 
     // make sure disconnected inputs are included
     for (final input in module.inputs.values) {
-      inputs.add(_getSynthLogic(input)!);
+      final inputSynth = _getSynthLogic(input)!;
+      inputs.add(inputSynth);
+
+      if (input is LogicStructure && input is! LogicArray) {
+        var idx = 0;
+        for (final leafElement in input.leafElements) {
+          final leafSynth = _getSynthLogic(leafElement)!;
+          internalSignals.add(leafSynth);
+
+          // this is DISCONNECTED, just a module used for synthesizing
+          final subsetMod = _BusSubsetForStructSlice(
+            Logic(width: input.width),
+            idx,
+            idx + leafElement.width - 1,
+          );
+
+          getSynthSubModuleInstantiation(subsetMod)
+            ..setInputMapping(subsetMod.original.name, inputSynth)
+            ..setOutputMapping(subsetMod.subset.name, leafSynth);
+
+          idx += leafElement.width;
+        }
+      }
     }
 
     // make sure disconnected inouts are included, also

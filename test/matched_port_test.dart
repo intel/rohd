@@ -1,7 +1,22 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-import 'logic_structure_test.dart';
+class MyStruct extends LogicStructure {
+  final Logic ready;
+  final Logic valid;
+
+  factory MyStruct({String? name}) => MyStruct._(
+        Logic(name: 'ready', naming: Naming.mergeable),
+        Logic(name: 'valid', naming: Naming.mergeable),
+        name: name,
+      );
+
+  MyStruct._(this.ready, this.valid, {String? name})
+      : super([ready, valid], name: name ?? 'myStruct');
+
+  @override
+  LogicStructure clone({String? name}) => MyStruct(name: name);
+}
 
 class SimpleStructModule extends Module {
   MyStruct get myOut => output('myOut') as MyStruct;

@@ -23,9 +23,11 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final String _subsetName;
 
   /// The input to get a subset of.
-  late final Logic _original;
+  ///
+  /// This should not be used outside of this module.
+  late final Logic original;
 
-  /// The output, a subset of [_original].
+  /// The output, a subset of [original].
   late final Logic subset;
 
   /// Start index of the subset.
@@ -72,27 +74,28 @@ class BusSubset extends Module with InlineSystemVerilog {
     final newWidth = (endIndex - startIndex).abs() + 1;
 
     if (_isNet) {
-      _original = addInOut(_originalName, bus, width: bus.width);
-      subset = LogicNet(width: newWidth);
+      original = addInOut(_originalName, bus, width: bus.width);
+      subset =
+          LogicNet(width: newWidth, name: _subsetName, naming: Naming.unnamed);
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
       if (startIndex > endIndex) {
         // reverse case
         for (var i = 0; i < newWidth; i++) {
           internalSubset.quietlyMergeSubsetTo(
-            _original[startIndex - i] as LogicNet,
+            original[startIndex - i] as LogicNet,
             start: endIndex + i,
           );
         }
       } else {
         // normal case
-        (_original as LogicNet).quietlyMergeSubsetTo(
+        (original as LogicNet).quietlyMergeSubsetTo(
           internalSubset,
           start: startIndex,
         );
       }
     } else {
-      _original = addInput(_originalName, bus, width: bus.width);
+      original = addInput(_originalName, bus, width: bus.width);
       subset = addOutput(_subsetName, width: newWidth);
 
       // so that people can't do a slice assign, not (yet?) implemented
@@ -107,22 +110,22 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-    _original.glitch.listen((args) {
+    original.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_original.width == 1) {
-      subset.put(_original.value);
+    if (original.width == 1) {
+      subset.put(original.value);
       return;
     }
 
     if (endIndex < startIndex) {
-      subset.put(_original.value.getRange(endIndex, startIndex + 1).reversed);
+      subset.put(original.value.getRange(endIndex, startIndex + 1).reversed);
     } else {
-      subset.put(_original.value.getRange(startIndex, endIndex + 1));
+      subset.put(original.value.getRange(startIndex, endIndex + 1));
     }
   }
 
@@ -140,7 +143,7 @@ class BusSubset extends Module with InlineSystemVerilog {
         'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
-    if (_original.width == 1) {
+    if (original.width == 1) {
       return a;
     }
 
