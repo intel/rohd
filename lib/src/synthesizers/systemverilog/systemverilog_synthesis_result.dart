@@ -152,9 +152,15 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      // TODO: need to handle partial assignments here
-      assignmentLines
-          .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+      var sliceString = '';
+      if (assignment is PartialSynthAssignment) {
+        sliceString = assignment.upperIndex == assignment.lowerIndex
+            ? '[${assignment.upperIndex}]'
+            : '[${assignment.upperIndex}:${assignment.lowerIndex}]';
+      }
+
+      assignmentLines.add('assign ${assignment.dst.name}$sliceString'
+          ' = ${assignment.src.name};');
     }
     return assignmentLines.join('\n');
   }

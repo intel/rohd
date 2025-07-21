@@ -177,7 +177,20 @@ class SynthModuleDefinition {
       ..addAll(module.inOuts.values);
 
     for (final output in module.outputs.values) {
-      outputs.add(_getSynthLogic(output)!);
+      final outputSynth = _getSynthLogic(output)!;
+      outputs.add(outputSynth);
+
+      if (output is LogicStructure && output is! LogicArray) {
+        var idx = 0;
+        for (final leafElement in output.leafElements) {
+          //TODO: test hiearchical structs
+          final leafSynth = _getSynthLogic(leafElement)!;
+          internalSignals.add(leafSynth);
+          assignments.add(PartialSynthAssignment(leafSynth, outputSynth,
+              upperIndex: idx + leafElement.width - 1, lowerIndex: idx));
+          idx += leafElement.width;
+        }
+      }
     }
 
     // make sure disconnected inputs are included
