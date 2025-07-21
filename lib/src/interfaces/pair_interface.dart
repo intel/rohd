@@ -98,6 +98,7 @@ class PairInterface extends Interface<PairDirection> {
 
   /// Creates a new instance of a [PairInterface] with the same ports and other
   /// characteristics.
+  @Deprecated('Use `clone()` on an instance instead')
   PairInterface.clone(PairInterface otherInterface)
       : this(
           portsFromConsumer:
@@ -268,6 +269,11 @@ class PairInterface extends Interface<PairDirection> {
     _subInterfaces[name] = _SubPairInterface(subInterface, reverse: reverse);
     return subInterface;
   }
+
+  @override
+  @mustBeOverridden
+  // ignore: deprecated_member_use_from_same_package
+  PairInterface clone() => PairInterface.clone(this);
 }
 
 /// An internal tracking object for sub-interfaces and characteristics useful

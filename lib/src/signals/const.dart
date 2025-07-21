@@ -29,4 +29,7 @@ class Const extends Logic {
 
     makeUnassignable(reason: '`Const` signals are unassignable.');
   }
+
+  @override
+  Logic clone({String? name}) => Const(value, width: width);
 }

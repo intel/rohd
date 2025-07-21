@@ -192,7 +192,7 @@ class Logic {
   ///
   /// This should *only* be called by [Module.build].  It is used to
   /// optimize search.
-  @protected
+  @internal
   set parentModule(Module? newParentModule) {
     assert(_parentModule == null || _parentModule == newParentModule,
         'Should only set parent module once.');
@@ -268,6 +268,8 @@ class Logic {
 
   /// Makes a copy of `this`, optionally with the specified [name], but the same
   /// [width].
+  @mustBeOverridden
+  //TODO: does this need to expose naming too?
   Logic clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone] with the provided [name] and optionally [naming], then
@@ -282,6 +284,7 @@ class Logic {
   /// final myImportantNode = (a ^ b).named('myImportantNode');
   /// ```
   Logic named(String name, {Naming? naming}) =>
+      //TODO: ths should call `clone` instead of _clone so it gets renamed properly
       _clone(name: name, naming: naming)..gets(this);
 
   /// An internal constructor for [Logic] which additional provides access to

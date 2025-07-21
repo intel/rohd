@@ -197,6 +197,7 @@ class LogicArray extends LogicStructure {
   ///
   /// If no new [name] is specified, then it will also have the same name.
   @override
+  @mustBeOverridden
   LogicArray clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone] with the provided [name] and optionally [naming], then

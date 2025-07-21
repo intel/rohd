@@ -49,6 +49,16 @@ class LogicStructure implements Logic {
               ' ${element.parentStructure}.');
         }
 
+        if (element.parentModule != null &&
+            element.parentModule!.isPort(element)) {
+          // Note we do not use `element.isPort` since that will set the lazy
+          // variable, which would break assumptions when we create the port,
+          // which may be in progress
+          throw LogicConstructionException(
+              '`Module` ports cannot be set as elements of a `LogicStructure`,'
+              ' but $element is a port of ${element.parentModule}.');
+        }
+
         element._parentStructure = this;
       });
   }
@@ -62,6 +72,7 @@ class LogicStructure implements Logic {
   /// Creates a new [LogicStructure] with the same structure as `this` and
   /// [clone]d [elements], optionally with the provided [name].
   @override
+  @mustBeOverridden
   LogicStructure clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone], optionally with the specified [name], then assigns it to
@@ -269,6 +280,7 @@ class LogicStructure implements Logic {
   Module? _parentModule;
 
   @protected
+  @internal
   @override
   set parentModule(Module? newParentModule) {
     assert(_parentModule == null || _parentModule == newParentModule,
@@ -282,8 +294,11 @@ class LogicStructure implements Logic {
   ///
   /// This should *only* be called by [Module.build].  It is used to optimize
   /// search.
-  @protected
+  @internal
   void setAllParentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
     parentModule = newParentModule;
     for (final element in elements) {
       if (element is LogicStructure) {
@@ -638,4 +653,7 @@ class LogicStructure implements Logic {
   // ignore: unused_element
   set _unassignableReason(String? _) =>
       throw UnsupportedError('Delegated to elements');
+
+  @override
+  String toString() => 'LogicStructure(${super.toString()}): $name';
 }

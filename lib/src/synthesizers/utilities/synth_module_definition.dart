@@ -130,6 +130,12 @@ class SynthModuleDefinition {
   /// definition.
   final List<Module> supportingModules = [];
 
+  //TODO: plan for mapping to struct ports
+  // - when driving an output struct (not array) from inside a module, just do `assign myOut[5:3] = ...`
+  // - when receiving an input struct (not array) from inside a module, just do `... = myIn[5:3]`
+  // - when receiving from a submodule output struct (not array), just do `... = mySubmodule.myOut[5:3]`
+  // - when driving a submodule input struct (not array), just do `myIn[5:3] = ...` but force a new intermediate signal to be driven
+
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : _synthInstantiationNameUniquifier = Uniquifier(
@@ -197,11 +203,11 @@ class SynthModuleDefinition {
         continue;
       }
 
-      if (receiver is LogicArray) {
+      if (receiver is LogicStructure) {
         logicsToTraverse.addAll(receiver.elements);
       }
 
-      if (receiver.isArrayMember) {
+      if (receiver.parentStructure != null) {
         logicsToTraverse.add(receiver.parentStructure!);
       }
 
@@ -232,11 +238,11 @@ class SynthModuleDefinition {
       final receiverIsConstant = driver == null && receiver is Const;
 
       final receiverIsModuleInput =
-          module.isInput(receiver) && !receiver.isArrayMember;
+          module.isInput(receiver) && receiver.parentStructure == null;
       final receiverIsModuleOutput =
-          module.isOutput(receiver) && !receiver.isArrayMember;
+          module.isOutput(receiver) && receiver.parentStructure == null;
       final receiverIsModuleInOut =
-          module.isInOut(receiver) && !receiver.isArrayMember;
+          module.isInOut(receiver) && receiver.parentStructure == null;
 
       final synthDriver = _getSynthLogic(driver);
 

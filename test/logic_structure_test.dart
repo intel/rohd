@@ -17,15 +17,17 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct() => MyStruct._(
+  factory MyStruct({String? name}) => MyStruct._(
         Logic(name: 'ready'),
         Logic(name: 'valid'),
+        name: name,
       );
 
-  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+  MyStruct._(this.ready, this.valid, {String? name})
+      : super([ready, valid], name: name ?? 'myStruct');
 
   @override
-  LogicStructure clone({String? name}) => MyStruct();
+  LogicStructure clone({String? name}) => MyStruct(name: name);
 }
 
 class MyFancyStruct extends LogicStructure {

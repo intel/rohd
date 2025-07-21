@@ -97,4 +97,8 @@ class LogicNet extends Logic {
   void _blastWire() {
     _updateWire((_wire as _WireNet).toBlasted());
   }
+
+  @override
+  @mustBeOverridden
+  Logic clone({String? name}) => super.clone(name: name) as LogicNet;
 }

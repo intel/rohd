@@ -23,7 +23,7 @@ import 'package:rohd/rohd.dart';
 /// was passed would have negative consequences if multiple [Module]s
 /// were consuming the same [Interface], and also breaks the rules for
 /// [Module] input and output connectivity.
-class Interface<TagType> {
+class Interface<TagType extends Enum> {
   /// Internal map from the [Interface]'s defined port name to an instance
   /// of a [Logic].
   ///
@@ -232,4 +232,17 @@ class Interface<TagType> {
               MapEntry(portName, thisPort < other.port(portName)))
           .values
           .toList(growable: false));
+
+  /// Creates a new [Interface] with the same ports as `this`.
+  ///
+  /// It is expected that any implementation will override this in a way that
+  /// returns the same type as itself.
+  @mustBeOverridden
+  Interface<TagType> clone() {
+    final newIntf = Interface<TagType>();
+    _portToTagMap.forEach((portName, tags) {
+      newIntf.setPorts([port(portName).clone()], tags);
+    });
+    return newIntf;
+  }
 }
