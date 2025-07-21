@@ -45,3 +45,16 @@ class SynthAssignment {
   @override
   String toString() => '$dst <= $src';
 }
+
+class PartialSynthAssignment extends SynthAssignment {
+  int upperIndex;
+  int lowerIndex;
+
+  /// Constructs a representation of a partial assignment.
+  PartialSynthAssignment(SynthLogic src, SynthLogic dst,
+      {required this.upperIndex, required this.lowerIndex})
+      : super(src, dst);
+
+  @override
+  String toString() => '$dst[$upperIndex:$lowerIndex] <= $src';
+}

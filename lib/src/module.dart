@@ -698,6 +698,9 @@ abstract class Module {
       String name, LogicType source) {
     _checkForSafePortName(name);
 
+    // TODO: confirm that no matched input/output structure has ANY nets in it
+    //  or we will violate all kinds of assumptions
+
     final inPort = (source.clone(name: name) as LogicType)..gets(source);
 
     if (inPort.name != name) {
