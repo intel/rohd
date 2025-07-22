@@ -55,13 +55,6 @@ abstract class Module {
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
 
-  // late final Map<String, LogicStructure> _inputStructures = {};
-  // late final Map<String, LogicStructure> _inputStructureSources = {};
-  // late final Map<String, LogicStructure> _inOutStructures = {};
-  // late final Map<String, LogicStructure> _inOutStructureSources = {};
-  // late final Map<String, LogicStructure> _outputStructures = {};
-  // late final Map<String, LogicStructure> _outputStructureSources = {};
-
   /// The parent [Module] of this [Module].
   ///
   /// This only gets populated after its parent [Module], if it exists, has
@@ -131,16 +124,6 @@ abstract class Module {
       _inputSources[name] ??
       (throw PortDoesNotExistException(
           '$name is not an input of this Module.'));
-
-  // LogicStructure inputStructure(String name) =>
-  //     _inputStructures[name] ??
-  //     (throw PortDoesNotExistException(
-  //         '$name is not an input structure of this Module.'));
-
-  // LogicStructure inputStructureSource(String name) =>
-  //     _inputStructureSources[name] ??
-  //     (throw PortDoesNotExistException(
-  //         '$name is not an input structure of this Module.'));
 
   /// Provides the [input] named [name] if it exists, otherwise `null`.
   ///
@@ -700,6 +683,10 @@ abstract class Module {
 
     // TODO: confirm that no matched input/output structure has ANY nets in it
     //  or we will violate all kinds of assumptions
+    if (source.isNet || (source is LogicStructure && source.hasNets)) {
+      //TODO
+      throw Exception('Matched inputs cannot have nets in them.');
+    }
 
     final inPort = (source.clone(name: name) as LogicType)..gets(source);
 
@@ -776,6 +763,18 @@ abstract class Module {
     return inOutPort;
   }
 
+  LogicType addMatchedInOut<LogicType extends Logic>(
+      String name, LogicType source) {
+    _checkForSafePortName(name);
+
+    if (!source.isNet) {
+      throw Exception('Matched inOuts must be fully nets.');
+    }
+
+    // TODO finish implementation!
+    return source;
+  }
+
   /// Registers and returns an input [LogicArray] port to this [Module] with
   /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
@@ -828,6 +827,11 @@ abstract class Module {
   LogicType addMatchedOutput<LogicType extends Logic>(
       String name, LogicType toMatch) {
     _checkForSafePortName(name);
+
+    if (toMatch.isNet || (toMatch is LogicStructure && toMatch.hasNets)) {
+      //TODO
+      throw Exception('Matched outputs cannot have nets in them.');
+    }
 
     // must make a new clone of it, to avoid people using ports of other modules
     final outPort = toMatch.clone(name: name) as LogicType;
@@ -925,33 +929,6 @@ abstract class Module {
 
     return inOutArr;
   }
-
-  // StructType addInputStructure<StructType extends LogicStructure>(
-  //     String name, StructType source) {
-  //   final inputStruct = (source.clone(name: name) as StructType)
-  //     ..gets(addInput(name, source, width: source.width));
-
-  //   _inputStructures[name] = inputStruct;
-  //   _inputStructureSources[name] = source;
-
-  //   return inputStruct;
-  // }
-
-  // StructType addOutputStructure<StructType extends LogicStructure>(
-  //     String name, StructType internalSource) {
-  //   final externalStruct = internalSource.clone(name: name);
-  //   final outputPort = addOutput(name, width: externalStruct.width);
-
-  //   outputPort <= internalSource;
-  //   externalStruct <= outputPort;
-
-  //   return externalStruct as StructType;
-  // }
-
-  // StructType addInOutStructure<StructType extends LogicStructure>(
-  //         String name, StructType source) =>
-  //     (source.clone(name: name) as StructType)
-  //       ..gets(addInOut(name, source, width: source.width));
 
   InterfaceType connectInterface<InterfaceType extends Interface<TagType>,
               TagType extends Enum>(InterfaceType source,
