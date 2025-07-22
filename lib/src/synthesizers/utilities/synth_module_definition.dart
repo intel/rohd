@@ -551,10 +551,18 @@ class SynthModuleDefinition {
     // there might be more assign statements than necessary, so let's ditch them
     var prevAssignmentCount = 0;
 
+    // grapb the partial assignments since they can't be merged
+    final partialAssignments =
+        assignments.whereType<PartialSynthAssignment>().toList();
+    assignments.removeWhere((e) => e is PartialSynthAssignment);
+
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <SynthAssignment>[];
       for (final assignment in assignments) {
+        assert(assignment is! PartialSynthAssignment,
+            'Partial assignments should have been removed before this.');
+
         final dst = assignment.dst;
         final src = assignment.src;
 
@@ -597,6 +605,10 @@ class SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
+
+    // add back all the partial assignments that were removed since they could
+    // not be merged
+    assignments.addAll(partialAssignments);
 
     // update the look-up table post-merge
     logicToSynthMap.clear();

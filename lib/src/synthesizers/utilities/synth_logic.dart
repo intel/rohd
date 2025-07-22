@@ -83,10 +83,8 @@ class SynthLogic {
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements
   /// from the other.
   bool get mergeable =>
-      _reservedLogic == null &&
-      _constLogic == null &&
-      _renameableLogic == null &&
-      !isStructPortElement;
+      _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+  // && !isStructPortElement; // TODO: need this?
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
