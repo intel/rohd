@@ -269,7 +269,8 @@ class SynthModuleDefinition {
         logicsToTraverse.addAll(receiver.elements);
       }
 
-      if (receiver.parentStructure != null) {
+      if (receiver.isArrayMember) {
+        // don't need to step up to any structure, just arrays
         logicsToTraverse.add(receiver.parentStructure!);
       }
 

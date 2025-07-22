@@ -52,9 +52,8 @@ void main() {
     final mod = SimpleStructModuleContainer(Logic(), Logic());
     await mod.build();
 
-    //TODO: expect that internal_struct is NOT in the output
     final sv = mod.generateSynth();
-    // expect(sv, isNot(contains('internal_struct')));
+    expect(sv, isNot(contains('internal_struct')));
 
     print(sv);
   });
