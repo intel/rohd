@@ -68,9 +68,7 @@ void main() {
       Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
     ];
 
-    print(sv);
-
-    // await SimCompare.checkFunctionalVector(mod, vectors);
-    // SimCompare.checkIverilogVector(mod, vectors);
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }

@@ -269,6 +269,16 @@ class SynthModuleDefinition {
         ..addAll(subModule.inputs.values)
         ..addAll(subModule.outputs.values)
         ..addAll(subModule.inOuts.values);
+
+      subModule.inputs.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_partialAssignStructPort);
+
+      subModule.outputs.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_subsetReceiveStructPort);
     }
 
     // search for other modules contained within this module
