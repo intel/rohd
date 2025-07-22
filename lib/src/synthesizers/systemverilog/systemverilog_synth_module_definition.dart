@@ -31,6 +31,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// [LogicNet]s.
   SystemVerilogSynthSubModuleInstantiation _addNetConnect(
       SynthLogic dst, SynthLogic src) {
+    //TODO: this needs to suport partial assignments!
+
     // make an (unconnected) module representing the assignment
     final netConnect =
         _NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));

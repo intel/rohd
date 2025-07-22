@@ -6,45 +6,61 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct({String? name}) => MyStruct._(
-        Logic(name: 'ready', naming: Naming.mergeable),
-        Logic(name: 'valid', naming: Naming.mergeable),
+  final bool asNet;
+
+  factory MyStruct({String? name, bool asNet = false}) => MyStruct._(
+        (asNet ? LogicNet.new : Logic.new)(
+            name: 'ready', naming: Naming.mergeable),
+        (asNet ? LogicNet.new : Logic.new)(
+            name: 'valid', naming: Naming.mergeable),
         name: name,
+        asNet: asNet,
       );
 
-  MyStruct._(this.ready, this.valid, {String? name})
+  MyStruct._(this.ready, this.valid,
+      {required String? name, required this.asNet})
       : super([ready, valid], name: name ?? 'myStruct');
 
   @override
-  LogicStructure clone({String? name}) => MyStruct(name: name);
+  MyStruct clone({String? name}) => MyStruct(name: name, asNet: asNet);
 }
 
 class SimpleStructModule extends Module {
-  MyStruct get myOut => output('myOut') as MyStruct;
+  late final MyStruct myOut;
 
   SimpleStructModule(MyStruct myIn, {super.name = 'simple_struct_mod'}) {
-    myIn = addMatchedInput('myIn', myIn);
+    myIn = (myIn.isNet ? addMatchedInOut : addMatchedInput)('myIn', myIn);
 
-    final internal = MyStruct(name: 'internal_struct');
+    final internal = myIn.clone(name: 'internal_struct');
     internal.ready <= myIn.valid;
     internal.valid <= myIn.ready;
 
-    addMatchedOutput('myOut', internal) <= internal;
+    if (myIn.isNet) {
+      myOut = myIn.clone();
+      addMatchedInOut('myOut', myOut) <= internal;
+    } else {
+      myOut = addMatchedOutput('myOut', internal)..gets(internal);
+    }
   }
 }
 
 class SimpleStructModuleContainer extends Module {
   SimpleStructModuleContainer(Logic a1, Logic a2,
-      {super.name = 'simple_struct_mod_container'}) {
-    a1 = addInput('a1', a1);
-    a2 = addInput('a2', a2);
-    final myStruct = MyStruct(name: 'upper_struct');
+      {super.name = 'simple_struct_mod_container', bool asNet = false}) {
+    final Logic Function(String, Logic) inMaker = asNet ? addInOut : addInput;
+    // ignore: omit_local_variable_types
+    final Logic Function(String name) outMaker =
+        asNet ? (name) => addInOut(name, LogicNet()) : addOutput;
+
+    a1 = inMaker('a1', a1);
+    a2 = inMaker('a2', a2);
+    final myStruct = MyStruct(name: 'upper_struct', asNet: asNet);
     myStruct.ready <= a1;
     myStruct.valid <= a2;
     final sub = SimpleStructModule(myStruct);
 
-    addOutput('b1') <= sub.myOut.ready;
-    addOutput('b2') <= sub.myOut.valid;
+    outMaker('b1') <= sub.myOut.ready;
+    outMaker('b2') <= sub.myOut.valid;
   }
 }
 
@@ -70,5 +86,33 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('simple struct module with nets', () async {
+    final mod = SimpleStructModuleContainer(Logic(), Logic(), asNet: true);
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    print(sv);
+    // expect(sv, isNot(contains('internal_struct')));
+
+    // expect(sv, contains('input logic [1:0] myIn'));
+    // expect(sv, contains('output logic [1:0] myOut'));
+
+    // final vectors = [
+    //   Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
+    //   Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+    // ];
+
+    // await SimCompare.checkFunctionalVector(mod, vectors);
+    // SimCompare.checkIverilogVector(mod, vectors);
+
+    // final vectorsReversed = [
+    //   Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
+    //   Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
+    // ];
+
+    // await SimCompare.checkFunctionalVector(mod, vectorsReversed);
+    // SimCompare.checkIverilogVector(mod, vectorsReversed);
   });
 }

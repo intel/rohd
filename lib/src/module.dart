@@ -768,11 +768,47 @@ abstract class Module {
     _checkForSafePortName(name);
 
     if (!source.isNet) {
-      throw Exception('Matched inOuts must be fully nets.');
+      throw Exception('Matched inOuts must be nets.');
     }
 
-    // TODO finish implementation!
-    return source;
+    _inOutDrivers.add(source);
+
+    // we need to properly detect all inout sources
+    if (source is LogicStructure) {
+      final sourceElems = TraverseableCollection<Logic>()..add(source);
+      for (var i = 0; i < sourceElems.length; i++) {
+        final sei = sourceElems[i];
+        _inOutDrivers.add(sei);
+
+        if (sei.parentStructure != null) {
+          sourceElems.add(sei.parentStructure!);
+        }
+
+        if (sei is LogicStructure) {
+          sourceElems.addAll(sei.elements);
+        }
+      }
+    }
+
+    final inOutPort = (source.clone(name: name) as LogicType)..gets(source);
+
+    if (inOutPort.name != name) {
+      throw Exception('clone name failed'); // TODO
+    }
+
+    if (inOutPort is LogicStructure) {
+      inOutPort.setAllParentModule(this);
+    } else {
+      inOutPort.parentModule = this;
+    }
+
+    _inOutDrivers.addAll(inOutPort.srcConnections);
+
+    _inOuts[name] = inOutPort;
+
+    _inOutSources[name] = source;
+
+    return inOutPort;
   }
 
   /// Registers and returns an input [LogicArray] port to this [Module] with
