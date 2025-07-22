@@ -163,6 +163,54 @@ class SynthModuleDefinition {
   // - when DRIVING a struct port (my output, sub's input), we use a "partial assignment", a new construct
   // - when RECEIVING from a struct port (my input, sub's output), we use a BusSubset locally created to slice it off
 
+  /// Takes all the leaf elements of [port] and drives [port] with them, each
+  /// with a partial assignment.
+  ///
+  /// This is intended for use when driving an output of a module from within
+  /// the module, or for driving the input of a sub-module.
+  void _partialAssignStructPort(LogicStructure port) {
+    assert(port is! LogicArray, 'Should only be used on non-array structs');
+
+    final portSynth = _getSynthLogic(port)!;
+
+    var idx = 0;
+    for (final leafElement in port.leafElements) {
+      //TODO: test hiearchical structs
+      final leafSynth = _getSynthLogic(leafElement)!;
+      internalSignals.add(leafSynth);
+      assignments.add(PartialSynthAssignment(leafSynth, portSynth,
+          upperIndex: idx + leafElement.width - 1, lowerIndex: idx));
+      idx += leafElement.width;
+    }
+  }
+
+  /// Drives all leaf elements of [port] using a (modified) [BusSubset].
+  ///
+  /// This is intended for use when receiving from an input of a module from
+  /// within the module, or for receiving the output of a sub-module.
+  void _subsetReceiveStructPort(LogicStructure port) {
+    final portSynth = _getSynthLogic(port)!;
+
+    var idx = 0;
+    for (final leafElement in port.leafElements) {
+      final leafSynth = _getSynthLogic(leafElement)!;
+      internalSignals.add(leafSynth);
+
+      // this is DISCONNECTED, just a module used for synthesizing
+      final subsetMod = _BusSubsetForStructSlice(
+        Logic(width: port.width),
+        idx,
+        idx + leafElement.width - 1,
+      );
+
+      getSynthSubModuleInstantiation(subsetMod)
+        ..setInputMapping(subsetMod.original.name, portSynth)
+        ..setOutputMapping(subsetMod.subset.name, leafSynth);
+
+      idx += leafElement.width;
+    }
+  }
+
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : _synthInstantiationNameUniquifier = Uniquifier(
@@ -188,15 +236,7 @@ class SynthModuleDefinition {
       outputs.add(outputSynth);
 
       if (output is LogicStructure && output is! LogicArray) {
-        var idx = 0;
-        for (final leafElement in output.leafElements) {
-          //TODO: test hiearchical structs
-          final leafSynth = _getSynthLogic(leafElement)!;
-          internalSignals.add(leafSynth);
-          assignments.add(PartialSynthAssignment(leafSynth, outputSynth,
-              upperIndex: idx + leafElement.width - 1, lowerIndex: idx));
-          idx += leafElement.width;
-        }
+        _partialAssignStructPort(output);
       }
     }
 
@@ -206,24 +246,7 @@ class SynthModuleDefinition {
       inputs.add(inputSynth);
 
       if (input is LogicStructure && input is! LogicArray) {
-        var idx = 0;
-        for (final leafElement in input.leafElements) {
-          final leafSynth = _getSynthLogic(leafElement)!;
-          internalSignals.add(leafSynth);
-
-          // this is DISCONNECTED, just a module used for synthesizing
-          final subsetMod = _BusSubsetForStructSlice(
-            Logic(width: input.width),
-            idx,
-            idx + leafElement.width - 1,
-          );
-
-          getSynthSubModuleInstantiation(subsetMod)
-            ..setInputMapping(subsetMod.original.name, inputSynth)
-            ..setOutputMapping(subsetMod.subset.name, leafSynth);
-
-          idx += leafElement.width;
-        }
+        _subsetReceiveStructPort(input);
       }
     }
 

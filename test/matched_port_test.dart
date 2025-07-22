@@ -1,4 +1,5 @@
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class MyStruct extends LogicStructure {
@@ -48,6 +49,10 @@ class SimpleStructModuleContainer extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   test('simple struct module', () async {
     final mod = SimpleStructModuleContainer(Logic(), Logic());
     await mod.build();
@@ -55,6 +60,17 @@ void main() {
     final sv = mod.generateSynth();
     expect(sv, isNot(contains('internal_struct')));
 
+    expect(sv, contains('input logic [1:0] myIn'));
+    expect(sv, contains('output logic [1:0] myOut'));
+
+    final vectors = [
+      Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
+      Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+    ];
+
     print(sv);
+
+    // await SimCompare.checkFunctionalVector(mod, vectors);
+    // SimCompare.checkIverilogVector(mod, vectors);
   });
 }
