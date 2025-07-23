@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 
 import '../example/example.dart' as counter;
 import '../example/fir_filter.dart' as fir_filter;
+import '../example/logic_array.dart' as logic_array;
 import '../example/oven_fsm.dart' as fsm;
 import '../example/tree.dart' as tree;
 
@@ -34,5 +35,9 @@ void main() {
 
   test('fsm example', () async {
     await fsm.main(noPrint: true);
+  });
+
+  test('logic array example', () async {
+    await logic_array.main(noPrint: true);
   });
 }

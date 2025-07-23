@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
@@ -61,7 +61,7 @@ abstract class Simulator {
   static bool _simulationEndRequested = false;
 
   /// Tracks for [_SimulatorException] that are thrown during the simulation.
-  static List<_SimulatorException> _simExceptions = [];
+  static final List<_SimulatorException> _simExceptions = [];
 
   /// The maximum time the simulation can run.
   ///
@@ -148,8 +148,6 @@ abstract class Simulator {
     _currentTimestamp = 0;
     _simulationEndRequested = false;
 
-    _simExceptions = [];
-
     _maxSimTime = -1;
     if (!_preTickController.isClosed) {
       await _preTickController.close();
@@ -174,6 +172,9 @@ abstract class Simulator {
     _pendingTimestamps.clear();
     _phase = SimulatorPhase.outOfTick;
     _injectedActions.clear();
+    _endOfSimulationActions.clear();
+    _simExceptions.clear();
+    _pendingList = ListQueue();
 
     // make sure we've already passed the new completer so that listeners can
     // get the latest
@@ -440,13 +441,9 @@ abstract class Simulator {
       }
     }
 
+    // initially, just log the exceptions
     for (final err in _simExceptions) {
       logger.severe(err.exception.toString(), err.exception, err.stackTrace);
-
-      // trigger the end of simulation if an error occurred
-      _simulationEndedCompleter.complete();
-
-      throw err.exception;
     }
 
     if (_currentTimestamp >= _maxSimTime && _maxSimTime > 0) {
@@ -467,6 +464,13 @@ abstract class Simulator {
     }
 
     _simulationEndedCompleter.complete();
+
+    // now, rethrow any exceptions now that sim is over and end of sim actions
+    // have all executed
+    for (final err in _simExceptions) {
+      throw err.exception;
+    }
+
     await simulationEnded;
   }
 }

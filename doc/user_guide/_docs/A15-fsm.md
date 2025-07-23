@@ -113,6 +113,55 @@ FiniteStateMachine<LightStates>(
 );
 ```
 
+Notice, that in all states, one of the lights is red.  We could simplify the FSM by removing all the actions to make a light red and setting up a default in `setupActions` for the FSM.  That way, every state would default to both lights being red, and we'd only need to specify states when they are non-red.  For example:
+
+```dart
+final states = <State<LightStates>>[
+  State(LightStates.northFlowing, events: {
+    TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
+  }, actions: [
+    northLight < LightColor.green.value,
+  ]),
+  State(
+    LightStates.northSlowing,
+    events: {},
+    defaultNextState: LightStates.eastFlowing,
+    actions: [
+      northLight < LightColor.yellow.value,
+    ],
+  ),
+  State(
+    LightStates.eastFlowing,
+    events: {
+      TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
+    },
+    actions: [
+      eastLight < LightColor.green.value,
+    ],
+  ),
+  State(
+    LightStates.eastSlowing,
+    events: {},
+    defaultNextState: LightStates.northFlowing,
+    actions: [
+      eastLight < LightColor.yellow.value,
+    ],
+  ),
+];
+
+FiniteStateMachine<LightStates>(
+  clk,
+  reset,
+  LightStates.northFlowing,
+  states,
+  setupActions: [
+    // by default, lights should be red
+    northLight < LightColor.red.value,
+    eastLight < LightColor.red.value,
+  ],
+);
+```
+
 This state machine is now functional and synthesizable into SystemVerilog!
 
 You can even generate a mermaid diagram for the state machine using the [`generateDiagram`](https://intel.github.io/rohd/rohd/FiniteStateMachine/generateDiagram.html) API.

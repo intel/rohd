@@ -160,7 +160,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () {
+      Simulator.registerAction(timestamp, () async {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))
@@ -168,7 +168,7 @@ abstract class SimCompare {
         }
 
         if (enableChecking) {
-          Simulator.postTick.first.then((value) {
+          unawaited(Simulator.postTick.first.then((value) {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o =
@@ -207,7 +207,7 @@ abstract class SimCompare {
             (Object err, StackTrace stackTrace) {
               Simulator.throwException(err as Exception, stackTrace);
             },
-          );
+          ));
         }
       });
       timestamp += Vector._period;

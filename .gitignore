@@ -22,4 +22,5 @@ tmp_test/
 # Exceptions
 !.vscode/extensions.json
 !test/example_icarus_waves.vcd
+!test/example_verilator_waves.vcd
 !test/sv_param_passthrough.sv

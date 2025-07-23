@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // many_seq_and_comb_benchmark.dart
@@ -17,18 +17,18 @@ enum _MCUInterfaceTag { input, output }
 class _MCUInterface extends Interface<_MCUInterfaceTag> {
   _MCUInterface({this.memorySizeOverride}) {
     setPorts([
-      Port('clock'),
-      Port('enable'),
-      Port('write'),
-      Port('selectByte'),
-      Port('address', 16),
-      Port('inputData', 16),
+      Logic.port('clock'),
+      Logic.port('enable'),
+      Logic.port('write'),
+      Logic.port('selectByte'),
+      Logic.port('address', 16),
+      Logic.port('inputData', 16),
     ], [
       _MCUInterfaceTag.input
     ]);
 
     setPorts([
-      Port('outputData', 16),
+      Logic.port('outputData', 16),
     ], [
       _MCUInterfaceTag.output
     ]);

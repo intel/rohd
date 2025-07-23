@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_structure_test.dart
@@ -93,7 +93,6 @@ class StructModuleWithInstrumentation extends Module {
       ..isOutput
       ..changed
       ..glitch
-      ..nextChanged
       // ignore: deprecated_member_use_from_same_package
       ..hasValidValue()
       // ignore: deprecated_member_use_from_same_package
@@ -102,6 +101,8 @@ class StructModuleWithInstrumentation extends Module {
       ..valueBigInt
       // ignore: deprecated_member_use_from_same_package
       ..valueInt;
+
+    unawaited(MyStruct().nextChanged);
   }
 }
 
@@ -200,6 +201,13 @@ void main() {
 
       expect(orig.clone(name: 'newName').name, 'newName');
     });
+
+    test('tricky withSet', () async {
+      // first field has width of 72 so this is the starting point
+      // second field has a width of 12
+      // try a withSet of a subset of the second field
+      MyFancyStruct().withSet(72, Logic(width: 4));
+    });
   });
 
   group('LogicStructures with modules', () {
@@ -253,5 +261,30 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  test('logicstructure value and previous value', () async {
+    final s = MyStruct();
+
+    final val1 = LogicValue.ofInt(1, 2);
+    final val2 = LogicValue.ofInt(2, 2);
+
+    s.put(val1);
+
+    expect(s.value, val1);
+    expect(s.previousValue, isNull);
+
+    var checkRan = false;
+
+    Simulator.registerAction(10, () {
+      s.put(val2);
+      expect(s.value, val2);
+      expect(s.previousValue, val1);
+      checkRan = true;
+    });
+
+    await Simulator.run();
+
+    expect(checkRan, isTrue);
   });
 }

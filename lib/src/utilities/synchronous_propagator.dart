@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synchronous_propogator.dart
@@ -8,7 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 //
 
-import 'package:rohd/src/collections/iterable_removable_queue.dart';
+import 'dart:collection';
 
 /// A controller for a [SynchronousEmitter] that allows for
 /// adding of events of type [T] to be emitted.
@@ -38,13 +38,13 @@ class SynchronousEmitter<T> {
   /// be cancelled.
   SynchronousSubscription<T> listen(void Function(T args) f) {
     final subscription = SynchronousSubscription<T>(f);
-    _subscriptions.add(subscription);
+    _subscriptions.add(subscription._entry);
     return subscription;
   }
 
-  /// A [List] of actions to perform for each event.
-  final IterableRemovableQueue<SynchronousSubscription<T>> _subscriptions =
-      IterableRemovableQueue<SynchronousSubscription<T>>();
+  /// A collection of actions to perform for each event.
+  final LinkedList<_SynchronousSubscriptionEntry<T>> _subscriptions =
+      LinkedList<_SynchronousSubscriptionEntry<T>>();
 
   /// Returns `true` iff this is currently emitting.
   ///
@@ -52,19 +52,21 @@ class SynchronousEmitter<T> {
   bool get isEmitting => _isEmitting;
   bool _isEmitting = false;
 
-  /// Determines whether a [SynchronousSubscription] should be removed from the
-  /// collection of active [_subscriptions].
-  static bool _doRemove<T>(SynchronousSubscription<T> subscription) =>
-      subscription._cancelled;
-
   /// Sends out [t] to all listeners.
   void _propagate(T t) {
     _isEmitting = true;
 
-    _subscriptions.iterate(
-      action: (subscription) => subscription.func(t),
-      removeWhere: _doRemove,
-    );
+    // don't use an iterator/foreach in case we concurrently modify
+    var entry = _subscriptions.firstOrNull;
+    while (entry != null) {
+      final subscription = entry.subscription;
+      assert(subscription.isActive,
+          'Inactive subscriptions should have been removed.');
+
+      subscription.func(t);
+
+      entry = entry.next;
+    }
 
     _isEmitting = false;
   }
@@ -75,7 +77,17 @@ class SynchronousEmitter<T> {
   /// time this would propagate.  Also clears all actions from [other]
   /// so that it will not execute anything in the future.
   void adopt(SynchronousEmitter<T> other) {
-    _subscriptions.takeAll(other._subscriptions);
+    // can't use an iterator/foreach because we are concurrently modifying
+    var otherEntry = other._subscriptions.firstOrNull;
+    while (otherEntry != null) {
+      assert(otherEntry.subscription.isActive,
+          'Inactive subscriptions should have been removed.');
+
+      final nextOtherEntry = otherEntry.next;
+      otherEntry.unlink(); // remove from other
+      _subscriptions.add(otherEntry);
+      otherEntry = nextOtherEntry;
+    }
   }
 }
 
@@ -91,6 +103,10 @@ class SynchronousSubscription<T> {
   /// Keeps track of whether this subscription has been cancelled.
   bool _cancelled = false;
 
+  /// The entry in the linked list of subscriptions for this subscription.
+  late final _SynchronousSubscriptionEntry<T> _entry =
+      _SynchronousSubscriptionEntry(this);
+
   /// Constructs a new subscription so that [func] executes on certain events.
   SynchronousSubscription(this.func);
 
@@ -99,6 +115,19 @@ class SynchronousSubscription<T> {
   ///
   /// Calling this will make [isActive] `false`.
   void cancel() {
+    if (!_cancelled) {
+      _entry.unlink();
+    }
     _cancelled = true;
   }
+}
+
+/// An entry in the linked list of subscriptions for a [SynchronousEmitter].
+final class _SynchronousSubscriptionEntry<T>
+    extends LinkedListEntry<_SynchronousSubscriptionEntry<T>> {
+  /// The subscription that this entry represents.
+  final SynchronousSubscription<T> subscription;
+
+  /// Constructs a new entry for the linked list of subscriptions.
+  _SynchronousSubscriptionEntry(this.subscription);
 }

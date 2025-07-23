@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // vcd_parser.dart
@@ -49,8 +49,16 @@ abstract class VcdParser {
       } else if (state == _VcdParseState.findDumpVars) {
         if (line.contains(r'$dumpvars')) {
           state = _VcdParseState.findValue;
+          continue;
         }
-      } else if (state == _VcdParseState.findValue) {
+
+        if (line.startsWith('#')) {
+          // in case there's a missing $dumpvars section and jumps straight to #
+          state = _VcdParseState.findValue;
+        }
+      }
+
+      if (state == _VcdParseState.findValue) {
         if (line.startsWith('#')) {
           currentTime = int.parse(line.substring(1));
           if (currentTime > timestamp) {

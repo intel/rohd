@@ -407,9 +407,48 @@ class SsaSequenceOfCases extends Module {
   }
 }
 
+class SsaPipeJump extends Module {
+  SsaPipeJump(Logic a) : super(name: 'seqofifs') {
+    a = addInput('a', a, width: 8);
+    final clk = SimpleClockGenerator(10).clk;
+    final x = addOutput('x', width: 8);
+
+    final i1 = Logic(name: 'i1', width: 8);
+
+    Combinational.ssa((s) => [
+          s(i1) < a + 1,
+        ]);
+
+    final i1ff = Logic(name: 'i1ff', width: 8);
+    i1ff <= flop(clk, i1);
+
+    final i2 = Logic(name: 'i2', width: 8);
+
+    Combinational.ssa((s) => [
+          s(i2) < i1ff + i1,
+        ]);
+
+    x <= i2;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('ssa pipe jump', () async {
+    final mod = SsaPipeJump(Logic(name: 'a', width: 8));
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 3}, {}),
+      Vector({'a': 4}, {'x': 9}),
+      Vector({'a': 5}, {'x': 11}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('ssa_test_module', () {

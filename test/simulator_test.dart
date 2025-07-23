@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
@@ -142,6 +142,62 @@ void main() {
 
       expect(endOfSimActionExecuted, isTrue);
       expect(errorThrown, isTrue);
+    });
+
+    test('actions still occur when simulation exception is thrown', () async {
+      var errorThrown = false;
+      var endOfSimActionExecuted = false;
+
+      Simulator.registerAction(
+          100,
+          () => Simulator.throwException(
+              Exception('simulator thrown exception'), StackTrace.current));
+      Simulator.registerAction(200, () => true);
+
+      Simulator.registerEndOfSimulationAction(() {
+        endOfSimActionExecuted = true;
+      });
+
+      unawaited(Simulator.run().onError((_, __) {
+        errorThrown = true;
+      }));
+
+      await Simulator.simulationEnded;
+
+      expect(errorThrown, isTrue);
+      expect(endOfSimActionExecuted, isTrue);
+    });
+
+    test('actions are cleared at Simulator.reset even if exception occurs',
+        () async {
+      var endOfSimActionExecuted = false;
+      var errorThrown = false;
+
+      Simulator.registerAction(
+          100,
+          () => Simulator.throwException(
+              Exception('simulator thrown exception'), StackTrace.current));
+
+      Simulator.registerEndOfSimulationAction(() {
+        endOfSimActionExecuted = true;
+      });
+
+      await Simulator.run().onError((_, __) {
+        errorThrown = true;
+      });
+
+      expect(endOfSimActionExecuted, isTrue);
+      expect(errorThrown, isTrue);
+
+      endOfSimActionExecuted = false;
+
+      await Simulator.reset();
+
+      Simulator.registerAction(100, () => true);
+
+      await Simulator.run();
+
+      expect(endOfSimActionExecuted, isFalse);
     });
   });
 
@@ -321,10 +377,10 @@ void main() {
   test('end of tick makes a re-tick if it was missed', () async {
     var endOfTickActionTaken = false;
 
-    Simulator.registerAction(100, () {
-      Simulator.postTick.first.then((_) {
+    Simulator.registerAction(100, () async {
+      unawaited(Simulator.postTick.first.then((_) {
         Simulator.injectEndOfTickAction(() => endOfTickActionTaken = true);
-      });
+      }));
     });
 
     var numStartTicks = 0;

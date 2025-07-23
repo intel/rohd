@@ -37,7 +37,7 @@ x.value.toInt()
 x.value.toBigInt()
 
 // constructing a LogicValue a handful of different ways
-LogicValue.ofRadixString("31'h5761 F87A");            // 0x5761F87A
+LogicValue.ofRadixString("31'h5761_F87A");            // 0x5761F87A
 LogicValue.ofString('0101xz01');                      // 0b0101xz01
 LogicValue.of([LogicValue.one, LogicValue.zero]);     // 0b10
 [LogicValue.z, LogicValue.x].swizzle();               // 0bzx

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_hier_test.dart
@@ -18,7 +18,7 @@ class SubInterface extends PairInterface {
 
   SubInterface({super.modify})
       : super(
-          portsFromConsumer: [Port('rsp')],
+          portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
           commonInOutPorts: [
             LogicNet.port('io'),
@@ -38,7 +38,7 @@ class TopLevelInterface extends PairInterface {
 
   TopLevelInterface(this.numSubInterfaces)
       : super(
-          sharedInputPorts: [Port('clk')],
+          sharedInputPorts: [Logic.port('clk')],
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
       subIntfs.add(addSubInterface(

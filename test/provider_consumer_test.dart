@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // provider_consumer_test.dart
@@ -18,8 +18,8 @@ class DataInterface extends PairInterface {
 
   DataInterface({String? prefix})
       : super(
-            portsFromProvider: [Port('data', 32), Port('valid')],
-            portsFromConsumer: [Port('ready')],
+            portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
+            portsFromConsumer: [Logic.port('ready')],
             modify: (original) => [
                   if (prefix != null) prefix,
                   original,
