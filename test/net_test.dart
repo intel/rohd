@@ -123,6 +123,9 @@ class NetIntf extends Interface<NetTag> {
     setPorts([LogicNet.port('ana', 8)], {NetTag.na});
     setPorts([LogicNet.port('anb', 8)], {NetTag.nb});
   }
+
+  @override
+  NetIntf clone() => NetIntf();
 }
 
 class NetISubMod extends Module {
@@ -176,6 +179,9 @@ class NetArrayIntf extends Interface<NetArrayTag> {
       NetArrayTag.d3
     });
   }
+
+  @override
+  NetArrayIntf clone() => NetArrayIntf();
 }
 
 class NetArraySubMod extends Module {

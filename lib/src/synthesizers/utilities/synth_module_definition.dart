@@ -153,16 +153,6 @@ class SynthModuleDefinition {
   /// definition.
   final List<Module> supportingModules = [];
 
-  //TODO: plan for mapping to struct ports
-  // - when driving an output struct (not array) from inside a module, just do `assign myOut[5:3] = ...`
-  // - when receiving an input struct (not array) from inside a module, just do `... = myIn[5:3]`
-  // - when receiving from a submodule output struct (not array), just do `... = mySubmodule.myOut[5:3]`
-  // - when driving a submodule input struct (not array), just do `myIn[5:3] = ...` but force a new intermediate signal to be driven
-  // HOWEVER: we cannot assume expressions can go anywhere, due to expressionless inputs, so we should reassign to the struct members?
-  // OK new plan:
-  // - when DRIVING a struct port (my output, sub's input), we use a "partial assignment", a new construct
-  // - when RECEIVING from a struct port (my input, sub's output), we use a BusSubset locally created to slice it off
-
   /// Takes all the leaf elements of [port] and drives [port] with them, each
   /// with a partial assignment.
   ///
@@ -332,6 +322,8 @@ class SynthModuleDefinition {
       final synthReceiver = _getSynthLogic(receiver)!;
 
       if (receiver is LogicNet) {
+        // only for the leaves, that's why only `LogicNet` and not array/struct
+
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections

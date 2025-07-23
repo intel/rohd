@@ -161,6 +161,13 @@ class LAPassthroughIntf extends Interface<LADir> {
           elementWidth: other.elementWidth,
           numUnpackedDimensions: other.numUnpackedDimensions,
         );
+
+  @override
+  LAPassthroughIntf clone() => LAPassthroughIntf(
+        dimensions: dimensions,
+        elementWidth: elementWidth,
+        numUnpackedDimensions: numUnpackedDimensions,
+      );
 }
 
 class LAPassthroughWithIntf extends Module implements SimpleLAPassthrough {

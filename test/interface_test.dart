@@ -18,6 +18,9 @@ class MyModuleInterface extends Interface<MyDirection> {
     setPorts(
         [LogicNet.port('p2'), LogicArray.netPort('p2arr')], [MyDirection.dir2]);
   }
+
+  @override
+  MyModuleInterface clone() => MyModuleInterface();
 }
 
 class MyModule extends Module {
@@ -37,16 +40,23 @@ class UncleanPortInterface extends Interface<MyDirection> {
   UncleanPortInterface() {
     setPorts([Logic.port('end')], [MyDirection.dir1]);
   }
+
+  @override
+  UncleanPortInterface clone() => UncleanPortInterface();
 }
 
 class MaybePortInterface extends Interface<MyDirection> {
   Logic? get p => tryPort('p');
 
-  MaybePortInterface({required bool includePort}) {
+  final bool includePort;
+  MaybePortInterface({required this.includePort}) {
     if (includePort) {
       setPorts([Logic.port('p')], {MyDirection.dir1});
     }
   }
+
+  @override
+  MaybePortInterface clone() => MaybePortInterface(includePort: includePort);
 }
 
 class BadNetInterface extends Interface<MyDirection> {
@@ -54,6 +64,9 @@ class BadNetInterface extends Interface<MyDirection> {
     setPorts([Logic.port('p')], [MyDirection.dir1]);
     setPorts([LogicArray.port('a')], [MyDirection.dir2]);
   }
+
+  @override
+  BadNetInterface clone() => BadNetInterface();
 }
 
 class BadNetModule extends Module {

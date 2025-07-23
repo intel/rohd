@@ -30,14 +30,14 @@ class SimpleInterface extends PairInterface {
           modify: (original) => 'simple_$original',
         );
 
-  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
+  @override
+  SimpleInterface clone() => SimpleInterface();
 }
 
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -45,13 +45,13 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.provider);
+    intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.consumer);
+    intf = intf.clone()..pairConnectIO(this, intf, PairRole.consumer);
   }
 }
 
@@ -68,14 +68,14 @@ class SimpleTop extends Module {
 class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
       {required bool useConditional}) {
-    intf1 = SimpleInterface.clone(intf1)
+    intf1 = intf1.clone()
       ..pairConnectIO(
         this,
         intf1,
         PairRole.consumer,
         uniquify: (original) => '${original}_1',
       );
-    intf2 = SimpleInterface.clone(intf2)
+    intf2 = intf2.clone()
       ..connectIO(
         this,
         intf2,

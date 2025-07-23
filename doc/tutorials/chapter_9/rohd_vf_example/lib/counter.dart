@@ -22,6 +22,9 @@ class MyCounterInterface extends Interface<CounterDirection> {
 
     setPorts([Logic.port('clk')], [CounterDirection.misc]);
   }
+
+  @override
+  MyCounterInterface clone() => MyCounterInterface(width: width);
 }
 
 /// A simple counter which increments once per [clk] edge whenever

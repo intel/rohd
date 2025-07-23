@@ -31,6 +31,9 @@ class CounterInterface extends Interface<CounterDirection> {
       CounterDirection.misc
     ]);
   }
+
+  @override
+  CounterInterface clone() => CounterInterface(width: width);
 }
 
 class Counter extends Module {

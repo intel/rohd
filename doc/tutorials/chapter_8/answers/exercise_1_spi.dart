@@ -33,6 +33,9 @@ class SPIInterface extends Interface<SPIDirection> {
       SPIDirection.peripheralOutput
     ]);
   }
+
+  @override
+  SPIInterface clone() => SPIInterface();
 }
 
 class Controller extends Module {

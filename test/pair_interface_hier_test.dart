@@ -26,7 +26,8 @@ class SubInterface extends PairInterface {
           ],
         );
 
-  SubInterface.clone(SubInterface super.otherInterface) : super.clone();
+  @override
+  SubInterface clone() => SubInterface(modify: modify);
 }
 
 class TopLevelInterface extends PairInterface {
@@ -49,15 +50,14 @@ class TopLevelInterface extends PairInterface {
     }
   }
 
-  TopLevelInterface.clone(TopLevelInterface otherInterface)
-      : this(otherInterface.numSubInterfaces);
+  @override
+  TopLevelInterface clone() => TopLevelInterface(numSubInterfaces);
 }
 
 class HierProducer extends Module {
   late final TopLevelInterface _intf;
   HierProducer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
 
     _intf.subIntfs[0].req <= FlipFlop(_intf.clk, _intf.subIntfs[0].rsp).q;
   }
@@ -66,8 +66,7 @@ class HierProducer extends Module {
 class HierConsumer extends Module {
   late final TopLevelInterface _intf;
   HierConsumer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.consumer);
+    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.consumer);
 
     _intf.subIntfs[1].rsp <= FlipFlop(_intf.clk, _intf.subIntfs[1].req).q;
   }
