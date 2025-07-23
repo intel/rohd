@@ -170,7 +170,7 @@ class SynthModuleDefinition {
       final leafSynth = _getSynthLogic(leafElement)!;
       internalSignals.add(leafSynth);
       assignments.add(PartialSynthAssignment(leafSynth, portSynth,
-          upperIndex: idx + leafElement.width - 1, lowerIndex: idx));
+          dstUpperIndex: idx + leafElement.width - 1, dstLowerIndex: idx));
       idx += leafElement.width;
     }
   }

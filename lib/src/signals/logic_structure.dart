@@ -49,6 +49,7 @@ class LogicStructure implements Logic {
               ' ${element.parentStructure}.');
         }
 
+        // TODO: this check is ONLY applicable if we're making it a port? or just never?
         if (element.parentModule != null &&
             element.parentModule!.isPort(element)) {
           // Note we do not use `element.isPort` since that will set the lazy

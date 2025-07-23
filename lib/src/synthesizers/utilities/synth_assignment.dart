@@ -39,26 +39,30 @@ class SynthAssignment {
     return _src;
   }
 
+  bool _checkWidths() => _src.width == _dst.width;
+
   /// Constructs a representation of an assignment.
-  SynthAssignment(this._src, this._dst)
-      : assert(
-            _src.width == _dst.width,
-            'Cannot assign signals of different widths:'
-            ' ${_src.width} vs ${_dst.width}');
+  SynthAssignment(this._src, this._dst) {
+    assert(_checkWidths(), 'Signal width mismatch');
+  }
 
   @override
   String toString() => '$dst <= $src';
 }
 
 class PartialSynthAssignment extends SynthAssignment {
-  int upperIndex;
-  int lowerIndex;
-
-  /// Constructs a representation of a partial assignment.
-  PartialSynthAssignment(SynthLogic src, SynthLogic dst,
-      {required this.upperIndex, required this.lowerIndex})
-      : super(src, dst);
+  int dstUpperIndex;
+  int dstLowerIndex;
 
   @override
-  String toString() => '$dst[$upperIndex:$lowerIndex] <= $src';
+  bool _checkWidths() => _src.width == (dstUpperIndex - dstLowerIndex + 1);
+
+  /// Constructs a representation of a partial assignment.
+  PartialSynthAssignment(super._src, super._dst,
+      {required this.dstUpperIndex, required this.dstLowerIndex})
+      : assert(dstLowerIndex >= 0, 'Invalid lower index'),
+        assert(dstUpperIndex < _dst.width, 'Invalid upper index');
+
+  @override
+  String toString() => '$dst[$dstUpperIndex:$dstLowerIndex] <= $src';
 }

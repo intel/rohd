@@ -154,9 +154,9 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
 
       var sliceString = '';
       if (assignment is PartialSynthAssignment) {
-        sliceString = assignment.upperIndex == assignment.lowerIndex
-            ? '[${assignment.upperIndex}]'
-            : '[${assignment.upperIndex}:${assignment.lowerIndex}]';
+        sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
+            ? '[${assignment.dstUpperIndex}]'
+            : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';
       }
 
       assignmentLines.add('assign ${assignment.dst.name}$sliceString'
