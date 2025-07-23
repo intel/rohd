@@ -63,11 +63,36 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
   }
 
   Widget getNodeContent(TreeModel module) {
-    return Row(
+    final selectedModule = context.watch<SelectedModuleCubit>().state;
+
+    // Check if the current module is the selected module
+    bool isSelected = selectedModule is SelectedModuleLoaded &&
+        selectedModule.module == module;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.memory),
-        const SizedBox(width: 2.0),
-        Text(module.name),
+        Container(
+          decoration: BoxDecoration(
+            color:
+                isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          child: Row(
+            children: [
+              const Icon(Icons.memory),
+              const SizedBox(width: 2.0),
+              Text(
+                module.name,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? Colors.blue : Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

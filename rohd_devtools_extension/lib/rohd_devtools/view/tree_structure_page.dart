@@ -14,6 +14,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cub
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_details_navbar.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/selected_module_cubit.dart';
 
 class TreeStructurePage extends StatelessWidget {
   TreeStructurePage({
@@ -170,11 +171,11 @@ class TreeStructurePage extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 20, right: 20),
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
-                          child:
-                              BlocBuilder<RohdServiceCubit, RohdServiceState>(
+                          child: BlocBuilder<SelectedModuleCubit,
+                              SelectedModuleState>(
                             builder: (context, state) {
-                              if (state is RohdServiceLoaded) {
-                                final selectedModule = state.treeModel;
+                              if (state is SelectedModuleLoaded) {
+                                final selectedModule = state.module;
                                 return SignalDetailsCard(
                                   module: selectedModule,
                                 );
