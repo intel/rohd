@@ -677,12 +677,19 @@ abstract class Module {
     return inPort;
   }
 
+  /// Registers a signal as an [input] to this [Module] and returns an input
+  /// port that can be consumed. The type of the port will be [LogicType] and
+  /// constructed via [Logic.clone], so it is required that the [source]
+  /// implements clone functionality that matches the type and properly updates
+  /// the [Logic.name] as well.
+  ///
+  /// The return value is the same as what is returned by [input] and should
+  /// only be used within this [Module]. The provided [source] is accessible via
+  /// [inputSource].
   LogicType addMatchedInput<LogicType extends Logic>(
       String name, LogicType source) {
     _checkForSafePortName(name);
 
-    // TODO: confirm that no matched input/output structure has ANY nets in it
-    //  or we will violate all kinds of assumptions
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
       throw PortTypeException(
           source, 'Matched inputs cannot have nets in them.');

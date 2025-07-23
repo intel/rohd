@@ -38,15 +38,17 @@ class MyStruct extends LogicStructure {
   final Logic smaller;
   final Logic big;
 
-  factory MyStruct() => MyStruct._(
+  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
         Logic(name: 'smaller'),
         Logic(name: 'big', width: 8),
+        name: name,
       );
 
-  MyStruct._(this.smaller, this.big) : super([smaller, big], name: 'myStruct');
+  MyStruct._(this.smaller, this.big, {required String name})
+      : super([smaller, big], name: name);
 
   @override
-  LogicStructure clone({String? name}) => MyStruct();
+  MyStruct clone({String? name}) => MyStruct(name: name ?? this.name);
 }
 
 class LogicStructSubsetModule extends Module {

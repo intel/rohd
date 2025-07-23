@@ -17,12 +17,17 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct() => MyStruct._(
+  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
         Logic(name: 'ready'),
         Logic(name: 'valid'),
+        name: name,
       );
 
-  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+  MyStruct._(this.ready, this.valid, {required String name})
+      : super([ready, valid], name: name);
+
+  @override
+  MyStruct clone({String? name}) => MyStruct(name: name ?? this.name);
 }
 
 class LogicTestModule extends Module {

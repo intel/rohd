@@ -239,11 +239,15 @@ class NetArrayTopMod extends Module {
 }
 
 class NetfulLogicStructure extends LogicStructure {
-  NetfulLogicStructure()
+  NetfulLogicStructure({super.name})
       : super([
           LogicNet(name: 'structnet', width: 4),
           Logic(name: 'structlogic', width: 4)
         ]);
+
+  @override
+  NetfulLogicStructure clone({String? name}) =>
+      NetfulLogicStructure(name: name);
 }
 
 class NetsStructsArraysDriving extends Module {
