@@ -49,17 +49,6 @@ class LogicStructure implements Logic {
               ' ${element.parentStructure}.');
         }
 
-        // TODO: this check is ONLY applicable if we're making it a port? or just never?
-        if (element.parentModule != null &&
-            element.parentModule!.isPort(element)) {
-          // Note we do not use `element.isPort` since that will set the lazy
-          // variable, which would break assumptions when we create the port,
-          // which may be in progress
-          throw LogicConstructionException(
-              '`Module` ports cannot be set as elements of a `LogicStructure`,'
-              ' but $element is a port of ${element.parentModule}.');
-        }
-
         element._parentStructure = this;
       });
   }

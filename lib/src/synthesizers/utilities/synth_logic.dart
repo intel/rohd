@@ -31,9 +31,15 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
+  /// Indicates if this signal is an element of a [LogicStructure] that is a
+  /// port.
+  ///
+  /// Note that this is distinct from a port that is an element of a
+  /// [LogicStructure] that is not a port.
   bool get isStructPortElement =>
       (this is! SynthLogicArrayElement) &&
-      logics.any((e) => e.isPort && e.parentStructure != null);
+      logics.any((e) =>
+          e.isPort && e.parentStructure != null && e.parentStructure!.isPort);
 
   // bool get isMainPort =>
   //     logics.any((e) => e.isPort && e.parentStructure == null); // TODO?

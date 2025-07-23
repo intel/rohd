@@ -347,12 +347,15 @@ class SynthModuleDefinition {
 
       final receiverIsConstant = driver == null && receiver is Const;
 
+      final receiverParentStructureIsPort =
+          receiver.parentStructure != null && receiver.parentStructure!.isPort;
+
       final receiverIsModuleInput =
-          module.isInput(receiver) && receiver.parentStructure == null;
+          module.isInput(receiver) && !receiverParentStructureIsPort;
       final receiverIsModuleOutput =
-          module.isOutput(receiver) && receiver.parentStructure == null;
+          module.isOutput(receiver) && !receiverParentStructureIsPort;
       final receiverIsModuleInOut =
-          module.isInOut(receiver) && receiver.parentStructure == null;
+          module.isInOut(receiver) && !receiverParentStructureIsPort;
 
       final synthDriver = _getSynthLogic(driver);
 
@@ -363,6 +366,11 @@ class SynthModuleDefinition {
       } else if (receiverIsModuleInOut) {
         inOuts.add(synthReceiver);
       } else {
+        assert(
+            !inputs.contains(synthReceiver) &&
+                !outputs.contains(synthReceiver) &&
+                !inOuts.contains(synthReceiver),
+            'Internal signals should not be ports also.');
         internalSignals.add(synthReceiver);
       }
 
