@@ -684,14 +684,15 @@ abstract class Module {
     // TODO: confirm that no matched input/output structure has ANY nets in it
     //  or we will violate all kinds of assumptions
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
-      //TODO
-      throw Exception('Matched inputs cannot have nets in them.');
+      throw PortTypeException(
+          source, 'Matched inputs cannot have nets in them.');
     }
 
     final inPort = (source.clone(name: name) as LogicType)..gets(source);
 
     if (inPort.name != name) {
-      throw Exception('clone name failed'); // TODO
+      throw PortTypeException.forIntendedName(name,
+          'The `clone` method for $source failed to update the signal name.');
     }
 
     if (inPort is LogicStructure) {
@@ -768,7 +769,7 @@ abstract class Module {
     _checkForSafePortName(name);
 
     if (!source.isNet) {
-      throw Exception('Matched inOuts must be nets.');
+      throw PortTypeException(source, 'Matched inOuts must be nets.');
     }
 
     _inOutDrivers.add(source);
@@ -793,7 +794,8 @@ abstract class Module {
     final inOutPort = (source.clone(name: name) as LogicType)..gets(source);
 
     if (inOutPort.name != name) {
-      throw Exception('clone name failed'); // TODO
+      throw PortTypeException.forIntendedName(name,
+          'The `clone` method for $source failed to update the signal name.');
     }
 
     if (inOutPort is LogicStructure) {
@@ -865,15 +867,16 @@ abstract class Module {
     _checkForSafePortName(name);
 
     if (toMatch.isNet || (toMatch is LogicStructure && toMatch.hasNets)) {
-      //TODO
-      throw Exception('Matched outputs cannot have nets in them.');
+      throw PortTypeException(
+          toMatch, 'Matched outputs cannot have nets in them.');
     }
 
     // must make a new clone of it, to avoid people using ports of other modules
     final outPort = toMatch.clone(name: name) as LogicType;
 
     if (outPort.name != name) {
-      throw Exception('clone name failed'); // TODO
+      throw PortTypeException.forIntendedName(name,
+          'The `clone` method for $toMatch failed to update the signal name.');
     }
 
     if (outPort is LogicStructure) {

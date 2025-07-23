@@ -66,6 +66,16 @@ class SimpleStructModuleContainer extends Module {
   }
 }
 
+class DummyModule extends Module {}
+
+class CloneNoNameStruct extends LogicStructure {
+  CloneNoNameStruct({bool asNet = false})
+      : super([if (asNet) LogicNet() else Logic()], name: 'abc');
+
+  @override
+  CloneNoNameStruct clone({String? name}) => CloneNoNameStruct();
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -131,4 +141,43 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectorsReversed);
     });
   });
+
+  group('illegal match port creations', () {
+    final matchedPortCreators = {
+      'input': (Logic logic) => DummyModule().addMatchedInput('p', logic),
+      'output': (Logic logic) => DummyModule().addMatchedOutput('p', logic),
+      'inOut': (Logic logic) => DummyModule().addMatchedInOut('p', logic),
+    };
+
+    group('struct with partial nets fails', () {
+      for (final MapEntry(key: portType, value: creator)
+          in matchedPortCreators.entries) {
+        test(portType, () {
+          expect(
+            () => creator(LogicStructure([Logic(), LogicNet()])),
+            throwsA(isA<PortTypeException>()),
+          );
+        });
+      }
+    });
+
+    group('struct with missing clone name fails', () {
+      for (final MapEntry(key: portType, value: creator)
+          in matchedPortCreators.entries) {
+        test(portType, () {
+          try {
+            creator(CloneNoNameStruct(asNet: portType == 'inOut'));
+          } on PortTypeException catch (e) {
+            expect(e.message, contains('failed to update the signal name'));
+          }
+        });
+      }
+    });
+  });
+
+  // TODO Testplan: illegal cases:
+  // - partially net, partially not (as inout, as input, as output)
+  // - clone name fails
+
+  //TODO: test arrays and normal ports as arguments to match constructors
 }
