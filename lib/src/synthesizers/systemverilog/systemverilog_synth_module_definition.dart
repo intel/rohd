@@ -57,6 +57,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {
+      // if (assignment is PartialSynthAssignment) { //TODO?
+      //   subsetReceiveStructPort(assignment.dst);
+      // } else
       if (assignment.src.isNet && assignment.dst.isNet) {
         _addNetConnect(assignment.dst, assignment.src);
       } else {

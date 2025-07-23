@@ -22,7 +22,8 @@ class MyStruct extends LogicStructure {
       : super([ready, valid], name: name ?? 'myStruct');
 
   @override
-  MyStruct clone({String? name}) => MyStruct(name: name, asNet: asNet);
+  MyStruct clone({String? name}) =>
+      MyStruct(name: name ?? this.name, asNet: asNet);
 }
 
 class SimpleStructModule extends Module {
@@ -36,7 +37,7 @@ class SimpleStructModule extends Module {
     internal.valid <= myIn.ready;
 
     if (myIn.isNet) {
-      myOut = myIn.clone();
+      myOut = myIn.clone(name: 'myOutExt');
       addMatchedInOut('myOut', myOut) <= internal;
     } else {
       myOut = addMatchedOutput('myOut', internal)..gets(internal);
@@ -49,15 +50,16 @@ class SimpleStructModuleContainer extends Module {
       {super.name = 'simple_struct_mod_container', bool asNet = false}) {
     final Logic Function(String, Logic) inMaker = asNet ? addInOut : addInput;
     // ignore: omit_local_variable_types
-    final Logic Function(String name) outMaker =
-        asNet ? (name) => addInOut(name, LogicNet()) : addOutput;
+    final Logic Function(String name) outMaker = asNet
+        ? (name) => addInOut(name, LogicNet(name: 'ext$name'))
+        : addOutput;
 
     a1 = inMaker('a1', a1);
     a2 = inMaker('a2', a2);
-    final myStruct = MyStruct(name: 'upper_struct', asNet: asNet);
-    myStruct.ready <= a1;
-    myStruct.valid <= a2;
-    final sub = SimpleStructModule(myStruct);
+    final upperStruct = MyStruct(name: 'upper_struct', asNet: asNet);
+    upperStruct.ready <= a1;
+    upperStruct.valid <= a2;
+    final sub = SimpleStructModule(upperStruct);
 
     outMaker('b1') <= sub.myOut.ready;
     outMaker('b2') <= sub.myOut.valid;
@@ -74,6 +76,7 @@ void main() {
     await mod.build();
 
     final sv = mod.generateSynth();
+
     expect(sv, isNot(contains('internal_struct')));
 
     expect(sv, contains('input logic [1:0] myIn'));
@@ -94,25 +97,27 @@ void main() {
 
     final sv = mod.generateSynth();
     print(sv);
-    // expect(sv, isNot(contains('internal_struct')));
+    expect(sv, isNot(contains('internal_struct')));
 
-    // expect(sv, contains('input logic [1:0] myIn'));
-    // expect(sv, contains('output logic [1:0] myOut'));
+    expect(sv, contains('inout wire [1:0] myIn'));
+    expect(sv, contains('inout wire [1:0] myOut'));
 
-    // final vectors = [
-    //   Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
-    //   Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
-    // ];
+    final vectors = [
+      Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
+      Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+    ];
 
-    // await SimCompare.checkFunctionalVector(mod, vectors);
-    // SimCompare.checkIverilogVector(mod, vectors);
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
 
-    // final vectorsReversed = [
-    //   Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
-    //   Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
-    // ];
+    await Simulator.reset();
 
-    // await SimCompare.checkFunctionalVector(mod, vectorsReversed);
-    // SimCompare.checkIverilogVector(mod, vectorsReversed);
+    final vectorsReversed = [
+      Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
+      Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectorsReversed);
+    SimCompare.checkIverilogVector(mod, vectorsReversed);
   });
 }

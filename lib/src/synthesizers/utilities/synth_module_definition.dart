@@ -168,6 +168,7 @@ class SynthModuleDefinition {
   ///
   /// This is intended for use when driving an output of a module from within
   /// the module, or for driving the input of a sub-module.
+  @protected
   void _partialAssignStructPort(LogicStructure port) {
     assert(port is! LogicArray, 'Should only be used on non-array structs');
 
@@ -188,6 +189,7 @@ class SynthModuleDefinition {
   ///
   /// This is intended for use when receiving from an input of a module from
   /// within the module, or for receiving the output of a sub-module.
+  @protected
   void _subsetReceiveStructPort(LogicStructure port) {
     final portSynth = _getSynthLogic(port)!;
 
@@ -198,14 +200,23 @@ class SynthModuleDefinition {
 
       // this is DISCONNECTED, just a module used for synthesizing
       final subsetMod = _BusSubsetForStructSlice(
-        Logic(width: port.width),
+        (port.isNet ? LogicNet.new : Logic.new)(
+            width: port.width, name: 'DUMMY'),
         idx,
         idx + leafElement.width - 1,
       );
 
-      getSynthSubModuleInstantiation(subsetMod)
-        ..setInputMapping(subsetMod.original.name, portSynth)
-        ..setOutputMapping(subsetMod.subset.name, leafSynth);
+      final ssmi = getSynthSubModuleInstantiation(subsetMod);
+
+      if (port.isNet) {
+        ssmi
+          ..setInOutMapping(subsetMod.subset.name, leafSynth)
+          ..setInOutMapping(subsetMod.original.name, portSynth);
+      } else {
+        ssmi
+          ..setOutputMapping(subsetMod.subset.name, leafSynth)
+          ..setInputMapping(subsetMod.original.name, portSynth);
+      }
 
       idx += leafElement.width;
     }
@@ -253,6 +264,12 @@ class SynthModuleDefinition {
     // make sure disconnected inouts are included, also
     for (final inOut in module.inOuts.values) {
       inOuts.add(_getSynthLogic(inOut)!);
+
+      if (inOut is LogicStructure && inOut is! LogicArray) {
+        // for nets, we can just use the normal bus subset here in either
+        // direction!
+        _subsetReceiveStructPort(inOut);
+      }
     }
 
     // find any named signals sitting around that don't do anything
@@ -276,6 +293,11 @@ class SynthModuleDefinition {
           .forEach(_partialAssignStructPort);
 
       subModule.outputs.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_subsetReceiveStructPort);
+
+      subModule.inOuts.values
           .whereType<LogicStructure>()
           .where((e) => e is! LogicArray)
           .forEach(_subsetReceiveStructPort);

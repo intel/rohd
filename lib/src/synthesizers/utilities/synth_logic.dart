@@ -35,6 +35,9 @@ class SynthLogic {
       (this is! SynthLogicArrayElement) &&
       logics.any((e) => e.isPort && e.parentStructure != null);
 
+  // bool get isMainPort =>
+  //     logics.any((e) => e.isPort && e.parentStructure == null); // TODO?
+
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
 
@@ -204,6 +207,12 @@ class SynthLogic {
       return null;
     }
 
+    //TODO?
+    // if ((a.isMainPort && b.isStructPortElement) ||
+    //     (b.isMainPort && a.isStructPortElement)) {
+    //   return null;
+    // }
+
     if (b.mergeable) {
       a.adopt(b);
       return b;
@@ -227,6 +236,8 @@ class SynthLogic {
     assert(other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
+    assert(other.width == width,
+        'Cannot merge logics of different widths: $width vs ${other.width}');
 
     _constNameDisallowed |= other._constNameDisallowed;
 

@@ -40,7 +40,11 @@ class SynthAssignment {
   }
 
   /// Constructs a representation of an assignment.
-  SynthAssignment(this._src, this._dst);
+  SynthAssignment(this._src, this._dst)
+      : assert(
+            _src.width == _dst.width,
+            'Cannot assign signals of different widths:'
+            ' ${_src.width} vs ${_dst.width}');
 
   @override
   String toString() => '$dst <= $src';
