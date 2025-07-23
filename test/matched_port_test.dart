@@ -127,8 +127,7 @@ void main() {
         Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
       ];
 
-      await SimCompare.checkFunctionalVector(mod, vectorsReversed,
-          enableChecking: false);
+      await SimCompare.checkFunctionalVector(mod, vectorsReversed);
       SimCompare.checkIverilogVector(mod, vectorsReversed);
     });
   });
