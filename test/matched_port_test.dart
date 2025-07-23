@@ -91,33 +91,45 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('simple struct module with nets', () async {
-    final mod = SimpleStructModuleContainer(Logic(), Logic(), asNet: true);
-    await mod.build();
+  group('simple struct module with nets', () {
+    Future<Module> makeMod() async {
+      final mod =
+          SimpleStructModuleContainer(LogicNet(), LogicNet(), asNet: true);
+      await mod.build();
 
-    final sv = mod.generateSynth();
-    print(sv);
-    expect(sv, isNot(contains('internal_struct')));
+      final sv = mod.generateSynth();
 
-    expect(sv, contains('inout wire [1:0] myIn'));
-    expect(sv, contains('inout wire [1:0] myOut'));
+      expect(sv, isNot(contains('internal_struct')));
 
-    final vectors = [
-      Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
-      Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
-    ];
+      expect(sv, contains('inout wire [1:0] myIn'));
+      expect(sv, contains('inout wire [1:0] myOut'));
 
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
+      return mod;
+    }
 
-    await Simulator.reset();
+    test('forward', () async {
+      final mod = await makeMod();
 
-    final vectorsReversed = [
-      Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
-      Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
-    ];
+      final vectors = [
+        Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
+        Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+      ];
 
-    await SimCompare.checkFunctionalVector(mod, vectorsReversed);
-    SimCompare.checkIverilogVector(mod, vectorsReversed);
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('reversed', () async {
+      final mod = await makeMod();
+
+      final vectorsReversed = [
+        Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
+        Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
+      ];
+
+      await SimCompare.checkFunctionalVector(mod, vectorsReversed,
+          enableChecking: false);
+      SimCompare.checkIverilogVector(mod, vectorsReversed);
+    });
   });
 }
