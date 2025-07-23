@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -74,6 +75,42 @@ class CloneNoNameStruct extends LogicStructure {
 
   @override
   CloneNoNameStruct clone({String? name}) => CloneNoNameStruct();
+}
+
+class MatcherModule extends Module {
+  final bool isNet;
+
+  Logic get anyOut => isNet ? inOutSource('anyOut') : output('anyOut');
+
+  @protected
+  late final Logic _innerOut;
+
+  @protected
+  late final Logic _anyIn;
+
+  MatcherModule(Logic anyIn) : isNet = anyIn.isNet {
+    if (isNet) {
+      _anyIn = addMatchedInOut('anyIn', anyIn);
+      _innerOut = addMatchedInOut('anyOut', anyIn.clone());
+    } else {
+      _anyIn = addMatchedInput('anyIn', anyIn);
+      _innerOut = addMatchedOutput('anyOut', _anyIn);
+    }
+
+    _makeLogic();
+  }
+
+  void _makeLogic() {
+    _innerOut <= ~_anyIn;
+  }
+}
+
+class MatcherModuleWrapper extends MatcherModule {
+  MatcherModuleWrapper(super.anyIn);
+  @override
+  void _makeLogic() {
+    _innerOut <= MatcherModule(_anyIn).anyOut;
+  }
 }
 
 void main() {
@@ -175,9 +212,59 @@ void main() {
     });
   });
 
-  // TODO Testplan: illegal cases:
-  // - partially net, partially not (as inout, as input, as output)
-  // - clone name fails
+  group('various port types to match', () {
+    final portTypes = [
+      (name: 'simple logic', maker: () => Logic(width: 8)),
+      (name: 'logic array', maker: () => LogicArray([4], 2)),
+      (name: 'deeper logic array', maker: () => LogicArray([1, 2, 2], 2)),
+      (
+        name: 'fancy mixed struct',
+        maker: () => LogicStructure([
+              Logic(width: 2),
+              LogicArray([2], 2),
+              LogicStructure([Logic(), Logic()])
+            ])
+      ),
+      (name: 'logic net', maker: () => LogicNet(width: 8)),
+      (name: 'logic array net', maker: () => LogicArray.net([2], 4)),
+      (
+        name: 'fancy logic struct net',
+        maker: () => LogicStructure([
+              LogicNet(),
+              LogicNet(),
+              LogicArray.net([4], 1),
+              LogicStructure([LogicNet(width: 2)])
+            ])
+      ),
+    ];
 
-  //TODO: test arrays and normal ports as arguments to match constructors
+    final modMakers = [
+      (name: 'basic', maker: MatcherModule.new),
+      (name: 'wrapper', maker: MatcherModuleWrapper.new)
+    ];
+
+    for (final modMaker in modMakers) {
+      group('${modMaker.name} module', () {
+        for (final portType in portTypes) {
+          test(portType.name, () async {
+            final mod = modMaker.maker(portType.maker());
+
+            // check that things cloned up properly
+            expect(mod.anyOut.runtimeType, portType.maker().runtimeType);
+
+            await mod.build();
+
+            final vectors = [
+              Vector({'anyIn': 0xa5}, {'anyOut': 0x5a}),
+              Vector({'anyIn': 0xff}, {'anyOut': 0x00}),
+              Vector({'anyIn': 0x13}, {'anyOut': 0xec}),
+            ];
+
+            await SimCompare.checkFunctionalVector(mod, vectors);
+            SimCompare.checkIverilogVector(mod, vectors);
+          });
+        }
+      });
+    }
+  });
 }
