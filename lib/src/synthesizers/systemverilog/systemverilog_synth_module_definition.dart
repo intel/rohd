@@ -31,8 +31,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// [LogicNet]s.
   SystemVerilogSynthSubModuleInstantiation _addNetConnect(
       SynthLogic dst, SynthLogic src) {
-    //TODO: this needs to suport partial assignments!
-
     // make an (unconnected) module representing the assignment
     final netConnect =
         _NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
@@ -57,10 +55,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {
-      // if (assignment is PartialSynthAssignment) { //TODO?
-      //   subsetReceiveStructPort(assignment.dst);
-      // } else
       if (assignment.src.isNet && assignment.dst.isNet) {
+        assert(assignment is! PartialSynthAssignment,
+            'Net connections should not be partial assignments.');
+
         _addNetConnect(assignment.dst, assignment.src);
       } else {
         reducedAssignments.add(assignment);

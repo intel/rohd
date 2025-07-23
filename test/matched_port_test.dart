@@ -113,6 +113,25 @@ class MatcherModuleWrapper extends MatcherModule {
   }
 }
 
+class MatcherPassThrough extends MatcherModule {
+  MatcherPassThrough(super.anyIn);
+
+  @override
+  void _makeLogic() {
+    _innerOut <= _anyIn;
+  }
+}
+
+class PartialLogicNetStructAssignment extends Module {
+  PartialLogicNetStructAssignment(MyStruct a) {
+    a = addMatchedInOut('a', a);
+
+    final b = addMatchedInOut('b', a.clone());
+
+    b.valid <= a.valid;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -212,6 +231,19 @@ void main() {
     });
   });
 
+  test('partial net struct assign', () async {
+    final mod = PartialLogicNetStructAssignment(MyStruct(asNet: true));
+    await mod.build();
+
+    final vectors = [
+      Vector({'a': 0}, {'b': '0z'}),
+      Vector({'a': 3}, {'b': '1z'})
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
   group('various port types to match', () {
     final portTypes = [
       (name: 'simple logic', maker: () => Logic(width: 8)),
@@ -239,8 +271,9 @@ void main() {
     ];
 
     final modMakers = [
-      (name: 'basic', maker: MatcherModule.new),
-      (name: 'wrapper', maker: MatcherModuleWrapper.new)
+      (name: 'basic', maker: MatcherModule.new, invert: true),
+      (name: 'wrapper', maker: MatcherModuleWrapper.new, invert: true),
+      (name: 'pass through', maker: MatcherPassThrough.new, invert: false),
     ];
 
     for (final modMaker in modMakers) {
@@ -255,9 +288,12 @@ void main() {
             await mod.build();
 
             final vectors = [
-              Vector({'anyIn': 0xa5}, {'anyOut': 0x5a}),
-              Vector({'anyIn': 0xff}, {'anyOut': 0x00}),
-              Vector({'anyIn': 0x13}, {'anyOut': 0xec}),
+              Vector(
+                  {'anyIn': 0xa5}, {'anyOut': modMaker.invert ? 0x5a : 0xa5}),
+              Vector(
+                  {'anyIn': 0xff}, {'anyOut': modMaker.invert ? 0x00 : 0xff}),
+              Vector(
+                  {'anyIn': 0x13}, {'anyOut': modMaker.invert ? 0xec : 0x13}),
             ];
 
             await SimCompare.checkFunctionalVector(mod, vectors);
