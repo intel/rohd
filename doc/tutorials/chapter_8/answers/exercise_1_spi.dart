@@ -51,13 +51,11 @@ class Controller extends Module {
 
     // define a new interface, and connect it
     // to the interface passed in.
-    intf = SPIInterface()
-      ..connectIO(
-        this,
-        intf,
-        inputTags: {SPIDirection.peripheralOutput}, // Add inputs
-        outputTags: {SPIDirection.controllerOutput}, // Add outputs
-      );
+    intf = connectInterface(
+      intf,
+      inputTags: {SPIDirection.peripheralOutput}, // Add inputs
+      outputTags: {SPIDirection.controllerOutput}, // Add outputs
+    );
 
     intf.cs <= Const(1);
 
@@ -85,13 +83,11 @@ class Peripheral extends Module {
   late final SPIInterface shiftRegIntF;
 
   Peripheral(SPIInterface periIntF) : super(name: 'shift_register') {
-    shiftRegIntF = SPIInterface()
-      ..connectIO(
-        this,
-        periIntF,
-        inputTags: {SPIDirection.controllerOutput},
-        outputTags: {SPIDirection.peripheralOutput},
-      );
+    shiftRegIntF = connectInterface(
+      periIntF,
+      inputTags: {SPIDirection.controllerOutput},
+      outputTags: {SPIDirection.peripheralOutput},
+    );
 
     const regWidth = 8;
     final data = Logic(name: 'data', width: regWidth);

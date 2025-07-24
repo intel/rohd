@@ -24,6 +24,8 @@ class MyModuleInterface extends Interface<MyDirection> {
   MyModuleInterface clone() => MyModuleInterface();
 }
 
+// class
+
 class MyModule extends Module {
   MyModule(MyModuleInterface i1, MyModuleInterface i2) {
     MyModuleInterface().connectIO(this, i1,

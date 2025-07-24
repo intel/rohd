@@ -2,7 +2,7 @@
 title: "Interfaces"
 permalink: /docs/interfaces/
 excerpt: "Interfaces"
-last_modified_at: 2022-12-06
+last_modified_at: 2025-7-24
 toc: true
 ---
 
@@ -14,11 +14,14 @@ The [`Logic.port`](https://intel.github.io/rohd/rohd/Logic-class.html) construct
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor.  Modifying the same `Interface` as was passed would have negative consequences if multiple `Module`s were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
-The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.  You can also use the `setPort` function to directly set individual ports on the `Interface` instead of via tagged set of ports.
+The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
+
+`Module` has functions called `connectInterface` and `connectPairInterface` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`.
 
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface
 enum CounterDirection {IN, OUT}
+
 class CounterInterface extends Interface<CounterDirection> {
 
   // include the getters in the interface so any user can access them
@@ -47,13 +50,10 @@ class Counter extends Module {
 
   late final CounterInterface intf;
   Counter(CounterInterface intf) {
-    // define a new interface, and connect it to the interface passed in
-    this.intf = CounterInterface(intf.width)
-      ..connectIO(this, intf,
+    this.intf = connectInterface(intf,
         // map inputs and outputs to appropriate directions
-        inputTags: {CounterDirection.IN},
-        outputTags: {CounterDirection.OUT}
-      );
+        inputTags: {CounterDirection.inward, CounterDirection.misc},
+        outputTags: {CounterDirection.outward});
 
     _buildLogic();
   }
@@ -104,8 +104,7 @@ Note that it comes with helpers in the super constructor for grouping ports as w
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = connectPairInterface(intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -114,16 +113,14 @@ class SimpleProvider extends Module {
 class SimpleSubProvider extends Module {
   late final SimpleInterface _intf;
   SimpleSubProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = connectPairInterface(intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   late final SimpleInterface _intf;
   SimpleConsumer(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.consumer);
+    _intf = connectPairInterface(intf, PairRole.consumer);
   }
 }
 

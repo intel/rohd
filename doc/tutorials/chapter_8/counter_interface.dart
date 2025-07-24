@@ -40,10 +40,9 @@ class Counter extends Module {
   late final CounterInterface _intf;
 
   Counter(CounterInterface intf) : super(name: 'counter') {
-    _intf = CounterInterface(width: intf.width)
-      ..connectIO(this, intf,
-          inputTags: {CounterDirection.inward, CounterDirection.misc},
-          outputTags: {CounterDirection.outward});
+    _intf = connectInterface(intf,
+        inputTags: {CounterDirection.inward, CounterDirection.misc},
+        outputTags: {CounterDirection.outward});
 
     final nextVal = Logic(name: 'nextVal', width: intf.width);
 

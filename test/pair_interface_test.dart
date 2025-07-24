@@ -37,7 +37,7 @@ class SimpleInterface extends PairInterface {
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
+    _intf = connectPairInterface(intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -45,13 +45,13 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
+    connectPairInterface(intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    intf = intf.clone()..pairConnectIO(this, intf, PairRole.consumer);
+    connectPairInterface(intf, PairRole.consumer);
   }
 }
 
