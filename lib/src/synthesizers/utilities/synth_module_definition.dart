@@ -611,7 +611,7 @@ class SynthModuleDefinition {
     // there might be more assign statements than necessary, so let's ditch them
     var prevAssignmentCount = 0;
 
-    // grapb the partial assignments since they can't be merged
+    // grab the partial assignments since they can't be merged
     final partialAssignments =
         assignments.whereType<PartialSynthAssignment>().toList();
     assignments.removeWhere((e) => e is PartialSynthAssignment);

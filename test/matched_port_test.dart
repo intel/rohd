@@ -1,3 +1,12 @@
+// Copyright (C) 2025 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// matched_port_test.dart
+// Tests for matching ports on modules
+//
+// 2025 July
+// Author: Max Korbel <max.korbel@intel.com>
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -160,6 +169,8 @@ void main() {
   test('matched array is an array', () async {
     final mod = MatcherPassThrough(LogicArray([4], 2));
     await mod.build();
+
+    expect(mod.anyOut, isA<LogicArray>());
 
     final sv = mod.generateSynth();
 

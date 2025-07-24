@@ -393,8 +393,6 @@ abstract class Module {
       return;
     }
 
-    // print('tracing from input ($signal) in $this');
-
     try {
       final subModule =
           (signal.isInput || signal.isInOut) ? signal.parentModule : null;
@@ -521,8 +519,6 @@ abstract class Module {
       // we've already parsed down this path
       return;
     }
-
-    // print('tracing from output ($signal) in $this');
 
     try {
       final subModule =
