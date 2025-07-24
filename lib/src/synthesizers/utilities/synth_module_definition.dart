@@ -15,9 +15,14 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+/// A version of [BusSubset] that can be used for slicing on [LogicStructure]
+/// ports.
 class _BusSubsetForStructSlice extends BusSubset {
+  /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
+  /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex);
 
+  // we override this since it's added post-build
   @override
   bool get hasBuilt => true;
 }
