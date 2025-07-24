@@ -619,12 +619,14 @@ class LogicStructure implements Logic {
       packed.selectFrom(busList, defaultValue: defaultValue);
 
   @override
-  bool get isNet => elements.every((e) => e.isNet);
+  bool get isNet => _isNet;
+  late final bool _isNet = elements.every((e) => e.isNet);
 
   /// Indicates whether this structure or any of its elements [isNet].
-  bool get hasNets =>
+  bool get hasNets => _hasNets;
+  late final bool _hasNets =
       elements.any((e) => e.isNet || (e is LogicStructure && e.hasNets)) ||
-      isNet;
+          isNet;
 
   @override
   Iterable<Logic> get srcConnections => {
