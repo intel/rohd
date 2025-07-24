@@ -23,7 +23,7 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
 
-`Module` has functions called `connectInterface` and `connectPairInterface` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`.
+`Module` has functions called `connectInterface` and `connectPairInterface` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
 
 ## Counter Module
 

@@ -645,7 +645,7 @@ abstract class Module {
     }
   }
 
-  /// Registers a signal as an [input] to this [Module] and returns an input
+  /// Registers a signal as an [input] to this [Module] and returns an [input]
   /// port that can be consumed.
   ///
   /// The return value is the same as what is returned by [input] and should
@@ -673,7 +673,7 @@ abstract class Module {
     return inPort;
   }
 
-  /// Registers a signal as an [input] to this [Module] and returns an input
+  /// Registers a signal as an [input] to this [Module] and returns an [input]
   /// port that can be consumed. The type of the port will be [LogicType] and
   /// constructed via [Logic.clone], so it is required that the [source]
   /// implements clone functionality that matches the type and properly updates
@@ -717,7 +717,7 @@ abstract class Module {
   /// bidirectional.
   final Set<Logic> _inOutDrivers = {};
 
-  /// Registers a signal as an [inOut] to this [Module] and returns an inOut
+  /// Registers a signal as an [inOut] to this [Module] and returns an [inOut]
   /// port that can be consumed inside this [Module].
   ///
   /// The return value is the same as what is returned by [inOut] and should
@@ -767,7 +767,7 @@ abstract class Module {
     return inOutPort;
   }
 
-  /// Registers a signal as an [inOut] to this [Module] and returns an inOut
+  /// Registers a signal as an [inOut] to this [Module] and returns an [inOut]
   /// port that can be consumed inside this [Module]. The type of the port will
   /// be [LogicType] and constructed via [Logic.clone], so it is required that
   /// the [source] implements clone functionality that matches the type and
@@ -825,7 +825,7 @@ abstract class Module {
     return inOutPort;
   }
 
-  /// Registers and returns an input [LogicArray] port to this [Module] with
+  /// Registers and returns an [input] [LogicArray] port to this [Module] with
   /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
   ///
@@ -859,8 +859,8 @@ abstract class Module {
     return inArr;
   }
 
-  /// Registers an [output] to this [Module] and returns an output port that can
-  /// be driven by this [Module] or consumed outside of it.
+  /// Registers an [output] to this [Module] and returns an [output] port that
+  /// can be driven by this [Module] or consumed outside of it.
   ///
   /// The return value is the same as what is returned by [output].
   Logic addOutput(String name, {int width = 1}) {
@@ -874,11 +874,11 @@ abstract class Module {
     return outPort;
   }
 
-  /// Registers an [output] to this [Module] and returns an output port that can
-  /// be driven by this [Module] or consumed outside of it. The type of the port
-  /// will be [LogicType] and constructed via [Logic.clone] on [toMatch], so it
-  /// is required that the [toMatch] implements clone functionality that matches
-  /// the type and properly updates the [Logic.name] as well.
+  /// Registers an [output] to this [Module] and returns an [output] port that
+  /// can be driven by this [Module] or consumed outside of it. The type of the
+  /// port will be [LogicType] and constructed via [Logic.clone] on [toMatch],
+  /// so it is required that the [toMatch] implements clone functionality that
+  /// matches the type and properly updates the [Logic.name] as well.
   ///
   /// This function does not set the [toMatch] argument to drive or be driven by
   /// the [output] port.
@@ -912,7 +912,7 @@ abstract class Module {
     return outPort;
   }
 
-  /// Registers and returns an output [LogicArray] port to this [Module] with
+  /// Registers and returns an [output] [LogicArray] port to this [Module] with
   /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
   ///
@@ -938,7 +938,7 @@ abstract class Module {
     return outArr;
   }
 
-  /// Registers and returns an inOut [LogicArray] port to this [Module] with
+  /// Registers and returns an [inOut] [LogicArray] port to this [Module] with
   /// the specified [dimensions], [elementWidth], and [numUnpackedDimensions]
   /// named [name].
   ///

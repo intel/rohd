@@ -13,7 +13,7 @@ A [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html
 
 **Elements within a `LogicStructure` can be individually assigned.** This is a notable difference from individual bits of a plain `Logic` where you'd have to use something like `withSet` or `assignSubset` to effectively modify bits within a signal.
 
-Ports with matching types to the original `LogicStructre` can be created using `addMatchedInput`, `addMatchedOutput`, and `addMatchedInOut`.  Note that these functions rely on a proper implementation of the `clone` function.
+Ports with matching types to the original `LogicStructure` can be created using `addMatchedInput`, `addMatchedOutput`, and `addMatchedInOut`.  Note that these functions rely on a proper implementation of the `clone` function.
 
 `LogicArray`s are a type of `LogicStructure` and thus inherit these behavioral traits.
 

@@ -24,7 +24,8 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// The input to get a subset of.
   ///
-  /// This should not be used outside of this module.
+  /// This is the [input] or [inOut] of this module, and thus should not be
+  /// directly connected to outside of this module.
   late final Logic original;
 
   /// The output, a subset of [original].
