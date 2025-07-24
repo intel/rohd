@@ -268,6 +268,9 @@ class Logic {
 
   /// Makes a copy of `this`, optionally with the specified [name], but the same
   /// [width].
+  ///
+  /// It is expected that any implementation will override this in a way that
+  /// returns the same type as itself.
   @mustBeOverridden
   Logic clone({String? name}) => _clone(name: name);
 

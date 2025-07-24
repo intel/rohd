@@ -100,5 +100,5 @@ class LogicNet extends Logic {
 
   @override
   @mustBeOverridden
-  Logic clone({String? name}) => super.clone(name: name) as LogicNet;
+  LogicNet clone({String? name}) => super.clone(name: name) as LogicNet;
 }
