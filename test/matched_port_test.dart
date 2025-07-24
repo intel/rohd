@@ -157,6 +157,17 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
+  test('matched array is an array', () async {
+    final mod = MatcherPassThrough(LogicArray([4], 2));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('input logic [3:0][1:0] anyIn'));
+    expect(sv, contains('output logic [3:0][1:0] anyOut'));
+    expect(sv, contains('assign anyOut = anyIn;'));
+  });
+
   group('simple struct module with nets', () {
     Future<Module> makeMod() async {
       final mod =
