@@ -145,6 +145,7 @@ class _Wire {
   _Wire _adopt(_Wire other) {
     _glitchController.emitter.adopt(other._glitchController.emitter);
     other._migrateChangedTriggers(this);
+    _valueConstraints.addAll(other._valueConstraints);
 
     // ignore: avoid_returning_this
     return this;
@@ -245,7 +246,17 @@ class _Wire {
       newValue = LogicValue.filled(width, LogicValue.x);
     }
 
+    for (final constraint in _valueConstraints) {
+      newValue = constraint(newValue);
+    }
+
     _updateValue(newValue, signalName: signalName);
+  }
+
+  //TODO docs
+  final List<_LogicValueConstraint> _valueConstraints = [];
+  void _constrainValue(_LogicValueConstraint constraint) {
+    _valueConstraints.add(constraint);
   }
 
   /// Updates the value of this signal to [newValue].
@@ -265,3 +276,6 @@ class _Wire {
   @override
   String toString() => 'wire $hashCode';
 }
+
+//TODO docs
+typedef _LogicValueConstraint = LogicValue Function(LogicValue origValue);

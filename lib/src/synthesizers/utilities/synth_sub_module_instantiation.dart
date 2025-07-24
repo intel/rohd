@@ -9,7 +9,9 @@
 
 import 'dart:collection';
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -87,6 +89,41 @@ class SynthSubModuleInstantiation {
         'A mapping already exists to this output: $name.');
 
     _inOutMapping[name] = synthLogic;
+  }
+
+  @internal
+  void adjustTypePairs() {
+    for (final MapEntry(key: toUpdate, value: reference)
+        in module.portTypePairs.entries) {
+      final toUpdateSynth = inputMapping[toUpdate.name] ??
+          outputMapping[toUpdate.name] ??
+          inOutMapping[toUpdate.name]!;
+      final referenceSynth = inputMapping[reference.name] ??
+          outputMapping[reference.name] ??
+          inOutMapping[reference.name]!;
+
+      if (referenceSynth.isEnum) {
+        if (toUpdateSynth.isEnum &&
+            SynthEnumDefinitionKey(toUpdateSynth.characteristicEnum!) ==
+                SynthEnumDefinitionKey(referenceSynth.characteristicEnum!)) {
+          // If the types are equivalent, we can just use the original, no need
+          // to do any additional merging.
+          continue;
+        }
+
+        final mergeResult = SynthLogic.tryMerge(
+          toUpdateSynth,
+          SynthLogic(
+              referenceSynth.characteristicEnum!.clone(name: 'reference')),
+        );
+        if (mergeResult == null) {
+          //TODO
+          throw Exception('Unmergeable types');
+        }
+        assert(mergeResult != toUpdateSynth,
+            'We should not be replacing the original one.');
+      }
+    }
   }
 
   /// Indicates whether this module should be declared.

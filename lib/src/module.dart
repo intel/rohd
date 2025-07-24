@@ -55,6 +55,17 @@ abstract class Module {
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
 
+  /// A mapping between [inputs], [outputs], and/or [inOuts] which must have the
+  /// same type as each other. The keys of the map will be updated to match the
+  /// type of the values.
+  ///
+  /// This is used for type checking for [LogicEnum]s through [Conditional]s.
+  ///
+  /// NOTE: This is for internal usage only, and the API will not be guaranteed
+  /// to be stable.
+  @internal
+  final Map<Logic, Logic> portTypePairs = {};
+
   /// The parent [Module] of this [Module].
   ///
   /// This only gets populated after its parent [Module], if it exists, has
@@ -307,6 +318,7 @@ abstract class Module {
 
     // set unique module instance names for submodules
     final uniquifier = Uniquifier();
+    //TODO: BUG! we must guarantee this unique name is the same one used for generation!?
     for (final module in _subModules) {
       module._uniqueInstanceName = uniquifier.getUniqueName(
           initialName: Sanitizer.sanitizeSV(module.name),

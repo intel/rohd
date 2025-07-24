@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_enum_definition.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -46,6 +47,22 @@ class SynthLogic {
   /// The [Logic] whose name is renameable, if there is one.
   Logic? _renameableLogic;
 
+  /// A [LogicEnum] that is characteristic of any merged [LogicEnum]s into this.
+  LogicEnum? get characteristicEnum => _characteristicEnum;
+
+  /// The first [LogicEnum] merged into this [SynthLogic], if there is one.
+  LogicEnum? _characteristicEnum;
+
+  SynthEnumDefinition? get enumDefinition => _enumDefinition;
+  set enumDefinition(SynthEnumDefinition? definition) {
+    assert(definition != null, 'Cannot set enum definition to null.');
+    assert(
+        _enumDefinition == null, 'Cannot set enum definition more than once.');
+    _enumDefinition = definition;
+  }
+
+  SynthEnumDefinition? _enumDefinition;
+
   /// [Logic]s that are marked mergeable.
   final Set<Logic> _mergeableLogics = {};
 
@@ -67,6 +84,9 @@ class SynthLogic {
   bool get isNet =>
       // can just look at the first since nets and non-nets cannot be merged
       logics.first.isNet || (isArray && (logics.first as LogicArray).isNet);
+
+  /// Whether this represents an enum.
+  bool get isEnum => characteristicEnum != null;
 
   /// If set, then this should never pick the constant as the name.
   bool get constNameDisallowed => _constNameDisallowed;
@@ -106,14 +126,22 @@ class SynthLogic {
     assert(_name == null, 'Should only pick a name once.');
 
     _name = _findName(uniquifier);
+    //TODO: dont allow merge after name picked?
   }
 
   /// Finds the best name from the collection of [Logic]s.
   String _findName(Uniquifier uniquifier) {
     // check for const
-    if (_constLogic != null) {
+    if (isConstant) {
       if (!_constNameDisallowed) {
-        return _constLogic!.value.toString();
+        if (isEnum) {
+          return enumDefinition!.enumToNameMapping[characteristicEnum!
+              .mapping.entries
+              .firstWhere((e) => e.value == _constLogic!.value)
+              .key]!;
+        } else {
+          return _constLogic!.value.toString();
+        }
       } else {
         assert(
             logics.length > 1,
@@ -121,6 +149,8 @@ class SynthLogic {
             'there needs to be another option');
       }
     }
+
+    //TODO: for enums, all the value names must be unique in the scope as well!
 
     // check for reserved
     if (_reservedLogic != null) {
@@ -184,18 +214,32 @@ class SynthLogic {
 
   /// Returns the [SynthLogic] that should be *removed*.
   static SynthLogic? tryMerge(SynthLogic a, SynthLogic b) {
+    assert(a != b, 'Cannot merge a SynthLogic with itself.');
+
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
       return b;
     }
 
-    if (!a.mergeable && !b.mergeable) {
+    if (a.isNet != b.isNet) {
+      // do not merge nets with non-nets
       return null;
     }
 
-    if (a.isNet != b.isNet) {
-      // do not merge nets with non-nets
+    if (_enumAndConstMergeable(a, b)) {
+      a.adopt(b);
+      return b;
+    } else if (a.isEnum && b.isEnum) {
+      //TODO: test this scenario
+
+      // don't merge enums if they are not mergeable
+      return null;
+    }
+
+    //TODO: should enum and non-enum be mergeable?
+
+    if (!a.mergeable && !b.mergeable) {
       return null;
     }
 
@@ -216,12 +260,67 @@ class SynthLogic {
       !a._constNameDisallowed &&
       !b._constNameDisallowed;
 
+  /// Indicates whether [a] and [b] represent enum(s) and constant(s) that
+  /// can be merged.
+  static bool _enumAndConstMergeable(SynthLogic a, SynthLogic b) {
+    final enums = [a, b].where((e) => e.isEnum).toList(growable: false);
+    final constants = [a, b].where((e) => e.isConstant).toList(growable: false);
+
+    // if no enums, then this is not a reason to merge
+    if (enums.isEmpty) {
+      return false;
+    }
+
+    // if we have two enums, make sure they are compatible
+    if (enums.length == 2) {
+      if (!enums[0]
+          .characteristicEnum!
+          .isEquivalentTypeTo(enums[1].characteristicEnum!)) {
+        return false;
+      }
+
+      if (enums[0].characteristicEnum!.reserveDefinitionName &&
+          enums[1].characteristicEnum!.reserveDefinitionName &&
+          enums[0].characteristicEnum!.definitionName !=
+              enums[1].characteristicEnum!.definitionName) {
+        return false;
+      }
+
+      for (final e in enums) {
+        if (!e.mergeable) {
+          return false;
+        }
+      }
+    }
+
+    // if one is constant, then ensure the constant is legal
+    if (constants.isNotEmpty) {
+      for (final c in constants) {
+        for (final e in enums) {
+          final enumMapping = e.characteristicEnum!.mapping;
+          if (!enumMapping.values.contains(c._constLogic!.value)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
   void adopt(SynthLogic other) {
-    assert(other.mergeable || _constantsMergeable(this, other),
+    assert(
+        other.mergeable ||
+            _constantsMergeable(this, other) ||
+            _enumAndConstMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
+    assert(
+        _name == null, 'Cannot merge into this after a name has been picked.');
+    assert(other._name == null,
+        'Cannot merge into other after a name has been picked.');
 
     _constNameDisallowed |= other._constNameDisallowed;
 
@@ -229,6 +328,7 @@ class SynthLogic {
     _constLogic ??= other._constLogic;
     _reservedLogic ??= other._reservedLogic;
     _renameableLogic ??= other._renameableLogic;
+    _characteristicEnum ??= other._characteristicEnum;
 
     // the rest, take them all
     _mergeableLogics.addAll(other._mergeableLogics);
@@ -255,6 +355,26 @@ class SynthLogic {
           _unnamedLogics.add(logic);
       }
     }
+
+    if (logic is LogicEnum) {
+      assert(characteristicEnum?.isEquivalentTypeTo(logic) ?? true,
+          'Cannot add a LogicEnum that is not equivalent to the existing one.');
+
+      if (logic.reserveDefinitionName) {
+        // if the added `logic` reserves its definition name, then we
+        // should use it as the characteristic enum
+        assert(
+          _characteristicEnum == null ||
+              !_characteristicEnum!.reserveDefinitionName ||
+              logic.definitionName == _characteristicEnum!.definitionName,
+          'Cannot add a LogicEnum that reserves its definition name, but has a '
+          'different definition name than the existing characteristic enum.',
+        );
+        _characteristicEnum = logic;
+      }
+
+      _characteristicEnum ??= logic;
+    }
   }
 
   @override
@@ -273,6 +393,10 @@ class SynthLogic {
   /// Computes the name of the signal at declaration time with appropriate
   /// dimensions included.
   String definitionName() {
+    if (isEnum) {
+      return name;
+    }
+
     String packedDims;
     String unpackedDims;
 
