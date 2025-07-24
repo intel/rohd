@@ -995,6 +995,8 @@ abstract class Module {
     return inOutArr;
   }
 
+  /// Connects the [source] to this [Module] using [Interface.connectIO] and
+  /// returns a copy of the [source] that can be used within this module.
   InterfaceType connectInterface<InterfaceType extends Interface<TagType>,
               TagType extends Enum>(InterfaceType source,
           {Iterable<TagType>? inputTags,
@@ -1008,6 +1010,8 @@ abstract class Module {
             inOutTags: inOutTags,
             uniquify: uniquify);
 
+  /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
+  /// and returns a copy of the [source] that can be used within this module.
   InterfaceType connectPairInterface<InterfaceType extends PairInterface>(
           InterfaceType source, PairRole role,
           {String Function(String original)? uniquify}) =>

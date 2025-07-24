@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 enum MyDirection { dir1, dir2 }
@@ -33,6 +34,27 @@ class MyModule extends Module {
         uniquify: (oldName) => 'i2$oldName',
         inOutTags: {MyDirection.dir2},
         outputTags: {MyDirection.dir1});
+  }
+}
+
+class ModuleWithConnectInterfaces extends Module {
+  ModuleWithConnectInterfaces(
+      Interface<MyDirection> intf1, Interface<MyDirection> intf2) {
+    intf1 = connectInterface(
+      intf1,
+      inputTags: {MyDirection.dir1},
+      outputTags: {MyDirection.dir2},
+      uniquify: (oldName) => 'i1$oldName',
+    );
+    intf2 = connectInterface(
+      intf2,
+      inputTags: {MyDirection.dir2},
+      outputTags: {MyDirection.dir1},
+      uniquify: (oldName) => 'i2$oldName',
+    );
+
+    intf1.driveOther(intf2, [MyDirection.dir1]);
+    intf2.driveOther(intf1, [MyDirection.dir2]);
   }
 }
 
@@ -99,6 +121,27 @@ void main() {
       expect(m.tryInOut('i2p2'), isNotNull);
       expect(m.tryInOut('i2p2arr'), isNotNull);
     });
+  });
+
+  test('connect interfaces module api', () async {
+    final intf1 = MyModuleInterface();
+    final intf2 = MyModuleInterface();
+
+    final mod = ModuleWithConnectInterfaces(intf1, intf2);
+    await mod.build();
+
+    expect(mod.tryInput('i1p1'), isNotNull);
+    expect(mod.tryOutput('i1p2'), isNotNull);
+    expect(mod.tryInput('i2p2'), isNotNull);
+    expect(mod.tryOutput('i2p1'), isNotNull);
+
+    final vectors = [
+      Vector({'i1p1': 1, 'i2p2': 0}, {'i1p2': 0, 'i2p1': 1}),
+      Vector({'i1p1': 0, 'i2p2': 1}, {'i1p2': 1, 'i2p1': 0}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   test('should return exception when port name is not sanitary.', () async {
