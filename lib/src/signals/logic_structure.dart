@@ -17,7 +17,8 @@ class LogicStructure implements Logic {
   late final List<Logic> elements = UnmodifiableListView(_elements);
   final List<Logic> _elements = [];
 
-  /// Packs all [elements] into one flattened bus.
+  /// Packs all [elements] into one flattened [Logic] bus.
+  @override
   late final Logic packed = elements
       .map((e) {
         if (e is LogicStructure) {
@@ -269,7 +270,6 @@ class LogicStructure implements Logic {
   @override
   Module? _parentModule;
 
-  @protected
   @internal
   @override
   set parentModule(Module? newParentModule) {

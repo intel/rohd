@@ -731,6 +731,12 @@ class Logic {
   late final List<Logic> elements = UnmodifiableListView(
       List.generate(width, (index) => this[index], growable: false));
 
+  /// Returns a simple flattened [Logic].
+  ///
+  /// For a basic [Logic], this just returns itself.
+  // ignore: avoid_returning_this
+  Logic get packed => this;
+
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
   ///
