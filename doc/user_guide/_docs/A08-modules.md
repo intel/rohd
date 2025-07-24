@@ -71,7 +71,7 @@ Available mechanisms for creating ports on a `Module` are listed below:
 | `addMatchedInOut`  | Adds an in/out port with width and type matched to another signal. Requires an external source.|
 |--------------------|----------------------------------------------------------------------------------------------|
 
-You can also use (`Interface`s)[https://intel.github.io/rohd-website/docs/interfaces/] to create groups of ports.
+You can also use [`Interface`s](https://intel.github.io/rohd-website/docs/interfaces/) to create groups of ports.
 
 It can be convenient to use dart getters for signal names so that accessing inputs and outputs of a module doesn't require calling `input()` and `output()` every time.  It also makes it easier to consume your module.
 

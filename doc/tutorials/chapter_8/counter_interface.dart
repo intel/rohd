@@ -2,9 +2,10 @@
 
 import 'package:rohd/rohd.dart';
 
-enum CounterDirection { inward, outward, misc }
+enum CounterPortGroups { inward, outward, misc }
 
-class CounterInterface extends Interface<CounterDirection> {
+//TODO finish renaming these
+class CounterInterface extends Interface<CounterPortGroups> {
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
@@ -16,19 +17,19 @@ class CounterInterface extends Interface<CounterDirection> {
       Logic.port('en'),
       Logic.port('reset'),
     ], [
-      CounterDirection.inward
+      CounterPortGroups.inward
     ]);
 
     setPorts([
       Logic.port('val', width),
     ], [
-      CounterDirection.outward
+      CounterPortGroups.outward
     ]);
 
     setPorts([
       Logic.port('clk'),
     ], [
-      CounterDirection.misc
+      CounterPortGroups.misc
     ]);
   }
 
@@ -41,8 +42,8 @@ class Counter extends Module {
 
   Counter(CounterInterface intf) : super(name: 'counter') {
     _intf = connectInterface(intf,
-        inputTags: {CounterDirection.inward, CounterDirection.misc},
-        outputTags: {CounterDirection.outward});
+        inputTags: {CounterPortGroups.inward, CounterPortGroups.misc},
+        outputTags: {CounterPortGroups.outward});
 
     final nextVal = Logic(name: 'nextVal', width: intf.width);
 
