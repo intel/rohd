@@ -166,7 +166,6 @@ class SynthModuleDefinition {
 
     var idx = 0;
     for (final leafElement in port.leafElements) {
-      //TODO: test hiearchical structs
       final leafSynth = _getSynthLogic(leafElement)!;
       internalSignals.add(leafSynth);
       assignments.add(PartialSynthAssignment(leafSynth, portSynth,

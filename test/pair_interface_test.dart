@@ -11,8 +11,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
-import 'multimodule_test.dart';
-
 class SimpleInterface extends PairInterface {
   Logic get clk => port('clk');
   Logic get req => port('req');

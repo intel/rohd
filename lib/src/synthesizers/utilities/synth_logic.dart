@@ -41,9 +41,6 @@ class SynthLogic {
       logics.any((e) =>
           e.isPort && e.parentStructure != null && e.parentStructure!.isPort);
 
-  // bool get isMainPort =>
-  //     logics.any((e) => e.isPort && e.parentStructure == null); // TODO?
-
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
 
@@ -93,7 +90,6 @@ class SynthLogic {
   /// from the other.
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
-  // && !isStructPortElement; // TODO: need this?
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -212,12 +208,6 @@ class SynthLogic {
       // do not merge nets with non-nets
       return null;
     }
-
-    //TODO?
-    // if ((a.isMainPort && b.isStructPortElement) ||
-    //     (b.isMainPort && a.isStructPortElement)) {
-    //   return null;
-    // }
 
     if (b.mergeable) {
       a.adopt(b);
