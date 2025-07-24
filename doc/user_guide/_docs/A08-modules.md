@@ -2,14 +2,14 @@
 title: "Modules"
 permalink: /docs/modules/
 excerpt: "Modules"
-last_modified_at: 2024-6-3
+last_modified_at: 2025-7-24
 toc: true
 ---
 
 [`Module`](https://intel.github.io/rohd/rohd/Module-class.html)s are similar to modules in SystemVerilog.  They have inputs and outputs and logic that connects them.  There are a handful of rules that *must* be followed when implementing a module.
 
-1. Inputs and inOuts (from `input`, `addInput`, `inOut` or `addInOut` methods, or their array equivalents) return *internal* copies of ports that should be used inside a `Module`.  Signals should not be consumed directly from outside a `Module`.  Internal module logic should consume the internal versions.  Logic outside the `Module` can drive to (or receive from, in the case of inOut) that `Module` only through the external copies, i.e. arguments passed to `addInput`, `addInOut`, etc.
-2. Outputs (from `output` or `addOutput`, or their array equivalents) are the only way logic outside of a `Module` can consume signals from that `Module`.  There are no internal vs. external versions of `output`s, so they may be consumed inside of `Module`s as well.
+1. Inputs and inOuts (from `input`, `addInput`, `inOut` or `addInOut` methods, or their array and match equivalents) return *internal* copies of ports that should be used inside a `Module`.  Signals should not be consumed directly from outside a `Module`.  Internal module logic should consume the internal versions.  Logic outside the `Module` can drive to (or receive from, in the case of inOut) that `Module` only through the external copies, i.e. arguments passed to `addInput`, `addInOut`, etc.
+2. Outputs (from `output` or `addOutput`, or their array and match equivalents) are the only way logic outside of a `Module` can consume signals from that `Module`.  There are no internal vs. external versions of `output`s, so they may be consumed inside of `Module`s as well.
 3. All logic must be defined *before* the call to `super.build()`.  Logic should not be further defined after build.
 
 The reasons for these rules have to do with how ROHD is able to determine which logic and `Module`s exist within a given Module and how ROHD builds connectivity.  If these rules are not followed, generated outputs (including waveforms and SystemVerilog) may be unpredictable.
@@ -22,7 +22,7 @@ Note that the `build()` method returns a `Future<void>`, not just `void`.  This 
 
 It is not necessary to put all logic directly within a class that extends Module.  You can put synthesizable logic in other functions and classes, as long as the logic eventually connects to an input or output of a module if you hope to convert it to SystemVerilog.  Except where there is a desire for the debug hierarchy, waveforms, SystemVerilog generated, etc. to have equivalent module hierarchy, it is not necessary to use submodules within modules instead of plain classes or functions.
 
-The `Module` base class has an optional String argument `name` which is an instance name.
+The `Module` base class has an optional String argument `name` which is an instance name.  There are also options for the `definitionName` and reservation of both names, which can be especially useful to control generation of outputs like SystemVerilog.
 
 `Module`s have the below basic structure:
 
@@ -50,9 +50,11 @@ class MyModule extends Module {
 
 All gates or functionality apart from assign statements in ROHD are implemented using Modules.
 
-#### Inputs, outputs, widths, and getters
+#### Ports, widths, and getters
 
-The default width of an input and output is 1.  You can control the width of ports using the `width` argument of `addInput()` and `addOutput()`.  You may choose to set them to a static number, based on some other variable, or even dynamically based on the width of input parameters.  These functions also return the input/output signal.
+The default width of a port is 1.  You can control the width of ports using the `width` argument of `addInput()` and `addOutput()`.  You may choose to set them to a static number, based on some other variable, or even dynamically based on the width of input parameters.  These functions also return the input/output signal.
+
+There are also similar functions called `addMatchedInput` and `addMatchedOutput` which will create a port with matching widths and types.  This is especially useful for creating `LogicStructure` ports.
 
 It can be convenient to use dart getters for signal names so that accessing inputs and outputs of a module doesn't require calling `input()` and `output()` every time.  It also makes it easier to consume your module.
 
@@ -61,7 +63,7 @@ Below are some examples of inputs and outputs in a Module.
 ```dart
 class MyModule extends Module {
 
-    MyModule(Logic a, Logic b, Logic c, {int xWidth=5}) {
+    MyModule(Logic a, Logic b, Logic c, Logic d, {int xWidth=5}) {
         
         // 'a' should always be width 4, throw an exception if its wrong
         if(a.width != 4) throw Exception('Width of a must be 4!');
@@ -74,15 +76,22 @@ class MyModule extends Module {
         // addInput returns the value of input('c'), if you want it
         var c_input = addInput('c', c)
 
+        // create a port 'b' with the same width as whatever was received
+        addMatchedInput('d', d);
+
         // set the width of 'x' based on the constructor argument
         addOutput('x', width: xWidth);
 
         // you can dynamically set the output width based on an input width, 
         // as well addOutput returns the value of output('y'), if you want it
         var y_output = addOutput('y', width: b.width);
+
+        // create an output 'z' that has the same width and type as 'd'.
+        // note that this does not actually connect 'd' to 'z', just matches it
+        addMatchedOutput('z', d);
     }
 
-    // A verbose getter of the value of input 'a'
+    // A verbose getter of the value of input 'a'.
     Logic get a {
       return input('a');
     }
@@ -98,3 +107,7 @@ class MyModule extends Module {
 
 }
 ```
+
+For `LogicArray`s, you can create `LogicArray` ports.  See [the section on Logic Arrays](https://intel.github.io/rohd-website/docs/logic-arrays/) for more details.
+
+For `LogicNet`s, you can create `inOut` ports.  See [the section on Logic Nets, In/Outs, and Tri-state Buffers](https://intel.github.io/rohd-website/docs/logic-nets/) for more details.

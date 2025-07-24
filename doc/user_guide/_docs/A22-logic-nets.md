@@ -1,7 +1,7 @@
 ---
 title: "Logic Nets, In/Outs, and Tri-state Buffers"
 permalink: /docs/logic-nets/
-last_modified_at: 2024-6-3
+last_modified_at: 2025-7-24
 toc: true
 ---
 
@@ -16,6 +16,8 @@ Assignments between `LogicNet`s use the same `<=` or `gets` API as normal `Logic
 ## In/Out Ports
 
 `Module`s support `inOut` ports via `addInOut`, which return objects of type `LogicNet`.  There are also equivalent versions for `LogicArray`s.  The API for `inOut` is similar to that of `input` -- there's an internal version to be used within a module, and the external version used for outside of the module.
+
+There is also an `addMatchedInOut`, which has a similar API as the other "matched" APIs for port creation.
 
 ## Tri-state Buffers
 
