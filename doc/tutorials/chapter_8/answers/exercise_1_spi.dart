@@ -51,7 +51,7 @@ class Controller extends Module {
 
     // define a new interface, and connect it
     // to the interface passed in.
-    intf = connectInterface(
+    intf = addInterfacePorts(
       intf,
       inputTags: {SPIDirection.peripheralOutput}, // Add inputs
       outputTags: {SPIDirection.controllerOutput}, // Add outputs
@@ -83,7 +83,7 @@ class Peripheral extends Module {
   late final SPIInterface shiftRegIntF;
 
   Peripheral(SPIInterface periIntF) : super(name: 'shift_register') {
-    shiftRegIntF = connectInterface(
+    shiftRegIntF = addInterfacePorts(
       periIntF,
       inputTags: {SPIDirection.controllerOutput},
       outputTags: {SPIDirection.peripheralOutput},

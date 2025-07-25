@@ -37,16 +37,16 @@ class MyModule extends Module {
   }
 }
 
-class ModuleWithConnectInterfaces extends Module {
-  ModuleWithConnectInterfaces(
+class ModuleWithaddInterfacePortss extends Module {
+  ModuleWithaddInterfacePortss(
       Interface<MyDirection> intf1, Interface<MyDirection> intf2) {
-    intf1 = connectInterface(
+    intf1 = addInterfacePorts(
       intf1,
       inputTags: {MyDirection.dir1},
       outputTags: {MyDirection.dir2},
       uniquify: (oldName) => 'i1$oldName',
     );
-    intf2 = connectInterface(
+    intf2 = addInterfacePorts(
       intf2,
       inputTags: {MyDirection.dir2},
       outputTags: {MyDirection.dir1},
@@ -127,7 +127,7 @@ void main() {
     final intf1 = MyModuleInterface();
     final intf2 = MyModuleInterface();
 
-    final mod = ModuleWithConnectInterfaces(intf1, intf2);
+    final mod = ModuleWithaddInterfacePortss(intf1, intf2);
     await mod.build();
 
     expect(mod.tryInput('i1p1'), isNotNull);

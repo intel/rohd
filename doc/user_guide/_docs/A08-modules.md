@@ -54,22 +54,21 @@ All gates or functionality apart from assign statements in ROHD are implemented 
 
 The default width of a port is 1.  You can control the width of ports using the `width` argument of `addInput()` and `addOutput()`.  You may choose to set them to a static number, based on some other variable, or even dynamically based on the width of input parameters.  These functions also return the input/output signal.
 
-There are also similar functions called `addMatchedInput` and `addMatchedOutput` which will create a port with matching widths and types.  This is especially useful for creating `LogicStructure` ports.
+There are also similar functions called `addTypedInput` and `addTypedOutput` which will create a port with matching widths and types.  This is especially useful for creating `LogicStructure` ports.
 
 Available mechanisms for creating ports on a `Module` are listed below:
 
 | API                | Description                                                                                                      |
 |--------------------|------------------------------------------------------------------------------------------------------------------|
-| `addInput`         | Adds an input port to the module with explicit width. Requires an external source.                               |
-| `addInputArray`    | Adds an input array port to the module with explicit dimensions and element width. Requires an external source.  |
-| `addMatchedInput`  | Adds an input port with width and type matched to another signal. Requires an external source.                   |
-| `addOutput`        | Adds an output port to the module with explicit width.                                                           |
-| `addOutputArray`   | Adds an output array port to the module with explicit dimensions and element width.                              |
-| `addMatchedOutput` | Adds an output port with width and type matched to another signal. Requires a reference to match.                |
-| `addInOut`         | Adds an in/out (bidirectional) port to the module with explicit width. Requires an external source.              |
-| `addInOutArray`    | Adds an in/out array port to the module with explicit dimensions and element width. Requires an external source. |
-| `addMatchedInOut`  | Adds an in/out port with width and type matched to another signal. Requires an external source.                  |
-|--------------------|------------------------------------------------------------------------------------------------------------------|
+| `addTypedInput`    | Adds an input port (of any `Logic` type including `LogicArray` and `LogicStructure`) with width/dimensions and type matched to another signal. Requires an external source. |
+| `addInput`         | Adds an input `Logic` port to the module with explicit width. Requires an external source. |
+| `addInputArray`    | Adds an input `LogicArray` port to the module with explicit dimensions and element width. Requires an external source. |
+| `addTypedOutput`   | Adds an output port (of any `Logic` type including `LogicArray` and `LogicStructure`) with width/dimensions and type generated. Requires a generator. |
+| `addOutput`        | Adds an output `Logic` port to the module with explicit width. |
+| `addOutputArray`   | Adds an output `LogicArray` port to the module with explicit dimensions and element width. |
+| `addTypedInOut`    | Adds an in/out port (of any `Logic` type including `LogicArray` and `LogicStructure`) with width/dimensions and type matched to another signal. Requires an external source. |
+| `addInOut`         | Adds an in/out (bidirectional) `Logic` port to the module with explicit width. Requires an external source. |
+| `addInOutArray`    | Adds an in/out (bidirectional) `LogicArray` port to the module with explicit dimensions and element width. Requires an external source. |
 
 You can also use [`Interface`s](https://intel.github.io/rohd-website/docs/interfaces/) to create groups of ports.
 
@@ -94,7 +93,7 @@ class MyModule extends Module {
         var c_input = addInput('c', c)
 
         // create a port 'b' with the same width as whatever was received
-        addMatchedInput('d', d);
+        addTypedInput('d', d);
 
         // set the width of 'x' based on the constructor argument
         addOutput('x', width: xWidth);
@@ -104,8 +103,7 @@ class MyModule extends Module {
         var y_output = addOutput('y', width: b.width);
 
         // create an output 'z' that has the same width and type as 'd'.
-        // note that this does not actually connect 'd' to 'z', just matches it
-        addMatchedOutput('z', d);
+        addTypedOutput('z', d.clone);
     }
 
     // A verbose getter of the value of input 'a'.

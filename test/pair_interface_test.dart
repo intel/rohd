@@ -37,7 +37,7 @@ class SimpleInterface extends PairInterface {
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = connectPairInterface(intf, PairRole.provider);
+    _intf = addPairInterfacePorts(intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -45,13 +45,13 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    connectPairInterface(intf, PairRole.provider);
+    addPairInterfacePorts(intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    connectPairInterface(intf, PairRole.consumer);
+    addPairInterfacePorts(intf, PairRole.consumer);
   }
 }
 
@@ -69,7 +69,7 @@ class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
       {required bool useConditional, required bool useConnectApi}) {
     intf1 = useConnectApi
-        ? connectPairInterface(
+        ? addPairInterfacePorts(
             intf1,
             PairRole.consumer,
             uniquify: (original) => '${original}_1',
@@ -82,7 +82,7 @@ class PassthroughPairIntfModule extends Module {
             uniquify: (original) => '${original}_1',
           ));
     intf2 = useConnectApi
-        ? connectInterface(
+        ? addInterfacePorts(
             intf2,
             inputTags: {PairDirection.fromConsumer},
             outputTags: {PairDirection.fromProvider},

@@ -40,7 +40,7 @@ class Counter extends Module {
   late final CounterInterface _intf;
 
   Counter(CounterInterface intf) : super(name: 'counter') {
-    _intf = connectInterface(intf,
+    _intf = addInterfacePorts(intf,
         inputTags: {CounterDirection.inward, CounterDirection.misc},
         outputTags: {CounterDirection.outward});
 

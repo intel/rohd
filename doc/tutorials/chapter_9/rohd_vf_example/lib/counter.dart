@@ -38,7 +38,7 @@ class MyCounter extends Module {
   late final MyCounterInterface counterintf;
 
   MyCounter(MyCounterInterface intf) : super(name: 'counter') {
-    counterintf = connectInterface(counterintf,
+    counterintf = addInterfacePorts(counterintf,
         inputTags: {CounterDirection.inward, CounterDirection.misc},
         outputTags: {CounterDirection.outward});
 

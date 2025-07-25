@@ -688,10 +688,14 @@ abstract class Module {
   /// implements clone functionality that matches the type and properly updates
   /// the [Logic.name] as well.
   ///
+  /// This is a good way to construct [input]s that have matching widths or
+  /// dimensions to their [source] signal, or to make a [LogicStructure] an
+  /// [input]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  ///
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inputSource].
-  LogicType addMatchedInput<LogicType extends Logic>(
+  LogicType addTypedInput<LogicType extends Logic>(
       String name, LogicType source) {
     _checkForSafePortName(name);
 
@@ -782,10 +786,14 @@ abstract class Module {
   /// the [source] implements clone functionality that matches the type and
   /// properly updates the [Logic.name] as well.
   ///
+  /// This is a good way to construct [inOut]s that have matching widths or
+  /// dimensions to their [source] signal, or to make a [LogicStructure] an
+  /// [inOut]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
+  ///
   /// The return value is the same as what is returned by [inOut] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inOutSource].
-  LogicType addMatchedInOut<LogicType extends Logic>(
+  LogicType addTypedInOut<LogicType extends Logic>(
       String name, LogicType source) {
     _checkForSafePortName(name);
 
@@ -885,29 +893,31 @@ abstract class Module {
 
   /// Registers an [output] to this [Module] and returns an [output] port that
   /// can be driven by this [Module] or consumed outside of it. The type of the
-  /// port will be [LogicType] and constructed via [Logic.clone] on [toMatch],
-  /// so it is required that the [toMatch] implements clone functionality that
-  /// matches the type and properly updates the [Logic.name] as well.
+  /// port will be [LogicType] and constructed via [logicGenerator], which must
+  /// properly update the `name` of the generated [LogicType] as well.
   ///
-  /// This function does not set the [toMatch] argument to drive or be driven by
-  /// the [output] port.
+  /// This is a good way to construct [output]s that have matching widths or
+  /// dimensions to another signal, or to make a [LogicStructure] an [output].
+  /// You can use this on a [Logic], [LogicArray], or [LogicStructure].
   ///
   /// The return value is the same as what is returned by [output].
-  LogicType addMatchedOutput<LogicType extends Logic>(
-      String name, LogicType toMatch) {
+  LogicType addTypedOutput<LogicType extends Logic>(
+      String name, LogicType Function({String name}) logicGenerator) {
     _checkForSafePortName(name);
 
-    if (toMatch.isNet || (toMatch is LogicStructure && toMatch.hasNets)) {
+    // must make a new clone of it, to avoid people using ports of other modules
+    final outPort = logicGenerator(name: name);
+
+    if (outPort.isNet || (outPort is LogicStructure && outPort.hasNets)) {
       throw PortTypeException(
-          toMatch, 'Matched outputs cannot have nets in them.');
+          outPort, 'Matched outputs cannot have nets in them.');
     }
 
-    // must make a new clone of it, to avoid people using ports of other modules
-    final outPort = toMatch.clone(name: name) as LogicType;
-
     if (outPort.name != name) {
-      throw PortTypeException.forIntendedName(name,
-          'The `clone` method for $toMatch failed to update the signal name.');
+      throw PortTypeException.forIntendedName(
+          name,
+          'The `logicGenerator` function failed to'
+          ' update the signal name on $outPort.');
     }
 
     if (outPort is LogicStructure) {
@@ -1002,7 +1012,7 @@ abstract class Module {
 
   /// Connects the [source] to this [Module] using [Interface.connectIO] and
   /// returns a copy of the [source] that can be used within this module.
-  InterfaceType connectInterface<InterfaceType extends Interface<TagType>,
+  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
               TagType extends Enum>(InterfaceType source,
           {Iterable<TagType>? inputTags,
           Iterable<TagType>? outputTags,
@@ -1017,7 +1027,7 @@ abstract class Module {
 
   /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
   /// and returns a copy of the [source] that can be used within this module.
-  InterfaceType connectPairInterface<InterfaceType extends PairInterface>(
+  InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
           InterfaceType source, PairRole role,
           {String Function(String original)? uniquify}) =>
       (source.clone() as InterfaceType)

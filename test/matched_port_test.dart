@@ -40,7 +40,7 @@ class SimpleStructModule extends Module {
   late final MyStruct myOut;
 
   SimpleStructModule(MyStruct myIn, {super.name = 'simple_struct_mod'}) {
-    myIn = (myIn.isNet ? addMatchedInOut : addMatchedInput)('myIn', myIn);
+    myIn = (myIn.isNet ? addTypedInOut : addTypedInput)('myIn', myIn);
 
     final internal = myIn.clone(name: 'internal_struct');
     internal.ready <= myIn.valid;
@@ -48,9 +48,9 @@ class SimpleStructModule extends Module {
 
     if (myIn.isNet) {
       myOut = myIn.clone(name: 'myOutExt');
-      addMatchedInOut('myOut', myOut) <= internal;
+      addTypedInOut('myOut', myOut) <= internal;
     } else {
-      myOut = addMatchedOutput('myOut', internal)..gets(internal);
+      myOut = addTypedOutput('myOut', internal.clone)..gets(internal);
     }
   }
 }
@@ -99,11 +99,11 @@ class MatcherModule extends Module {
 
   MatcherModule(Logic anyIn) : isNet = anyIn.isNet {
     if (isNet) {
-      _anyIn = addMatchedInOut('anyIn', anyIn);
-      _innerOut = addMatchedInOut('anyOut', anyIn.clone());
+      _anyIn = addTypedInOut('anyIn', anyIn);
+      _innerOut = addTypedInOut('anyOut', anyIn.clone());
     } else {
-      _anyIn = addMatchedInput('anyIn', anyIn);
-      _innerOut = addMatchedOutput('anyOut', _anyIn);
+      _anyIn = addTypedInput('anyIn', anyIn);
+      _innerOut = addTypedOutput('anyOut', _anyIn.clone);
     }
 
     _makeLogic();
@@ -133,9 +133,9 @@ class MatcherPassThrough extends MatcherModule {
 
 class PartialLogicNetStructAssignment extends Module {
   PartialLogicNetStructAssignment(MyStruct a) {
-    a = addMatchedInOut('a', a);
+    a = addTypedInOut('a', a);
 
-    final b = addMatchedInOut('b', a.clone());
+    final b = addTypedInOut('b', a.clone());
 
     b.valid <= a.valid;
   }
@@ -222,9 +222,9 @@ void main() {
 
   group('illegal match port creations', () {
     final matchedPortCreators = {
-      'input': (Logic logic) => DummyModule().addMatchedInput('p', logic),
-      'output': (Logic logic) => DummyModule().addMatchedOutput('p', logic),
-      'inOut': (Logic logic) => DummyModule().addMatchedInOut('p', logic),
+      'input': (Logic logic) => DummyModule().addTypedInput('p', logic),
+      'output': (Logic logic) => DummyModule().addTypedOutput('p', logic.clone),
+      'inOut': (Logic logic) => DummyModule().addTypedInOut('p', logic),
     };
 
     group('struct with partial nets fails', () {

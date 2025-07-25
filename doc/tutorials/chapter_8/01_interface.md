@@ -23,7 +23,7 @@ When connecting an `Interface` to a `Module`, you should always create a new ins
 
 The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
 
-`Module` has functions called `connectInterface` and `connectPairInterface` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
+`Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
 
 ## Counter Module
 
@@ -132,11 +132,11 @@ late final CounterInterface _intf;
 Counter(CounterInterface intf): super(name: 'counter') {}
 ```
 
-Now, let use the `connectInterface` function. As mentioned [previously](#rohd-interfaces), this function called `addInput` and `addOutput` (via `connectIO`) that help us register the ports. Therefore, we can pass the `module`, `interface`, `inputTags`, and `outputTags` as the arguments of the `connectInterface` function.
+Now, let use the `addInterfacePorts` function. As mentioned [previously](#rohd-interfaces), this function called `addInput` and `addOutput` (via `connectIO`) that help us register the ports. Therefore, we can pass the `module`, `interface`, `inputTags`, and `outputTags` as the arguments of the `addInterfacePorts` function.
 
 ```dart
 Counter(CounterInterface intf) : super(name: 'counter') {
-  _intf = connectInterface(intf,
+  _intf = addInterfacePorts(intf,
       inputTags: {CounterDirection.inward, CounterDirection.misc},
       outputTags: {CounterDirection.outward});
 
