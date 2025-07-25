@@ -17,7 +17,6 @@ class CounterInterface extends Interface<CounterDirection> {
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
-  Logic get resetVal => port('resetVal');
 
   final int width;
   CounterInterface(this.width) {

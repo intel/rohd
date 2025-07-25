@@ -90,6 +90,7 @@ Hence, the `CounterInterface` will look something like this:
 ```dart
 enum CounterDirection { inward, outward, misc }
 
+/// A simple [Interface] for [Counter].
 class CounterInterface extends Interface<CounterDirection> {
   Logic get en => port('en');
   Logic get reset => port('reset');

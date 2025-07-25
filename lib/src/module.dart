@@ -164,18 +164,27 @@ abstract class Module {
 
   /// Returns true iff [signal] is the same [Logic] as the [input] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [input] port,
+  /// but is not itself a port, this will return false.
   bool isInput(Logic signal) =>
       _inputs[signal.name] == signal ||
       (signal.parentStructure != null && isInput(signal.parentStructure!));
 
   /// Returns true iff [signal] is the same [Logic] as the [output] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [output] port,
+  /// but is not itself a port, this will return false.
   bool isOutput(Logic signal) =>
       _outputs[signal.name] == signal ||
       (signal.parentStructure != null && isOutput(signal.parentStructure!));
 
   /// Returns true iff [signal] is the same [Logic] as the [inOut] port of this
   /// [Module] with the same name.
+  ///
+  /// Note that if signal is a [LogicStructure] which contains an [inOut] port,
+  /// but is not itself a port, this will return false.
   bool isInOut(Logic signal) =>
       _inOuts[signal.name] == signal ||
       (signal.parentStructure != null && isInOut(signal.parentStructure!));
