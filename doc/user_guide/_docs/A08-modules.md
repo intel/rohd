@@ -58,18 +58,18 @@ There are also similar functions called `addMatchedInput` and `addMatchedOutput`
 
 Available mechanisms for creating ports on a `Module` are listed below:
 
-| API                | Description                                                                                  |
-|--------------------|----------------------------------------------------------------------------------------------|
-| `addInput`         | Adds an input port to the module with explicit width. Requires an external source.           |
-| `addInputArray`    | Adds an array of input ports to the module with explicit dimensions and element width. Requires an external source. |
-| `addMatchedInput`  | Adds an input port with width and type matched to another signal. Requires an external source.|
-| `addOutput`        | Adds an output port to the module with explicit width.                                       |
-| `addOutputArray`   | Adds an array of output ports to the module with explicit dimensions and element width.|
-| `addMatchedOutput` | Adds an output port with width and type matched to another signal. Requires a reference to match.|
-| `addInOut`         | Adds an in/out (bidirectional) port to the module with explicit width. Requires an external source.|
-| `addInOutArray`    | Adds an array of in/out ports to the module with explicit dimensions and element width. Requires an external source. |
-| `addMatchedInOut`  | Adds an in/out port with width and type matched to another signal. Requires an external source.|
-|--------------------|----------------------------------------------------------------------------------------------|
+| API                | Description                                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------------------|
+| `addInput`         | Adds an input port to the module with explicit width. Requires an external source.                               |
+| `addInputArray`    | Adds an input array port to the module with explicit dimensions and element width. Requires an external source.  |
+| `addMatchedInput`  | Adds an input port with width and type matched to another signal. Requires an external source.                   |
+| `addOutput`        | Adds an output port to the module with explicit width.                                                           |
+| `addOutputArray`   | Adds an output array port to the module with explicit dimensions and element width.                              |
+| `addMatchedOutput` | Adds an output port with width and type matched to another signal. Requires a reference to match.                |
+| `addInOut`         | Adds an in/out (bidirectional) port to the module with explicit width. Requires an external source.              |
+| `addInOutArray`    | Adds an in/out array port to the module with explicit dimensions and element width. Requires an external source. |
+| `addMatchedInOut`  | Adds an in/out port with width and type matched to another signal. Requires an external source.                  |
+|--------------------|------------------------------------------------------------------------------------------------------------------|
 
 You can also use [`Interface`s](https://intel.github.io/rohd-website/docs/interfaces/) to create groups of ports.
 
