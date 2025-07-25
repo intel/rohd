@@ -28,7 +28,8 @@ class LogicStructure implements Logic {
         }
       })
       .toList(growable: false)
-      .rswizzle();
+      .rswizzle()
+      .named(name, naming: Naming.mergeable);
 
   @override
   final String name;
