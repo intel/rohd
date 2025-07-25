@@ -21,8 +21,12 @@ class CounterInterface extends Interface<CounterDirection> {
 
   final int width;
   CounterInterface(this.width) {
-    setPorts(
-        [Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
+    setPorts([
+      Logic.port('en'),
+      Logic.port('reset'),
+    ], [
+      CounterDirection.inward
+    ]);
 
     setPorts([
       Logic.port('val', width),

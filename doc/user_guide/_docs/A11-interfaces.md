@@ -20,26 +20,35 @@ The `connectIO` function under the hood calls `addInput` and `addOutput` directl
 
 ```dart
 // Define a set of legal directions for this interface, and pass as parameter to Interface
-enum CounterDirection {IN, OUT}
+enum CounterDirection { inward, outward, misc }
 
 class CounterInterface extends Interface<CounterDirection> {
-
-  // include the getters in the interface so any user can access them
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
+  Logic get clk => port('clk');
 
   final int width;
-  CounterInterface(this.width) {
-    // register ports to a specific direction
+  CounterInterface({this.width = 8}) {
+    // register ports to a specific direction or group
     setPorts([
       Logic.port('en'), // Logic.port factory returns Logic
-      Logic.port('reset')
-    ], [CounterDirection.IN]);  // inputs to the counter
+    ], [
+      CounterDirection.inward // inputs to the counter
+    ]);
 
     setPorts([
       Logic.port('val', width),
-    ], [CounterDirection.OUT]); // outputs from the counter
+    ], [
+      CounterDirection.outward // outputs from the counter
+    ]);
+
+    setPorts([
+      Logic.port('clk'),
+      Logic.port('reset'),
+    ], [
+      CounterDirection.misc // other miscellaneous ports
+    ]);
   }
 
   @override
@@ -47,30 +56,21 @@ class CounterInterface extends Interface<CounterDirection> {
 }
 
 class Counter extends Module {
+  late final CounterInterface _intf;
 
-  late final CounterInterface intf;
-  Counter(CounterInterface intf) {
-    this.intf = connectInterface(intf,
+  Counter(CounterInterface intf) : super(name: 'counter') {
+    _intf = connectInterface(intf,
         // map inputs and outputs to appropriate directions
         inputTags: {CounterDirection.inward, CounterDirection.misc},
         outputTags: {CounterDirection.outward});
 
-    _buildLogic();
-  }
-
-  void _buildLogic() {
-    var nextVal = Logic(name: 'nextVal', width: intf.width);
-
     // access signals directly from the interface
-    nextVal <= intf.val + 1;
-
-    Sequential( SimpleClockGenerator(10).clk, [
-      If(intf.reset, then:[
-        intf.val < 0
-      ], orElse: [If(intf.en, then: [
-        intf.val < nextVal
-      ])])
-    ]);
+    _intf.val <=
+        flop(
+          _intf.clk,
+          reset: _intf.reset,
+          (_intf.val + 1).named('nextVal'),
+        );
   }
 }
 ```

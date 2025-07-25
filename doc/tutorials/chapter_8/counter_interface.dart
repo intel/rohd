@@ -14,7 +14,6 @@ class CounterInterface extends Interface<CounterDirection> {
   CounterInterface({this.width = 8}) {
     setPorts([
       Logic.port('en'),
-      Logic.port('reset'),
     ], [
       CounterDirection.inward
     ]);
@@ -27,6 +26,7 @@ class CounterInterface extends Interface<CounterDirection> {
 
     setPorts([
       Logic.port('clk'),
+      Logic.port('reset'),
     ], [
       CounterDirection.misc
     ]);
@@ -44,20 +44,12 @@ class Counter extends Module {
         inputTags: {CounterDirection.inward, CounterDirection.misc},
         outputTags: {CounterDirection.outward});
 
-    final nextVal = Logic(name: 'nextVal', width: intf.width);
-
-    nextVal <= _intf.val + 1;
-
-    Sequential(_intf.clk, [
-      If.block([
-        Iff(_intf.reset, [
-          _intf.val < 0,
-        ]),
-        ElseIf(_intf.en, [
-          _intf.val < nextVal,
-        ])
-      ]),
-    ]);
+    _intf.val <=
+        flop(
+          _intf.clk,
+          reset: _intf.reset,
+          (_intf.val + 1).named('nextVal'),
+        );
   }
 }
 
