@@ -1,7 +1,7 @@
 // Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// matched_port_test.dart
+// typed_port_test.dart
 // Tests for matching ports on modules
 //
 // 2025 July
@@ -11,6 +11,8 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
+
+// TODO: what if a typed port is a Const?
 
 class MyStruct extends LogicStructure {
   final Logic ready;
