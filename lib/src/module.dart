@@ -692,6 +692,11 @@ abstract class Module {
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
   /// [input]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
   ///
+  /// The [source] cannot be or contain any [LogicNet]s. If [source] is a
+  /// [Const] (or is a [LogicStructure] that includes a [Const]), the
+  /// [LogicType] must be set to [Logic], since [Const]s cannot be driven and
+  /// are not suitable as ports.
+  ///
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inputSource].
@@ -699,9 +704,11 @@ abstract class Module {
       String name, LogicType source) {
     _checkForSafePortName(name);
 
+    // ignore: parameter_assignments
+    source = _validateType<LogicType>(source, isOutput: false, name: name);
+
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
-      throw PortTypeException(
-          source, 'Matched inputs cannot have nets in them.');
+      throw PortTypeException(source, 'Typed inputs cannot have nets in them.');
     }
 
     final inPort = (source.clone(name: name) as LogicType)..gets(source);
@@ -790,6 +797,11 @@ abstract class Module {
   /// dimensions to their [source] signal, or to make a [LogicStructure] an
   /// [inOut]. You can use this on a [Logic], [LogicArray], or [LogicStructure].
   ///
+  /// The [source] must be or exclusively contain [LogicNet]s. If [source] is a
+  /// [Const] (or is a [LogicStructure] that includes a [Const]), the
+  /// [LogicType] must be set to [Logic], since [Const]s cannot be driven and
+  /// are not suitable as ports.
+  ///
   /// The return value is the same as what is returned by [inOut] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inOutSource].
@@ -798,8 +810,11 @@ abstract class Module {
     _checkForSafePortName(name);
 
     if (!source.isNet) {
-      throw PortTypeException(source, 'Matched inOuts must be nets.');
+      throw PortTypeException(source, 'Typed inOuts must be nets.');
     }
+
+    // ignore: parameter_assignments
+    source = _validateType<LogicType>(source, isOutput: false, name: name);
 
     _inOutDrivers.add(source);
 
@@ -891,6 +906,38 @@ abstract class Module {
     return outPort;
   }
 
+  /// Checks that the [logic] meets type requirements for `Typed` [Logic]s and
+  /// returns a potentially modified [logic] to use.
+  LogicType _validateType<LogicType extends Logic>(LogicType logic,
+      {required String name, required bool isOutput}) {
+    const exceptionMessage =
+        'Cannot use `Const` (or `LogicStructure` with `Const`s) as a port type.'
+        ' Try passing in a `Logic` or parameterizing'
+        ' using `<Logic>` explicitly instead.';
+
+    if (LogicType == Const) {
+      throw PortTypeException(logic, exceptionMessage);
+    }
+
+    if (logic is Const || (logic is LogicStructure && logic.hasConsts)) {
+      if (LogicType == Logic) {
+        // we're ok, can just convert to Logic
+        final newLogic =
+            Logic(name: name, width: logic.width, naming: Naming.mergeable)
+                as LogicType;
+        if (isOutput) {
+          return newLogic;
+        } else {
+          return newLogic..gets(logic);
+        }
+      } else {
+        throw PortTypeException(logic, exceptionMessage);
+      }
+    }
+
+    return logic;
+  }
+
   /// Registers an [output] to this [Module] and returns an [output] port that
   /// can be driven by this [Module] or consumed outside of it. The type of the
   /// port will be [LogicType] and constructed via [logicGenerator], which must
@@ -900,17 +947,24 @@ abstract class Module {
   /// dimensions to another signal, or to make a [LogicStructure] an [output].
   /// You can use this on a [Logic], [LogicArray], or [LogicStructure].
   ///
+  /// The [logicGenerator] cannot create ports that are or contain any
+  /// [LogicNet]s in them. If a [Const] is generated (or included in a
+  /// [LogicStructure]), the [LogicType] must be set to [Logic], since [Const]s
+  /// cannot be driven and are not suitable as ports.
+  ///
   /// The return value is the same as what is returned by [output].
   LogicType addTypedOutput<LogicType extends Logic>(
       String name, LogicType Function({String name}) logicGenerator) {
     _checkForSafePortName(name);
 
     // must make a new clone of it, to avoid people using ports of other modules
-    final outPort = logicGenerator(name: name);
+    var outPort = logicGenerator(name: name);
+
+    outPort = _validateType<LogicType>(outPort, isOutput: true, name: name);
 
     if (outPort.isNet || (outPort is LogicStructure && outPort.hasNets)) {
       throw PortTypeException(
-          outPort, 'Matched outputs cannot have nets in them.');
+          outPort, 'Typed outputs cannot have nets in them.');
     }
 
     if (outPort.name != name) {
@@ -1075,4 +1129,11 @@ abstract class Module {
             .getSynthFileContents()
             .join('\n\n////////////////////\n\n');
   }
+}
+
+extension on LogicStructure {
+  /// Indicates that a [LogicStructure] has a [Const] element within it or
+  /// within one of its [elements].
+  bool get hasConsts =>
+      elements.any((e) => e is Const || (e is LogicStructure && e.hasConsts));
 }

@@ -31,5 +31,5 @@ class Const extends Logic {
   }
 
   @override
-  Logic clone({String? name}) => Const(value, width: width);
+  Const clone({String? name}) => Const(value, width: width);
 }
