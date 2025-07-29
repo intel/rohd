@@ -148,6 +148,16 @@ class StructWithConst extends LogicStructure {
   StructWithConst clone({String? name}) => StructWithConst(name: name);
 }
 
+class ModuleWithPartialAssignInlineAndOutReuseModule extends Module {
+  ModuleWithPartialAssignInlineAndOutReuseModule(MyStruct inp) {
+    inp = addTypedInput('inp', inp);
+    final out = addTypedOutput('out', inp.clone);
+
+    out.valid <= mux(inp.ready, inp.valid, Const(0));
+    out.ready <= (~out.valid);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -184,6 +194,21 @@ void main() {
     expect(sv, contains('input logic [3:0][1:0] anyIn'));
     expect(sv, contains('output logic [3:0][1:0] anyOut'));
     expect(sv, contains('assign anyOut = anyIn;'));
+  });
+
+  test('module with inline partial assignment and output reuse', () async {
+    final mod = ModuleWithPartialAssignInlineAndOutReuseModule(MyStruct());
+    await mod.build();
+
+    final vectors = [
+      Vector({'inp': '00'}, {'out': '01'}),
+      Vector({'inp': '10'}, {'out': '01'}),
+      Vector({'inp': '01'}, {'out': '01'}),
+      Vector({'inp': '11'}, {'out': '10'}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('const typed ports', () {

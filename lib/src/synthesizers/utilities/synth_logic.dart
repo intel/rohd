@@ -98,6 +98,7 @@ class SynthLogic {
   ///
   /// Must call [pickName] before this is accessible.
   String get name {
+    assert(_name != null, 'Name has not been picked for $this.');
     assert(_replacement == null,
         'If this has been replaced, then we should not be getting its name.');
     assert(isConstant || Sanitizer.isSanitary(_name!),
@@ -140,7 +141,8 @@ class SynthLogic {
 
     // check for renameable
     if (_renameableLogic != null) {
-      return uniquifier.getUniqueName(initialName: _renameableLogic!.name);
+      return uniquifier.getUniqueName(
+          initialName: _renameableLogic!.preferredSynthName);
     }
 
     // pick a preferred, available, mergeable name, if one exists
@@ -149,17 +151,18 @@ class SynthLogic {
     for (final mergeableLogic in _mergeableLogics) {
       if (Naming.isUnpreferred(mergeableLogic.name)) {
         unpreferredMergeableLogics.add(mergeableLogic);
-      } else if (!uniquifier.isAvailable(mergeableLogic.name)) {
+      } else if (!uniquifier.isAvailable(mergeableLogic.preferredSynthName)) {
         uniquifiableMergeableLogics.add(mergeableLogic);
       } else {
-        return uniquifier.getUniqueName(initialName: mergeableLogic.name);
+        return uniquifier.getUniqueName(
+            initialName: mergeableLogic.preferredSynthName);
       }
     }
 
     // uniquify a preferred, mergeable name, if one exists
     if (uniquifiableMergeableLogics.isNotEmpty) {
       return uniquifier.getUniqueName(
-          initialName: uniquifiableMergeableLogics.first.name);
+          initialName: uniquifiableMergeableLogics.first.preferredSynthName);
     }
 
     // pick an available unpreferred mergeable name, if one exists, otherwise
@@ -167,20 +170,20 @@ class SynthLogic {
     if (unpreferredMergeableLogics.isNotEmpty) {
       return uniquifier.getUniqueName(
           initialName: unpreferredMergeableLogics
-                  .firstWhereOrNull(
-                      (element) => uniquifier.isAvailable(element.name))
-                  ?.name ??
-              unpreferredMergeableLogics.first.name);
+                  .firstWhereOrNull((element) =>
+                      uniquifier.isAvailable(element.preferredSynthName))
+                  ?.preferredSynthName ??
+              unpreferredMergeableLogics.first.preferredSynthName);
     }
 
     // pick anything (unnamed) and uniquify as necessary (considering preferred)
     // no need to prefer an available one here, since it's all unnamed
     return uniquifier.getUniqueName(
         initialName: _unnamedLogics
-                .firstWhereOrNull(
-                    (element) => !Naming.isUnpreferred(element.name))
-                ?.name ??
-            _unnamedLogics.first.name);
+                .firstWhereOrNull((element) =>
+                    !Naming.isUnpreferred(element.preferredSynthName))
+                ?.preferredSynthName ??
+            _unnamedLogics.first.preferredSynthName);
   }
 
   /// Creates an instance to represent [initialLogic] and any that merge
@@ -192,12 +195,14 @@ class SynthLogic {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
 
-  /// Returns the [SynthLogic] that should be *removed*.
-  static SynthLogic? tryMerge(SynthLogic a, SynthLogic b) {
+  /// Returns `null` if the merge did not occur, and a pair of the `removed` and
+  /// `kept` [SynthLogic]s otherwise.
+  static ({SynthLogic removed, SynthLogic kept})? tryMerge(
+      SynthLogic a, SynthLogic b) {
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
-      return b;
+      return (removed: b, kept: a);
     }
 
     if (!a.mergeable && !b.mergeable) {
@@ -211,10 +216,10 @@ class SynthLogic {
 
     if (b.mergeable) {
       a.adopt(b);
-      return b;
+      return (removed: b, kept: a);
     } else {
       b.adopt(a);
-      return a;
+      return (removed: a, kept: b);
     }
   }
 
@@ -271,7 +276,7 @@ class SynthLogic {
 
   @override
   String toString() => '${_name == null ? 'null' : '"$name"'}, '
-      'logics contained: ${logics.map((e) => e.name).toList()}';
+      'logics contained: ${logics.map((e) => e.preferredSynthName).toList()}';
 
   /// Provides a definition for a range in SV from a width.
   static String _widthToRangeDef(int width, {bool forceRange = false}) {
@@ -359,4 +364,18 @@ class SynthLogicArrayElement extends SynthLogic {
   String toString() => '${_name == null ? 'null' : '"$name"'},'
       ' parentArray=($parentArray), element ${logic.arrayIndex}, logic: $logic'
       ' logics contained: ${logics.map((e) => e.name).toList()}';
+}
+
+extension on Logic {
+  /// Returns the preferred name for this [Logic] while generating in the synth
+  /// stack.
+  String get preferredSynthName => naming == Naming.reserved
+      // if reserved, keep the exact name
+      ? name
+      : isArrayMember
+          // arrays nicely name their elements already
+          ? name
+          // sanitize to remove any `.` in struct names
+          // the base `name` will be returned if not a structure.
+          : Sanitizer.sanitizeSV(structureName);
 }

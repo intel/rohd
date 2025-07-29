@@ -629,10 +629,10 @@ class SynthModuleDefinition {
         assert(dst != src,
             'No circular assignment allowed between $dst and $src.');
 
-        final mergedAway = SynthLogic.tryMerge(dst, src);
+        final mergeResults = SynthLogic.tryMerge(dst, src);
 
-        if (mergedAway != null) {
-          final kept = mergedAway == dst ? src : dst;
+        if (mergeResults != null) {
+          final (removed: mergedAway, kept: kept) = mergeResults;
 
           final foundInternal = internalSignals.remove(mergedAway);
           if (!foundInternal) {

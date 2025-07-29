@@ -137,6 +137,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     });
 
+    // partial assignments are a special case, count as a usage
+    for (final partialAssignment
+        in assignments.whereType<PartialSynthAssignment>()) {
+      singleUseSignals.remove(partialAssignment.src);
+    }
+
     final singleUsageInlineableSubmoduleInstantiations =
         inlineableSubmoduleInstantiations.where((subModuleInstantiation) {
       // inlineable modules have only 1 result signal

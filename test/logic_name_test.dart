@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_test.dart
@@ -93,6 +93,19 @@ class BusSubsetNaming extends Module {
   }
 }
 
+class BadlyNamedIntermediateSignalModule extends Module {
+  BadlyNamedIntermediateSignalModule(Logic a) {
+    a = addInput('a', a);
+
+    final intermediate = Logic(name: '*wow&^(*&^)');
+
+    intermediate <= ~a;
+
+    addOutput('b') <= ~intermediate;
+    addOutput('c') <= intermediate;
+  }
+}
+
 class DrivenOutputModule extends Module {
   Logic get x => output('x');
   DrivenOutputModule(Logic? toDrive) {
@@ -122,6 +135,35 @@ class NameCollisionArrayTop extends Module {
   NameCollisionArrayTop() {
     addOutput('o') <=
         ModWithNameCollisionArrayPorts(LogicArray([3, 1], 1), Logic()).o;
+  }
+}
+
+class VariousNamingStruct extends LogicStructure {
+  VariousNamingStruct({super.name = 'various_naming_struct'})
+      : super([
+          Logic(name: 'renameable', naming: Naming.renameable),
+          Logic(name: 'reserved_$name', naming: Naming.reserved),
+          Logic(name: 'mergeable', naming: Naming.mergeable),
+          Logic(name: 'unnamed', naming: Naming.unnamed),
+          MyStruct(name: 'my_sub_struct'),
+        ]);
+
+  @override
+  VariousNamingStruct clone({String? name}) => VariousNamingStruct(name: name);
+}
+
+class StructElementNamingModule extends Module {
+  StructElementNamingModule(VariousNamingStruct inp) {
+    inp = addTypedInput('inp', inp);
+    final outp = addTypedOutput('outp', inp.clone);
+
+    final intermediate = inp.clone(name: 'intermediate');
+
+    for (var i = 0; i < inp.elements.length; i++) {
+      intermediate.elements[i] <= ~inp.elements[i] ^ outp.elements[i];
+    }
+
+    outp <= inp;
   }
 }
 
@@ -229,6 +271,48 @@ void main() {
         contains('submod(.portA_2(portA_2),.portA(portA),'
             '.o(o),'
             '.portB_1(portB_1),.portB(portB))'));
+  });
+
+  test('badly named intermediate signal sanitization', () async {
+    final dut = BadlyNamedIntermediateSignalModule(Logic());
+
+    await dut.build();
+
+    final sv = dut.generateSynth();
+
+    expect(sv, contains('_wow_______'));
+  });
+
+  test('struct elements contain their parent names', () async {
+    final mod = StructElementNamingModule(VariousNamingStruct());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('assign outp[0] = outp_renameable;'));
+    expect(sv, contains('assign outp[1] = reserved_outp;'));
+    expect(sv, contains('assign outp[2] = outp_mergeable;'));
+    expect(sv, contains('assign outp[4] = outp_my_sub_struct_ready;'));
+    expect(sv, contains('assign outp[5] = outp_my_sub_struct_valid;'));
+    expect(sv, contains('assign inp_renameable = inp[0];'));
+    expect(sv, contains('assign reserved_inp = inp[1];'));
+    expect(sv, contains('assign outp_mergeable = inp[2];'));
+    expect(sv, contains('assign inp_my_sub_struct_ready = inp[4];'));
+    expect(sv, contains('assign inp_my_sub_struct_valid = inp[5];'));
+    expect(
+        sv,
+        contains('assign intermediate_renameable ='
+            ' (~inp_renameable) ^ outp_renameable;'));
+    expect(
+        sv,
+        contains('assign reserved_intermediate ='
+            ' (~reserved_inp) ^ reserved_outp;'));
+    expect(
+        sv,
+        contains('assign intermediate_mergeable ='
+            ' (~outp_mergeable) ^ outp_mergeable;'));
+    expect(sv, contains('intermediate_my_sub_struct_ready'));
+    expect(sv, contains('intermediate_my_sub_struct_valid'));
   });
 
   group('clone', () {
