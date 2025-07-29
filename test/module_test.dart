@@ -335,7 +335,10 @@ void main() {
 
       final sv = mod.generateSynth();
 
-      expect(sv, contains('net_connect (o, ({floaty_mc_float_face,a}));'));
+      expect(
+          sv,
+          contains('net_connect (o, '
+              '({simple_logic_structure_floaty_mc_float_face,a}));'));
     });
   });
 
