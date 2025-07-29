@@ -17,7 +17,7 @@ Assignments between `LogicNet`s use the same `<=` or `gets` API as normal `Logic
 
 `Module`s support `inOut` ports via `addInOut`, which return objects of type `LogicNet`.  There are also equivalent versions for `LogicArray`s.  The API for `inOut` is similar to that of `input` -- there's an internal version to be used within a module, and the external version used for outside of the module.
 
-There is also an `addTypedInOut`, which has a similar API as the other "types" APIs for port creation.
+There is also an `addTypedInOut`, which has a similar API as the other "typed" APIs for port creation.
 
 ## Tri-state Buffers
 
