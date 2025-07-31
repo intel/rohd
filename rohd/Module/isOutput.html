@@ -78,7 +78,7 @@ but is not itself a port, this will return false.</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">bool isOutput(Logic signal) =&gt;
     _outputs[signal.name] == signal ||
-    (signal.isArrayMember &amp;&amp; isOutput(signal.parentStructure!));</code></pre>
+    (signal.parentStructure != null &amp;&amp; isOutput(signal.parentStructure!));</code></pre>
 </section>
 
 

@@ -58,6 +58,11 @@
     
       <section class="multi-line-signature">
         
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/override-constant.html">override</a></li>
+    </ol>
+  </div>
         <a href="../../rohd/Logic-class.html">Logic</a>
         <span class="name ">packed</span>
         <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
@@ -65,13 +70,14 @@
       </section>
       
 <section class="desc markdown">
-  <p>Packs all <a href="../../rohd/LogicStructure/elements.html">elements</a> into one flattened bus.</p>
+  <p>Packs all <a href="../../rohd/LogicStructure/elements.html">elements</a> into one flattened <a href="../../rohd/Logic-class.html">Logic</a> bus.</p>
 </section>
 
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">late final Logic packed = elements
+  <pre class="language-dart"><code class="language-dart">@override
+late final Logic packed = elements
     .map((e) {
       if (e is LogicStructure) {
         return e.packed;
@@ -80,7 +86,8 @@
       }
     })
     .toList(growable: false)
-    .rswizzle();</code></pre>
+    .rswizzle()
+    .named(name, naming: Naming.mergeable);</code></pre>
 </section>
 
 

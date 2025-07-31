@@ -99,27 +99,28 @@ in the generated SystemVerilog.</p>
   final newWidth = (endIndex - startIndex).abs() + 1;
 
   if (_isNet) {
-    _original = addInOut(_originalName, bus, width: bus.width);
-    subset = LogicNet(width: newWidth);
+    original = addInOut(_originalName, bus, width: bus.width);
+    subset =
+        LogicNet(width: newWidth, name: _subsetName, naming: Naming.unnamed);
     final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
     if (startIndex &gt; endIndex) {
       &#47;&#47; reverse case
       for (var i = 0; i &lt; newWidth; i++) {
         internalSubset.quietlyMergeSubsetTo(
-          _original[startIndex - i] as LogicNet,
+          original[startIndex - i] as LogicNet,
           start: endIndex + i,
         );
       }
     } else {
       &#47;&#47; normal case
-      (_original as LogicNet).quietlyMergeSubsetTo(
+      (original as LogicNet).quietlyMergeSubsetTo(
         internalSubset,
         start: startIndex,
       );
     }
   } else {
-    _original = addInput(_originalName, bus, width: bus.width);
+    original = addInput(_originalName, bus, width: bus.width);
     subset = addOutput(_subsetName, width: newWidth);
 
     &#47;&#47; so that people can&#39;t do a slice assign, not (yet?) implemented

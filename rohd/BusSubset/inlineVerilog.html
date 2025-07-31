@@ -97,7 +97,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
       &#39;Inputs to bus swizzle cannot contain any expressions.&#39;);
 
   &#47;&#47; When, input width is 1, ignore startIndex and endIndex
-  if (_original.width == 1) {
+  if (original.width == 1) {
     return a;
   }
 

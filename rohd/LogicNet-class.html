@@ -352,6 +352,18 @@ value at the end of a <a href="../rohd/Simulator-class.html">Simulator</a> tick 
 
 </dd>
 
+        <dt id="packed" class="property inherited">
+  <span class="name"><a href="../rohd/Logic/packed.html">packed</a></span>
+  <span class="signature">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+  
+
+</dt>
+<dd class="inherited">
+  Returns a simple flattened <a href="../rohd/Logic-class.html">Logic</a>.
+  <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
         <dt id="parentModule" class="property inherited">
   <span class="name"><a href="../rohd/Logic/parentModule.html">parentModule</a></span>
   <span class="signature">&#8596; <a href="../rohd/Module-class.html">Module</a>?</span>
@@ -565,17 +577,17 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dd>
 
-        <dt id="clone" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/clone.html">clone</a></span><span class="signature">(<wbr>{<span class="parameter" id="clone-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})
-    <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
+        <dt id="clone" class="callable">
+  <span class="name"><a href="../rohd/LogicNet/clone.html">clone</a></span><span class="signature">(<wbr>{<span class="parameter" id="clone-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">name</span></span>})
+    <span class="returntype parameter">&#8594; <a href="../rohd/LogicNet-class.html">LogicNet</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Makes a copy of <code>this</code>, optionally with the specified <code>name</code>, but the same
 <a href="../rohd/Logic/width.html">width</a>.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -798,7 +810,7 @@ conditional (<code>&lt;</code>) assignment.
 
 </dt>
 <dd class="inherited">
-  Makes a <a href="../rohd/Logic/clone.html">clone</a> with the provided <code>name</code> and optionally <code>naming</code>, then
+  Makes a new <a href="../rohd/Logic-class.html">Logic</a> with the provided <code>name</code> and optionally <code>naming</code>, then
 assigns it to be driven by <code>this</code>.
   <div class="features"><span class="feature">inherited</span></div>
 

@@ -60,6 +60,7 @@
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.17.0/meta/mustBeOverridden-constant.html">mustBeOverridden</a></li>
     </ol>
   </div>
 <span class="returntype"><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></span>
@@ -73,6 +74,8 @@
 <section class="desc markdown">
   <p>Creates a new <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> with the same structure as <code>this</code> and
 <a href="../../rohd/LogicStructure/clone.html">clone</a>d <a href="../../rohd/LogicStructure/elements.html">elements</a>, optionally with the provided <code>name</code>.</p>
+<p>It is expected that any implementation will override this in a way that
+returns the same type as itself.</p>
 </section>
 
 
@@ -80,6 +83,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
+@mustBeOverridden
 LogicStructure clone({String? name}) =&gt; _clone(name: name);</code></pre>
 </section>
 

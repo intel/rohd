@@ -71,8 +71,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">PortTypeException(Logic port, [String additionalMessage = &#39;&#39;])
-    : super(&#39;Port ${port.name} has the wrong type.&#39;
-          &#39; $additionalMessage&#39;);</code></pre>
+    : this.forIntendedName(port.name, additionalMessage);</code></pre>
 </section>
 
 

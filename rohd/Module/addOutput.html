@@ -67,8 +67,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Registers an output to this <a href="../../rohd/Module-class.html">Module</a> and returns an output port that
-can be driven.</p>
+  <p>Registers an <a href="../../rohd/Module/output.html">output</a> to this <a href="../../rohd/Module-class.html">Module</a> and returns an <a href="../../rohd/Module/output.html">output</a> port that
+can be driven by this <a href="../../rohd/Module-class.html">Module</a> or consumed outside of it.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/output.html">output</a>.</p>
 </section>
 
@@ -80,7 +80,6 @@ can be driven.</p>
   _checkForSafePortName(name);
 
   final outPort = Logic(name: name, width: width, naming: Naming.reserved)
-    &#47;&#47; ignore: invalid_use_of_protected_member
     ..parentModule = this;
 
   _outputs[name] = outPort;

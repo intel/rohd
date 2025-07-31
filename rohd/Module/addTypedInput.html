@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the addTypedInput method from the Module class, for the Dart programming language.">
+  <title>addTypedInput method - Module class - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/Module-class.html">Module</a></li>
+    <li class="self-crumb">addTypedInput&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; method</li>
+  </ol>
+  <div class="self-name">addTypedInput</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;Module-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">addTypedInput&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype">LogicType</span>
+<span class="name ">addTypedInput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Registers a signal as an <a href="../../rohd/Module/input.html">input</a> to this <a href="../../rohd/Module-class.html">Module</a> and returns an <a href="../../rohd/Module/input.html">input</a>
+port that can be consumed. The type of the port will be <code>LogicType</code> and
+constructed via <a href="../../rohd/Logic/clone.html">Logic.clone</a>, so it is required that the <code>source</code>
+implements clone functionality that matches the type and properly updates
+the <a href="../../rohd/Logic/name.html">Logic.name</a> as well.</p>
+<p>This is a good way to construct <a href="../../rohd/Module/input.html">input</a>s that have matching widths or
+dimensions to their <code>source</code> signal, or to make a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> an
+<a href="../../rohd/Module/input.html">input</a>. You can use this on a <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicArray-class.html">LogicArray</a>, or <a href="../../rohd/LogicStructure-class.html">LogicStructure</a>.</p>
+<p>The <code>source</code> cannot be or contain any <a href="../../rohd/LogicNet-class.html">LogicNet</a>s. If <code>source</code> is a
+<a href="../../rohd/Const-class.html">Const</a> (or is a <a href="../../rohd/LogicStructure-class.html">LogicStructure</a> that includes a <a href="../../rohd/Const-class.html">Const</a>), the
+<code>LogicType</code> must be set to <a href="../../rohd/Logic-class.html">Logic</a>, since <a href="../../rohd/Const-class.html">Const</a>s cannot be driven and
+are not suitable as ports.</p>
+<p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a> and should
+only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
+<a href="../../rohd/Module/inputSource.html">inputSource</a>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">LogicType addTypedInput&lt;LogicType extends Logic&gt;(
+    String name, LogicType source) {
+  _checkForSafePortName(name);
+
+  &#47;&#47; ignore: parameter_assignments
+  source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
+
+  if (source.isNet || (source is LogicStructure &amp;&amp; source.hasNets)) {
+    throw PortTypeException(source, &#39;Typed inputs cannot have nets in them.&#39;);
+  }
+
+  final inPort = (source.clone(name: name) as LogicType)..gets(source);
+
+  if (inPort.name != name) {
+    throw PortTypeException.forIntendedName(name,
+        &#39;The `clone` method for $source failed to update the signal name.&#39;);
+  }
+
+  if (inPort is LogicStructure) {
+    inPort.setAllParentModule(this);
+  } else {
+    inPort.parentModule = this;
+  }
+
+  _inputs[name] = inPort;
+
+  _inputSources[name] = source;
+
+  return inPort;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/Module-class.html">Module</a></li>
+    <li class="self-crumb">addTypedInput&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt; method</li>
+</ol>
+
+    <h5>Module class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.5
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

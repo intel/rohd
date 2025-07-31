@@ -68,8 +68,8 @@
     </section>
     
 <section class="desc markdown">
-  <p>Registers a signal as an input to this <a href="../../rohd/Module-class.html">Module</a> and returns an input port
-that can be consumed.</p>
+  <p>Registers a signal as an <a href="../../rohd/Module/input.html">input</a> to this <a href="../../rohd/Module-class.html">Module</a> and returns an <a href="../../rohd/Module/input.html">input</a>
+port that can be consumed.</p>
 <p>The return value is the same as what is returned by <a href="../../rohd/Module/input.html">input</a> and should
 only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
 <a href="../../rohd/Module/inputSource.html">inputSource</a>.</p>
@@ -92,7 +92,6 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
 
   final inPort = Logic(name: name, width: width, naming: Naming.reserved)
     ..gets(source)
-    &#47;&#47; ignore: invalid_use_of_protected_member
     ..parentModule = this;
 
   _inputs[name] = inPort;

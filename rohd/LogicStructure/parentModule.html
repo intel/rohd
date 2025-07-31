@@ -97,7 +97,7 @@ Module? get parentModule =&gt; _parentModule;</code></pre>
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://pub.dev/documentation/meta/1.17.0/meta/protected-constant.html">protected</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.17.0/meta/internal-constant.html">internal</a></li>
         <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
@@ -117,7 +117,7 @@ optimize search.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">@protected
+  <pre class="language-dart"><code class="language-dart">@internal
 @override
 set parentModule(Module? newParentModule) {
   assert(_parentModule == null || _parentModule == newParentModule,

@@ -70,7 +70,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>Registers and returns an input <a href="../../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../../rohd/Module-class.html">Module</a> with
+  <p>Registers and returns an <a href="../../rohd/Module/input.html">input</a> <a href="../../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../../rohd/Module-class.html">Module</a> with
 the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
 named <code>name</code>.</p>
 <p>This is very similar to <a href="../../rohd/Module/addInput.html">addInput</a>, except for <a href="../../rohd/LogicArray-class.html">LogicArray</a>s.</p>
@@ -99,7 +99,6 @@ named <code>name</code>.</p>
     naming: Naming.reserved,
   )
     ..gets(source)
-    &#47;&#47; ignore: invalid_use_of_protected_member
     ..setAllParentModule(this);
 
   _inputs[name] = inArr;

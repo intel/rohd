@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
-    <li><a href="../../rohd/Interface-class.html">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></a></li>
+    <li><a href="../../rohd/Interface-class.html">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">connectIO method</li>
   </ol>
   <div class="self-name">connectIO</div>
@@ -82,8 +82,8 @@ output connectivity.  For example:</p>
   srcIntf = MyIntf(args)..connectIO(this, srcIntf, inputTags: ... );
 }
 </code></pre>
-<p>All signals in the interface with specified <code>TagType</code> will be connected to
-the <a href="../../rohd/Module-class.html">Module</a> via <a href="../../rohd/Module/addInput.html">Module.addInput</a>, <a href="../../rohd/Module/addOutput.html">Module.addOutput</a>, or
+<p>All signals in the interface with specified <code>TagType</code> will be connected
+to the <a href="../../rohd/Module-class.html">Module</a> via <a href="../../rohd/Module/addInput.html">Module.addInput</a>, <a href="../../rohd/Module/addOutput.html">Module.addOutput</a>, or
 <a href="../../rohd/Module/addInOut.html">Module.addInOut</a> based on <code>inputTags</code>, <code>outputTags</code>, and <code>inOutTags</code>,
 respectively. <code>uniquify</code> can be used to uniquifiy port names by
 manipulating the original name of the port.</p>
@@ -182,7 +182,7 @@ respectively, no inputs, outputs, or inOuts will be added.</p>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
-    <li><a href="../../rohd/Interface-class.html">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></a></li>
+    <li><a href="../../rohd/Interface-class.html">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType extends Enum</span>&gt;</span></a></li>
     <li class="self-crumb">connectIO method</li>
 </ol>
 

@@ -344,8 +344,8 @@ unique name within its scope.
 
 </dt>
 <dd>
-  Registers a signal as an inOut to this <a href="../rohd/Module-class.html">Module</a> and returns an inOut port
-that can be consumed.
+  Registers a signal as an <a href="../rohd/Module/inOut.html">inOut</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/inOut.html">inOut</a>
+port that can be consumed inside this <a href="../rohd/Module-class.html">Module</a>.
   
 
 </dd>
@@ -358,7 +358,7 @@ that can be consumed.
 
 </dt>
 <dd>
-  Registers and returns an inOut <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
+  Registers and returns an <a href="../rohd/Module/inOut.html">inOut</a> <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
 the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
 named <code>name</code>.
   
@@ -373,8 +373,8 @@ named <code>name</code>.
 
 </dt>
 <dd>
-  Registers a signal as an input to this <a href="../rohd/Module-class.html">Module</a> and returns an input port
-that can be consumed.
+  Registers a signal as an <a href="../rohd/Module/input.html">input</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/input.html">input</a>
+port that can be consumed.
   
 
 </dd>
@@ -387,9 +387,23 @@ that can be consumed.
 
 </dt>
 <dd>
-  Registers and returns an input <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
+  Registers and returns an <a href="../rohd/Module/input.html">input</a> <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
 the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
 named <code>name</code>.
+  
+
+</dd>
+
+        <dt id="addInterfacePorts" class="callable">
+  <span class="name"><a href="../rohd/Module/addInterfacePorts.html">addInterfacePorts</a></span><span class="signature">&lt;<wbr><span class="type-parameter">InterfaceType extends <a href="../rohd/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span>, <span class="type-parameter">TagType extends <a href="https://api.dart.dev/stable/3.6.2/dart-core/Enum-class.html">Enum</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addInterfacePorts-param-source"><span class="type-annotation">InterfaceType</span> <span class="parameter-name">source</span>, {</span><span class="parameter" id="addInterfacePorts-param-inputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span><span class="parameter" id="addInterfacePorts-param-outputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span><span class="parameter" id="addInterfacePorts-param-inOutTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span>?</span> <span class="parameter-name">inOutTags</span>, </span><span class="parameter" id="addInterfacePorts-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)?</span>})
+    <span class="returntype parameter">&#8594; InterfaceType</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Connects the <code>source</code> to this <a href="../rohd/Module-class.html">Module</a> using <a href="../rohd/Interface/connectIO.html">Interface.connectIO</a> and
+returns a copy of the <code>source</code> that can be used within this module.
   
 
 </dd>
@@ -402,8 +416,8 @@ named <code>name</code>.
 
 </dt>
 <dd>
-  Registers an output to this <a href="../rohd/Module-class.html">Module</a> and returns an output port that
-can be driven.
+  Registers an <a href="../rohd/Module/output.html">output</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/output.html">output</a> port that
+can be driven by this <a href="../rohd/Module-class.html">Module</a> or consumed outside of it.
   
 
 </dd>
@@ -416,9 +430,73 @@ can be driven.
 
 </dt>
 <dd>
-  Registers and returns an output <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
+  Registers and returns an <a href="../rohd/Module/output.html">output</a> <a href="../rohd/LogicArray-class.html">LogicArray</a> port to this <a href="../rohd/Module-class.html">Module</a> with
 the specified <code>dimensions</code>, <code>elementWidth</code>, and <code>numUnpackedDimensions</code>
 named <code>name</code>.
+  
+
+</dd>
+
+        <dt id="addPairInterfacePorts" class="callable">
+  <span class="name"><a href="../rohd/Module/addPairInterfacePorts.html">addPairInterfacePorts</a></span><span class="signature">&lt;<wbr><span class="type-parameter">InterfaceType extends <a href="../rohd/PairInterface-class.html">PairInterface</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addPairInterfacePorts-param-source"><span class="type-annotation">InterfaceType</span> <span class="parameter-name">source</span>, </span><span class="parameter" id="addPairInterfacePorts-param-role"><span class="type-annotation"><a href="../rohd/PairRole.html">PairRole</a></span> <span class="parameter-name">role</span>, {</span><span class="parameter" id="addPairInterfacePorts-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)?</span>})
+    <span class="returntype parameter">&#8594; InterfaceType</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Connects the <code>source</code> to this <a href="../rohd/Module-class.html">Module</a> using <a href="../rohd/PairInterface/pairConnectIO.html">PairInterface.pairConnectIO</a>
+and returns a copy of the <code>source</code> that can be used within this module.
+  
+
+</dd>
+
+        <dt id="addTypedInOut" class="callable">
+  <span class="name"><a href="../rohd/Module/addTypedInOut.html">addTypedInOut</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addTypedInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addTypedInOut-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span>)
+    <span class="returntype parameter">&#8594; LogicType</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Registers a signal as an <a href="../rohd/Module/inOut.html">inOut</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/inOut.html">inOut</a>
+port that can be consumed inside this <a href="../rohd/Module-class.html">Module</a>. The type of the port will
+be <code>LogicType</code> and constructed via <a href="../rohd/Logic/clone.html">Logic.clone</a>, so it is required that
+the <code>source</code> implements clone functionality that matches the type and
+properly updates the <a href="../rohd/Logic/name.html">Logic.name</a> as well.
+  
+
+</dd>
+
+        <dt id="addTypedInput" class="callable">
+  <span class="name"><a href="../rohd/Module/addTypedInput.html">addTypedInput</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span>)
+    <span class="returntype parameter">&#8594; LogicType</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Registers a signal as an <a href="../rohd/Module/input.html">input</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/input.html">input</a>
+port that can be consumed. The type of the port will be <code>LogicType</code> and
+constructed via <a href="../rohd/Logic/clone.html">Logic.clone</a>, so it is required that the <code>source</code>
+implements clone functionality that matches the type and properly updates
+the <a href="../rohd/Logic/name.html">Logic.name</a> as well.
+  
+
+</dd>
+
+        <dt id="addTypedOutput" class="callable">
+  <span class="name"><a href="../rohd/Module/addTypedOutput.html">addTypedOutput</a></span><span class="signature">&lt;<wbr><span class="type-parameter">LogicType extends <a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span><span class="signature">(<wbr><span class="parameter" id="addTypedOutput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span><span class="parameter" id="addTypedOutput-param-logicGenerator"><span class="type-annotation">LogicType</span> <span class="parameter-name">logicGenerator</span>({<span class="parameter" id="param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span></span>})</span>)
+    <span class="returntype parameter">&#8594; LogicType</span>
+  </span>
+  
+
+</dt>
+<dd>
+  Registers an <a href="../rohd/Module/output.html">output</a> to this <a href="../rohd/Module-class.html">Module</a> and returns an <a href="../rohd/Module/output.html">output</a> port that
+can be driven by this <a href="../rohd/Module-class.html">Module</a> or consumed outside of it. The type of the
+port will be <code>LogicType</code> and constructed via <code>logicGenerator</code>, which must
+properly update the <code>name</code> of the generated <code>LogicType</code> as well.
   
 
 </dd>

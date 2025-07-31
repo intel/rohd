@@ -60,6 +60,7 @@
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://pub.dev/documentation/meta/1.17.0/meta/mustBeOverridden-constant.html">mustBeOverridden</a></li>
     </ol>
   </div>
 <span class="returntype"><a href="../../rohd/LogicArray-class.html">LogicArray</a></span>
@@ -74,6 +75,8 @@
   <p>Creates a new <a href="../../rohd/LogicArray-class.html">LogicArray</a> which has the same <a href="../../rohd/LogicArray/dimensions.html">dimensions</a>,
 <a href="../../rohd/LogicArray/elementWidth.html">elementWidth</a>, <a href="../../rohd/LogicArray/numUnpackedDimensions.html">numUnpackedDimensions</a>, and <a href="../../rohd/LogicArray/isNet.html">isNet</a> as <code>this</code>.</p>
 <p>If no new <code>name</code> is specified, then it will also have the same name.</p>
+<p>It is expected that any implementation will override this in a way that
+returns the same type as itself.</p>
 </section>
 
 
@@ -81,6 +84,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
+@mustBeOverridden
 LogicArray clone({String? name}) =&gt; _clone(name: name);</code></pre>
 </section>
 

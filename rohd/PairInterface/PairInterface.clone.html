@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
     <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
-    <li class="self-crumb">PairInterface.clone constructor</li>
+    <li class="self-crumb"><span class="deprecated">PairInterface.clone</span> constructor</li>
   </ol>
   <div class="self-name">PairInterface.clone</div>
   <form class="search navbar-right" role="search">
@@ -57,7 +57,12 @@
 
     <section class="multi-line-signature">
       
-      <span class="name ">PairInterface.clone</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="clone-param-otherInterface"><span class="type-annotation"><a href="../../rohd/PairInterface-class.html">PairInterface</a></span> <span class="parameter-name">otherInterface</span></span></li>
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `clone()` on an instance instead&#39;)</li>
+    </ol>
+  </div>
+      <span class="name deprecated">PairInterface.clone</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="clone-param-otherInterface"><span class="type-annotation"><a href="../../rohd/PairInterface-class.html">PairInterface</a></span> <span class="parameter-name">otherInterface</span></span></li>
 </ol>)
     </section>
     
@@ -70,7 +75,8 @@ characteristics.</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">PairInterface.clone(PairInterface otherInterface)
+  <pre class="language-dart"><code class="language-dart">@Deprecated(&#39;Use `clone()` on an instance instead&#39;)
+PairInterface.clone(PairInterface otherInterface)
     : this(
         portsFromConsumer:
             _getMatchPorts(otherInterface, PairDirection.fromConsumer),
@@ -97,7 +103,7 @@ characteristics.</p>
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/rohd-library.html">rohd</a></li>
     <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
-    <li class="self-crumb">PairInterface.clone constructor</li>
+    <li class="self-crumb"><span class="deprecated">PairInterface.clone</span> constructor</li>
 </ol>
 
     <h5>PairInterface class</h5>

@@ -26,7 +26,7 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd.dart</a></li>
-    <li class="self-crumb">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span> class</li>
+    <li class="self-crumb">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType extends <a href="https://api.dart.dev/stable/3.6.2/dart-core/Enum-class.html">Enum</a></span>&gt;</span> class</li>
   </ol>
   <div class="self-name">Interface</div>
   <form class="search navbar-right" role="search">
@@ -51,22 +51,22 @@
     data-above-sidebar="rohd&#47;rohd-library-sidebar.html"
     data-below-sidebar="rohd&#47;Interface-class-sidebar.html">
     <div>
-<h1><span class="kind-class">Interface&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span> class 
+<h1><span class="kind-class">Interface&lt;<wbr><span class="type-parameter">TagType extends Enum</span>&gt;</span> class 
  
 </h1></div>
 
     
 <section class="desc markdown">
   <p>Represents a logical interface to a <a href="../rohd/Module-class.html">Module</a>.</p>
-<p>Interfaces make it easier to define port connections of a <a href="../rohd/Module-class.html">Module</a>
-in a reusable way.  The <code>TagType</code> allows grouping of port signals
-of the module when connecting at a <a href="../rohd/Module-class.html">Module</a> level.</p>
-<p>When connecting an <a href="../rohd/Interface-class.html">Interface</a> to a <a href="../rohd/Module-class.html">Module</a>, you should always create
-a new instance of the <a href="../rohd/Interface-class.html">Interface</a> so you don't modify the one being
-passed in through the constructor.  Modifying the same <a href="../rohd/Interface-class.html">Interface</a> as
-was passed would have negative consequences if multiple <a href="../rohd/Module-class.html">Module</a>s
-were consuming the same <a href="../rohd/Interface-class.html">Interface</a>, and also breaks the rules for
-<a href="../rohd/Module-class.html">Module</a> input and output connectivity.</p>
+<p>Interfaces make it easier to define port connections of a <a href="../rohd/Module-class.html">Module</a> in a
+reusable way.  The <code>TagType</code> allows grouping of port signals of the module
+when connecting at a <a href="../rohd/Module-class.html">Module</a> level.</p>
+<p>When connecting an <a href="../rohd/Interface-class.html">Interface</a> to a <a href="../rohd/Module-class.html">Module</a>, you should always create a new
+instance of the <a href="../rohd/Interface-class.html">Interface</a> so you don't modify the one being passed in
+through the constructor.  Modifying the same <a href="../rohd/Interface-class.html">Interface</a> as was passed would
+have negative consequences if multiple <a href="../rohd/Module-class.html">Module</a>s were consuming the same
+<a href="../rohd/Interface-class.html">Interface</a>, and also breaks the rules for <a href="../rohd/Module-class.html">Module</a> input and output
+connectivity.</p>
 </section>
 
 
@@ -153,6 +153,19 @@ of a <a href="../rohd/Logic-class.html">Logic</a>.
       id="instance-methods">
     <h2>Methods</h2>
     <dl class="callables">
+        <dt id="clone" class="callable">
+  <span class="name"><a href="../rohd/Interface/clone.html">clone</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="../rohd/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Creates a new <a href="../rohd/Interface-class.html">Interface</a> with the same ports as <code>this</code>.
+  
+
+</dd>
+
         <dt id="conditionalDriveOther" class="callable">
   <span class="name"><a href="../rohd/Interface/conditionalDriveOther.html">conditionalDriveOther</a></span><span class="signature">(<wbr><span class="parameter" id="conditionalDriveOther-param-other"><span class="type-annotation"><a href="../rohd/Interface-class.html">Interface</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span> <span class="parameter-name">other</span>, </span><span class="parameter" id="conditionalDriveOther-param-tags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span></span> <span class="parameter-name">tags</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Conditional-class.html">Conditional</a></span>
@@ -339,7 +352,7 @@ of <code>tags</code>.
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
     <li><a href="../rohd/rohd-library.html">rohd</a></li>
-    <li class="self-crumb">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType</span>&gt;</span> class</li>
+    <li class="self-crumb">Interface<span class="signature">&lt;<wbr><span class="type-parameter">TagType extends <a href="https://api.dart.dev/stable/3.6.2/dart-core/Enum-class.html">Enum</a></span>&gt;</span> class</li>
 </ol>
 
     <h5>rohd library</h5>
