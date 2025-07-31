@@ -911,11 +911,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
           lastPos = pos;
         }
         return logicValList.rswizzle();
-      } else {
-        throw LogicValueConstructionException(
-            'Invalid LogicValue string $valueString');
       }
     }
+    throw LogicValueConstructionException(
+        'Invalid LogicValue string $valueString');
     return LogicValue.zero;
   }
 
