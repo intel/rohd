@@ -152,8 +152,15 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      assignmentLines
-          .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+      var sliceString = '';
+      if (assignment is PartialSynthAssignment) {
+        sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
+            ? '[${assignment.dstUpperIndex}]'
+            : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';
+      }
+
+      assignmentLines.add('assign ${assignment.dst.name}$sliceString'
+          ' = ${assignment.src.name};');
     }
     return assignmentLines.join('\n');
   }

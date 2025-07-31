@@ -108,8 +108,12 @@ class SubModWithArray extends Module {
 }
 
 class SimpleLogicStructure extends LogicStructure {
-  SimpleLogicStructure([Logic? a, Logic? b])
-      : super([a ?? Logic(), b ?? Logic()], name: 'simple_logic_structure');
+  SimpleLogicStructure(
+      {Logic? a, Logic? b, super.name = 'simple_logic_structure'})
+      : super([a ?? Logic(), b ?? Logic()]);
+
+  @override
+  SimpleLogicStructure clone({String? name}) => SimpleLogicStructure();
 }
 
 class StructWithOutputAsElementMod extends Module {
@@ -121,8 +125,8 @@ class StructWithOutputAsElementMod extends Module {
     b = addInput('b', b);
 
     final s = SimpleLogicStructure(
-      mux(a, Const(0), Const(1)),
-      Const(1),
+      a: mux(a, Const(0), Const(1)),
+      b: Const(1),
     );
 
     final o_ = addOutput('o', width: s.width);
@@ -154,8 +158,8 @@ class StructWithInputAsElementMod extends Module {
     b = addInput('b', b);
 
     final s = SimpleLogicStructure(
-      a,
-      Const(1),
+      a: a,
+      b: Const(1),
     );
 
     final o_ = addOutput('o', width: s.width);
@@ -188,8 +192,8 @@ class StructWithInoutAsElementMod extends Module {
     b = addInOut('b', b);
 
     final s = SimpleLogicStructure(
-      a,
-      LogicNet(name: 'floaty_mc_float_face'), // floating net
+      a: a,
+      b: LogicNet(name: 'floaty_mc_float_face'), // floating net
     );
 
     addInOut('o', o, width: s.width) <= s;
@@ -331,7 +335,10 @@ void main() {
 
       final sv = mod.generateSynth();
 
-      expect(sv, contains('net_connect (o, ({floaty_mc_float_face,a}));'));
+      expect(
+          sv,
+          contains('net_connect (o, '
+              '({simple_logic_structure_floaty_mc_float_face,a}));'));
     });
   });
 

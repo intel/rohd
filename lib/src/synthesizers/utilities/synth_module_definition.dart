@@ -15,6 +15,18 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
+/// A version of [BusSubset] that can be used for slicing on [LogicStructure]
+/// ports.
+class _BusSubsetForStructSlice extends BusSubset {
+  /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
+  /// [LogicStructure] port slicing.
+  _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex);
+
+  // we override this since it's added post-build
+  @override
+  bool get hasBuilt => true;
+}
+
 /// Represents the definition of a module.
 class SynthModuleDefinition {
   /// The [Module] being defined.
@@ -112,11 +124,27 @@ class SynthModuleDefinition {
                         .expressionlessInputs
                         .contains(logic.name)));
 
+        final Naming? namingOverride;
+        if (logic.isPort) {
+          if (logic.parentModule != module) {
+            // this is a submodule port, so it doesn't need to reserve the name
+            namingOverride = Naming.mergeable;
+          } else if (logic.parentStructure == null) {
+            // this is not a sub-element of an array or structure
+            namingOverride = Naming.reserved;
+          } else {
+            // this might be some sub-element that doesn't need a reserved port
+            // name
+            namingOverride = null;
+          }
+        } else {
+          // non-port, don't override the name
+          namingOverride = null;
+        }
+
         newSynth = SynthLogic(
           logic,
-          namingOverride: (logic.isPort && logic.parentModule != module)
-              ? Naming.mergeable
-              : null,
+          namingOverride: namingOverride,
           constNameDisallowed: disallowConstName,
         );
       }
@@ -129,6 +157,64 @@ class SynthModuleDefinition {
   /// A [List] of supporting modules that need to be instantiated within this
   /// definition.
   final List<Module> supportingModules = [];
+
+  /// Takes all the leaf elements of [port] and drives [port] with them, each
+  /// with a partial assignment.
+  ///
+  /// This is intended for use when driving an output of a module from within
+  /// the module, or for driving the input of a sub-module.
+  @protected
+  void _partialAssignStructPort(LogicStructure port) {
+    assert(port is! LogicArray, 'Should only be used on non-array structs');
+
+    final portSynth = _getSynthLogic(port)!;
+
+    var idx = 0;
+    for (final leafElement in port.leafElements) {
+      final leafSynth = _getSynthLogic(leafElement)!;
+      internalSignals.add(leafSynth);
+      assignments.add(PartialSynthAssignment(leafSynth, portSynth,
+          dstUpperIndex: idx + leafElement.width - 1, dstLowerIndex: idx));
+      idx += leafElement.width;
+    }
+  }
+
+  /// Drives all leaf elements of [port] using a (modified) [BusSubset].
+  ///
+  /// This is intended for use when receiving from an input of a module from
+  /// within the module, or for receiving the output of a sub-module.
+  @protected
+  void _subsetReceiveStructPort(LogicStructure port) {
+    final portSynth = _getSynthLogic(port)!;
+
+    var idx = 0;
+    for (final leafElement in port.leafElements) {
+      final leafSynth = _getSynthLogic(leafElement)!;
+      internalSignals.add(leafSynth);
+
+      // this is DISCONNECTED, just a module used for synthesizing
+      final subsetMod = _BusSubsetForStructSlice(
+        (port.isNet ? LogicNet.new : Logic.new)(
+            width: port.width, name: 'DUMMY'),
+        idx,
+        idx + leafElement.width - 1,
+      );
+
+      final ssmi = getSynthSubModuleInstantiation(subsetMod);
+
+      if (port.isNet) {
+        ssmi
+          ..setInOutMapping(subsetMod.subset.name, leafSynth)
+          ..setInOutMapping(subsetMod.original.name, portSynth);
+      } else {
+        ssmi
+          ..setOutputMapping(subsetMod.subset.name, leafSynth)
+          ..setInputMapping(subsetMod.original.name, portSynth);
+      }
+
+      idx += leafElement.width;
+    }
+  }
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
@@ -151,17 +237,33 @@ class SynthModuleDefinition {
       ..addAll(module.inOuts.values);
 
     for (final output in module.outputs.values) {
-      outputs.add(_getSynthLogic(output)!);
+      final outputSynth = _getSynthLogic(output)!;
+      outputs.add(outputSynth);
+
+      if (output is LogicStructure && output is! LogicArray) {
+        _partialAssignStructPort(output);
+      }
     }
 
     // make sure disconnected inputs are included
     for (final input in module.inputs.values) {
-      inputs.add(_getSynthLogic(input)!);
+      final inputSynth = _getSynthLogic(input)!;
+      inputs.add(inputSynth);
+
+      if (input is LogicStructure && input is! LogicArray) {
+        _subsetReceiveStructPort(input);
+      }
     }
 
     // make sure disconnected inouts are included, also
     for (final inOut in module.inOuts.values) {
       inOuts.add(_getSynthLogic(inOut)!);
+
+      if (inOut is LogicStructure && inOut is! LogicArray) {
+        // for nets, we can just use the normal bus subset here in either
+        // direction!
+        _subsetReceiveStructPort(inOut);
+      }
     }
 
     // find any named signals sitting around that don't do anything
@@ -178,6 +280,21 @@ class SynthModuleDefinition {
         ..addAll(subModule.inputs.values)
         ..addAll(subModule.outputs.values)
         ..addAll(subModule.inOuts.values);
+
+      subModule.inputs.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_partialAssignStructPort);
+
+      subModule.outputs.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_subsetReceiveStructPort);
+
+      subModule.inOuts.values
+          .whereType<LogicStructure>()
+          .where((e) => e is! LogicArray)
+          .forEach(_subsetReceiveStructPort);
     }
 
     // search for other modules contained within this module
@@ -197,17 +314,20 @@ class SynthModuleDefinition {
         continue;
       }
 
-      if (receiver is LogicArray) {
+      if (receiver is LogicStructure) {
         logicsToTraverse.addAll(receiver.elements);
       }
 
       if (receiver.isArrayMember) {
+        // don't need to step up to any structure, just arrays
         logicsToTraverse.add(receiver.parentStructure!);
       }
 
       final synthReceiver = _getSynthLogic(receiver)!;
 
       if (receiver is LogicNet) {
+        // only for the leaves, that's why only `LogicNet` and not array/struct
+
         logicsToTraverse.addAll([
           ...receiver.srcConnections,
           ...receiver.dstConnections
@@ -231,12 +351,15 @@ class SynthModuleDefinition {
 
       final receiverIsConstant = driver == null && receiver is Const;
 
+      final receiverParentStructureIsPort =
+          receiver.parentStructure != null && receiver.parentStructure!.isPort;
+
       final receiverIsModuleInput =
-          module.isInput(receiver) && !receiver.isArrayMember;
+          module.isInput(receiver) && !receiverParentStructureIsPort;
       final receiverIsModuleOutput =
-          module.isOutput(receiver) && !receiver.isArrayMember;
+          module.isOutput(receiver) && !receiverParentStructureIsPort;
       final receiverIsModuleInOut =
-          module.isInOut(receiver) && !receiver.isArrayMember;
+          module.isInOut(receiver) && !receiverParentStructureIsPort;
 
       final synthDriver = _getSynthLogic(driver);
 
@@ -247,6 +370,11 @@ class SynthModuleDefinition {
       } else if (receiverIsModuleInOut) {
         inOuts.add(synthReceiver);
       } else {
+        assert(
+            !inputs.contains(synthReceiver) &&
+                !outputs.contains(synthReceiver) &&
+                !inOuts.contains(synthReceiver),
+            'Internal signals should not be ports also.');
         internalSignals.add(synthReceiver);
       }
 
@@ -255,7 +383,8 @@ class SynthModuleDefinition {
       if (receiverIsSubmoduleInOut) {
         final subModule = receiver.parentModule!;
 
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setInOutMapping(receiver.name, synthReceiver);
         }
@@ -269,7 +398,8 @@ class SynthModuleDefinition {
         final subModule = receiver.parentModule!;
 
         // array elements are not named ports, just contained in array
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setOutputMapping(receiver.name, synthReceiver);
         }
@@ -300,7 +430,8 @@ class SynthModuleDefinition {
         final subModule = receiver.parentModule!;
 
         // array elements are not named ports, just contained in array
-        if (synthReceiver is! SynthLogicArrayElement) {
+        if (synthReceiver is! SynthLogicArrayElement &&
+            !synthReceiver.isStructPortElement) {
           getSynthSubModuleInstantiation(subModule)
               .setInputMapping(receiver.name, synthReceiver);
         }
@@ -480,20 +611,28 @@ class SynthModuleDefinition {
     // there might be more assign statements than necessary, so let's ditch them
     var prevAssignmentCount = 0;
 
+    // grab the partial assignments since they can't be merged
+    final partialAssignments =
+        assignments.whereType<PartialSynthAssignment>().toList();
+    assignments.removeWhere((e) => e is PartialSynthAssignment);
+
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <SynthAssignment>[];
       for (final assignment in assignments) {
+        assert(assignment is! PartialSynthAssignment,
+            'Partial assignments should have been removed before this.');
+
         final dst = assignment.dst;
         final src = assignment.src;
 
         assert(dst != src,
             'No circular assignment allowed between $dst and $src.');
 
-        final mergedAway = SynthLogic.tryMerge(dst, src);
+        final mergeResults = SynthLogic.tryMerge(dst, src);
 
-        if (mergedAway != null) {
-          final kept = mergedAway == dst ? src : dst;
+        if (mergeResults != null) {
+          final (removed: mergedAway, kept: kept) = mergeResults;
 
           final foundInternal = internalSignals.remove(mergedAway);
           if (!foundInternal) {
@@ -526,6 +665,10 @@ class SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
+
+    // add back all the partial assignments that were removed since they could
+    // not be merged
+    assignments.addAll(partialAssignments);
 
     // update the look-up table post-merge
     logicToSynthMap.clear();

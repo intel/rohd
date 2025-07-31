@@ -17,12 +17,15 @@ class CounterInterface extends Interface<CounterDirection> {
   Logic get en => port('en');
   Logic get reset => port('reset');
   Logic get val => port('val');
-  Logic get resetVal => port('resetVal');
 
   final int width;
   CounterInterface(this.width) {
-    setPorts(
-        [Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
+    setPorts([
+      Logic.port('en'),
+      Logic.port('reset'),
+    ], [
+      CounterDirection.inward
+    ]);
 
     setPorts([
       Logic.port('val', width),
@@ -30,6 +33,9 @@ class CounterInterface extends Interface<CounterDirection> {
       CounterDirection.outward
     ]);
   }
+
+  @override
+  CounterInterface clone() => CounterInterface(width);
 }
 
 class Counter extends Module {

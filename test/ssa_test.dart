@@ -22,8 +22,13 @@ abstract class SsaTestModule extends Module {
 }
 
 class SimpleStruct extends LogicStructure {
-  SimpleStruct()
-      : super([Logic(width: 4), Logic(width: 4)], name: 'simple_struct');
+  SimpleStruct({super.name = 'simple_struct'})
+      : super(
+          [Logic(width: 4), Logic(width: 4)],
+        );
+
+  @override
+  SimpleStruct clone({String? name}) => SimpleStruct(name: name);
 }
 
 class StructOpRepack extends Module {

@@ -21,7 +21,9 @@ The `Logic.port` constructor makes interface port definitions a little cleaner b
 
 When connecting an `Interface` to a `Module`, you should always create a new instance of the `Interface` so you don't modify the one being passed in through the constructor. Modifying the same `Interface` as was passed would have negative consequences if multiple `Modules` were consuming the same `Interface`, and also breaks the rules for `Module` input and output connectivity.
 
-The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interfaces`. Connection is based on signal names. You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module. You can also use the `setPort` function to directly set individual ports on the `Interface` instead of via tagged set of ports.
+The `connectIO` function under the hood calls `addInput` and `addOutput` directly on the `Module` and connects those `Module` ports to the correct ports on the `Interface`s.  Connection is based on signal names.  You can use the `uniquify` Function argument in `connectIO` to uniquify inputs and outputs in case you have multiple instances of the same `Interface` connected to your module.
+
+`Module` has functions called `addInterfacePorts` and `addPairInterfacePorts` which conveniently call `connectIO` and `pairConnectIO` and return the "internal" copy of the interface to use within the `Module`. For these to work, all `Interface`s must implement a `clone()` method so that an internal copy can be created.
 
 ## Counter Module
 
@@ -77,7 +79,7 @@ class Counter extends Module {
 
 ## Counter Module Interface
 
-Let us see how we can change the `ROHD` module to `Counter` interface. First, we can create a enum `CounterDirection` that have tags of `inward`, `outward` and `misc`. You can think of this as what is the category you want to group your ports. This category can be reuse between modules. `inward` port group all inputs port, `outward` group all outputs port and `misc` group all miscellanous port such as `clk`.
+Let us see how we can change the `ROHD` module to `Counter` interface. First, we can create a enum `CounterDirection` that have tags of `inward`, `outward` and `misc`. You can think of this as what is the category you want to group your ports. This category can be reuse between modules. `inward` port group all inputs port, `outward` group all output ports, and `misc` group all miscellanous ports such as `clk`.
 
 Then, we can create our interface `CounterInterface` that extends from parents `Interface<TagType>`. The `TagType` is the enum that we create earlier. Let create the getters to all ports for `Counter` to allows us to send signals to the interface.
 
@@ -97,7 +99,11 @@ class CounterInterface extends Interface<CounterDirection> {
 
   final int width;
   CounterInterface({this.width = 8}) {
-    setPorts([Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
+    setPorts([
+      Logic.port('en'),
+    ], [
+      CounterDirection.inward
+    ]);
 
     setPorts([
       Logic.port('val', width),
@@ -105,8 +111,16 @@ class CounterInterface extends Interface<CounterDirection> {
       CounterDirection.outward
     ]);
 
-    setPorts([Logic.port('clk')], [CounterDirection.misc]);
+    setPorts([
+      Logic.port('clk'),
+      Logic.port('reset'),
+    ], [
+      CounterDirection.misc
+    ]);
   }
+
+  @override
+  CounterInterface clone() => CounterInterface(width: width);
 }
 ```
 
@@ -115,32 +129,23 @@ Next, we want to modify the `Counter` module constructor to receive the interfac
 ```dart
 // create a new interface instance. Let make it a private variable.
 late final CounterInterface _intf;
-Counter(CounterInterface intf): super('counter') {}
+Counter(CounterInterface intf): super(name: 'counter') {}
 ```
 
-Now, let use the `connectIO()` function. As mentioned [previously](#rohd-interfaces), this function called `addInput` and `addOutput` that help us register the port. Therefore, we can pass the `module`, `interface`, `inputTags`, and `outputTags` as the arguments of the `connectIO` function.
+Now, let use the `addInterfacePorts` function. As mentioned [previously](#rohd-interfaces), this function called `addInput` and `addOutput` (via `connectIO`) that help us register the ports. Therefore, we can pass the `module`, `interface`, `inputTags`, and `outputTags` as the arguments of the `addInterfacePorts` function.
 
 ```dart
 Counter(CounterInterface intf) : super(name: 'counter') {
-    _intf = CounterInterface(width: intf.width)
-      ..connectIO(this, intf,
-          inputTags: {CounterDirection.inward, CounterDirection.misc},
-          outputTags: {CounterDirection.outward});
+  _intf = addInterfacePorts(intf,
+      inputTags: {CounterDirection.inward, CounterDirection.misc},
+      outputTags: {CounterDirection.outward});
 
-    final nextVal = Logic(name: 'nextVal', width: intf.width);
-
-    nextVal <= _intf.val + 1;
-
-    Sequential(_intf.clk, [
-      If.block([
-        Iff(_intf.reset, [
-          _intf.val < 0,
-        ]),
-        ElseIf(_intf.en, [
-          _intf.val < nextVal,
-        ])
-      ]),
-    ]);
+  _intf.val <=
+      flop(
+        _intf.clk,
+        reset: _intf.reset,
+        (_intf.val + 1).named('nextVal'),
+      );
 }
 ```
 
