@@ -56,6 +56,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     for (final assignment in assignments) {
       if (assignment.src.isNet && assignment.dst.isNet) {
+        assert(assignment is! PartialSynthAssignment,
+            'Net connections should not be partial assignments.');
+
         _addNetConnect(assignment.dst, assignment.src);
       } else {
         reducedAssignments.add(assignment);
@@ -133,6 +136,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         singleUseSignals.add(signal);
       }
     });
+
+    // partial assignments are a special case, count as a usage
+    for (final partialAssignment
+        in assignments.whereType<PartialSynthAssignment>()) {
+      singleUseSignals.remove(partialAssignment.src);
+    }
 
     final singleUsageInlineableSubmoduleInstantiations =
         inlineableSubmoduleInstantiations.where((subModuleInstantiation) {

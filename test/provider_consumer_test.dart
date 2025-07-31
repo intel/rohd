@@ -16,7 +16,9 @@ class DataInterface extends PairInterface {
   Logic get valid => port('valid');
   Logic get ready => port('ready');
 
-  DataInterface({String? prefix})
+  final String? prefix;
+
+  DataInterface({this.prefix})
       : super(
             portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
             portsFromConsumer: [Logic.port('ready')],
@@ -24,6 +26,8 @@ class DataInterface extends PairInterface {
                   if (prefix != null) prefix,
                   original,
                 ].join('_'));
+  @override
+  DataInterface clone() => DataInterface(prefix: prefix);
 }
 
 class RequestInterface extends PairInterface {
@@ -40,6 +44,8 @@ class RequestInterface extends PairInterface {
 
   RequestInterface.clone(RequestInterface other)
       : this(numWd: other.numWd, name: other.name);
+  @override
+  RequestInterface clone() => RequestInterface(numWd: numWd, name: name);
 }
 
 class ResponseInterface extends PairInterface {
@@ -48,6 +54,8 @@ class ResponseInterface extends PairInterface {
     readData = addSubInterface('read_data', DataInterface(prefix: 'rd'),
         reverse: true);
   }
+  @override
+  ResponseInterface clone() => ResponseInterface();
 }
 
 class PCInterface extends PairInterface {
@@ -57,6 +65,8 @@ class PCInterface extends PairInterface {
     req = addSubInterface('req', RequestInterface());
     rsp = addSubInterface('rsp', ResponseInterface());
   }
+  @override
+  PCInterface clone() => PCInterface();
 }
 
 class Provider extends Module {

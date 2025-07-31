@@ -30,14 +30,14 @@ class SimpleInterface extends PairInterface {
           modify: (original) => 'simple_$original',
         );
 
-  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
+  @override
+  SimpleInterface clone() => SimpleInterface();
 }
 
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = addPairInterfacePorts(intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -45,13 +45,13 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.provider);
+    addPairInterfacePorts(intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.consumer);
+    addPairInterfacePorts(intf, PairRole.consumer);
   }
 }
 
@@ -67,23 +67,37 @@ class SimpleTop extends Module {
 
 class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
-      {required bool useConditional}) {
-    intf1 = SimpleInterface.clone(intf1)
-      ..pairConnectIO(
-        this,
-        intf1,
-        PairRole.consumer,
-        uniquify: (original) => '${original}_1',
-      );
-    intf2 = SimpleInterface.clone(intf2)
-      ..connectIO(
-        this,
-        intf2,
-        inputTags: {PairDirection.fromConsumer},
-        outputTags: {PairDirection.fromProvider},
-        inOutTags: {PairDirection.commonInOuts},
-        uniquify: (original) => '${original}_2',
-      );
+      {required bool useConditional, required bool useConnectApi}) {
+    intf1 = useConnectApi
+        ? addPairInterfacePorts(
+            intf1,
+            PairRole.consumer,
+            uniquify: (original) => '${original}_1',
+          )
+        : (intf1.clone()
+          ..pairConnectIO(
+            this,
+            intf1,
+            PairRole.consumer,
+            uniquify: (original) => '${original}_1',
+          ));
+    intf2 = useConnectApi
+        ? addInterfacePorts(
+            intf2,
+            inputTags: {PairDirection.fromConsumer},
+            outputTags: {PairDirection.fromProvider},
+            inOutTags: {PairDirection.commonInOuts},
+            uniquify: (original) => '${original}_2',
+          )
+        : (intf2.clone()
+          ..connectIO(
+            this,
+            intf2,
+            inputTags: {PairDirection.fromConsumer},
+            outputTags: {PairDirection.fromProvider},
+            inOutTags: {PairDirection.commonInOuts},
+            uniquify: (original) => '${original}_2',
+          ));
 
     if (useConditional) {
       Combinational([
@@ -116,11 +130,13 @@ void main() {
   });
 
   group('drive and receive other', () {
-    Future<void> testDriveAndReceive({required bool useConditional}) async {
+    Future<void> testDriveAndReceive(
+        {required bool useConditional, required bool useConnectApi}) async {
       final mod = PassthroughPairIntfModule(
         SimpleInterface(),
         SimpleInterface(),
         useConditional: useConditional,
+        useConnectApi: useConnectApi,
       );
       await mod.build();
 
@@ -155,12 +171,17 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     }
 
-    test('with assign', () async {
-      await testDriveAndReceive(useConditional: false);
-    });
-
-    test('with conditional assign', () async {
-      await testDriveAndReceive(useConditional: true);
-    });
+    for (final useConditional in [false, true]) {
+      for (final useConnectApi in [false, true]) {
+        test(
+            'with useConnectApi: $useConnectApi, '
+            'with useConditional: $useConditional', () async {
+          await testDriveAndReceive(
+            useConditional: useConditional,
+            useConnectApi: useConnectApi,
+          );
+        });
+      }
+    }
   });
 }

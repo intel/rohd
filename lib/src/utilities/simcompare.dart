@@ -224,6 +224,7 @@ abstract class SimCompare {
     RegExp(r'sorry: constant selects in always_\* processes'
         ' are not currently supported'),
     RegExp('warning: always_comb process has no sensitivities'),
+    RegExp('finish called at'),
   ];
 
   /// Executes [vectors] against the Icarus Verilog simulator and checks

@@ -22,6 +22,9 @@ class MyCounterInterface extends Interface<CounterDirection> {
 
     setPorts([Logic.port('clk')], [CounterDirection.misc]);
   }
+
+  @override
+  MyCounterInterface clone() => MyCounterInterface(width: width);
 }
 
 /// A simple counter which increments once per [clk] edge whenever
@@ -35,10 +38,9 @@ class MyCounter extends Module {
   late final MyCounterInterface counterintf;
 
   MyCounter(MyCounterInterface intf) : super(name: 'counter') {
-    counterintf = MyCounterInterface(width: intf.width)
-      ..connectIO(this, intf,
-          inputTags: {CounterDirection.inward, CounterDirection.misc},
-          outputTags: {CounterDirection.outward});
+    counterintf = addInterfacePorts(counterintf,
+        inputTags: {CounterDirection.inward, CounterDirection.misc},
+        outputTags: {CounterDirection.outward});
 
     _buildLogic();
   }

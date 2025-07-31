@@ -32,4 +32,7 @@ class Port extends Logic {
       throw InvalidPortNameException(name);
     }
   }
+
+  @override
+  Logic clone({String? name}) => Port(name ?? this.name, width);
 }
