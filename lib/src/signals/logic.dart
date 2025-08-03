@@ -443,13 +443,59 @@ class Logic {
   void operator <=(Logic other) => gets(other);
 
   /// Logical bitwise NOT.
-  Logic operator ~() => NotGate(this).out;
+  Logic operator ~() => this is Const ? Const(~value) : NotGate(this).out;
 
   /// Logical bitwise AND.
-  Logic operator &(Logic other) => And2Gate(this, other).out;
+  Logic operator &(Logic other) {
+    if (this is Const && other is Const) {
+      return Const((this as Const).value & other.value);
+    }
+    Const? constOperand;
+    Logic? otherOperand;
+
+    if (this is Const && value.isValid) {
+      constOperand = this as Const;
+    } else if (other is Const && other.value.isValid) {
+      constOperand = other;
+      otherOperand = this;
+    }
+
+    if (constOperand != null && otherOperand != null) {
+      if (constOperand.value == LogicValue.filled(width, LogicValue.zero)) {
+        return constOperand;
+      } else if (constOperand.value ==
+          LogicValue.filled(width, LogicValue.one)) {
+        return otherOperand;
+      }
+    }
+    return And2Gate(this, other).out;
+  }
 
   /// Logical bitwise OR.
-  Logic operator |(Logic other) => Or2Gate(this, other).out;
+  Logic operator |(Logic other) {
+    if (this is Const && other is Const) {
+      return Const((this as Const).value | other.value);
+    }
+    Const? constOperand;
+    Logic? otherOperand;
+
+    if (this is Const && value.isValid) {
+      constOperand = this as Const;
+    } else if (other is Const && other.value.isValid) {
+      constOperand = other;
+      otherOperand = this;
+    }
+
+    if (constOperand != null && otherOperand != null) {
+      if (constOperand.value == LogicValue.filled(width, LogicValue.one)) {
+        return constOperand;
+      } else if (constOperand.value ==
+          LogicValue.filled(width, LogicValue.zero)) {
+        return otherOperand;
+      }
+    }
+    return Or2Gate(this, other).out;
+  }
 
   /// Logical bitwise XOR.
   Logic operator ^(Logic other) => Xor2Gate(this, other).out;
