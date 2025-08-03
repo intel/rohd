@@ -85,39 +85,39 @@ If.block([
 
 ### Add the condition inside the conditional Block
 
-`Iff(condition, then: [])`: `Iff` Statement, if condition is matched, then execute the `then` condition.
+`Iff(condition, [])`: `Iff` Statement, if condition is matched, then execute the `then` condition.
 
 ```dart
 // template
 If.block([
-  Iff(condition, then: [
+  Iff(condition, [
     // You can wrap condition here
   ]),
 ]); // If.block
 
 // example
 If.block([
-  Iff(a.eq(0), then: [
+  Iff(a.eq(0), [
     sum < 0    
   ]),
 ]); // If.block
 ```
 
-`ElseIf(condition, then: [])`: `ElseIf` Statement, if the condition in `Iff` is not matched, its will skip and look for next condition in `ElseIf` condition, then execute the `then`.
+`ElseIf(condition, [])`: `ElseIf` Statement, if the condition in `Iff` is not matched, its will skip and look for next condition in `ElseIf` condition, then execute the `then`.
 
 ```dart
 // template
 If.block([
-  Iff(condition, then: []), // If statement
-  ElseIf(condition, then: []) // Else If Statement
+  Iff(condition, []), // If statement
+  ElseIf(condition, []) // Else If Statement
 ]); // If.block
 
 // example
 If.block([
-  Iff(a.eq(0), then: [
+  Iff(a.eq(0), [
     sum < 1
   ]), // If statement
-  ElseIf(b.eq(0), then: [
+  ElseIf(b.eq(0), [
     sum < 0
   ]) // Else If Statement
 ]); // If.block
@@ -127,17 +127,17 @@ If.block([
 
 ```dart
 If.block([
-  Iff(condition, then: []), // If statement
-  ElseIf(condition, then: []), // Else If Statement
+  Iff(condition, []), // If statement
+  ElseIf(condition, []), // Else If Statement
   Else([]) // execute this
 ]); // If.block
 
 // example
 If.block([
-  Iff(a.eq(0), then: [
+  Iff(a.eq(0), [
     sum < 0
   ]), // If statement
-  ElseIf(b.eq(0), then: [
+  ElseIf(b.eq(0), [
     sum < 1
   ]), // Else If Statement
   Else([

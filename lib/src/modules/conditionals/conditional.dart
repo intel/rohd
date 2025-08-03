@@ -131,7 +131,7 @@ abstract class Conditional {
   String verilogContents(int indent, Map<String, String> inputsNameMap,
       Map<String, String> outputsNameMap, String assignOperator);
 
-  /// Calculates an amount of padding to provie at the beginning of each new
+  /// Calculates an amount of padding to provide at the beginning of each new
   /// line based on [indent].
   static String calcPadding(int indent) => List.filled(indent, '  ').join();
 
