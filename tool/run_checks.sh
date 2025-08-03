@@ -30,6 +30,14 @@ trap trap_error ERR
 
 printf '\n%s\n' "${form_bold}${color_yellow}Running local checks...${text_reset}"
 
+# Lint Markdown files
+print_step 'Lint Markdown files'
+tool/lint_markdown_files.sh
+
+# Check Markdown links
+print_step 'Check Markdown links'
+tool/check_markdown_links.sh
+
 # Install project dependencies
 print_step 'Install project dependencies'
 tool/gh_actions/install_dependencies.sh
