@@ -1,3 +1,14 @@
+## 0.6.6
+
+- Added `clone`ing for `Interface`s and `Logic`s and APIs that leverage the new capabilities (<https://github.com/intel/rohd/pull/614>).
+  - Added a new expectation for `Interface`s and `Logic`s (and derivative classes) to implement a `clone` function, to enable better APIs and reuse in various scenarios.
+  - Deprecated `PairInterface.clone` constructor in favor of new `clone` method on `PairInterface` instances.
+  - Added new `addTyped*` functions on `Module` which will create a `clone` of original source for ports.  This also supports `LogicStructure`s as ports.
+  - Added new `addInterfacePorts` and `addPairInterfacePorts` functions on `Module` which wrap `connectIO` and `pairConnectIO`, respectively, to make adding interfaces on `Module`s easier and more consistent with creation of other ports.
+- Updated naming of generated SystemVerilog signals (without `reserved` names) that were part of `LogicStructure`s to include the name of the parent structure as a prefix.
+- Added `packed` to base `Logic`, which just returns itself, so that it can safely be called on any `Logic` without first checking the type.
+- Fixed a bug related to module selection in the ROHD DevTools Extension (<https://github.com/intel/rohd/pull/612>).
+
 ## 0.6.5
 
 - Fixed a bug where zero-value `LogicValue`s could result in `toRadixString()` returning output an empty `String` instead of "0" (<https://github.com/intel/rohd/pull/606>).
