@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">rohd</a></li>
-    <li><a href="../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../rohd/">rohd.dart</a></li>
     <li class="self-crumb">If class</li>
   </ol>
   <div class="self-name">If</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -68,7 +65,7 @@
   <dt>Inheritance</dt>
   <dd>
     <ul class="gt-separated dark clazz-relationships">
-      <li><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object-class.html">Object</a></li>
+      <li><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object-class.html">Object</a></li>
         <li><a href="../rohd/Conditional-class.html">Conditional</a></li>
       <li>If</li>
     </ul>
@@ -93,15 +90,15 @@
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
-        <dt id="If" class="callable">
-          <span class="name"><a href="../rohd/If/If.html">If</a></span><span class="signature">(<span class="parameter" id="-param-condition"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">condition</span>, {</span><span class="parameter" id="-param-then"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">then</span>, </span><span class="parameter" id="-param-orElse"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">orElse</span></span>})</span>
+        <dt id="If.new" class="callable">
+          <span class="name"><a href="../rohd/If/If.html">If.new</a></span><span class="signature">(<span class="parameter" id="-param-condition"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">condition</span>, {</span><span class="parameter" id="-param-then"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">then</span>, </span><span class="parameter" id="-param-orElse"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span>?</span> <span class="parameter-name">orElse</span></span>})</span>
         </dt>
         <dd>
           If <code>condition</code> is high, then <code>then</code> executes, otherwise <code>orElse</code> is
 executed.
         </dd>
         <dt id="If.block" class="callable">
-          <span class="name"><a href="../rohd/If/If.block.html">If.block</a></span><span class="signature">(<span class="parameter" id="block-param-iffs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Iff.html">Iff</a></span>&gt;</span></span> <span class="parameter-name">iffs</span></span>)</span>
+          <span class="name"><a href="../rohd/If/If.block.html">If.block</a></span><span class="signature">(<span class="parameter" id="block-param-iffs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Iff.html">Iff</a></span>&gt;</span></span> <span class="parameter-name">iffs</span></span>)</span>
         </dt>
         <dd>
           Checks the conditions for <code>iffs</code> in order and executes the first one
@@ -124,7 +121,7 @@ otherwise <code>orElse</code> is executed.
     <dl class="properties">
         <dt id="conditionals" class="property">
   <span class="name"><a href="../rohd/If/conditionals.html">conditionals</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
   
 
 </dt>
@@ -137,7 +134,7 @@ otherwise <code>orElse</code> is executed.
 
         <dt id="drivers" class="property">
   <span class="name"><a href="../rohd/If/drivers.html">drivers</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
@@ -148,8 +145,8 @@ otherwise <code>orElse</code> is executed.
 </dd>
 
         <dt id="hashCode" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object/hashCode.html">hashCode</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object/hashCode.html">hashCode</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/int-class.html">int</a></span>
   
 
 </dt>
@@ -161,7 +158,7 @@ otherwise <code>orElse</code> is executed.
 
         <dt id="iffs" class="property">
   <span class="name"><a href="../rohd/If/iffs.html">iffs</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Iff.html">Iff</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Iff.html">Iff</a></span>&gt;</span></span>
   
 
 </dt>
@@ -173,7 +170,7 @@ otherwise <code>orElse</code> is executed.
 
         <dt id="receivers" class="property">
   <span class="name"><a href="../rohd/If/receivers.html">receivers</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   
 
 </dt>
@@ -185,8 +182,8 @@ receivers.
 </dd>
 
         <dt id="runtimeType" class="property inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object/runtimeType.html">runtimeType</a></span>
-  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/Type-class.html">Type</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object/runtimeType.html">runtimeType</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/Type-class.html">Type</a></span>
   
 
 </dt>
@@ -207,7 +204,7 @@ receivers.
     <dl class="callables">
         <dt id="calculateReceivers" class="callable">
   <span class="name"><a href="../rohd/If/calculateReceivers.html">calculateReceivers</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -248,7 +245,7 @@ associated with <code>driver</code>.
 </dd>
 
         <dt id="driveX" class="callable inherited">
-  <span class="name"><a href="../rohd/Conditional/driveX.html">driveX</a></span><span class="signature">(<wbr><span class="parameter" id="driveX-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span></span>)
+  <span class="name"><a href="../rohd/Conditional/driveX.html">driveX</a></span><span class="signature">(<wbr><span class="parameter" id="driveX-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span></span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -261,7 +258,7 @@ associated with <code>driver</code>.
 </dd>
 
         <dt id="execute" class="callable">
-  <span class="name"><a href="../rohd/If/execute.html">execute</a></span><span class="signature">(<wbr><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, [</span><span class="parameter" id="execute-param-guard"><span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?</span>])
+  <span class="name"><a href="../rohd/If/execute.html">execute</a></span><span class="signature">(<wbr><span class="parameter" id="execute-param-drivenSignals"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Set-class.html">Set</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span>?</span> <span class="parameter-name">drivenSignals</span>, [</span><span class="parameter" id="execute-param-guard"><span class="type-annotation">void</span> <span class="parameter-name">guard</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span></span>)?</span>])
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -277,7 +274,7 @@ during execution.
 
         <dt id="getConditionals" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getConditionals.html">getConditionals</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Conditional-class.html">Conditional</a></span>&gt;</span></span>
   </span>
   
 
@@ -291,7 +288,7 @@ during execution.
 
         <dt id="getDrivers" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getDrivers.html">getDrivers</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -304,7 +301,7 @@ during execution.
 
         <dt id="getReceivers" class="callable inherited">
   <span class="name deprecated"><a class="deprecated" href="../rohd/Conditional/getReceivers.html">getReceivers</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -317,7 +314,7 @@ receivers.
 </dd>
 
         <dt id="noSuchMethod" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
+  <span class="name"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object/noSuchMethod.html">noSuchMethod</a></span><span class="signature">(<wbr><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span>)
     <span class="returntype parameter">&#8594; dynamic</span>
   </span>
   
@@ -330,8 +327,8 @@ receivers.
 </dd>
 
         <dt id="processSsa" class="callable">
-  <span class="name"><a href="../rohd/If/processSsa.html">processSsa</a></span><span class="signature">(<wbr><span class="parameter" id="processSsa-param-currentMappings"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">currentMappings</span>, {</span><span class="parameter" id="processSsa-param-context"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">context</span></span>})
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
+  <span class="name"><a href="../rohd/If/processSsa.html">processSsa</a></span><span class="signature">(<wbr><span class="parameter" id="processSsa-param-currentMappings"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">currentMappings</span>, {</span><span class="parameter" id="processSsa-param-context"><span>required</span> <span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">context</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span>
   </span>
   
 
@@ -357,8 +354,8 @@ accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.
 </dd>
 
         <dt id="toString" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object/toString.html">toString</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>
   </span>
   
 
@@ -370,7 +367,7 @@ accordingly to <code>SsaLogic</code>s and returns an updated set of mappings.
 </dd>
 
         <dt id="updateAssignmentMaps" class="callable inherited">
-  <span class="name"><a href="../rohd/Conditional/updateAssignmentMaps.html">updateAssignmentMaps</a></span><span class="signature">(<wbr><span class="parameter" id="updateAssignmentMaps-param-assignedReceiverToOutputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedReceiverToOutputMap</span>, </span><span class="parameter" id="updateAssignmentMaps-param-assignedDriverToInputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedDriverToInputMap</span></span>)
+  <span class="name"><a href="../rohd/Conditional/updateAssignmentMaps.html">updateAssignmentMaps</a></span><span class="signature">(<wbr><span class="parameter" id="updateAssignmentMaps-param-assignedReceiverToOutputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedReceiverToOutputMap</span>, </span><span class="parameter" id="updateAssignmentMaps-param-assignedDriverToInputMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>&gt;</span></span> <span class="parameter-name">assignedDriverToInputMap</span></span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -385,7 +382,7 @@ as well.
 </dd>
 
         <dt id="updateOverrideMap" class="callable inherited">
-  <span class="name"><a href="../rohd/Conditional/updateOverrideMap.html">updateOverrideMap</a></span><span class="signature">(<wbr><span class="parameter" id="updateOverrideMap-param-driverValueOverrideMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">driverValueOverrideMap</span></span>)
+  <span class="name"><a href="../rohd/Conditional/updateOverrideMap.html">updateOverrideMap</a></span><span class="signature">(<wbr><span class="parameter" id="updateOverrideMap-param-driverValueOverrideMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../rohd/Logic-class.html">Logic</a></span>, <span class="type-parameter"><a href="../rohd/LogicValue-class.html">LogicValue</a></span>&gt;</span></span> <span class="parameter-name">driverValueOverrideMap</span></span>)
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
@@ -399,14 +396,14 @@ sub-<a href="../rohd/Conditional-class.html">Conditional</a>s as well.
 </dd>
 
         <dt id="verilogContents" class="callable">
-  <span class="name"><a href="../rohd/If/verilogContents.html">verilogContents</a></span><span class="signature">(<wbr><span class="parameter" id="verilogContents-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span>, </span><span class="parameter" id="verilogContents-param-inputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-outputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-assignOperator"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">assignOperator</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span>
+  <span class="name"><a href="../rohd/If/verilogContents.html">verilogContents</a></span><span class="signature">(<wbr><span class="parameter" id="verilogContents-param-indent"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">indent</span>, </span><span class="parameter" id="verilogContents-param-inputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-outputsNameMap"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">outputsNameMap</span>, </span><span class="parameter" id="verilogContents-param-assignOperator"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">assignOperator</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span>
   </span>
   
 
 </dt>
 <dd>
-  Returns a <a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a> of SystemVerilog to be used in generated output.
+  Returns a <a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a> of SystemVerilog to be used in generated output.
   <div class="features"><span class="feature">override</span></div>
 
 </dd>
@@ -420,8 +417,8 @@ sub-<a href="../rohd/Conditional-class.html">Conditional</a>s as well.
     <h2>Operators</h2>
     <dl class="callables">
         <dt id="operator ==" class="callable inherited">
-  <span class="name"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
-    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span>
+  <span class="name"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object/operator_equals.html">operator ==</a></span><span class="signature">(<wbr><span class="parameter" id="==-param-other"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Object-class.html">Object</a></span> <span class="parameter-name">other</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.dart.dev/stable/3.8.3/dart-core/bool-class.html">bool</a></span>
   </span>
   
 
@@ -448,7 +445,7 @@ sub-<a href="../rohd/Conditional-class.html">Conditional</a>s as well.
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">rohd</a></li>
-    <li><a href="../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../rohd/">rohd</a></li>
     <li class="self-crumb">If class</li>
 </ol>
 
@@ -461,7 +458,7 @@ sub-<a href="../rohd/Conditional-class.html">Conditional</a>s as well.
 <footer>
   <span class="no-break">
     rohd
-      0.6.5
+      0.6.6
   </span>
   
 </footer>

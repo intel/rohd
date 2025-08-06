@@ -25,7 +25,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
     <li class="self-crumb">put method</li>
   </ol>
@@ -33,17 +33,14 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -59,7 +56,7 @@
       
 <span class="returntype">void</span>
 <span class="name ">put</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span></li>
-<li><span class="parameter" id="put-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="put-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
 </ol>})
 
       
@@ -69,7 +66,7 @@
 <section class="desc markdown">
   <p>Puts a value <code>val</code> onto this signal, which may or may not be picked up
 for <a href="../../rohd/Logic/changed.html">changed</a> in this <a href="../../rohd/Simulator-class.html">Simulator</a> tick.</p>
-<p>The type of <code>val</code> should be an <code>int</code>, <a href="https://api.dart.dev/stable/3.6.2/dart-core/BigInt-class.html">BigInt</a>, <code>bool</code>, or <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
+<p>The type of <code>val</code> should be an <code>int</code>, <a href="https://api.dart.dev/stable/3.8.3/dart-core/BigInt-class.html">BigInt</a>, <code>bool</code>, or <a href="../../rohd/LogicValue-class.html">LogicValue</a>.</p>
 <p>This function is used for propogating glitches through connected signals.
 Use this function for custom definitions of <a href="../../rohd/Module-class.html">Module</a> behavior.</p>
 <p>If <code>fill</code> is set, all bits of the signal gets set to <code>val</code>, similar
@@ -95,7 +92,7 @@ to <code>'</code> in SystemVerilog.</p>
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/Logic-class.html">Logic</a></li>
     <li class="self-crumb">put method</li>
 </ol>
@@ -109,7 +106,7 @@ to <code>'</code> in SystemVerilog.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.5
+      0.6.6
   </span>
   
 </footer>

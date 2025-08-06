@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the FlipFlop constructor from Class FlipFlop from the rohd library, for the Dart programming language.">
-  <title>FlipFlop constructor - FlipFlop - rohd library - Dart API</title>
+  <meta name="description" content="API docs for the FlipFlop.new constructor from Class FlipFlop from the rohd library, for the Dart programming language.">
+  <title>FlipFlop.new constructor - FlipFlop - rohd library - Dart API</title>
 
 
   
@@ -25,25 +25,22 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
-    <li class="self-crumb">FlipFlop constructor</li>
+    <li class="self-crumb">FlipFlop.new constructor</li>
   </ol>
-  <div class="self-name">FlipFlop</div>
+  <div class="self-name">FlipFlop.new</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
   <div
@@ -62,8 +59,8 @@
 <li><span class="parameter" id="-param-en"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">en</span>, </span></li>
 <li><span class="parameter" id="-param-reset"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a>?</span> <span class="parameter-name">reset</span>, </span></li>
 <li><span class="parameter" id="-param-resetValue"><span class="type-annotation">dynamic</span> <span class="parameter-name">resetValue</span>, </span></li>
-<li><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
-<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.6.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span>, </span></li>
+<li><span class="parameter" id="-param-asyncReset"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">asyncReset</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span> = <span class="default-value">&#39;flipflop&#39;</span>, </span></li>
 </ol>})
     </section>
     
@@ -76,7 +73,7 @@ input<code>d</code>. For low <code>en</code>, output remains frozen irrespective
 If no <code>resetValue</code> is provided, the reset value is always <code>0</code>. Otherwise,
 it will reset to the provided <code>resetValue</code>. The type of <code>resetValue</code> must
 be a valid driver of a <a href="../../rohd/ConditionalAssign-class.html">ConditionalAssign</a> (e.g. <a href="../../rohd/Logic-class.html">Logic</a>, <a href="../../rohd/LogicValue-class.html">LogicValue</a>,
-<a href="https://api.dart.dev/stable/3.6.2/dart-core/int-class.html">int</a>, etc.).</p>
+<a href="https://api.dart.dev/stable/3.8.3/dart-core/int-class.html">int</a>, etc.).</p>
 <p>If <code>asyncReset</code> is true, the <code>reset</code> signal (if provided) will be treated
 as an async reset. If <code>asyncReset</code> is false, the reset signal will be
 treated as synchronous.</p>
@@ -132,9 +129,9 @@ treated as synchronous.</p>
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/FlipFlop-class.html">FlipFlop</a></li>
-    <li class="self-crumb">FlipFlop constructor</li>
+    <li class="self-crumb">FlipFlop.new constructor</li>
 </ol>
 
     <h5>FlipFlop class</h5>
@@ -146,7 +143,7 @@ treated as synchronous.</p>
 <footer>
   <span class="no-break">
     rohd
-      0.6.5
+      0.6.6
   </span>
   
 </footer>

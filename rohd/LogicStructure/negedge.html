@@ -25,7 +25,7 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd.dart</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
     <li class="self-crumb">negedge property</li>
   </ol>
@@ -33,17 +33,14 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -64,10 +61,10 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.6.2/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.8.3/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-      <span class="returntype"><a href="https://api.dart.dev/stable/3.6.2/dart-core/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
+      <span class="returntype"><a href="https://api.dart.dev/stable/3.8.3/dart-core/Stream-class.html">Stream</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/LogicValueChanged-class.html">LogicValueChanged</a></span>&gt;</span></span>
       get
       <span class="name ">negedge</span>
       <div class="features"><span class="feature">override</span></div>
@@ -75,7 +72,7 @@
     </section>
     
 <section class="desc markdown">
-  <p>A <a href="https://api.dart.dev/stable/3.6.2/dart-core/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
+  <p>A <a href="https://api.dart.dev/stable/3.8.3/dart-core/Stream-class.html">Stream</a> of <code>LogicValueChanged</code> events which triggers at most once
 per <a href="../../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../../rohd/Logic-class.html">Logic</a> has changed
 from <code>1</code> to <code>0</code>.</p>
 <p>Throws an exception if <a href="../../rohd/LogicStructure/width.html">width</a> is not <code>1</code>.</p>
@@ -102,7 +99,7 @@ Stream&lt;LogicValueChanged&gt; get negedge =&gt; packed.negedge;</code></pre>
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../../index.html">rohd</a></li>
-    <li><a href="../../rohd/rohd-library.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/LogicStructure-class.html">LogicStructure</a></li>
     <li class="self-crumb">negedge property</li>
 </ol>
@@ -116,7 +113,7 @@ Stream&lt;LogicValueChanged&gt; get negedge =&gt; packed.negedge;</code></pre>
 <footer>
   <span class="no-break">
     rohd
-      0.6.5
+      0.6.6
   </span>
   
 </footer>
