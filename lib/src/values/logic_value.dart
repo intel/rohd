@@ -915,7 +915,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
     }
     throw LogicValueConstructionException(
         'Invalid LogicValue string $valueString');
-    return LogicValue.zero;
   }
 
   /// Compares this to `other`.
