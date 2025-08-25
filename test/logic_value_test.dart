@@ -2118,13 +2118,13 @@ void main() {
       }
       try {
         lv.toRadixString(sepChar: 'q');
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConversionException>());
       }
       try {
         lv.toRadixString(radix: 14);
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConversionException>());
       }
@@ -2137,8 +2137,8 @@ void main() {
 
     test('radixString bad input', () {
       try {
-        LogicValue.ofRadixString("something");
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        LogicValue.ofRadixString('something');
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2146,7 +2146,7 @@ void main() {
     test('radixString bad input with fake length', () {
       try {
         LogicValue.ofRadixString("10'bsomething");
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2155,7 +2155,7 @@ void main() {
     test('radixString bad separator', () {
       try {
         LogicValue.ofRadixString("10'b10 0010_0111");
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2164,7 +2164,7 @@ void main() {
     test('radixString illegal separator', () {
       try {
         LogicValue.ofRadixString("10'b10q0010q0111", sepChar: 'q');
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2173,7 +2173,7 @@ void main() {
     test('radixString bad length', () {
       try {
         LogicValue.ofRadixString("10'b10_0010_0111_0001");
-        expect(true, throwsA(isA<LogicValueConstructionException>()));
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
