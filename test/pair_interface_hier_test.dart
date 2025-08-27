@@ -16,7 +16,7 @@ class SubInterface extends PairInterface {
   Logic get io => port('io');
   LogicArray get ioArr => port('io_arr') as LogicArray;
 
-  SubInterface({super.modify})
+  SubInterface()
       : super(
           portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
@@ -27,7 +27,7 @@ class SubInterface extends PairInterface {
         );
 
   @override
-  SubInterface clone() => SubInterface(modify: modify);
+  SubInterface clone() => SubInterface();
 }
 
 class TopLevelInterface extends PairInterface {
@@ -43,10 +43,10 @@ class TopLevelInterface extends PairInterface {
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
       subIntfs.add(addSubInterface(
-          'sub$i',
-          SubInterface(
-            modify: (original) => '${original}_$i',
-          )));
+        'sub$i',
+        SubInterface(),
+        uniquify: (original) => '${original}_$i',
+      ));
     }
   }
 

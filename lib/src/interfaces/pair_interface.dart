@@ -166,6 +166,7 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
+    // ignore: deprecated_member_use_from_same_package
     final nonNullModify = modify ?? (original) => original;
     String newUniquify(String original) =>
         nonNullUniquify(nonNullModify(original));
@@ -259,6 +260,9 @@ class PairInterface extends Interface<PairDirection> {
   /// opposite way as it usually is with respect to the [PairRole] specified.
   ///
   /// Sub-interfaces are connected via [connectIO] based on the [name].
+  ///
+  /// The [uniquify] function can be used to rename ports as they are created on
+  /// [Module] boundaries during [connectIO].
   @protected
   PairInterfaceType addSubInterface<PairInterfaceType extends PairInterface>(
     String name,
