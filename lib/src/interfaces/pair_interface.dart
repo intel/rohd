@@ -304,6 +304,7 @@ class _SubPairInterface<PairInterfaceType extends PairInterface> {
   /// Whether or not this interface should be connected in a reverse way.
   final bool reverse;
 
+  /// A function to uniquify/rename ports on a per-subInterface basis.
   final String Function(String original)? uniquify;
 
   /// Constructs a new sub-interface tracking object with characteristics.

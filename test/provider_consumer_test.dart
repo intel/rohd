@@ -11,9 +11,11 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+/// Creates a uniquification which adds a [prefix].
 String Function(String) withPrefix(String prefix) =>
     (original) => '${prefix}_$original';
 
+/// Creates a uniquification which adds a [suffix].
 String Function(String) withSuffix(String suffix) =>
     (original) => '${original}_$suffix';
 
@@ -32,9 +34,8 @@ class DataInterface extends PairInterface {
 
 class RequestInterface extends PairInterface {
   final List<DataInterface> writeDatas = [];
-  final String name;
   final int numWd;
-  RequestInterface({this.numWd = 2, this.name = 'req'}) {
+  RequestInterface({this.numWd = 2}) {
     for (var wd = 0; wd < numWd; wd++) {
       writeDatas.add(addSubInterface(
         'write_data$wd',
@@ -44,10 +45,8 @@ class RequestInterface extends PairInterface {
     }
   }
 
-  RequestInterface.clone(RequestInterface other)
-      : this(numWd: other.numWd, name: other.name);
   @override
-  RequestInterface clone() => RequestInterface(numWd: numWd, name: name);
+  RequestInterface clone() => RequestInterface(numWd: numWd);
 }
 
 class ResponseInterface extends PairInterface {
@@ -88,14 +87,14 @@ class Provider extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
+    reqIntf = reqIntf.clone()
       ..pairConnectIO(
         this,
         reqIntf,
         PairRole.provider,
         uniquify: withSuffix('req'),
       );
-    rspIntf = ResponseInterface()
+    rspIntf = rspIntf.clone()
       ..pairConnectIO(
         this,
         rspIntf,
@@ -118,14 +117,14 @@ class Consumer extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
+    reqIntf = reqIntf.clone()
       ..pairConnectIO(
         this,
         reqIntf,
         PairRole.consumer,
         uniquify: withSuffix('req'),
       );
-    rspIntf = ResponseInterface()
+    rspIntf = rspIntf.clone()
       ..pairConnectIO(
         this,
         rspIntf,
