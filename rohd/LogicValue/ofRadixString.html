@@ -55,8 +55,8 @@
     <section class="multi-line-signature">
       
 <span class="returntype"><a href="../../rohd/LogicValue-class.html">LogicValue</a></span>
-<span class="name ">ofRadixString</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="ofRadixString-param-valueString"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">valueString</span>, {</span></li>
-<li><span class="parameter" id="ofRadixString-param-sepChar"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.8.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">sepChar</span> = <span class="default-value">&#39;_&#39;</span>, </span></li>
+<span class="name ">ofRadixString</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="ofRadixString-param-valueString"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">valueString</span>, {</span></li>
+<li><span class="parameter" id="ofRadixString-param-sepChar"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">sepChar</span> = <span class="default-value">&#39;_&#39;</span>, </span></li>
 </ol>})
 
       
@@ -81,7 +81,8 @@ constructed.</p>
 radix format.  Space-separation is for ease of reading and is often
 in chunks of 4 digits.</p>
 <p>If the format of then length/radix-encoded string is not completely parsed
-an exception will be thrown.  This can be caused by illegal characters
+a <a href="../../rohd/LogicValueConstructionException-class.html">LogicValueConstructionException</a> will be thrown.  This can be caused by
+illegal characters
 in the string or too long of a value string.</p>
 <p>Strings created by <a href="../../rohd/LogicValue/toRadixString.html">toRadixString</a> are parsed by <a href="../../rohd/LogicValue/ofRadixString.html">ofRadixString</a>.</p>
 <p>If the LogicValue width is not encoded as round number of radix
@@ -241,12 +242,10 @@ in the remaining width:</p>
         lastPos = pos;
       }
       return logicValList.rswizzle();
-    } else {
-      throw LogicValueConstructionException(
-          &#39;Invalid LogicValue string $valueString&#39;);
     }
   }
-  return LogicValue.zero;
+  throw LogicValueConstructionException(
+      &#39;Invalid LogicValue string $valueString&#39;);
 }</code></pre>
 </section>
 
