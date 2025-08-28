@@ -27,6 +27,9 @@ class SimpleInterface extends PairInterface {
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])
           ],
+
+          // keep this around to test deprecated functionality
+          // ignore: deprecated_member_use_from_same_package
           modify: (original) => 'simple_$original',
         );
 

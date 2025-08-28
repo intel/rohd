@@ -45,6 +45,8 @@ enum PairRole {
 /// complex situations.
 class PairInterface extends Interface<PairDirection> {
   /// A function that can be used to modify all port names in a certain way.
+  @Deprecated(
+      'Use `uniquify` when connecting or adding sub interfaces instead.')
   String Function(String original)? modify;
 
   /// Constructs an instance of a [PairInterface] with the specified ports.
@@ -56,6 +58,8 @@ class PairInterface extends Interface<PairDirection> {
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
+    @Deprecated(
+        'Use `uniquify` when connecting or adding sub interfaces instead.')
     this.modify,
   }) {
     if (portsFromConsumer != null) {
@@ -162,6 +166,7 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
+    // ignore: deprecated_member_use_from_same_package
     final nonNullModify = modify ?? (original) => original;
     String newUniquify(String original) =>
         nonNullUniquify(nonNullModify(original));
@@ -183,6 +188,12 @@ class PairInterface extends Interface<PairDirection> {
       for (final subInterfaceEntry in _subInterfaces.entries) {
         final subInterface = subInterfaceEntry.value.interface;
         final subInterfaceName = subInterfaceEntry.key;
+
+        final nonNullSubIntfUniquify =
+            subInterfaceEntry.value.uniquify ?? (original) => original;
+
+        String newSubIntfUniquify(String original) =>
+            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -229,7 +240,7 @@ class PairInterface extends Interface<PairDirection> {
           inputTags: subIntfInputTags,
           outputTags: subIntfOutputTags,
           inOutTags: subIntfInOutTags,
-          uniquify: newUniquify,
+          uniquify: newSubIntfUniquify,
         );
       }
     }
@@ -249,11 +260,15 @@ class PairInterface extends Interface<PairDirection> {
   /// opposite way as it usually is with respect to the [PairRole] specified.
   ///
   /// Sub-interfaces are connected via [connectIO] based on the [name].
+  ///
+  /// The [uniquify] function can be used to rename ports as they are created on
+  /// [Module] boundaries during [connectIO].
   @protected
   PairInterfaceType addSubInterface<PairInterfaceType extends PairInterface>(
     String name,
     PairInterfaceType subInterface, {
     bool reverse = false,
+    String Function(String original)? uniquify,
   }) {
     if (_subInterfaces.containsKey(name)) {
       throw InterfaceNameException(
@@ -266,7 +281,11 @@ class PairInterface extends Interface<PairDirection> {
       throw InterfaceNameException(name, 'Sub-interface name is not sanitary.');
     }
 
-    _subInterfaces[name] = _SubPairInterface(subInterface, reverse: reverse);
+    _subInterfaces[name] = _SubPairInterface(
+      subInterface,
+      reverse: reverse,
+      uniquify: uniquify,
+    );
     return subInterface;
   }
 
@@ -285,6 +304,9 @@ class _SubPairInterface<PairInterfaceType extends PairInterface> {
   /// Whether or not this interface should be connected in a reverse way.
   final bool reverse;
 
+  /// A function to uniquify/rename ports on a per-subInterface basis.
+  final String Function(String original)? uniquify;
+
   /// Constructs a new sub-interface tracking object with characteristics.
-  _SubPairInterface(this.interface, {required this.reverse});
+  _SubPairInterface(this.interface, {required this.reverse, this.uniquify});
 }

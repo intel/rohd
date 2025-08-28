@@ -1,11 +1,13 @@
 // Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// pair_interface_hier_test.dart
-// Tests for PairInterface with hierarchy
+// pair_interface_hier_w_modify_test.dart
+// Tests for PairInterface with hierarchy (testing deprecated modify)
 //
 // 2023 March 9
 // Author: Max Korbel <max.korbel@intel.com>
+
+// ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
@@ -16,7 +18,7 @@ class SubInterface extends PairInterface {
   Logic get io => port('io');
   LogicArray get ioArr => port('io_arr') as LogicArray;
 
-  SubInterface()
+  SubInterface({super.modify})
       : super(
           portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
@@ -27,7 +29,7 @@ class SubInterface extends PairInterface {
         );
 
   @override
-  SubInterface clone() => SubInterface();
+  SubInterface clone() => SubInterface(modify: modify);
 }
 
 class TopLevelInterface extends PairInterface {
@@ -43,10 +45,10 @@ class TopLevelInterface extends PairInterface {
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
       subIntfs.add(addSubInterface(
-        'sub$i',
-        SubInterface(),
-        uniquify: (original) => '${original}_$i',
-      ));
+          'sub$i',
+          SubInterface(
+            modify: (original) => '${original}_$i',
+          )));
     }
   }
 
