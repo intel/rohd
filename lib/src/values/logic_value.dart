@@ -757,7 +757,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// in chunks of 4 digits.
   ///
   /// If the format of then length/radix-encoded string is not completely parsed
-  /// an exception will be thrown.  This can be caused by illegal characters
+  /// a [LogicValueConstructionException] will be thrown.  This can be caused by
+  /// illegal characters
   /// in the string or too long of a value string.
   ///
   ///  Strings created by [toRadixString] are parsed by [ofRadixString].
@@ -911,12 +912,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
           lastPos = pos;
         }
         return logicValList.rswizzle();
-      } else {
-        throw LogicValueConstructionException(
-            'Invalid LogicValue string $valueString');
       }
     }
-    return LogicValue.zero;
+    throw LogicValueConstructionException(
+        'Invalid LogicValue string $valueString');
   }
 
   /// Compares this to `other`.
