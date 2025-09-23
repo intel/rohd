@@ -56,16 +56,16 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.9.2/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.9.3/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
 <span class="returntype">void</span>
 <span class="name ">connectIO</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="connectIO-param-module"><span class="type-annotation"><a href="../../rohd/Module-class.html">Module</a></span> <span class="parameter-name">module</span>, </span></li>
 <li><span class="parameter" id="connectIO-param-srcInterface"><span class="type-annotation"><a href="../../rohd/Interface-class.html">Interface</a></span> <span class="parameter-name">srcInterface</span>, {</span></li>
-<li><span class="parameter" id="connectIO-param-inputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span></li>
-<li><span class="parameter" id="connectIO-param-outputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span></li>
-<li><span class="parameter" id="connectIO-param-inOutTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">inOutTags</span>, </span></li>
-<li><span class="parameter" id="connectIO-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span></li>
+<li><span class="parameter" id="connectIO-param-inputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">inputTags</span>, </span></li>
+<li><span class="parameter" id="connectIO-param-outputTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">outputTags</span>, </span></li>
+<li><span class="parameter" id="connectIO-param-inOutTags"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/Iterable-class.html">Iterable</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../rohd/PairDirection.html">PairDirection</a></span>&gt;</span>?</span> <span class="parameter-name">inOutTags</span>, </span></li>
+<li><span class="parameter" id="connectIO-param-uniquify"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">uniquify</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span></li>
 </ol>)?, </span></li>
 </ol>})
 
@@ -89,6 +89,7 @@ void connectIO(Module module, Interface&lt;dynamic&gt; srcInterface,
     Iterable&lt;PairDirection&gt;? inOutTags,
     String Function(String original)? uniquify}) {
   final nonNullUniquify = uniquify ?? (original) =&gt; original;
+  &#47;&#47; ignore: deprecated_member_use_from_same_package
   final nonNullModify = modify ?? (original) =&gt; original;
   String newUniquify(String original) =&gt;
       nonNullUniquify(nonNullModify(original));
@@ -110,6 +111,12 @@ void connectIO(Module module, Interface&lt;dynamic&gt; srcInterface,
     for (final subInterfaceEntry in _subInterfaces.entries) {
       final subInterface = subInterfaceEntry.value.interface;
       final subInterfaceName = subInterfaceEntry.key;
+
+      final nonNullSubIntfUniquify =
+          subInterfaceEntry.value.uniquify ?? (original) =&gt; original;
+
+      String newSubIntfUniquify(String original) =&gt;
+          nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
 
       if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
         throw InterfaceTypeException(
@@ -156,7 +163,7 @@ void connectIO(Module module, Interface&lt;dynamic&gt; srcInterface,
         inputTags: subIntfInputTags,
         outputTags: subIntfOutputTags,
         inOutTags: subIntfInOutTags,
-        uniquify: newUniquify,
+        uniquify: newSubIntfUniquify,
       );
     }
   }

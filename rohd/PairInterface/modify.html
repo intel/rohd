@@ -27,7 +27,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd.dart</a></li>
     <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
-    <li class="self-crumb">modify property</li>
+    <li class="self-crumb"><span class="deprecated">modify</span> property</li>
   </ol>
   <div class="self-name">modify</div>
   <form class="search navbar-right" role="search">
@@ -55,8 +55,13 @@
     
       <section class="multi-line-signature">
         
-        <a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.2/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)</span>?
-        <span class="name ">modify</span>
+  <div>
+    <ol class="annotation-list">
+        <li>@<a href="https://api.dart.dev/stable/3.9.3/dart-core/Deprecated-class.html">Deprecated</a>(&#39;Use `uniquify` when connecting or adding sub interfaces instead.&#39;)</li>
+    </ol>
+  </div>
+        <a href="https://api.dart.dev/stable/3.9.3/dart-core/String-class.html">String</a> Function<span class="signature">(<span class="parameter" id="param-original"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/String-class.html">String</a></span> <span class="parameter-name">original</span></span>)</span>?
+        <span class="name deprecated">modify</span>
         <div class="features"><span class="feature">getter/setter pair</span></div>
 
       </section>
@@ -68,7 +73,9 @@
       
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String Function(String original)? modify;</code></pre>
+  <pre class="language-dart"><code class="language-dart">@Deprecated(
+    &#39;Use `uniquify` when connecting or adding sub interfaces instead.&#39;)
+String Function(String original)? modify;</code></pre>
 </section>
 
 
@@ -85,7 +92,7 @@
     <li><a href="../../index.html">rohd</a></li>
     <li><a href="../../rohd/">rohd</a></li>
     <li><a href="../../rohd/PairInterface-class.html">PairInterface</a></li>
-    <li class="self-crumb">modify property</li>
+    <li class="self-crumb"><span class="deprecated">modify</span> property</li>
 </ol>
 
   <h5>PairInterface class</h5>
