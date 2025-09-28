@@ -294,13 +294,7 @@ void main() {
 
       await Simulator.run();
 
-      // ignore: omit_local_variable_types
-      final List<String> expectedLog = [
-        'wake up 0',
-        'wake up 1',
-        'delta 0',
-        'delta 1'
-      ];
+      final expectedLog = ['wake up 0', 'wake up 1', 'delta 0', 'delta 1'];
       expect(testLog, expectedLog);
     });
 
@@ -335,8 +329,7 @@ void main() {
 
       await Simulator.run();
 
-      // ignore: omit_local_variable_types
-      final List<String> expectedLog = [
+      final expectedLog = [
         'first delta 0',
         'first delta 1',
         'end delta 0',

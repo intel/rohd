@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022-2023 Intel Corporation
+# Copyright (C) 2025 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # pana_source.sh
@@ -11,4 +11,4 @@
 
 PATH="$PATH":"$HOME/.pub-cache/bin"
 
-pana .
+pana --exit-code-threshold 0 .

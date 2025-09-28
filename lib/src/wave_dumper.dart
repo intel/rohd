@@ -54,7 +54,7 @@ class WaveDumper {
   ///
   /// When the [Simulator] time progresses beyond this, it will dump all the
   /// signals that have changed up until that point at this saved time value.
-  var _currentDumpingTimestamp = Simulator.time;
+  int _currentDumpingTimestamp = Simulator.time;
 
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].

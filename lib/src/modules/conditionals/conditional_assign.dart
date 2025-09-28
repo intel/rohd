@@ -46,7 +46,7 @@ class ConditionalAssign extends Conditional {
   late final List<Conditional> conditionals = const [];
 
   /// A cached copy of the result of [receiverOutput] to save on lookups.
-  late final _receiverOutput = receiverOutput(receiver);
+  late final Logic _receiverOutput = receiverOutput(receiver);
 
   @override
   void execute(Set<Logic>? drivenSignals,

@@ -15,10 +15,15 @@ import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 // All logicvalues to support trying all possiblities
-const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
+const List<LogicValue> allLv = [
+  LogicValue.zero,
+  LogicValue.one,
+  LogicValue.x,
+  LogicValue.z
+];
 
 // shorten some names to make tests read better
-const lv = LogicValue.ofString;
+const LogicValue Function(String stringRepresentation) lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
 
 int repeatedInt(int value, int width, int times) {

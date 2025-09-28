@@ -122,7 +122,7 @@ linter:
     - null_check_on_nullable_type_parameter
     - null_closures
     - omit_local_variable_types
-    # - omit_obvious_local_variable_types
+    - omit_obvious_local_variable_types
     # - omit_obvious_property_types
     - one_member_abstracts
     - only_throw_errors
@@ -181,6 +181,7 @@ linter:
     # - sort_constructors_first
     - sort_pub_dependencies
     - sort_unnamed_constructors_first
+    # conflicts with omit_obvious_local_variable_types
     # - specify_nonobvious_local_variable_types
     # - specify_nonobvious_property_types
     - strict_top_level_inference
@@ -201,7 +202,7 @@ linter:
     - unnecessary_constructor_name
     # - unnecessary_final
     - unnecessary_getters_setters
-    # - unnecessary_ignore
+    - unnecessary_ignore
     - unnecessary_lambdas
     - unnecessary_late
     - unnecessary_library_directive
