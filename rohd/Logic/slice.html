@@ -55,8 +55,8 @@
     <section class="multi-line-signature">
       
 <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
-<span class="name ">slice</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
-<li><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.3/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span></li>
+<span class="name ">slice</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="slice-param-endIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">endIndex</span>, </span></li>
+<li><span class="parameter" id="slice-param-startIndex"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.9.4/dart-core/int-class.html">int</a></span> <span class="parameter-name">startIndex</span></span></li>
 </ol>)
 
       
@@ -91,7 +91,6 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
   final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
 
   if (modifiedStartIndex == 0 &amp;&amp; modifiedEndIndex == width - 1) {
-    &#47;&#47; ignore: avoid_returning_this
     return this;
   }
 
