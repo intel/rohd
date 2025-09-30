@@ -152,7 +152,6 @@ class NetITopMod extends Module {
     final net = LogicNet(width: 8, name: 'myNet');
     final norm = LogicNet(width: 8, name: 'myNorm');
 
-    // ignore: parameter_assignments
     intf = NetIntf()..connectIO(this, intf, outputTags: NetTag.values);
 
     NetISubMod(norm, net, intf, NetTag.na);

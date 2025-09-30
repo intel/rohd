@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // invalid_latch_test.dart
@@ -62,8 +62,8 @@ class _DLatch extends Module {
   /// The inverse output of the latch.
   Logic get outB => output(_outB.name);
 
-  late final _out = addOutput('out');
-  late final _outB = addOutput('outB');
+  late final Logic _out = addOutput('out');
+  late final Logic _outB = addOutput('outB');
 }
 
 void main() async {

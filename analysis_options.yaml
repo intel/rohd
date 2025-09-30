@@ -34,6 +34,7 @@ linter:
     - avoid_field_initializers_in_const_classes
     - avoid_final_parameters
     - avoid_function_literals_in_foreach_calls
+    - avoid_futureor_void
     - avoid_implementing_value_types
     - avoid_init_to_null
     - avoid_js_rounded_ints
@@ -81,6 +82,7 @@ linter:
     - directives_ordering
     - discarded_futures
     - do_not_use_environment
+    # - document_ignores
     - empty_catches
     - empty_constructor_bodies
     - empty_statements
@@ -93,6 +95,7 @@ linter:
     - implicit_call_tearoffs
     - implicit_reopen
     - invalid_case_patterns
+    - invalid_runtime_check_with_js_interop_types
     - join_return_with_assignment
     - leading_newlines_in_multiline_strings
     - library_annotations
@@ -119,6 +122,8 @@ linter:
     - null_check_on_nullable_type_parameter
     - null_closures
     - omit_local_variable_types
+    - omit_obvious_local_variable_types
+    # - omit_obvious_property_types
     - one_member_abstracts
     - only_throw_errors
     - overridden_fields
@@ -176,6 +181,11 @@ linter:
     # - sort_constructors_first
     - sort_pub_dependencies
     - sort_unnamed_constructors_first
+    # conflicts with omit_obvious_local_variable_types
+    # - specify_nonobvious_local_variable_types
+    # - specify_nonobvious_property_types
+    - strict_top_level_inference
+    # - switch_on_type
     - test_types_in_equals
     - throw_in_finally
     - tighten_type_of_initializing_formals
@@ -183,6 +193,8 @@ linter:
     - type_init_formals
     - type_literal_in_constant_pattern
     - unawaited_futures
+    - unintended_html_in_doc_comment
+    # - unnecessary_async
     - unnecessary_await_in_return
     - unnecessary_brace_in_string_interps
     - unnecessary_breaks
@@ -190,6 +202,7 @@ linter:
     - unnecessary_constructor_name
     # - unnecessary_final
     - unnecessary_getters_setters
+    - unnecessary_ignore
     - unnecessary_lambdas
     - unnecessary_late
     - unnecessary_library_directive
@@ -208,8 +221,11 @@ linter:
     - unnecessary_string_interpolations
     - unnecessary_this
     - unnecessary_to_list_in_spreads
+    # - unnecessary_unawaited
+    - unnecessary_underscores
     # - unreachable_from_main
     - unrelated_type_equality_checks
+    # - unsafe_variance
     - use_build_context_synchronously
     - use_colored_box
     - use_decorated_box
@@ -221,6 +237,7 @@ linter:
     - use_key_in_widget_constructors
     - use_late_for_private_fields_and_variables
     - use_named_constants
+    - use_null_aware_elements
     - use_raw_strings
     - use_rethrow_when_possible
     - use_setters_to_change_properties
@@ -229,5 +246,6 @@ linter:
     - use_super_parameters
     - use_test_throws_matchers
     - use_to_and_as_if_applicable
+    - use_truncating_division
     - valid_regexps
     - void_checks

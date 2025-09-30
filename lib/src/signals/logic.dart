@@ -766,7 +766,6 @@ class Logic {
     final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
 
     if (modifiedStartIndex == 0 && modifiedEndIndex == width - 1) {
-      // ignore: avoid_returning_this
       return this;
     }
 
@@ -866,7 +865,6 @@ class Logic {
         this,
       ].swizzle();
     } else if (newWidth == width) {
-      // ignore: avoid_returning_this
       return this;
     }
 

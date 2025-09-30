@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional_assign.dart
@@ -46,7 +46,7 @@ class ConditionalAssign extends Conditional {
   late final List<Conditional> conditionals = const [];
 
   /// A cached copy of the result of [receiverOutput] to save on lookups.
-  late final _receiverOutput = receiverOutput(receiver);
+  late final Logic _receiverOutput = receiverOutput(receiver);
 
   @override
   void execute(Set<Logic>? drivenSignals,

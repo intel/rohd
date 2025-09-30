@@ -204,7 +204,7 @@ class Combinational extends Always {
   ///
   /// Declared as a separate static function so that it doesn't need to be
   /// created on each [_guard] call.
-  static void _writeAfterRead(args) {
+  static void _writeAfterRead(LogicValueChanged f) {
     throw WriteAfterReadException();
   }
 

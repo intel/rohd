@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -343,7 +343,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// the width of [other].
   LogicValue _concatenate(LogicValue other) {
     if (other.width == 0) {
-      // ignore: avoid_returning_this
       return this;
     } else if (width == 0) {
       return other;
@@ -1105,7 +1104,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// Throws an Exception if width is not 1.
   @Deprecated('Check `width` separately to see if single-bit.')
-  // ignore: avoid_returning_this
   LogicValue get bit {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
@@ -1524,7 +1522,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
-      // ignore: avoid_returning_this
       return this;
     }
 

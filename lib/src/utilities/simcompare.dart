@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -203,7 +203,6 @@ abstract class SimCompare {
             }
           }).catchError(
             test: (error) => error is Exception,
-            // ignore: avoid_types_on_closure_parameters
             (Object err, StackTrace stackTrace) {
               Simulator.throwException(err as Exception, stackTrace);
             },
@@ -291,7 +290,7 @@ abstract class SimCompare {
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
-        // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
+        // ignore: prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
             // ignore: prefer_interpolation_to_compose_strings

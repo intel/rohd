@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 Intel Corporation
+// Copyright (C) 2022-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // finite_state_machine.dart
@@ -281,7 +281,7 @@ class _MermaidStateDiagram {
   final File _outputFile;
 
   // An empty spaces indentation for state.
-  final _indentation = ' ' * 4;
+  final String _indentation = ' ' * 4;
 
   /// Generate a [_MermaidStateDiagram] that initialized the diagram of
   /// mermaid as `stateDiagram`.

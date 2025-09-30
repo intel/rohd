@@ -475,7 +475,7 @@ class LogicStructure implements Logic {
 
   /// An internal version of [packed] for instrumentation operations on this
   /// [LogicStructure].
-  late final _internalPacked = _generateInternalPacked();
+  late final Logic _internalPacked = _generateInternalPacked();
 
   /// Generates and subscribes to be stored lazily into [_internalPacked].
   Logic _generateInternalPacked() {
@@ -651,7 +651,6 @@ class LogicStructure implements Logic {
       throw UnsupportedError('Delegated to elements');
 
   @override
-  // ignore: unused_element
   set _unassignableReason(String? _) =>
       throw UnsupportedError('Delegated to elements');
 
