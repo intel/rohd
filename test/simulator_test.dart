@@ -281,8 +281,7 @@ void main() {
 
   group('Rohme compatibility tests', () {
     test('simulator supports delta cycles', () async {
-      // ignore: omit_local_variable_types
-      final List<String> testLog = [];
+      final testLog = <String>[];
 
       void deltaFunc(int t, int i) {
         testLog.add('wake up $i');
@@ -311,8 +310,7 @@ void main() {
     });
 
     test('deltas occur after end of delta', () async {
-      // ignore: omit_local_variable_types
-      final List<String> testLog = [];
+      final testLog = <String>[];
 
       void deltaFunc(int t, int i) {
         testLog.add('first delta $i');
