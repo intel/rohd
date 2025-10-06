@@ -77,13 +77,11 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 void driveX(Set&lt;Logic&gt;? drivenSignals) {
-  for (final receiver in receivers) {
-    receiverOutput(receiver).put(LogicValue.x);
-    if (drivenSignals != null &amp;&amp;
-        (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
-      drivenSignals.add(receiver);
-    }
+  for (final receiverOutput in _receiverOutputs) {
+    receiverOutput.put(LogicValue.x);
   }
+
+  drivenSignals?.addAll(receivers);
 }</code></pre>
 </section>
 
