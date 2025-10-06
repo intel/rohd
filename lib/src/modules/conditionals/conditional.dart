@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
@@ -185,16 +185,19 @@ abstract class Conditional {
   Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
 
+  /// A cached list of [receiverOutput]s for all [receivers] that can be
+  /// iterated across quickly.
+  late final List<Logic> _receiverOutputs =
+      receivers.map(receiverOutput).toList(growable: false);
+
   /// Drives X to all receivers.
   @protected
   void driveX(Set<Logic>? drivenSignals) {
-    for (final receiver in receivers) {
-      receiverOutput(receiver).put(LogicValue.x);
-      if (drivenSignals != null &&
-          (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
-        drivenSignals.add(receiver);
-      }
+    for (final receiverOutput in _receiverOutputs) {
+      receiverOutput.put(LogicValue.x);
     }
+
+    drivenSignals?.addAll(receivers);
   }
 }
 
