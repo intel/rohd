@@ -11,6 +11,9 @@
     },
     {
       "pattern":"^https://github.com"
+    },
+    {
+      "pattern":"^https://www.nandland.com"
     }
   ]
 }
