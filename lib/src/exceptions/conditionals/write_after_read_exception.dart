@@ -29,6 +29,7 @@ class WriteAfterReadException extends RohdException {
             ' design with minimal refactoring.',
             _path));
 
+  /// Appends a [path] to the [message], if it exists.
   static String _appendPath(String message, List<String>? path) {
     if (path == null || path.isEmpty) {
       return message;
@@ -36,6 +37,8 @@ class WriteAfterReadException extends RohdException {
     return '$message\n${path.join('\n')}';
   }
 
+  /// Clones this [WriteAfterReadException] with an added [pathItem] item to the
+  /// top of the path.
   @internal
   WriteAfterReadException cloneWithAddedPath(String pathItem) =>
       WriteAfterReadException._([
