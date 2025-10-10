@@ -364,6 +364,16 @@ ${subPadding}end
 
     return newMappings;
   }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()..writeln('$caseType($expression, ');
+    for (final item in items) {
+      buffer.writeln('  $item');
+    }
+    buffer.writeln(')');
+    return buffer.toString();
+  }
 }
 
 /// A special version of [Case] which can do wildcard matching via `z` in

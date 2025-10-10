@@ -272,4 +272,18 @@ ${padding}end ''');
 
     return newMappings;
   }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()..writeln('If(');
+    for (final iff in iffs) {
+      if (iff is Else) {
+        buffer.writeln('  Else  ...');
+      } else {
+        buffer.writeln('  ${iff.condition.name} ...');
+      }
+    }
+    buffer.writeln(')');
+    return buffer.toString();
+  }
 }
