@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // write_after_read_exception.dart
@@ -14,6 +14,7 @@ import 'package:rohd/src/exceptions/rohd_exception.dart';
 ///
 /// This is also sometimes called a "read before write" violation.
 class WriteAfterReadException extends RohdException {
+  /// The path of things that caused the exception.
   final List<String>? _path;
 
   /// Creates a [WriteAfterReadException].
