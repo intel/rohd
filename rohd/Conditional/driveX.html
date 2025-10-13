@@ -77,8 +77,12 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@protected
 void driveX(Set&lt;Logic&gt;? drivenSignals) {
-  for (final receiverOutput in _receiverOutputs) {
-    receiverOutput.put(LogicValue.x);
+  try {
+    for (final receiverOutput in _receiverOutputs) {
+      receiverOutput.put(LogicValue.x);
+    }
+  } on WriteAfterReadException catch (e) {
+    throw e.cloneWithAddedPath(&#39;  at (driving X) $this&#39;);
   }
 
   drivenSignals?.addAll(receivers);

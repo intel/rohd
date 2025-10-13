@@ -92,12 +92,17 @@ void execute(Set&lt;Logic&gt;? drivenSignals,
   }
 
   final currentValue = driverValue(driver);
-  if (!currentValue.isValid) {
-    &#47;&#47; Use bitwise &amp; to turn Z&#39;s into X&#39;s, but keep valid signals as-is.
-    &#47;&#47; It&#39;s too pessimistic to convert the whole bus to X.
-    _receiverOutput.put(currentValue &amp; currentValue);
-  } else {
-    _receiverOutput.put(currentValue);
+
+  try {
+    if (!currentValue.isValid) {
+      &#47;&#47; Use bitwise &amp; to turn Z&#39;s into X&#39;s, but keep valid signals as-is.
+      &#47;&#47; It&#39;s too pessimistic to convert the whole bus to X.
+      _receiverOutput.put(currentValue &amp; currentValue);
+    } else {
+      _receiverOutput.put(currentValue);
+    }
+  } on WriteAfterReadException catch (e) {
+    throw e.cloneWithAddedPath(&#39;  at $this&#39;);
   }
 
   if (drivenSignals != null &amp;&amp;
