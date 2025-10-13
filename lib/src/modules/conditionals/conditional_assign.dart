@@ -56,12 +56,17 @@ class ConditionalAssign extends Conditional {
     }
 
     final currentValue = driverValue(driver);
-    if (!currentValue.isValid) {
-      // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
-      // It's too pessimistic to convert the whole bus to X.
-      _receiverOutput.put(currentValue & currentValue);
-    } else {
-      _receiverOutput.put(currentValue);
+
+    try {
+      if (!currentValue.isValid) {
+        // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
+        // It's too pessimistic to convert the whole bus to X.
+        _receiverOutput.put(currentValue & currentValue);
+      } else {
+        _receiverOutput.put(currentValue);
+      }
+    } on WriteAfterReadException catch (e) {
+      throw e.cloneWithAddedPath('  at $this');
     }
 
     if (drivenSignals != null &&

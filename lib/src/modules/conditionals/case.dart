@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // case.dart
@@ -363,6 +363,16 @@ ${subPadding}end
     }
 
     return newMappings;
+  }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()..writeln('$caseType($expression, ');
+    for (final item in items) {
+      buffer.writeln('  $item');
+    }
+    buffer.writeln(')');
+    return buffer.toString();
   }
 }
 

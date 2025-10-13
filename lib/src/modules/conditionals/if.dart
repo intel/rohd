@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // if.dart
@@ -271,5 +271,19 @@ ${padding}end ''');
     }
 
     return newMappings;
+  }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()..writeln('If(');
+    for (final iff in iffs) {
+      if (iff is Else) {
+        buffer.writeln('  Else  ...');
+      } else {
+        buffer.writeln('  ${iff.condition.name} ...');
+      }
+    }
+    buffer.writeln(')');
+    return buffer.toString();
   }
 }

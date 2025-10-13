@@ -193,8 +193,12 @@ abstract class Conditional {
   /// Drives X to all receivers.
   @protected
   void driveX(Set<Logic>? drivenSignals) {
-    for (final receiverOutput in _receiverOutputs) {
-      receiverOutput.put(LogicValue.x);
+    try {
+      for (final receiverOutput in _receiverOutputs) {
+        receiverOutput.put(LogicValue.x);
+      }
+    } on WriteAfterReadException catch (e) {
+      throw e.cloneWithAddedPath('  at (driving X) $this');
     }
 
     drivenSignals?.addAll(receivers);
