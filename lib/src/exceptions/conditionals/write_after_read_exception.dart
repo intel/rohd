@@ -44,6 +44,6 @@ class WriteAfterReadException extends RohdException {
   WriteAfterReadException cloneWithAddedPath(String pathItem) =>
       WriteAfterReadException._([
         pathItem,
-        if (_path != null) ...?_path,
+        ...?_path,
       ]);
 }
