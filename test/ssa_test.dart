@@ -437,6 +437,47 @@ class SsaPipeJump extends Module {
   }
 }
 
+class ProcessingModule extends Module {
+  late final Logic x = addOutput('x_p', width: 8);
+  late final Logic y = addOutput('y_p', width: 8);
+  ProcessingModule(Logic a) : super(name: 'processing') {
+    a = addInput('a_p', a, width: 8);
+
+    x <= a + 1;
+    y <= a + 2;
+  }
+}
+
+class SsaMultiUseModule extends SsaTestModule {
+  SsaMultiUseModule(Logic a, {bool badDoubleUse = true})
+      : super(name: 'multi_use') {
+    a = addInput('a', a, width: 8);
+    addOutput('x', width: 8);
+    final z = Logic(name: 'z', width: 8);
+
+    final s1 = Logic(name: 's1', width: 8);
+
+    Combinational.ssa((s) => [
+          s(s1) < a,
+          if (badDoubleUse)
+            ...() {
+              final pmod = ProcessingModule(s(s1));
+              return [
+                If(pmod.y.lt(5), then: [s(z) < 1]),
+                s(x) < pmod.x,
+              ];
+            }()
+          else ...[
+            If(ProcessingModule(s(s1)).y.lt(5), then: [s(z) < 1]),
+            s(x) < ProcessingModule(s(s1)).x,
+          ]
+        ]);
+  }
+
+  @override
+  int model(int a) => a + 1;
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -456,18 +497,25 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
+  test('ssa multi use model bad reuse', () {
+    expect(() => SsaMultiUseModule(Logic(name: 'a', width: 8)),
+        throwsA(isA<MappedSignalAlreadyAssignedException>()));
+  });
+
   group('ssa_test_module', () {
-    final aInput = Logic(width: 8, name: 'a');
+    Logic aInput() => Logic(width: 8, name: 'a');
+
     final mods = [
-      SsaModAssignsOnly(aInput),
-      SsaModIf(aInput),
-      SsaModCase(aInput),
-      SsaChain(aInput),
-      SsaMix(aInput),
-      SsaNested(aInput),
-      SsaMultiDep(aInput),
-      SsaModWithStructElements(aInput),
-      SsaModWithStructSplit(aInput),
+      SsaModAssignsOnly(aInput()),
+      SsaModIf(aInput()),
+      SsaModCase(aInput()),
+      SsaChain(aInput()),
+      SsaMix(aInput()),
+      SsaNested(aInput()),
+      SsaMultiDep(aInput()),
+      SsaModWithStructElements(aInput()),
+      SsaModWithStructSplit(aInput()),
+      SsaMultiUseModule(aInput(), badDoubleUse: false),
     ];
 
     for (final mod in mods) {
