@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // swizzle_test.dart
@@ -6,6 +6,8 @@
 //
 // 2022 January 6
 // Author: Max Korbel <max.korbel@intel.com>
+
+import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -28,9 +30,34 @@ class SwizzlyEmpty extends Module {
   }
 }
 
+class SwizzleVariety extends Module {
+  SwizzleVariety(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final swz = [
+      Const(0),
+      a,
+      Logic(name: 'x', width: 4),
+      LogicArray(name: 'y', [3], 2),
+      Const(3, width: 5),
+      LogicStructure([a, Const(2, width: 3)], name: 'z'),
+    ].swizzle();
+    final b = addOutput('b', width: swz.width);
+    b <= swz;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('annotated elements of swizzle in generated sv', () async {
+    final mod = SwizzleVariety(Logic(width: 8));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    File('tmp.sv').writeAsStringSync(sv);
+    print(sv);
   });
 
   group('LogicValue', () {

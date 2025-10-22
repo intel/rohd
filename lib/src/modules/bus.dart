@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus.dart
@@ -245,10 +245,25 @@ class Swizzle extends Module with InlineSystemVerilog {
         'This swizzle has ${_swizzleInputs.length} inputs,'
         ' but saw $inputs with ${inputs.length} values.');
 
-    final inputStr = _swizzleInputs.reversed
-        .where((e) => e.width > 0)
-        .map((e) => inputs[e.name])
-        .join(',');
-    return '{$inputStr}';
+    var upperIndex = out.width - 1;
+    final inputStr = _swizzleInputs.reversed.where((e) => e.width > 0).map((e) {
+      final inName = inputs[e.name]!;
+
+      var widthDescription = '$upperIndex';
+
+      if (e.width > 1) {
+        final lowerIndex = upperIndex - e.width + 1;
+        widthDescription += ':$lowerIndex';
+      }
+
+      upperIndex -= e.width;
+
+      final maybeComma = upperIndex >= 0 ? ',' : '';
+      return '$inName$maybeComma // $widthDescription';
+    }).join('\n');
+    return '''
+{
+$inputStr
+}''';
   }
 }
