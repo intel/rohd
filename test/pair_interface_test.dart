@@ -57,14 +57,16 @@ class HierarchicalInterface extends PairInterface {
   SubInterface get sub1 => subInterfaces['sub1']! as SubInterface;
   SubInterface get sub2 => subInterfaces['sub2']! as SubInterface;
 
-  HierarchicalInterface()
+  HierarchicalInterface({bool excludeSubInterfaces = false})
       : super(
           portsFromProvider: [Logic.port('main_req', 8)],
           portsFromConsumer: [Logic.port('main_rsp', 8)],
         ) {
-    addSubInterface('sub1', SubInterface(), uniquify: (orig) => 'sub1_$orig');
-    addSubInterface('sub2', SubInterface(),
-        uniquify: (orig) => 'sub2_$orig', reverse: true);
+    if (!excludeSubInterfaces) {
+      addSubInterface('sub1', SubInterface(), uniquify: (orig) => 'sub1_$orig');
+      addSubInterface('sub2', SubInterface(),
+          uniquify: (orig) => 'sub2_$orig', reverse: true);
+    }
   }
 
   @override
@@ -261,8 +263,21 @@ void main() {
         await mod.build();
 
         final vectors = [
-          Vector({'intf1_main_req': 0x01, 'intf2_main_rsp': 0x23},
-              {'intf2_main_req': 0x01, 'intf1_main_rsp': 0x23}),
+          Vector({
+            'intf1_main_req': 0x01,
+            'intf2_main_rsp': 0x12,
+            'intf1_sub1_sub_req': 0x23,
+            'intf2_sub1_sub_rsp': 0x34,
+            'intf1_sub2_sub_rsp': 0x45,
+            'intf2_sub2_sub_req': 0x56
+          }, {
+            'intf2_main_req': 0x01,
+            'intf1_main_rsp': 0x12,
+            'intf2_sub1_sub_req': 0x23,
+            'intf1_sub1_sub_rsp': 0x34,
+            'intf2_sub2_sub_rsp': 0x45,
+            'intf1_sub2_sub_req': 0x56
+          }),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -280,26 +295,17 @@ void main() {
     expect(intf.subInterfaces.length, equals(2));
 
     // Test access to sub-interface ports
-    expect(intf.sub1.subReq.width, equals(1));
-    expect(intf.sub1.subRsp.width, equals(1));
-    expect(intf.sub2.subReq.width, equals(1));
-    expect(intf.sub2.subRsp.width, equals(1));
+    expect(intf.sub1.subReq.width, equals(8));
+    expect(intf.sub1.subRsp.width, equals(8));
+    expect(intf.sub2.subReq.width, equals(8));
+    expect(intf.sub2.subRsp.width, equals(8));
   });
 
-  test('sub-interface error handling', () {
-    final intf1 = HierarchicalInterface();
-    final intf2 = SimpleInterface(); // Doesn't have sub-interfaces
-
-    // Should throw when trying to drive a non-PairInterface with sub-interfaces
+  test('sub-interface missing error handling', () {
     expect(
-      () => intf1.driveOther(intf2, {PairDirection.fromProvider}),
-      returnsNormally, // Base interface operations should still work
-    );
-
-    // Create another hierarchical interface missing a sub-interface
-    final intf3 = PairInterface();
-    expect(
-      () => intf1.driveOther(intf3, {PairDirection.fromProvider}),
+      () => HierarchicalInterface().driveOther(
+          HierarchicalInterface(excludeSubInterfaces: true),
+          {PairDirection.fromProvider}),
       throwsA(isA<InterfaceTypeException>()),
     );
   });

@@ -292,8 +292,8 @@ class PairInterface extends Interface<PairDirection> {
   /// Makes `this` drive interface signals tagged with [tags] on [other].
   ///
   /// In addition to the base [Interface.driveOther] functionality, this also
-  /// handles driving signals on all [subInterfaces] hierarchically when
-  /// [other] is a [PairInterface].
+  /// handles driving signals on all [subInterfaces] hierarchically when [other]
+  /// is a [PairInterface], considering `reverse`.
   @override
   void driveOther(
       Interface<PairDirection> other, Iterable<PairDirection> tags) {
@@ -305,7 +305,12 @@ class PairInterface extends Interface<PairDirection> {
           throw InterfaceTypeException(
               other, 'missing a sub-interface named $subIntfName');
         }
-        subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+        } else {
+          subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+        }
       });
     }
   }
@@ -314,7 +319,7 @@ class PairInterface extends Interface<PairDirection> {
   ///
   /// In addition to the base [Interface.receiveOther] functionality, this also
   /// handles receiving signals from all [subInterfaces] hierarchically when
-  /// [other] is a [PairInterface].
+  /// [other] is a [PairInterface], considering `reverse`.
   @override
   void receiveOther(
       Interface<PairDirection> other, Iterable<PairDirection> tags) {
@@ -326,7 +331,12 @@ class PairInterface extends Interface<PairDirection> {
           throw InterfaceTypeException(
               other, 'missing a sub-interface named $subIntfName');
         }
-        subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+        } else {
+          subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+        }
       });
     }
   }
@@ -338,7 +348,7 @@ class PairInterface extends Interface<PairDirection> {
   /// this also handles conditional driving of signals on all [subInterfaces]
   /// hierarchically when [other] is a [PairInterface]. Returns a
   /// [ConditionalGroup] that combines all conditionals from the main interface
-  /// and sub-interfaces.
+  /// and sub-interfaces, considering `reverse`.
   @override
   Conditional conditionalDriveOther(
       Interface<PairDirection> other, Iterable<PairDirection> tags) {
@@ -352,8 +362,14 @@ class PairInterface extends Interface<PairDirection> {
           throw InterfaceTypeException(
               other, 'missing a sub-interface named $subIntfName');
         }
-        conditionals.add(subInterface.conditionalDriveOther(
-            other.subInterfaces[subIntfName]!, tags));
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          conditionals.add(subInterface.conditionalReceiveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        } else {
+          conditionals.add(subInterface.conditionalDriveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        }
       });
     }
 
@@ -363,11 +379,11 @@ class PairInterface extends Interface<PairDirection> {
   /// Makes `this` signals tagged with [tags] be driven conditionally by
   /// [other].
   ///
-  /// In addition to the base [Interface.conditionalReceiveOther]
-  /// functionality, this also handles conditional receiving of signals from
-  /// all [subInterfaces] hierarchically when [other] is a [PairInterface].
-  /// Returns a [ConditionalGroup] that combines all conditionals from the main
-  /// interface and sub-interfaces.
+  /// In addition to the base [Interface.conditionalReceiveOther] functionality,
+  /// this also handles conditional receiving of signals from all
+  /// [subInterfaces] hierarchically when [other] is a [PairInterface]. Returns
+  /// a [ConditionalGroup] that combines all conditionals from the main
+  /// interface and sub-interfaces, considering `reverse`.
   @override
   Conditional conditionalReceiveOther(
       Interface<PairDirection> other, Iterable<PairDirection> tags) {
@@ -381,8 +397,14 @@ class PairInterface extends Interface<PairDirection> {
           throw InterfaceTypeException(
               other, 'missing a sub-interface named $subIntfName');
         }
-        conditionals.add(subInterface.conditionalReceiveOther(
-            other.subInterfaces[subIntfName]!, tags));
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          conditionals.add(subInterface.conditionalDriveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        } else {
+          conditionals.add(subInterface.conditionalReceiveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        }
       });
     }
 
