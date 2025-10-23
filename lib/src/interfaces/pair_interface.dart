@@ -289,6 +289,106 @@ class PairInterface extends Interface<PairDirection> {
     return subInterface;
   }
 
+  /// Makes `this` drive interface signals tagged with [tags] on [other].
+  ///
+  /// In addition to the base [Interface.driveOther] functionality, this also
+  /// handles driving signals on all [subInterfaces] hierarchically when
+  /// [other] is a [PairInterface].
+  @override
+  void driveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    super.driveOther(other, tags);
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+        subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+      });
+    }
+  }
+
+  /// Makes `this` signals tagged with [tags] be driven by [other].
+  ///
+  /// In addition to the base [Interface.receiveOther] functionality, this also
+  /// handles receiving signals from all [subInterfaces] hierarchically when
+  /// [other] is a [PairInterface].
+  @override
+  void receiveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    super.receiveOther(other, tags);
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+        subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+      });
+    }
+  }
+
+  /// Makes `this` conditionally drive interface signals tagged with [tags] on
+  /// [other].
+  ///
+  /// In addition to the base [Interface.conditionalDriveOther] functionality,
+  /// this also handles conditional driving of signals on all [subInterfaces]
+  /// hierarchically when [other] is a [PairInterface]. Returns a
+  /// [ConditionalGroup] that combines all conditionals from the main interface
+  /// and sub-interfaces.
+  @override
+  Conditional conditionalDriveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    final conditionals = <Conditional>[
+      super.conditionalDriveOther(other, tags)
+    ];
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+        conditionals.add(subInterface.conditionalDriveOther(
+            other.subInterfaces[subIntfName]!, tags));
+      });
+    }
+
+    return ConditionalGroup(conditionals);
+  }
+
+  /// Makes `this` signals tagged with [tags] be driven conditionally by
+  /// [other].
+  ///
+  /// In addition to the base [Interface.conditionalReceiveOther]
+  /// functionality, this also handles conditional receiving of signals from
+  /// all [subInterfaces] hierarchically when [other] is a [PairInterface].
+  /// Returns a [ConditionalGroup] that combines all conditionals from the main
+  /// interface and sub-interfaces.
+  @override
+  Conditional conditionalReceiveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    final conditionals = <Conditional>[
+      super.conditionalReceiveOther(other, tags)
+    ];
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+        conditionals.add(subInterface.conditionalReceiveOther(
+            other.subInterfaces[subIntfName]!, tags));
+      });
+    }
+
+    return ConditionalGroup(conditionals);
+  }
+
   @override
   @mustBeOverridden
   // ignore: deprecated_member_use_from_same_package
