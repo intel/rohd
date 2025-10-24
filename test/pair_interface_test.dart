@@ -37,6 +37,42 @@ class SimpleInterface extends PairInterface {
   SimpleInterface clone() => SimpleInterface();
 }
 
+class SubInterface extends PairInterface {
+  Logic get subReq => port('sub_req');
+  Logic get subRsp => port('sub_rsp');
+
+  SubInterface()
+      : super(
+          portsFromConsumer: [Logic.port('sub_rsp', 8)],
+          portsFromProvider: [Logic.port('sub_req', 8)],
+        );
+
+  @override
+  SubInterface clone() => SubInterface();
+}
+
+class HierarchicalInterface extends PairInterface {
+  Logic get mainReq => port('main_req');
+  Logic get mainRsp => port('main_rsp');
+  SubInterface get sub1 => subInterfaces['sub1']! as SubInterface;
+  SubInterface get sub2 => subInterfaces['sub2']! as SubInterface;
+
+  HierarchicalInterface({bool excludeSubInterfaces = false})
+      : super(
+          portsFromProvider: [Logic.port('main_req', 8)],
+          portsFromConsumer: [Logic.port('main_rsp', 8)],
+        ) {
+    if (!excludeSubInterfaces) {
+      addSubInterface('sub1', SubInterface(), uniquify: (orig) => 'sub1_$orig');
+      addSubInterface('sub2', SubInterface(),
+          uniquify: (orig) => 'sub2_$orig', reverse: true);
+    }
+  }
+
+  @override
+  HierarchicalInterface clone() => HierarchicalInterface();
+}
+
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
@@ -118,6 +154,34 @@ class PassthroughPairIntfModule extends Module {
   }
 }
 
+class SubInterfaceTestModule extends Module {
+  SubInterfaceTestModule(
+      HierarchicalInterface intf1, HierarchicalInterface intf2,
+      {required bool useConditional}) {
+    intf1 = addPairInterfacePorts(
+      intf1,
+      PairRole.consumer,
+      uniquify: (original) => 'intf1_$original',
+    );
+    intf2 = addPairInterfacePorts(
+      intf2,
+      PairRole.provider,
+      uniquify: (original) => 'intf2_$original',
+    );
+
+    if (useConditional) {
+      Combinational([
+        intf1.conditionalDriveOther(intf2, {PairDirection.fromProvider}),
+        intf1.conditionalReceiveOther(intf2, {PairDirection.fromConsumer}),
+      ]);
+    } else {
+      intf1
+        ..driveOther(intf2, {PairDirection.fromProvider})
+        ..receiveOther(intf2, {PairDirection.fromConsumer});
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -186,5 +250,63 @@ void main() {
         });
       }
     }
+  });
+
+  group('sub-interface drive and receive other', () {
+    for (final useConditional in [false, true]) {
+      test('with useConditional: $useConditional', () async {
+        final mod = SubInterfaceTestModule(
+          HierarchicalInterface(),
+          HierarchicalInterface(),
+          useConditional: useConditional,
+        );
+        await mod.build();
+
+        final vectors = [
+          Vector({
+            'intf1_main_req': 0x01,
+            'intf2_main_rsp': 0x12,
+            'intf1_sub1_sub_req': 0x23,
+            'intf2_sub1_sub_rsp': 0x34,
+            'intf1_sub2_sub_rsp': 0x45,
+            'intf2_sub2_sub_req': 0x56
+          }, {
+            'intf2_main_req': 0x01,
+            'intf1_main_rsp': 0x12,
+            'intf2_sub1_sub_req': 0x23,
+            'intf1_sub1_sub_rsp': 0x34,
+            'intf2_sub2_sub_rsp': 0x45,
+            'intf1_sub2_sub_req': 0x56
+          }),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+  });
+
+  test('hierarchical interface creation and access', () {
+    final intf = HierarchicalInterface();
+
+    // Test that sub-interfaces were created properly
+    expect(intf.subInterfaces.containsKey('sub1'), isTrue);
+    expect(intf.subInterfaces.containsKey('sub2'), isTrue);
+    expect(intf.subInterfaces.length, equals(2));
+
+    // Test access to sub-interface ports
+    expect(intf.sub1.subReq.width, equals(8));
+    expect(intf.sub1.subRsp.width, equals(8));
+    expect(intf.sub2.subReq.width, equals(8));
+    expect(intf.sub2.subRsp.width, equals(8));
+  });
+
+  test('sub-interface missing error handling', () {
+    expect(
+      () => HierarchicalInterface().driveOther(
+          HierarchicalInterface(excludeSubInterfaces: true),
+          {PairDirection.fromProvider}),
+      throwsA(isA<InterfaceTypeException>()),
+    );
   });
 }
