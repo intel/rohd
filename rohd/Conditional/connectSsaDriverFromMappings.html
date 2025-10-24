@@ -101,6 +101,12 @@ static void connectSsaDriverFromMappings(
       continue;
     }
 
+    &#47;&#47; if at this point there&#39;s still a srcConnection, then something is wrong
+    &#47;&#47; and someone probably reused a signal when they shouldn&#39;t have
+    if (ssaDriver.srcConnection != null) {
+      throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+    }
+
     ssaDriver &lt;= mappings[ssaDriver.ref]!;
   }
 }</code></pre>
