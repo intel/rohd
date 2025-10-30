@@ -19,7 +19,15 @@ class LogicStructure implements Logic {
 
   /// Packs all [elements] into one flattened [Logic] bus.
   @override
-  late final Logic packed = elements
+  // If this is an output port, we have to regenerate each time to avoid
+  // illegal reuse inside and outside the module. This is unique for outputs.
+  Logic get packed => isOutput ? _genPacked() : _packed;
+
+  /// A cached version of [packed] scenarios when it is legal.
+  late final Logic _packed = _genPacked();
+
+  /// Generates the packed version of this [LogicStructure].
+  Logic _genPacked() => elements
       .map((e) {
         if (e is LogicStructure) {
           return e.packed;
