@@ -47,6 +47,9 @@ class SynthAssignment {
     assert(_checkWidths(), 'Signal width mismatch');
   }
 
+  /// The width of the assignment (of both the [src] and [dst]).
+  int get width => dst.width;
+
   @override
   String toString() => '$dst <= $src';
 }
