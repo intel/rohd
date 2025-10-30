@@ -153,7 +153,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           ' bidirectional net connections.');
 
       var sliceString = '';
-      if (assignment is PartialSynthAssignment) {
+      if (assignment is PartialSynthAssignment && assignment.width > 1) {
         sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
             ? '[${assignment.dstUpperIndex}]'
             : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';

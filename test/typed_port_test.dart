@@ -55,6 +55,22 @@ class SimpleStructModule extends Module {
   }
 }
 
+class OneBitStruct extends LogicStructure {
+  OneBitStruct({super.name = 'obs'}) : super([Logic(name: 'oneBit')]);
+
+  @override
+  OneBitStruct clone({String? name}) => OneBitStruct(name: name ?? this.name);
+}
+
+class ModuleWithOneBitStructPort extends Module {
+  ModuleWithOneBitStructPort(OneBitStruct inStruct) {
+    inStruct = addTypedInput('inStruct', inStruct);
+    final outStruct = addTypedOutput('outStruct', inStruct.clone);
+
+    outStruct.elements.first.gets(inStruct.elements.first);
+  }
+}
+
 class SimpleStructModuleContainer extends Module {
   SimpleStructModuleContainer(Logic a1, Logic a2,
       {super.name = 'simple_struct_mod_container', bool asNet = false}) {
@@ -407,5 +423,23 @@ void main() {
         }
       });
     }
+  });
+
+  test('single bit struct port partial assignment', () async {
+    final mod = ModuleWithOneBitStructPort(OneBitStruct());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    // no slicing on single-bit signals
+    expect(sv, contains('assign outStruct = outStruct_oneBit'));
+
+    final vectors = [
+      Vector({'inStruct': 0}, {'outStruct': 0}),
+      Vector({'inStruct': 1}, {'outStruct': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }
