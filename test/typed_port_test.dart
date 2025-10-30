@@ -203,6 +203,23 @@ class ChildModuleForStructsOfPorts extends Module {
   }
 }
 
+class ParentModuleWithPackingSubModuleOutput extends Module {
+  ParentModuleWithPackingSubModuleOutput(
+    Logic x,
+  ) {
+    x = addInput('x', x);
+    ChildModuleWithPackingOutput(x).myOut.packed.xor() ^ x;
+  }
+}
+
+class ChildModuleWithPackingOutput extends Module {
+  late final MyStruct myOut = addTypedOutput('myOut', MyStruct().clone);
+  ChildModuleWithPackingOutput(Logic x) {
+    x = addInput('x', x);
+    x ^ myOut.packed.xor();
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -274,6 +291,13 @@ void main() {
     expect(
         sv, contains(RegExp(r'^\s*output logic out2[,\s]*$', multiLine: true)));
     expect(sv, contains(RegExp(r'^\s*inout wire io[,\s]*$', multiLine: true)));
+  });
+
+  test('packed struct output inside and outside of module', () async {
+    final mod = ParentModuleWithPackingSubModuleOutput(Logic());
+
+    // just building will detect if there was a bad reuse of packed
+    await mod.build();
   });
 
   group('const typed ports', () {
