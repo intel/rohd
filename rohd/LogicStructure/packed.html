@@ -53,42 +53,40 @@
 </h1></div>
 
     
-      <section class="multi-line-signature">
+
+    
         
+  <section id="getter">
+    <section class="multi-line-signature">
+      
   <div>
     <ol class="annotation-list">
         <li>@<a href="https://api.dart.dev/stable/3.9.4/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-        <a href="../../rohd/Logic-class.html">Logic</a>
-        <span class="name ">packed</span>
-        <div class="features"><span class="feature">late</span><span class="feature">final</span></div>
+      <span class="returntype"><a href="../../rohd/Logic-class.html">Logic</a></span>
+      get
+      <span class="name ">packed</span>
+      <div class="features"><span class="feature">override</span></div>
 
-      </section>
-      
+    </section>
+    
 <section class="desc markdown">
   <p>Packs all <a href="../../rohd/LogicStructure/elements.html">elements</a> into one flattened <a href="../../rohd/Logic-class.html">Logic</a> bus.</p>
 </section>
 
-      
+    
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">@override
-late final Logic packed = elements
-    .map((e) {
-      if (e is LogicStructure) {
-        return e.packed;
-      } else {
-        return e;
-      }
-    })
-    .toList(growable: false)
-    .rswizzle()
-    .named(name, naming: Naming.mergeable);</code></pre>
+&#47;&#47; If this is an output port, we have to regenerate each time to avoid
+&#47;&#47; illegal reuse inside and outside the module. This is unique for outputs.
+Logic get packed =&gt; isOutput ? _genPacked() : _packed;</code></pre>
 </section>
 
+  </section>
 
-    
+
 </div> <!-- /.main-content -->
 <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
   <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
