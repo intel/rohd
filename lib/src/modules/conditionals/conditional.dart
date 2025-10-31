@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
 
 /// Represents an some logical assignments or actions that will only happen
@@ -28,19 +29,47 @@ abstract class Conditional {
   /// This is used for things like [Sequential]'s pre-tick values.
   Map<Logic, LogicValue> _driverValueOverrideMap = {};
 
+  /// The [Conditional] that contains this [Conditional], if there is one.
+  ///
+  /// This is only initialized after it's been included inside an [Always].
+  late final Conditional? _parentConditional;
+
+  /// The [Always] parent of this [Conditional], if there is one.
+  ///
+  /// This is only initialized after it's been included inside an [Always].
+  late final Always _parentAlways;
+
+  @protected
+  @internal
+  String get hierarchyString => [
+        _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName(),
+        runtimeType
+      ].join('.');
+
+  /// Updates registration information for the [Conditional], passed down from
+  /// the parent [Always] or [Conditional].
+  ///
   /// Updates the values of [_assignedReceiverToOutputMap] and
   /// [_assignedDriverToInputMap] and passes them down to all sub-[Conditional]s
   /// as well.
   @internal
-  void updateAssignmentMaps(
-    Map<Logic, Logic> assignedReceiverToOutputMap,
-    Map<Logic, Logic> assignedDriverToInputMap,
-  ) {
+  void updateRegistration({
+    required Map<Logic, Logic> assignedReceiverToOutputMap,
+    required Map<Logic, Logic> assignedDriverToInputMap,
+    required Conditional? parentConditional,
+    required Always parentAlways,
+  }) {
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
+    _parentConditional = parentConditional;
+    _parentAlways = parentAlways;
     for (final conditional in conditionals) {
-      conditional.updateAssignmentMaps(
-          assignedReceiverToOutputMap, assignedDriverToInputMap);
+      conditional.updateRegistration(
+        assignedReceiverToOutputMap: assignedReceiverToOutputMap,
+        assignedDriverToInputMap: assignedDriverToInputMap,
+        parentConditional: this,
+        parentAlways: parentAlways,
+      );
     }
   }
 
@@ -204,7 +233,7 @@ abstract class Conditional {
         receiverOutput.put(LogicValue.x);
       }
     } on WriteAfterReadException catch (e) {
-      throw e.cloneWithAddedPath('  at (driving X) $this');
+      throw e.cloneWithAddedPath('  at (driving X) $this  [$hierarchyString]');
     }
 
     drivenSignals?.addAll(receivers);

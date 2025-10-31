@@ -386,4 +386,15 @@ void main() {
       }
     });
   });
+
+  test('hierarchicalName', () async {
+    final topInput = Logic();
+    final top = FlexibleModule(name: 'top')..addInput('a', topInput);
+    final mid = FlexibleModule(name: 'mid')..addInput('a', top.input('a'));
+    final sub = FlexibleModule(name: 'sub')..addInput('a', mid.input('a'));
+
+    await top.build();
+
+    expect(sub.hierarchicalName(), 'top.mid.sub');
+  });
 }

@@ -135,8 +135,12 @@ abstract class Always extends Module with SystemVerilog {
       }
 
       // share the registration information down
-      conditional.updateAssignmentMaps(
-          assignedReceiverToOutputMap, assignedDriverToInputMap);
+      conditional.updateRegistration(
+        assignedReceiverToOutputMap: assignedReceiverToOutputMap,
+        assignedDriverToInputMap: assignedDriverToInputMap,
+        parentConditional: null,
+        parentAlways: this,
+      );
     }
   }
 
