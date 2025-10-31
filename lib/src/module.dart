@@ -1108,8 +1108,9 @@ abstract class Module {
   }
 
   /// Returns the hierarchical name of this [Module] with the parent [hierarchy]
-  /// included, separated by `.`s, e.g. `top.mid.leaf`.
-  String hierarchicalName() => _hierarchyListToString(hierarchy());
+  /// included, separated by `.`s, e.g. `top.mid.leaf`.  Because it depends on
+  /// [hierarchy], this is only valid after [build] has been called.
+  String get hierarchicalName => _hierarchyListToString(hierarchy());
 
   /// Returns a synthesized version of this [Module].
   ///

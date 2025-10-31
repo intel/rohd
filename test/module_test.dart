@@ -395,6 +395,6 @@ void main() {
 
     await top.build();
 
-    expect(sub.hierarchicalName(), 'top.mid.sub');
+    expect(sub.hierarchicalName, 'top.mid.sub');
   });
 }

@@ -39,10 +39,13 @@ abstract class Conditional {
   /// This is only initialized after it's been included inside an [Always].
   late final Always _parentAlways;
 
+  /// A string representing the hierarchical path to this [Conditional],
+  /// including the module path to the [_parentAlways] and the names of
+  /// [Conditional]s within that [Always] down to `this` one.
   @protected
   @internal
   String get hierarchyString => [
-        _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName(),
+        _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName,
         runtimeType
       ].join('.');
 
