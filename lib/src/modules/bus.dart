@@ -259,8 +259,7 @@ class Swizzle extends Module with InlineSystemVerilog {
       upperIndex -= e.width;
 
       final maybeComma = upperIndex >= 0 ? ',' : '';
-      return '$inName$maybeComma // $widthDescription';
-      //TODO: BUG! if this is inlined again, the // will ruin the inlining!
+      return '$inName$maybeComma /* $widthDescription */';
     }).join('\n');
     return '''
 {
