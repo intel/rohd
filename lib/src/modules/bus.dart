@@ -255,6 +255,7 @@ class Swizzle extends Module with InlineSystemVerilog {
         final lowerIndex = upperIndex - e.width + 1;
         widthDescription += ':$lowerIndex';
       }
+      //TODO: should we only add the range if theres more than some number of elements being swizzled?
 
       upperIndex -= e.width;
 
