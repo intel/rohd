@@ -55,6 +55,22 @@ class SimpleStructModule extends Module {
   }
 }
 
+class OneBitStruct extends LogicStructure {
+  OneBitStruct({super.name = 'obs'}) : super([Logic(name: 'oneBit')]);
+
+  @override
+  OneBitStruct clone({String? name}) => OneBitStruct(name: name ?? this.name);
+}
+
+class ModuleWithOneBitStructPort extends Module {
+  ModuleWithOneBitStructPort(OneBitStruct inStruct) {
+    inStruct = addTypedInput('inStruct', inStruct);
+    final outStruct = addTypedOutput('outStruct', inStruct.clone);
+
+    outStruct.elements.first.gets(inStruct.elements.first);
+  }
+}
+
 class SimpleStructModuleContainer extends Module {
   SimpleStructModuleContainer(Logic a1, Logic a2,
       {super.name = 'simple_struct_mod_container', bool asNet = false}) {
@@ -158,6 +174,52 @@ class ModuleWithPartialAssignInlineAndOutReuseModule extends Module {
   }
 }
 
+class ParentModuleWithStructsContainingPorts extends Module {
+  ParentModuleWithStructsContainingPorts(Logic x) {
+    x = addInput('x', x);
+
+    final child = ChildModuleForStructsOfPorts(
+      x,
+      LogicNet(name: 'y'),
+    );
+
+    LogicStructure(name: 'BADNAMEO2', [child.out2]) ^ x;
+  }
+}
+
+class ChildModuleForStructsOfPorts extends Module {
+  late final Logic out1 = addOutput('out1');
+  late final Logic out2 = addTypedOutput('out2', out1.clone);
+  ChildModuleForStructsOfPorts(Logic inp, LogicNet io) {
+    inp = addTypedInput('inp', inp);
+    io = addTypedInOut('io', io);
+
+    out1 <= inp;
+    out2 <= io;
+
+    LogicStructure(name: 'BADNAMEI', [inp]) ^
+        LogicStructure(name: 'BADNAMEIO', [io]);
+    LogicStructure(name: 'BADNAMEO1', [out1]) ^ Const(1) ^ inp;
+  }
+}
+
+class ParentModuleWithPackingSubModuleOutput extends Module {
+  ParentModuleWithPackingSubModuleOutput(
+    Logic x,
+  ) {
+    x = addInput('x', x);
+    ChildModuleWithPackingOutput(x).myOut.packed.xor() ^ x;
+  }
+}
+
+class ChildModuleWithPackingOutput extends Module {
+  late final MyStruct myOut = addTypedOutput('myOut', MyStruct().clone);
+  ChildModuleWithPackingOutput(Logic x) {
+    x = addInput('x', x);
+    x ^ myOut.packed.xor();
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -209,6 +271,33 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('structure containing ports naming properly', () async {
+    final mod = ParentModuleWithStructsContainingPorts(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    // if naming is wrong, these names will appear in the SV in ports
+    expect(
+        sv, isNot(contains(RegExp(r'\b(?:input|output|inout)\s+.*BADNAME'))));
+
+    // if name is renamed/uniquified, it won't be an exact match
+    expect(
+        sv, contains(RegExp(r'^\s*input logic inp[,\s]*$', multiLine: true)));
+    expect(
+        sv, contains(RegExp(r'^\s*output logic out1[,\s]*$', multiLine: true)));
+    expect(
+        sv, contains(RegExp(r'^\s*output logic out2[,\s]*$', multiLine: true)));
+    expect(sv, contains(RegExp(r'^\s*inout wire io[,\s]*$', multiLine: true)));
+  });
+
+  test('packed struct output inside and outside of module', () async {
+    final mod = ParentModuleWithPackingSubModuleOutput(Logic());
+
+    // just building will detect if there was a bad reuse of packed
+    await mod.build();
   });
 
   group('const typed ports', () {
@@ -407,5 +496,23 @@ void main() {
         }
       });
     }
+  });
+
+  test('single bit struct port partial assignment', () async {
+    final mod = ModuleWithOneBitStructPort(OneBitStruct());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    // no slicing on single-bit signals
+    expect(sv, contains('assign outStruct = outStruct_oneBit'));
+
+    final vectors = [
+      Vector({'inStruct': 0}, {'outStruct': 0}),
+      Vector({'inStruct': 1}, {'outStruct': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }

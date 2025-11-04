@@ -108,28 +108,26 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ]);
 
   /// Representation of all input port declarations in generated SV.
-  List<String> _verilogInputs() {
-    final declarations = _synthModuleDefinition.inputs
-        .map((sig) => 'input ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
+        assert(module.tryInput(sig.name) != null,
+            'Named input ${sig.name} not found in module ${module.name}.');
+        return 'input ${sig.definitionType()} ${sig.definitionName()}';
+      });
 
   /// Representation of all output port declarations in generated SV.
-  List<String> _verilogOutputs() {
-    final declarations = _synthModuleDefinition.outputs
-        .map((sig) => 'output ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogOutputs() =>
+      _synthModuleDefinition.outputs.map((sig) {
+        assert(module.tryOutput(sig.name) != null,
+            'Named output ${sig.name} not found in module ${module.name}.');
+        return 'output ${sig.definitionType()} ${sig.definitionName()}';
+      });
 
   /// Representation of all inout port declarations in generated SV.
-  List<String> _verilogInOuts() {
-    final declarations = _synthModuleDefinition.inOuts
-        .map((sig) => 'inout ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
+        assert(module.tryInOut(sig.name) != null,
+            'Named inOut ${sig.name} not found in module ${module.name}.');
+        return 'inout ${sig.definitionType()} ${sig.definitionName()}';
+      });
 
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
@@ -153,7 +151,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
           ' bidirectional net connections.');
 
       var sliceString = '';
-      if (assignment is PartialSynthAssignment) {
+      if (assignment is PartialSynthAssignment && assignment.width > 1) {
         sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
             ? '[${assignment.dstUpperIndex}]'
             : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';

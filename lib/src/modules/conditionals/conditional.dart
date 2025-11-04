@@ -160,6 +160,12 @@ abstract class Conditional {
         continue;
       }
 
+      // if at this point there's still a srcConnection, then something is wrong
+      // and someone probably reused a signal when they shouldn't have
+      if (ssaDriver.srcConnection != null) {
+        throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+      }
+
       ssaDriver <= mappings[ssaDriver.ref]!;
     }
   }

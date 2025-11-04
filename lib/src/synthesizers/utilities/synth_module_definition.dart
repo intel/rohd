@@ -132,6 +132,13 @@ class SynthModuleDefinition {
           } else if (logic.parentStructure == null) {
             // this is not a sub-element of an array or structure
             namingOverride = Naming.reserved;
+          } else if (logic.parentStructure != null &&
+              logic.parentModule == module &&
+              (logic.parentStructure!.parentModule != module ||
+                  !logic.parentStructure!.isPort)) {
+            // this is a port of this module which is a sub-element of a
+            // structure that is not a port of this module
+            namingOverride = Naming.reserved;
           } else {
             // this might be some sub-element that doesn't need a reserved port
             // name

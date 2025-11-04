@@ -506,6 +506,24 @@ class AssignSubsetModule extends Module {
   }
 }
 
+class ParentModuleWithPackingArrayOutput extends Module {
+  ParentModuleWithPackingArrayOutput(
+    Logic x,
+  ) {
+    x = addInput('x', x);
+    ChildModuleWithPackingArrayOutput(x).myOut.packed.xor() ^ x;
+  }
+}
+
+class ChildModuleWithPackingArrayOutput extends Module {
+  late final LogicArray myOut =
+      addOutputArray('myOut', dimensions: [2, 2], elementWidth: 4);
+  ChildModuleWithPackingArrayOutput(Logic x) {
+    x = addInput('x', x);
+    x ^ myOut.packed.xor();
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -1083,6 +1101,13 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  test('packed array output inside and outside of module', () async {
+    final mod = ParentModuleWithPackingArrayOutput(Logic());
+
+    // just building will detect if there was a bad reuse of packed
+    await mod.build();
   });
 
   group('array clone', () {
