@@ -58,6 +58,8 @@ void main() {
     final sv = mod.generateSynth();
     File('tmp.sv').writeAsStringSync(sv);
     print(sv);
+
+    //TODO: test this with the swizzle inlined in something else also
   });
 
   group('LogicValue', () {
