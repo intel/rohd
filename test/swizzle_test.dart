@@ -51,6 +51,13 @@ void main() {
     await Simulator.reset();
   });
 
+// testplan:
+// - swizzle where all elements are 1 bit
+// - only one element in the swizzle
+// - swizzles within swizzles
+// - swizzles inlined into other expressions
+// - range padding combinations
+
   test('annotated elements of swizzle in generated sv', () async {
     final mod = SwizzleVariety(Logic(width: 8));
     await mod.build();
