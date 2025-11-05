@@ -12,21 +12,23 @@ import 'package:test/test.dart';
 void main() {
   group('SvCleaner', () {
     test('removes basic bit range annotations', () {
-      final input = '''assign out = {
+      const input = '''
+assign out = {
 a, /* 24:17 */
 b, /* 16:13 */
 c, /*    12 */
 d  /* 11: 0 */
 };''';
 
-      final expected = '''assign out = {a,b,c,d};''';
+      const expected = '''assign out = {a,b,c,d};''';
 
       final result = SvCleaner.removeSwizzleAnnotationComments(input);
       expect(result, equals(expected));
     });
 
     test('preserves non-bit-range comments', () {
-      final input = '''// This is a regular comment
+      const input = '''
+// This is a regular comment
 assign out = {
 a, /* 7:0 */
 b, /* 3 */
@@ -34,7 +36,8 @@ c  /* 15:8 */
 }; // Another regular comment
 /* This is a block comment that should stay */''';
 
-      final expected = '''// This is a regular comment
+      const expected = '''
+// This is a regular comment
 assign out = {a,b,c}; // Another regular comment
 /* This is a block comment that should stay */''';
 
@@ -43,23 +46,24 @@ assign out = {a,b,c}; // Another regular comment
     });
 
     test('handles single bit annotations', () {
-      final input = 'signal /* 5 */ <= other_signal;';
-      final expected = 'signal<= other_signal;';
+      const input = 'signal /* 5 */ <= other_signal;';
+      const expected = 'signal<= other_signal;';
 
       final result = SvCleaner.removeSwizzleAnnotationComments(input);
       expect(result, equals(expected));
     });
 
     test('handles multi-digit bit ranges', () {
-      final input = 'big_signal /* 123:45 */ <= other;';
-      final expected = 'big_signal<= other;';
+      const input = 'big_signal /* 123:45 */ <= other;';
+      const expected = 'big_signal<= other;';
 
       final result = SvCleaner.removeSwizzleAnnotationComments(input);
       expect(result, equals(expected));
     });
 
     test('does not affect other SystemVerilog content', () {
-      final input = '''module test (
+      const input = '''
+module test (
   input logic [7:0] a,
   output logic [15:0] b
 );
@@ -89,13 +93,15 @@ endmodule''';
     });
 
     test('handles input without annotations', () {
-      final input = '''assign out = {
+      const input = '''
+assign out = {
 a,
 b,
 c
 };''';
 
-      final expected = '''assign out = {a,
+      const expected = '''
+assign out = {a,
 b,
 c};''';
 

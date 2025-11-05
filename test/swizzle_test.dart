@@ -85,7 +85,7 @@ class InlinedSwizzle extends Module {
 
 class VariedWidthSwizzle extends Module {
   VariedWidthSwizzle() {
-    final a = addInput('a', Logic(width: 1), width: 1);
+    final a = addInput('a', Logic());
     final b = addInput('b', Logic(width: 12), width: 12);
     final c = addInput('c', Logic(width: 3), width: 3);
     final d = addInput('d', Logic(width: 100), width: 100);
