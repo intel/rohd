@@ -42,12 +42,21 @@ abstract class Conditional {
   /// A string representing the hierarchical path to this [Conditional],
   /// including the module path to the [_parentAlways] and the names of
   /// [Conditional]s within that [Always] down to `this` one.
+  ///
+  /// If this [Conditional] is not yet registered within an [Always], or if the
+  /// [_parentAlways] has not yet been built, this will only include the runtime
+  /// type of this [Conditional].
   @protected
   @internal
   String get hierarchyString => [
-        _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName,
+        if (_isRegistered && _parentAlways.hasBuilt)
+          _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName,
         runtimeType
       ].join('.');
+
+  /// Indicates whether [updateRegistration] has been called on this
+  /// [Conditional] already.
+  bool _isRegistered = false;
 
   /// Updates registration information for the [Conditional], passed down from
   /// the parent [Always] or [Conditional].
@@ -62,6 +71,11 @@ abstract class Conditional {
     required Conditional? parentConditional,
     required Always parentAlways,
   }) {
+    if (_isRegistered) {
+      throw InvalidConditionalException('Conditional $this is already included'
+          ' as part of another block: $hierarchyString');
+    }
+
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
     _parentConditional = parentConditional;
@@ -74,6 +88,8 @@ abstract class Conditional {
         parentAlways: parentAlways,
       );
     }
+
+    _isRegistered = true;
   }
 
   /// Updates the value of [_driverValueOverrideMap] and passes it down to all
