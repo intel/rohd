@@ -9,6 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class SubsetMod extends Module {
@@ -517,6 +518,7 @@ void main() {
       await mod.build();
 
       final sv = mod.generateSynth();
+      print(sv);
       expect(
           sv,
           contains('net_connect (reversed, '
@@ -587,7 +589,8 @@ void main() {
 
               await mod.build();
 
-              final sv = mod.generateSynth();
+              final sv = SvCleaner.removeSwizzleAnnotationComments(
+                  mod.generateSynth());
               if (netTypeName == LogicNet) {
                 expect(
                     sv,
@@ -616,7 +619,8 @@ void main() {
 
               await mod.build();
 
-              final sv = mod.generateSynth();
+              final sv = SvCleaner.removeSwizzleAnnotationComments(
+                  mod.generateSynth());
               if (netTypeName == LogicNet) {
                 expect(
                     sv,

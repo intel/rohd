@@ -323,22 +323,28 @@ void main() {
     });
   });
 
-// testplan:
-// - swizzle where all elements are 1 bit ✓
-// - only one element in the swizzle (will require creating a `Swizzle` explicitly since .swizzle already has an ==1 check). ✓
-// - swizzles within swizzles ✓
-// - swizzles inlined into other expressions (e.g. something swizzled & something else) ✓
-// - range padding combinations ✓
-
   test('annotated elements of swizzle in generated sv', () async {
     final mod = SwizzleVariety(Logic(width: 8));
     await mod.build();
 
     final sv = mod.generateSynth();
-    File('tmp.sv').writeAsStringSync(sv);
-    print(sv);
 
-    //TODO: test this with the swizzle inlined in something else also
+    expect(sv, contains('''
+assign b = {
+1'h0, /*    34 */
+a, /* 33:26 */
+x, /* 25:22 */
+({
+y[2], /* 5:4 */
+y[1], /* 3:2 */
+y[0]  /* 1:0 */
+}), /* 21:16 */
+5'h3, /* 15:11 */
+({
+3'h2, /* 10:8 */
+a  /*  7:0 */
+})  /* 10: 0 */
+};  // swizzle'''));
   });
 
   group('LogicValue', () {
