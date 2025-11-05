@@ -301,8 +301,6 @@ void main() {
       expect(sv, contains('554'));
       expect(sv, contains('550'));
 
-      print(sv);
-
       // Verify functionality
       final vectors = [
         Vector({

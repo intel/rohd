@@ -12,6 +12,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
@@ -982,7 +983,7 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-      final sv = mod.generateSynth();
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
       // make sure we're reassigning both times it overlaps!
       expect(
