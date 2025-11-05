@@ -272,13 +272,18 @@ class Swizzle extends Module with InlineSystemVerilog {
     }
 
     // Find maximum width for alignment
-    final maxUpperWidth = widthDescriptions
-        .map((desc) => desc.upper.toString().length)
-        .reduce(max);
-    final maxLowerWidth = widthDescriptions
-        .where((desc) => desc.lower != null)
-        .map((desc) => desc.lower!.toString().length)
-        .fold(0, max);
+    final maxUpperWidth = widthDescriptions.isEmpty
+        ? 0
+        : widthDescriptions
+            .map((desc) => desc.upper.toString().length)
+            .reduce(max);
+    final maxLowerWidth =
+        widthDescriptions.where((desc) => desc.lower != null).isEmpty
+            ? 0
+            : widthDescriptions
+                .where((desc) => desc.lower != null)
+                .map((desc) => desc.lower!.toString().length)
+                .reduce(max);
 
     // Second pass: generate aligned output
     upperIndex = out.width - 1;
