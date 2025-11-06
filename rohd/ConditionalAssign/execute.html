@@ -102,7 +102,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals,
       _receiverOutput.put(currentValue);
     }
   } on WriteAfterReadException catch (e) {
-    throw e.cloneWithAddedPath(&#39;  at $this&#39;);
+    throw e.cloneWithAddedPath(&#39;  at $this  [$hierarchyString]&#39;);
   }
 
   if (drivenSignals != null &amp;&amp;
