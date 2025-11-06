@@ -245,6 +245,8 @@ void main() {
           } on Exception catch (e) {
             expect(e, isA<WriteAfterReadException>());
             expect(e.toString(), contains('internalReadEn '));
+            expect(
+                e.toString(), contains('singlereadandwriterf.rf_read.If.Case'));
           }
         }
       });

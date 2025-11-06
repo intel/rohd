@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // always.dart
@@ -135,8 +135,12 @@ abstract class Always extends Module with SystemVerilog {
       }
 
       // share the registration information down
-      conditional.updateAssignmentMaps(
-          assignedReceiverToOutputMap, assignedDriverToInputMap);
+      conditional.updateRegistration(
+        assignedReceiverToOutputMap: assignedReceiverToOutputMap,
+        assignedDriverToInputMap: assignedDriverToInputMap,
+        parentConditional: null,
+        parentAlways: this,
+      );
     }
   }
 

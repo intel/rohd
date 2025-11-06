@@ -353,7 +353,7 @@ abstract class Module {
 
   /// Converts a [hierarchy] (like used in [_checkValidHierarchy]) into a string
   /// that can be used for error messages.
-  static String _hierarchyListToString(List<Module> hierarchy) =>
+  static String _hierarchyListToString(Iterable<Module> hierarchy) =>
       hierarchy.map((e) => e.name).join('.');
 
   /// Adds a [Module] to this as a subModule.
@@ -1106,6 +1106,11 @@ abstract class Module {
     }
     return hier.toString();
   }
+
+  /// Returns the hierarchical name of this [Module] with the parent [hierarchy]
+  /// included, separated by `.`s, e.g. `top.mid.leaf`.  Because it depends on
+  /// [hierarchy], this is only valid after [build] has been called.
+  String get hierarchicalName => _hierarchyListToString(hierarchy());
 
   /// Returns a synthesized version of this [Module].
   ///

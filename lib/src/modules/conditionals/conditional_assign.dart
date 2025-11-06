@@ -66,7 +66,7 @@ class ConditionalAssign extends Conditional {
         _receiverOutput.put(currentValue);
       }
     } on WriteAfterReadException catch (e) {
-      throw e.cloneWithAddedPath('  at $this');
+      throw e.cloneWithAddedPath('  at $this  [$hierarchyString]');
     }
 
     if (drivenSignals != null &&
