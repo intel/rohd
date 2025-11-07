@@ -108,6 +108,198 @@ class TopCustomSvWrap extends Module {
   }
 }
 
+class SimpleStruct extends LogicStructure {
+  SimpleStruct({super.name = 'SimpleStruct'})
+      : super([
+          Logic(name: 'field4', width: 4),
+          Logic(name: 'field8', width: 8),
+        ]);
+
+  @override
+  SimpleStruct clone({String? name}) => SimpleStruct(name: name ?? this.name);
+}
+
+class TopWithUnusedSubModPorts extends Module {
+  // types of ports to not use:
+  // - inout, input, output
+  // watch out for:
+  // - used by only an assignment
+  // - used only by another module
+  // - used only as port of super module
+  // - element of a struct/array
+  // - connects to element of struct/array
+  // - reserved/renameable names
+
+  late final Logic outTop;
+  late final LogicArray outArrTop;
+  late final SimpleStruct outStructTop;
+
+  TopWithUnusedSubModPorts({
+    required Logic topIn,
+    required LogicNet topIo,
+    required LogicArray topArrIn,
+    required SimpleStruct topStructIn,
+    required Naming? internalNaming, // TODO: loop over incl null
+  }) {
+    topIn = addInput('topIn', topIn, width: topIn.width);
+    topIo = addInOut('topIo', topIo, width: topIo.width);
+    topArrIn = addInputArray('topArrIn', topArrIn,
+        elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions);
+    topStructIn = addTypedInput('topStructIn', topStructIn);
+
+    final inpNotUsed = Logic(name: 'inpNotUsed', naming: internalNaming);
+    final ioNotUsed = LogicNet(name: 'ioNotUsed', naming: internalNaming);
+    final arrInNotUsed =
+        LogicArray([4, 3], 2, name: 'arrInNotUsed', naming: internalNaming);
+    final structInNotUsed = SimpleStruct(name: 'structInNotUsed');
+
+    final betweenAtoB = Logic(name: 'betweenAtoB', naming: internalNaming);
+    final betweenArrAtoB =
+        LogicArray([2], 3, name: 'betweenArrAtoB', naming: internalNaming);
+    final betweenStructAtoB = SimpleStruct(name: 'betweenStructAtoB');
+    final betweenAtoBIo =
+        LogicNet(name: 'betweenAtoBIo', naming: internalNaming);
+
+    final subModA = SubModWithSomePortsUsed(
+      fromTopIn: topIn,
+      fromTopIo: topIo,
+      fromTopArrIn: topArrIn,
+      fromTopStructIn: topStructIn,
+      inpNotUsed: inpNotUsed,
+      ioNotUsed: ioNotUsed,
+      arrInNotUsed: arrInNotUsed,
+      structInNotUsed: structInNotUsed,
+      fromOtherIn: betweenAtoB,
+      fromOtherIo: betweenAtoBIo,
+      fromOtherArrIn: betweenArrAtoB,
+      fromOtherStructIn: betweenStructAtoB,
+      name: 'subModA',
+    );
+    outTop = addOutput('outTop', width: topIn.width)..gets(subModA.outToTop);
+    outArrTop = addOutputArray('outArrTop',
+        elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions)
+      ..gets(subModA.outArrToTop);
+    outStructTop = addTypedOutput('outStructTop', topStructIn.clone)
+      ..gets(subModA.outStructToTop);
+
+    final subModB = SubModWithSomePortsUsed(
+      fromTopIn: topIn,
+      fromTopIo: topIo,
+      fromTopArrIn: topArrIn,
+      fromTopStructIn: topStructIn,
+      inpNotUsed: inpNotUsed,
+      ioNotUsed: ioNotUsed,
+      arrInNotUsed: arrInNotUsed,
+      structInNotUsed: structInNotUsed,
+      fromOtherIn: subModA.outToOther,
+      fromOtherIo: betweenAtoBIo,
+      fromOtherArrIn: subModA.outArrToOther.elements[1] as LogicArray,
+      fromOtherStructIn: subModA.outStructToOther.elements[1],
+      name: 'subModB',
+    );
+
+    betweenAtoB <= subModB.outToOther;
+    betweenArrAtoB <=
+        (betweenArrAtoB.clone()..elements[1].gets(subModA.outArrToOther));
+    betweenStructAtoB <=
+        (SimpleStruct()..elements[1].gets(subModB.outStructToOther));
+
+    if (internalNaming != null) {
+      Logic(
+              name: 'outNotUsed',
+              width: subModA.outNotUsed.width,
+              naming: internalNaming) <=
+          subModA.outNotUsed;
+
+      LogicArray(subModA.outArrNotUsed.dimensions,
+              subModA.outArrNotUsed.elementWidth,
+              name: 'outArrNotUsed', naming: internalNaming) <=
+          subModA.outArrNotUsed;
+
+      SimpleStruct(name: 'outStructNotUsed') <= subModA.outStructNotUsed;
+    }
+  }
+}
+
+class SubModWithSomePortsUsed extends Module {
+  late final Logic outToTop;
+  late final LogicArray outArrToTop;
+  late final SimpleStruct outStructToTop;
+
+  late final Logic outNotUsed;
+  late final LogicArray outArrNotUsed;
+  late final SimpleStruct outStructNotUsed;
+
+  late final Logic outToOther;
+  late final LogicArray outArrToOther;
+  late final Logic outStructToOther;
+
+  SubModWithSomePortsUsed(
+      {required Logic fromTopIn,
+      required LogicNet fromTopIo,
+      required LogicArray fromTopArrIn,
+      required SimpleStruct fromTopStructIn,
+      required Logic inpNotUsed,
+      required LogicNet ioNotUsed,
+      required LogicArray arrInNotUsed,
+      required SimpleStruct structInNotUsed,
+      required Logic fromOtherIn,
+      required LogicNet fromOtherIo,
+      required LogicArray fromOtherArrIn,
+      required Logic fromOtherStructIn,
+      required super.name}) {
+    fromTopIn = addInput('fromTopIn', fromTopIn, width: fromTopIn.width);
+    fromTopIo = addInOut('fromTopIo', fromTopIo, width: fromTopIo.width);
+    fromTopArrIn = addInputArray('fromTopArrIn', fromTopArrIn,
+        elementWidth: fromTopArrIn.elementWidth,
+        dimensions: fromTopArrIn.dimensions);
+    fromTopStructIn = addTypedInput('fromTopStructIn', fromTopStructIn);
+
+    inpNotUsed = addInput('inpNotUsed', inpNotUsed, width: inpNotUsed.width);
+    ioNotUsed = addInOut('ioNotUsed', ioNotUsed, width: ioNotUsed.width);
+    arrInNotUsed = addInputArray('arrInNotUsed', arrInNotUsed,
+        elementWidth: arrInNotUsed.elementWidth,
+        dimensions: arrInNotUsed.dimensions);
+    structInNotUsed = addTypedInput('structInNotUsed', structInNotUsed);
+
+    outToTop = addOutput('outToTop', width: fromTopIn.width)..gets(fromTopIn);
+    outArrToTop = addOutputArray('outArrToTop',
+        elementWidth: fromTopArrIn.elementWidth,
+        dimensions: fromTopArrIn.dimensions)
+      ..gets(fromTopArrIn);
+    outStructToTop = addTypedOutput('outStructToTop', fromTopStructIn.clone)
+      ..gets(fromTopStructIn);
+
+    outNotUsed = addOutput('outNotUsed', width: inpNotUsed.width)
+      ..gets(fromTopIn);
+    outArrNotUsed = addOutputArray('outArrNotUsed',
+        elementWidth: arrInNotUsed.elementWidth,
+        dimensions: arrInNotUsed.dimensions)
+      ..gets(fromTopArrIn);
+    outStructNotUsed = addTypedOutput('outStructNotUsed', structInNotUsed.clone)
+      ..gets(fromTopStructIn);
+
+    fromOtherIn =
+        addInput('fromOtherIn', fromOtherIn, width: fromOtherIn.width);
+    fromOtherIo =
+        addInOut('fromOtherIo', fromOtherIo, width: fromOtherIo.width);
+    fromOtherArrIn = addInputArray('fromOtherArrIn', fromOtherArrIn,
+        elementWidth: fromOtherArrIn.elementWidth,
+        dimensions: fromOtherArrIn.dimensions);
+    fromOtherStructIn = addTypedInput('fromOtherStructIn', fromOtherStructIn);
+
+    outToOther = addOutput('outToOther', width: fromOtherIn.width)
+      ..gets(fromOtherIn);
+    outArrToOther = addOutputArray('outArrToOther',
+        elementWidth: fromOtherArrIn.elementWidth,
+        dimensions: fromOtherArrIn.dimensions)
+      ..gets(fromOtherArrIn);
+    outStructToOther =
+        addTypedOutput('outStructToOther', fromOtherStructIn.clone)
+          ..gets(fromOtherStructIn);
+  }
+}
+
 /// This is for legacy deprecated testing.
 // ignore: deprecated_member_use_from_same_package
 class SubCustomSv extends Module with CustomSystemVerilog {
@@ -297,5 +489,19 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('unconnected ports left unconnected', () async {
+    final mod = TopWithUnusedSubModPorts(
+      topIn: Logic(),
+      topIo: LogicNet.port('topIo', 2),
+      topArrIn: LogicArray([4, 3], 2),
+      topStructIn: SimpleStruct(),
+      internalNaming: Naming.mergeable,
+    );
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    print(sv);
   });
 }

@@ -449,6 +449,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+    //TODO: another step here
     process();
     _pickNames();
   }
