@@ -7,6 +7,8 @@
 // 2023 October 4
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
@@ -155,7 +157,7 @@ class TopWithUnusedSubModPorts extends Module {
 
     final betweenAtoB = Logic(name: 'betweenAtoB', naming: internalNaming);
     final betweenArrAtoB =
-        LogicArray([2], 3, name: 'betweenArrAtoB', naming: internalNaming);
+        LogicArray([6, 2], 3, name: 'betweenArrAtoB', naming: internalNaming);
     final betweenStructAtoB = SimpleStruct(name: 'betweenStructAtoB');
     final betweenAtoBIo =
         LogicNet(name: 'betweenAtoBIo', naming: internalNaming);
@@ -174,6 +176,7 @@ class TopWithUnusedSubModPorts extends Module {
       fromOtherArrIn: betweenArrAtoB,
       fromOtherStructIn: betweenStructAtoB,
       name: 'subModA',
+      connectToOther: true,
     );
     outTop = addOutput('outTop', width: topIn.width)..gets(subModA.outToTop);
     outArrTop = addOutputArray('outArrTop',
@@ -196,11 +199,12 @@ class TopWithUnusedSubModPorts extends Module {
       fromOtherArrIn: subModA.outArrToOther.elements[1] as LogicArray,
       fromOtherStructIn: subModA.outStructToOther.elements[1],
       name: 'subModB',
+      connectToOther: false,
     );
 
     betweenAtoB <= subModB.outToOther;
     betweenArrAtoB <=
-        (betweenArrAtoB.clone()..elements[1].gets(subModA.outArrToOther));
+        (betweenArrAtoB.clone()..elements[1].gets(subModB.outArrToOther));
     betweenStructAtoB <=
         (SimpleStruct()..elements[1].gets(subModB.outStructToOther));
 
@@ -247,7 +251,9 @@ class SubModWithSomePortsUsed extends Module {
       required LogicNet fromOtherIo,
       required LogicArray fromOtherArrIn,
       required Logic fromOtherStructIn,
-      required super.name}) {
+      required super.name,
+      required bool connectToOther})
+      : super(definitionName: name.toUpperCase()) {
     fromTopIn = addInput('fromTopIn', fromTopIn, width: fromTopIn.width);
     fromTopIo = addInOut('fromTopIo', fromTopIo, width: fromTopIo.width);
     fromTopArrIn = addInputArray('fromTopArrIn', fromTopArrIn,
@@ -288,15 +294,18 @@ class SubModWithSomePortsUsed extends Module {
         dimensions: fromOtherArrIn.dimensions);
     fromOtherStructIn = addTypedInput('fromOtherStructIn', fromOtherStructIn);
 
-    outToOther = addOutput('outToOther', width: fromOtherIn.width)
-      ..gets(fromOtherIn);
+    outToOther = addOutput('outToOther', width: fromOtherIn.width);
     outArrToOther = addOutputArray('outArrToOther',
         elementWidth: fromOtherArrIn.elementWidth,
-        dimensions: fromOtherArrIn.dimensions)
-      ..gets(fromOtherArrIn);
+        dimensions: fromOtherArrIn.dimensions);
     outStructToOther =
-        addTypedOutput('outStructToOther', fromOtherStructIn.clone)
-          ..gets(fromOtherStructIn);
+        addTypedOutput('outStructToOther', fromOtherStructIn.clone);
+
+    if (connectToOther) {
+      outToOther.gets(fromOtherIn);
+      outArrToOther.gets(fromOtherArrIn);
+      outStructToOther.gets(fromOtherStructIn);
+    }
   }
 }
 
@@ -503,5 +512,7 @@ void main() {
     final sv = mod.generateSynth();
 
     print(sv);
+
+    File('tmp.sv').writeAsStringSync(sv);
   });
 }
