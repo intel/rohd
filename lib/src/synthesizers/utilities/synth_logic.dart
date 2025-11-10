@@ -101,11 +101,14 @@ class SynthLogic {
     assert(_name != null, 'Name has not been picked for $this.');
     assert(_replacement == null,
         'If this has been replaced, then we should not be getting its name.');
-    assert(isConstant || Sanitizer.isSanitary(_name!),
+    assert(isUnused || isConstant || Sanitizer.isSanitary(_name!),
         'Signal names should be sanitary, but found $_name.');
 
     return _name!;
   }
+
+  //TODO: should we just remove the synthlogic if unused?
+  bool isUnused = false;
 
   /// The name of this, if it has been picked.
   String? _name;
@@ -116,7 +119,11 @@ class SynthLogic {
   void pickName(Uniquifier uniquifier) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = _findName(uniquifier);
+    if (isUnused) {
+      _name = '';
+    } else {
+      _name = _findName(uniquifier);
+    }
   }
 
   /// Finds the best name from the collection of [Logic]s.
@@ -344,8 +351,9 @@ class SynthLogicArrayElement extends SynthLogic {
     final parentArrayname = parentArray.replacement?.name ?? parentArray.name;
     final n = '$parentArrayname[${logic.arrayIndex!}]';
     assert(
-      Sanitizer.isSanitary(
-          n.substring(0, n.contains('[') ? n.indexOf('[') : null)),
+      isUnused ||
+          Sanitizer.isSanitary(
+              n.substring(0, n.contains('[') ? n.indexOf('[') : null)),
       'Array name should be sanitary, but found $n',
     );
     return n;

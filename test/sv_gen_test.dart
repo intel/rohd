@@ -121,7 +121,10 @@ class SimpleStruct extends LogicStructure {
   SimpleStruct clone({String? name}) => SimpleStruct(name: name ?? this.name);
 }
 
+//TODO: test removal of bussubsets and swizzles as well
+
 class TopWithUnusedSubModPorts extends Module {
+  //TODO:
   // types of ports to not use:
   // - inout, input, output
   // watch out for:
@@ -511,7 +514,7 @@ void main() {
     await mod.build();
     final sv = mod.generateSynth();
 
-    print(sv);
+    // print(sv);
 
     File('tmp.sv').writeAsStringSync(sv);
   });

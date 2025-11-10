@@ -449,7 +449,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
-    //TODO: another step here
+    _pruneUnused();
     process();
     _pickNames();
   }
@@ -460,6 +460,52 @@ class SynthModuleDefinition {
   @visibleForOverriding
   void process() {
     // by default, nothing!
+  }
+
+  /// Prunes any signals that are not used in this definition, including any
+  /// swizzles and subsets, iteratively until there's nothing less to prune.
+  void _pruneUnused() {
+    var changed = true;
+
+    while (changed) {
+      changed = false;
+
+      for (final internalSignal in internalSignals.where((e) => !e.isUnused)) {
+        final logics = internalSignal.logics; // TODO: could be cached
+        final hasSrcConnections = logics.any((logic) => logic.srcConnections
+            .any((e) => !(_getSynthLogic(e)?.isUnused ?? false)));
+        final hasDstConnections = logics.any((logic) => logic.dstConnections
+            .any((e) => !(_getSynthLogic(e)?.isUnused ?? false)));
+
+        if (!hasSrcConnections || !hasDstConnections) {
+          internalSignal.isUnused = true;
+          changed = true;
+        }
+      }
+
+      final reducedAssignments = <SynthAssignment>[];
+      for (final assignment in assignments) {
+        if (assignment.src.isUnused || assignment.dst.isUnused) {
+          changed = true;
+        } else {
+          reducedAssignments.add(assignment);
+        }
+      }
+      if (changed) {
+        assignments
+          ..clear()
+          ..addAll(reducedAssignments);
+      }
+
+      // things to check:
+      //  - signals are not used
+      //  - assignments where either side is not used
+      //  - swizzles where all inputs or all outputs are not used
+      // not used means
+      //  - no "used" modules use it
+      //  - no assignments use it
+      //  - it is not a port of the current module
+    }
   }
 
   /// Updates all sub-module instantiations with information about which
