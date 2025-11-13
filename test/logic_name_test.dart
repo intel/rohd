@@ -120,6 +120,8 @@ class DrivenOutputModule extends Module {
 
 class ModWithNameCollisionArrayPorts extends Module {
   Logic get o => output('o');
+  Logic get portB1 => output('portB_1');
+  Logic get portB => output('portB');
   ModWithNameCollisionArrayPorts(LogicArray portA, Logic portA2)
       : super(name: 'submod') {
     portA2 = addInput('portA_2', portA2);
@@ -133,8 +135,16 @@ class ModWithNameCollisionArrayPorts extends Module {
 
 class NameCollisionArrayTop extends Module {
   NameCollisionArrayTop() {
-    addOutput('o') <=
-        ModWithNameCollisionArrayPorts(LogicArray([3, 1], 1), Logic()).o;
+    final portA = LogicArray([3, 1], 1);
+    final portA2 = Logic();
+    final mod = ModWithNameCollisionArrayPorts(portA, portA2);
+    addOutput('o') <= mod.o;
+
+    // put some logic to prevent them from just being removed...
+    portA.xor();
+    portA2.xor();
+    mod.portB1.xor();
+    mod.portB.xor();
   }
 }
 

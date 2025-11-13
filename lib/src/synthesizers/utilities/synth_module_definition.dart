@@ -67,7 +67,7 @@ class SynthModuleDefinition {
   /// All the sub-module instantiations used within this definition which are
   /// still present (not removed).
   Iterable<SynthSubModuleInstantiation> get subModuleInstantiations =>
-      moduleToSubModuleInstantiationMap.values.nonNulls;
+      moduleToSubModuleInstantiationMap.values;
 
   /// Indicates that [m] is a submodule used within this definition.
   ///
@@ -585,10 +585,11 @@ class SynthModuleDefinition {
       for (final subModuleInstantiation
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
         if (subModuleInstantiation.module is _BusSubsetForStructSlice &&
-            (subModuleInstantiation
-                    .inputMapping.values.first.declarationCleared ||
-                subModuleInstantiation
-                    .outputMapping.values.first.declarationCleared)) {
+            ([
+              ...subModuleInstantiation.inputMapping.values,
+              ...subModuleInstantiation.outputMapping.values,
+              ...subModuleInstantiation.inOutMapping.values
+            ].any((e) => e.declarationCleared))) {
           subModuleInstantiation.clearInstantiation();
           changed = true;
         }

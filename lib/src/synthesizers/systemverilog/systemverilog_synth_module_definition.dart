@@ -198,11 +198,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// and which have not had their declarations cleared and replaces them with a
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
-    for (final subModuleInstantiation in subModuleInstantiations.where((e) =>
-        e.module is InlineSystemVerilog &&
-        e.needsInstantiation &&
-        e.outputMapping.isEmpty &&
-        e.inOutMapping.isNotEmpty)) {
+    for (final subModuleInstantiation in subModuleInstantiations.toList().where(
+        (e) =>
+            e.module is InlineSystemVerilog &&
+            e.needsInstantiation &&
+            e.outputMapping.isEmpty &&
+            e.inOutMapping.isNotEmpty)) {
       // algorithm:
       // - mark module as not needing declaration
       // - add a net_connect
