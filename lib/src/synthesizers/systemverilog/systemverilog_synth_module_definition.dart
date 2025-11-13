@@ -96,13 +96,15 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final inlineableSubmoduleInstantiations = module.subModules
         .whereType<InlineSystemVerilog>()
         .map((m) => getSynthSubModuleInstantiation(m)
-            as SystemVerilogSynthSubModuleInstantiation);
+            as SystemVerilogSynthSubModuleInstantiation?)
+        .nonNulls;
+
+    //TODO: what to do about inline expressions that don't exist anymore?? or impossible?
 
     // number of times each signal name is used by any module
     final signalUsage = <SynthLogic, int>{};
 
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values) {
+    for (final subModuleInstantiation in subModuleInstantiations) {
       for (final inSynthLogic in [
         ...subModuleInstantiation.inputMapping.values,
         ...subModuleInstantiation.inOutMapping.values
@@ -152,8 +154,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     });
 
     // remove any inlineability for those that want no expressions
-    for (final MapEntry(key: subModule, value: instantiation)
-        in moduleToSubModuleInstantiationMap.entries) {
+    for (final instantiation in subModuleInstantiations) {
+      final subModule = instantiation.module;
       if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
             instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
@@ -178,14 +180,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       internalSignals.remove(resultSynthLogic);
 
       // clear declaration of instantiation for inline module
-      subModuleInstantiation.clearDeclaration();
+      subModuleInstantiation.clearInstantiation();
 
       synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
           subModuleInstantiation;
     }
 
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values) {
+    for (final subModuleInstantiation in subModuleInstantiations) {
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
       subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
@@ -197,12 +198,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// and which have not had their declarations cleared and replaces them with a
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values.toList().where((e) =>
-            e.module is InlineSystemVerilog &&
-            e.needsDeclaration &&
-            e.outputMapping.isEmpty &&
-            e.inOutMapping.isNotEmpty)) {
+    for (final subModuleInstantiation in subModuleInstantiations.where((e) =>
+        e.module is InlineSystemVerilog &&
+        e.needsInstantiation &&
+        e.outputMapping.isEmpty &&
+        e.inOutMapping.isNotEmpty)) {
       // algorithm:
       // - mark module as not needing declaration
       // - add a net_connect
@@ -210,7 +210,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      subModuleInstantiation.clearDeclaration();
+      subModuleInstantiation.clearInstantiation();
 
       final resultName = (subModuleInstantiation.module as InlineSystemVerilog)
           .resultSignalName;

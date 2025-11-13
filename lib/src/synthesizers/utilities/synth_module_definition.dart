@@ -37,7 +37,7 @@ class SynthModuleDefinition {
 
   /// All other internal signals that are not ports.
   ///
-  /// This is the only collection that maye have mergeable items in it.
+  /// This is the only collection that may have mergeable items in it.
   final Set<SynthLogic> internalSignals = {};
 
   /// All the input ports.
@@ -63,6 +63,20 @@ class SynthModuleDefinition {
   /// [SynthSubModuleInstantiation]s that represent them.
   final Map<Module, SynthSubModuleInstantiation>
       moduleToSubModuleInstantiationMap = {};
+
+  /// All the sub-module instantiations used within this definition which are
+  /// still present (not removed).
+  Iterable<SynthSubModuleInstantiation> get subModuleInstantiations =>
+      moduleToSubModuleInstantiationMap.values.nonNulls;
+
+  /// Indicates that [m] is a submodule used within this definition.
+  ///
+  /// This is only valid to call after all the submodules have been detected.
+  /// This also updates as modules are pruned or removed during processing.
+  bool _isSubmoduleAndPresent(Module? m) =>
+      m != null &&
+      moduleToSubModuleInstantiationMap.containsKey(m) &&
+      moduleToSubModuleInstantiationMap[m]!.needsInstantiation;
 
   /// Either accesses a previously created [SynthSubModuleInstantiation]
   /// corresponding to [m], or else creates a new one and adds it to the
@@ -92,6 +106,12 @@ class SynthModuleDefinition {
   /// Used to uniquify any identifiers, including signal names
   /// and module instances.
   final Uniquifier _synthInstantiationNameUniquifier;
+
+  //TODO doc
+  bool _logicHasSynthLogic(Logic logic) => logicToSynthMap.containsKey(logic);
+
+  // bool _synthLogicPresent(SynthLogic synthLogic) =>
+  //     _logicHasSynthLogic(synthLogic.logics.first); //TODO: optimize
 
   /// Either accesses a previously created [SynthLogic] corresponding to
   /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
@@ -392,7 +412,7 @@ class SynthModuleDefinition {
 
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)
+          getSynthSubModuleInstantiation(subModule)!
               .setInOutMapping(receiver.name, synthReceiver);
         }
 
@@ -407,7 +427,7 @@ class SynthModuleDefinition {
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)
+          getSynthSubModuleInstantiation(subModule)!
               .setOutputMapping(receiver.name, synthReceiver);
         }
 
@@ -439,7 +459,7 @@ class SynthModuleDefinition {
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)
+          getSynthSubModuleInstantiation(subModule)!
               .setInputMapping(receiver.name, synthReceiver);
         }
       }
@@ -464,28 +484,91 @@ class SynthModuleDefinition {
 
   /// Prunes any signals that are not used in this definition, including any
   /// swizzles and subsets, iteratively until there's nothing less to prune.
+  ///
+  /// Note that this can remove signals from [internalSignals] after marking
+  /// them as having their declaration cleared.
   void _pruneUnused() {
     var changed = true;
 
     while (changed) {
       changed = false;
 
-      for (final internalSignal in internalSignals.where((e) => !e.isUnused)) {
-        final logics = internalSignal.logics; // TODO: could be cached
-        final hasSrcConnections = logics.any((logic) => logic.srcConnections
-            .any((e) => !(_getSynthLogic(e)?.isUnused ?? false)));
-        final hasDstConnections = logics.any((logic) => logic.dstConnections
-            .any((e) => !(_getSynthLogic(e)?.isUnused ?? false)));
+      // conditions for allowing a signal to be removed:
+      // - modules that are removable: BusSubset, Swizzle
+      //   - if none of the ports are connected to any signals that exist
+      // - signals that are removable; all of:
+      //   - `mergeable`, structs/arrays that are all removable
+      //   - no drivers or receivers (ignore ports of removable modules)
+      //   - not a port of the current module
+      // - assignments that are removable:
+      //   - the driver has no driver OR the receiver has no receivers
 
-        if (!hasSrcConnections || !hasDstConnections) {
-          internalSignal.isUnused = true;
-          changed = true;
+      //TODO: ensure we test all these scenarios!
+
+      final reducedInternalSignals = <SynthLogic>[];
+      for (final internalSignal
+          in internalSignals.where((e) => !e.declarationCleared)) {
+        final logics = internalSignal.logics; // TODO: could be cached
+
+        // if it's not a mergeable signal (for whatever reason), can't remove it
+        if (!internalSignal.mergeable) {
+          reducedInternalSignals.add(internalSignal);
+          continue;
         }
+
+        // if it's an array, can only remove if all elements are removed
+        if (internalSignal.isArray &&
+            logics.any(
+                (logicArray) => logicArray.elements.any(_logicHasSynthLogic))) {
+          reducedInternalSignals.add(internalSignal);
+          continue;
+        }
+
+        final isCustomSvModPort = logics.any((logic) =>
+            logic.isPort &&
+            _isSubmoduleAndPresent(logic.parentModule) &&
+            (logic.parentModule! is SystemVerilog ||
+                logic.parentModule! is CustomSystemVerilog));
+
+        final hasSrcConnections = logics.any((logic) =>
+            ((logic.isOutput || logic.isInOut) &&
+                _isSubmoduleAndPresent(logic.parentModule)) ||
+            logic.srcConnections.any(_logicHasSynthLogic));
+
+        if (!hasSrcConnections && !isCustomSvModPort) {
+          internalSignal.clearDeclaration();
+          print(
+              'removing from ${module.definitionName} (no src) ${internalSignal}');
+          changed = true;
+          continue;
+        }
+
+        final hasDstConnections = logics.any((logic) =>
+            ((logic.isInput || logic.isInOut) &&
+                _isSubmoduleAndPresent(logic.parentModule)) ||
+            logic.dstConnections.any(_logicHasSynthLogic));
+
+        if (!hasDstConnections && !isCustomSvModPort) {
+          print(
+              'removing from ${module.definitionName} (no dst) ${internalSignal}');
+          internalSignal.clearDeclaration();
+          changed = true;
+          continue;
+        }
+
+        reducedInternalSignals.add(internalSignal);
+      }
+      if (changed) {
+        internalSignals
+          ..clear()
+          ..addAll(reducedInternalSignals);
+        continue;
       }
 
       final reducedAssignments = <SynthAssignment>[];
       for (final assignment in assignments) {
-        if (assignment.src.isUnused || assignment.dst.isUnused) {
+        if (assignment.src.declarationCleared ||
+            assignment.dst.declarationCleared) {
           changed = true;
         } else {
           reducedAssignments.add(assignment);
@@ -495,6 +578,20 @@ class SynthModuleDefinition {
         assignments
           ..clear()
           ..addAll(reducedAssignments);
+        continue;
+      }
+
+      // TODO: more module sweeping!
+      for (final subModuleInstantiation
+          in subModuleInstantiations.where((e) => e.needsInstantiation)) {
+        if (subModuleInstantiation.module is _BusSubsetForStructSlice &&
+            (subModuleInstantiation
+                    .inputMapping.values.first.declarationCleared ||
+                subModuleInstantiation
+                    .outputMapping.values.first.declarationCleared)) {
+          subModuleInstantiation.clearInstantiation();
+          changed = true;
+        }
       }
 
       // things to check:
@@ -511,8 +608,7 @@ class SynthModuleDefinition {
   /// Updates all sub-module instantiations with information about which
   /// [SynthLogic] should be used for their ports.
   void _assignSubmodulePortMapping() {
-    for (final submoduleInstantiation
-        in moduleToSubModuleInstantiationMap.values) {
+    for (final submoduleInstantiation in subModuleInstantiations) {
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
         submoduleInstantiation.setInputMapping(
@@ -551,7 +647,7 @@ class SynthModuleDefinition {
 
     // pick names of *reserved* submodule instances
     final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
-    for (final submodule in moduleToSubModuleInstantiationMap.values) {
+    for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
         submodule.pickName(_synthInstantiationNameUniquifier);
         assert(submodule.module.name == submodule.name,
@@ -572,8 +668,8 @@ class SynthModuleDefinition {
     }
 
     // then submodule instances
-    for (final submodule
-        in nonReservedSubmodules.where((element) => element.needsDeclaration)) {
+    for (final submodule in nonReservedSubmodules
+        .where((element) => element.needsInstantiation)) {
       submodule.pickName(_synthInstantiationNameUniquifier);
     }
 

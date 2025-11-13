@@ -133,7 +133,6 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   String _verilogInternalSignals() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
-        .where((e) => !e.isUnused)
         .sorted((a, b) => a.name.compareTo(b.name))) {
       if (sig.needsDeclaration) {
         declarations.add('${sig.definitionType()} ${sig.definitionName()};');
@@ -169,7 +168,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       String Function(Module module) getInstanceTypeOfModule) {
     final subModuleLines = <String>[];
     for (final subModuleInstantiation
-        in _synthModuleDefinition.moduleToSubModuleInstantiationMap.values) {
+        in _synthModuleDefinition.subModuleInstantiations) {
       final instanceType =
           getInstanceTypeOfModule(subModuleInstantiation.module);
 

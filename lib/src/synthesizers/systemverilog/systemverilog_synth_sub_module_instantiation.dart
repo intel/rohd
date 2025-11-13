@@ -37,7 +37,7 @@ class SystemVerilogSynthSubModuleInstantiation
           name,
           synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
-              synthLogic.name));
+              (synthLogic.declarationCleared ? '' : synthLogic.name)));
 
   /// Provides the inline SV representation for this module.
   ///
@@ -54,7 +54,7 @@ class SystemVerilogSynthSubModuleInstantiation
 
   /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
-    if (!needsDeclaration) {
+    if (!needsInstantiation) {
       return null;
     }
     return SystemVerilogSynthesizer.instantiationVerilogFor(

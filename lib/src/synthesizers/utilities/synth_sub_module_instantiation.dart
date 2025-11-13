@@ -89,13 +89,16 @@ class SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
-  /// Indicates whether this module should be declared.
-  bool get needsDeclaration => _needsDeclaration;
-  bool _needsDeclaration = true;
+  //TODO: is this change breaking?
 
-  /// Removes the need for this module to be declared (via [needsDeclaration]).
-  void clearDeclaration() {
-    _needsDeclaration = false;
+  /// Indicates whether this module should be declared.
+  bool get needsInstantiation => _needsInstantiation;
+  bool _needsInstantiation = true;
+
+  /// Removes the need for this module to be declared (via
+  /// [needsInstantiation]).
+  void clearInstantiation() {
+    _needsInstantiation = false;
   }
 
   /// Creates an instantiation for [module].

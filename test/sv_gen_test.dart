@@ -506,7 +506,7 @@ void main() {
   test('unconnected ports left unconnected', () async {
     final mod = TopWithUnusedSubModPorts(
       topIn: Logic(),
-      topIo: LogicNet.port('topIo', 2),
+      topIo: LogicNet(width: 2),
       topArrIn: LogicArray([4, 3], 2),
       topStructIn: SimpleStruct(),
       internalNaming: Naming.mergeable,
