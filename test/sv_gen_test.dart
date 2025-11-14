@@ -195,8 +195,8 @@ class TopWithUnusedSubModPorts extends Module {
       name: 'subModA',
     );
 
-    outTopA = addOutput('outTop', width: topIn.width)..gets(subModA.outTo);
-    outArrTopA = addOutputArray('outArrTop',
+    outTopA = addOutput('outTopA', width: topIn.width)..gets(subModA.outTo);
+    outArrTopA = addOutputArray('outArrTopA',
         elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions)
       ..gets(subModA.outArrTo);
     outStructTopA = addTypedOutput('outStructTop', topStructIn.clone)
@@ -302,14 +302,13 @@ class SubModWithSomePortsUsed extends Module {
         dimensions: arrInNotUsed.dimensions);
     structInNotUsed = addTypedInput('structInNotUsed', structInNotUsed);
 
-    outTo = addOutput('outToTop', width: fromIn.width)..gets(fromIn);
-    outArrTo = addOutputArray('outArrToTop',
+    outTo = addOutput('outTo', width: fromIn.width)..gets(fromIn);
+    outArrTo = addOutputArray('outArrTo',
         elementWidth: fromArrIn.elementWidth, dimensions: fromArrIn.dimensions)
       ..gets(fromArrIn);
-    outStructTo = addTypedOutput('outStructToTop', fromStructIn.clone)
+    outStructTo = addTypedOutput('outStructTo', fromStructIn.clone)
       ..gets(fromStructIn);
-    outIoTo = addInOut('outIoToTop', outIoTo, width: fromIo.width)
-      ..gets(fromIo);
+    outIoTo = addInOut('outIoTo', outIoTo, width: fromIo.width)..gets(fromIo);
 
     outNotUsed = addOutput('outNotUsed', width: inpNotUsed.width)..gets(fromIn);
     outArrNotUsed = addOutputArray('outArrNotUsed',
@@ -394,6 +393,10 @@ class TopWithCustomDef extends Module {
 }
 
 void main() {
+  tearDown(() async {
+    await Simulator.reset();
+  });
+
   group('signal declaration order', () {
     void checkSignalDeclarationOrder(String sv, List<String> signalNames) {
       final expected =
@@ -510,22 +513,46 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('unconnected ports left unconnected', () async {
-    final mod = TopWithUnusedSubModPorts(
-      topIn: Logic(),
-      topIo: LogicNet(width: 2),
-      topArrIn: LogicArray([4, 3], 2),
-      topStructIn: SimpleStruct(),
-      internalNaming: Naming.mergeable,
-      outTopIoA: LogicNet(width: 2),
-      outTopIoB: LogicNet(width: 2),
-      outTopIoC: LogicNet(width: 2),
-    );
-    await mod.build();
-    final sv = mod.generateSynth();
+  group('connected ports left unconnected', () {
+    for (final naming in Naming.values) {
+      test('with naming $naming', () async {
+        final mod = TopWithUnusedSubModPorts(
+          topIn: Logic(),
+          topIo: LogicNet(width: 2),
+          topArrIn: LogicArray([4, 3], 2),
+          topStructIn: SimpleStruct(),
+          internalNaming: naming,
+          outTopIoA: LogicNet(width: 2),
+          outTopIoB: LogicNet(width: 2),
+          outTopIoC: LogicNet(width: 2),
+        );
+        await mod.build();
+        final sv = mod.generateSynth();
 
-    // print(sv);
+        // print(sv);
 
-    File('tmp.sv').writeAsStringSync(sv);
+        File('tmp_${naming.name}.sv').writeAsStringSync(sv);
+
+        final vectors = [
+          Vector({
+            'topIn': 1,
+            'topArrIn': LogicValue.of('110011').replicate(4)
+          }, {
+            'outTopA': 1,
+            'outTopB': 1,
+            'outTopC': 1,
+            'outArrTopA': LogicValue.of('110011').replicate(4),
+            'outArrTopB': LogicValue.of('110011'),
+            'outArrTopC': [
+              LogicValue.z.replicate(24),
+              LogicValue.of('110011').replicate(4)
+            ].swizzle(),
+          }),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        // SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
   });
 }
