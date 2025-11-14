@@ -539,6 +539,7 @@ class PartialArrayAssignTop extends Module {
       // note: important that this does not have a name!
     );
 
+    // note: important that this output port is present!
     addOutputArray('p1out',
             dimensions: p1.laOut.dimensions,
             elementWidth: p1.laOut.elementWidth)
@@ -719,6 +720,7 @@ void main() {
         'inpArr': '110011000011'
       }, {
         'outArr': '000000000011110011000011',
+        'p1out': '110011000011',
         'partialOut': '0011',
       }),
     ];
@@ -981,9 +983,8 @@ void main() {
       test('3d', () async {
         final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
         await testArrayPassthrough(mod);
-
-        expect(mod.generateSynth(),
-            contains('SimpleLAPassthrough  unnamed_module'));
+        final sv = mod.generateSynth();
+        expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough'));
       });
 
       test('3d unpacked', () async {
@@ -1002,9 +1003,10 @@ void main() {
         final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
 
+        final sv = mod.generateSynth();
+
         // make sure the 4th one is there (since we expect 4)
-        expect(mod.generateSynth(),
-            contains('SimpleLAPassthrough  unnamed_module_2'));
+        expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough_2'));
       });
 
       test('3d unpacked', () async {
