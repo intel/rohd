@@ -199,14 +199,14 @@ class TopWithUnusedSubModPorts extends Module {
     outArrTopA = addOutputArray('outArrTopA',
         elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions)
       ..gets(subModA.outArrTo);
-    outStructTopA = addTypedOutput('outStructTop', topStructIn.clone)
+    outStructTopA = addTypedOutput('outStructTopA', topStructIn.clone)
       ..gets(subModA.outStructTo);
 
     final subModB = SubModWithSomePortsUsed(
       fromIn: subModA.outTo,
       fromIo: betweenAtoBNet,
-      fromArrIn: subModA.outArrTo.elements[1] as LogicArray,
-      fromStructIn: subModA.outStructTo.elements[1],
+      fromArrIn: subModA.outArrTo.elements[0] as LogicArray,
+      fromStructIn: subModA.outStructTo.elements[0],
       inpNotUsed: inpNotUsed,
       ioNotUsed: LogicNet(
           name: 'ioNotUsedB',
@@ -230,9 +230,12 @@ class TopWithUnusedSubModPorts extends Module {
       fromIo: betweenAtoBNet,
       fromArrIn: LogicArray(
           [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
-        ..elements[0].gets(subModA.outArrTo),
-      fromStructIn: LogicStructure([SimpleStruct(), SimpleStruct()])
-        ..elements[0].gets(subModA.outStructTo),
+        ..elements[0].gets(subModA.outArrTo)
+        ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
+      fromStructIn: LogicStructure([
+        SimpleStruct()..gets(subModA.outStructTo),
+        SimpleStruct()..gets(Const(3, width: subModA.outStructTo.width))
+      ]),
       inpNotUsed: inpNotUsed,
       ioNotUsed: LogicNet(
           name: 'ioNotUsedC',
@@ -536,22 +539,32 @@ void main() {
         final vectors = [
           Vector({
             'topIn': 1,
-            'topArrIn': LogicValue.of('110011').replicate(4)
+            'topArrIn': LogicValue.of('110011').replicate(4),
+            'topStructIn': LogicValue.of('110011110011'),
           }, {
             'outTopA': 1,
             'outTopB': 1,
             'outTopC': 1,
             'outArrTopA': LogicValue.of('110011').replicate(4),
             'outArrTopB': LogicValue.of('110011'),
-            'outArrTopC': [
-              LogicValue.z.replicate(24),
-              LogicValue.of('110011').replicate(4)
+            // 'outArrTopC': [
+            //   LogicValue.ofInt(3, 24),
+            //   LogicValue.of('110011').replicate(4)
+            // ].swizzle(),
+            'outStructTopA': LogicValue.of('110011110011'),
+            'outStructTopB': LogicValue.of('0011'),
+            'outStructTopC': [
+              LogicValue.ofInt(
+                3,
+                12,
+              ),
+              LogicValue.of('110011110011')
             ].swizzle(),
           }),
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
-        // SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
     }
   });
