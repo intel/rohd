@@ -491,7 +491,8 @@ void main() {
             ];
 
             await SimCompare.checkFunctionalVector(mod, vectors);
-            SimCompare.checkIverilogVector(mod, vectors);
+            SimCompare.checkIverilogVector(mod, vectors,
+                dontDeleteTmpFiles: true);
           });
         }
       });

@@ -533,7 +533,8 @@ class SynthModuleDefinition {
         final hasSrcConnections = logics.any((logic) =>
             ((logic.isOutput || logic.isInOut) &&
                 _isSubmoduleAndPresent(logic.parentModule)) ||
-            logic.srcConnections.any(_logicHasSynthLogic));
+            logic.srcConnections.any(_logicHasSynthLogic) ||
+            (logic.isNet && logic.dstConnections.any(_logicHasSynthLogic)));
 
         if (!hasSrcConnections && !isCustomSvModPort) {
           internalSignal.clearDeclaration();
@@ -546,7 +547,8 @@ class SynthModuleDefinition {
         final hasDstConnections = logics.any((logic) =>
             ((logic.isInput || logic.isInOut) &&
                 _isSubmoduleAndPresent(logic.parentModule)) ||
-            logic.dstConnections.any(_logicHasSynthLogic));
+            logic.dstConnections.any(_logicHasSynthLogic) ||
+            (logic.isNet && logic.srcConnections.any(_logicHasSynthLogic)));
 
         if (!hasDstConnections && !isCustomSvModPort) {
           print(
@@ -567,8 +569,9 @@ class SynthModuleDefinition {
 
       final reducedAssignments = <SynthAssignment>[];
       for (final assignment in assignments) {
-        if (assignment.src.declarationCleared ||
-            assignment.dst.declarationCleared) {
+        if ((assignment.src.declarationCleared ||
+                assignment.dst.declarationCleared) &&
+            !(assignment.src.isNet || assignment.dst.isNet)) {
           changed = true;
         } else {
           reducedAssignments.add(assignment);
