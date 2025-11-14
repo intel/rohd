@@ -96,8 +96,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final inlineableSubmoduleInstantiations = module.subModules
         .whereType<InlineSystemVerilog>()
         .map((m) => getSynthSubModuleInstantiation(m)
-            as SystemVerilogSynthSubModuleInstantiation?)
-        .nonNulls;
+            as SystemVerilogSynthSubModuleInstantiation);
 
     //TODO: what to do about inline expressions that don't exist anymore?? or impossible?
 

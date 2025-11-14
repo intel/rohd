@@ -412,7 +412,7 @@ class SynthModuleDefinition {
 
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)!
+          getSynthSubModuleInstantiation(subModule)
               .setInOutMapping(receiver.name, synthReceiver);
         }
 
@@ -427,7 +427,7 @@ class SynthModuleDefinition {
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)!
+          getSynthSubModuleInstantiation(subModule)
               .setOutputMapping(receiver.name, synthReceiver);
         }
 
@@ -459,7 +459,7 @@ class SynthModuleDefinition {
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement) {
-          getSynthSubModuleInstantiation(subModule)!
+          getSynthSubModuleInstantiation(subModule)
               .setInputMapping(receiver.name, synthReceiver);
         }
       }
@@ -469,7 +469,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
-    _pruneUnused();
+    // _pruneUnused(); //TODO: get test passing without this first
     process();
     _pickNames();
   }
