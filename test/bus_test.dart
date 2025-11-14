@@ -595,8 +595,7 @@ void main() {
         Vector({'a': 0xaa, 'b': 0x55}, {'a_b_joined': 0x55aa}),
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
-      final simResult =
-          SimCompare.iverilogVector(gtm, vectors, dontDeleteTmpFiles: true);
+      final simResult = SimCompare.iverilogVector(gtm, vectors);
       expect(simResult, equals(true));
     });
 

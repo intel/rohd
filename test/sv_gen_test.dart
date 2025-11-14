@@ -135,22 +135,43 @@ class TopWithUnusedSubModPorts extends Module {
   // - connects to element of struct/array
   // - reserved/renameable names
 
-  late final Logic outTop;
-  late final LogicArray outArrTop;
-  late final SimpleStruct outStructTop;
+  late final Logic outTopA;
+  late final LogicArray outArrTopA;
+  late final Logic outStructTopA;
+
+  late final Logic outTopB;
+  late final LogicArray outArrTopB;
+  late final Logic outStructTopB;
+
+  late final Logic outTopC;
+  late final LogicArray outArrTopC;
+  late final Logic outStructTopC;
 
   TopWithUnusedSubModPorts({
     required Logic topIn,
     required LogicNet topIo,
+    required LogicNet outTopIoA,
+    required LogicNet outTopIoB,
+    required LogicNet outTopIoC,
     required LogicArray topArrIn,
     required SimpleStruct topStructIn,
     required Naming? internalNaming, // TODO: loop over incl null
   }) {
+    // Connectivity description:
+    //                 ^ outTopA
+    //                 |      between
+    // topIn ---> [ SubModA ] -------> [ SubModB ] ---> outTopB
+    //                 |-------------> [ SubModC ] ---> outTopC
+
     topIn = addInput('topIn', topIn, width: topIn.width);
     topIo = addInOut('topIo', topIo, width: topIo.width);
     topArrIn = addInputArray('topArrIn', topArrIn,
         elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions);
     topStructIn = addTypedInput('topStructIn', topStructIn);
+
+    outTopIoA = addInOut('outTopIoA', outTopIoA, width: outTopIoA.width);
+    outTopIoB = addInOut('outTopIoB', outTopIoB, width: outTopIoB.width);
+    outTopIoC = addInOut('outTopIoC', outTopIoC, width: outTopIoC.width);
 
     final inpNotUsed = Logic(name: 'inpNotUsed', naming: internalNaming);
     final ioNotUsed = LogicNet(name: 'ioNotUsed', naming: internalNaming);
@@ -158,58 +179,77 @@ class TopWithUnusedSubModPorts extends Module {
         LogicArray([4, 3], 2, name: 'arrInNotUsed', naming: internalNaming);
     final structInNotUsed = SimpleStruct(name: 'structInNotUsed');
 
-    final betweenAtoB = Logic(name: 'betweenAtoB', naming: internalNaming);
-    final betweenArrAtoB =
-        LogicArray([6, 2], 3, name: 'betweenArrAtoB', naming: internalNaming);
-    final betweenStructAtoB = SimpleStruct(name: 'betweenStructAtoB');
-    final betweenAtoBIo =
-        LogicNet(name: 'betweenAtoBIo', naming: internalNaming);
+    final betweenAtoBNet = LogicNet(
+        name: 'betweenAtoBNet', width: outTopIoA.width, naming: internalNaming);
 
     final subModA = SubModWithSomePortsUsed(
-      fromTopIn: topIn,
-      fromTopIo: topIo,
-      fromTopArrIn: topArrIn,
-      fromTopStructIn: topStructIn,
+      fromIn: topIn,
+      fromIo: topIo,
+      fromArrIn: topArrIn,
+      fromStructIn: topStructIn,
       inpNotUsed: inpNotUsed,
       ioNotUsed: ioNotUsed,
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
-      fromOtherIn: betweenAtoB,
-      fromOtherIo: betweenAtoBIo,
-      fromOtherArrIn: betweenArrAtoB,
-      fromOtherStructIn: betweenStructAtoB,
+      outIoTo: outTopIoA,
       name: 'subModA',
-      connectToOther: true,
     );
-    outTop = addOutput('outTop', width: topIn.width)..gets(subModA.outToTop);
-    outArrTop = addOutputArray('outArrTop',
+
+    outTopA = addOutput('outTop', width: topIn.width)..gets(subModA.outTo);
+    outArrTopA = addOutputArray('outArrTop',
         elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions)
-      ..gets(subModA.outArrToTop);
-    outStructTop = addTypedOutput('outStructTop', topStructIn.clone)
-      ..gets(subModA.outStructToTop);
+      ..gets(subModA.outArrTo);
+    outStructTopA = addTypedOutput('outStructTop', topStructIn.clone)
+      ..gets(subModA.outStructTo);
 
     final subModB = SubModWithSomePortsUsed(
-      fromTopIn: topIn,
-      fromTopIo: topIo,
-      fromTopArrIn: topArrIn,
-      fromTopStructIn: topStructIn,
+      fromIn: subModA.outTo,
+      fromIo: betweenAtoBNet,
+      fromArrIn: subModA.outArrTo.elements[1] as LogicArray,
+      fromStructIn: subModA.outStructTo.elements[1],
       inpNotUsed: inpNotUsed,
-      ioNotUsed: ioNotUsed,
+      ioNotUsed: LogicNet(
+          name: 'ioNotUsedB',
+          naming: internalNaming), // don't multiply connect IO
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
-      fromOtherIn: subModA.outToOther,
-      fromOtherIo: betweenAtoBIo,
-      fromOtherArrIn: subModA.outArrToOther.elements[1] as LogicArray,
-      fromOtherStructIn: subModA.outStructToOther.elements[1],
+      outIoTo: outTopIoB,
       name: 'subModB',
-      connectToOther: false,
     );
 
-    betweenAtoB <= subModB.outToOther;
-    betweenArrAtoB <=
-        (betweenArrAtoB.clone()..elements[1].gets(subModB.outArrToOther));
-    betweenStructAtoB <=
-        (SimpleStruct()..elements[1].gets(subModB.outStructToOther));
+    outTopB = addOutput('outTopB', width: topIn.width)..gets(subModB.outTo);
+    outArrTopB = addOutputArray('outArrTopB',
+        elementWidth: subModB.outArrTo.elementWidth,
+        dimensions: subModB.outArrTo.dimensions)
+      ..gets(subModB.outArrTo);
+    outStructTopB = addTypedOutput('outStructTopB', subModB.outStructTo.clone)
+      ..gets(subModB.outStructTo);
+
+    final subModC = SubModWithSomePortsUsed(
+      fromIn: subModA.outTo,
+      fromIo: betweenAtoBNet,
+      fromArrIn: LogicArray(
+          [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
+        ..elements[0].gets(subModA.outArrTo),
+      fromStructIn: LogicStructure([SimpleStruct(), SimpleStruct()])
+        ..elements[0].gets(subModA.outStructTo),
+      inpNotUsed: inpNotUsed,
+      ioNotUsed: LogicNet(
+          name: 'ioNotUsedC',
+          naming: internalNaming), // don't multiply connect IO
+      arrInNotUsed: arrInNotUsed,
+      structInNotUsed: structInNotUsed,
+      outIoTo: outTopIoC,
+      name: 'subModC',
+    );
+
+    outTopC = addOutput('outTopC', width: topIn.width)..gets(subModC.outTo);
+    outArrTopC = addOutputArray('outArrTopC',
+        elementWidth: subModC.outArrTo.elementWidth,
+        dimensions: subModC.outArrTo.dimensions)
+      ..gets(subModC.outArrTo);
+    outStructTopC = addTypedOutput('outStructTopC', subModC.outStructTo.clone)
+      ..gets(subModC.outStructTo);
 
     if (internalNaming != null) {
       Logic(
@@ -229,40 +269,31 @@ class TopWithUnusedSubModPorts extends Module {
 }
 
 class SubModWithSomePortsUsed extends Module {
-  late final Logic outToTop;
-  late final LogicArray outArrToTop;
-  late final SimpleStruct outStructToTop;
+  late final Logic outTo;
+  late final LogicArray outArrTo;
+  late final Logic outStructTo;
 
   late final Logic outNotUsed;
   late final LogicArray outArrNotUsed;
   late final SimpleStruct outStructNotUsed;
 
-  late final Logic outToOther;
-  late final LogicArray outArrToOther;
-  late final Logic outStructToOther;
-
   SubModWithSomePortsUsed(
-      {required Logic fromTopIn,
-      required LogicNet fromTopIo,
-      required LogicArray fromTopArrIn,
-      required SimpleStruct fromTopStructIn,
+      {required Logic fromIn,
+      required LogicNet fromIo,
+      required LogicArray fromArrIn,
+      required Logic fromStructIn,
       required Logic inpNotUsed,
       required LogicNet ioNotUsed,
       required LogicArray arrInNotUsed,
       required SimpleStruct structInNotUsed,
-      required Logic fromOtherIn,
-      required LogicNet fromOtherIo,
-      required LogicArray fromOtherArrIn,
-      required Logic fromOtherStructIn,
-      required super.name,
-      required bool connectToOther})
+      required LogicNet outIoTo,
+      required super.name})
       : super(definitionName: name.toUpperCase()) {
-    fromTopIn = addInput('fromTopIn', fromTopIn, width: fromTopIn.width);
-    fromTopIo = addInOut('fromTopIo', fromTopIo, width: fromTopIo.width);
-    fromTopArrIn = addInputArray('fromTopArrIn', fromTopArrIn,
-        elementWidth: fromTopArrIn.elementWidth,
-        dimensions: fromTopArrIn.dimensions);
-    fromTopStructIn = addTypedInput('fromTopStructIn', fromTopStructIn);
+    fromIn = addInput('fromIn', fromIn, width: fromIn.width);
+    fromIo = addInOut('fromIo', fromIo, width: fromIo.width);
+    fromArrIn = addInputArray('fromArrIn', fromArrIn,
+        elementWidth: fromArrIn.elementWidth, dimensions: fromArrIn.dimensions);
+    fromStructIn = addTypedInput('fromStructIn', fromStructIn);
 
     inpNotUsed = addInput('inpNotUsed', inpNotUsed, width: inpNotUsed.width);
     ioNotUsed = addInOut('ioNotUsed', ioNotUsed, width: ioNotUsed.width);
@@ -271,44 +302,20 @@ class SubModWithSomePortsUsed extends Module {
         dimensions: arrInNotUsed.dimensions);
     structInNotUsed = addTypedInput('structInNotUsed', structInNotUsed);
 
-    outToTop = addOutput('outToTop', width: fromTopIn.width)..gets(fromTopIn);
-    outArrToTop = addOutputArray('outArrToTop',
-        elementWidth: fromTopArrIn.elementWidth,
-        dimensions: fromTopArrIn.dimensions)
-      ..gets(fromTopArrIn);
-    outStructToTop = addTypedOutput('outStructToTop', fromTopStructIn.clone)
-      ..gets(fromTopStructIn);
+    outTo = addOutput('outToTop', width: fromIn.width)..gets(fromIn);
+    outArrTo = addOutputArray('outArrToTop',
+        elementWidth: fromArrIn.elementWidth, dimensions: fromArrIn.dimensions)
+      ..gets(fromArrIn);
+    outStructTo = addTypedOutput('outStructToTop', fromStructIn.clone)
+      ..gets(fromStructIn);
+    outIoTo = addInOut('outIoToTop', outIoTo, width: fromIo.width)
+      ..gets(fromIo);
 
-    outNotUsed = addOutput('outNotUsed', width: inpNotUsed.width)
-      ..gets(fromTopIn);
+    outNotUsed = addOutput('outNotUsed', width: inpNotUsed.width)..gets(fromIn);
     outArrNotUsed = addOutputArray('outArrNotUsed',
-        elementWidth: arrInNotUsed.elementWidth,
-        dimensions: arrInNotUsed.dimensions)
-      ..gets(fromTopArrIn);
-    outStructNotUsed = addTypedOutput('outStructNotUsed', structInNotUsed.clone)
-      ..gets(fromTopStructIn);
-
-    fromOtherIn =
-        addInput('fromOtherIn', fromOtherIn, width: fromOtherIn.width);
-    fromOtherIo =
-        addInOut('fromOtherIo', fromOtherIo, width: fromOtherIo.width);
-    fromOtherArrIn = addInputArray('fromOtherArrIn', fromOtherArrIn,
-        elementWidth: fromOtherArrIn.elementWidth,
-        dimensions: fromOtherArrIn.dimensions);
-    fromOtherStructIn = addTypedInput('fromOtherStructIn', fromOtherStructIn);
-
-    outToOther = addOutput('outToOther', width: fromOtherIn.width);
-    outArrToOther = addOutputArray('outArrToOther',
-        elementWidth: fromOtherArrIn.elementWidth,
-        dimensions: fromOtherArrIn.dimensions);
-    outStructToOther =
-        addTypedOutput('outStructToOther', fromOtherStructIn.clone);
-
-    if (connectToOther) {
-      outToOther.gets(fromOtherIn);
-      outArrToOther.gets(fromOtherArrIn);
-      outStructToOther.gets(fromOtherStructIn);
-    }
+        elementWidth: fromArrIn.elementWidth, dimensions: fromArrIn.dimensions);
+    outStructNotUsed =
+        addTypedOutput('outStructNotUsed', structInNotUsed.clone);
   }
 }
 
@@ -510,6 +517,9 @@ void main() {
       topArrIn: LogicArray([4, 3], 2),
       topStructIn: SimpleStruct(),
       internalNaming: Naming.mergeable,
+      outTopIoA: LogicNet(width: 2),
+      outTopIoB: LogicNet(width: 2),
+      outTopIoC: LogicNet(width: 2),
     );
     await mod.build();
     final sv = mod.generateSynth();
