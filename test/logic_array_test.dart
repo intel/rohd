@@ -7,7 +7,6 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -724,8 +723,6 @@ void main() {
         'partialOut': '0011',
       }),
     ];
-
-    File('tmp_arr.sv').writeAsStringSync(mod.generateSynth());
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
