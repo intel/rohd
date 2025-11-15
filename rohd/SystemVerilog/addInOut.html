@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the addInOut method from the SystemVerilog mixin, for the Dart programming language.">
+  <title>addInOut method - SystemVerilog mixin - rohd library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd.dart</a></li>
+    <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
+    <li class="self-crumb">addInOut method</li>
+  </ol>
+  <div class="self-name">addInOut</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="rohd&#47;SystemVerilog-mixin-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">addInOut</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="../../rohd/LogicNet-class.html">LogicNet</a></span>
+<span class="name ">addInOut</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="addInOut-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.0/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<li><span class="parameter" id="addInOut-param-source"><span class="type-annotation"><a href="../../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">source</span>, {</span></li>
+<li><span class="parameter" id="addInOut-param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.0/dart-core/int-class.html">int</a></span> <span class="parameter-name">width</span> = <span class="default-value">1</span>, </span></li>
+</ol>})
+
+      <div class="features"><span class="feature">inherited</span></div>
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Registers a signal as an <a href="../../rohd/Module/inOut.html">inOut</a> to this <a href="../../rohd/Module-class.html">Module</a> and returns an <a href="../../rohd/Module/inOut.html">inOut</a>
+port that can be consumed inside this <a href="../../rohd/Module-class.html">Module</a>.</p>
+<p>The return value is the same as what is returned by <a href="../../rohd/Module/inOut.html">inOut</a> and should
+only be used within this <a href="../../rohd/Module-class.html">Module</a>. The provided <code>source</code> is accessible via
+<a href="../../rohd/Module/inOutSource.html">inOutSource</a>.</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">LogicNet addInOut(String name, Logic source, {int width = 1}) {
+  _checkForSafePortName(name);
+  if (source.width != width) {
+    throw PortWidthMismatchException(source, width);
+  }
+
+  _inOutDrivers.add(source);
+
+  &#47;&#47; we need to properly detect all inout sources, even for arrays
+  if (source.isArrayMember || source is LogicArray) {
+    final sourceElems = TraverseableCollection&lt;Logic&gt;()..add(source);
+    for (var i = 0; i &lt; sourceElems.length; i++) {
+      final sei = sourceElems[i];
+      _inOutDrivers.add(sei);
+
+      if (sei.isArrayMember) {
+        sourceElems.add(sei.parentStructure!);
+      }
+
+      if (sei is LogicArray) {
+        sourceElems.addAll(sei.elements);
+      }
+    }
+  }
+
+  if (source is LogicStructure) {
+    &#47;&#47; need to also track the packed version if it&#39;s a structure, since the
+    &#47;&#47; signal that&#39;s actually getting connected to the port *is* the packed
+    &#47;&#47; one, not the original array&#47;struct.
+    _inOutDrivers.add(source.packed);
+  }
+
+  final inOutPort =
+      LogicNet(name: name, width: width, naming: Naming.reserved)
+        ..parentModule = this
+        ..gets(source);
+
+  _inOuts[name] = inOutPort;
+
+  _inOutSources[name] = source;
+
+  return inOutPort;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">rohd</a></li>
+    <li><a href="../../rohd/">rohd</a></li>
+    <li><a href="../../rohd/SystemVerilog-mixin.html">SystemVerilog</a></li>
+    <li class="self-crumb">addInOut method</li>
+</ol>
+
+    <h5>SystemVerilog mixin</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    rohd
+      0.6.6
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
