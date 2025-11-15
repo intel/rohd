@@ -225,21 +225,13 @@ class TopWithUnusedSubModPorts extends Module {
     outStructTopB = addTypedOutput('outStructTopB', subModB.outStructTo.clone)
       ..gets(subModB.outStructTo);
 
-    final subModCArrIn = LogicArray(
-        [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth);
-    subModCArrIn.elements[0].gets(subModA.outArrTo);
-    subModCArrIn.elements[1].gets(Const(3, width: subModA.outArrTo.width));
-
-    //TODO: is this a bug!? array subset assignment broken?
-
     final subModC = SubModWithSomePortsUsed(
       fromIn: subModA.outTo,
       fromIo: betweenAtoBNet,
-      fromArrIn: subModCArrIn,
-      // LogicArray(
-      //     [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
-      //   ..elements[0].gets(subModA.outArrTo.named('ASDF'))
-      //   ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
+      fromArrIn: LogicArray(
+          [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
+        ..elements[0].gets(subModA.outArrTo)
+        ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
       fromStructIn: LogicStructure([
         SimpleStruct()..gets(subModA.outStructTo),
         SimpleStruct()..gets(Const(3, width: subModA.outStructTo.width))
