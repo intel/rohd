@@ -340,6 +340,11 @@ class SynthLogicArrayElement extends SynthLogic {
   bool get needsDeclaration => false;
 
   @override
+  bool get mergeable =>
+      // we can't merge elements of arrays safely, we could lose an assignment
+      false;
+
+  @override
   String get name {
     final parentArrayname = parentArray.replacement?.name ?? parentArray.name;
     final n = '$parentArrayname[${logic.arrayIndex!}]';
