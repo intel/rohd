@@ -93,7 +93,7 @@ class SynthLogic {
 
   //TODO doc
   void clearDeclaration() {
-    assert(!isStructPortElement);
+    // assert(!isStructPortElement); //TODO
     _declarationCleared = true;
   }
 

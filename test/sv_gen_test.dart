@@ -111,14 +111,16 @@ class TopCustomSvWrap extends Module {
 }
 
 class SimpleStruct extends LogicStructure {
-  SimpleStruct({super.name = 'SimpleStruct'})
+  final Naming? elementNaming;
+  SimpleStruct({super.name = 'SimpleStruct', required this.elementNaming})
       : super([
-          Logic(name: 'field4', width: 4),
-          Logic(name: 'field8', width: 8),
+          Logic(name: 'field4', width: 4, naming: elementNaming),
+          Logic(name: 'field8', width: 8, naming: elementNaming),
         ]);
 
   @override
-  SimpleStruct clone({String? name}) => SimpleStruct(name: name ?? this.name);
+  SimpleStruct clone({String? name}) =>
+      SimpleStruct(name: name ?? this.name, elementNaming: elementNaming);
 }
 
 //TODO: test removal of bussubsets and swizzles as well
@@ -177,7 +179,8 @@ class TopWithUnusedSubModPorts extends Module {
     final ioNotUsed = LogicNet(name: 'ioNotUsed', naming: internalNaming);
     final arrInNotUsed =
         LogicArray([4, 3], 2, name: 'arrInNotUsed', naming: internalNaming);
-    final structInNotUsed = SimpleStruct(name: 'structInNotUsed');
+    final structInNotUsed =
+        SimpleStruct(name: 'structInNotUsed', elementNaming: internalNaming);
 
     final betweenAtoBNet = LogicNet(
         name: 'betweenAtoBNet', width: outTopIoA.width, naming: internalNaming);
@@ -233,8 +236,9 @@ class TopWithUnusedSubModPorts extends Module {
         ..elements[0].gets(subModA.outArrTo)
         ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
       fromStructIn: LogicStructure([
-        SimpleStruct()..gets(subModA.outStructTo),
-        SimpleStruct()..gets(Const(3, width: subModA.outStructTo.width))
+        SimpleStruct(elementNaming: internalNaming)..gets(subModA.outStructTo),
+        SimpleStruct(elementNaming: internalNaming)
+          ..gets(Const(3, width: subModA.outStructTo.width))
       ]),
       inpNotUsed: inpNotUsed,
       ioNotUsed: LogicNet(
@@ -266,7 +270,8 @@ class TopWithUnusedSubModPorts extends Module {
               name: 'outArrNotUsed', naming: internalNaming) <=
           subModA.outArrNotUsed;
 
-      SimpleStruct(name: 'outStructNotUsed') <= subModA.outStructNotUsed;
+      SimpleStruct(name: 'outStructNotUsed', elementNaming: internalNaming) <=
+          subModA.outStructNotUsed;
     }
   }
 }
@@ -523,7 +528,7 @@ void main() {
           topIn: Logic(),
           topIo: LogicNet(width: 2),
           topArrIn: LogicArray([4, 3], 2),
-          topStructIn: SimpleStruct(),
+          topStructIn: SimpleStruct(elementNaming: naming),
           internalNaming: naming,
           outTopIoA: LogicNet(width: 2),
           outTopIoB: LogicNet(width: 2),

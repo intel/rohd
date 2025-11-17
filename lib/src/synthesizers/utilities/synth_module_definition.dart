@@ -9,6 +9,7 @@
 
 import 'dart:collection';
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
@@ -20,7 +21,11 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 class _BusSubsetForStructSlice extends BusSubset {
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
-  _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex);
+  _BusSubsetForStructSlice(
+    super.bus,
+    super.startIndex,
+    super.endIndex,
+  ) : super(name: 'struct_slice');
 
   // we override this since it's added post-build
   @override
@@ -524,6 +529,12 @@ class SynthModuleDefinition {
           in internalSignals.where((e) => !e.declarationCleared)) {
         final logics = internalSignal.logics; // TODO: could be cached
 
+        if (logics.any((e) =>
+            e.parentStructure != null &&
+            e.parentStructure!.name.contains('structInNotUsed'))) {
+          print('whyyy');
+        }
+
         // if it's not a mergeable signal (for whatever reason), can't remove it
         if (!internalSignal.mergeable) {
           reducedInternalSignals.add(internalSignal);
@@ -568,10 +579,6 @@ class SynthModuleDefinition {
           continue;
         }
 
-        if (logics.any((e) => e.name == 'outNotUsed')) {
-          print('why not?');
-        }
-
         reducedInternalSignals.add(internalSignal);
       }
       if (changed) {
@@ -589,6 +596,16 @@ class SynthModuleDefinition {
           print(
               'removing assignment from ${module.definitionName} $assignment');
           changed = true;
+        } else if (assignment is PartialSynthAssignment &&
+            !assignment.src.hasSrcConnectionsPresentIn(this) &&
+            !(assignment.src.isStructPortElement &&
+                assignment.src.logics
+                    .any((e) => e.isPort && e.parentModule == module)) &&
+            assignment.src.mergeable) {
+          print('removing partial struct assignment from '
+              '${module.definitionName} $assignment (no src)');
+          assignment.src.clearDeclaration();
+          changed = true;
         } else {
           reducedAssignments.add(assignment);
         }
@@ -605,6 +622,7 @@ class SynthModuleDefinition {
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
         final module = subModuleInstantiation.module;
 
+        //TODO: do we need ANY of this if statement?
         if (module is _BusSubsetForStructSlice &&
             ([
               ...subModuleInstantiation.inputMapping.values,
@@ -627,16 +645,6 @@ class SynthModuleDefinition {
             ...subModuleInstantiation.outputMapping,
             ...subModuleInstantiation.inOutMapping
           };
-
-          // if (module is InlineSystemVerilog &&
-          //     outputs[module.resultSignalName]!.declarationCleared) {
-          //   // if the result is not used, we can remove the module
-          //   subModuleInstantiation.clearInstantiation();
-          //   print('removing from ${module.definitionName} '
-          //       'inline system verilog of $module (result not used)');
-          //   changed = true;
-          //   continue;
-          // }
 
           // if all the inputs or all the outputs are not used, we can remove
           // the module
@@ -668,11 +676,38 @@ class SynthModuleDefinition {
             //     input.logics.any((e) => e.name.contains('topStructIn')))) {
             //   print('what?');
             // }
+            // [[]].flattened;
             subModuleInstantiation.clearInstantiation();
             print('removing from ${module.definitionName} '
                 'system verilog of $module (all inputs unused)');
             changed = true;
             continue;
+          }
+        }
+
+        if (module is _BusSubsetForStructSlice
+            // subModuleInstantiation.inputMapping.values.any((e) => e
+            //     .srcConnections
+            //     .any((e) => e.name.contains('outStructNotUsed')))
+            ) {
+          // print('asdfasdfasdf' +
+          //     subModuleInstantiation.inputMapping.values
+          //         .map((e) => e.srcConnections.toList())
+          //         .toList()
+          //         .flattened
+          //         .map((e) => _getSynthLogic(e.parentStructure))
+          //         .nonNulls
+          //         .toList()
+          //         .toString());
+          if (subModuleInstantiation.inputMapping.values
+              .map((e) => e.srcConnections.toList())
+              .toList()
+              .flattened
+              .map((e) => _getSynthLogic(e.parentStructure))
+              .nonNulls
+              .any((e) =>
+                  e.logics.any((e) => e.name.contains('structInNotUsed')))) {
+            print('why?');
           }
         }
       }
