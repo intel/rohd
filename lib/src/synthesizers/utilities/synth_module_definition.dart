@@ -643,7 +643,9 @@ class SynthModuleDefinition {
 
           final allOutputsUnused = outputs.values.every((output) =>
               output.declarationCleared ||
-              (output.mergeable && !output.hasDstConnectionsPresentIn(this)));
+              (output.mergeable &&
+                  !output.isStructPortElement &&
+                  !output.hasDstConnectionsPresentIn(this)));
           if (allOutputsUnused) {
             // if (inputs.values.any((input) =>
             //     input.logics.any((e) => e.name.contains('topStructIn')))) {
@@ -658,7 +660,9 @@ class SynthModuleDefinition {
 
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
-              (input.mergeable && !input.hasSrcConnectionsPresentIn(this)));
+              (input.mergeable &&
+                  !input.isStructPortElement &&
+                  !input.hasSrcConnectionsPresentIn(this)));
           if (allInputsUnused) {
             // if (inputs.values.any((input) =>
             //     input.logics.any((e) => e.name.contains('topStructIn')))) {
