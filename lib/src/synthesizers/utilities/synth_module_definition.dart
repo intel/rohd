@@ -28,6 +28,7 @@ class _BusSubsetForStructSlice extends BusSubset {
 }
 
 /// Represents the definition of a module.
+@internal
 class SynthModuleDefinition {
   /// The [Module] being defined.
   final Module module;
@@ -73,7 +74,8 @@ class SynthModuleDefinition {
   ///
   /// This is only valid to call after all the submodules have been detected.
   /// This also updates as modules are pruned or removed during processing.
-  bool _isSubmoduleAndPresent(Module? m) =>
+  @internal
+  bool isSubmoduleAndPresent(Module? m) =>
       m != null &&
       moduleToSubModuleInstantiationMap.containsKey(m) &&
       moduleToSubModuleInstantiationMap[m]!.needsInstantiation;
@@ -108,8 +110,19 @@ class SynthModuleDefinition {
   final Uniquifier _synthInstantiationNameUniquifier;
 
   //TODO doc
-  bool _logicHasPresentSynthLogic(Logic logic) =>
-      !(logicToSynthMap[logic]?.declarationCleared ?? true);
+  @internal
+  bool logicHasPresentSynthLogic(Logic logic) {
+    final synthLogic = logicToSynthMap[logic];
+    if (synthLogic == null) {
+      return false;
+    } else if (synthLogic.declarationCleared) {
+      return false;
+    } else if (synthLogic.isStructPortElement) {
+      return true;
+    } else {
+      return true;
+    }
+  }
 
   // bool _synthLogicPresent(SynthLogic synthLogic) =>
   //     _logicHasSynthLogic(synthLogic.logics.first); //TODO: optimize
@@ -526,25 +539,19 @@ class SynthModuleDefinition {
         // if it's an array, can only remove if all elements are removed
         if (internalSignal.isArray &&
             logics.any((logicArray) =>
-                logicArray.elements.any(_logicHasPresentSynthLogic))) {
+                logicArray.elements.any(logicHasPresentSynthLogic))) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
 
         final isCustomSvModPort = logics.any((logic) =>
             logic.isPort &&
-            _isSubmoduleAndPresent(logic.parentModule) &&
+            isSubmoduleAndPresent(logic.parentModule) &&
             (logic.parentModule! is SystemVerilog ||
                 logic.parentModule! is CustomSystemVerilog));
 
-        final hasSrcConnections = logics.any((logic) =>
-                (logic.isOutput || logic.isInOut) &&
-                _isSubmoduleAndPresent(logic.parentModule)) ||
-            internalSignal.srcConnections.any(_logicHasPresentSynthLogic) ||
-            (internalSignal.isNet &&
-                internalSignal.dstConnections.any(_logicHasPresentSynthLogic));
-
-        if (!hasSrcConnections && !isCustomSvModPort) {
+        if (!internalSignal.hasSrcConnectionsPresentIn(this) &&
+            !isCustomSvModPort) {
           internalSignal.clearDeclaration();
           print(
               'removing from ${module.definitionName} (no src) ${internalSignal}');
@@ -552,16 +559,8 @@ class SynthModuleDefinition {
           continue;
         }
 
-        // TODO: if it's an element of a struct port, can't remove it!
-
-        final hasDstConnections = logics.any((logic) =>
-                (logic.isInput || logic.isInOut) &&
-                _isSubmoduleAndPresent(logic.parentModule)) ||
-            internalSignal.dstConnections.any(_logicHasPresentSynthLogic) ||
-            (internalSignal.isNet &&
-                internalSignal.srcConnections.any(_logicHasPresentSynthLogic));
-
-        if (!hasDstConnections && !isCustomSvModPort) {
+        if (!internalSignal.hasDstConnectionsPresentIn(this) &&
+            !isCustomSvModPort) {
           print(
               'removing from ${module.definitionName} (no dst) ${internalSignal}');
           internalSignal.clearDeclaration();
@@ -587,6 +586,8 @@ class SynthModuleDefinition {
         if ((assignment.src.declarationCleared ||
                 assignment.dst.declarationCleared) &&
             !(assignment.src.isNet || assignment.dst.isNet)) {
+          print(
+              'removing assignment from ${module.definitionName} $assignment');
           changed = true;
         } else {
           reducedAssignments.add(assignment);
@@ -602,14 +603,73 @@ class SynthModuleDefinition {
       // TODO: more module sweeping!
       for (final subModuleInstantiation
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
-        if (subModuleInstantiation.module is _BusSubsetForStructSlice &&
+        final module = subModuleInstantiation.module;
+
+        if (module is _BusSubsetForStructSlice &&
             ([
               ...subModuleInstantiation.inputMapping.values,
               ...subModuleInstantiation.outputMapping.values,
               ...subModuleInstantiation.inOutMapping.values
             ].any((e) => e.declarationCleared))) {
           subModuleInstantiation.clearInstantiation();
+          print('removing from ${module.definitionName} '
+              'bus subset for struct slice of $module (all ports unused)');
           changed = true;
+          continue;
+        }
+
+        if (module is SystemVerilog && module.isWiresOnly) {
+          final inputs = {
+            ...subModuleInstantiation.inputMapping,
+            ...subModuleInstantiation.inOutMapping
+          };
+          final outputs = {
+            ...subModuleInstantiation.outputMapping,
+            ...subModuleInstantiation.inOutMapping
+          };
+
+          // if (module is InlineSystemVerilog &&
+          //     outputs[module.resultSignalName]!.declarationCleared) {
+          //   // if the result is not used, we can remove the module
+          //   subModuleInstantiation.clearInstantiation();
+          //   print('removing from ${module.definitionName} '
+          //       'inline system verilog of $module (result not used)');
+          //   changed = true;
+          //   continue;
+          // }
+
+          // if all the inputs or all the outputs are not used, we can remove
+          // the module
+
+          final allOutputsUnused = outputs.values.every((output) =>
+              output.declarationCleared ||
+              (output.mergeable && !output.hasDstConnectionsPresentIn(this)));
+          if (allOutputsUnused) {
+            // if (inputs.values.any((input) =>
+            //     input.logics.any((e) => e.name.contains('topStructIn')))) {
+            //   print('what?');
+            // }
+            subModuleInstantiation.clearInstantiation();
+            print('removing from ${module.definitionName} '
+                'system verilog of $module (all outputs unused)');
+            changed = true;
+            continue;
+          }
+
+          final allInputsUnused = inputs.values.every((input) =>
+              input.declarationCleared ||
+              (input.mergeable && !input.hasSrcConnectionsPresentIn(this)));
+          if (allInputsUnused) {
+            // if (inputs.values.any((input) =>
+            //     input.logics.any((e) => e.name.contains('topStructIn')))) {
+            //   print('what?');
+            // }
+            subModuleInstantiation.clearInstantiation();
+            print('removing from ${module.definitionName} '
+                'system verilog of $module (all inputs unused)');
+            changed = true;
+            continue;
+          }
         }
       }
 

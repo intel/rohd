@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -92,6 +93,7 @@ class SynthLogic {
 
   //TODO doc
   void clearDeclaration() {
+    assert(!isStructPortElement);
     _declarationCleared = true;
   }
 
@@ -115,6 +117,23 @@ class SynthLogic {
         .flattened
         .where((e) => !containedLogics.contains(e));
   }
+
+  //TODO doc
+  bool hasDstConnectionsPresentIn(SynthModuleDefinition def) =>
+      logics.any((logic) =>
+          logic is Const || // in case of net, could be const dest
+          (logic.isInput || logic.isInOut) &&
+              def.isSubmoduleAndPresent(logic.parentModule)) ||
+      dstConnections.any(def.logicHasPresentSynthLogic) ||
+      (isNet && srcConnections.any(def.logicHasPresentSynthLogic));
+
+  bool hasSrcConnectionsPresentIn(SynthModuleDefinition def) =>
+      logics.any((logic) =>
+          logic is Const ||
+          (logic.isOutput || logic.isInOut) &&
+              def.isSubmoduleAndPresent(logic.parentModule)) ||
+      srcConnections.any(def.logicHasPresentSynthLogic) ||
+      (isNet && dstConnections.any(def.logicHasPresentSynthLogic));
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements

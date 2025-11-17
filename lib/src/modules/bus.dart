@@ -7,6 +7,7 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
@@ -39,6 +40,10 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// Indicates whether this operates bidirectionally on nets.
   final bool _isNet;
+
+  @internal
+  @override
+  bool get isWiresOnly => true;
 
   @override
   String get resultSignalName => _subsetName;
@@ -183,6 +188,10 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Whether this [Swizzle] is for [LogicNet]s.
   final bool _isNet;
+
+  @internal
+  @override
+  bool get isWiresOnly => true;
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})

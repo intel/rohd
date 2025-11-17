@@ -7,6 +7,7 @@
 // 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A gate [Module] that performs bit-wise inversion.
@@ -1014,6 +1015,10 @@ class ReplicationOp extends Module with InlineSystemVerilog {
 
   /// Indicates whether this operates on nets, supporting bidirectionality.
   final bool _isNet;
+
+  @internal
+  @override
+  bool get isWiresOnly => true;
 
   /// Constructs a ReplicationOp
   ///

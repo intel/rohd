@@ -91,6 +91,12 @@ mixin SystemVerilog on Module {
       return DefinitionGenerationType.none;
     }
   }
+
+  //TODO doc
+  /// Indicates that this module is only wires, no logic inside, which can be
+  /// leveraged for pruning.
+  @internal
+  bool get isWiresOnly => false;
 }
 
 /// A type of generation for generated outputs.
@@ -167,6 +173,10 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 
   @override
   List<SystemVerilogParameterDefinition>? get definitionParameters => null;
+
+  @internal
+  @override
+  bool get isWiresOnly => false;
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be
