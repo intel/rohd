@@ -39,10 +39,16 @@ class SynthLogic {
   ///
   /// Note that this is distinct from a port that is an element of a
   /// [LogicStructure] that is not a port.
-  bool get isStructPortElement =>
+  ///
+  /// If a [module] is provided, then it only returns true if the parent
+  /// structure is a port of that [module].
+  bool isStructPortElement([Module? module]) =>
       (this is! SynthLogicArrayElement) &&
       logics.any((e) =>
-          e.isPort && e.parentStructure != null && e.parentStructure!.isPort);
+          e.isPort &&
+          e.parentStructure != null &&
+          e.parentStructure!.isPort &&
+          (module == null || e.parentStructure!.parentModule == module));
 
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;

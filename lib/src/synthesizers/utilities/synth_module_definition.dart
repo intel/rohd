@@ -122,7 +122,7 @@ class SynthModuleDefinition {
       return false;
     } else if (synthLogic.declarationCleared) {
       return false;
-    } else if (synthLogic.isStructPortElement) {
+    } else if (synthLogic.isStructPortElement()) {
       return true;
     } else {
       return true;
@@ -430,7 +430,7 @@ class SynthModuleDefinition {
         final subModule = receiver.parentModule!;
 
         if (synthReceiver is! SynthLogicArrayElement &&
-            !synthReceiver.isStructPortElement) {
+            !synthReceiver.isStructPortElement()) {
           getSynthSubModuleInstantiation(subModule)
               .setInOutMapping(receiver.name, synthReceiver);
         }
@@ -445,7 +445,7 @@ class SynthModuleDefinition {
 
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
-            !synthReceiver.isStructPortElement) {
+            !synthReceiver.isStructPortElement()) {
           getSynthSubModuleInstantiation(subModule)
               .setOutputMapping(receiver.name, synthReceiver);
         }
@@ -477,7 +477,7 @@ class SynthModuleDefinition {
 
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
-            !synthReceiver.isStructPortElement) {
+            !synthReceiver.isStructPortElement()) {
           getSynthSubModuleInstantiation(subModule)
               .setInputMapping(receiver.name, synthReceiver);
         }
@@ -541,7 +541,7 @@ class SynthModuleDefinition {
           continue;
         }
 
-        if (internalSignal.isStructPortElement) {
+        if (internalSignal.isStructPortElement()) {
           // can't remove elements of struct ports
           reducedInternalSignals.add(internalSignal);
           continue;
@@ -598,9 +598,7 @@ class SynthModuleDefinition {
           changed = true;
         } else if (assignment is PartialSynthAssignment &&
             !assignment.src.hasSrcConnectionsPresentIn(this) &&
-            !(assignment.src.isStructPortElement &&
-                assignment.src.logics
-                    .any((e) => e.isPort && e.parentModule == module)) &&
+            !assignment.src.isStructPortElement(module) &&
             assignment.src.mergeable) {
           print('removing partial struct assignment from '
               '${module.definitionName} $assignment (no src)');
@@ -652,7 +650,7 @@ class SynthModuleDefinition {
           final allOutputsUnused = outputs.values.every((output) =>
               output.declarationCleared ||
               (output.mergeable &&
-                  !output.isStructPortElement &&
+                  !output.isStructPortElement() &&
                   !output.hasDstConnectionsPresentIn(this)));
           if (allOutputsUnused) {
             // if (inputs.values.any((input) =>
@@ -669,7 +667,7 @@ class SynthModuleDefinition {
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
               (input.mergeable &&
-                  !input.isStructPortElement &&
+                  !input.isStructPortElement() &&
                   !input.hasSrcConnectionsPresentIn(this)));
           if (allInputsUnused) {
             // if (inputs.values.any((input) =>
