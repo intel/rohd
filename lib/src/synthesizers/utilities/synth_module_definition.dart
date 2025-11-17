@@ -517,6 +517,12 @@ class SynthModuleDefinition {
           continue;
         }
 
+        if (internalSignal.isStructPortElement) {
+          // can't remove elements of struct ports
+          reducedInternalSignals.add(internalSignal);
+          continue;
+        }
+
         // if it's an array, can only remove if all elements are removed
         if (internalSignal.isArray &&
             logics.any((logicArray) =>
@@ -545,6 +551,8 @@ class SynthModuleDefinition {
           changed = true;
           continue;
         }
+
+        // TODO: if it's an element of a struct port, can't remove it!
 
         final hasDstConnections = logics.any((logic) =>
                 (logic.isInput || logic.isInOut) &&
@@ -604,6 +612,9 @@ class SynthModuleDefinition {
           changed = true;
         }
       }
+
+      //TODO: remove partial assignments that are not needed anymore for struct
+      // ports
 
       // things to check:
       //  - signals are not used
