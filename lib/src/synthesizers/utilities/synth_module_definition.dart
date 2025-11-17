@@ -108,7 +108,8 @@ class SynthModuleDefinition {
   final Uniquifier _synthInstantiationNameUniquifier;
 
   //TODO doc
-  bool _logicHasSynthLogic(Logic logic) => logicToSynthMap.containsKey(logic);
+  bool _logicHasPresentSynthLogic(Logic logic) =>
+      !(logicToSynthMap[logic]?.declarationCleared ?? true);
 
   // bool _synthLogicPresent(SynthLogic synthLogic) =>
   //     _logicHasSynthLogic(synthLogic.logics.first); //TODO: optimize
@@ -469,7 +470,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
-    // _pruneUnused(); //TODO: get test passing without this first
+    _pruneUnused();
     process();
     _pickNames();
   }
@@ -518,8 +519,8 @@ class SynthModuleDefinition {
 
         // if it's an array, can only remove if all elements are removed
         if (internalSignal.isArray &&
-            logics.any(
-                (logicArray) => logicArray.elements.any(_logicHasSynthLogic))) {
+            logics.any((logicArray) =>
+                logicArray.elements.any(_logicHasPresentSynthLogic))) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
@@ -531,10 +532,11 @@ class SynthModuleDefinition {
                 logic.parentModule! is CustomSystemVerilog));
 
         final hasSrcConnections = logics.any((logic) =>
-            ((logic.isOutput || logic.isInOut) &&
+                (logic.isOutput || logic.isInOut) &&
                 _isSubmoduleAndPresent(logic.parentModule)) ||
-            logic.srcConnections.any(_logicHasSynthLogic) ||
-            (logic.isNet && logic.dstConnections.any(_logicHasSynthLogic)));
+            internalSignal.srcConnections.any(_logicHasPresentSynthLogic) ||
+            (internalSignal.isNet &&
+                internalSignal.dstConnections.any(_logicHasPresentSynthLogic));
 
         if (!hasSrcConnections && !isCustomSvModPort) {
           internalSignal.clearDeclaration();
@@ -545,10 +547,11 @@ class SynthModuleDefinition {
         }
 
         final hasDstConnections = logics.any((logic) =>
-            ((logic.isInput || logic.isInOut) &&
+                (logic.isInput || logic.isInOut) &&
                 _isSubmoduleAndPresent(logic.parentModule)) ||
-            logic.dstConnections.any(_logicHasSynthLogic) ||
-            (logic.isNet && logic.srcConnections.any(_logicHasSynthLogic)));
+            internalSignal.dstConnections.any(_logicHasPresentSynthLogic) ||
+            (internalSignal.isNet &&
+                internalSignal.srcConnections.any(_logicHasPresentSynthLogic));
 
         if (!hasDstConnections && !isCustomSvModPort) {
           print(
@@ -556,6 +559,10 @@ class SynthModuleDefinition {
           internalSignal.clearDeclaration();
           changed = true;
           continue;
+        }
+
+        if (logics.any((e) => e.name == 'outNotUsed')) {
+          print('why not?');
         }
 
         reducedInternalSignals.add(internalSignal);

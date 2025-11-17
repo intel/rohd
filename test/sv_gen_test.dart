@@ -156,7 +156,7 @@ class TopWithUnusedSubModPorts extends Module {
     required LogicArray topArrIn,
     required SimpleStruct topStructIn,
     required Naming? internalNaming, // TODO: loop over incl null
-  }) {
+  }) : super(name: 'TopWithUnusedSubModPorts') {
     // Connectivity description:
     //                 ^ outTopA
     //                 |      between

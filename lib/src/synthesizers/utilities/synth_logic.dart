@@ -8,11 +8,13 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a logic signal in the generated code within a module.
+@internal
 class SynthLogic {
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
@@ -88,12 +90,31 @@ class SynthLogic {
 
   bool get declarationCleared => _declarationCleared;
 
+  //TODO doc
   void clearDeclaration() {
     _declarationCleared = true;
   }
 
   // TODO: doc
   bool _declarationCleared = false;
+
+  //TODO doc
+  Iterable<Logic> get srcConnections {
+    final containedLogics = logics.toSet();
+    return logics
+        .map((e) => e.srcConnections)
+        .flattened
+        .where((e) => !containedLogics.contains(e));
+  }
+
+  //TODO doc
+  Iterable<Logic> get dstConnections {
+    final containedLogics = logics.toSet();
+    return logics
+        .map((e) => e.dstConnections)
+        .flattened
+        .where((e) => !containedLogics.contains(e));
+  }
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements
