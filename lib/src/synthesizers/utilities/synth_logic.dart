@@ -52,6 +52,7 @@ class SynthLogic {
 
   //TODO doc
   bool isPort([Module? module]) =>
+      // we can rely on ports being the reserved logic (optimization)
       _reservedLogic != null &&
       _reservedLogic!.isPort &&
       (module == null || _reservedLogic!.parentModule == module);
@@ -157,8 +158,7 @@ class SynthLogic {
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
 
   //TODO doc
-  bool isClearable(Module module) =>
-      mergeable || (this is SynthLogicArrayElement && !isPort(module));
+  bool isClearable(Module module) => mergeable;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -415,8 +415,14 @@ class SynthLogicArrayElement extends SynthLogic {
 
   @override
   bool isPort([Module? module]) =>
+      // we cannot just use `super.isPort` since we need to check `logic`, not
+      // rely on `_reservedLogic`
       (logic.isPort && (module == null || logic.parentModule == module)) ||
       parentArray.isPort(module);
+
+  @override
+  bool isClearable(Module module) =>
+      !isPort(module) && parentArray.isClearable(module);
 
   @override
   String get name {

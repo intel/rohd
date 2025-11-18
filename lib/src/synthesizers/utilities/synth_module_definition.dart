@@ -663,7 +663,7 @@ class SynthModuleDefinition {
                   !output.hasDstConnectionsPresentIn(this)));
           if (allOutputsUnused) {
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${subModule.definitionName} '
+            print('removing from ${module.definitionName} '
                 'system verilog of $subModule (all outputs unused)');
             changed = true;
             continue;
@@ -676,7 +676,7 @@ class SynthModuleDefinition {
                   !input.hasSrcConnectionsPresentIn(this)));
           if (allInputsUnused) {
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${subModule.definitionName} '
+            print('removing from ${module.definitionName} '
                 'system verilog of $subModule (all inputs unused)');
             changed = true;
             continue;
