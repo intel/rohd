@@ -415,7 +415,8 @@ class SynthLogicArrayElement extends SynthLogic {
 
   @override
   bool isPort([Module? module]) =>
-      super.isPort(module) || parentArray.isPort(module);
+      (logic.isPort && (module == null || logic.parentModule == module)) ||
+      parentArray.isPort(module);
 
   @override
   String get name {
