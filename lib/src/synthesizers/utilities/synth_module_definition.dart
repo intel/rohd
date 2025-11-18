@@ -529,14 +529,8 @@ class SynthModuleDefinition {
           in internalSignals.where((e) => !e.declarationCleared)) {
         final logics = internalSignal.logics; // TODO: could be cached
 
-        if (logics.any((e) =>
-            e.parentStructure != null &&
-            e.parentStructure!.name.contains('structInNotUsed'))) {
-          print('whyyy');
-        }
-
-        // if it's not a mergeable signal (for whatever reason), can't remove it
-        if (!internalSignal.mergeable) {
+        // if it's not a clearable signal (for whatever reason), can't remove it
+        if (!internalSignal.isClearable(module)) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
@@ -547,11 +541,26 @@ class SynthModuleDefinition {
           continue;
         }
 
+        if (internalSignal.isPort(module)) {
+          // can't remove ports of this module
+          reducedInternalSignals.add(internalSignal);
+          continue;
+        }
+
         // if it's an array, can only remove if all elements are removed
         if (internalSignal.isArray &&
             logics.any((logicArray) =>
                 logicArray.elements.any(logicHasPresentSynthLogic))) {
           reducedInternalSignals.add(internalSignal);
+          continue;
+        }
+
+        // if it's an array and all elements are gone, we can remove it
+        if (internalSignal.isArray &&
+            logics.none((logicArray) =>
+                logicArray.elements.any(logicHasPresentSynthLogic))) {
+          internalSignal.clearDeclaration();
+          changed = true;
           continue;
         }
 
@@ -599,7 +608,7 @@ class SynthModuleDefinition {
         } else if (assignment is PartialSynthAssignment &&
             !assignment.src.hasSrcConnectionsPresentIn(this) &&
             !assignment.src.isStructPortElement(module) &&
-            assignment.src.mergeable) {
+            assignment.src.isClearable(module)) {
           print('removing partial struct assignment from '
               '${module.definitionName} $assignment (no src)');
           assignment.src.clearDeclaration();
@@ -618,23 +627,23 @@ class SynthModuleDefinition {
       // TODO: more module sweeping!
       for (final subModuleInstantiation
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
-        final module = subModuleInstantiation.module;
+        final subModule = subModuleInstantiation.module;
 
         //TODO: do we need ANY of this if statement?
-        if (module is _BusSubsetForStructSlice &&
+        if (subModule is _BusSubsetForStructSlice &&
             ([
               ...subModuleInstantiation.inputMapping.values,
               ...subModuleInstantiation.outputMapping.values,
               ...subModuleInstantiation.inOutMapping.values
             ].any((e) => e.declarationCleared))) {
           subModuleInstantiation.clearInstantiation();
-          print('removing from ${module.definitionName} '
-              'bus subset for struct slice of $module (all ports unused)');
+          print('removing from ${subModule.definitionName} '
+              'bus subset for struct slice of $subModule (all ports unused)');
           changed = true;
           continue;
         }
 
-        if (module is SystemVerilog && module.isWiresOnly) {
+        if (subModule is SystemVerilog && subModule.isWiresOnly) {
           final inputs = {
             ...subModuleInstantiation.inputMapping,
             ...subModuleInstantiation.inOutMapping
@@ -649,63 +658,28 @@ class SynthModuleDefinition {
 
           final allOutputsUnused = outputs.values.every((output) =>
               output.declarationCleared ||
-              (output.mergeable &&
+              (output.isClearable(module) &&
                   !output.isStructPortElement() &&
                   !output.hasDstConnectionsPresentIn(this)));
           if (allOutputsUnused) {
-            // if (inputs.values.any((input) =>
-            //     input.logics.any((e) => e.name.contains('topStructIn')))) {
-            //   print('what?');
-            // }
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${module.definitionName} '
-                'system verilog of $module (all outputs unused)');
+            print('removing from ${subModule.definitionName} '
+                'system verilog of $subModule (all outputs unused)');
             changed = true;
             continue;
           }
 
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
-              (input.mergeable &&
+              (input.isClearable(module) &&
                   !input.isStructPortElement() &&
                   !input.hasSrcConnectionsPresentIn(this)));
           if (allInputsUnused) {
-            // if (inputs.values.any((input) =>
-            //     input.logics.any((e) => e.name.contains('topStructIn')))) {
-            //   print('what?');
-            // }
-            // [[]].flattened;
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${module.definitionName} '
-                'system verilog of $module (all inputs unused)');
+            print('removing from ${subModule.definitionName} '
+                'system verilog of $subModule (all inputs unused)');
             changed = true;
             continue;
-          }
-        }
-
-        if (module is _BusSubsetForStructSlice
-            // subModuleInstantiation.inputMapping.values.any((e) => e
-            //     .srcConnections
-            //     .any((e) => e.name.contains('outStructNotUsed')))
-            ) {
-          // print('asdfasdfasdf' +
-          //     subModuleInstantiation.inputMapping.values
-          //         .map((e) => e.srcConnections.toList())
-          //         .toList()
-          //         .flattened
-          //         .map((e) => _getSynthLogic(e.parentStructure))
-          //         .nonNulls
-          //         .toList()
-          //         .toString());
-          if (subModuleInstantiation.inputMapping.values
-              .map((e) => e.srcConnections.toList())
-              .toList()
-              .flattened
-              .map((e) => _getSynthLogic(e.parentStructure))
-              .nonNulls
-              .any((e) =>
-                  e.logics.any((e) => e.name.contains('structInNotUsed')))) {
-            print('why?');
           }
         }
       }

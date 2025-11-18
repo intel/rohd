@@ -149,6 +149,8 @@ class TopWithUnusedSubModPorts extends Module {
   late final LogicArray outArrTopC;
   late final Logic outStructTopC;
 
+  //TODO: what about IO arrays and IO structs?
+
   TopWithUnusedSubModPorts({
     required Logic topIn,
     required LogicNet topIo,
@@ -176,7 +178,7 @@ class TopWithUnusedSubModPorts extends Module {
     outTopIoC = addInOut('outTopIoC', outTopIoC, width: outTopIoC.width);
 
     final inpNotUsed = Logic(name: 'inpNotUsed', naming: internalNaming);
-    final ioNotUsed = LogicNet(name: 'ioNotUsed', naming: internalNaming);
+    final ioNotUsedA = LogicNet(name: 'ioNotUsedA', naming: internalNaming);
     final arrInNotUsed =
         LogicArray([4, 3], 2, name: 'arrInNotUsed', naming: internalNaming);
     final structInNotUsed =
@@ -191,7 +193,7 @@ class TopWithUnusedSubModPorts extends Module {
       fromArrIn: topArrIn,
       fromStructIn: topStructIn,
       inpNotUsed: inpNotUsed,
-      ioNotUsed: ioNotUsed,
+      ioNotUsed: ioNotUsedA,
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
       outIoTo: outTopIoA,

@@ -50,6 +50,12 @@ class SynthLogic {
           e.parentStructure!.isPort &&
           (module == null || e.parentStructure!.parentModule == module));
 
+  //TODO doc
+  bool isPort([Module? module]) =>
+      _reservedLogic != null &&
+      _reservedLogic!.isPort &&
+      (module == null || _reservedLogic!.parentModule == module);
+
   /// The direct replacement of this [SynthLogic].
   SynthLogic? _replacement;
 
@@ -95,12 +101,15 @@ class SynthLogic {
   bool get needsDeclaration =>
       !(isConstant && !_constNameDisallowed) && !declarationCleared;
 
+  //TODO doc
   bool get declarationCleared => _declarationCleared;
 
   //TODO doc
   void clearDeclaration() {
     // assert(!isStructPortElement); //TODO
     _declarationCleared = true;
+
+    // NOTE: this also can apply to array elements?
   }
 
   // TODO: doc
@@ -146,6 +155,10 @@ class SynthLogic {
   /// from the other.
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
+
+  //TODO doc
+  bool isClearable(Module module) =>
+      mergeable || (this is SynthLogicArrayElement && !isPort(module));
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -399,6 +412,10 @@ class SynthLogicArrayElement extends SynthLogic {
   bool get mergeable =>
       // we can't merge elements of arrays safely, we could lose an assignment
       false;
+
+  @override
+  bool isPort([Module? module]) =>
+      super.isPort(module) || parentArray.isPort(module);
 
   @override
   String get name {
