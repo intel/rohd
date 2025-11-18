@@ -541,8 +541,8 @@ class SynthModuleDefinition {
           continue;
         }
 
-        if (internalSignal.isStructPortElement()) {
-          // can't remove elements of struct ports
+        if (internalSignal.isStructPortElement(module)) {
+          // can't remove elements of struct ports of this module
           reducedInternalSignals.add(internalSignal);
           continue;
         }

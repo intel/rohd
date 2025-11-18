@@ -539,6 +539,12 @@ void main() {
 
         // print(sv);
 
+        // TODO: checks:
+        // - no assign statements with notUsed
+        // - the notUsed ports have () on mergeable, actual things on renameable
+        // - net across 2 modules is maintained, individual net is not
+        // - arrays and structss
+
         File('tmp_${naming.name}.sv').writeAsStringSync(sv);
 
         final vectors = [
