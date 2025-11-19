@@ -554,6 +554,8 @@ class SynthModuleDefinition {
             reducedInternalSignals.add(internalSignal);
           } else {
             // if it's an array and all elements are gone, we can remove it
+            print('removing from ${module.definitionName} array '
+                '$internalSignal (all elements unused)');
             internalSignal.clearDeclaration();
             changed = true;
           }
@@ -564,7 +566,11 @@ class SynthModuleDefinition {
         final isCustomSvModPort = logics.any((logic) =>
             logic.isPort &&
             isSubmoduleAndPresent(logic.parentModule) &&
-            (logic.parentModule! is SystemVerilog ||
+            ((logic.parentModule! is SystemVerilog &&
+                    !(logic.parentModule! as SystemVerilog)
+                        //TODO: test this!
+                        .acceptsEmptyPortConnections) ||
+                // ignore: deprecated_member_use_from_same_package
                 logic.parentModule! is CustomSystemVerilog));
 
         if (!isCustomSvModPort) {

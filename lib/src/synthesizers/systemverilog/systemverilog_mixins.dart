@@ -56,6 +56,14 @@ mixin SystemVerilog on Module {
   /// will be fed into these.
   final List<String> expressionlessInputs = const [];
 
+  /// Indicates whether this module accepts empty port connections when being
+  /// instantiated in SystemVerilog.
+  ///
+  /// This may be safely set to `true` in cases where the instantiation verilog
+  /// can accept port connections like `.()` where no signal is connected to
+  /// that port.
+  bool get acceptsEmptyPortConnections => false;
+
   /// A custom SystemVerilog definition to be produced for this [Module].
   ///
   /// If an empty string is returned (the default behavior), then no definition
@@ -143,6 +151,9 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 
     return outputs.keys.first;
   }
+
+  @override
+  bool get acceptsEmptyPortConnections => false;
 
   @override
   String instantiationVerilog(
