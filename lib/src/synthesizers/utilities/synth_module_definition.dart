@@ -567,22 +567,54 @@ class SynthModuleDefinition {
             (logic.parentModule! is SystemVerilog ||
                 logic.parentModule! is CustomSystemVerilog));
 
-        if (!internalSignal.hasSrcConnectionsPresentIn(this) &&
-            !isCustomSvModPort) {
-          internalSignal.clearDeclaration();
-          print(
-              'removing from ${module.definitionName} (no src) ${internalSignal}');
-          changed = true;
-          continue;
-        }
+        if (!isCustomSvModPort) {
+          if (internalSignal.isNet) {
+            final anyInternalConnections = {
+              ...internalSignal.srcConnections,
+              ...internalSignal.dstConnections
+            }.where((e) => e.parentModule == module).isNotEmpty;
 
-        if (!internalSignal.hasDstConnectionsPresentIn(this) &&
-            !isCustomSvModPort) {
-          print(
-              'removing from ${module.definitionName} (no dst) ${internalSignal}');
-          internalSignal.clearDeclaration();
-          changed = true;
-          continue;
+            if (anyInternalConnections) {
+              reducedInternalSignals.add(internalSignal);
+              continue;
+            }
+
+            final numSubModulesConnected = logics
+                .map((e) => e.parentModule)
+                .nonNulls
+                .where((e) =>
+                    e != module &&
+                    getSynthSubModuleInstantiation(e).needsInstantiation)
+                .toSet()
+                .length;
+
+            if (numSubModulesConnected > 1) {
+              reducedInternalSignals.add(internalSignal);
+              continue;
+            }
+
+            print('removing from ${module.definitionName} net $internalSignal');
+
+            // otherwise, we can remove this net
+            internalSignal.clearDeclaration();
+            changed = true;
+          }
+
+          if (!internalSignal.hasSrcConnectionsPresentIn(this)) {
+            internalSignal.clearDeclaration();
+            print(
+                'removing from ${module.definitionName} (no src) ${internalSignal}');
+            changed = true;
+            continue;
+          }
+
+          if (!internalSignal.hasDstConnectionsPresentIn(this)) {
+            print(
+                'removing from ${module.definitionName} (no dst) ${internalSignal}');
+            internalSignal.clearDeclaration();
+            changed = true;
+            continue;
+          }
         }
 
         reducedInternalSignals.add(internalSignal);
