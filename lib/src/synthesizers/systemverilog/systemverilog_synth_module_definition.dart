@@ -149,7 +149,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // inlineable modules have only 1 result signal
       final resultSynthLogic = subModuleInstantiation.inlineResultLogic!;
 
-      return singleUseSignals.contains(resultSynthLogic);
+      return singleUseSignals.contains(resultSynthLogic) &&
+
+          // don't inline modules if they were cleared from instantiation
+          subModuleInstantiation.needsInstantiation;
     });
 
     // remove any inlineability for those that want no expressions

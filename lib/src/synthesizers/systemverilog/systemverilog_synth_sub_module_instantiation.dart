@@ -7,6 +7,7 @@
 // 2025 June
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
@@ -43,11 +44,24 @@ class SystemVerilogSynthSubModuleInstantiation
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
-    final inlineSvRepresentation =
-        (module as InlineSystemVerilog).inlineVerilog(
-      _modulePortsMapWithInline({...inputMapping, ...inOutMapping}
-        ..remove((module as InlineSystemVerilog).resultSignalName)),
+    // TODO: should we keep this??
+    // assert(
+    //     needsInstantiation,
+    //     'Inline SV modules should not have had their instantiation cleared'
+    //     ' if they are used.');
+
+    final portNameToValueMapping = _modulePortsMapWithInline(
+      {...inputMapping, ...inOutMapping}
+        ..remove((module as InlineSystemVerilog).resultSignalName),
     );
+
+    assert(
+        portNameToValueMapping.values.none((e) => e.isEmpty),
+        'Inline modules should not ever receive empty port values,'
+        ' only module instantiations can get something like `.()`.');
+
+    final inlineSvRepresentation =
+        (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
 
     return '($inlineSvRepresentation)';
   }

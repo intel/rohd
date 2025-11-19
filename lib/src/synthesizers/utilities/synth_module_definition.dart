@@ -669,6 +669,7 @@ class SynthModuleDefinition {
             continue;
           }
 
+          // TODO: do we want to do this?
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
               (input.isClearable(module) &&

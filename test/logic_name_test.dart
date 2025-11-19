@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 import 'logic_structure_test.dart' as logic_structure_test;
 
@@ -134,8 +135,8 @@ class ModWithNameCollisionArrayPorts extends Module {
 }
 
 class NameCollisionArrayTop extends Module {
-  NameCollisionArrayTop() {
-    final portA = LogicArray([3, 1], 1);
+  NameCollisionArrayTop({Naming? portANaming}) {
+    final portA = LogicArray([3, 1], 1, naming: portANaming);
     final portA2 = Logic();
     final mod = ModWithNameCollisionArrayPorts(portA, portA2);
     addOutput('o') <= mod.o;
@@ -273,14 +274,37 @@ void main() {
   });
 
   test('array port and simple port with _num name conflict', () async {
-    final mod = NameCollisionArrayTop();
+    final mod = NameCollisionArrayTop(
+      // mark as renameable so that it doesnt get pruned away (no name needed)
+      portANaming: Naming.renameable,
+    );
     await mod.build();
     final sv = mod.generateSynth();
+
     expect(
         sv,
         contains('submod(.portA_2(portA_2),.portA(portA),'
             '.o(o),'
             '.portB_1(portB_1),.portB(portB))'));
+
+    // confirm build works
+    SimCompare.checkIverilogVector(mod, []);
+  });
+
+  test('array port and simple port with _num name conflict but pruned away',
+      () async {
+    final mod = NameCollisionArrayTop();
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(
+        sv,
+        contains('submod(.portA_2(portA_2),.portA(),'
+            '.o(o),'
+            '.portB_1(portB_1),.portB(portB))'));
+
+    // confirm build works
+    SimCompare.checkIverilogVector(mod, []);
   });
 
   test('badly named intermediate signal sanitization', () async {

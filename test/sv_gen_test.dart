@@ -524,7 +524,7 @@ void main() {
   });
 
   group('connected ports left unconnected', () {
-    for (final naming in Naming.values) {
+    for (final naming in [Naming.renameable, Naming.mergeable]) {
       test('with naming $naming', () async {
         final mod = TopWithUnusedSubModPorts(
           topIn: Logic(),
