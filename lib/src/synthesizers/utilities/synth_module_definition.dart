@@ -547,20 +547,17 @@ class SynthModuleDefinition {
           continue;
         }
 
-        // if it's an array, can only remove if all elements are removed
-        if (internalSignal.isArray &&
-            logics.any((logicArray) =>
-                logicArray.elements.any(logicHasPresentSynthLogic))) {
-          reducedInternalSignals.add(internalSignal);
-          continue;
-        }
+        if (internalSignal.isArray) {
+          if (logics.any((logicArray) =>
+              logicArray.elements.any(logicHasPresentSynthLogic))) {
+            // if it's an array, can only remove if all elements are removed
+            reducedInternalSignals.add(internalSignal);
+          } else {
+            // if it's an array and all elements are gone, we can remove it
+            internalSignal.clearDeclaration();
+            changed = true;
+          }
 
-        // if it's an array and all elements are gone, we can remove it
-        if (internalSignal.isArray &&
-            logics.none((logicArray) =>
-                logicArray.elements.any(logicHasPresentSynthLogic))) {
-          internalSignal.clearDeclaration();
-          changed = true;
           continue;
         }
 
@@ -669,7 +666,6 @@ class SynthModuleDefinition {
             continue;
           }
 
-          // TODO: do we want to do this?
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
               (input.isClearable(module) &&
@@ -684,9 +680,6 @@ class SynthModuleDefinition {
           }
         }
       }
-
-      //TODO: remove partial assignments that are not needed anymore for struct
-      // ports
 
       // things to check:
       //  - signals are not used
