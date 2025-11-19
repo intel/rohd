@@ -10,6 +10,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -112,15 +113,22 @@ class TopCustomSvWrap extends Module {
 
 class SimpleStruct extends LogicStructure {
   final Naming? elementNaming;
-  SimpleStruct({super.name = 'SimpleStruct', required this.elementNaming})
+  final bool asNet;
+
+  SimpleStruct(
+      {super.name = 'SimpleStruct',
+      required this.elementNaming,
+      this.asNet = false})
       : super([
-          Logic(name: 'field4', width: 4, naming: elementNaming),
-          Logic(name: 'field8', width: 8, naming: elementNaming),
+          (asNet ? LogicNet.new : Logic.new)(
+              name: 'field4', width: 4, naming: elementNaming),
+          (asNet ? LogicNet.new : Logic.new)(
+              name: 'field8', width: 8, naming: elementNaming),
         ]);
 
   @override
-  SimpleStruct clone({String? name}) =>
-      SimpleStruct(name: name ?? this.name, elementNaming: elementNaming);
+  SimpleStruct clone({String? name}) => SimpleStruct(
+      name: name ?? this.name, elementNaming: elementNaming, asNet: asNet);
 }
 
 //TODO: test removal of bussubsets and swizzles as well
@@ -159,6 +167,10 @@ class TopWithUnusedSubModPorts extends Module {
     required LogicNet outTopIoC,
     required LogicArray topArrIn,
     required SimpleStruct topStructIn,
+    required LogicArray topArrNetIn,
+    required SimpleStruct topStructNetIn,
+    required LogicArray outTopIoArrA,
+    required SimpleStruct outTopIoStructA,
     required Naming? internalNaming, // TODO: loop over incl null
   }) : super(name: 'TopWithUnusedSubModPorts') {
     // Connectivity description:
@@ -172,10 +184,19 @@ class TopWithUnusedSubModPorts extends Module {
     topArrIn = addInputArray('topArrIn', topArrIn,
         elementWidth: topArrIn.elementWidth, dimensions: topArrIn.dimensions);
     topStructIn = addTypedInput('topStructIn', topStructIn);
+    topArrNetIn = addInOutArray('topArrNetIn', topArrNetIn,
+        elementWidth: topArrNetIn.elementWidth,
+        dimensions: topArrNetIn.dimensions);
+    topStructNetIn = addTypedInOut('topStructNetIn', topStructNetIn);
 
     outTopIoA = addInOut('outTopIoA', outTopIoA, width: outTopIoA.width);
     outTopIoB = addInOut('outTopIoB', outTopIoB, width: outTopIoB.width);
     outTopIoC = addInOut('outTopIoC', outTopIoC, width: outTopIoC.width);
+
+    outTopIoArrA = addInOutArray('outTopIoArrA', outTopIoArrA,
+        elementWidth: outTopIoArrA.elementWidth,
+        dimensions: outTopIoArrA.dimensions);
+    outTopIoStructA = addTypedInOut('outTopIoStructA', outTopIoStructA);
 
     final inpNotUsed = Logic(name: 'inpNotUsed', naming: internalNaming);
     final ioNotUsedA = LogicNet(name: 'ioNotUsedA', naming: internalNaming);
@@ -183,20 +204,36 @@ class TopWithUnusedSubModPorts extends Module {
         LogicArray([4, 3], 2, name: 'arrInNotUsed', naming: internalNaming);
     final structInNotUsed =
         SimpleStruct(name: 'structInNotUsed', elementNaming: internalNaming);
+    final arrNetInNotUsed = LogicArray.net([2, 2], 3,
+        name: 'arrNetInNotUsed', naming: internalNaming);
+    final structNetInNotUsed = SimpleStruct(
+        name: 'structNetInNotUsed', elementNaming: internalNaming, asNet: true);
 
     final betweenAtoBNet = LogicNet(
         name: 'betweenAtoBNet', width: outTopIoA.width, naming: internalNaming);
+    final betweenAtoBArrNet = LogicArray.net(
+        name: 'betweenAtoBArrNet',
+        outTopIoArrA.dimensions,
+        outTopIoArrA.elementWidth,
+        naming: internalNaming);
+    final betweenAtoBStructNet = outTopIoStructA.clone();
 
     final subModA = SubModWithSomePortsUsed(
       fromIn: topIn,
       fromIo: topIo,
       fromArrIn: topArrIn,
       fromStructIn: topStructIn,
+      fromArrNetIn: topArrNetIn,
+      fromStructNetIn: topStructNetIn,
       inpNotUsed: inpNotUsed,
       ioNotUsed: ioNotUsedA,
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
+      arrNetInNotUsed: arrNetInNotUsed,
+      structNetInNotUsed: structNetInNotUsed,
       outIoTo: outTopIoA,
+      outIoArrTo: outTopIoArrA,
+      outIoStructTo: outTopIoStructA,
       name: 'subModA',
     );
 
@@ -212,13 +249,19 @@ class TopWithUnusedSubModPorts extends Module {
       fromIo: betweenAtoBNet,
       fromArrIn: subModA.outArrTo.elements[0] as LogicArray,
       fromStructIn: subModA.outStructTo.elements[0],
+      fromArrNetIn: topArrNetIn,
+      fromStructNetIn: topStructNetIn,
       inpNotUsed: inpNotUsed,
       ioNotUsed: LogicNet(
           name: 'ioNotUsedB',
           naming: internalNaming), // don't multiply connect IO
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
+      arrNetInNotUsed: arrNetInNotUsed.clone(),
+      structNetInNotUsed: structNetInNotUsed.clone(),
       outIoTo: outTopIoB,
+      outIoArrTo: betweenAtoBArrNet,
+      outIoStructTo: betweenAtoBStructNet,
       name: 'subModB',
     );
 
@@ -242,13 +285,19 @@ class TopWithUnusedSubModPorts extends Module {
         SimpleStruct(elementNaming: internalNaming)
           ..gets(Const(3, width: subModA.outStructTo.width))
       ]),
+      fromArrNetIn: topArrNetIn,
+      fromStructNetIn: topStructNetIn,
       inpNotUsed: inpNotUsed,
       ioNotUsed: LogicNet(
           name: 'ioNotUsedC',
           naming: internalNaming), // don't multiply connect IO
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
+      arrNetInNotUsed: arrNetInNotUsed.clone(),
+      structNetInNotUsed: structNetInNotUsed.clone(),
       outIoTo: outTopIoC,
+      outIoArrTo: betweenAtoBArrNet,
+      outIoStructTo: betweenAtoBStructNet,
       name: 'subModC',
     );
 
@@ -292,11 +341,17 @@ class SubModWithSomePortsUsed extends Module {
       required LogicNet fromIo,
       required LogicArray fromArrIn,
       required Logic fromStructIn,
+      required LogicArray fromArrNetIn,
+      required SimpleStruct fromStructNetIn,
       required Logic inpNotUsed,
       required LogicNet ioNotUsed,
       required LogicArray arrInNotUsed,
       required SimpleStruct structInNotUsed,
+      required LogicArray arrNetInNotUsed,
+      required SimpleStruct structNetInNotUsed,
       required LogicNet outIoTo,
+      required LogicArray outIoArrTo,
+      required SimpleStruct outIoStructTo,
       required super.name})
       : super(definitionName: name.toUpperCase()) {
     fromIn = addInput('fromIn', fromIn, width: fromIn.width);
@@ -304,6 +359,10 @@ class SubModWithSomePortsUsed extends Module {
     fromArrIn = addInputArray('fromArrIn', fromArrIn,
         elementWidth: fromArrIn.elementWidth, dimensions: fromArrIn.dimensions);
     fromStructIn = addTypedInput('fromStructIn', fromStructIn);
+    fromArrNetIn = addInOutArray('fromArrNetIn', fromArrNetIn,
+        elementWidth: fromArrNetIn.elementWidth,
+        dimensions: fromArrNetIn.dimensions);
+    fromStructNetIn = addTypedInOut('fromStructNetIn', fromStructNetIn);
 
     inpNotUsed = addInput('inpNotUsed', inpNotUsed, width: inpNotUsed.width);
     ioNotUsed = addInOut('ioNotUsed', ioNotUsed, width: ioNotUsed.width);
@@ -311,6 +370,11 @@ class SubModWithSomePortsUsed extends Module {
         elementWidth: arrInNotUsed.elementWidth,
         dimensions: arrInNotUsed.dimensions);
     structInNotUsed = addTypedInput('structInNotUsed', structInNotUsed);
+    arrNetInNotUsed = addInOutArray('arrNetInNotUsed', arrNetInNotUsed,
+        elementWidth: arrNetInNotUsed.elementWidth,
+        dimensions: arrNetInNotUsed.dimensions);
+    structNetInNotUsed =
+        addTypedInOut('structNetInNotUsed', structNetInNotUsed);
 
     outTo = addOutput('outTo', width: fromIn.width)..gets(fromIn);
     outArrTo = addOutputArray('outArrTo',
@@ -319,6 +383,12 @@ class SubModWithSomePortsUsed extends Module {
     outStructTo = addTypedOutput('outStructTo', fromStructIn.clone)
       ..gets(fromStructIn);
     outIoTo = addInOut('outIoTo', outIoTo, width: fromIo.width)..gets(fromIo);
+    outIoArrTo = addInOutArray('outIoArrTo', outIoArrTo,
+        elementWidth: outIoArrTo.elementWidth,
+        dimensions: outIoArrTo.dimensions)
+      ..gets(fromArrNetIn);
+    outIoStructTo = addTypedInOut('outIoStructTo', outIoStructTo)
+      ..gets(fromStructNetIn);
 
     outNotUsed = addOutput('outNotUsed', width: inpNotUsed.width)..gets(fromIn);
     outArrNotUsed = addOutputArray('outArrNotUsed',
@@ -531,10 +601,14 @@ void main() {
           topIo: LogicNet(width: 2),
           topArrIn: LogicArray([4, 3], 2),
           topStructIn: SimpleStruct(elementNaming: naming),
+          topArrNetIn: LogicArray.net([2, 2], 3),
+          topStructNetIn: SimpleStruct(elementNaming: naming, asNet: true),
           internalNaming: naming,
           outTopIoA: LogicNet(width: 2),
           outTopIoB: LogicNet(width: 2),
           outTopIoC: LogicNet(width: 2),
+          outTopIoArrA: LogicArray.net([2, 2], 3),
+          outTopIoStructA: SimpleStruct(elementNaming: naming, asNet: true),
         );
         await mod.build();
 
@@ -555,6 +629,11 @@ void main() {
           expect(topSv,
               isNot(contains(RegExp('assign.*NotUsed', caseSensitive: false))),
               reason: 'No assignments with unused signals');
+          expect(
+              topSv,
+              isNot(contains(
+                  RegExp('net_connect.*NotUsed', caseSensitive: false))),
+              reason: 'No net assignments with unused signals');
           expect(topSv,
               isNot(contains(RegExp('logic.*NotUsed', caseSensitive: false))),
               reason: 'No declarations with unused signals');
@@ -589,14 +668,6 @@ void main() {
               reason: 'The fromIo port should be connected'
                   ' in both subModB and subModC');
         }
-
-        // TODO: checks:
-        // - no assign statements with notUsed
-        // - the notUsed ports have () on mergeable, actual things on renameable
-        // - net across 2 modules is maintained, individual net is not
-        // - arrays and structs
-
-        //TODO: add net arrays, net structs to this testing!
 
         final vectors = [
           Vector({
