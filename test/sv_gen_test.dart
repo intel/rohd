@@ -523,7 +523,7 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  group('connected ports left unconnected', () {
+  group('connected ports and pruning', () {
     for (final naming in [Naming.renameable, Naming.mergeable]) {
       test('with naming $naming', () async {
         final mod = TopWithUnusedSubModPorts(
@@ -537,9 +537,58 @@ void main() {
           outTopIoC: LogicNet(width: 2),
         );
         await mod.build();
+
         final sv = mod.generateSynth();
+        File('tmp_${naming.name}.sv').writeAsStringSync(sv);
 
         // print(sv);
+
+        final topSv = SynthBuilder(mod, SystemVerilogSynthesizer())
+            .synthesisResults
+            .firstWhere((e) => e.module is TopWithUnusedSubModPorts)
+            .toSynthFileContents()
+            .first
+            .contents;
+
+        if (naming == Naming.mergeable) {
+          // make sure we don't see any NotUsed we dont expect
+          expect(topSv,
+              isNot(contains(RegExp('assign.*NotUsed', caseSensitive: false))),
+              reason: 'No assignments with unused signals');
+          expect(topSv,
+              isNot(contains(RegExp('logic.*NotUsed', caseSensitive: false))),
+              reason: 'No declarations with unused signals');
+          expect(topSv,
+              isNot(contains(RegExp('NotUsed[^(]', caseSensitive: false))),
+              reason: 'NotUsed should only appear when followed by ()');
+
+          expect('.fromIo(fromIo),'.allMatches(topSv).length, 2,
+              reason: 'The fromIo port should be connected'
+                  ' in both subModB and subModC');
+        } else if (naming == Naming.renameable) {
+          // make sure we see all the ones we expect still there
+          expect(
+              topSv, contains(RegExp(r'SUBMODA.*inpNotUsed\(inpNotUsed\),')));
+          expect(topSv,
+              contains(RegExp(r'SUBMODA.*arrInNotUsed\(arrInNotUsed\),')));
+          expect(
+              topSv,
+              contains(
+                  RegExp(r'SUBMODA.*structInNotUsed\(structInNotUsed\),')));
+          expect(
+              topSv, contains(RegExp(r'SUBMODA.*outNotUsed\(outNotUsed\),')));
+          expect(topSv,
+              contains(RegExp(r'SUBMODA.*outArrNotUsed\(outArrNotUsed\),')));
+          expect(
+              topSv,
+              contains(
+                  RegExp(r'SUBMODA.*outStructNotUsed\(outStructNotUsed\),')));
+          expect(topSv, contains(RegExp(r'SUBMODA.*ioNotUsed\(ioNotUsedA\),')));
+
+          expect('.fromIo(betweenAtoBNet),'.allMatches(topSv).length, 2,
+              reason: 'The fromIo port should be connected'
+                  ' in both subModB and subModC');
+        }
 
         // TODO: checks:
         // - no assign statements with notUsed
@@ -547,14 +596,14 @@ void main() {
         // - net across 2 modules is maintained, individual net is not
         // - arrays and structs
 
-        File('tmp_${naming.name}.sv').writeAsStringSync(sv);
+        //TODO: add net arrays, net structs to this testing!
 
         final vectors = [
           Vector({
             'topIn': 1,
             'topArrIn': LogicValue.of('110011').replicate(4),
             'topStructIn': LogicValue.of('110011110011'),
-            //TODO: dont forget inouts!
+            'topIo': '10',
           }, {
             'outTopA': 1,
             'outTopB': 1,
@@ -574,6 +623,7 @@ void main() {
               ),
               LogicValue.of('110011110011')
             ].swizzle(),
+            'outTopIoA': '10',
           }),
         ];
 
