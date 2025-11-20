@@ -724,6 +724,8 @@ void main() {
       }),
     ];
 
+    //TODO: make sure this test is solid passing!
+
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
   });

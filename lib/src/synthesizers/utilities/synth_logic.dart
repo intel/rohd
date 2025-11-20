@@ -34,6 +34,10 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
+  //TODO doc
+  //TODO: replace places where [module] was an arg with this when applicable
+  final SynthModuleDefinition parentSynthModuleDefinition;
+
   /// Indicates if this signal is an element of a [LogicStructure] that is a
   /// port.
   ///
@@ -110,7 +114,7 @@ class SynthLogic {
     // assert(!isStructPortElement); //TODO
     _declarationCleared = true;
 
-    // NOTE: this also can apply to array elements?
+    // NOTE: this also can apply to array elements? //TODO
   }
 
   // TODO: doc
@@ -162,6 +166,21 @@ class SynthLogic {
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
+
+  Iterable<SynthLogicArrayElement>? get arrayElements {
+    if (!isArray) {
+      return null;
+    }
+    //TODO: should we keep this accessor? probably not?
+
+    return logics
+        .whereType<LogicArray>()
+        .map((logicArray) => logicArray.elements)
+        .flattened
+        .map(parentSynthModuleDefinition.getSynthLogic)
+        .nonNulls
+        .whereType<SynthLogicArrayElement>();
+  }
 
   /// The chosen name of this.
   ///
@@ -258,7 +277,9 @@ class SynthLogic {
   /// Creates an instance to represent [initialLogic] and any that merge
   /// into it.
   SynthLogic(Logic initialLogic,
-      {Naming? namingOverride, bool constNameDisallowed = false})
+      {required this.parentSynthModuleDefinition,
+      Naming? namingOverride,
+      bool constNameDisallowed = false})
       : isArray = initialLogic is LogicArray,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
@@ -322,6 +343,18 @@ class SynthLogic {
 
     // keep track that it was replaced by this
     other.replacement = this;
+
+    // TODO: This is bad, delete?
+    // if (isArray) {
+    //   // need to also adopt all the elements!
+    //   final refArr = logics.first as LogicArray;
+    //   final numElements = refArr.dimensions.first;
+    //   for (var i = 0; i < numElements; i++) {
+    //     parentSynthModuleDefinition.getSynthLogic(refArr.elements[i])!.adopt(
+    //         parentSynthModuleDefinition.getSynthLogic(
+    //             (other.logics.first as LogicArray).elements[i])!);
+    //   }
+    // }
   }
 
   /// Adds a new [logic] to be represented by this.
@@ -403,7 +436,9 @@ class SynthLogic {
 /// [SynthLogic], so this should be used cautiously.
 class SynthLogicArrayElement extends SynthLogic {
   /// The [SynthLogic] tracking the name of the direct parent array.
-  final SynthLogic parentArray;
+  // final SynthLogic parentArray; //TODO
+  SynthLogic get parentArray =>
+      parentSynthModuleDefinition.getSynthLogic(logic.parentStructure)!;
 
   @override
   bool get needsDeclaration => false;
@@ -440,10 +475,14 @@ class SynthLogicArrayElement extends SynthLogic {
   final Logic logic;
 
   /// Creates an instance of an element of a [LogicArray].
-  SynthLogicArrayElement(this.logic, this.parentArray)
+  SynthLogicArrayElement(this.logic,
+      {required super.parentSynthModuleDefinition})
       : assert(logic.isArrayMember,
             'Should only be used for elements in a LogicArray'),
-        super(logic);
+        super(logic) {
+    // make sure we have created the synthLogic for the parent array
+    parentArray;
+  }
 
   @override
   String toString() => '${_name == null ? 'null' : '"$name"'},'

@@ -222,8 +222,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       // use a dummy as a placeholder, it will not really be used since we are
       // updating the inlineable map
-      final dummy =
-          SynthLogic(LogicNet(name: 'DUMMY', width: subModResult.width));
+      final dummy = SynthLogic(
+        LogicNet(name: 'DUMMY', width: subModResult.width),
+        parentSynthModuleDefinition: this,
+      );
 
       final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
         ..synthLogicToInlineableSynthSubmoduleMap ??= {};
