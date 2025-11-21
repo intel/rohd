@@ -7,6 +7,7 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -713,6 +714,9 @@ void main() {
       () async {
     final mod = PartialArrayAssignTop(LogicArray([3, 2], 2));
     await mod.build();
+
+    final sv = mod.generateSynth();
+    File('tmp_array_partial_assign.sv').writeAsStringSync(sv);
 
     final vectors = [
       Vector({

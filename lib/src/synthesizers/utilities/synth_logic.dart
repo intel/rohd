@@ -139,21 +139,29 @@ class SynthLogic {
   }
 
   //TODO doc
-  bool hasDstConnectionsPresentIn(SynthModuleDefinition def) =>
+  bool hasDstConnectionsPresent() =>
       logics.any((logic) =>
           logic is Const || // in case of net, could be const dest
           (logic.isInput || logic.isInOut) &&
-              def.isSubmoduleAndPresent(logic.parentModule)) ||
-      dstConnections.any(def.logicHasPresentSynthLogic) ||
-      (isNet && srcConnections.any(def.logicHasPresentSynthLogic));
+              parentSynthModuleDefinition
+                  .isSubmoduleAndPresent(logic.parentModule)) ||
+      dstConnections
+          .any(parentSynthModuleDefinition.logicHasPresentSynthLogic) ||
+      (isNet &&
+          srcConnections
+              .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
 
-  bool hasSrcConnectionsPresentIn(SynthModuleDefinition def) =>
+  bool hasSrcConnectionsPresent() =>
       logics.any((logic) =>
           logic is Const ||
           (logic.isOutput || logic.isInOut) &&
-              def.isSubmoduleAndPresent(logic.parentModule)) ||
-      srcConnections.any(def.logicHasPresentSynthLogic) ||
-      (isNet && dstConnections.any(def.logicHasPresentSynthLogic));
+              parentSynthModuleDefinition
+                  .isSubmoduleAndPresent(logic.parentModule)) ||
+      srcConnections
+          .any(parentSynthModuleDefinition.logicHasPresentSynthLogic) ||
+      (isNet &&
+          dstConnections
+              .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
   /// other. If onlyt one of them is not [mergeable], it can adopt the elements
@@ -323,12 +331,16 @@ class SynthLogic {
 
   /// Merges [other] to be represented by `this` instead, and updates the
   /// [other] that it has been replaced.
-  void adopt(SynthLogic other) {
-    assert(other.mergeable || _constantsMergeable(this, other),
+  ///
+  /// If [force] is `true`, then it will adopt even if both are non-mergeable.
+  void adopt(SynthLogic other, {bool force = false}) {
+    assert(force || other.mergeable || _constantsMergeable(this, other),
         'Cannot merge a non-mergeable into this.');
     assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
     assert(other.width == width,
         'Cannot merge logics of different widths: $width vs ${other.width}');
+    assert(
+        other != this, 'Suspicious attempt to merge a SynthLogic into itself.');
 
     _constNameDisallowed |= other._constNameDisallowed;
 
@@ -450,14 +462,42 @@ class SynthLogicArrayElement extends SynthLogic {
 
   @override
   bool isPort([Module? module]) =>
-      // we cannot just use `super.isPort` since we need to check `logic`, not
-      // rely on `_reservedLogic`
-      (logic.isPort && (module == null || logic.parentModule == module)) ||
+      super.isPort(module) ||
+      // we cannot just use `super.isPort` since we can't rely on only using
+      // `_reservedLogic`
+      logics.any(
+          (l) => l.isPort && (module == null || l.parentModule == module)) ||
       parentArray.isPort(module);
 
   @override
   bool isClearable(Module module) =>
       !isPort(module) && parentArray.isClearable(module);
+
+  @override
+  bool hasSrcConnectionsPresent() =>
+      super.hasSrcConnectionsPresent() ||
+      parentArray.hasSrcConnectionsPresent();
+
+  @override
+  bool hasDstConnectionsPresent() =>
+      super.hasDstConnectionsPresent() ||
+      parentArray.hasDstConnectionsPresent();
+
+  @override
+  void adopt(SynthLogic other, {bool force = false}) {
+    super.adopt(other, force: force);
+
+    // in case we're merging array elements with a force or something, and maybe
+    // there was a renameable in there instead of mergeable or something, then
+    // we need to make sure it still gets in there.
+    if (force) {
+      for (final otherLogic in other.logics) {
+        if (!logics.contains(otherLogic)) {
+          _mergeableLogics.add(otherLogic);
+        }
+      }
+    }
+  }
 
   @override
   String get name {
