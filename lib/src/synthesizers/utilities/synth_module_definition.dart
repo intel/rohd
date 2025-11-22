@@ -191,13 +191,13 @@ class SynthModuleDefinition {
         newSynth = SynthLogicArrayElement(logic,
             parentSynthModuleDefinition: this); // parentArraySynthLogic);
 
-        if ((newSynth as SynthLogicArrayElement).parentArray
-                is SynthLogicArrayElement &&
-            sigIsTheOne(((newSynth as SynthLogicArrayElement).parentArray
-                    as SynthLogicArrayElement)
-                .parentArray)) {
-          print('ASDF net grandparent: SYNTH CREATED ${newSynth.hashCode}');
-        }
+        // if ((newSynth as SynthLogicArrayElement).parentArray
+        //         is SynthLogicArrayElement &&
+        //     sigIsTheOne(((newSynth as SynthLogicArrayElement).parentArray
+        //             as SynthLogicArrayElement)
+        //         .parentArray)) {
+        //   print('ASDF net grandparent: SYNTH CREATED ${newSynth.hashCode}');
+        // }
       } else {
         final disallowConstName = logic.isInput && //TODO: inout?
             // ignore: deprecated_member_use_from_same_package
@@ -573,18 +573,18 @@ class SynthModuleDefinition {
     // by default, nothing!
   }
 
-  bool sigIsTheOnesGrandchild(SynthLogic sig) =>
-      sig is SynthLogicArrayElement &&
-      sig.parentArray is SynthLogicArrayElement &&
-      sigIsTheOne((sig.parentArray as SynthLogicArrayElement).parentArray);
+  // bool sigIsTheOnesGrandchild(SynthLogic sig) =>
+  //     sig is SynthLogicArrayElement &&
+  //     sig.parentArray is SynthLogicArrayElement &&
+  //     sigIsTheOne((sig.parentArray as SynthLogicArrayElement).parentArray);
 
-  bool sigIsTheOne(SynthLogic sig) {
-    return sig.isNet &&
-        sig.logics.any((l) =>
-            l.name.contains('arrNetInNotUsed') && l.parentModule == module) &&
-        module.name.contains('Top') &&
-        sig is! SynthLogicArrayElement;
-  }
+  // bool sigIsTheOne(SynthLogic sig) {
+  //   return sig.isNet &&
+  //       sig.logics.any((l) =>
+  //           l.name.contains('arrNetInNotUsed') && l.parentModule == module) &&
+  //       module.name.contains('Top') &&
+  //       sig is! SynthLogicArrayElement;
+  // }
 
   /// Prunes any signals that are not used in this definition, including any
   /// swizzles and subsets, iteratively until there's nothing less to prune.
@@ -614,7 +614,7 @@ class SynthModuleDefinition {
           in internalSignals.where((e) => !e.declarationCleared)) {
         final logics = internalSignal.logics; // TODO: could be cached
 
-        if (internalSignal.toString().contains('structNetInNotUsed') &&
+        if (internalSignal.toString().contains('outArrNotUsed') &&
             module.name.contains('Top')) {
           print('huh');
         }
@@ -641,29 +641,29 @@ class SynthModuleDefinition {
           continue;
         }
 
-        bool followGp = false;
-        if (internalSignal is SynthLogicArrayElement &&
-            internalSignal.parentArray is SynthLogicArrayElement &&
-            sigIsTheOne((internalSignal.parentArray as SynthLogicArrayElement)
-                .parentArray)) {
-          final grandParent =
-              (internalSignal.parentArray as SynthLogicArrayElement)
-                  .parentArray;
-          followGp = true;
-          assert(internalSignal.parentSynthModuleDefinition == this);
-          assert(grandParent.parentSynthModuleDefinition == this);
-          print(
-              'ASDF net grandparent: (${internalSignal.hashCode.toString().padLeft(10)}) $internalSignal  (of gp ${grandParent.hashCode} ${grandParent})');
-        }
+        // bool followGp = false;
+        // if (internalSignal is SynthLogicArrayElement &&
+        //     internalSignal.parentArray is SynthLogicArrayElement &&
+        //     sigIsTheOne((internalSignal.parentArray as SynthLogicArrayElement)
+        //         .parentArray)) {
+        //   final grandParent =
+        //       (internalSignal.parentArray as SynthLogicArrayElement)
+        //           .parentArray;
+        //   followGp = true;
+        //   assert(internalSignal.parentSynthModuleDefinition == this);
+        //   assert(grandParent.parentSynthModuleDefinition == this);
+        //   // print(
+        //   //     'ASDF net grandparent: (${internalSignal.hashCode.toString().padLeft(10)}) $internalSignal  (of gp ${grandParent.hashCode} ${grandParent})');
+        // }
 
         if (internalSignal.isArray) {
-          if (sigIsTheOne(internalSignal)) {
-            print('ASDF net');
-          }
-          if (internalSignal is SynthLogicArrayElement &&
-              sigIsTheOne(internalSignal.parentArray!)) {
-            print('ASDF net parent');
-          }
+          // if (sigIsTheOne(internalSignal)) {
+          //   print('ASDF net');
+          // }
+          // if (internalSignal is SynthLogicArrayElement &&
+          //     sigIsTheOne(internalSignal.parentArray!)) {
+          //   print('ASDF net parent');
+          // }
 
           if (logics.any((logicArray) =>
               logicArray.elements.any(logicHasPresentSynthLogic))) {
@@ -693,10 +693,10 @@ class SynthModuleDefinition {
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
             // if (internalSignal.toString().contains('arrNetInNotUsed')) {
-            if (followGp) {
-              print('ASDF net 2');
-              //TODO: THEY ARE DIFFERENT ARRAYS!!!
-            }
+            // if (followGp) {
+            //   print('ASDF net 2');
+            //   //TODO: THEY ARE DIFFERENT ARRAYS!!!
+            // }
             final anyInternalConnections = [
               ...internalSignal.srcConnections,
               ...internalSignal.dstConnections
@@ -726,10 +726,10 @@ class SynthModuleDefinition {
               continue;
             }
 
-            if (followGp) {
-              print(
-                  'ASDF net grandparent grandchild removed! ${internalSignal.hashCode}');
-            }
+            // if (followGp) {
+            //   print(
+            //       'ASDF net grandparent grandchild removed! ${internalSignal.hashCode}');
+            // }
 
             print('removing from ${module.definitionName} net $internalSignal');
 
@@ -753,6 +753,11 @@ class SynthModuleDefinition {
             internalSignal.clearDeclaration();
             changed = true;
             continue;
+          }
+
+          if (internalSignal.toString().contains('arrInNotUsed') &&
+              module.name.contains('Top')) {
+            print('huh');
           }
         }
 
@@ -1044,14 +1049,14 @@ class SynthModuleDefinition {
         if (mergeResults != null) {
           final (removed: mergedAway, kept: kept) = mergeResults;
 
-          if (sigIsTheOnesGrandchild(mergedAway) ||
-              sigIsTheOnesGrandchild(kept)) {
-            print(
-                'ASDF net grandparent grandchild assign merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
-          } else if (sigIsTheOne(mergedAway) || sigIsTheOne(kept)) {
-            print(
-                'ASDF net grandparent merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
-          }
+          // if (sigIsTheOnesGrandchild(mergedAway) ||
+          //     sigIsTheOnesGrandchild(kept)) {
+          //   print(
+          //       'ASDF net grandparent grandchild assign merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
+          // } else if (sigIsTheOne(mergedAway) || sigIsTheOne(kept)) {
+          //   print(
+          //       'ASDF net grandparent merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
+          // }
 
           //TODO BUG!  How do we get rid of all the synthLogic's that are elements of arrays merged?
 

@@ -476,12 +476,14 @@ class SynthLogicArrayElement extends SynthLogic {
   @override
   bool hasSrcConnectionsPresent() =>
       super.hasSrcConnectionsPresent() ||
-      parentArray.hasSrcConnectionsPresent();
+      (parentArray is! SynthLogicArrayElement && //TODO: why not??
+          parentArray.hasSrcConnectionsPresent());
 
   @override
   bool hasDstConnectionsPresent() =>
       super.hasDstConnectionsPresent() ||
-      parentArray.hasDstConnectionsPresent();
+      (parentArray is! SynthLogicArrayElement &&
+          parentArray.hasDstConnectionsPresent());
 
   @override
   void adopt(SynthLogic other, {bool force = false}) {
