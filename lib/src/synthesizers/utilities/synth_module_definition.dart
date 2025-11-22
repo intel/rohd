@@ -614,6 +614,11 @@ class SynthModuleDefinition {
           in internalSignals.where((e) => !e.declarationCleared)) {
         final logics = internalSignal.logics; // TODO: could be cached
 
+        if (internalSignal.toString().contains('structNetInNotUsed') &&
+            module.name.contains('Top')) {
+          print('huh');
+        }
+
         if (internalSignal.declarationCleared) {
           continue;
         }
@@ -695,7 +700,10 @@ class SynthModuleDefinition {
             final anyInternalConnections = [
               ...internalSignal.srcConnections,
               ...internalSignal.dstConnections
-            ].where((e) => e.parentModule == module).isNotEmpty;
+            ]
+                .where((e) =>
+                    e.parentModule == module && logicHasPresentSynthLogic(e))
+                .isNotEmpty;
 
             if (anyInternalConnections) {
               // internalSignal.srcConnections.map((e) => _getSynthLogic(e.parentStructure?.parentStructure?))

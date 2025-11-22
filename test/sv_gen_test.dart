@@ -257,7 +257,7 @@ class TopWithUnusedSubModPorts extends Module {
           naming: internalNaming), // don't multiply connect IO
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
-      arrNetInNotUsed: arrNetInNotUsed.clone(name: 'TMPB'),
+      arrNetInNotUsed: arrNetInNotUsed.clone(),
       structNetInNotUsed: structNetInNotUsed.clone(),
       outIoTo: outTopIoB,
       outIoArrTo: betweenAtoBArrNet,
@@ -293,7 +293,7 @@ class TopWithUnusedSubModPorts extends Module {
           naming: internalNaming), // don't multiply connect IO
       arrInNotUsed: arrInNotUsed,
       structInNotUsed: structInNotUsed,
-      arrNetInNotUsed: arrNetInNotUsed.clone(name: 'TMPC'),
+      arrNetInNotUsed: arrNetInNotUsed.clone(),
       structNetInNotUsed: structNetInNotUsed.clone(),
       outIoTo: outTopIoC,
       outIoArrTo: betweenAtoBArrNet,
