@@ -216,7 +216,10 @@ class TopWithUnusedSubModPorts extends Module {
         outTopIoArrA.dimensions,
         outTopIoArrA.elementWidth,
         naming: internalNaming);
-    final betweenAtoBStructNet = outTopIoStructA.clone();
+    final betweenAtoBStructNet = outTopIoStructA.clone(
+        name: internalNaming == Naming.renameable
+            ? 'betweenAtoBStructNet'
+            : null);
 
     final subModA = SubModWithSomePortsUsed(
       fromIn: topIn,
@@ -644,6 +647,9 @@ void main() {
           expect('.fromIo(fromIo),'.allMatches(topSv).length, 2,
               reason: 'The fromIo port should be connected'
                   ' in both subModB and subModC');
+          expect('.outIoArrTo(outIoArrTo),'.allMatches(topSv).length, 2,
+              reason: 'The outIoArrTo port should be connected'
+                  ' in both subModB and subModC');
         } else if (naming == Naming.renameable) {
           // make sure we see all the ones we expect still there
           expect(
@@ -667,6 +673,16 @@ void main() {
           expect('.fromIo(betweenAtoBNet),'.allMatches(topSv).length, 2,
               reason: 'The fromIo port should be connected'
                   ' in both subModB and subModC');
+          expect('.outIoArrTo(betweenAtoBArrNet),'.allMatches(topSv).length, 2,
+              reason: 'The outIoArrTo port should be connected'
+                  ' in both subModB and subModC');
+          expect(
+              RegExp('net_connect.*betweenAtoBStructNet_field8')
+                  .allMatches(topSv)
+                  .length,
+              2,
+              reason: 'The outIoStructTo port should be connected'
+                  ' in both subModB and subModC');
         }
 
         final vectors = [
@@ -675,6 +691,8 @@ void main() {
             'topArrIn': LogicValue.of('110011').replicate(4),
             'topStructIn': LogicValue.of('110011110011'),
             'topIo': '10',
+            'topArrNetIn': LogicValue.of('110011').replicate(2),
+            'topStructNetIn': LogicValue.of('101011101010'),
           }, {
             'outTopA': 1,
             'outTopB': 1,
@@ -695,6 +713,8 @@ void main() {
               LogicValue.of('110011110011')
             ].swizzle(),
             'outTopIoA': '10',
+            'outTopIoArrA': LogicValue.of('110011').replicate(2),
+            'outTopIoStructA': LogicValue.of('101011101010')
           }),
         ];
 

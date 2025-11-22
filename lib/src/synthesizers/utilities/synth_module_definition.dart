@@ -754,11 +754,6 @@ class SynthModuleDefinition {
             changed = true;
             continue;
           }
-
-          if (internalSignal.toString().contains('arrInNotUsed') &&
-              module.name.contains('Top')) {
-            print('huh');
-          }
         }
 
         reducedInternalSignals.add(internalSignal);
