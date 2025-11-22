@@ -8,7 +8,6 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -115,7 +114,8 @@ class SynthModuleDefinition {
   /// and module instances.
   final Uniquifier _synthInstantiationNameUniquifier;
 
-  //TODO doc
+  /// Indicates whether [logic] has a corresponding present [SynthLogic] in
+  /// this definition.
   @internal
   bool logicHasPresentSynthLogic(Logic logic) {
     final synthLogic = logicToSynthMap[logic];
@@ -130,18 +130,11 @@ class SynthModuleDefinition {
     }
   }
 
-  // bool _synthLogicPresent(SynthLogic synthLogic) =>
-  //     _logicHasSynthLogic(synthLogic.logics.first); //TODO: optimize
-
   /// Either accesses a previously created [SynthLogic] corresponding to
   /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
   SynthLogic? getSynthLogic(
     Logic? logic,
   ) {
-    // assert(logic == null ||
-    //     logic.parentModule == module ||
-    //     (logic.isPort && module.subModules.contains(logic.parentModule)));
-
     if (logic == null) {
       return null;
     } else if (!(logic.parentModule == module ||
@@ -150,22 +143,7 @@ class SynthModuleDefinition {
       // this is a signal not in this module or its submodules ports, so don't
       // add it as a SynthLogic in here!
       return null;
-      // } else if (logic.isArrayMember) {
-      //   //TODO is this good???
-      //   return getSynthLogic(
-      //     getSynthLogic(logic.parentStructure)!
-      //         .logics
-      //         .first
-      //         .elements[logic.arrayIndex!],
-      // );
     } else if (logicToSynthMap.containsKey(logic)) {
-      // TODO: i think we can ditch this check, not true anymore
-      // final synthLogic = logicToSynthMap[logic];
-      // if (synthLogic is SynthLogicArrayElement) {
-      //   assert(synthLogic.logics.every((e) =>
-      //       getSynthLogic(e.parentStructure) == null ||
-      //       getSynthLogic(e.parentStructure) == synthLogic.parentArray));
-      // }
       return logicToSynthMap[logic]!;
     } else {
       SynthLogic newSynth;
@@ -174,8 +152,6 @@ class SynthModuleDefinition {
         final parentArraySynthLogic =
             // ignore: unnecessary_null_checks
             getSynthLogic(logic.parentStructure!)!;
-
-        //TODO: BUG!  if another element doesn't yet have a synthlogic, but parents have merged, then it doesnt merge properly!
 
         // if there's already a parent whose element has a SynthLogic, reuse it
         final existingElementWithSynthLogic = parentArraySynthLogic.logics
@@ -188,18 +164,12 @@ class SynthModuleDefinition {
           return existingSynthLogic;
         }
 
-        newSynth = SynthLogicArrayElement(logic,
-            parentSynthModuleDefinition: this); // parentArraySynthLogic);
-
-        // if ((newSynth as SynthLogicArrayElement).parentArray
-        //         is SynthLogicArrayElement &&
-        //     sigIsTheOne(((newSynth as SynthLogicArrayElement).parentArray
-        //             as SynthLogicArrayElement)
-        //         .parentArray)) {
-        //   print('ASDF net grandparent: SYNTH CREATED ${newSynth.hashCode}');
-        // }
+        newSynth = SynthLogicArrayElement(
+          logic,
+          parentSynthModuleDefinition: this,
+        );
       } else {
-        final disallowConstName = logic.isInput && //TODO: inout?
+        final disallowConstName = (logic.isInput || logic.isInOut) &&
             // ignore: deprecated_member_use_from_same_package
             ((logic.parentModule is CustomSystemVerilog &&
                     // ignore: deprecated_member_use_from_same_package
@@ -243,8 +213,6 @@ class SynthModuleDefinition {
           constNameDisallowed: disallowConstName,
         );
       }
-
-      assert(logicToSynthMap.values.none((e) => e.logics.contains(logic)));
 
       logicToSynthMap[logic] = newSynth;
 
@@ -361,7 +329,6 @@ class SynthModuleDefinition {
     // make sure disconnected inouts are included, also
     for (final inOut in module.inOuts.values) {
       inOuts.add(getSynthLogic(inOut)!);
-      assert(inOut.parentModule == module);
 
       if (inOut is LogicStructure && inOut is! LogicArray) {
         // for nets, we can just use the normal bus subset here in either
@@ -453,18 +420,6 @@ class SynthModuleDefinition {
 
       final driver = receiver.srcConnection;
 
-      //TODO: is this necessary? this whole if statement?
-      if (driver != null &&
-          (driver.parentModule == module ||
-              (driver.parentModule?.parent == module && driver.isPort))) {
-        if (driver is LogicStructure) {
-          logicsToTraverse.addAll(driver.elements);
-        }
-        if (driver.isArrayMember) {
-          logicsToTraverse.add(driver.parentStructure!);
-        }
-      }
-
       final receiverIsConstant = driver == null && receiver is Const;
 
       final receiverParentStructureIsPort =
@@ -484,7 +439,6 @@ class SynthModuleDefinition {
       } else if (receiverIsModuleOutput) {
         outputs.add(synthReceiver);
       } else if (receiverIsModuleInOut) {
-        assert(synthReceiver.logics.every((e) => e.parentModule == module));
         inOuts.add(synthReceiver);
       } else {
         assert(
@@ -560,7 +514,6 @@ class SynthModuleDefinition {
     _collapseAssignments();
     _assignSubmodulePortMapping();
     _pruneUnused();
-    // _assignSubmodulePortMapping(); //TODO: again??
     process();
     _pickNames();
   }
@@ -573,19 +526,6 @@ class SynthModuleDefinition {
     // by default, nothing!
   }
 
-  // bool sigIsTheOnesGrandchild(SynthLogic sig) =>
-  //     sig is SynthLogicArrayElement &&
-  //     sig.parentArray is SynthLogicArrayElement &&
-  //     sigIsTheOne((sig.parentArray as SynthLogicArrayElement).parentArray);
-
-  // bool sigIsTheOne(SynthLogic sig) {
-  //   return sig.isNet &&
-  //       sig.logics.any((l) =>
-  //           l.name.contains('arrNetInNotUsed') && l.parentModule == module) &&
-  //       module.name.contains('Top') &&
-  //       sig is! SynthLogicArrayElement;
-  // }
-
   /// Prunes any signals that are not used in this definition, including any
   /// swizzles and subsets, iteratively until there's nothing less to prune.
   ///
@@ -597,27 +537,20 @@ class SynthModuleDefinition {
     while (changed) {
       changed = false;
 
-      // conditions for allowing a signal to be removed:
+      // (roughly) conditions for allowing a signal to be removed:
       // - modules that are removable: BusSubset, Swizzle
       //   - if none of the ports are connected to any signals that exist
       // - signals that are removable; all of:
-      //   - `mergeable`, structs/arrays that are all removable
-      //   - no drivers or receivers (ignore ports of removable modules)
+      //   - `clearable`, structs/arrays all elements are cleared
+      //   - no drivers or receivers (ignore ports of removed modules)
       //   - not a port of the current module
       // - assignments that are removable:
       //   - the driver has no driver OR the receiver has no receivers
-
-      //TODO: ensure we test all these scenarios!
 
       final reducedInternalSignals = <SynthLogic>[];
       for (final internalSignal
           in internalSignals.where((e) => !e.declarationCleared)) {
         final logics = internalSignal.logics; // TODO: could be cached
-
-        if (internalSignal.toString().contains('outArrNotUsed') &&
-            module.name.contains('Top')) {
-          print('huh');
-        }
 
         if (internalSignal.declarationCleared) {
           continue;
@@ -641,30 +574,7 @@ class SynthModuleDefinition {
           continue;
         }
 
-        // bool followGp = false;
-        // if (internalSignal is SynthLogicArrayElement &&
-        //     internalSignal.parentArray is SynthLogicArrayElement &&
-        //     sigIsTheOne((internalSignal.parentArray as SynthLogicArrayElement)
-        //         .parentArray)) {
-        //   final grandParent =
-        //       (internalSignal.parentArray as SynthLogicArrayElement)
-        //           .parentArray;
-        //   followGp = true;
-        //   assert(internalSignal.parentSynthModuleDefinition == this);
-        //   assert(grandParent.parentSynthModuleDefinition == this);
-        //   // print(
-        //   //     'ASDF net grandparent: (${internalSignal.hashCode.toString().padLeft(10)}) $internalSignal  (of gp ${grandParent.hashCode} ${grandParent})');
-        // }
-
         if (internalSignal.isArray) {
-          // if (sigIsTheOne(internalSignal)) {
-          //   print('ASDF net');
-          // }
-          // if (internalSignal is SynthLogicArrayElement &&
-          //     sigIsTheOne(internalSignal.parentArray!)) {
-          //   print('ASDF net parent');
-          // }
-
           if (logics.any((logicArray) =>
               logicArray.elements.any(logicHasPresentSynthLogic))) {
             // if it's an array, can only remove if all elements are removed
@@ -692,11 +602,6 @@ class SynthModuleDefinition {
 
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
-            // if (internalSignal.toString().contains('arrNetInNotUsed')) {
-            // if (followGp) {
-            //   print('ASDF net 2');
-            //   //TODO: THEY ARE DIFFERENT ARRAYS!!!
-            // }
             final anyInternalConnections = [
               ...internalSignal.srcConnections,
               ...internalSignal.dstConnections
@@ -706,8 +611,6 @@ class SynthModuleDefinition {
                 .isNotEmpty;
 
             if (anyInternalConnections) {
-              // internalSignal.srcConnections.map((e) => _getSynthLogic(e.parentStructure?.parentStructure?))
-
               reducedInternalSignals.add(internalSignal);
               continue;
             }
@@ -725,11 +628,6 @@ class SynthModuleDefinition {
               reducedInternalSignals.add(internalSignal);
               continue;
             }
-
-            // if (followGp) {
-            //   print(
-            //       'ASDF net grandparent grandchild removed! ${internalSignal.hashCode}');
-            // }
 
             print('removing from ${module.definitionName} net $internalSignal');
 
@@ -792,7 +690,6 @@ class SynthModuleDefinition {
         continue;
       }
 
-      // TODO: more module sweeping!
       for (final subModuleInstantiation
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
         final subModule = subModuleInstantiation.module;
@@ -851,18 +748,7 @@ class SynthModuleDefinition {
           }
         }
       }
-
-      // things to check:
-      //  - signals are not used
-      //  - assignments where either side is not used
-      //  - swizzles where all inputs or all outputs are not used
-      // not used means
-      //  - no "used" modules use it
-      //  - no assignments use it
-      //  - it is not a port of the current module
     }
-
-    // _aggregateSynthLogicArrayElements();
   }
 
   /// Updates all sub-module instantiations with information about which
@@ -1044,94 +930,7 @@ class SynthModuleDefinition {
         if (mergeResults != null) {
           final (removed: mergedAway, kept: kept) = mergeResults;
 
-          // if (sigIsTheOnesGrandchild(mergedAway) ||
-          //     sigIsTheOnesGrandchild(kept)) {
-          //   print(
-          //       'ASDF net grandparent grandchild assign merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
-          // } else if (sigIsTheOne(mergedAway) || sigIsTheOne(kept)) {
-          //   print(
-          //       'ASDF net grandparent merged away: (${mergedAway.hashCode}) kept: (${kept.hashCode}) $mergedAway gone,  keeping $kept');
-          // }
-
-          //TODO BUG!  How do we get rid of all the synthLogic's that are elements of arrays merged?
-
-          // if (mergedAway.isArray) {
-          //   // if the one that got merged away is an array, we need to merge all
-          //   // the elements as well (recursively down)
-
-          //   // two key pieces to ensure we do:
-          //   // - clear out the reference in `internalSignals` (or wherever)
-          //   // - adopt the logics of each merged away element into the kept one
-          // }
-
           _applyAssignmentMergeUpdates(mergedAway: mergedAway, kept: kept);
-
-          // final foundInternal = internalSignals.remove(mergedAway);
-
-          // // if (foundInternal && mergedAway.isArray) {
-          // //   final logicsToUntrack = <Logic>[
-          // //     ...mergedAway.logics
-          // //         .whereType<LogicArray>()
-          // //         .map((logicArray) => logicArray.elements)
-          // //         .flattened
-          // //   ];
-
-          // //   for (var i = 0; i < logicsToUntrack.length; i++) {
-          // //     final logicToUntrack = logicsToUntrack[i];
-          // //     if (logicToUntrack is LogicArray) {
-          // //       logicsToUntrack.addAll(logicToUntrack.elements);
-          // //     }
-
-          // //     if (logicToUntrack.isArrayMember) {
-          // //       // print(
-          // //       //     'ASDF net grandparent eliminate: (${logicToUntrack.hashCode}) '
-          // //       //     '${logicToUntrack} from ${module.definitionName}');
-          // //       logicToSynthMap.remove(logicToUntrack);
-
-          // //       // TODO: need to maybe remove internal signal here???
-          // //       // internalSignals.removeWhere(
-          // //       //     (synthLogic) => synthLogic.logics.contains(logicToUntrack));
-          // //     }
-          // //   }
-
-          // //   // // also remove all the merged away elements from everywhere we can!
-          // //   // final elementsToRemove = <SynthLogicArrayElement>[
-          // //   //   ...mergedAway.arrayElements!
-          // //   // ];
-          // //   // for (var i = 0; i < elementsToRemove.length; i++) {
-          // //   //   final elementToRemove = elementsToRemove[i];
-          // //   //   if (elementToRemove.isArray) {
-          // //   //     elementsToRemove.addAll(elementToRemove.arrayElements!);
-          // //   //   }
-
-          // //   //   if (elementToRemove.toString().contains('laIn')) {
-          // //   //     print('REMOVING: $elementToRemove');
-          // //   //   }
-
-          // //   //   internalSignals.remove(elementToRemove);
-          // //   // }
-          // // }
-
-          // if (!foundInternal) {
-          //   final foundKept = internalSignals.remove(kept);
-          //   assert(foundKept,
-          //       'One of the two should be internal since we cant merge ports.');
-
-          //   if (inputs.contains(mergedAway)) {
-          //     inputs
-          //       ..remove(mergedAway)
-          //       ..add(kept);
-          //   } else if (outputs.contains(mergedAway)) {
-          //     outputs
-          //       ..remove(mergedAway)
-          //       ..add(kept);
-          //   } else if (inOuts.contains(mergedAway)) {
-          //     inOuts
-          //       ..remove(mergedAway)
-          //       ..add(kept);
-          //     assert(kept.logics.every((e) => e.parentModule == module));
-          //   }
-          // }
         } else if (assignment.src.isFloatingConstant) {
           internalSignals.remove(assignment.src);
         } else {
@@ -1155,56 +954,11 @@ class SynthModuleDefinition {
       ...outputs,
       ...inOuts,
       ...internalSignals,
-      // we need to separately update all the array elements
-      // ...internalSignals.whereNot((e) => e is SynthLogicArrayElement) //TODO
     ]) {
       for (final logic in synthLogic.logics) {
         logicToSynthMap[logic] = synthLogic;
       }
     }
-
-    // _aggregateSynthLogicArrayElements();
-
-    // final newInternalSignals = <SynthLogic>[
-    //   ...internalSignals.whereNot((e) => e is SynthLogicArrayElement)
-    // ];
-    // for (final internalSignal
-    //     in internalSignals.whereType<SynthLogicArrayElement>()) {
-    //   if (internalSignal.logics.length > 1) {
-    //     newInternalSignals.add(internalSignal);
-    //   } else {
-    //     logicToSynthMap.remove(internalSignal.logic);
-    //     final elementReplacement = getSynthLogic(internalSignal.logic)!;
-    //     newInternalSignals.add(elementReplacement);
-    //   }
-    // }
-    // internalSignals
-    //   ..clear()
-    //   ..addAll(newInternalSignals);
-
-    // now update any array elements properly
-    // final newInternalSignals = <SynthLogic>[];
-    // for (final internalSignal in internalSignals) {
-    //   if (internalSignal is SynthLogicArrayElement) {
-    //     final elementReplacements =
-    //         internalSignal.logics.map((e) => getSynthLogic(e)!);
-
-    //     // assert(elementReplacements.toSet().length == 1,
-    //     //     'All elements of an array element should map to the same SynthLogic after merges.');
-
-    //     newInternalSignals.addAll(elementReplacements);
-    //   } else {
-    //     newInternalSignals.add(internalSignal);
-    //   }
-    // }
-    // internalSignals
-    //   ..clear()
-    //   ..addAll(newInternalSignals);
-
-    // for (final synthLogic
-    //     in internalSignals.whereType<SynthLogicArrayElement>()) {
-    //   synthLogic.logics.forEach(getSynthLogic);
-    // }
   }
 
   void _applyAssignmentMergeUpdates(
@@ -1228,7 +982,6 @@ class SynthModuleDefinition {
         inOuts
           ..remove(mergedAway)
           ..add(kept);
-        assert(kept.logics.every((e) => e.parentModule == module));
       }
     }
 
@@ -1252,35 +1005,5 @@ class SynthModuleDefinition {
             mergedAway: mergedAwayElement, kept: keptElement);
       }
     }
-  }
-
-  /// Finds multiple [SynthLogicArrayElement]s that actually represent the same
-  /// element and merges them together.
-  void _aggregateSynthLogicArrayElements() {
-    // mapping from (parent array, element index) to the common elements
-    final elementMap = <(LogicArray, int), List<SynthLogicArrayElement>>{};
-
-    for (final synthElement
-        in internalSignals.whereType<SynthLogicArrayElement>()) {
-      // make sure only ONE of the logics has a parent array
-      assert(
-        synthElement.logics.where((e) => e.isArrayMember).toSet().length == 1,
-        'SynthLogicArrayElement $synthElement should have exactly one logic with a parent array.',
-      );
-
-      for (final logic in synthElement.logics) {
-        if (logic.isArrayMember) {
-          final parentArray = logic.parentStructure as LogicArray;
-          final arrayIndex = logic.arrayIndex!;
-          elementMap[(parentArray, arrayIndex)] ??= [];
-          elementMap[(parentArray, arrayIndex)]!.add(synthElement);
-        }
-      }
-    }
-
-    for (final x in elementMap.entries.where((e) => e.value.length > 1)) {
-      print(x);
-    }
-    print('oops');
   }
 }
