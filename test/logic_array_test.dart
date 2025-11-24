@@ -7,7 +7,6 @@
 // 2023 May 2
 // Author: Max Korbel <max.korbel@intel.com>
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -715,9 +714,6 @@ void main() {
     final mod = PartialArrayAssignTop(LogicArray([3, 2], 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
-    File('tmp_array_partial_assign.sv').writeAsStringSync(sv);
-
     final vectors = [
       Vector({
         'inpArr': '110011000011'
@@ -727,8 +723,6 @@ void main() {
         'partialOut': '0011',
       }),
     ];
-
-    //TODO: make sure this test is solid passing!
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

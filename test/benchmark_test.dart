@@ -56,7 +56,6 @@ void main() {
     });
 
     test('many submodule', () async {
-      //TODO: debug this benchmark, make sure we dont have a perf issue!
       await ManySubmodulesBenchmark().measure();
     });
   });

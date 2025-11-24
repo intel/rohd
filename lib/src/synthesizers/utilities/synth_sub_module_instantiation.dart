@@ -89,8 +89,6 @@ class SynthSubModuleInstantiation {
     _inOutMapping[name] = synthLogic;
   }
 
-  //TODO: is this change breaking?
-
   /// Indicates whether this module should be declared.
   bool get needsInstantiation => _needsInstantiation;
   bool _needsInstantiation = true;

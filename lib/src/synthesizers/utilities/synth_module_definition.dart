@@ -593,7 +593,6 @@ class SynthModuleDefinition {
             isSubmoduleAndPresent(logic.parentModule) &&
             ((logic.parentModule! is SystemVerilog &&
                     !(logic.parentModule! as SystemVerilog)
-                        //TODO: test this!
                         .acceptsEmptyPortConnections) ||
                 // ignore: deprecated_member_use_from_same_package
                 logic.parentModule! is CustomSystemVerilog));
@@ -917,7 +916,7 @@ class SynthModuleDefinition {
     // not be merged
     assignments.addAll(partialAssignments);
 
-    // update the look-up table post-merge //TODO why??
+    // update the look-up table post-merge
     logicToSynthMap.clear();
     for (final synthLogic in [
       ...inputs,
@@ -931,7 +930,8 @@ class SynthModuleDefinition {
     }
   }
 
-  //TODO doc
+  /// Performs updates to this definition after merging away a signal as part of
+  /// [_collapseAssignments].
   void _applyAssignmentMergeUpdates(
       {required SynthLogic mergedAway, required SynthLogic kept}) {
     final foundInternal = internalSignals.remove(mergedAway);

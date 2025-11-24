@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_gen_test.dart
@@ -6,8 +6,6 @@
 //
 // 2023 October 4
 // Author: Max Korbel <max.korbel@intel.com>
-
-import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
@@ -167,7 +165,7 @@ class TopWithUnusedSubModPorts extends Module {
     required SimpleStruct topStructNetIn,
     required LogicArray outTopIoArrA,
     required SimpleStruct outTopIoStructA,
-    required Naming? internalNaming, // TODO: loop over incl null
+    required Naming internalNaming,
   }) : super(name: 'TopWithUnusedSubModPorts') {
     // Connectivity description:
     //                 ^ outTopA
@@ -308,21 +306,19 @@ class TopWithUnusedSubModPorts extends Module {
     outStructTopC = addTypedOutput('outStructTopC', subModC.outStructTo.clone)
       ..gets(subModC.outStructTo);
 
-    if (internalNaming != null) {
-      Logic(
-              name: 'outNotUsed',
-              width: subModA.outNotUsed.width,
-              naming: internalNaming) <=
-          subModA.outNotUsed;
+    Logic(
+            name: 'outNotUsed',
+            width: subModA.outNotUsed.width,
+            naming: internalNaming) <=
+        subModA.outNotUsed;
 
-      LogicArray(subModA.outArrNotUsed.dimensions,
-              subModA.outArrNotUsed.elementWidth,
-              name: 'outArrNotUsed', naming: internalNaming) <=
-          subModA.outArrNotUsed;
+    LogicArray(subModA.outArrNotUsed.dimensions,
+            subModA.outArrNotUsed.elementWidth,
+            name: 'outArrNotUsed', naming: internalNaming) <=
+        subModA.outArrNotUsed;
 
-      SimpleStruct(name: 'outStructNotUsed', elementNaming: internalNaming) <=
-          subModA.outStructNotUsed;
-    }
+    SimpleStruct(name: 'outStructNotUsed', elementNaming: internalNaming) <=
+        subModA.outStructNotUsed;
   }
 }
 
@@ -441,7 +437,11 @@ assign my_fancy_new_signal <= ^${ports['fer_swizzle']};
 
 class CustomDefinitionModule extends Module with SystemVerilog {
   late final Logic b;
-  CustomDefinitionModule(Logic a) {
+
+  @override
+  final bool acceptsEmptyPortConnections;
+
+  CustomDefinitionModule(Logic a, {this.acceptsEmptyPortConnections = false}) {
     a = addInput('a', a);
     b = addOutput('b')..gets(a);
   }
@@ -461,6 +461,15 @@ module $definitionType (
 assign b = a;
 endmodule
 ''';
+}
+
+class ModuleWithCustomDefinitionEmptyPorts extends Module {
+  ModuleWithCustomDefinitionEmptyPorts(Logic a,
+      {bool acceptsEmptyPortConnections = false}) {
+    a = addInput('a', a);
+    CustomDefinitionModule(a,
+        acceptsEmptyPortConnections: acceptsEmptyPortConnections);
+  }
 }
 
 class TopWithCustomDef extends Module {
@@ -575,6 +584,25 @@ void main() {
     }
   });
 
+  group('custom definition empty port connections', () {
+    for (final acceptsEmptyPortConnections in [true, false]) {
+      test('acceptsEmptyPortConnections=$acceptsEmptyPortConnections',
+          () async {
+        final mod = ModuleWithCustomDefinitionEmptyPorts(Logic(),
+            acceptsEmptyPortConnections: acceptsEmptyPortConnections);
+        await mod.build();
+        final sv = mod.generateSynth();
+
+        if (acceptsEmptyPortConnections) {
+          expect(sv, contains('.b()'));
+        } else {
+          expect(sv, isNot(contains('.b()')));
+          expect(sv, contains('.b(b)'));
+        }
+      });
+    }
+  });
+
   test('custom definition', () async {
     final mod = TopWithCustomDef(Logic());
     await mod.build();
@@ -629,11 +657,6 @@ endmodule : ModWithUselessWireMods'''));
           outTopIoStructA: SimpleStruct(elementNaming: naming, asNet: true),
         );
         await mod.build();
-
-        final sv = mod.generateSynth();
-        File('tmp_${naming.name}.sv').writeAsStringSync(sv);
-
-        // print(sv);
 
         final topSv = SynthBuilder(mod, SystemVerilogSynthesizer())
             .synthesisResults
