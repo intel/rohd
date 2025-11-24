@@ -480,6 +480,19 @@ class TopWithCustomDef extends Module {
   }
 }
 
+class ModWithPartialArrayAssignment extends Module {
+  ModWithPartialArrayAssignment(Logic a) {
+    a = addInput('a', a, width: 8);
+
+    final aArr = LogicArray([2], 8, name: 'aArr');
+    aArr.elements[0] <= a;
+
+    final b = addOutput('b', width: 8);
+
+    b <= aArr.elements[0];
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -637,6 +650,23 @@ input logic [7:0] b
 );
 
 endmodule : ModWithUselessWireMods'''));
+  });
+
+  test('partial array assignment sv', () async {
+    final mod = ModWithPartialArrayAssignment(Logic(width: 8));
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('assign b = aArr[0];'));
+    expect(sv, contains('assign aArr[0] = a;'));
+    expect(sv, isNot(contains('aArr[1]')));
+
+    final vectors = [
+      Vector({'a': 42}, {'b': 42}),
+      Vector({'a': 255}, {'b': 255}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('connected ports and pruning', () {
