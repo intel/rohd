@@ -5,6 +5,7 @@
 // Tests for SvCleaner utility functions
 //
 // 2025 November 5
+// Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
