@@ -53,7 +53,7 @@ class SynthLogic {
           e.parentStructure!.isPort &&
           (module == null || e.parentStructure!.parentModule == module));
 
-  //TODO doc
+  /// Indicates if this signal is a port, optionally for a specific [module].
   bool isPort([Module? module]) =>
       // we can rely on ports being the reserved logic (optimization)
       _reservedLogic != null &&
@@ -105,21 +105,26 @@ class SynthLogic {
   bool get needsDeclaration =>
       !(isConstant && !_constNameDisallowed) && !declarationCleared;
 
-  //TODO doc
+  /// Whether this signal's declaration has been cleared (via
+  /// [clearDeclaration]).
   bool get declarationCleared => _declarationCleared;
-
-  //TODO doc
-  void clearDeclaration() {
-    // assert(!isStructPortElement); //TODO
-    _declarationCleared = true;
-
-    // NOTE: this also can apply to array elements? //TODO
-  }
-
-  // TODO: doc
   bool _declarationCleared = false;
 
-  //TODO doc
+  /// Clears the declaration requirement for this [SynthLogic].
+  ///
+  /// Note that this can also apply to array elements.
+  void clearDeclaration() {
+    _declarationCleared = true;
+  }
+
+  /// Indicates if this signal definition can be cleared via [clearDeclaration].
+  ///
+  /// If it is `false`, then this signal cannot be cleared.  If `true`, there
+  /// may be additional conditions that prevent clearing.
+  bool get isClearable => mergeable;
+
+  /// The source connections to any [Logic] in this [SynthLogic] which are not
+  /// also contained within this [SynthLogic].
   Iterable<Logic> get srcConnections {
     final containedLogics = logics.toSet();
     return logics
@@ -128,7 +133,8 @@ class SynthLogic {
         .where((e) => !containedLogics.contains(e));
   }
 
-  //TODO doc
+  /// The destination connections to any [Logic] in this [SynthLogic] which are
+  /// not also contained within this [SynthLogic].
   Iterable<Logic> get dstConnections {
     final containedLogics = logics.toSet();
     return logics
@@ -137,7 +143,8 @@ class SynthLogic {
         .where((e) => !containedLogics.contains(e));
   }
 
-  //TODO doc
+  /// Indicates if there are any [dstConnections] present in
+  /// [parentSynthModuleDefinition].
   bool hasDstConnectionsPresent() =>
       logics.any((logic) =>
           logic is Const || // in case of net, could be const dest
@@ -150,6 +157,8 @@ class SynthLogic {
           srcConnections
               .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
 
+  /// Indicates if there are any [srcConnections] present in
+  /// [parentSynthModuleDefinition].
   bool hasSrcConnectionsPresent() =>
       logics.any((logic) =>
           logic is Const ||
@@ -168,26 +177,8 @@ class SynthLogic {
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
 
-  //TODO doc
-  bool get isClearable => mergeable;
-
   /// True only if this represents a [LogicArray].
   final bool isArray;
-
-  Iterable<SynthLogicArrayElement>? get arrayElements {
-    if (!isArray) {
-      return null;
-    }
-    //TODO: should we keep this accessor? probably not?
-
-    return logics
-        .whereType<LogicArray>()
-        .map((logicArray) => logicArray.elements)
-        .flattened
-        .map(parentSynthModuleDefinition.getSynthLogic)
-        .nonNulls
-        .whereType<SynthLogicArrayElement>();
-  }
 
   /// The chosen name of this.
   ///
@@ -434,8 +425,7 @@ class SynthLogic {
 /// Does not fully override or properly implement all characteristics of
 /// [SynthLogic], so this should be used cautiously.
 class SynthLogicArrayElement extends SynthLogic {
-  /// The [SynthLogic] tracking the name of the direct parent array.
-  // final SynthLogic parentArray; //TODO
+  /// The [SynthLogic] tracking the direct parent array.
   SynthLogic get parentArray =>
       parentSynthModuleDefinition.getSynthLogic(logic.parentStructure)!;
 
@@ -463,13 +453,13 @@ class SynthLogicArrayElement extends SynthLogic {
   @override
   bool hasSrcConnectionsPresent() =>
       super.hasSrcConnectionsPresent() ||
-      (parentArray is! SynthLogicArrayElement && //TODO: why not??
+      (parentArray is! SynthLogicArrayElement && // in case merge with non array
           parentArray.hasSrcConnectionsPresent());
 
   @override
   bool hasDstConnectionsPresent() =>
       super.hasDstConnectionsPresent() ||
-      (parentArray is! SynthLogicArrayElement &&
+      (parentArray is! SynthLogicArrayElement && // in case merge with non array
           parentArray.hasDstConnectionsPresent());
 
   @override

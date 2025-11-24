@@ -550,7 +550,7 @@ class SynthModuleDefinition {
       final reducedInternalSignals = <SynthLogic>[];
       for (final internalSignal
           in internalSignals.where((e) => !e.declarationCleared)) {
-        final logics = internalSignal.logics; // TODO: could be cached
+        final logics = internalSignal.logics;
 
         if (internalSignal.declarationCleared) {
           continue;
@@ -581,8 +581,6 @@ class SynthModuleDefinition {
             reducedInternalSignals.add(internalSignal);
           } else {
             // if it's an array and all elements are gone, we can remove it
-            print('removing from ${module.definitionName} whole array '
-                '$internalSignal (all elements unused)');
             internalSignal.clearDeclaration();
             changed = true;
           }
@@ -629,8 +627,6 @@ class SynthModuleDefinition {
               continue;
             }
 
-            print('removing from ${module.definitionName} net $internalSignal');
-
             // otherwise, we can remove this net
             internalSignal.clearDeclaration();
             changed = true;
@@ -639,15 +635,11 @@ class SynthModuleDefinition {
 
           if (!internalSignal.hasSrcConnectionsPresent()) {
             internalSignal.clearDeclaration();
-            print(
-                'removing from ${module.definitionName} (no src) ${internalSignal}');
             changed = true;
             continue;
           }
 
           if (!internalSignal.hasDstConnectionsPresent()) {
-            print(
-                'removing from ${module.definitionName} (no dst) ${internalSignal}');
             internalSignal.clearDeclaration();
             changed = true;
             continue;
@@ -668,15 +660,11 @@ class SynthModuleDefinition {
         if ((assignment.src.declarationCleared ||
                 assignment.dst.declarationCleared) &&
             !(assignment.src.isNet || assignment.dst.isNet)) {
-          print(
-              'removing assignment from ${module.definitionName} $assignment');
           changed = true;
         } else if (assignment is PartialSynthAssignment &&
             !assignment.src.hasSrcConnectionsPresent() &&
             !assignment.src.isStructPortElement(module) &&
             assignment.src.isClearable) {
-          print('removing partial struct assignment from '
-              '${module.definitionName} $assignment (no src)');
           assignment.src.clearDeclaration();
           changed = true;
         } else {
@@ -693,20 +681,6 @@ class SynthModuleDefinition {
       for (final subModuleInstantiation
           in subModuleInstantiations.where((e) => e.needsInstantiation)) {
         final subModule = subModuleInstantiation.module;
-
-        //TODO: do we need ANY of this if statement?
-        if (subModule is _BusSubsetForStructSlice &&
-            ([
-              ...subModuleInstantiation.inputMapping.values,
-              ...subModuleInstantiation.outputMapping.values,
-              ...subModuleInstantiation.inOutMapping.values
-            ].any((e) => e.declarationCleared))) {
-          subModuleInstantiation.clearInstantiation();
-          print('removing from ${subModule.definitionName} '
-              'bus subset for struct slice of $subModule (all ports unused)');
-          changed = true;
-          continue;
-        }
 
         if (subModule is SystemVerilog && subModule.isWiresOnly) {
           final inputs = {
@@ -728,8 +702,6 @@ class SynthModuleDefinition {
                   !output.hasDstConnectionsPresent()));
           if (allOutputsUnused) {
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${module.definitionName} '
-                'system verilog of $subModule (all outputs unused)');
             changed = true;
             continue;
           }
@@ -741,8 +713,6 @@ class SynthModuleDefinition {
                   !input.hasSrcConnectionsPresent()));
           if (allInputsUnused) {
             subModuleInstantiation.clearInstantiation();
-            print('removing from ${module.definitionName} '
-                'system verilog of $subModule (all inputs unused)');
             changed = true;
             continue;
           }
