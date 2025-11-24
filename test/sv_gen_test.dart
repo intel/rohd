@@ -130,7 +130,17 @@ class SimpleStruct extends LogicStructure {
       name: name ?? this.name, elementNaming: elementNaming, asNet: asNet);
 }
 
-//TODO: test removal of bussubsets and swizzles as well
+class ModWithUselessWireMods extends Module {
+  ModWithUselessWireMods() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    final b = addInput('b', Logic(width: 8), width: 8);
+
+    // none of these should show up, unused stuff
+    [a, b].swizzle();
+    b.replicate(3);
+    a.getRange(2, 6);
+  }
+}
 
 class TopWithUnusedSubModPorts extends Module {
   late final Logic outTopA;
@@ -580,6 +590,25 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('unused wire mods are pruned', () async {
+    final mod = ModWithUselessWireMods();
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, isNot(contains('swizzle')));
+    expect(sv, isNot(contains('replicate')));
+    expect(sv, isNot(contains('subset')));
+
+    expect(sv, contains('''
+module ModWithUselessWireMods (
+input logic [7:0] a,
+input logic [7:0] b
+);
+
+endmodule : ModWithUselessWireMods'''));
   });
 
   group('connected ports and pruning', () {
