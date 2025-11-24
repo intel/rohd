@@ -10,7 +10,6 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
@@ -116,8 +115,8 @@ class SimpleStruct extends LogicStructure {
   final bool asNet;
 
   SimpleStruct(
-      {super.name = 'SimpleStruct',
-      required this.elementNaming,
+      {required this.elementNaming,
+      super.name = 'SimpleStruct',
       this.asNet = false})
       : super([
           (asNet ? LogicNet.new : Logic.new)(
@@ -134,17 +133,6 @@ class SimpleStruct extends LogicStructure {
 //TODO: test removal of bussubsets and swizzles as well
 
 class TopWithUnusedSubModPorts extends Module {
-  //TODO:
-  // types of ports to not use:
-  // - inout, input, output
-  // watch out for:
-  // - used by only an assignment
-  // - used only by another module
-  // - used only as port of super module
-  // - element of a struct/array
-  // - connects to element of struct/array
-  // - reserved/renameable names
-
   late final Logic outTopA;
   late final LogicArray outArrTopA;
   late final Logic outStructTopA;
@@ -156,8 +144,6 @@ class TopWithUnusedSubModPorts extends Module {
   late final Logic outTopC;
   late final LogicArray outArrTopC;
   late final Logic outStructTopC;
-
-  //TODO: what about IO arrays and IO structs?
 
   TopWithUnusedSubModPorts({
     required Logic topIn,

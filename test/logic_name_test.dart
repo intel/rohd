@@ -7,8 +7,6 @@
 // 2022 October 26
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
-import 'dart:io';
-
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -298,10 +296,6 @@ void main() {
     final mod = NameCollisionArrayTop();
     await mod.build();
     final sv = mod.generateSynth();
-
-    print(sv);
-
-    // File('tmp_array_num.sv').writeAsStringSync(sv);
 
     expect(
         sv,

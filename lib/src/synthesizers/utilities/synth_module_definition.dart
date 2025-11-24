@@ -961,6 +961,7 @@ class SynthModuleDefinition {
     }
   }
 
+  //TODO doc
   void _applyAssignmentMergeUpdates(
       {required SynthLogic mergedAway, required SynthLogic kept}) {
     final foundInternal = internalSignals.remove(mergedAway);
