@@ -44,12 +44,6 @@ class SystemVerilogSynthSubModuleInstantiation
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
-    // TODO: should we keep this??
-    // assert(
-    //     needsInstantiation,
-    //     'Inline SV modules should not have had their instantiation cleared'
-    //     ' if they are used.');
-
     final portNameToValueMapping = _modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
         ..remove((module as InlineSystemVerilog).resultSignalName),

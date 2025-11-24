@@ -557,7 +557,7 @@ class SynthModuleDefinition {
         }
 
         // if it's not a clearable signal (for whatever reason), can't remove it
-        if (!internalSignal.isClearable(module)) {
+        if (!internalSignal.isClearable) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
@@ -674,7 +674,7 @@ class SynthModuleDefinition {
         } else if (assignment is PartialSynthAssignment &&
             !assignment.src.hasSrcConnectionsPresent() &&
             !assignment.src.isStructPortElement(module) &&
-            assignment.src.isClearable(module)) {
+            assignment.src.isClearable) {
           print('removing partial struct assignment from '
               '${module.definitionName} $assignment (no src)');
           assignment.src.clearDeclaration();
@@ -723,7 +723,7 @@ class SynthModuleDefinition {
 
           final allOutputsUnused = outputs.values.every((output) =>
               output.declarationCleared ||
-              (output.isClearable(module) &&
+              (output.isClearable &&
                   !output.isStructPortElement() &&
                   !output.hasDstConnectionsPresent()));
           if (allOutputsUnused) {
@@ -736,7 +736,7 @@ class SynthModuleDefinition {
 
           final allInputsUnused = inputs.values.every((input) =>
               input.declarationCleared ||
-              (input.isClearable(module) &&
+              (input.isClearable &&
                   !input.isStructPortElement() &&
                   !input.hasSrcConnectionsPresent()));
           if (allInputsUnused) {

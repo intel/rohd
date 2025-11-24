@@ -34,8 +34,7 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
-  //TODO doc
-  //TODO: replace places where [module] was an arg with this when applicable
+  /// The parent [SynthModuleDefinition] that this [SynthLogic] belongs to.
   final SynthModuleDefinition parentSynthModuleDefinition;
 
   /// Indicates if this signal is an element of a [LogicStructure] that is a
@@ -170,7 +169,7 @@ class SynthLogic {
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
 
   //TODO doc
-  bool isClearable(Module module) => mergeable;
+  bool get isClearable => mergeable;
 
   /// True only if this represents a [LogicArray].
   final bool isArray;
@@ -355,18 +354,6 @@ class SynthLogic {
 
     // keep track that it was replaced by this
     other.replacement = this;
-
-    // TODO: This is bad, delete?
-    // if (isArray) {
-    //   // need to also adopt all the elements!
-    //   final refArr = logics.first as LogicArray;
-    //   final numElements = refArr.dimensions.first;
-    //   for (var i = 0; i < numElements; i++) {
-    //     parentSynthModuleDefinition.getSynthLogic(refArr.elements[i])!.adopt(
-    //         parentSynthModuleDefinition.getSynthLogic(
-    //             (other.logics.first as LogicArray).elements[i])!);
-    //   }
-    // }
   }
 
   /// Adds a new [logic] to be represented by this.
@@ -470,8 +457,8 @@ class SynthLogicArrayElement extends SynthLogic {
       parentArray.isPort(module);
 
   @override
-  bool isClearable(Module module) =>
-      !isPort(module) && parentArray.isClearable(module);
+  bool get isClearable =>
+      !isPort(parentSynthModuleDefinition.module) && parentArray.isClearable;
 
   @override
   bool hasSrcConnectionsPresent() =>

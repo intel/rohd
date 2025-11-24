@@ -98,8 +98,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         .map((m) => getSynthSubModuleInstantiation(m)
             as SystemVerilogSynthSubModuleInstantiation);
 
-    //TODO: what to do about inline expressions that don't exist anymore?? or impossible?
-
     // number of times each signal name is used by any module
     final signalUsage = <SynthLogic, int>{};
 

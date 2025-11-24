@@ -100,7 +100,6 @@ mixin SystemVerilog on Module {
     }
   }
 
-  //TODO doc
   /// Indicates that this module is only wires, no logic inside, which can be
   /// leveraged for pruning.
   @internal
