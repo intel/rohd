@@ -60,7 +60,7 @@ mixin SystemVerilog on Module {
   /// instantiated in SystemVerilog.
   ///
   /// This may be safely set to `true` in cases where the instantiation verilog
-  /// can accept port connections like `.portname()` where no signal is
+  /// can accept port connections like `.port_name()` where no signal is
   /// connected to that port.
   bool get acceptsEmptyPortConnections => false;
 

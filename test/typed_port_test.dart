@@ -490,13 +490,8 @@ void main() {
                   {'anyIn': 0x13}, {'anyOut': modMaker.invert ? 0xec : 0x13}),
             ];
 
-            // print(mod.generateSynth());
-
             await SimCompare.checkFunctionalVector(mod, vectors);
-            SimCompare.checkIverilogVector(
-              mod,
-              vectors,
-            );
+            SimCompare.checkIverilogVector(mod, vectors);
           });
         }
       });

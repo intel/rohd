@@ -527,7 +527,7 @@ class SynthModuleDefinition {
   }
 
   /// Prunes any signals that are not used in this definition, including any
-  /// swizzles and subsets, iteratively until there's nothing less to prune.
+  /// swizzles/subsets/etc., iteratively until there's nothing left to prune.
   ///
   /// Note that this can remove signals from [internalSignals] after marking
   /// them as having their declaration cleared.
@@ -548,11 +548,10 @@ class SynthModuleDefinition {
       //   - the driver has no driver OR the receiver has no receivers
 
       final reducedInternalSignals = <SynthLogic>[];
-      for (final internalSignal
-          in internalSignals.where((e) => !e.declarationCleared)) {
-        final logics = internalSignal.logics;
-
+      for (final internalSignal in internalSignals) {
+        // if it's cleared already, just skip it
         if (internalSignal.declarationCleared) {
+          changed = true;
           continue;
         }
 
@@ -573,6 +572,8 @@ class SynthModuleDefinition {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
+
+        final logics = internalSignal.logics;
 
         if (internalSignal.isArray) {
           if (logics.any((logicArray) =>

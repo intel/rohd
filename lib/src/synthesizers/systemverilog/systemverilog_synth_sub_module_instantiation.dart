@@ -38,6 +38,7 @@ class SystemVerilogSynthSubModuleInstantiation
           name,
           synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
+              // if cleared, then empty port
               (synthLogic.declarationCleared ? '' : synthLogic.name)));
 
   /// Provides the inline SV representation for this module.
@@ -50,9 +51,11 @@ class SystemVerilogSynthSubModuleInstantiation
     );
 
     assert(
-        portNameToValueMapping.values.none((e) => e.isEmpty),
+        (module is SystemVerilog &&
+                (module as SystemVerilog).acceptsEmptyPortConnections) ||
+            portNameToValueMapping.values.none((e) => e.isEmpty),
         'Inline modules should not ever receive empty port values,'
-        ' only module instantiations can get something like `.()`.');
+        ' only module instantiations can get something like `.port_name()`.');
 
     final inlineSvRepresentation =
         (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
