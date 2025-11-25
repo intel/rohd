@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class ModuleWithMaybePorts extends Module {
@@ -302,7 +303,8 @@ void main() {
             disconnectOutputs: disconnectOutputs);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -318,7 +320,8 @@ void main() {
             disconnectOutputs: disconnectOutputs);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -333,7 +336,7 @@ void main() {
           TopStructInoutWrap(LogicNet(), LogicNet(), LogicNet(width: 2));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
       expect(
           sv,

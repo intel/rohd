@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_gen_test.dart
@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class AlphabeticalModule extends Module {
@@ -270,7 +271,8 @@ void main() {
           final mod = TopCustomSvWrap(Logic(), Logic(),
               useOld: useOld, banExpressions: banExpressions);
           await mod.build();
-          final sv = mod.generateSynth();
+          final sv =
+              SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
           if (banExpressions) {
             expect(sv, contains('assign my_fancy_new_signal <= ^fer_swizzle;'));
