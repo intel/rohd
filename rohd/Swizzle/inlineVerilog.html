@@ -56,11 +56,11 @@
       
   <div>
     <ol class="annotation-list">
-        <li>@<a href="https://api.dart.dev/stable/3.10.0/dart-core/override-constant.html">override</a></li>
+        <li>@<a href="https://api.dart.dev/stable/3.10.1/dart-core/override-constant.html">override</a></li>
     </ol>
   </div>
-<span class="returntype"><a href="https://api.dart.dev/stable/3.10.0/dart-core/String-class.html">String</a></span>
-<span class="name ">inlineVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.0/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.10.0/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.10.0/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
+<span class="returntype"><a href="https://api.dart.dev/stable/3.10.1/dart-core/String-class.html">String</a></span>
+<span class="name ">inlineVerilog</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="inlineVerilog-param-inputs"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.1/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.dart.dev/stable/3.10.1/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.dart.dev/stable/3.10.1/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">inputs</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">override</span></div>
@@ -91,11 +91,75 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
       &#39;This swizzle has ${_swizzleInputs.length} inputs,&#39;
       &#39; but saw $inputs with ${inputs.length} values.&#39;);
 
-  final inputStr = _swizzleInputs.reversed
-      .where((e) =&gt; e.width &gt; 0)
-      .map((e) =&gt; inputs[e.name])
-      .join(&#39;,&#39;);
-  return &#39;{$inputStr}&#39;;
+  &#47;&#47; Calculate all width descriptions upfront to determine alignment
+  final validInputs =
+      _swizzleInputs.reversed.where((e) =&gt; e.width &gt; 0).toList();
+
+  &#47;&#47; If there&#39;s only one element, no need for width descriptions
+  if (validInputs.length == 1) {
+    final inName = inputs[validInputs.first.name]!;
+    return inName;
+  }
+
+  final widthDescriptions = &lt;({int upper, int? lower})&gt;[];
+  var upperIndex = out.width - 1;
+
+  &#47;&#47; First pass: calculate all width descriptions
+  for (final e in validInputs) {
+    if (e.width &gt; 1) {
+      final lowerIndex = upperIndex - e.width + 1;
+      widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
+    } else {
+      widthDescriptions.add((upper: upperIndex, lower: null));
+    }
+    upperIndex -= e.width;
+  }
+
+  &#47;&#47; Find maximum width for alignment
+  final maxUpperWidth = widthDescriptions.isEmpty
+      ? 0
+      : widthDescriptions
+          .map((desc) =&gt; desc.upper.toString().length)
+          .reduce(max);
+  final maxLowerWidth =
+      widthDescriptions.where((desc) =&gt; desc.lower != null).isEmpty
+          ? 0
+          : widthDescriptions
+              .where((desc) =&gt; desc.lower != null)
+              .map((desc) =&gt; desc.lower!.toString().length)
+              .reduce(max);
+
+  &#47;&#47; Second pass: generate aligned output
+  upperIndex = out.width - 1;
+  final inputLines = &lt;String&gt;[];
+  var descIndex = 0;
+
+  for (final e in validInputs) {
+    final inName = inputs[e.name]!;
+    final desc = widthDescriptions[descIndex++];
+
+    String alignedDesc;
+    if (desc.lower != null) {
+      final paddedUpper = desc.upper.toString().padLeft(maxUpperWidth);
+      final paddedLower = desc.lower!.toString().padLeft(maxLowerWidth);
+      alignedDesc = &#39;$paddedUpper:$paddedLower&#39;;
+    } else {
+      &#47;&#47; For single bits, right-align to the total width (upper:lower format)
+      final totalWidth =
+          maxUpperWidth + (maxLowerWidth &gt; 0 ? 1 + maxLowerWidth : 0);
+      alignedDesc = desc.upper.toString().padLeft(totalWidth);
+    }
+
+    upperIndex -= e.width;
+    final maybeComma =
+        upperIndex &gt;= 0 ? &#39;,&#39; : &#39; &#39;; &#47;&#47; space at end for alignment
+    inputLines.add(&#39;$inName$maybeComma &#47;* $alignedDesc *&#47;&#39;);
+  }
+
+  return &#39;&#39;&#39;
+{
+${inputLines.join(&#39;\n&#39;)}
+}&#39;&#39;&#39;;
 }</code></pre>
 </section>
 
