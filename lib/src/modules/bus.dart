@@ -7,6 +7,8 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math' show max;
+
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
@@ -254,10 +256,74 @@ class Swizzle extends Module with InlineSystemVerilog {
         'This swizzle has ${_swizzleInputs.length} inputs,'
         ' but saw $inputs with ${inputs.length} values.');
 
-    final inputStr = _swizzleInputs.reversed
-        .where((e) => e.width > 0)
-        .map((e) => inputs[e.name])
-        .join(',');
-    return '{$inputStr}';
+    // Calculate all width descriptions upfront to determine alignment
+    final validInputs =
+        _swizzleInputs.reversed.where((e) => e.width > 0).toList();
+
+    // If there's only one element, no need for width descriptions
+    if (validInputs.length == 1) {
+      final inName = inputs[validInputs.first.name]!;
+      return inName;
+    }
+
+    final widthDescriptions = <({int upper, int? lower})>[];
+    var upperIndex = out.width - 1;
+
+    // First pass: calculate all width descriptions
+    for (final e in validInputs) {
+      if (e.width > 1) {
+        final lowerIndex = upperIndex - e.width + 1;
+        widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
+      } else {
+        widthDescriptions.add((upper: upperIndex, lower: null));
+      }
+      upperIndex -= e.width;
+    }
+
+    // Find maximum width for alignment
+    final maxUpperWidth = widthDescriptions.isEmpty
+        ? 0
+        : widthDescriptions
+            .map((desc) => desc.upper.toString().length)
+            .reduce(max);
+    final maxLowerWidth =
+        widthDescriptions.where((desc) => desc.lower != null).isEmpty
+            ? 0
+            : widthDescriptions
+                .where((desc) => desc.lower != null)
+                .map((desc) => desc.lower!.toString().length)
+                .reduce(max);
+
+    // Second pass: generate aligned output
+    upperIndex = out.width - 1;
+    final inputLines = <String>[];
+    var descIndex = 0;
+
+    for (final e in validInputs) {
+      final inName = inputs[e.name]!;
+      final desc = widthDescriptions[descIndex++];
+
+      String alignedDesc;
+      if (desc.lower != null) {
+        final paddedUpper = desc.upper.toString().padLeft(maxUpperWidth);
+        final paddedLower = desc.lower!.toString().padLeft(maxLowerWidth);
+        alignedDesc = '$paddedUpper:$paddedLower';
+      } else {
+        // For single bits, right-align to the total width (upper:lower format)
+        final totalWidth =
+            maxUpperWidth + (maxLowerWidth > 0 ? 1 + maxLowerWidth : 0);
+        alignedDesc = desc.upper.toString().padLeft(totalWidth);
+      }
+
+      upperIndex -= e.width;
+      final maybeComma =
+          upperIndex >= 0 ? ',' : ' '; // space at end for alignment
+      inputLines.add('$inName$maybeComma /* $alignedDesc */');
+    }
+
+    return '''
+{
+${inputLines.join('\n')}
+}''';
   }
 }
