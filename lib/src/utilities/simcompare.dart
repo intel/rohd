@@ -71,7 +71,8 @@ class Vector {
 
     return 'if($sigName !== $expectedValStr) '
         '\$error(\$sformatf("Expected $sigName=$expectedHexStr,'
-        ' but found $sigName=0x%x with inputs $inputValues", $sigName));';
+        ' but found $sigName=0x%x (0b%b) with inputs $inputValues",'
+        ' $sigName, $sigName));';
   }
 
   /// Converts this vector into a SystemVerilog check.

@@ -7,6 +7,7 @@
 // 2025 June
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
@@ -37,24 +38,34 @@ class SystemVerilogSynthSubModuleInstantiation
           name,
           synthLogicToInlineableSynthSubmoduleMap?[synthLogic]
                   ?.inlineVerilog() ??
-              synthLogic.name));
+              // if cleared, then empty port
+              (synthLogic.declarationCleared ? '' : synthLogic.name)));
 
   /// Provides the inline SV representation for this module.
   ///
   /// Should only be called if [module] is [InlineSystemVerilog].
   String inlineVerilog() {
-    final inlineSvRepresentation =
-        (module as InlineSystemVerilog).inlineVerilog(
-      _modulePortsMapWithInline({...inputMapping, ...inOutMapping}
-        ..remove((module as InlineSystemVerilog).resultSignalName)),
+    final portNameToValueMapping = _modulePortsMapWithInline(
+      {...inputMapping, ...inOutMapping}
+        ..remove((module as InlineSystemVerilog).resultSignalName),
     );
+
+    assert(
+        (module is SystemVerilog &&
+                (module as SystemVerilog).acceptsEmptyPortConnections) ||
+            portNameToValueMapping.values.none((e) => e.isEmpty),
+        'Inline modules should not ever receive empty port values,'
+        ' only module instantiations can get something like `.port_name()`.');
+
+    final inlineSvRepresentation =
+        (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
 
     return '($inlineSvRepresentation)';
   }
 
   /// Provides the full SV instantiation for this module.
   String? instantiationVerilog(String instanceType) {
-    if (!needsDeclaration) {
+    if (!needsInstantiation) {
       return null;
     }
     return SystemVerilogSynthesizer.instantiationVerilogFor(

@@ -90,12 +90,13 @@ class SynthSubModuleInstantiation {
   }
 
   /// Indicates whether this module should be declared.
-  bool get needsDeclaration => _needsDeclaration;
-  bool _needsDeclaration = true;
+  bool get needsInstantiation => _needsInstantiation;
+  bool _needsInstantiation = true;
 
-  /// Removes the need for this module to be declared (via [needsDeclaration]).
-  void clearDeclaration() {
-    _needsDeclaration = false;
+  /// Removes the need for this module to be declared (via
+  /// [needsInstantiation]).
+  void clearInstantiation() {
+    _needsInstantiation = false;
   }
 
   /// Creates an instantiation for [module].

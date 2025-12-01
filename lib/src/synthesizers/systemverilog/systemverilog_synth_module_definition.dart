@@ -101,8 +101,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // number of times each signal name is used by any module
     final signalUsage = <SynthLogic, int>{};
 
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values) {
+    for (final subModuleInstantiation in subModuleInstantiations) {
       for (final inSynthLogic in [
         ...subModuleInstantiation.inputMapping.values,
         ...subModuleInstantiation.inOutMapping.values
@@ -148,12 +147,15 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // inlineable modules have only 1 result signal
       final resultSynthLogic = subModuleInstantiation.inlineResultLogic!;
 
-      return singleUseSignals.contains(resultSynthLogic);
+      return singleUseSignals.contains(resultSynthLogic) &&
+
+          // don't inline modules if they were cleared from instantiation
+          subModuleInstantiation.needsInstantiation;
     });
 
     // remove any inlineability for those that want no expressions
-    for (final MapEntry(key: subModule, value: instantiation)
-        in moduleToSubModuleInstantiationMap.entries) {
+    for (final instantiation in subModuleInstantiations) {
+      final subModule = instantiation.module;
       if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
             instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
@@ -178,14 +180,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       internalSignals.remove(resultSynthLogic);
 
       // clear declaration of instantiation for inline module
-      subModuleInstantiation.clearDeclaration();
+      subModuleInstantiation.clearInstantiation();
 
       synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
           subModuleInstantiation;
     }
 
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values) {
+    for (final subModuleInstantiation in subModuleInstantiations) {
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
       subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
@@ -197,10 +198,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// and which have not had their declarations cleared and replaces them with a
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
-    for (final subModuleInstantiation
-        in moduleToSubModuleInstantiationMap.values.toList().where((e) =>
+    for (final subModuleInstantiation in subModuleInstantiations.toList().where(
+        (e) =>
             e.module is InlineSystemVerilog &&
-            e.needsDeclaration &&
+            e.needsInstantiation &&
             e.outputMapping.isEmpty &&
             e.inOutMapping.isNotEmpty)) {
       // algorithm:
@@ -210,7 +211,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      subModuleInstantiation.clearDeclaration();
+      subModuleInstantiation.clearInstantiation();
 
       final resultName = (subModuleInstantiation.module as InlineSystemVerilog)
           .resultSignalName;
@@ -219,8 +220,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       // use a dummy as a placeholder, it will not really be used since we are
       // updating the inlineable map
-      final dummy =
-          SynthLogic(LogicNet(name: 'DUMMY', width: subModResult.width));
+      final dummy = SynthLogic(
+        LogicNet(name: 'DUMMY', width: subModResult.width),
+        parentSynthModuleDefinition: this,
+      );
 
       final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
         ..synthLogicToInlineableSynthSubmoduleMap ??= {};
@@ -279,7 +282,7 @@ class _NetConnect extends Module with SystemVerilog {
   @override
   String? definitionVerilog(String definitionType) => '''
 // A special module for connecting two nets bidirectionally
-module $definitionType #(parameter WIDTH=1) (w, w); 
+module $definitionType #(parameter int WIDTH=1) (w, w);
 inout wire[WIDTH-1:0] w;
 endmodule''';
 }
