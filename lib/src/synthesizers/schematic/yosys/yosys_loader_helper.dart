@@ -60,10 +60,6 @@ Future<YosysLoaderResult> runYosysLoader(String jsonPath) async {
   ProcessResult result;
   try {
     result = await Process.run(node, [script, jsonPath]);
-  } on UnsupportedError catch (e) {
-    return YosysLoaderResult(
-        success: false,
-        error: 'Yosys loader unavailable in this environment: ${e.message}');
   } on Exception catch (e) {
     return YosysLoaderResult(success: false, error: 'Process.run failed: $e');
   }
