@@ -56,6 +56,9 @@ class SynthBuilder {
       }
     }
 
+    // Allow the synthesizer to prepare with knowledge of top module(s)
+    synthesizer.prepare(this.tops);
+
     final modulesToParse = <Module>[...tops];
     for (var i = 0; i < modulesToParse.length; i++) {
       final moduleI = modulesToParse[i];

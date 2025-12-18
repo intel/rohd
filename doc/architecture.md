@@ -22,10 +22,6 @@ Every `Module` defines its own functionality. This could be through composition 
 
 The `Simulator` acts as a statically accessible driver of the overall simulation. Anything can register arbitrary `Function`s to be executed at any timestamp that has not already occurred. The `Simulator` does not need to understand much about the functionality of a design; rather, the `Module`s and `Logic`s are responsible for propagating changes throughout.
 
-### Synthesizer
-
-A separate type of object responsible for taking a `Module` and converting it to some output, such as SystemVerilog.
-
 ## Organization
 
 All the code for the ROHD framework library is in `lib/src/`, with `lib/rohd.dart` exporting the main stuff for usage.
@@ -45,6 +41,14 @@ Contains a collection of `Module` implementations that can be used as primitive 
 ### Synthesizers
 
 Contains logic for synthesizing `Module`s into some output. It is structured to maximize reusability across different output types (including those not yet supported).
+
+#### SystemVerilogSynthesizer
+
+A `Synthesizer` that produces synthesizable SystemVerilog for a `Module` and its dependencies.
+
+#### SchematicSynthesizer
+
+A `Synthesizer` that produces [ELK JSON] (<https://github.com/kieler/elkjs>) for use with a schematic visualizer like that in [d3-hwschematic](<https://github.com/Nic30/d3-hwschematic>).
 
 ### Utilities
 
