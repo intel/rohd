@@ -57,7 +57,16 @@ Future<YosysLoaderResult> runYosysLoader(String jsonPath) async {
   const node = 'node';
   const script =
       'lib/src/synthesizers/schematic/yosys/_yosys_loader_runner.mjs';
-  final result = await Process.run(node, [script, jsonPath]);
+  ProcessResult result;
+  try {
+    result = await Process.run(node, [script, jsonPath]);
+  } on UnsupportedError catch (e) {
+    return YosysLoaderResult(
+        success: false,
+        error: 'Yosys loader unavailable in this environment: ${e.message}');
+  } on Exception catch (e) {
+    return YosysLoaderResult(success: false, error: 'Process.run failed: $e');
+  }
   if (result.exitCode == 0) {
     final out = result.stdout.toString().trim();
     final map = json.decode(out) as Map<String, dynamic>;
