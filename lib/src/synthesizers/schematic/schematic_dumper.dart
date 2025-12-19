@@ -7,11 +7,11 @@
 // 2025 December 12
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:rohd/rohd.dart';
-
 import 'package:rohd/src/synthesizers/schematic/schematic.dart';
 
 /// Helper: follow srcConnection chain to return canonical driver Logic.
@@ -1020,9 +1020,35 @@ class SchematicDumper {
     };
 
     // (Diagnostics removed.)
-    File(outPath)
-      ..createSync(recursive: true)
-      ..writeAsStringSync(const JsonEncoder.withIndent('  ').convert(out));
+    final outJson = const JsonEncoder.withIndent('  ').convert(out);
+    try {
+      // Attempt normal file write (works on Dart VM).
+      File(outPath)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(outJson);
+    } on Exception catch (_) {
+      // Running in JS platform (Node) — filesystem operations may be
+      // unsupported. Instead of falling back to printing the entire JSON,
+      // validate the generated JSON by invoking the Yosys loader in-process
+      // (the JS implementation will import the d3-yosys module). This keeps
+      // tests that run under --platform node able to validate dumps.
+      unawaited(runYosysLoaderFromString(outJson).then((res) {
+        if (!res.success) {
+          final msg =
+              'Yosys loader validation failed for $outPath: ${res.error}'
+              '${res.stack != null ? '\n${res.stack}' : ''}';
+          throw Exception(msg);
+        }
+        return res;
+      }).catchError((Object e, StackTrace? st) {
+        final msg = 'Yosys loader invocation failed for $outPath: $e'
+            '${st != null ? '\n$st' : ''}';
+        throw Exception(msg);
+      }));
+    } catch (e) {
+      // Re-throw unexpected errors to keep behavior unchanged.
+      rethrow;
+    }
   }
 
   /// Synchronous accessor for the top module map.

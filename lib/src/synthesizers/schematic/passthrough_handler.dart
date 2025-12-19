@@ -99,7 +99,7 @@ class PassThroughHandler {
 
     final passThroughNames = {
       for (final e in passThroughConnections.entries)
-        e.key.name: (inputsByLogic[e.value] ?? e.value.name),
+        e.key.name: inputsByLogic[e.value] ?? e.value.name,
     };
 
     nextIdRef[0] = nextId;

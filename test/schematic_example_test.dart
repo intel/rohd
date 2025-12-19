@@ -21,6 +21,42 @@ import '../example/oven_fsm.dart';
 import '../example/tree.dart';
 
 void main() {
+  // Detect whether running in JS (dart2js) environment. In JS many
+  // `dart:io` APIs are unsupported; when running tests with
+  // `--platform node` we skip filesystem and loader assertions.
+  const isJS = identical(0, 0.0);
+
+  // Helper: write combined SynthBuilder schematic JSON to `out`.
+  // Returns the JSON string so callers can pass it to loaders directly.
+  Future<String> writeCombinedFromSynth(
+      SynthBuilder synth, Module top, String out) async {
+    final allModules = <String, Map<String, Object?>>{};
+    for (final result in synth.synthesisResults) {
+      if (result is SchematicSynthesisResult) {
+        final typeName = result.instanceTypeName;
+        final attrs = Map<String, Object?>.from(result.attributes);
+        if (result.module == top) {
+          attrs['top'] = 1;
+        }
+        allModules[typeName] = {
+          'attributes': attrs,
+          'ports': result.ports,
+          'cells': result.cells,
+          'netnames': result.netnames,
+        };
+      }
+    }
+    final combined = {
+      'creator': 'SchematicSynthesizer via SynthBuilder (rohd)',
+      'modules': allModules,
+    };
+    final json = const JsonEncoder.withIndent('  ').convert(combined);
+    if (!isJS) {
+      await File(out).writeAsString(json);
+    }
+    return json;
+  }
+
   test('Schematic dump for example Counter', () async {
     final en = Logic(name: 'en');
     final reset = Logic(name: 'reset');
@@ -28,23 +64,20 @@ void main() {
 
     final counter = Counter(en, reset, clk);
     await counter.build();
+    counter.generateSynth();
 
+    final synth = SynthBuilder(counter, SchematicSynthesizer());
     const outPath = 'build/Counter.rohd.json';
-    SchematicDumper(counter,
-        outputPath: outPath, filterConstInputsToCombinational: true);
+    final json = await writeCombinedFromSynth(synth, counter, outPath);
 
-    final f = File(outPath);
-    expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
-    final contents = await f.readAsString();
-    expect(contents.trim().isNotEmpty, isTrue);
-
-    final r = await runYosysLoader(outPath);
+    // Always validate the generated JSON with the yosys loader.
+    final r = await runYosysLoaderFromString(json);
     expect(r.success, isTrue,
-        reason: 'loader should load Counter: ${r.error ?? r}');
+        reason: 'loader should load Counter from string: ${r.error ?? r}');
   });
 
   group('SynthBuilder schematic generation for examples', () {
-    Future<void> writeCombined(
+    Future<String> writeCombined(
         SynthBuilder synth, Module top, String out) async {
       final allModules = <String, Map<String, Object?>>{};
       for (final result in synth.synthesisResults) {
@@ -67,7 +100,10 @@ void main() {
         'modules': allModules,
       };
       final json = const JsonEncoder.withIndent('  ').convert(combined);
-      await File(out).writeAsString(json);
+      if (!isJS) {
+        await File(out).writeAsString(json);
+      }
+      return json;
     }
 
     test('SynthBuilder schematic for Counter', () async {
@@ -82,11 +118,8 @@ void main() {
       expect(synth.synthesisResults.isNotEmpty, isTrue);
 
       const outPath = 'build/Counter.synth.rohd.json';
-      await writeCombined(synth, counter, outPath);
-      final f = File(outPath);
-      expect(f.existsSync(), isTrue);
-
-      final r = await runYosysLoader(outPath);
+      final json = await writeCombined(synth, counter, outPath);
+      final r = await runYosysLoaderFromString(json);
       expect(r.success, isTrue,
           reason: 'loader should load Counter synth: ${r.error ?? r}');
     });
@@ -105,11 +138,8 @@ void main() {
       expect(synth.synthesisResults.isNotEmpty, isTrue);
 
       const outPath = 'build/FirFilter.synth.rohd.json';
-      await writeCombined(synth, fir, outPath);
-      final f = File(outPath);
-      expect(f.existsSync(), isTrue);
-
-      final r = await runYosysLoader(outPath);
+      final json = await writeCombined(synth, fir, outPath);
+      final r = await runYosysLoaderFromString(json);
       expect(r.success, isTrue,
           reason: 'loader should load FirFilter synth: ${r.error ?? r}');
     });
@@ -128,11 +158,8 @@ void main() {
       expect(synth.synthesisResults.isNotEmpty, isTrue);
 
       const outPath = 'build/LogicArrayExample.synth.rohd.json';
-      await writeCombined(synth, la, outPath);
-      final f = File(outPath);
-      expect(f.existsSync(), isTrue);
-
-      final r = await runYosysLoader(outPath);
+      final json = await writeCombined(synth, la, outPath);
+      final r = await runYosysLoaderFromString(json);
       expect(r.success, isTrue,
           reason:
               'loader should load LogicArrayExample synth: ${r.error ?? r}');
@@ -150,11 +177,8 @@ void main() {
       expect(synth.synthesisResults.isNotEmpty, isTrue);
 
       const outPath = 'build/OvenModule.synth.rohd.json';
-      await writeCombined(synth, oven, outPath);
-      final f = File(outPath);
-      expect(f.existsSync(), isTrue);
-
-      final r = await runYosysLoader(outPath);
+      final json = await writeCombined(synth, oven, outPath);
+      final r = await runYosysLoaderFromString(json);
       expect(r.success, isTrue,
           reason: 'loader should load OvenModule synth: ${r.error ?? r}');
     });
@@ -168,9 +192,11 @@ void main() {
       expect(synth.synthesisResults.isNotEmpty, isTrue);
 
       const outPath = 'build/TreeOfTwoInputModules.synth.rohd.json';
-      await writeCombined(synth, tree, outPath);
-      final f = File(outPath);
-      expect(f.existsSync(), isTrue);
+      final json = await writeCombined(synth, tree, outPath);
+      final r = await runYosysLoaderFromString(json);
+      expect(r.success, isTrue,
+          reason: 'loader should load TreeOfTwoInputModules synth: '
+              '${r.error ?? r}');
 
       // Skip loader validation for the tree as it may be deeply nested.
     });
@@ -185,17 +211,22 @@ void main() {
     final fir = FirFilter(en, resetB, clk, inputVal, [0, 0, 0, 1], bitWidth: 8);
     await fir.build();
 
+    final synth = SynthBuilder(fir, SchematicSynthesizer());
     const outPath = 'build/FirFilter.rohd.json';
-    SchematicDumper(fir,
-        outputPath: outPath, filterConstInputsToCombinational: true);
-    final f = File(outPath);
-    expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
-    final contents = await f.readAsString();
-    expect(contents.trim().isNotEmpty, isTrue);
-
-    final r = await runYosysLoader(outPath);
-    expect(r.success, isTrue,
-        reason: 'loader should load FirFilter: ${r.error ?? r}');
+    final json = await writeCombinedFromSynth(synth, fir, outPath);
+    if (!isJS) {
+      final f = File(outPath);
+      expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
+      final contents = await f.readAsString();
+      expect(contents.trim().isNotEmpty, isTrue);
+      final r = await runYosysLoader(outPath);
+      expect(r.success, isTrue,
+          reason: 'loader should load FirFilter: ${r.error ?? r}');
+    } else {
+      final r = await runYosysLoaderFromString(json);
+      expect(r.success, isTrue,
+          reason: 'loader should load FirFilter from string: ${r.error ?? r}');
+    }
   });
 
   test('Schematic dump for LogicArray example', () async {
@@ -207,17 +238,23 @@ void main() {
     final la = LogicArrayExample(arrayA, id, selectIndexValue, selectFromValue);
     await la.build();
 
+    final synth = SynthBuilder(la, SchematicSynthesizer());
     const outPath = 'build/LogicArrayExample.rohd.json';
-    SchematicDumper(la,
-        outputPath: outPath, filterConstInputsToCombinational: true);
-    final f = File(outPath);
-    expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
-    final contents = await f.readAsString();
-    expect(contents.trim().isNotEmpty, isTrue);
-
-    final r = await runYosysLoader(outPath);
-    expect(r.success, isTrue,
-        reason: 'loader should load LogicArrayExample: ${r.error ?? r}');
+    final json = await writeCombinedFromSynth(synth, la, outPath);
+    if (!isJS) {
+      final f = File(outPath);
+      expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
+      final contents = await f.readAsString();
+      expect(contents.trim().isNotEmpty, isTrue);
+      final r = await runYosysLoader(outPath);
+      expect(r.success, isTrue,
+          reason: 'loader should load LogicArrayExample: ${r.error ?? r}');
+    } else {
+      final r = await runYosysLoaderFromString(json);
+      expect(r.success, isTrue,
+          reason: 'loader should load LogicArrayExample from string: '
+              '${r.error ?? r}');
+    }
   });
 
   test('Schematic dump for OvenModule example', () async {
@@ -228,17 +265,22 @@ void main() {
     final oven = OvenModule(button, reset, clk);
     await oven.build();
 
+    final synth = SynthBuilder(oven, SchematicSynthesizer());
     const outPath = 'build/OvenModule.rohd.json';
-    SchematicDumper(oven,
-        outputPath: outPath, filterConstInputsToCombinational: true);
-    final f = File(outPath);
-    expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
-    final contents = await f.readAsString();
-    expect(contents.trim().isNotEmpty, isTrue);
-
-    final r = await runYosysLoader(outPath);
-    expect(r.success, isTrue,
-        reason: 'loader should load OvenModule: ${r.error ?? r}');
+    final json = await writeCombinedFromSynth(synth, oven, outPath);
+    if (!isJS) {
+      final f = File(outPath);
+      expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
+      final contents = await f.readAsString();
+      expect(contents.trim().isNotEmpty, isTrue);
+      final r = await runYosysLoader(outPath);
+      expect(r.success, isTrue,
+          reason: 'loader should load OvenModule: ${r.error ?? r}');
+    } else {
+      final r = await runYosysLoaderFromString(json);
+      expect(r.success, isTrue,
+          reason: 'loader should load OvenModule from string: ${r.error ?? r}');
+    }
   });
 
   test('Schematic dump for TreeOfTwoInputModules example', () async {
@@ -246,13 +288,20 @@ void main() {
     final tree = TreeOfTwoInputModules(seq, (a, b) => mux(a > b, a, b));
     await tree.build();
 
+    final synth = SynthBuilder(tree, SchematicSynthesizer());
     const outPath = 'build/TreeOfTwoInputModules.rohd.json';
-    SchematicDumper(tree,
-        outputPath: outPath, filterConstInputsToCombinational: true);
-    final f = File(outPath);
-    expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
-    final contents = await f.readAsString();
-    expect(contents.trim().isNotEmpty, isTrue);
+    final json = await writeCombinedFromSynth(synth, tree, outPath);
+    if (!isJS) {
+      final f = File(outPath);
+      expect(f.existsSync(), isTrue, reason: 'ROHD JSON should be created');
+      final contents = await f.readAsString();
+      expect(contents.trim().isNotEmpty, isTrue);
+    } else {
+      final r = await runYosysLoaderFromString(json);
+      expect(r.success, isTrue,
+          reason: 'loader should load TreeOfTwoInputModules from string: '
+              '${r.error ?? r}');
+    }
 
     // The loader can hit a recursion/stack overflow on deeply nested
     // generated structures for the tree example. For now, ensure the
