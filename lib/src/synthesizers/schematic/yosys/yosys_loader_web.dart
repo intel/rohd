@@ -4,8 +4,6 @@
 // yosys_loader_web.dart
 // JS/Node implementation using direct JS interop to call d3-yosys.
 
-// ignore_for_file: avoid_print
-
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
