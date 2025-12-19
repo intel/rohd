@@ -52,7 +52,9 @@ void main() {
     };
     final json = const JsonEncoder.withIndent('  ').convert(combined);
     if (!isJS) {
-      await File(out).writeAsString(json);
+      final file = File(out);
+      await file.create(recursive: true);
+      await file.writeAsString(json);
     }
     return json;
   }
@@ -101,7 +103,9 @@ void main() {
       };
       final json = const JsonEncoder.withIndent('  ').convert(combined);
       if (!isJS) {
-        await File(out).writeAsString(json);
+        final file = File(out);
+        await file.create(recursive: true);
+        await file.writeAsString(json);
       }
       return json;
     }
