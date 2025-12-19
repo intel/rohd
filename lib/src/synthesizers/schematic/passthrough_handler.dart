@@ -10,6 +10,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_synthesis_result.dart';
 
 /// Result of pass-through collection.
 class PassThroughResult {
@@ -34,9 +35,10 @@ class PassThroughHandler {
   /// nets.
   PassThroughResult collectPassThroughs({
     required Module module,
-    required dynamic map,
+    required List<Module> childModules,
+    required List<SchematicSynthesisResult?> childResultsList,
     required Map<Logic, List<Object?>> internalNetIds,
-    required Map<String, Object?> ports,
+    required Map<String, Map<String, Object?>> ports,
     required List<int> nextIdRef,
   }) {
     final passThroughConnections = <Logic, Logic>{};

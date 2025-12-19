@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 export 'constant_handler.dart';
-export 'module_map.dart';
 export 'module_utils.dart';
 export 'passthrough_handler.dart';
-export 'schematic_dumper.dart';
 export 'schematic_mixins.dart';
 export 'schematic_primitives.dart';
 export 'schematic_synthesis_result.dart';

@@ -28,6 +28,13 @@ abstract class Synthesizer {
 
   /// Synthesizes [module] into a [SynthesisResult], given the mapping provided
   /// by [getInstanceTypeOfModule].
+  ///
+  /// Optionally a [lookupExistingResult] callback may be supplied which
+  /// allows the synthesizer to query already-generated `SynthesisResult`s
+  /// for child modules (useful when building parent output that needs
+  /// information from children).
   SynthesisResult synthesize(
-      Module module, String Function(Module module) getInstanceTypeOfModule);
+      Module module, String Function(Module module) getInstanceTypeOfModule,
+      {SynthesisResult? Function(Module module)? lookupExistingResult,
+      Map<Module, SynthesisResult>? existingResults});
 }

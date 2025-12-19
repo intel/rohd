@@ -11,8 +11,8 @@
 
 import 'package:rohd/rohd.dart';
 
-import 'package:rohd/src/synthesizers/schematic/module_map.dart';
 import 'package:rohd/src/synthesizers/schematic/schematic_primitives.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_synthesis_result.dart';
 
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (a.length != b.length) {
@@ -81,15 +81,14 @@ class ConstantHandler {
   ///
   /// Parameters:
   /// - [module]: The module being processed
-  /// - [map]: The ModuleMap for this module (kept `dynamic` to avoid
-  ///   circular type dependencies with schematic_dumper)
   /// - [internalNetIds]: Map to populate with constant Logic → IDs
   /// - [ports]: The ports map (for name collision avoidance)
   /// - [nextIdRef]: Reference to the next available ID (will be mutated)
   /// - [isTop]: Whether this is the top-level module
   ConstantCollectionResult collectConstants({
     required Module module,
-    required ModuleMap map,
+    required List<Module> childModules,
+    required List<SchematicSynthesisResult?> childResultsList,
     required Map<Logic, List<Object?>> internalNetIds,
     required Map<String, Map<String, Object?>> ports,
     required List<int> nextIdRef, // Use list as mutable reference
@@ -114,9 +113,17 @@ class ConstantHandler {
       return ids;
     }
 
-    // Process each child module
-    for (final childMap in map.submodules.values) {
-      final childModule = childMap.module;
+    // Process each child module (use provided child lists/fallbacks)
+    for (var ci = 0; ci < childModules.length; ci++) {
+      final childModule = childModules[ci];
+      final childResult = childResultsList[ci];
+
+      // Derive child input list either from the authoritative child result
+      // (preferred) or directly from the child's declared inputs (for
+      // primitive/helper modules that may not produce a result).
+      final childInputs = (childResult != null)
+          ? childResult.portLogics.keys.where((l) => l.isInput).toList()
+          : childModule.inputs.values.toList();
 
       // Scan primitive child's internal signals for `Const` values.
       // For combinational-like primitives we allocate fresh internal IDs
@@ -152,12 +159,6 @@ class ConstantHandler {
       }
 
       // Collect constants used by child inputs.
-      final childInputs = <Logic>[];
-      for (final l in childMap.portLogics.keys) {
-        if (l.isInput) {
-          childInputs.add(l);
-        }
-      }
       // Collect per-input `Const`s: process each input's srcConnections and
       // handle combinational-internalization vs per-input driver creation.
       for (final input in childInputs) {
@@ -198,7 +199,7 @@ class ConstantHandler {
           .forEach((sig) {
         final hasScopeConsumer = sig.dstConnections.any((dst) {
           final pm = dst.parentModule;
-          return pm != null && (pm == module || map.submodules.containsKey(pm));
+          return pm != null && (pm == module || childModules.contains(pm));
         });
         if (isTop && !hasScopeConsumer) {
           return;
@@ -207,7 +208,7 @@ class ConstantHandler {
         final dsts = sig.dstConnections;
         final anyToCombOrSeq = dsts.any((d) {
           final pm = d.parentModule;
-          if (pm == null || !map.submodules.containsKey(pm)) {
+          if (pm == null || !childModules.contains(pm)) {
             return false;
           }
           final pmDefLower = pm.definitionName.toLowerCase();

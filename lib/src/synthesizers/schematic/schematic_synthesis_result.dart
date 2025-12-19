@@ -11,6 +11,7 @@ import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/schematic/schematic.dart';
+// ModuleMap removed — migration to child SchematicSynthesisResult objects.
 
 /// A [SynthesisResult] representing schematic output for a single [Module].
 ///
@@ -19,6 +20,12 @@ import 'package:rohd/src/synthesizers/schematic/schematic.dart';
 class SchematicSynthesisResult extends SynthesisResult {
   /// The ports map: name → {direction, bits}.
   final Map<String, Map<String, Object?>> ports;
+
+  /// Mapping of `Logic` port objects to assigned schematic bit ids.
+  final Map<Logic, List<int>> portLogics;
+
+  /// Set of Logic objects considered global for this module result.
+  final Set<Logic> globalLogics;
 
   /// The cells map: instance name → cell data.
   final Map<String, Map<String, Object?>> cells;
@@ -29,6 +36,13 @@ class SchematicSynthesisResult extends SynthesisResult {
   /// Attributes for this module (e.g., top marker).
   final Map<String, Object?> attributes;
 
+  /// Note: ModuleMap was removed from result; builder keeps a local fallback.
+
+  /// List of child module SchematicSynthesisResults (ordered like
+  /// `ModuleMap.submodules.keys`). Elements may be null when no existing
+  /// result was available for a child module.
+  final List<SchematicSynthesisResult?> childResults;
+
   /// Cached JSON string for comparison and output.
   late final String _cachedJson = _buildJson();
 
@@ -37,10 +51,67 @@ class SchematicSynthesisResult extends SynthesisResult {
     super.module,
     super.getInstanceTypeOfModule, {
     required this.ports,
+    required this.portLogics,
+    required this.globalLogics,
     required this.cells,
     required this.netnames,
     this.attributes = const {},
+    this.childResults = const [],
   });
+
+  /// Compute connected-component roots for `n` items given a list of union
+  /// operations as index pairs. Returns a list `roots` where `roots[i]` is the
+  /// canonical root index for element `i`.
+  static List<int> computeComponents(int n, Iterable<List<int>> unions,
+      {List<int>? priority}) {
+    final parent = List<int>.generate(n, (i) => i);
+    var pri = priority ?? List<int>.filled(n, 0);
+    if (pri.length < n) {
+      pri = [...pri, ...List<int>.filled(n - pri.length, 0)];
+    }
+    int find(int x) {
+      var r = x;
+      while (parent[r] != r) {
+        parent[r] = parent[parent[r]];
+        r = parent[r];
+      }
+      return r;
+    }
+
+    void unite(int a, int b) {
+      final ra = find(a);
+      final rb = find(b);
+      if (ra == rb) {
+        return;
+      }
+      final pra = pri[ra];
+      final prb = pri[rb];
+      final winner = (pra > prb) ? ra : (prb > pra ? rb : (ra < rb ? ra : rb));
+      final loser = (winner == ra) ? rb : ra;
+      parent[loser] = winner;
+    }
+
+    for (final u in unions) {
+      if (u.length >= 2) {
+        unite(u[0], u[1]);
+      }
+    }
+
+    return List<int>.generate(n, find);
+  }
+
+  /// Deep list equality (compare contents, not identity).
+  static bool listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   String _buildJson() {
     final moduleEntry = <String, Object?>{
@@ -89,28 +160,37 @@ class SchematicSynthesisResult extends SynthesisResult {
   }
 }
 
-/// Factory helper to build [SchematicSynthesisResult] from a [ModuleMap].
+/// Factory helper to build [SchematicSynthesisResult].
 ///
-/// This extracts the logic from SchematicDumper.buildModuleEntryHierarchy to
-/// handle one module level without recursion.
+/// Extracted from SchematicDumper.buildModuleEntryHierarchy to handle one
+/// module level without recursion.
 class SchematicSynthesisResultBuilder {
   /// The module to synthesize.
   final Module module;
 
-  /// The ModuleMap for this module.
-  final ModuleMap map;
-
   /// Whether to filter const-only inputs to combinational primitives.
   final bool filterConstInputsToCombinational;
+
+  /// Optional set of resolved global logics (from synthesizer.prepare())
+  /// to be considered when computing reachable-from-global sets.
+  final Set<Logic> resolvedGlobalLogics;
 
   /// Function to get instance type names for submodules.
   final String Function(Module) getInstanceTypeOfModule;
 
+  /// Optional callback to lookup an existing `SynthesisResult` for a module.
+  final SynthesisResult? Function(Module module)? lookupExistingResult;
+
+  /// Optional map of existing results keyed by Module for fast access.
+  final Map<Module, SynthesisResult>? existingResults;
+
   /// Creates a builder for [module].
   SchematicSynthesisResultBuilder({
     required this.module,
-    required this.map,
     required this.getInstanceTypeOfModule,
+    this.resolvedGlobalLogics = const {},
+    this.lookupExistingResult,
+    this.existingResults,
     this.filterConstInputsToCombinational = false,
   });
 
@@ -125,6 +205,35 @@ class SchematicSynthesisResultBuilder {
       attr['top'] = 1;
     }
 
+    // Prepare child SchematicSynthesisResults lookup aligned with the
+    // module's declared submodules so iteration matches the Module's
+    // declared child order (helps when ModuleMap ordering differs).
+    final childModules = module.subModules.toList();
+    final childResultsList = <SchematicSynthesisResult?>[
+      for (final m in childModules)
+        (existingResults != null)
+            ? existingResults![m] as SchematicSynthesisResult?
+            : (lookupExistingResult != null)
+                ? lookupExistingResult!(m) as SchematicSynthesisResult?
+                : null
+    ];
+    // Allow null entries for children that do not generate definitions
+    // (primitives or modules synthesized inline). For children that do
+    // generate definitions, a SchematicSynthesisResult should already
+    // be present in `existingResults` (provided by SynthBuilder).
+    for (var i = 0; i < childModules.length; i++) {
+      final child = childModules[i];
+      final res = childResultsList[i];
+      final typeName = getInstanceTypeOfModule(child);
+      if (typeName != '*NONE*' && res == null) {
+        throw StateError('Missing SchematicSynthesisResult for child '
+            '${child.name}; builder requires child results to be available.');
+      }
+    }
+    // No ModuleMap fallbacks: require child results to be present.
+    final internalLogicsFallback = <Logic, List<int>>{};
+    // childResultsList is aligned with childModules; iterate by index.
+
     // Emit ports (names + directions)
     void addPorts(Map<String, Logic> portMap, String dir) {
       for (final p in portMap.entries) {
@@ -138,17 +247,64 @@ class SchematicSynthesisResultBuilder {
 
     // Assign IDs to internal nets (child outputs + constants)
     final internalNetIds = <Logic, List<Object?>>{};
-    final maxPortId = map.portLogics.values
-        .expand((ids) => ids)
-        .whereType<int>()
-        .fold<int>(-1, (m, id) => id > m ? id : m);
-    var nextId = maxPortId + 1;
 
-    // Assign IDs to each child's output ports
-    for (final childMap in map.submodules.values) {
-      final childModule = childMap.module;
+    // Compute port-level schematic ids locally (same algorithm used by
+    // ModuleMap) so the builder can operate without consulting
+    // `moduleMap.portLogics` directly.
+    final portLogicsLocal = <Logic, List<int>>{};
+    final portLogicsCandidates = <Logic>[
+      ...module.inputs.values,
+      ...module.outputs.values,
+      ...module.inOuts.values
+    ];
+
+    // Compute transitive set of signals reachable from globals aggregated
+    // from child results. Require child results to be present; throw early
+    // if any are missing.
+    // Start with synthesizer-provided resolved globals if any.
+    final reachableFromGlobals = <Logic>{}..addAll(resolvedGlobalLogics);
+    for (var ci = 0; ci < childModules.length; ci++) {
+      final childResult = childResultsList[ci];
+      if (childResult == null) {
+        continue;
+      }
+      for (final g in childResult.globalLogics) {
+        if (!reachableFromGlobals.contains(g)) {
+          final visitQueue = <Logic>[g];
+          while (visitQueue.isNotEmpty) {
+            final cur = visitQueue.removeLast();
+            if (reachableFromGlobals.contains(cur)) {
+              continue;
+            }
+            reachableFromGlobals.add(cur);
+            for (final dst in cur.dstConnections) {
+              if (!reachableFromGlobals.contains(dst)) {
+                visitQueue.add(dst);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    var nextId = 0;
+    for (final logic in portLogicsCandidates) {
+      if (reachableFromGlobals.contains(logic)) {
+        continue;
+      }
+      final ids = List<int>.generate(logic.width, (_) => nextId++);
+      portLogicsLocal[logic] = ids;
+    }
+
+    // Assign IDs to each child's output ports by walking the child results
+    // list produced by recursion so we rely on synthesized results rather
+    // than performing fresh lookups.
+    for (var ci = 0; ci < childModules.length; ci++) {
+      final childModule = childModules[ci];
+      final childResult = childResultsList[ci];
+      final childGlobalSet = childResult?.globalLogics ?? <Logic>{};
       for (final output in childModule.outputs.values) {
-        if (childMap.globalLogics.contains(output)) {
+        if (childGlobalSet.contains(output)) {
           continue;
         }
         final ids = List<int>.generate(output.width, (_) => nextId++);
@@ -161,7 +317,8 @@ class SchematicSynthesisResultBuilder {
     final constHandler = ConstantHandler();
     final constResult = constHandler.collectConstants(
       module: module,
-      map: map,
+      childModules: childModules,
+      childResultsList: childResultsList,
       internalNetIds: internalNetIds,
       ports: ports,
       nextIdRef: nextIdRef,
@@ -174,7 +331,8 @@ class SchematicSynthesisResultBuilder {
     final passHandler = PassThroughHandler();
     final passResult = passHandler.collectPassThroughs(
       module: module,
-      map: map,
+      childModules: childModules,
+      childResultsList: childResultsList,
       internalNetIds: internalNetIds,
       ports: ports,
       nextIdRef: nextIdRef,
@@ -192,7 +350,7 @@ class SchematicSynthesisResultBuilder {
       if (!visited.add(logic)) {
         return;
       }
-      if (map.portLogics.containsKey(logic) ||
+      if (portLogicsLocal.containsKey(logic) ||
           internalNetIds.containsKey(logic)) {
         return;
       }
@@ -202,8 +360,13 @@ class SchematicSynthesisResultBuilder {
       }
     }
 
-    for (final childMap in map.submodules.values) {
-      for (final input in childMap.module.inputs.values) {
+    for (var ci = 0; ci < childModules.length; ci++) {
+      final childModule = childModules[ci];
+      final childResult = childResultsList[ci];
+      final inputs = childResult != null
+          ? childResult.module.inputs.values
+          : childModule.inputs.values;
+      for (final input in inputs) {
         final visited = <Logic>{};
         for (final src in input.srcConnections) {
           collectIntermediates(src, visited);
@@ -211,7 +374,7 @@ class SchematicSynthesisResultBuilder {
       }
     }
 
-    for (final portLogic in map.portLogics.keys) {
+    for (final portLogic in portLogicsLocal.keys) {
       if (module.outputs.values.contains(portLogic) &&
           portLogic is! LogicStructure) {
         final visited = <Logic>{};
@@ -223,7 +386,7 @@ class SchematicSynthesisResultBuilder {
 
     // Build union-find on all Logics
     final allLogics = <Logic>[
-      ...map.portLogics.keys,
+      ...portLogicsLocal.keys,
       ...internalNetIds.keys,
       ...intermediateLogics,
     ];
@@ -242,18 +405,19 @@ class SchematicSynthesisResultBuilder {
       }
     }
 
-    final cellRoots = computeComponents(allLogics.length, cellUnions);
+    final cellRoots = SchematicSynthesisResult.computeComponents(
+        allLogics.length, cellUnions);
 
     // Build root → canonical IDs mapping
     final rootToIds = <int, List<Object?>>{};
 
-    for (final portLogic in map.portLogics.keys) {
+    for (final portLogic in portLogicsLocal.keys) {
       final idx = logicIndex[portLogic];
       if (idx == null) {
         continue;
       }
       final root = cellRoots[idx];
-      final ids = map.portLogics[portLogic];
+      final ids = portLogicsLocal[portLogic];
       if (ids != null && ids.isNotEmpty) {
         rootToIds.putIfAbsent(root, () => ids);
       }
@@ -292,11 +456,11 @@ class SchematicSynthesisResultBuilder {
         final idx = logicIndex[l];
         if (idx != null) {
           return rootToIds[cellRoots[idx]] ??
-              map.portLogics[l] ??
+              portLogicsLocal[l] ??
               internalNetIds[l] ??
               <Object?>[];
         }
-        return map.portLogics[l] ?? internalNetIds[l] ?? <Object?>[];
+        return portLogicsLocal[l] ?? internalNetIds[l] ?? <Object?>[];
       }
 
       if (internalNetIds.containsKey(childLogic)) {
@@ -325,7 +489,7 @@ class SchematicSynthesisResultBuilder {
     }
 
     var nextInternalNetId = 0;
-    for (final ids in map.portLogics.values) {
+    for (final ids in portLogicsLocal.values) {
       for (final id in ids) {
         if (id >= nextInternalNetId) {
           nextInternalNetId = id + 1;
@@ -341,8 +505,9 @@ class SchematicSynthesisResultBuilder {
     }
 
     // Emit cells
-    for (final childMap in map.submodules.values) {
-      final childModule = childMap.module;
+    for (var ci = 0; ci < childModules.length; ci++) {
+      final childModule = childModules[ci];
+
       final cellKey = childModule.hasBuilt
           ? childModule.uniqueInstanceName
           : childModule.name;
@@ -393,7 +558,6 @@ class SchematicSynthesisResultBuilder {
           if (prim != null) {
             _emitPrimitiveCell(
               childModule: childModule,
-              childMap: childMap,
               cellKey: cellKey,
               prim: prim,
               cells: cells,
@@ -416,7 +580,6 @@ class SchematicSynthesisResultBuilder {
         // Handle primitive cells
         _emitPrimitiveCell(
           childModule: childModule,
-          childMap: childMap,
           cellKey: cellKey,
           prim: prim,
           cells: cells,
@@ -473,19 +636,17 @@ class SchematicSynthesisResultBuilder {
         }
       }
     }
-    final roots = computeComponents(signals.length, unions);
+    final roots =
+        SchematicSynthesisResult.computeComponents(signals.length, unions);
 
     final bitIdToLogic = <int, Logic>{};
-    for (final e in map.portLogics.entries) {
+    for (final e in portLogicsLocal.entries) {
       for (final bitId in e.value) {
         bitIdToLogic[bitId] = e.key;
       }
     }
-    for (final e in map.internalLogics.entries) {
-      for (final bitId in e.value) {
-        bitIdToLogic[bitId] = e.key;
-      }
-    }
+    // No internalLogicsFallback entries to add; all internal ids are
+    // represented in `internalNetIds`.
     for (final e in internalNetIds.entries) {
       for (final bitId in e.value) {
         if (bitId is int) {
@@ -522,7 +683,7 @@ class SchematicSynthesisResultBuilder {
         continue;
       }
 
-      final portBitIds = List<int>.from(map.portLogics[logic] ?? <int>[]);
+      final portBitIds = List<int>.from(portLogicsLocal[logic] ?? <int>[]);
       entry.value['bits'] = portBitIds;
 
       final idx = indexOf[logic];
@@ -548,8 +709,8 @@ class SchematicSynthesisResultBuilder {
 
       final portBitIds = passResult.passThroughConnections.containsKey(logic)
           ? (internalNetIds[logic]?.whereType<int>().toList() ??
-              (map.portLogics[logic] ?? <int>[]))
-          : (map.portLogics[logic] ?? <int>[]);
+              (portLogicsLocal[logic] ?? <int>[]))
+          : (portLogicsLocal[logic] ?? <int>[]);
 
       entry.value['bits'] = portBitIds;
 
@@ -574,7 +735,7 @@ class SchematicSynthesisResultBuilder {
         continue;
       }
 
-      final portBitIds = map.portLogics[logic] ?? <int>[];
+      final portBitIds = portLogicsLocal[logic] ?? <int>[];
       entry.value['bits'] = portBitIds;
 
       final idx = indexOf[logic];
@@ -586,7 +747,7 @@ class SchematicSynthesisResultBuilder {
     }
 
     // Add named internal signals to rootToPreferred
-    final portLogicsSet = map.portLogics.keys.toSet();
+    final portLogicsSet = portLogicsLocal.keys.toSet();
     signals.asMap().entries.where((e) {
       final logic = e.value;
       return !portLogicsSet.contains(logic) &&
@@ -601,8 +762,8 @@ class SchematicSynthesisResultBuilder {
       final inn = e.value;
       final outName = out.name;
       final inName = passResult.passThroughNames[outName] ?? inn.name;
-      final inIds = map.portLogics[inn] ?? <int>[];
-      final outIds = internalNetIds[out] ?? map.portLogics[out] ?? <int>[];
+      final inIds = portLogicsLocal[inn] ?? <int>[];
+      final outIds = internalNetIds[out] ?? portLogicsLocal[out] ?? <int>[];
       if (inIds.isEmpty || outIds.isEmpty) {
         continue;
       }
@@ -729,7 +890,7 @@ class SchematicSynthesisResultBuilder {
           }
         }
 
-        return map.portLogics[elem] ?? map.internalLogics[elem];
+        return portLogicsLocal[elem] ?? internalLogicsFallback[elem];
       }
 
       final elemLists = struct.elements.map(findElemIds).toList();
@@ -783,13 +944,15 @@ class SchematicSynthesisResultBuilder {
       cells: cells,
       netnames: netnames,
       attributes: attr,
+      portLogics: portLogicsLocal,
+      globalLogics: reachableFromGlobals,
+      childResults: childResultsList,
     );
   }
 
   /// Emits a primitive cell into [cells].
   void _emitPrimitiveCell({
     required Module childModule,
-    required ModuleMap childMap,
     required String cellKey,
     required PrimitiveDescriptor prim,
     required Map<String, Map<String, Object?>> cells,
@@ -864,7 +1027,7 @@ class SchematicSynthesisResultBuilder {
             prim,
             (primCell['parameters']! as Map).cast<String, Object?>(),
             portDirs,
-            (m) => map.submodules[m],
+            lookupExistingResult ?? ((Module _) => null),
             idsForChildLogic);
 
     if (filterConstInputsToCombinational &&

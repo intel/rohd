@@ -8,8 +8,8 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/synthesizers/schematic/module_map.dart';
 import 'package:rohd/src/synthesizers/schematic/module_utils.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_synthesis_result.dart';
 
 /// Descriptor describing how a ROHD helper module maps to a Yosys
 /// primitive type.
@@ -508,25 +508,43 @@ class Primitives {
   }
 
   /// Convenience wrapper used by the dumper when the lookup for ROHD port
-  /// ids needs to resolve ports via a child ModuleMap (or fallback to the
-  /// child module's own ports). The [idsForChildLogic] callback should
-  /// accept a `Logic` and return the corresponding bit id list. The
-  /// [childMapLookup] callback, when provided, should return the ModuleMap
-  /// for a given child module or null if not present.
+  /// ids needs to resolve ports via either a previously-produced
+  /// `SynthesisResult` for the child (preferred) or a child `ModuleMap`
+  /// (fallback). The [idsForChildLogic] callback should accept a `Logic`
+  /// and return the corresponding bit id list. The [childResultLookup]
+  /// callback, when provided, should return the `SynthesisResult` for a
+  /// given child module or null if not present. This allows using cached
+  /// synthesis outputs rather than rebuilding ModuleMaps.
   Map<String, List<Object?>> buildPrimitiveConnectionsWithChildLogicLookup(
       Module childModule,
       PrimitiveDescriptor prim,
       Map<String, Object?> parameters,
       Map<String, String> portDirs,
-      ModuleMap? Function(Module) childMapLookup,
+      SynthesisResult? Function(Module) childResultLookup,
       List<Object?> Function(Logic) idsForChildLogic) {
     // Adapter: convert rohdName -> idsForRohd by resolving the Logic
-    // either from the child ModuleMap (if available) or directly from
-    // the child module.
+    // either from the SchematicSynthesisResult (if available), the
+    // child ModuleMap contained within that result, or directly from
+    // the child module as a last resort.
     List<Object?> idsForRohd(String rohdName) {
-      final childMap = childMapLookup(childModule);
-      final logic =
-          childMap?.module.ports[rohdName] ?? childModule.ports[rohdName];
+      final res = childResultLookup(childModule);
+      // If we have a SchematicSynthesisResult, try to use its port map.
+      if (res is SchematicSynthesisResult) {
+        final ports = res.ports;
+        if (ports.containsKey(rohdName)) {
+          // ports[rohdName]['bits'] is a List<Object?> of bit ids
+          final bits = (ports[rohdName]! as Map)['bits'];
+          if (bits is List) {
+            return bits.cast<Object?>();
+          }
+        }
+      }
+
+      // Fallback: try to obtain the logic from the child's ModuleMap if
+      // the result provides a way (many SchematicSynthesisResults do not
+      // expose ModuleMap directly), otherwise use the module's port
+      // reference and resolve via idsForChildLogic.
+      final logic = childModule.ports[rohdName];
       if (logic == null) {
         return <Object?>[];
       }

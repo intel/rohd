@@ -137,7 +137,9 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
   @override
   SynthesisResult synthesize(
-      Module module, String Function(Module module) getInstanceTypeOfModule) {
+      Module module, String Function(Module module) getInstanceTypeOfModule,
+      {SynthesisResult? Function(Module module)? lookupExistingResult,
+      Map<Module, SynthesisResult>? existingResults}) {
     assert(
         module is! SystemVerilog ||
             module.generatedDefinitionType != DefinitionGenerationType.none,
