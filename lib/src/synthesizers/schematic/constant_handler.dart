@@ -11,7 +11,8 @@
 
 import 'package:rohd/rohd.dart';
 
-import 'package:rohd/src/synthesizers/schematic/schematic_primitives.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_gates.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_mixins.dart';
 import 'package:rohd/src/synthesizers/schematic/schematic_synthesis_result.dart';
 
 bool _listEquals<T>(List<T> a, List<T> b) {
@@ -129,7 +130,10 @@ class ConstantHandler {
       // For combinational-like primitives we allocate fresh internal IDs
       // so they do not become shared pattern-level $const cells; for
       // other primitives we register const patterns as before.
-      final childPrimDesc = Primitives.instance.lookupForModule(childModule);
+      final childPrimDesc = (childModule is Schematic
+              ? childModule.primitiveDescriptor()
+              : null) ??
+          CoreGatePrimitives.instance.lookupByType(childModule);
       final childIsPrimitive = childPrimDesc != null;
       // Only treat explicit ROHD helper modules with definitionName
       // 'Combinational' or 'Sequential' as candidates for the const-input

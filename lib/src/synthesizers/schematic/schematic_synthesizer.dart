@@ -69,7 +69,8 @@ class SchematicSynthesizer extends Synthesizer {
   ///
   /// - [filterConstInputsToCombinational]: When true, filters out constant-only
   ///   inputs to combinational primitives.
-  /// - [globalPortNames]: Port names on the top module to treat as global.
+  /// - [globalPortNames]: Port names on the top module to treat as global
+  ///   (e.g., clock, reset).
   /// - [globalLogics]: Explicit [Logic] objects to treat as global (takes
   ///   precedence over [globalPortNames]).
   SchematicSynthesizer({
@@ -121,6 +122,11 @@ class SchematicSynthesizer extends Synthesizer {
 
   @override
   bool generatesDefinition(Module module) {
+    // Sequential is handled as a primitive via SequentialSchematic
+    if (module.runtimeType.toString() == 'Sequential') {
+      return false;
+    }
+
     // Check if module uses Schematic mixin and controls definition generation
     if (module is Schematic) {
       return module.schematicDefinitionType !=
@@ -128,7 +134,7 @@ class SchematicSynthesizer extends Synthesizer {
     }
 
     // Primitives don't generate separate definitions - they're inlined
-    final prim = Primitives.instance.lookupForModule(module);
+    final prim = CoreGatePrimitives.instance.lookupByType(module);
     return prim == null;
   }
 
@@ -426,13 +432,9 @@ class SchematicSynthesizer extends Synthesizer {
       }
     }
 
-    // Primitive input driver checks
+    // Primitive input driver checks: use module-level indication first.
     for (final sub in module.subModules) {
-      var prim = Primitives.instance.lookupByDefinitionName(sub.definitionName);
-      if (prim == null && sub.subModules.isEmpty) {
-        prim = Primitives.instance.lookupForModule(sub);
-      }
-      if (prim == null) {
+      if (!Schematic.isPrimitiveModule(sub)) {
         continue;
       }
       for (final inLogic in sub.inputs.values) {

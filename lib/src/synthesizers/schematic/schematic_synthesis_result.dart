@@ -551,31 +551,37 @@ class SchematicSynthesisResultBuilder {
           continue;
         }
 
-        // If schematicCell returns null but isSchematicPrimitive is true,
-        // fall through to primitive handling
-        if (childModule.isSchematicPrimitive) {
-          final prim = Primitives.instance.lookupForModule(childModule);
-          if (prim != null) {
-            _emitPrimitiveCell(
-              childModule: childModule,
-              cellKey: cellKey,
-              prim: prim,
-              cells: cells,
-              idsForChildLogic: idsForChildLogic,
-              constResult: constResult,
-              syntheticNets: syntheticNets,
-              nextInternalNetIdGetter: () => nextInternalNetId,
-              nextInternalNetIdSetter: (v) => nextInternalNetId = v,
-              internalNetIds: internalNetIds,
-            );
-            continue;
-          }
+        // If schematicCell returns null, allow fallback primitive handling
+        // later in the emission flow. Modules that want primitive-like
+        // behavior should return a non-null `schematicCell` here.
+      }
+
+      // Special handling for Sequential module without requiring mixin
+      if (childModule.runtimeType.toString() == 'Sequential') {
+        final emitted = SequentialSchematic.emitCells(
+          module: childModule,
+          ports: childModule.ports,
+          internalNetIds: internalNetIds,
+          idsForChildLogic: idsForChildLogic,
+          cells: cells,
+          syntheticNets: syntheticNets,
+          nextInternalNetIdGetter: () => nextInternalNetId,
+          nextInternalNetIdSetter: (v) => nextInternalNetId = v,
+        );
+        if (emitted) {
+          continue;
         }
       }
 
       // Check if this is a primitive - if so, skip emitting a module instance
       // and instead emit the primitive cell directly
-      final prim = Primitives.instance.lookupForModule(childModule);
+      PrimitiveDescriptor? prim;
+      if (childModule is Schematic) {
+        prim = childModule.primitiveDescriptor() ??
+            CoreGatePrimitives.instance.lookupByType(childModule);
+      } else {
+        prim = CoreGatePrimitives.instance.lookupByType(childModule);
+      }
       if (prim != null) {
         // Handle primitive cells
         _emitPrimitiveCell(
@@ -963,20 +969,39 @@ class SchematicSynthesisResultBuilder {
     required void Function(int) nextInternalNetIdSetter,
     required Map<Logic, List<Object?>> internalNetIds,
   }) {
-    // Handle Sequential modules
-    final seqHandler = SequentialHandler();
-    final handled = seqHandler.handleSequential(
-      childModule: childModule,
-      ports: childModule.ports,
-      internalNetIds: internalNetIds,
-      idsForChildLogic: idsForChildLogic,
-      cells: cells,
-      syntheticNets: syntheticNets,
-      nextInternalNetIdGetter: nextInternalNetIdGetter,
-      nextInternalNetIdSetter: nextInternalNetIdSetter,
-    );
-    if (handled) {
-      return;
+    // Give the module itself the first opportunity to emit schematic cells
+    // for its instantiation (modules may implement `emitSchematicCells`).
+    if (childModule is Schematic) {
+      final emitted = childModule.emitSchematicCells(
+        ports: childModule.ports,
+        internalNetIds: internalNetIds,
+        idsForChildLogic: idsForChildLogic,
+        cells: cells,
+        syntheticNets: syntheticNets,
+        nextInternalNetIdGetter: nextInternalNetIdGetter,
+        nextInternalNetIdSetter: nextInternalNetIdSetter,
+      );
+      if (emitted) {
+        return;
+      }
+    }
+
+    // Allow the module to provide the final primitive cell directly.
+    if (childModule is Schematic) {
+      final modulePrimCell = childModule.schematicPrimitiveCell(
+        prim,
+        idsForChildLogic,
+        internalNetIds: internalNetIds,
+        syntheticNets: syntheticNets,
+        nextInternalNetIdGetter: nextInternalNetIdGetter,
+        nextInternalNetIdSetter: nextInternalNetIdSetter,
+        filterConstInputsToCombinational: filterConstInputsToCombinational,
+        lookupExistingResult: lookupExistingResult,
+      );
+      if (modulePrimCell != null) {
+        cells[cellKey] = modulePrimCell;
+        return;
+      }
     }
 
     if (prim.useRawPortNames) {
@@ -1016,13 +1041,12 @@ class SchematicSynthesisResultBuilder {
       return;
     }
 
-    final primCell =
-        Primitives.instance.computePrimitiveCell(childModule, prim);
+    final primCell = PrimitiveHelper.computePrimitiveCell(childModule, prim);
     final portDirs = Map<String, String>.from(
         (primCell['port_directions']! as Map).cast<String, String>());
 
-    final connMap = Primitives.instance
-        .buildPrimitiveConnectionsWithChildLogicLookup(
+    final connMap =
+        PrimitiveHelper.buildPrimitiveConnectionsWithChildLogicLookup(
             childModule,
             prim,
             (primCell['parameters']! as Map).cast<String, Object?>(),

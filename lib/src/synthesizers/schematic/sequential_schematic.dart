@@ -1,27 +1,36 @@
 // Copyright (C) 2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// sequential_handler.dart
-// Class for handling [Sequential] child modules in the schematic
-// dumper. This encapsulates simple-vs-complex mapping and synthetic net
-// allocation for mux/dff generation.
+// sequential_schematic.dart
+// Schematic synthesis support for Sequential module.
 //
-// 2025 December 16
+// 2025 December 20
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/schematic/schematic_mixins.dart';
 
-/// Handler to process [Sequential] child modules in the schematic
-/// dumper.
-class SequentialHandler {
-  /// Creates a [SequentialHandler].
-  SequentialHandler();
+/// Schematic support for [Sequential] modules.
+///
+/// This provides custom cell emission logic for Sequential blocks without
+/// modifying the core Sequential class. The logic handles:
+/// - Simple case: single trigger/input/output → emits $dff
+/// - Complex case: multiple triggers/inputs/outputs → emits $mux + $dff
+/// - Fallback: emits $sequential with raw port mapping
+class SequentialSchematic {
+  SequentialSchematic._();
 
-  /// Process a [Sequential]-type [Module] child, emitting cells and registering
-  /// any synthetic nets into [syntheticNets]. Returns true if the child was
-  /// processed (and the caller should `continue`), false otherwise.
-  bool handleSequential({
-    required Module childModule,
+  /// Descriptor for Sequential primitives.
+  static const PrimitiveDescriptor descriptor = PrimitiveDescriptor(
+    primitiveName: r'$sequential',
+    useRawPortNames: true,
+  );
+
+  /// Emit schematic cells for a Sequential module.
+  ///
+  /// Returns `true` if cells were emitted, `false` otherwise.
+  static bool emitCells({
+    required Module module,
     required Map<String, Logic> ports,
     required Map<Logic, List<Object?>> internalNetIds,
     required List<Object?> Function(Logic) idsForChildLogic,
@@ -30,10 +39,6 @@ class SequentialHandler {
     required int Function() nextInternalNetIdGetter,
     required void Function(int) nextInternalNetIdSetter,
   }) {
-    if (childModule.definitionName != 'Sequential') {
-      return false;
-    }
-
     final triggers = <String, Logic>{};
     final dataInputs = <String, Logic>{};
     final dataOutputs = <String, Logic>{};
@@ -50,9 +55,7 @@ class SequentialHandler {
       }
     }
 
-    final cellKey = childModule.hasBuilt
-        ? childModule.uniqueInstanceName
-        : childModule.name;
+    final cellKey = module.hasBuilt ? module.uniqueInstanceName : module.name;
 
     // Simple case: 1 trigger, 1 data input, 1 output.
     if (triggers.length == 1 &&
