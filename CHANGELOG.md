@@ -7,7 +7,7 @@
 - Fixed a bug where `packed` on output port `LogicStructure`s being accessed both inside and outside of its parent module could cause build trace failures (<https://github.com/intel/rohd/pull/631>).
 - Fixed a bug where one-bit `LogicStructure` ports could generate illegal SystemVerilog with slicing (<https://github.com/intel/rohd/pull/629>).
 - Fixed a bug where `LogicValue.ofRadixString` could return incorrect values for invalid inputs instead of throwing an exception (<https://github.com/intel/rohd/issues/616>).
-- Fixed behavior of `PairInterface`s so that `driveOther, `receiveOther`, etc. properly apply recursively to sub-interfaces as well (<https://github.com/intel/rohd/pull/628>).  Note that any code that relied on or expected this missing capability may need to be updated.
+- Fixed behavior of `PairInterface`s so that `driveOther`, `receiveOther`, etc. properly apply recursively to sub-interfaces as well (<https://github.com/intel/rohd/pull/628>).  Note that any code that relied on or expected this missing capability may need to be updated.
 - Deprecated `PairInterface.modify` in favor of using `uniquify` on `PairInterface.addSubInterface` (<https://github.com/intel/rohd/pull/620>).
 - Optimized simulation performance for some designs that have many glitchy `Conditional`s (<https://github.com/intel/rohd/pull/623>).
 - Fixed an error message for SSA checks to be more helpful when illegal signal reuse occurs (<https://github.com/intel/rohd/pull/625>).
