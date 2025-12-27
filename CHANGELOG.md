@@ -1,3 +1,20 @@
+## 0.6.7
+
+- Significantly improved and simplified generated outputs (including SystemVerilog) by reducing unnecessary signal slicing and swizzling operations and leaving unconnected ports on module instantiations empty (<https://github.com/intel/rohd/pull/638>).
+- Enhanced generated SystemVerilog to include annotated bit ranges in comments for swizzles, improving readability and debugability (<https://github.com/intel/rohd/pull/627>).
+- Fixed a bug where, in some rare scenarios, partial array assignments could cause missing assignments in generated outputs (<https://github.com/intel/rohd/pull/637>).
+- Fixed a bug where non-port `LogicStructure`s that contain elements which are ports could cause incorrect name selection in generated outputs (<https://github.com/intel/rohd/pull/630>).
+- Fixed a bug where `packed` on output port `LogicStructure`s being accessed both inside and outside of its parent module could cause build trace failures (<https://github.com/intel/rohd/pull/631>).
+- Fixed a bug where one-bit `LogicStructure` ports could generate illegal SystemVerilog with slicing (<https://github.com/intel/rohd/pull/629>).
+- Fixed a bug where `LogicValue.ofRadixString` could return incorrect values for invalid inputs instead of throwing an exception (<https://github.com/intel/rohd/issues/616>).
+- Fixed behavior of `PairInterface`s so that `driveOther`, `receiveOther`, etc. properly apply recursively to sub-interfaces as well (<https://github.com/intel/rohd/pull/628>).  Note that any code that relied on or expected this missing capability may need to be updated.
+- Deprecated `PairInterface.modify` in favor of using `uniquify` on `PairInterface.addSubInterface` (<https://github.com/intel/rohd/pull/620>).
+- Optimized simulation performance for some designs that have many glitchy `Conditional`s (<https://github.com/intel/rohd/pull/623>).
+- Fixed an error message for SSA checks to be more helpful when illegal signal reuse occurs (<https://github.com/intel/rohd/pull/625>).
+- Improved SSA error messages and debugability with additional hierarchy context (<https://github.com/intel/rohd/pull/635>).
+- Added the `hierarchicalName` API to `Module` to make it easier to get the full hierarchical name of a module instance (<https://github.com/intel/rohd/pull/635>).
+- Improved error messages for `WriteAfterReadException`s to include a trace of conditional assignments involved in the execution (<https://github.com/intel/rohd/pull/624>).
+
 ## 0.6.6
 
 - Added `clone`ing for `Interface`s and `Logic`s and APIs that leverage the new capabilities (<https://github.com/intel/rohd/pull/614>).
