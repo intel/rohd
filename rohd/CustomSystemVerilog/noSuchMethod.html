@@ -55,7 +55,7 @@
     <section class="multi-line-signature">
       
 <span class="returntype">dynamic</span>
-<span class="name ">noSuchMethod</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.2/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span></li>
+<span class="name ">noSuchMethod</span>(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="noSuchMethod-param-invocation"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.7/dart-core/Invocation-class.html">Invocation</a></span> <span class="parameter-name">invocation</span></span></li>
 </ol>)
 
       <div class="features"><span class="feature">inherited</span></div>
@@ -70,11 +70,11 @@ doesn't exist on the receiving object. Example:</p>
 object.add(42); // Statically allowed, run-time error
 </code></pre>
 <p>This invalid code will invoke the <code>noSuchMethod</code> method
-of the integer <code>1</code> with an <a href="https://api.dart.dev/stable/3.10.2/dart-core/Invocation-class.html">Invocation</a> representing the
+of the integer <code>1</code> with an <a href="https://api.dart.dev/stable/3.10.7/dart-core/Invocation-class.html">Invocation</a> representing the
 <code>.add(42)</code> call and arguments (which then throws).</p>
-<p>Classes can override <a href="https://api.dart.dev/stable/3.10.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a> to provide custom behavior
+<p>Classes can override <a href="https://api.dart.dev/stable/3.10.7/dart-core/Object/noSuchMethod.html">noSuchMethod</a> to provide custom behavior
 for such invalid dynamic invocations.</p>
-<p>A class with a non-default <a href="https://api.dart.dev/stable/3.10.2/dart-core/Object/noSuchMethod.html">noSuchMethod</a> invocation can also
+<p>A class with a non-default <a href="https://api.dart.dev/stable/3.10.7/dart-core/Object/noSuchMethod.html">noSuchMethod</a> invocation can also
 omit implementations for members of its interface.
 Example:</p>
 <pre class="language-dart"><code class="language-dart">class MockList&lt;T&gt; implements List&lt;T&gt; {
@@ -97,7 +97,7 @@ so this code will <code>log</code> an invocation similar to
 it becomes the result of the original invocation.
 If the value is not of a type that can be returned by the original
 invocation, a type error occurs at the invocation.</p>
-<p>The default behavior is to throw a <a href="https://api.dart.dev/stable/3.10.2/dart-core/NoSuchMethodError-class.html">NoSuchMethodError</a>.</p>
+<p>The default behavior is to throw a <a href="https://api.dart.dev/stable/3.10.7/dart-core/NoSuchMethodError-class.html">NoSuchMethodError</a>.</p>
 </section>
 
 
@@ -134,7 +134,7 @@ external dynamic noSuchMethod(Invocation invocation);</code></pre>
 <footer>
   <span class="no-break">
     rohd
-      0.6.6
+      0.6.7
   </span>
   
 </footer>
