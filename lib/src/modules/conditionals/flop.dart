@@ -31,6 +31,7 @@ Logic flop(
   Logic? reset,
   dynamic resetValue,
   bool asyncReset = false,
+  String? label,
 }) =>
     FlipFlop(
       clk,
@@ -39,6 +40,7 @@ Logic flop(
       reset: reset,
       resetValue: resetValue,
       asyncReset: asyncReset,
+      label: label,
     ).q;
 
 /// Represents a single flip-flop with no reset.
@@ -92,6 +94,9 @@ class FlipFlop extends Module with SystemVerilog {
   /// reset. If no `reset` is provided, this will have no effect.
   final bool asyncReset;
 
+  /// An optional label for the blocks in this flop.
+  final String? label;
+
   /// Constructs a flip flop which is positive edge triggered on [clk].
   ///
   /// When optional [en] is provided, an additional input will be created for
@@ -115,6 +120,7 @@ class FlipFlop extends Module with SystemVerilog {
     dynamic resetValue,
     this.asyncReset = false,
     super.name = 'flipflop',
+    this.label,
   }) {
     if (clk.width != 1) {
       throw Exception('clk must be 1 bit');
@@ -146,7 +152,9 @@ class FlipFlop extends Module with SystemVerilog {
     var contents = [q < _d];
 
     if (_en != null) {
-      contents = [If(_en!, then: contents)];
+      contents = [
+        If(_en!, then: contents, ifLabel: label == null ? null : '${label}_en')
+      ];
     }
 
     Sequential(
@@ -156,6 +164,7 @@ class FlipFlop extends Module with SystemVerilog {
       asyncReset: asyncReset,
       resetValues:
           _reset != null ? {q: _resetValuePort ?? _resetValueConst} : null,
+      label: label,
     );
   }
 

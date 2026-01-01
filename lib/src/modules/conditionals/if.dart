@@ -11,6 +11,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
+import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A conditional block to execute only if [condition] is satisified.
 ///
@@ -22,8 +23,11 @@ class ElseIf {
   /// The [Conditional]s to execute if [condition] is satisfied.
   final List<Conditional> then;
 
+  /// An optional block label.
+  final String? label;
+
   /// If [condition] is 1, then [then] will be executed.
-  ElseIf(this.condition, this.then) {
+  ElseIf(this.condition, this.then, {this.label}) {
     if (condition.width != 1) {
       throw PortWidthMismatchException(condition, 1);
     }
@@ -32,7 +36,8 @@ class ElseIf {
   /// If [condition] is 1, then [then] will be executed.
   ///
   /// Use this constructor when you only have a single [then] condition.
-  ElseIf.s(Logic condition, Conditional then) : this(condition, [then]);
+  ElseIf.s(Logic condition, Conditional then, {String? label})
+      : this(condition, [then], label: label);
 }
 
 /// A conditional block to execute only if `condition` is satisified.
@@ -46,13 +51,14 @@ typedef Iff = ElseIf;
 class Else extends Iff {
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
-  Else(List<Conditional> then) : super(Const(1), then);
+  Else(List<Conditional> then, {String? label})
+      : super(Const(1), then, label: label);
 
   /// If none of the proceding [Iff] or [ElseIf] are executed, then
   /// [then] will be executed.
   ///
   /// Use this constructor when you only have a single [then] condition.
-  Else.s(Conditional then) : this([then]);
+  Else.s(Conditional then, {String? label}) : this([then], label: label);
 }
 
 /// Represents a chain of blocks of code to be conditionally executed, like
@@ -82,10 +88,14 @@ class If extends Conditional {
 
   /// If [condition] is high, then [then] executes, otherwise [orElse] is
   /// executed.
-  If(Logic condition, {List<Conditional>? then, List<Conditional>? orElse})
+  If(Logic condition,
+      {List<Conditional>? then,
+      List<Conditional>? orElse,
+      String? ifLabel,
+      String? elseLabel})
       : this.block([
-          Iff(condition, then ?? []),
-          if (orElse != null) Else(orElse),
+          Iff(condition, then ?? [], label: ifLabel),
+          if (orElse != null) Else(orElse, label: elseLabel),
         ]);
 
   /// If [condition] is high, then [then] is excutes,
@@ -198,10 +208,12 @@ class If extends Conditional {
               indent + 2, inputsNameMap, outputsNameMap, assignOperator))
           .join('\n');
       final condition = iff is! Else ? '($conditionName)' : '';
+      final iffLabel =
+          iff.label == null ? '' : ' : ${Sanitizer.sanitizeSV(iff.label!)}';
       verilog.write('''
-$padding$header$condition begin
+$padding$header$condition begin$iffLabel
 $ifContents
-${padding}end ''');
+${padding}end$iffLabel ''');
     }
     verilog.write('\n');
 
