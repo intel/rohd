@@ -83,7 +83,7 @@ class _OneInputUnaryGate extends Module with InlineSystemVerilog {
   final LogicValue Function(LogicValue a) _op;
   final String _opStr;
 
-  /// Constructs a unary gate for an abitrary custom functional implementation.
+  /// Constructs a unary gate for an arbitrary custom functional implementation.
   ///
   /// The function [_op] is executed as the custom functional behavior.  When
   /// this [Module] is in-lined as SystemVerilog, it will use [_opStr] as the
@@ -171,7 +171,7 @@ abstract class _TwoInputBitwiseGate extends Module with InlineSystemVerilog {
   /// expression to behave as a self-determined width.
   final bool _makeSelfDetermined;
 
-  /// Constructs a two-input bitwise gate for an abitrary custom functional
+  /// Constructs a two-input bitwise gate for an arbitrary custom functional
   /// implementation.
   ///
   /// The function [_op] is executed as the custom functional behavior.  When
@@ -269,7 +269,7 @@ abstract class _TwoInputComparisonGate extends Module with InlineSystemVerilog {
   /// The `String` representing the operation to perform in generated code.
   final String _opStr;
 
-  /// Constructs a two-input comparison gate for an abitrary custom functional
+  /// Constructs a two-input comparison gate for an arbitrary custom functional
   /// implementation.
   ///
   /// The function [_op] is executed as the custom functional behavior.  When
@@ -376,7 +376,7 @@ abstract class _ShiftGate extends Module with InlineSystemVerilog {
   /// If the shift amount is a constant, this will be set to that constant.
   late final LogicValue? _shiftAmountConstant;
 
-  /// Constructs a two-input shift gate for an abitrary custom functional
+  /// Constructs a two-input shift gate for an arbitrary custom functional
   /// implementation.
   ///
   /// The function [_op] is executed as the custom functional behavior.  When
@@ -641,7 +641,7 @@ class Multiply extends _TwoInputBitwiseGate {
             name: name, makeSelfDetermined: true);
 }
 
-/// A two-input divison module.
+/// A two-input division module.
 class Divide extends _TwoInputBitwiseGate {
   /// Calculates [in0] divided by [in1].
   ///
@@ -837,10 +837,10 @@ class Mux extends Module with InlineSystemVerilog {
   /// The control signal for this [Mux].
   late final Logic _control = input(_controlName);
 
-  /// [Mux] input propogated when [out] is `0`.
+  /// [Mux] input propagated when [out] is `0`.
   late final Logic _d0 = input(_d0Name);
 
-  /// [Mux] input propogated when [out] is `1`.
+  /// [Mux] input propagated when [out] is `1`.
   late final Logic _d1 = input(_d1Name);
 
   /// Output port of the [Mux].
@@ -930,7 +930,7 @@ class IndexGate extends Module with InlineSystemVerilog {
   /// The output of this gate.
   late final Logic selection = output(_selectionName);
 
-  /// Constructs a two-input bit index gate for an abitrary custom functional
+  /// Constructs a two-input bit index gate for an arbitrary custom functional
   /// implementation.
   ///
   /// The signal will be indexed by [index] as an output.

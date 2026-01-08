@@ -107,7 +107,7 @@ class _SequentialTriggerRaceTracker {
     _preNonTriggerClearAction = action;
   }
 
-  /// Whether a post-tick has been registered alreayd for this timestep.
+  /// Whether a post-tick has been registered already for this timestep.
   bool _registeredPostTick = false;
 
   /// Registers a post-tick event to clear the flags.

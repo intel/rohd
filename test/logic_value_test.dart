@@ -14,7 +14,7 @@ import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_excep
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
-// All logicvalues to support trying all possiblities
+// All logicvalues to support trying all possibilities
 const List<LogicValue> allLv = [
   LogicValue.zero,
   LogicValue.one,

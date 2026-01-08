@@ -158,7 +158,7 @@ class Case extends Conditional {
     }
 
     if (!expression.value.isValid) {
-      // if expression has X or Z, then propogate X's!
+      // if expression has X or Z, then propagate X's!
       driveX(drivenSignals);
       return;
     }

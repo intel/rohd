@@ -47,7 +47,7 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 void main() {
-    // your rohd implmentation here!
+    // your rohd implementation here!
 }
 ```
 

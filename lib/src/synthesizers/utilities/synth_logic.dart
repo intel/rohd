@@ -214,7 +214,7 @@ class SynthLogic {
       } else {
         assert(
             logics.length > 1,
-            'If there is a consant, but the const name is not allowed, '
+            'If there is a constant, but the const name is not allowed, '
             'there needs to be another option');
       }
     }

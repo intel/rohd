@@ -28,7 +28,7 @@ void main() {
     expect(actionTaken, equals(true));
   });
 
-  test('simulator supports cancelation of previously scheduled actions',
+  test('simulator supports cancellation of previously scheduled actions',
       () async {
     var actionCount = 0;
 

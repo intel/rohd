@@ -194,7 +194,7 @@ abstract class Simulator {
     _maxSimTime = newMaxSimTime;
   }
 
-  /// Registers an abritrary [action] to be executed at [timestamp] time.
+  /// Registers an arbitrary [action] to be executed at [timestamp] time.
   ///
   /// The [action], if it returns a [Future], will be `await`ed.
   static void registerAction(int timestamp, dynamic Function() action) {

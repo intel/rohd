@@ -19,7 +19,7 @@ import 'dart:collection';
 ///
 /// In situations where it is necessary to iterate through and frequently access
 /// elements by index, but also check whether a certain element is contained
-/// wihin it, and there are many elements, this implementation is substantially
+/// within it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
 class TraverseableCollection<T> with IterableMixin<T> {
   /// The underlying [Set] that stores the data.

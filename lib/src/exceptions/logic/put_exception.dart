@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // put_exception.dart
-// An exception that thrown when a signal failes to `put`.
+// An exception that thrown when a signal fails to `put`.
 //
 // 2023 January 5
 // Author: Max Korbel <max.korbel@intel.com>
