@@ -172,7 +172,7 @@ class SynthLogic {
               .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
-  /// other. If onlyt one of them is not [mergeable], it can adopt the elements
+  /// other. If only one of them is not [mergeable], it can adopt the elements
   /// from the other.
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
@@ -292,6 +292,20 @@ class SynthLogic {
       a.adopt(b);
       return (removed: b, kept: a);
     }
+    // else if ((a.isConstant && b is SynthLogicArrayElement) ||
+    //     (b.isConstant && a is SynthLogicArrayElement)) {
+    //   // we don't want to lose any constant assignments when signals aren't
+    //   // guaranteed to be declared
+    //   return null;
+    // }
+
+    if ((a.isConstant && b.constNameDisallowed) ||
+        (b.isConstant && a.constNameDisallowed)) {
+      // we cannot merge a constant if the other disallows the constant name
+      // since we can lose a constant assignment (note: this doesn't guarantee
+      // we end up with the nicest name)
+      return null;
+    }
 
     if (!a.mergeable && !b.mergeable) {
       return null;
@@ -331,6 +345,13 @@ class SynthLogic {
         'Cannot merge logics of different widths: $width vs ${other.width}');
     assert(
         other != this, 'Suspicious attempt to merge a SynthLogic into itself.');
+
+//TODO TMP
+    // print('***\n  $this -- is adopting \n  $other');
+
+    // if (this.toString().contains('const_0')) {
+    //   print('here');
+    // }
 
     _constNameDisallowed |= other._constNameDisallowed;
 
