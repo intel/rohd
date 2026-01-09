@@ -1,3 +1,8 @@
+## 0.6.8
+
+- Fixed a bug where constant assignments or tie-offs could be lost in certain rare scenarios in generated outputs (<https://github.com/intel/rohd/pull/643>).
+- Fixed typos in various documentation, comments, tutorials, etc. (<https://github.com/intel/rohd/pull/642>).
+
 ## 0.6.7
 
 - Significantly improved and simplified generated outputs (including SystemVerilog) by reducing unnecessary signal slicing and swizzling operations and leaving unconnected ports on module instantiations empty (<https://github.com/intel/rohd/pull/638>).

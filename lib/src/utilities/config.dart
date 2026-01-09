@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // config.dart
@@ -10,5 +10,5 @@
 /// A utility for ROHD configuration file.
 class Config {
   /// The version of the ROHD framework.
-  static const String version = '0.6.7';
+  static const String version = '0.6.8';
 }
