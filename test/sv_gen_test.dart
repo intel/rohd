@@ -547,6 +547,47 @@ class TieOffSubsetSub extends Module {
   }
 }
 
+class TieOffPortTop extends Module {
+  TieOffPortTop(Logic clk, {required bool withRedirect}) {
+    clk = addInput('clk', clk);
+
+    var tieoffApple = Const(0).named('apple_tieoff', naming: Naming.mergeable);
+
+    final apple = Logic(name: 'apple', naming: Naming.mergeable);
+
+    if (withRedirect) {
+      tieoffApple = Logic()..gets(tieoffApple);
+    }
+
+    apple <= tieoffApple;
+
+    final submod = TieOffPortSub(apple, withRedirect: withRedirect);
+
+    addOutput('outApple') <= submod.outApple;
+    addOutput('outBanana') <= submod.banana;
+  }
+}
+
+class TieOffPortSub extends Module {
+  late final Logic banana;
+  late final Logic outApple;
+  TieOffPortSub(Logic apple, {required bool withRedirect}) {
+    apple = addInput('apple', apple);
+
+    var tieoffBanana =
+        Const(0).named('banana_tieoff', naming: Naming.mergeable);
+
+    if (withRedirect) {
+      tieoffBanana = Logic()..gets(tieoffBanana);
+    }
+
+    banana = addOutput('banana');
+    outApple = addOutput('outApple')..gets(apple);
+
+    banana <= tieoffBanana;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -564,27 +605,50 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  group('tieoff subset of array', () {
+  group('tieoff ', () {
     for (final redirect in [true, false]) {
-      test('with redirect=$redirect', () async {
-        final mod = TieOffSubsetTop(Logic(), withRedirect: redirect);
-        await mod.build();
+      group('with redirect=$redirect', () {
+        test('subset of array', () async {
+          final mod = TieOffSubsetTop(Logic(), withRedirect: redirect);
+          await mod.build();
 
-        final sv = mod.generateSynth();
+          final sv = mod.generateSynth();
 
-        expect(sv, contains("assign banana_tieoff = 2'h0;"));
-        expect(sv, contains("assign apple_tieoff = 2'h0;"));
+          expect(sv, contains("assign banana_tieoff = 2'h0;"));
+          expect(sv, contains("assign apple_tieoff = 2'h0;"));
 
-        // simcompare to make sure simulation works as expected
-        final vectors = [
-          Vector({}, {
-            'outApple': 'zzzzzzzzz00zzzzz',
-            'outBanana': 'zzzzzzzzz00zzzzz',
-          }),
-        ];
+          // simcompare to make sure simulation works as expected
+          final vectors = [
+            Vector({}, {
+              'outApple': 'zzzzzzzzz00zzzzz',
+              'outBanana': 'zzzzzzzzz00zzzzz',
+            }),
+          ];
 
-        await SimCompare.checkFunctionalVector(mod, vectors);
-        SimCompare.checkIverilogVector(mod, vectors);
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+
+        test('full port', () async {
+          final mod = TieOffPortTop(Logic(), withRedirect: redirect);
+          await mod.build();
+
+          final sv = mod.generateSynth();
+
+          expect(sv, contains("assign banana = 1'h0;"));
+          expect(sv, contains(".apple(1'h0)"));
+
+          // simcompare to make sure simulation works as expected
+          final vectors = [
+            Vector({}, {
+              'outApple': 0,
+              'outBanana': 0,
+            }),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
       });
     }
   });
