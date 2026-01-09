@@ -302,8 +302,7 @@ class SynthLogic {
     if ((a.isConstant && b.constNameDisallowed) ||
         (b.isConstant && a.constNameDisallowed)) {
       // we cannot merge a constant if the other disallows the constant name
-      // since we can lose a constant assignment (note: this doesn't guarantee
-      // we end up with the nicest name)
+      // since we can lose a constant assignment
       return null;
     }
 

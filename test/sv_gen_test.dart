@@ -572,7 +572,8 @@ void main() {
 
         final sv = mod.generateSynth();
 
-        expect(sv, contains(RegExp("assign .* = 2'h0;")));
+        expect(sv, contains("assign banana_tieoff = 2'h0;"));
+        expect(sv, contains("assign apple_tieoff = 2'h0;"));
 
         // simcompare to make sure simulation works as expected
         final vectors = [

@@ -885,7 +885,12 @@ class SynthModuleDefinition {
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <SynthAssignment>[];
-      for (final assignment in assignments) {
+      for (final assignment in CombinedIterableView([
+        // we look at non-constant assignments first to maximize merging in case
+        // some constant merge scenario is disallowed by
+        assignments.where((a) => !a.src.isConstant && !a.dst.isConstant),
+        assignments.where((a) => a.src.isConstant || a.dst.isConstant),
+      ])) {
         assert(assignment is! PartialSynthAssignment,
             'Partial assignments should have been removed before this.');
 
