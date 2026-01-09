@@ -897,6 +897,13 @@ class SynthModuleDefinition {
         final dst = assignment.dst;
         final src = assignment.src;
 
+        if (src == dst && src.isConstant) {
+          // looks like this assignment does nothing -- some sort of circular
+          // constant assignment, can just remove it
+
+          continue;
+        }
+
         assert(dst != src,
             'No circular assignment allowed between $dst and $src.');
 
