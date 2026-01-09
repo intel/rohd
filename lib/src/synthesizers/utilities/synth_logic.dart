@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_logic.dart
@@ -292,12 +292,6 @@ class SynthLogic {
       a.adopt(b);
       return (removed: b, kept: a);
     }
-    // else if ((a.isConstant && b is SynthLogicArrayElement) ||
-    //     (b.isConstant && a is SynthLogicArrayElement)) {
-    //   // we don't want to lose any constant assignments when signals aren't
-    //   // guaranteed to be declared
-    //   return null;
-    // }
 
     if ((a.isConstant && b.constNameDisallowed) ||
         (b.isConstant && a.constNameDisallowed)) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_module_definition.dart
@@ -887,7 +887,7 @@ class SynthModuleDefinition {
       final reducedAssignments = <SynthAssignment>[];
       for (final assignment in CombinedIterableView([
         // we look at non-constant assignments first to maximize merging in case
-        // some constant merge scenario is disallowed by
+        // some constant merge scenario is disallowed by a module (e.g. subset)
         assignments.where((a) => !a.src.isConstant && !a.dst.isConstant),
         assignments.where((a) => a.src.isConstant || a.dst.isConstant),
       ])) {
