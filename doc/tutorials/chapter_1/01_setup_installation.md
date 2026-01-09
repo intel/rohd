@@ -291,5 +291,5 @@ If you can see SystemVerilog code pop up on the terminal. Congratulation, you ar
 2023 February 13
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
-Copyright (C) 2021-2023 Intel Corporation
+Copyright (C) 2021-2026 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause
