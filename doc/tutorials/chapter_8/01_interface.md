@@ -79,7 +79,7 @@ class Counter extends Module {
 
 ## Counter Module Interface
 
-Let us see how we can change the `ROHD` module to `Counter` interface. First, we can create a enum `CounterDirection` that have tags of `inward`, `outward` and `misc`. You can think of this as what is the category you want to group your ports. This category can be reuse between modules. `inward` port group all inputs port, `outward` group all output ports, and `misc` group all miscellanous ports such as `clk`.
+Let us see how we can change the `ROHD` module to `Counter` interface. First, we can create a enum `CounterDirection` that have tags of `inward`, `outward` and `misc`. You can think of this as what is the category you want to group your ports. This category can be reuse between modules. `inward` port group all inputs port, `outward` group all output ports, and `misc` group all miscellaneous ports such as `clk`.
 
 Then, we can create our interface `CounterInterface` that extends from parents `Interface<TagType>`. The `TagType` is the enum that we create earlier. Let create the getters to all ports for `Counter` to allows us to send signals to the interface.
 
@@ -183,7 +183,7 @@ Future<void> main() async {
 }
 ```
 
-Thats it for the ROHD interface. By using interface, you code can be a lot cleaner and readable. Hope you enjoy the tutorials. You can find the executable version of code at [counter_interface.dart](./counter_interface.dart).
+That's it for the ROHD interface. By using interface, you code can be a lot cleaner and readable. Hope you enjoy the tutorials. You can find the executable version of code at [counter_interface.dart](./counter_interface.dart).
 
 ## Exercise
 
