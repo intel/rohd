@@ -1,8 +1,8 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synchronous_propogator.dart
-// Ultra light-weight events for signal propogation
+// Ultra light-weight events for signal propagation
 //
 // 2021 August 3
 // Author: Max Korbel <max.korbel@intel.com>
