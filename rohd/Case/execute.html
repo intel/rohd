@@ -94,7 +94,7 @@ void execute(Set&lt;Logic&gt;? drivenSignals, [void Function(Logic)? guard]) {
   }
 
   if (!expression.value.isValid) {
-    &#47;&#47; if expression has X or Z, then propogate X&#39;s!
+    &#47;&#47; if expression has X or Z, then propagate X&#39;s!
     driveX(drivenSignals);
     return;
   }
