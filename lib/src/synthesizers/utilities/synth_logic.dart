@@ -346,13 +346,6 @@ class SynthLogic {
     assert(
         other != this, 'Suspicious attempt to merge a SynthLogic into itself.');
 
-//TODO TMP
-    // print('***\n  $this -- is adopting \n  $other');
-
-    // if (this.toString().contains('const_0')) {
-    //   print('here');
-    // }
-
     _constNameDisallowed |= other._constNameDisallowed;
 
     // only take one of the other's items if we don't have it already

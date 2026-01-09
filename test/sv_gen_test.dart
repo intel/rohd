@@ -501,10 +501,13 @@ class ModWithConstInlineUnaryOp extends Module {
 }
 
 class TieOffSubsetTop extends Module {
+  LogicArray get outApple => output('outApple') as LogicArray;
+  LogicArray get outBanana => output('outBanana') as LogicArray;
+
   TieOffSubsetTop(Logic clk, {required bool withRedirect}) {
     clk = addInput('clk', clk);
 
-    Logic tieoffApple =
+    var tieoffApple =
         Const(0, width: 2).named('apple_tieoff', naming: Naming.mergeable);
 
     final apple = LogicArray([4], 4, name: 'apple');
@@ -515,17 +518,23 @@ class TieOffSubsetTop extends Module {
 
     apple.elements[1].assignSubset(tieoffApple.elements, start: 1);
 
-    TieOffSubsetSub(clk, apple, withRedirect: withRedirect);
+    final submod = TieOffSubsetSub(clk, apple, withRedirect: withRedirect);
+
+    addOutputArray('outApple', dimensions: [4], elementWidth: 4).gets(apple);
+    addOutputArray('outBanana', dimensions: [4], elementWidth: 4)
+        .gets(submod.outBanana);
   }
 }
 
 class TieOffSubsetSub extends Module {
+  LogicArray get outBanana => output('banana') as LogicArray;
+
   TieOffSubsetSub(Logic clk, Logic apple, {required bool withRedirect})
       : super(name: 'submod') {
     apple = addInputArray('apple', apple, dimensions: [4], elementWidth: 4);
     clk = addInput('clk', clk);
 
-    Logic tieoffBanana =
+    var tieoffBanana =
         Const(0, width: 2).named('banana_tieoff', naming: Naming.mergeable);
 
     if (withRedirect) {
@@ -562,12 +571,19 @@ void main() {
         await mod.build();
 
         final sv = mod.generateSynth();
-        print(sv);
 
-        // expect(sv, contains("assign apple_tieoff = 2'h0;"));
-        // expect(sv, contains("assign banana_tieoff = 2'h0;"));
+        expect(sv, contains(RegExp("assign .* = 2'h0;")));
 
-        //TODO: do a simcompare to see the actual values in SV sim
+        // simcompare to make sure simulation works as expected
+        final vectors = [
+          Vector({}, {
+            'outApple': 'zzzzzzzzz00zzzzz',
+            'outBanana': 'zzzzzzzzz00zzzzz',
+          }),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
       });
     }
   });
