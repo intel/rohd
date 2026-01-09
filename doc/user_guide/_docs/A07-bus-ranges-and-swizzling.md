@@ -2,7 +2,7 @@
 title: "Bus ranges and swizzling"
 permalink: /docs/bus-range-swizzling/
 excerpt: "Bus ranges and swizzling"
-last_modified_at: 2022-12-06
+last_modified_at: 2026-01-09
 toc: true
 ---
 

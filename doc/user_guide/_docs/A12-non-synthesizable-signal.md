@@ -2,7 +2,7 @@
 title: "Non-synthesizable signal deposition"
 permalink: /docs/non-synthesizable-signal/
 excerpt: "Non-synthesizable signal deposition"
-last_modified_at: 2022-12-06
+last_modified_at: 2026-01-09
 toc: true
 ---
 
