@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2026 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_test.dart
@@ -341,42 +341,9 @@ class ModArrToNetSub extends Module {
   }
 }
 
-class OutToInOutTop extends Module {
-  OutToInOutTop(Logic clk) {
-    clk = addInput('clk', clk);
-    final modWithOut = ModWithOut(clk);
-    final myNetTop = LogicNet();
-    myNetTop <= modWithOut.myOut;
-
-    ModWithInOut(myNetTop);
-  }
-}
-
-class ModWithOut extends Module {
-  late final Logic myOut;
-
-  ModWithOut(Logic clk) {
-    clk = addInput('clk', clk);
-    myOut = addOutput('myOut')..gets(~clk);
-  }
-}
-
-class ModWithInOut extends Module {
-  ModWithInOut(LogicNet myNet) {
-    myNet = addInOut('myNet', myNet);
-  }
-}
-
 void main() {
   tearDown(() async {
     await Simulator.reset();
-  });
-
-  test('out to inout unnamed connection', () async {
-    final mod = OutToInOutTop(Logic());
-    await mod.build();
-
-    print(mod.generateSynth());
   });
 
   test('mod array to net hier', () async {

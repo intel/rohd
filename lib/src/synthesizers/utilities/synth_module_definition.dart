@@ -605,7 +605,10 @@ class SynthModuleDefinition {
               ...internalSignal.dstConnections
             ]
                 .where((e) =>
-                    e.parentModule == module && logicHasPresentSynthLogic(e))
+                    (e.parentModule == module ||
+                        ( // in case of sub-module output driving a net
+                            e.parentModule?.parent == module && e.isOutput)) &&
+                    logicHasPresentSynthLogic(e))
                 .isNotEmpty;
 
             if (anyInternalConnections) {

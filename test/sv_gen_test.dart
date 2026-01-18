@@ -588,6 +588,35 @@ class TieOffPortSub extends Module {
   }
 }
 
+class OutToInOutTop extends Module {
+  OutToInOutTop(Logic clk) : super(name: 'out_to_inout_top') {
+    clk = addInput('clk', clk);
+    final modWithOut = ModWithOut(clk);
+    final myNetTop = LogicNet();
+    myNetTop <= modWithOut.myOut;
+
+    addOutput('clkB') <= ModWithInOut(myNetTop).clkB;
+  }
+}
+
+class ModWithOut extends Module {
+  late final Logic myOut;
+
+  ModWithOut(Logic clk) : super(name: 'mod_with_out') {
+    clk = addInput('clk', clk);
+    myOut = addOutput('myOut')..gets(~clk);
+  }
+}
+
+class ModWithInOut extends Module {
+  late final Logic clkB;
+  ModWithInOut(LogicNet myNet) : super(name: 'mod_with_inout') {
+    myNet = addInOut('myNet', myNet);
+
+    clkB = addOutput('clkB')..gets(myNet);
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -946,5 +975,26 @@ endmodule : ModWithUselessWireMods'''));
         SimCompare.checkIverilogVector(mod, vectors);
       });
     }
+  });
+
+  test('out to inout unnamed connection', () async {
+    // this test makes sure we don't lose an unnamed connection from an output
+    // to an inout
+
+    final mod = OutToInOutTop(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    print(sv);
+
+    expect(sv, contains('assign myNet = myOut;'));
+
+    final vectors = [
+      Vector({'clk': 0}, {'clkB': 1}),
+      Vector({'clk': 1}, {'clkB': 0}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 }
