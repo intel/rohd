@@ -1,6 +1,7 @@
 ## 0.6.8
 
 - Fixed a bug where constant assignments or tie-offs could be lost in certain rare scenarios in generated outputs (<https://github.com/intel/rohd/pull/643>).
+- Fixed a bug where an unnamed connection between an output and inOut could be incorrectly pruned during SystemVerilog generation, causing confusing error messages (<https://github.com/intel/rohd/pull/644>).
 - Fixed typos in various documentation, comments, tutorials, etc. (<https://github.com/intel/rohd/pull/642>).
 
 ## 0.6.7
