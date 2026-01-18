@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_logic.dart
@@ -172,7 +172,7 @@ class SynthLogic {
               .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
-  /// other. If onlyt one of them is not [mergeable], it can adopt the elements
+  /// other. If only one of them is not [mergeable], it can adopt the elements
   /// from the other.
   bool get mergeable =>
       _reservedLogic == null && _constLogic == null && _renameableLogic == null;
@@ -214,7 +214,7 @@ class SynthLogic {
       } else {
         assert(
             logics.length > 1,
-            'If there is a consant, but the const name is not allowed, '
+            'If there is a constant, but the const name is not allowed, '
             'there needs to be another option');
       }
     }
@@ -291,6 +291,13 @@ class SynthLogic {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
       return (removed: b, kept: a);
+    }
+
+    if ((a.isConstant && b.constNameDisallowed) ||
+        (b.isConstant && a.constNameDisallowed)) {
+      // we cannot merge a constant if the other disallows the constant name
+      // since we can lose a constant assignment
+      return null;
     }
 
     if (!a.mergeable && !b.mergeable) {

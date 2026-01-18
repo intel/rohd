@@ -16,7 +16,7 @@ To access the Codespaces feature on the <https://github.com/intel/rohd> reposito
 
 Please note that Codespaces are free for all users with a personal GitHub account that have either a Free or Pro plan. However, there is a monthly usage limit. To learn more about this feature, visit the official GitHub Codespaces Overview page at <https://docs.github.com/en/codespaces/overview>.
 
-> All personal GitHub.com accounts have a monthly quota of free use of GitHub Codespaces included in the Free or Pro plan. You can get started using GitHub Codespaces on your personal account without changing any settings or providing payment details. You can create and use a codespaces for any repository you can clone. You can also use a template to create codespaces that are not initially associated with a repository. If you create a codespaces from an organization-owned repository, use of the codespaces will either be charged to the organization (if the organization is configured for this), or to your personal account. Codespaces created from templates are always charged to your personal account. You can continue using GitHub Codespaces beyond your monthly included storage and compute usage by providing payment details and setting a spending limit. For more information, see "About billing for GitHub Codespaces.
+> All personal GitHub.com accounts have a monthly quota of free use of GitHub Codespaces included in the Free or Pro plan. You can get started using GitHub Codespaces on your personal account without changing any settings or providing payment details. You can create and use a codespaces for any repository you can clone. You can also use a template to create codespaces that are not initially associated with a repository. If you create a codespaces from an organization-owned repository, use of the Codespaces will either be charged to the organization (if the organization is configured for this), or to your personal account. Codespaces created from templates are always charged to your personal account. You can continue using GitHub Codespaces beyond your monthly included storage and compute usage by providing payment details and setting a spending limit. For more information, see "About billing for GitHub Codespaces.
 
 ![step 1](assets/codespaces_setup/step_1.png)
 
@@ -48,7 +48,7 @@ If you can see SystemVerilog code pop up on the terminal. Well, you have success
 
 ### Step 6: Delete the CodeSpaces (Optional)
 
-To delete the codespaces, go back to <https://github.com/intel/rohd> and click on codespaces just like step 1. But this time, you will see more options. Click on the `delete` option to delete codespaces.
+To delete the Codespaces, go back to <https://github.com/intel/rohd> and click on Codespaces just like step 1. But this time, you will see more options. Click on the `delete` option to delete Codespaces.
 
 ![step 6](assets/codespaces_setup/step_6.png)
 
@@ -248,7 +248,7 @@ If you can see SystemVerilog code pop up on the terminal. Congratulation, you ar
 
 ## Docker Container Setup
 
-There are another options which is to setup on lcoal docker environment. Firstly, you must install docker in your PC.
+There are another options which is to setup on local docker environment. Firstly, you must install docker in your PC.
 
 Pre-requisites:
 
@@ -291,5 +291,5 @@ If you can see SystemVerilog code pop up on the terminal. Congratulation, you ar
 2023 February 13
 Author: Yao Jing Quek <<yao.jing.quek@intel.com>>
 
-Copyright (C) 2021-2023 Intel Corporation
+Copyright (C) 2021-2026 Intel Corporation
 SPDX-License-Identifier: BSD-3-Clause

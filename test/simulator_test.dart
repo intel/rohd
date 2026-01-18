@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
@@ -28,7 +28,7 @@ void main() {
     expect(actionTaken, equals(true));
   });
 
-  test('simulator supports cancelation of previously scheduled actions',
+  test('simulator supports cancellation of previously scheduled actions',
       () async {
     var actionCount = 0;
 

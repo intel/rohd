@@ -69,7 +69,7 @@ The most important part that you have to notice here is the assignment operator 
 
 Alright, now we know how the operator in ROHD. we can dive into the `If...Else` in ROHD. In dart, `if...else` is used as a conditional for hardware generation, we can think of it as `if` condition A filled, then generate this pieces of hardware `else` generate that pieces of hardware. While in ROHD, `If...Else` is conditionally assignment which assign signal to a port, which we can think something like `If` Logic signal `A` is high, `Then` assign output port `B` to `A`.
 
-In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most prefferable way is using `If.block` which is more readable and clean.
+In today tutorial, we will review how to assign value to PORT using ROHD `If...Else` conditionals. Let start by understanding ROHD `If...Else` conditionals. There are several ways of using `If...Else` in ROHD, but the most preferable way is using `If.block` which is more readable and clean.
 
 *Note: `If...Else` and `Case` in ROHD is written with the first letter capitalized to differentiate from the built-in dart keywords and functionality.*
 

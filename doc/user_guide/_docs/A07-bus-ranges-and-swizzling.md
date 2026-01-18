@@ -2,11 +2,11 @@
 title: "Bus ranges and swizzling"
 permalink: /docs/bus-range-swizzling/
 excerpt: "Bus ranges and swizzling"
-last_modified_at: 2022-12-06
+last_modified_at: 2026-01-09
 toc: true
 ---
 
-Multi-bit busses can be accessed by single bits and ranges or composed from multiple other signals.  Slicing, swizzling, etc. are also accessible on `LogicValue`s.
+Multi-bit buses can be accessed by single bits and ranges or composed from multiple other signals.  Slicing, swizzling, etc. are also accessible on `LogicValue`s.
 
 ```dart
 var a = Logic(width:8),

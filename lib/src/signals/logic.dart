@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic.dart
@@ -361,7 +361,7 @@ class Logic {
   ///
   /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
   ///
-  /// This function is used for propogating glitches through connected signals.
+  /// This function is used for propagating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar

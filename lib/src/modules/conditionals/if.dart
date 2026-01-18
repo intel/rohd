@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // if.dart
@@ -12,7 +12,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
 
-/// A conditional block to execute only if [condition] is satisified.
+/// A conditional block to execute only if [condition] is satisfied.
 ///
 /// Intended for use with [If.block].
 class ElseIf {
@@ -35,12 +35,12 @@ class ElseIf {
   ElseIf.s(Logic condition, Conditional then) : this(condition, [then]);
 }
 
-/// A conditional block to execute only if `condition` is satisified.
+/// A conditional block to execute only if `condition` is satisfied.
 ///
 /// Intended for use with [If.block].
 typedef Iff = ElseIf;
 
-/// A conditional block to execute only if [condition] is satisified.
+/// A conditional block to execute only if [condition] is satisfied.
 ///
 /// This should come last in [If.block].
 class Else extends Iff {
@@ -88,7 +88,7 @@ class If extends Conditional {
           if (orElse != null) Else(orElse),
         ]);
 
-  /// If [condition] is high, then [then] is excutes,
+  /// If [condition] is high, then [then] is executes,
   /// otherwise [orElse] is executed.
   ///
   /// Use this constructor when you only have a single [then] condition.

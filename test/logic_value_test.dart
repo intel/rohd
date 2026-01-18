@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_value_test.dart
@@ -14,7 +14,7 @@ import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_excep
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
-// All logicvalues to support trying all possiblities
+// All logicvalues to support trying all possibilities
 const List<LogicValue> allLv = [
   LogicValue.zero,
   LogicValue.one,

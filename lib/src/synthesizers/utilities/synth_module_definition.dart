@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_module_definition.dart
@@ -605,7 +605,10 @@ class SynthModuleDefinition {
               ...internalSignal.dstConnections
             ]
                 .where((e) =>
-                    e.parentModule == module && logicHasPresentSynthLogic(e))
+                    (e.parentModule == module ||
+                        ( // in case of sub-module output driving a net
+                            e.parentModule?.parent == module && e.isOutput)) &&
+                    logicHasPresentSynthLogic(e))
                 .isNotEmpty;
 
             if (anyInternalConnections) {
@@ -885,12 +888,24 @@ class SynthModuleDefinition {
     while (prevAssignmentCount != assignments.length) {
       // keep looping until it stops shrinking
       final reducedAssignments = <SynthAssignment>[];
-      for (final assignment in assignments) {
+      for (final assignment in CombinedIterableView([
+        // we look at non-constant assignments first to maximize merging in case
+        // some constant merge scenario is disallowed by a module (e.g. subset)
+        assignments.where((a) => !a.src.isConstant && !a.dst.isConstant),
+        assignments.where((a) => a.src.isConstant || a.dst.isConstant),
+      ])) {
         assert(assignment is! PartialSynthAssignment,
             'Partial assignments should have been removed before this.');
 
         final dst = assignment.dst;
         final src = assignment.src;
+
+        if (src == dst && src.isConstant) {
+          // looks like this assignment does nothing -- some sort of circular
+          // constant assignment, can just remove it
+
+          continue;
+        }
 
         assert(dst != src,
             'No circular assignment allowed between $dst and $src.');
