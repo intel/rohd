@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sv_gen_test.dart
@@ -494,9 +494,163 @@ class ModWithPartialArrayAssignment extends Module {
   }
 }
 
+class ModWithConstInlineUnaryOp extends Module {
+  ModWithConstInlineUnaryOp() {
+    addOutput('b', width: 8) <= ~Const(0, width: 8);
+  }
+}
+
+class TieOffSubsetTop extends Module {
+  LogicArray get outApple => output('outApple') as LogicArray;
+  LogicArray get outBanana => output('outBanana') as LogicArray;
+
+  TieOffSubsetTop(Logic clk, {required bool withRedirect}) {
+    clk = addInput('clk', clk);
+
+    var tieoffApple =
+        Const(0, width: 2).named('apple_tieoff', naming: Naming.mergeable);
+
+    final apple = LogicArray([4], 4, name: 'apple');
+
+    if (withRedirect) {
+      tieoffApple = Logic(width: 2)..gets(tieoffApple);
+    }
+
+    apple.elements[1].assignSubset(tieoffApple.elements, start: 1);
+
+    final submod = TieOffSubsetSub(clk, apple, withRedirect: withRedirect);
+
+    addOutputArray('outApple', dimensions: [4], elementWidth: 4).gets(apple);
+    addOutputArray('outBanana', dimensions: [4], elementWidth: 4)
+        .gets(submod.outBanana);
+  }
+}
+
+class TieOffSubsetSub extends Module {
+  LogicArray get outBanana => output('banana') as LogicArray;
+
+  TieOffSubsetSub(Logic clk, Logic apple, {required bool withRedirect})
+      : super(name: 'submod') {
+    apple = addInputArray('apple', apple, dimensions: [4], elementWidth: 4);
+    clk = addInput('clk', clk);
+
+    var tieoffBanana =
+        Const(0, width: 2).named('banana_tieoff', naming: Naming.mergeable);
+
+    if (withRedirect) {
+      tieoffBanana = Logic(width: 2)..gets(tieoffBanana);
+    }
+
+    final banana = addOutputArray('banana', dimensions: [4], elementWidth: 4);
+
+    banana.elements[1].assignSubset(tieoffBanana.elements, start: 1);
+  }
+}
+
+class TieOffPortTop extends Module {
+  TieOffPortTop(Logic clk, {required bool withRedirect}) {
+    clk = addInput('clk', clk);
+
+    var tieoffApple = Const(0).named('apple_tieoff', naming: Naming.mergeable);
+
+    final apple = Logic(name: 'apple', naming: Naming.mergeable);
+
+    if (withRedirect) {
+      tieoffApple = Logic()..gets(tieoffApple);
+    }
+
+    apple <= tieoffApple;
+
+    final submod = TieOffPortSub(apple, withRedirect: withRedirect);
+
+    addOutput('outApple') <= submod.outApple;
+    addOutput('outBanana') <= submod.banana;
+  }
+}
+
+class TieOffPortSub extends Module {
+  late final Logic banana;
+  late final Logic outApple;
+  TieOffPortSub(Logic apple, {required bool withRedirect}) {
+    apple = addInput('apple', apple);
+
+    var tieoffBanana =
+        Const(0).named('banana_tieoff', naming: Naming.mergeable);
+
+    if (withRedirect) {
+      tieoffBanana = Logic()..gets(tieoffBanana);
+    }
+
+    banana = addOutput('banana');
+    outApple = addOutput('outApple')..gets(apple);
+
+    banana <= tieoffBanana;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('const unary inline op', () async {
+    final mod = ModWithConstInlineUnaryOp();
+    await mod.build();
+
+    final vectors = [
+      Vector({}, {'b': 0xff}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  group('tieoff ', () {
+    for (final redirect in [true, false]) {
+      group('with redirect=$redirect', () {
+        test('subset of array', () async {
+          final mod = TieOffSubsetTop(Logic(), withRedirect: redirect);
+          await mod.build();
+
+          final sv = mod.generateSynth();
+
+          expect(sv, contains("assign banana_tieoff = 2'h0;"));
+          expect(sv, contains("assign apple_tieoff = 2'h0;"));
+
+          // simcompare to make sure simulation works as expected
+          final vectors = [
+            Vector({}, {
+              'outApple': 'zzzzzzzzz00zzzzz',
+              'outBanana': 'zzzzzzzzz00zzzzz',
+            }),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+
+        test('full port', () async {
+          final mod = TieOffPortTop(Logic(), withRedirect: redirect);
+          await mod.build();
+
+          final sv = mod.generateSynth();
+
+          expect(sv, contains("assign banana = 1'h0;"));
+          expect(sv, contains(".apple(1'h0)"));
+
+          // simcompare to make sure simulation works as expected
+          final vectors = [
+            Vector({}, {
+              'outApple': 0,
+              'outBanana': 0,
+            }),
+          ];
+
+          await SimCompare.checkFunctionalVector(mod, vectors);
+          SimCompare.checkIverilogVector(mod, vectors);
+        });
+      });
+    }
   });
 
   group('signal declaration order', () {
