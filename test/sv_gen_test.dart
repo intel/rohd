@@ -986,8 +986,6 @@ endmodule : ModWithUselessWireMods'''));
 
     final sv = mod.generateSynth();
 
-    print(sv);
-
     expect(sv, contains('assign myNet = myOut;'));
 
     final vectors = [
