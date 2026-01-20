@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - ci-repo-stat-maifee
   workflow_dispatch:
 
 permissions:
@@ -14,7 +13,7 @@ jobs:
   coverage:
     name: Code Coverage
     timeout-minutes: 60
-    runs-on: ${{ (github.repository_owner == 'intel' || github.repository_owner == 'maifeeulasad') && ('intel-ubuntu-latest' || 'ubuntu-latest') }}
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
