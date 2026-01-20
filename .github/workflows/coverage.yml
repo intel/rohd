@@ -1,0 +1,52 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - ci-repo-stat-maifee
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    name: Code Coverage
+    timeout-minutes: 60
+    runs-on: ${{ (github.repository_owner == 'intel' || github.repository_owner == 'maifeeulasad') && ('intel-ubuntu-latest' || 'ubuntu-latest') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Install Icarus Verilog
+        run: tool/gh_actions/install_iverilog.sh
+
+      - name: Generate coverage and badge
+        run: tool/gh_actions/generate_coverage.sh
+
+      - name: Commit coverage badge
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Fetch and checkout badges branch
+          git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
+          git checkout badges 2>/dev/null || true
+          
+          # Clean and copy badge
+          git rm -rf . 2>/dev/null || true
+          mkdir -p coverage
+          cp /tmp/coverage-badge.svg "coverage/${BRANCH_NAME}.svg"
+          
+          git add "coverage/${BRANCH_NAME}.svg"
+          git diff --staged --quiet || git commit -m "Update coverage badge for ${BRANCH_NAME} [skip ci]"
+          
+          git push origin badges --force
