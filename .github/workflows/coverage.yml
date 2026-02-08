@@ -28,7 +28,7 @@ jobs:
         run: tool/gh_actions/install_iverilog.sh
 
       - name: Generate coverage and badge
-        run: tool/gh_actions/generate_coverage.sh
+        run: tool/generate_coverage.sh --generate-svg
 
       - name: Commit coverage badge
         run: |
