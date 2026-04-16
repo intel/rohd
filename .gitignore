@@ -13,6 +13,7 @@ doc/api/
 
 # Other stuff
 tmp_test/
+coverage/
 *.sv
 *.vcd
 *_fsm.md

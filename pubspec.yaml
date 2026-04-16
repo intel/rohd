@@ -17,4 +17,5 @@ dependencies:
 
 dev_dependencies:
   benchmark_harness: ^2.2.0
+  coverage: ^1.10.0
   yaml: ^3.1.1
