@@ -51,10 +51,6 @@ dart run coverage:format_coverage \
     --packages=.dart_tool/package_config.json \
     --report-on=lib
 
-# Generate HTML report
-genhtml -o coverage/html coverage/lcov.info --branch-coverage
-printf '\n%s\n\n' "Open coverage/html/index.html to review code coverage results."
-
 # Install lcov if needed
 if ! command -v lcov &> /dev/null; then
     if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
@@ -62,6 +58,10 @@ if ! command -v lcov &> /dev/null; then
         sudo apt install -y lcov
     fi
 fi
+
+# Generate HTML report
+genhtml -o coverage/html coverage/lcov.info --branch-coverage
+printf '\n%s\n\n' "Open coverage/html/index.html to review code coverage results."
 
 # Extract coverage percentage
 if command -v lcov &> /dev/null; then
