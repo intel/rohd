@@ -1,3 +1,8 @@
+## 0.6.9
+
+- Fixed a bug where unnamed or mergeable inOut loop-back connections on a single module could be incorrectly omitted from the generated SystemVerilog (<https://github.com/intel/rohd/pull/655>).
+- Improved generated SystemVerilog to avoid duplicate constant declarations and preserve more naming context for `LogicStructure` elements (<https://github.com/intel/rohd/pull/650>).
+
 ## 0.6.8
 
 - Fixed a bug where constant assignments or tie-offs could be lost in certain rare scenarios in generated outputs (<https://github.com/intel/rohd/pull/643>).
