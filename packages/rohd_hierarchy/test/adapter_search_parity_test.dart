@@ -52,10 +52,7 @@ BaseHierarchyAdapter _buildVcdAdapter() => BaseHierarchyAdapter.fromTree(
             signals: [
               Signal(id: 'Abcd/lab/clk', name: 'clk', type: 'wire', width: 1),
               Signal(
-                  id: 'Abcd/lab/reset',
-                  name: 'reset',
-                  type: 'wire',
-                  width: 1),
+                  id: 'Abcd/lab/reset', name: 'reset', type: 'wire', width: 1),
               Signal(
                   id: 'Abcd/lab/fromUpstream_request__st',
                   name: 'fromUpstream_request__st',

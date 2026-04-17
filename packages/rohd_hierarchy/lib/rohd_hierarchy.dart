@@ -45,20 +45,6 @@
 /// ```
 library;
 
-import 'package:rohd_hierarchy/rohd_hierarchy.dart'
-    show
-        BaseHierarchyAdapter,
-        HierarchyAddress,
-        HierarchyKind,
-        HierarchyNode,
-        HierarchySearchController,
-        HierarchyService,
-        ModuleSearchResult,
-        NetlistHierarchyAdapter,
-        Port,
-        Signal,
-        SignalSearchResult;
-
 export 'src/base_hierarchy_adapter.dart';
 export 'src/hierarchy_models.dart';
 export 'src/hierarchy_search_controller.dart';
