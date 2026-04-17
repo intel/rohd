@@ -377,7 +377,6 @@ class Logic {
     // If we are connecting a `LogicStructure` to this simple `Logic`,
     // then pack it first.
     if (other is LogicStructure) {
-      // ignore: parameter_assignments
       other = other.packed;
     }
 

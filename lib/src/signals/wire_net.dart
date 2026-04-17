@@ -189,7 +189,6 @@ class _WireNetBlasted extends _Wire implements _WireNet {
     other as _WireNet;
 
     if (other is! _WireNetBlasted) {
-      // ignore: parameter_assignments
       other = other.toBlasted();
     }
 
