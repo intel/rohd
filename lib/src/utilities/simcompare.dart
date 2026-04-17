@@ -282,7 +282,6 @@ abstract class SimCompare {
               : 'logic');
 
       if (adjust != null) {
-        // ignore: parameter_assignments
         signalName = adjust(signalName);
       }
 

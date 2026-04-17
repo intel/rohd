@@ -12,3 +12,15 @@
 set -euo pipefail
 
 dart analyze --fatal-infos
+
+# Analyze sub-packages that have their own pubspec.yaml and are excluded
+# from the root analysis_options.yaml.
+for pkg in packages/rohd_hierarchy; do
+  if [ -f "$pkg/pubspec.yaml" ]; then
+    echo "Analyzing sub-package: $pkg"
+    pushd "$pkg" > /dev/null
+    dart pub get
+    dart analyze --fatal-infos
+    popd > /dev/null
+  fi
+done
