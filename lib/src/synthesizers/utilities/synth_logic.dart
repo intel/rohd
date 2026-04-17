@@ -46,11 +46,13 @@ class SynthLogic {
   /// structure is a port of that [module].
   bool isStructPortElement([Module? module]) =>
       (this is! SynthLogicArrayElement) &&
-      logics.any((e) =>
-          e.isPort &&
-          e.parentStructure != null &&
-          e.parentStructure!.isPort &&
-          (module == null || e.parentStructure!.parentModule == module));
+      logics.any(
+        (e) =>
+            e.isPort &&
+            e.parentStructure != null &&
+            e.parentStructure!.isPort &&
+            (module == null || e.parentStructure!.parentModule == module),
+      );
 
   /// Indicates if this signal is a port, optionally for a specific [module].
   bool isPort([Module? module]) =>
@@ -145,30 +147,40 @@ class SynthLogic {
   /// Indicates if there are any [dstConnections] present in
   /// [parentSynthModuleDefinition].
   bool hasDstConnectionsPresent() =>
-      logics.any((logic) =>
-          logic is Const || // in case of net, could be const dest
-          (logic.isInput || logic.isInOut) &&
-              parentSynthModuleDefinition
-                  .isSubmoduleAndPresent(logic.parentModule)) ||
-      dstConnections
-          .any(parentSynthModuleDefinition.logicHasPresentSynthLogic) ||
+      logics.any(
+        (logic) =>
+            logic is Const || // in case of net, could be const dest
+            (logic.isInput || logic.isInOut) &&
+                parentSynthModuleDefinition.isSubmoduleAndPresent(
+                  logic.parentModule,
+                ),
+      ) ||
+      dstConnections.any(
+        parentSynthModuleDefinition.logicHasPresentSynthLogic,
+      ) ||
       (isNet &&
-          srcConnections
-              .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
+          srcConnections.any(
+            parentSynthModuleDefinition.logicHasPresentSynthLogic,
+          ));
 
   /// Indicates if there are any [srcConnections] present in
   /// [parentSynthModuleDefinition].
   bool hasSrcConnectionsPresent() =>
-      logics.any((logic) =>
-          logic is Const ||
-          (logic.isOutput || logic.isInOut) &&
-              parentSynthModuleDefinition
-                  .isSubmoduleAndPresent(logic.parentModule)) ||
-      srcConnections
-          .any(parentSynthModuleDefinition.logicHasPresentSynthLogic) ||
+      logics.any(
+        (logic) =>
+            logic is Const ||
+            (logic.isOutput || logic.isInOut) &&
+                parentSynthModuleDefinition.isSubmoduleAndPresent(
+                  logic.parentModule,
+                ),
+      ) ||
+      srcConnections.any(
+        parentSynthModuleDefinition.logicHasPresentSynthLogic,
+      ) ||
       (isNet &&
-          dstConnections
-              .any(parentSynthModuleDefinition.logicHasPresentSynthLogic));
+          dstConnections.any(
+            parentSynthModuleDefinition.logicHasPresentSynthLogic,
+          ));
 
   /// Two [SynthLogic]s that are not [mergeable] cannot be merged with each
   /// other. If only one of them is not [mergeable], it can adopt the elements
@@ -184,10 +196,14 @@ class SynthLogic {
   /// Must call [pickName] before this is accessible.
   String get name {
     assert(_name != null, 'Name has not been picked for $this.');
-    assert(_replacement == null,
-        'If this has been replaced, then we should not be getting its name.');
-    assert(isConstant || Sanitizer.isSanitary(_name!),
-        'Signal names should be sanitary, but found $_name.');
+    assert(
+      _replacement == null,
+      'If this has been replaced, then we should not be getting its name.',
+    );
+    assert(
+      isConstant || Sanitizer.isSanitary(_name!),
+      'Signal names should be sanitary, but found $_name.',
+    );
 
     return _name!;
   }
@@ -205,6 +221,7 @@ class SynthLogic {
   }
 
   /// Finds the best name from the collection of [Logic]s.
+<<<<<<< central_naming
   ///
   /// Delegates to signal namer which handles constant value naming, priority
   /// selection, and uniquification via the module's shared namespace.
@@ -214,14 +231,93 @@ class SynthLogic {
         constValue: _constLogic,
         constNameDisallowed: _constNameDisallowed,
       );
+=======
+  String _findName(Uniquifier uniquifier) {
+    // check for const
+    if (_constLogic != null) {
+      if (!_constNameDisallowed) {
+        return _constLogic!.value.toString();
+      } else {
+        assert(
+          logics.length > 1,
+          'If there is a constant, but the const name is not allowed, '
+          'there needs to be another option',
+        );
+      }
+    }
+
+    // check for reserved
+    if (_reservedLogic != null) {
+      return uniquifier.getUniqueName(
+        initialName: _reservedLogic!.name,
+        reserved: true,
+      );
+    }
+
+    // check for renameable
+    if (_renameableLogic != null) {
+      return uniquifier.getUniqueName(
+        initialName: _renameableLogic!.preferredSynthName,
+      );
+    }
+
+    // pick a preferred, available, mergeable name, if one exists
+    final unpreferredMergeableLogics = <Logic>[];
+    final uniquifiableMergeableLogics = <Logic>[];
+    for (final mergeableLogic in _mergeableLogics) {
+      if (Naming.isUnpreferred(mergeableLogic.preferredSynthName)) {
+        unpreferredMergeableLogics.add(mergeableLogic);
+      } else if (!uniquifier.isAvailable(mergeableLogic.preferredSynthName)) {
+        uniquifiableMergeableLogics.add(mergeableLogic);
+      } else {
+        return uniquifier.getUniqueName(
+          initialName: mergeableLogic.preferredSynthName,
+        );
+      }
+    }
+
+    // uniquify a preferred, mergeable name, if one exists
+    if (uniquifiableMergeableLogics.isNotEmpty) {
+      return uniquifier.getUniqueName(
+        initialName: uniquifiableMergeableLogics.first.preferredSynthName,
+      );
+    }
+
+    // pick an available unpreferred mergeable name, if one exists, otherwise
+    // uniquify an unpreferred mergeable name
+    if (unpreferredMergeableLogics.isNotEmpty) {
+      return uniquifier.getUniqueName(
+        initialName: unpreferredMergeableLogics
+                .firstWhereOrNull(
+                  (element) =>
+                      uniquifier.isAvailable(element.preferredSynthName),
+                )
+                ?.preferredSynthName ??
+            unpreferredMergeableLogics.first.preferredSynthName,
+      );
+    }
+
+    // pick anything (unnamed) and uniquify as necessary (considering preferred)
+    // no need to prefer an available one here, since it's all unnamed
+    return uniquifier.getUniqueName(
+      initialName: _unnamedLogics
+              .firstWhereOrNull(
+                (element) => !Naming.isUnpreferred(element.preferredSynthName),
+              )
+              ?.preferredSynthName ??
+          _unnamedLogics.first.preferredSynthName,
+    );
+  }
+>>>>>>> main
 
   /// Creates an instance to represent [initialLogic] and any that merge
   /// into it.
-  SynthLogic(Logic initialLogic,
-      {required this.parentSynthModuleDefinition,
-      Naming? namingOverride,
-      bool constNameDisallowed = false})
-      : isArray = initialLogic is LogicArray,
+  SynthLogic(
+    Logic initialLogic, {
+    required this.parentSynthModuleDefinition,
+    Naming? namingOverride,
+    bool constNameDisallowed = false,
+  })  : isArray = initialLogic is LogicArray,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
@@ -229,18 +325,13 @@ class SynthLogic {
   /// Returns `null` if the merge did not occur, and a pair of the `removed` and
   /// `kept` [SynthLogic]s otherwise.
   static ({SynthLogic removed, SynthLogic kept})? tryMerge(
-      SynthLogic a, SynthLogic b) {
+    SynthLogic a,
+    SynthLogic b,
+  ) {
     if (_constantsMergeable(a, b)) {
       // case to avoid things like a constant assigned to another constant
       a.adopt(b);
       return (removed: b, kept: a);
-    }
-
-    if ((a.isConstant && b.constNameDisallowed) ||
-        (b.isConstant && a.constNameDisallowed)) {
-      // we cannot merge a constant if the other disallows the constant name
-      // since we can lose a constant assignment
-      return null;
     }
 
     if (!a.mergeable && !b.mergeable) {
@@ -274,13 +365,19 @@ class SynthLogic {
   ///
   /// If [force] is `true`, then it will adopt even if both are non-mergeable.
   void adopt(SynthLogic other, {bool force = false}) {
-    assert(force || other.mergeable || _constantsMergeable(this, other),
-        'Cannot merge a non-mergeable into this.');
-    assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
-    assert(other.width == width,
-        'Cannot merge logics of different widths: $width vs ${other.width}');
     assert(
-        other != this, 'Suspicious attempt to merge a SynthLogic into itself.');
+      force || other.mergeable || _constantsMergeable(this, other),
+      'Cannot merge a non-mergeable into this.',
+    );
+    assert(other.isArray == isArray, 'Cannot merge arrays and non-arrays');
+    assert(
+      other.width == width,
+      'Cannot merge logics of different widths: $width vs ${other.width}',
+    );
+    assert(
+      other != this,
+      'Suspicious attempt to merge a SynthLogic into itself.',
+    );
 
     _constNameDisallowed |= other._constNameDisallowed;
 
@@ -364,9 +461,11 @@ class SynthLogic {
       unpackedDims = '';
     }
 
-    return [packedDims, name, unpackedDims]
-        .where((e) => e.isNotEmpty)
-        .join(' ');
+    return [
+      packedDims,
+      name,
+      unpackedDims,
+    ].where((e) => e.isNotEmpty).join(' ');
   }
 }
 
@@ -393,7 +492,8 @@ class SynthLogicArrayElement extends SynthLogic {
       // we cannot just use `super.isPort` since we can't rely on only using
       // `_reservedLogic`
       logics.any(
-          (l) => l.isPort && (module == null || l.parentModule == module)) ||
+        (l) => l.isPort && (module == null || l.parentModule == module),
+      ) ||
       parentArray.isPort(module);
 
   @override
@@ -434,7 +534,8 @@ class SynthLogicArrayElement extends SynthLogic {
     final n = '$parentArrayname[${logic.arrayIndex!}]';
     assert(
       Sanitizer.isSanitary(
-          n.substring(0, n.contains('[') ? n.indexOf('[') : null)),
+        n.substring(0, n.contains('[') ? n.indexOf('[') : null),
+      ),
       'Array name should be sanitary, but found $n',
     );
     return n;
@@ -444,10 +545,13 @@ class SynthLogicArrayElement extends SynthLogic {
   final Logic logic;
 
   /// Creates an instance of an element of a [LogicArray].
-  SynthLogicArrayElement(this.logic,
-      {required super.parentSynthModuleDefinition})
-      : assert(logic.isArrayMember,
-            'Should only be used for elements in a LogicArray'),
+  SynthLogicArrayElement(
+    this.logic, {
+    required super.parentSynthModuleDefinition,
+  })  : assert(
+          logic.isArrayMember,
+          'Should only be used for elements in a LogicArray',
+        ),
         super(logic) {
     // make sure we have created the synthLogic for the parent array
     parentArray;
