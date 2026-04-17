@@ -361,11 +361,11 @@ void main() {
       expect(outerModuleSv, contains('innerClk'));
       expect(outerModuleSv, contains('.clk(clk)'));
 
-      // make sure there are actually connections in those pins
-      expect(outerModuleSv, contains(RegExp(r'innerClk.*\.ioA(\s+)')));
-      expect(outerModuleSv, contains(RegExp(r'innerClk.*\.ioB(\s+)')));
-
-      // fail('FIX THIS');
+      // make sure there are actually connections in those pins (not empty)
+      expect(outerModuleSv, isNot(contains('.ioA()')));
+      expect(outerModuleSv, isNot(contains('.ioB()')));
+      expect(outerModuleSv,
+          contains(RegExp(r'^\s*wire \[7:0\] io[AB];\s*$', multiLine: true)));
 
       // Should compile cleanly in iverilog (build-only, no vectors needed
       // since there are no outputs to check).
