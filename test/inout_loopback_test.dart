@@ -1,11 +1,11 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // inout_loopback_test.dart
 // Tests for inout port loopback scenarios where two inout ports of a
 // submodule are connected externally to the same net by a parent module.
 //
-// 2025
+// 2026
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
