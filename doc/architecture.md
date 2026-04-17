@@ -24,7 +24,12 @@ The `Simulator` acts as a statically accessible driver of the overall simulation
 
 ### Synthesizer
 
-A separate type of object responsible for taking a `Module` and converting it to some output, such as SystemVerilog.
+A separate type of object responsible for taking a `Module` and converting it to some output. ROHD includes two built-in synthesizers:
+
+- `SystemVerilogSynthesizer` — Converts a `Module` hierarchy into SystemVerilog files. Each `Module` with custom functionality must implement the `SystemVerilog` or `InlineSystemVerilog` mixin so the synthesizer knows how to emit it.
+- `NetlistSynthesizer` — Converts a `Module` hierarchy into a JSON netlist following the [Yosys JSON format](https://yosyshq.readthedocs.io/projects/yosys/en/0.45/cmd/write_json.html). The output contains `modules` with `ports`, `cells`, and `netnames` sections, and is compatible with open-source EDA tools that consume `yosys write_json` output.
+
+Both synthesizers are driven by `SynthBuilder`, which walks the module hierarchy bottom-up, deduplicates identical module definitions, and produces a set of `SynthesisResult` objects (either `SynthesisResult` for SystemVerilog or `NetlistSynthesisResult` for netlist JSON).
 
 ## Organization
 
@@ -44,7 +49,7 @@ Contains a collection of `Module` implementations that can be used as primitive 
 
 ### Synthesizers
 
-Contains logic for synthesizing `Module`s into some output. It is structured to maximize reusability across different output types (including those not yet supported).
+Contains logic for synthesizing `Module`s into some output. It is structured to maximize reusability across different output types. The `SystemVerilogSynthesizer` generates `.sv` files, while the `NetlistSynthesizer` generates Yosys-compatible JSON netlists. `SynthBuilder` orchestrates the synthesis process for both, handling hierarchy traversal and definition deduplication.
 
 ### Utilities
 
