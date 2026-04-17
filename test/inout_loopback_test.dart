@@ -5,7 +5,7 @@
 // Tests for inout port loopback scenarios where two inout ports of a
 // submodule are connected externally to the same net by a parent module.
 //
-// 2026
+// 2026 April 17
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
