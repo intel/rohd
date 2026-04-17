@@ -218,7 +218,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
       if (val.width == 1 && (!val.isValid || fill)) {
         if (!val.isValid) {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
@@ -243,7 +242,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
       if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
         if (val == 'x' || val == 'z') {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
@@ -269,7 +267,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
       if (val.length == 1 &&
           (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
         if (!val.first.isValid) {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
