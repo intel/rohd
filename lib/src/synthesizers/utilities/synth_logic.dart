@@ -12,7 +12,6 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a logic signal in the generated code within a module.
 @internal
@@ -196,81 +195,25 @@ class SynthLogic {
   /// The name of this, if it has been picked.
   String? _name;
 
-  /// Picks a [name].
+  /// Picks a [name] using the module's signal namer.
   ///
   /// Must be called exactly once.
-  void pickName(Uniquifier uniquifier) {
+  void pickName() {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = _findName(uniquifier);
+    _name = _findName();
   }
 
   /// Finds the best name from the collection of [Logic]s.
-  String _findName(Uniquifier uniquifier) {
-    // check for const
-    if (_constLogic != null) {
-      if (!_constNameDisallowed) {
-        return _constLogic!.value.toString();
-      } else {
-        assert(
-            logics.length > 1,
-            'If there is a constant, but the const name is not allowed, '
-            'there needs to be another option');
-      }
-    }
-
-    // check for reserved
-    if (_reservedLogic != null) {
-      return uniquifier.getUniqueName(
-          initialName: _reservedLogic!.name, reserved: true);
-    }
-
-    // check for renameable
-    if (_renameableLogic != null) {
-      return uniquifier.getUniqueName(
-          initialName: _renameableLogic!.preferredSynthName);
-    }
-
-    // pick a preferred, available, mergeable name, if one exists
-    final unpreferredMergeableLogics = <Logic>[];
-    final uniquifiableMergeableLogics = <Logic>[];
-    for (final mergeableLogic in _mergeableLogics) {
-      if (Naming.isUnpreferred(mergeableLogic.name)) {
-        unpreferredMergeableLogics.add(mergeableLogic);
-      } else if (!uniquifier.isAvailable(mergeableLogic.preferredSynthName)) {
-        uniquifiableMergeableLogics.add(mergeableLogic);
-      } else {
-        return uniquifier.getUniqueName(
-            initialName: mergeableLogic.preferredSynthName);
-      }
-    }
-
-    // uniquify a preferred, mergeable name, if one exists
-    if (uniquifiableMergeableLogics.isNotEmpty) {
-      return uniquifier.getUniqueName(
-          initialName: uniquifiableMergeableLogics.first.preferredSynthName);
-    }
-
-    // pick an available unpreferred mergeable name, if one exists, otherwise
-    // uniquify an unpreferred mergeable name
-    if (unpreferredMergeableLogics.isNotEmpty) {
-      return uniquifier.getUniqueName(
-          initialName: unpreferredMergeableLogics
-                  .firstWhereOrNull((element) =>
-                      uniquifier.isAvailable(element.preferredSynthName))
-                  ?.preferredSynthName ??
-              unpreferredMergeableLogics.first.preferredSynthName);
-    }
-
-    // pick anything (unnamed) and uniquify as necessary (considering preferred)
-    // no need to prefer an available one here, since it's all unnamed
-    return uniquifier.getUniqueName(
-        initialName: _unnamedLogics
-                .firstWhereOrNull((element) =>
-                    !Naming.isUnpreferred(element.preferredSynthName))
-                ?.preferredSynthName ??
-            _unnamedLogics.first.preferredSynthName);
-  }
+  ///
+  /// Delegates to signal namer which handles constant value naming, priority
+  /// selection, and uniquification via the module's shared namespace.
+  String _findName() =>
+      parentSynthModuleDefinition.module.signalNamer.nameOfBest(
+        logics,
+        constValue: _constLogic,
+        constNameDisallowed: _constNameDisallowed,
+      );
 
   /// Creates an instance to represent [initialLogic] and any that merge
   /// into it.

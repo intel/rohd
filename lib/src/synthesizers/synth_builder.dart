@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_builder.dart
@@ -55,6 +55,9 @@ class SynthBuilder {
         throw ModuleNotBuiltException(top);
       }
     }
+
+    // Allow the synthesizer to prepare with knowledge of top module(s)
+    synthesizer.prepare(this.tops);
 
     final modulesToParse = <Module>[...tops];
     for (var i = 0; i < modulesToParse.length; i++) {

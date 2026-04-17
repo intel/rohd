@@ -14,7 +14,6 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
@@ -109,10 +108,6 @@ class SynthModuleDefinition {
 
   @override
   String toString() => "module name: '${module.name}'";
-
-  /// Used to uniquify any identifiers, including signal names
-  /// and module instances.
-  final Uniquifier _synthInstantiationNameUniquifier;
 
   /// Indicates whether [logic] has a corresponding present [SynthLogic] in
   /// this definition.
@@ -289,14 +284,7 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : _synthInstantiationNameUniquifier = Uniquifier(
-          reservedNames: {
-            ...module.inputs.keys,
-            ...module.outputs.keys,
-            ...module.inOuts.keys,
-          },
-        ),
-        assert(
+      : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
                     DefinitionGenerationType.none),
@@ -465,6 +453,7 @@ class SynthModuleDefinition {
 
       final receiverIsSubModuleOutput =
           receiver.isOutput && (receiver.parentModule?.parent == module);
+
       if (receiverIsSubModuleOutput) {
         final subModule = receiver.parentModule!;
 
@@ -513,6 +502,7 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+
     _pruneUnused();
     process();
     _pickNames();
@@ -752,49 +742,59 @@ class SynthModuleDefinition {
   }
 
   /// Picks names of signals and sub-modules.
+  ///
+  /// Signal names are read from [Module.signalName] (for user-created
+  /// [Logic] objects) or kept as literal constants.  Submodule instance
+  /// names and synthesizer artifacts are allocated from the shared
+  /// [Module] namespace via [Module.allocateSignalName], guaranteeing no
+  /// collisions across synthesizers.
   void _pickNames() {
-    // first ports get priority
+    // Name allocation order matters — earlier claims get the unsuffixed name
+    // when there are collisions.  This matches production ROHD priority:
+    //   1. Ports (reserved by _initNamespace, claimed via signalName)
+    //   2. Reserved submodule instances
+    //   3. Reserved internal signals
+    //   4. Non-reserved submodule instances
+    //   5. Non-reserved internal signals
     for (final input in inputs) {
-      input.pickName(_synthInstantiationNameUniquifier);
+      input.pickName();
     }
     for (final output in outputs) {
-      output.pickName(_synthInstantiationNameUniquifier);
+      output.pickName();
     }
     for (final inOut in inOuts) {
-      inOut.pickName(_synthInstantiationNameUniquifier);
+      inOut.pickName();
     }
 
-    // pick names of *reserved* submodule instances
-    final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
+    // Reserved submodule instances first (they assert their exact name).
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
-        submodule.pickName(_synthInstantiationNameUniquifier);
+        submodule.pickName(module);
         assert(submodule.module.name == submodule.name,
             'Expect reserved names to retain their name.');
-      } else {
-        nonReservedSubmodules.add(submodule);
       }
     }
 
-    // then *reserved* internal signals get priority
+    // Reserved internal signals next.
     final nonReservedSignals = <SynthLogic>[];
     for (final signal in internalSignals) {
       if (signal.isReserved) {
-        signal.pickName(_synthInstantiationNameUniquifier);
+        signal.pickName();
       } else {
         nonReservedSignals.add(signal);
       }
     }
 
-    // then submodule instances
-    for (final submodule in nonReservedSubmodules
-        .where((element) => element.needsInstantiation)) {
-      submodule.pickName(_synthInstantiationNameUniquifier);
+    // Then non-reserved submodule instances.
+    for (final submodule in subModuleInstantiations) {
+      if (!submodule.module.reserveName && submodule.needsInstantiation) {
+        submodule.pickName(module);
+      }
     }
 
-    // then the rest of the internal signals
+    // Then the rest of the internal signals.
     for (final signal in nonReservedSignals) {
-      signal.pickName(_synthInstantiationNameUniquifier);
+      signal.pickName();
     }
   }
 

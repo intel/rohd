@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synthesizer.dart
@@ -137,7 +137,9 @@ class SystemVerilogSynthesizer extends Synthesizer {
 
   @override
   SynthesisResult synthesize(
-      Module module, String Function(Module module) getInstanceTypeOfModule) {
+      Module module, String Function(Module module) getInstanceTypeOfModule,
+      {SynthesisResult? Function(Module module)? lookupExistingResult,
+      Map<Module, SynthesisResult>? existingResults}) {
     assert(
         module is! SystemVerilog ||
             module.generatedDefinitionType != DefinitionGenerationType.none,
