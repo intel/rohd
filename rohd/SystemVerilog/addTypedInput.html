@@ -55,7 +55,7 @@
     <section class="multi-line-signature">
       
 <span class="returntype">LogicType</span>
-<span class="name ">addTypedInput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.10.7/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
+<span class="name ">addTypedInput</span>&lt;<wbr><span class="type-parameter">LogicType extends Logic</span>&gt;(<wbr><ol class="parameter-list single-line"> <li><span class="parameter" id="addTypedInput-param-name"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.11.5/dart-core/String-class.html">String</a></span> <span class="parameter-name">name</span>, </span></li>
 <li><span class="parameter" id="addTypedInput-param-source"><span class="type-annotation">LogicType</span> <span class="parameter-name">source</span></span></li>
 </ol>)
 
@@ -89,7 +89,6 @@ only be used within this <a href="../../rohd/Module-class.html">Module</a>. The 
     String name, LogicType source) {
   _checkForSafePortName(name);
 
-  &#47;&#47; ignore: parameter_assignments
   source = _validateType&lt;LogicType&gt;(source, isOutput: false, name: name);
 
   if (source.isNet || (source is LogicStructure &amp;&amp; source.hasNets)) {
