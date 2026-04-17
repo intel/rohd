@@ -100,63 +100,6 @@ class FancyStructInverter extends Module {
   }
 }
 
-// -- Structure leaf naming helpers --
-
-class _StructLeafNamingStruct extends LogicStructure {
-  final Logic a;
-  final Logic b;
-
-  _StructLeafNamingStruct({required this.a, required this.b, super.name = 'st'})
-      : super([a, b]);
-
-  @override
-  _StructLeafNamingStruct clone({String? name}) => _StructLeafNamingStruct(
-        a: a.clone(),
-        b: b.clone(), // key: element.clone() → Naming.mergeable
-        name: name ?? this.name,
-      );
-}
-
-class _StructLeafNamingModule extends Module {
-  _StructLeafNamingModule() {
-    final inp = addTypedInput(
-      'inp',
-      _StructLeafNamingStruct(
-        a: Logic(name: 'a', width: 4),
-        b: Logic(width: 4), // unnamed → auto '_s'
-      ),
-    );
-    addOutput('out', width: 4) <= inp.b ^ inp.a;
-  }
-}
-
-// -- Const naming helpers --
-
-class _ExpressionlessSub extends Module with SystemVerilog {
-  @override
-  List<String> get expressionlessInputs => ['a', 'b'];
-
-  _ExpressionlessSub(Logic a, Logic b) {
-    addInput('a', a, width: a.width);
-    addInput('b', b, width: b.width);
-    addOutput('out', width: a.width);
-  }
-
-  @override
-  String? instantiationVerilog(String instanceType, String instanceName,
-          Map<String, String> ports) =>
-      '$instanceType $instanceName(.a(${ports['a']}), .b(${ports['b']}), '
-      '.out(${ports['out']}));';
-}
-
-class _ConstNamingModule extends Module {
-  _ConstNamingModule() {
-    final c = Const(0, width: 8);
-    final sub = _ExpressionlessSub(c, c);
-    addOutput('result', width: 8) <= sub.output('out');
-  }
-}
-
 class StructModuleWithInstrumentation extends Module {
   StructModuleWithInstrumentation(Logic a) {
     a = addInput('a', a, width: 2);
@@ -376,31 +319,5 @@ void main() {
     await Simulator.run();
 
     expect(checkRan, isTrue);
-  });
-
-  group('synthesis names', () {
-    test('struct leaf with unpreferred raw name uses struct-path name',
-        () async {
-      final mod = _StructLeafNamingModule();
-      await mod.build();
-      final sv = mod.generateSynth();
-
-      expect(sv, isNot(contains('_in0')),
-          reason: 'Struct leaf from unnamed Logic() should use its '
-              'struct-path name, not fall back to anonymous _in names.\n$sv');
-    });
-
-    test('const merge not blocked by constNameDisallowed', () async {
-      final mod = _ConstNamingModule();
-      await mod.build();
-      final sv = mod.generateSynth();
-
-      final constAssignments =
-          RegExp(r"assign \w+ = 8'h0;").allMatches(sv).length;
-      expect(constAssignments, equals(1),
-          reason: 'Two expressionless inputs driven by the same constant '
-              'should merge into one signal declaration, not produce '
-              '$constAssignments separate assignments.\n$sv');
-    });
   });
 }

@@ -252,19 +252,6 @@ class SynthLogic {
     }
 
     // pick a preferred, available, mergeable name, if one exists
-    //
-    // Bug fix: the unpreferred check must use `preferredSynthName` (the
-    // sanitized struct-path name), not the raw `Logic.name`.
-    //
-    // A struct field created with `Logic()` (no name) auto-generates the
-    // raw name `_s`.  When the struct is cloned via `addTypedInput`,
-    // `chooseCloneNaming` promotes the field to `Naming.mergeable`, so it
-    // enters `_mergeableLogics`.  The raw name `_s` starts with `_` and
-    // IS unpreferred, but its `preferredSynthName` is the full struct
-    // path — e.g. `inp_myStruct__s` — which starts with `i` and is NOT
-    // unpreferred.  Checking `.name` instead of `.preferredSynthName`
-    // caused these fields to be wrongly deprioritized, losing their
-    // descriptive struct-path names in favor of anonymous `_in0` names.
     final unpreferredMergeableLogics = <Logic>[];
     final uniquifiableMergeableLogics = <Logic>[];
     for (final mergeableLogic in _mergeableLogics) {
@@ -335,18 +322,6 @@ class SynthLogic {
       a.adopt(b);
       return (removed: b, kept: a);
     }
-
-    // Bug fix: a previous guard here blocked merging when one side was a
-    // constant and the other had `constNameDisallowed`.  This was overly
-    // conservative.  `constNameDisallowed` only means "don't use the
-    // constant literal (e.g. `8'h0`) as the signal name" — it does NOT
-    // mean the signal cannot be merged.  `adopt()` already propagates
-    // the flag via `_constNameDisallowed |=`, so the merged result still
-    // gets a proper named declaration with an `assign` statement.
-    //
-    // Without this fix, when multiple `expressionlessInput` ports (e.g.
-    // from `BusSubset`) were driven by the same constant, each produced
-    // its own redundant declaration instead of sharing one signal.
 
     if (!a.mergeable && !b.mergeable) {
       return null;
