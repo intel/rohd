@@ -68,24 +68,53 @@ abstract class Module {
     );
   }
 
+  /// Separate namespace for submodule instance names.
+  ///
+  /// Instance names and signal names occupy different namespaces in
+  /// SystemVerilog (and most other HDLs), so they must be uniquified
+  /// independently to avoid false collisions.
+  @internal
+  late final Uniquifier instanceNameUniquifier = Uniquifier();
+
   /// Returns the collision-free signal name for [logic] within this module.
   String signalName(Logic logic) => signalNamer.nameOf(logic);
 
-  /// Allocates a collision-free signal name in this module's namespace.
+  /// Allocates a collision-free signal name in this module's signal namespace.
   ///
-  /// Used by synthesizers to name connection nets, submodule instances,
-  /// intermediate wires, and other artifacts that have no user-created
-  /// [Logic] object.  The returned name is guaranteed not to collide with
-  /// any signal name or any previously allocated name.
+  /// Used by synthesizers to name connection nets, intermediate wires, and
+  /// other signal artifacts.  The returned name is guaranteed not to collide
+  /// with any other signal name previously allocated in this module.
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
   /// claimed without modification; an exception is thrown if it collides.
   String allocateSignalName(String baseName, {bool reserved = false}) =>
       signalNamer.allocate(baseName, reserved: reserved);
 
+  /// Allocates a collision-free instance name in this module's instance
+  /// namespace.
+  ///
+  /// Instance names are kept separate from signal names because in
+  /// SystemVerilog (and other HDLs) they occupy distinct namespaces — a
+  /// signal and a submodule instance may legally share the same identifier
+  /// without collision.  Mixing them into one uniquifier causes spurious
+  /// suffixing.
+  ///
+  /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
+  /// claimed without modification; an exception is thrown if it collides.
+  String allocateInstanceName(String baseName, {bool reserved = false}) =>
+      instanceNameUniquifier.getUniqueName(
+        initialName: Sanitizer.sanitizeSV(baseName),
+        reserved: reserved,
+      );
+
   /// Returns `true` if [name] has not yet been claimed as a signal name in
-  /// this module's namespace.
+  /// this module's signal namespace.
   bool isSignalNameAvailable(String name) => signalNamer.isAvailable(name);
+
+  /// Returns `true` if [name] has not yet been claimed as an instance name in
+  /// this module's instance namespace.
+  bool isInstanceNameAvailable(String name) =>
+      instanceNameUniquifier.isAvailable(name);
 
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};

@@ -744,10 +744,11 @@ class SynthModuleDefinition {
   /// Picks names of signals and sub-modules.
   ///
   /// Signal names are read from [Module.signalName] (for user-created
-  /// [Logic] objects) or kept as literal constants.  Submodule instance
-  /// names and synthesizer artifacts are allocated from the shared
-  /// [Module] namespace via [Module.allocateSignalName], guaranteeing no
-  /// collisions across synthesizers.
+  /// [Logic] objects) or kept as literal constants and are allocated from
+  /// [Module.allocateSignalName] (signal namespace).  Submodule instance
+  /// names are allocated from [Module.allocateInstanceName] (instance
+  /// namespace).  The two namespaces are independent, matching SystemVerilog
+  /// semantics where signal and instance identifiers do not collide.
   void _pickNames() {
     // Name allocation order matters — earlier claims get the unsuffixed name
     // when there are collisions.  This matches production ROHD priority:

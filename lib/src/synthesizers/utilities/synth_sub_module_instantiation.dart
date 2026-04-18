@@ -25,13 +25,15 @@ class SynthSubModuleInstantiation {
 
   /// Selects a name for this module instance. Must be called exactly once.
   ///
-  /// Names are allocated from [parentModule]'s shared namespace via
-  /// [Module.allocateSignalName], ensuring no collision with signal names or
-  /// other submodule instances — even across multiple synthesizers.
+  /// Names are allocated from [parentModule]'s instance namespace via
+  /// [Module.allocateInstanceName], which is kept separate from the signal
+  /// namespace.  In SystemVerilog (and other HDLs) instance names and signal
+  /// names occupy distinct namespaces, so they must be uniquified
+  /// independently to avoid spurious suffixing.
   void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.allocateSignalName(
+    _name = parentModule.allocateInstanceName(
       module.uniqueInstanceName,
       reserved: module.reserveName,
     );

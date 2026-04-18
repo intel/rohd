@@ -219,10 +219,12 @@ void main() {
       }
     });
 
-    test('submodule instance names are allocated from shared namespace',
+    test('submodule instance names are allocated from the instance namespace',
         () async {
-      // When building a single SynthModuleDefinition (as each synthesizer
-      // does), submodule instance names come from Module.allocateSignalName.
+      // Instance names come from Module.allocateInstanceName, which is
+      // separate from the signal namespace (Module.allocateSignalName).
+      // A signal and a submodule instance may therefore share the same
+      // identifier without collision — matching SystemVerilog semantics.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
@@ -237,10 +239,12 @@ void main() {
       expect(instNames, isNotEmpty,
           reason: 'Should have at least one submodule instance');
 
-      // All instance names should be obtainable from the module namespace
+      // Instance names are claimed in the *instance* namespace, NOT the
+      // signal namespace.
       for (final name in instNames) {
-        expect(mod.isSignalNameAvailable(name), isFalse,
-            reason: 'Instance name "$name" should be claimed in namespace');
+        expect(mod.isInstanceNameAvailable(name), isFalse,
+            reason: 'Instance name "$name" should be claimed in instance '
+                'namespace');
       }
     });
   });
