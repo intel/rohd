@@ -88,7 +88,8 @@ void main() {
           reason: 'Instance "inner" must not be suffixed to "inner_0"');
     });
 
-    test('signal and instance may share the name "inner" without collision', () {
+    test('signal and instance may share the name "inner" without collision',
+        () {
       // Both should be "inner", not one of them "inner_0".
       final sl = def.internalSignals.cast<SynthLogic?>().firstWhere(
             (s) => s!.logics.any((l) => l.name == 'inner'),
