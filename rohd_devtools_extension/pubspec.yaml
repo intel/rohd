@@ -16,12 +16,17 @@ dependencies:
   rohd:
     path: ../../rohd
   # devtools_shared: ^6.0.0
-  devtools_extensions: ^0.3.0
-  devtools_app_shared: ^0.3.0
-  vm_service: ^14.0.0
+  devtools_extensions: ^0.5.0
+  devtools_app_shared: ^0.5.0
+  vm_service: ^15.0.0
   flutter_simple_treeview: ^3.0.2
   equatable: ^2.0.5
   flutter_bloc: ^9.0.0
+  web: ^1.0.0
+  export_png:
+    path: packages/export_png
+  help_api:
+    path: packages/help_api
 
 dev_dependencies:
   flutter_test:
@@ -29,8 +34,10 @@ dev_dependencies:
   flutter_lints: ^3.0.1
   build_runner: ^2.4.7
   mocktail: ^1.0.2
-  bloc_lint: ^0.1.0
+  bloc_lint: ^0.3.7
   
 flutter:
   uses-material-design: true
+  assets:
+    - assets/help/
 

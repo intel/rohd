@@ -20,7 +20,7 @@ class ModuleTreeDetailsNavbar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       backgroundColor: const Color(0x1B1B1FEE),
       selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white.withOpacity(.60),
+      unselectedItemColor: Colors.white.withValues(alpha: .60),
       selectedFontSize: 10,
       unselectedFontSize: 10,
       onTap: (value) {

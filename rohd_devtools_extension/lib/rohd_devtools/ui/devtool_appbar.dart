@@ -8,6 +8,7 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/devtools_help_button.dart';
 
 class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DevtoolAppBar({
@@ -16,11 +17,17 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.onPrimary,
       title: const Text('ROHD DevTool (Beta)'),
       leading: const Icon(Icons.build),
       actions: <Widget>[
+        // ── Help ──
+        DevToolsHelpButton(isDark: isDark),
+
+        // ── Licenses ──
         Padding(
           padding: const EdgeInsets.only(right: 20.0),
           child: MouseRegion(
