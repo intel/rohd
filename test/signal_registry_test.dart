@@ -57,19 +57,19 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      expect(mod.signalName(mod.input('a')), equals('a'));
-      expect(mod.signalName(mod.input('b')), equals('b'));
-      expect(mod.signalName(mod.output('a_bar')), equals('a_bar'));
-      expect(mod.signalName(mod.output('a_and_b')), equals('a_and_b'));
+      expect(mod.namer.signalNameOf(mod.input('a')), equals('a'));
+      expect(mod.namer.signalNameOf(mod.input('b')), equals('b'));
+      expect(mod.namer.signalNameOf(mod.output('a_bar')), equals('a_bar'));
+      expect(mod.namer.signalNameOf(mod.output('a_and_b')), equals('a_and_b'));
     });
 
     test('returns internal signal names', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      expect(mod.signalName(mod.input('en')), equals('en'));
-      expect(mod.signalName(mod.input('reset')), equals('reset'));
-      expect(mod.signalName(mod.output('val')), equals('val'));
+      expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
+      expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
+      expect(mod.namer.signalNameOf(mod.output('val')), equals('val'));
     });
   });
 
@@ -78,7 +78,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final allocated = mod.allocateSignalName('en');
+      final allocated = mod.namer.allocateSignalName('en');
       expect(allocated, isNot(equals('en')),
           reason: 'Should not collide with existing port name');
       expect(allocated, contains('en'),
@@ -89,8 +89,8 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final a = mod.allocateSignalName('wire');
-      final b = mod.allocateSignalName('wire');
+      final a = mod.namer.allocateSignalName('wire');
+      final b = mod.namer.allocateSignalName('wire');
       expect(a, isNot(equals(b)), reason: 'Each allocation should be unique');
     });
   });
@@ -100,7 +100,7 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      expect(mod.signalName(mod.input('a')), equals('a'));
+      expect(mod.namer.signalNameOf(mod.input('a')), equals('a'));
       expect(mod.input('a').name, equals('a'));
     });
   });
@@ -111,7 +111,7 @@ void main() {
         final mod = _Counter(Logic(), Logic());
         await mod.build();
         return {
-          for (final sig in mod.signals) sig.name: mod.signalName(sig),
+          for (final sig in mod.signals) sig.name: mod.namer.signalNameOf(sig),
         };
       }
 
@@ -150,12 +150,12 @@ void main() {
       );
       await dut.build();
 
-      expect(dut.signalName(dut.input('clk')), equals('clk'));
-      expect(dut.signalName(dut.output('done')), equals('done'));
+      expect(dut.namer.signalNameOf(dut.input('clk')), equals('clk'));
+      expect(dut.namer.signalNameOf(dut.output('done')), equals('done'));
 
       for (final sub in dut.subModules) {
         for (final entry in sub.inputs.entries) {
-          final name = sub.signalName(entry.value);
+          final name = sub.namer.signalNameOf(entry.value);
           expect(name, isNotEmpty);
         }
       }

@@ -15,8 +15,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd/src/utilities/signal_namer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -52,40 +52,21 @@ abstract class Module {
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
 
-  // ─── Canonical naming (SignalNamer) ─────────────────────────────
+  // ─── Central naming (Namer) ─────────────────────────────────────
 
-  /// Lazily-constructed namer that owns the [Uniquifier] and the
-  /// sparse Logic→String cache.  Initialized on first access.
+  /// Central namer that owns both the signal and instance namespaces.
+  /// Initialized lazily on first access (after build).
   @internal
-  late final SignalNamer signalNamer = _createSignalNamer();
+  late final Namer namer = _createNamer();
 
-  SignalNamer _createSignalNamer() {
+  Namer _createNamer() {
     assert(hasBuilt, 'Module must be built before canonical names are bound.');
-    return SignalNamer.forModule(
+    return Namer.forModule(
       inputs: _inputs,
       outputs: _outputs,
       inOuts: _inOuts,
     );
   }
-
-  /// Returns the collision-free signal name for [logic] within this module.
-  String signalName(Logic logic) => signalNamer.nameOf(logic);
-
-  /// Allocates a collision-free signal name in this module's namespace.
-  ///
-  /// Used by synthesizers to name connection nets, submodule instances,
-  /// intermediate wires, and other artifacts that have no user-created
-  /// [Logic] object.  The returned name is guaranteed not to collide with
-  /// any signal name or any previously allocated name.
-  ///
-  /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
-  /// claimed without modification; an exception is thrown if it collides.
-  String allocateSignalName(String baseName, {bool reserved = false}) =>
-      signalNamer.allocate(baseName, reserved: reserved);
-
-  /// Returns `true` if [name] has not yet been claimed as a signal name in
-  /// this module's namespace.
-  bool isSignalNameAvailable(String name) => signalNamer.isAvailable(name);
 
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};

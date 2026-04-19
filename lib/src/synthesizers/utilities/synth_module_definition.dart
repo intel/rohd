@@ -743,11 +743,11 @@ class SynthModuleDefinition {
 
   /// Picks names of signals and sub-modules.
   ///
-  /// Signal names are read from [Module.signalName] (for user-created
-  /// [Logic] objects) or kept as literal constants.  Submodule instance
-  /// names and synthesizer artifacts are allocated from the shared
-  /// [Module] namespace via [Module.allocateSignalName], guaranteeing no
-  /// collisions across synthesizers.
+  /// Signal names are read from `Namer.signalNameOf `(for user-created
+  /// [Logic] objects) or kept as literal constants and are allocated from
+  /// `Namer.allocateSignalName` (signal namespace).  Submodule instance
+  /// names are allocated from `Namer.allocateInstanceName` (instance
+  /// namespace).  Both namespaces are managed by the module's `Namer`.
   void _pickNames() {
     // Name allocation order matters — earlier claims get the unsuffixed name
     // when there are collisions.  This matches production ROHD priority:

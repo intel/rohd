@@ -139,9 +139,6 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
 /// final json = await synth.synthesizeToJson(topModule);
 /// ```
 class NetlistSynthesizer extends Synthesizer {
-  /// Top-level modules provided in [prepare].
-  Set<Module> _topModules = {};
-
   /// The configuration options controlling netlist synthesis.
   ///
   /// See [NetlisterOptions] for documentation on individual fields.
@@ -158,11 +155,6 @@ class NetlistSynthesizer extends Synthesizer {
   NetlistSynthesizer({this.options = const NetlisterOptions()});
 
   @override
-  void prepare(List<Module> tops) {
-    _topModules = Set<Module>.from(tops);
-  }
-
-  @override
   bool generatesDefinition(Module module) =>
       // Only modules with sub-modules generate their own module definition.
       // Leaf modules (no children) become cells inside their parent.
@@ -173,11 +165,9 @@ class NetlistSynthesizer extends Synthesizer {
   @override
   SynthesisResult synthesize(
     Module module,
-    String Function(Module module) getInstanceTypeOfModule, {
-    SynthesisResult? Function(Module module)? lookupExistingResult,
-    Map<Module, SynthesisResult>? existingResults,
-  }) {
-    final isTop = _topModules.contains(module);
+    String Function(Module module) getInstanceTypeOfModule,
+  ) {
+    final isTop = module.parent == null;
     final attr = <String, Object?>{'src': 'generated'};
     if (isTop) {
       attr['top'] = 1;
