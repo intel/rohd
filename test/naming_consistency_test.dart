@@ -4,7 +4,7 @@
 // naming_consistency_test.dart
 // Validates that both the SystemVerilog synthesizer and a base
 // SynthModuleDefinition (used by the netlist synthesizer) produce
-// consistent signal names via the shared Module.signalNamer.
+// consistent signal names via the shared Module.namer.
 //
 // 2026 April 10
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -100,7 +100,7 @@ void main() {
       final svDef = SystemVerilogSynthModuleDefinition(mod);
 
       // Base path (same as netlist synthesizer uses)
-      // Since signalNamer is late final, the second constructor reuses
+      // Since namer is late final, the second constructor reuses
       // the same naming state — names must be consistent.
       final baseDef = SynthModuleDefinition(mod);
 
@@ -181,12 +181,11 @@ void main() {
       }
     });
 
-    test('signalNamer is shared across multiple SynthModuleDefinitions',
-        () async {
+    test('namer is shared across multiple SynthModuleDefinitions', () async {
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
-      // Build one def, then build another — same signalNamer instance.
+      // Build one def, then build another — same namer instance.
       final def1 = SynthModuleDefinition(mod);
       final def2 = SynthModuleDefinition(mod);
 
@@ -202,27 +201,27 @@ void main() {
       }
     });
 
-    test('Module.signalName matches SynthLogic.name for ports', () async {
+    test('Namer.signalNameOf matches SynthLogic.name for ports', () async {
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
       final def = SynthModuleDefinition(mod);
       final synthNames = _collectNames(def);
 
-      // Module.signalName uses SignalNamer.nameOf directly
+      // Module.namer.signalNameOf uses Namer directly
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
-        final moduleName = mod.signalName(port);
+        final moduleName = mod.namer.signalNameOf(port);
         final synthName = synthNames[port];
         expect(synthName, moduleName,
-            reason: 'SynthLogic.name and Module.signalName must agree '
+            reason: 'SynthLogic.name and Module.namer.signalNameOf must agree '
                 'for port ${port.name}');
       }
     });
 
     test('submodule instance names are allocated from the instance namespace',
         () async {
-      // Instance names come from Module.allocateInstanceName, which is
-      // separate from the signal namespace (Module.allocateSignalName).
+      // Instance names come from Module.namer.allocateInstanceName, which is
+      // separate from the signal namespace (Module.namer.allocateSignalName).
       // A signal and a submodule instance may therefore share the same
       // identifier without collision — matching SystemVerilog semantics.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
@@ -242,7 +241,7 @@ void main() {
       // Instance names are claimed in the *instance* namespace, NOT the
       // signal namespace.
       for (final name in instNames) {
-        expect(mod.isInstanceNameAvailable(name), isFalse,
+        expect(mod.namer.isInstanceNameAvailable(name), isFalse,
             reason: 'Instance name "$name" should be claimed in instance '
                 'namespace');
       }

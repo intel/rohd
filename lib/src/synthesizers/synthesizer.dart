@@ -18,6 +18,5 @@ abstract class Synthesizer {
   /// Synthesizes [module] into a [SynthesisResult], given the mapping provided
   /// by [getInstanceTypeOfModule].
   SynthesisResult synthesize(
-      Module module, String Function(Module module) getInstanceTypeOfModule,
-      {Map<Module, SynthesisResult>? existingResults});
+      Module module, String Function(Module module) getInstanceTypeOfModule);
 }

@@ -18,7 +18,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:test/test.dart';
 
 // ── Minimal repro modules ────────────────────────────────────────────────────
@@ -61,8 +61,8 @@ void main() {
     late bool previousSetting;
 
     setUpAll(() async {
-      previousSetting = Config.ensureUniqueSignalAndInstanceNames;
-      Config.ensureUniqueSignalAndInstanceNames = false;
+      previousSetting = Namer.uniquifySignalAndInstanceNames;
+      Namer.uniquifySignalAndInstanceNames = false;
 
       mod = _CollidingParent(Logic(width: 8));
       await mod.build();
@@ -70,7 +70,7 @@ void main() {
     });
 
     tearDownAll(() {
-      Config.ensureUniqueSignalAndInstanceNames = previousSetting;
+      Namer.uniquifySignalAndInstanceNames = previousSetting;
     });
 
     test('internal signal named "inner" retains its exact name', () {

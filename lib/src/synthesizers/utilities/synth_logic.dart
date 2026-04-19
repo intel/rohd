@@ -11,11 +11,25 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// Represents a logic signal in the generated code within a module.
 @internal
 class SynthLogic {
+  /// Controls whether two constants with the same value driving separate
+  /// module inputs are merged into a single signal declaration.
+  ///
+  /// When `true` (the default), identical constants are collapsed to one
+  /// declaration — desirable for simulation-oriented output such as
+  /// SystemVerilog, where a single `assign wire = VALUE;` feeds all
+  /// downstream consumers.
+  ///
+  /// When `false`, each constant input keeps its own declaration.  This is
+  /// useful for netlist/visualization outputs where seeing every individual
+  /// constant connection is more informative than an optimized fan-out net.
+  static bool mergeConstantInputs = true;
+
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
         if (_reservedLogic != null) _reservedLogic!,
@@ -225,7 +239,7 @@ class SynthLogic {
   /// Delegates to signal namer which handles constant value naming, priority
   /// selection, and uniquification via the module's shared namespace.
   String _findName() =>
-      parentSynthModuleDefinition.module.signalNamer.nameOfBest(
+      parentSynthModuleDefinition.module.namer.signalNameOfBest(
         logics,
         constValue: _constLogic,
         constNameDisallowed: _constNameDisallowed,
@@ -274,7 +288,12 @@ class SynthLogic {
   }
 
   /// Indicates whether two constants can be merged.
+  ///
+  /// Merging is only performed when [SynthLogic.mergeConstantInputs] is
+  /// `true`.  Set it to `false` to keep each constant input as its own
+  /// declaration (e.g. for netlist/visualization output).
   static bool _constantsMergeable(SynthLogic a, SynthLogic b) =>
+      SynthLogic.mergeConstantInputs &&
       a.isConstant &&
       b.isConstant &&
       a._constLogic!.value == b._constLogic!.value &&
@@ -336,7 +355,7 @@ class SynthLogic {
 
   @override
   String toString() => '${_name == null ? 'null' : '"$name"'}, '
-      'logics contained: ${logics.map((e) => e.preferredSynthName).toList()}';
+      'logics contained: ${logics.map(Namer.baseName).toList()}';
 
   /// Provides a definition for a range in SV from a width.
   static String _widthToRangeDef(int width, {bool forceRange = false}) {
@@ -482,18 +501,4 @@ class SynthLogicArrayElement extends SynthLogic {
   String toString() => '${_name == null ? 'null' : '"$name"'},'
       ' parentArray=($parentArray), element ${logic.arrayIndex}, logic: $logic'
       ' logics contained: ${logics.map((e) => e.name).toList()}';
-}
-
-extension on Logic {
-  /// Returns the preferred name for this [Logic] while generating in the synth
-  /// stack.
-  String get preferredSynthName => naming == Naming.reserved
-      // if reserved, keep the exact name
-      ? name
-      : isArrayMember
-          // arrays nicely name their elements already
-          ? name
-          // sanitize to remove any `.` in struct names
-          // the base `name` will be returned if not a structure.
-          : Sanitizer.sanitizeSV(structureName);
 }

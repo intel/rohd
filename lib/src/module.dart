@@ -15,8 +15,8 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd/src/utilities/signal_namer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
@@ -52,100 +52,21 @@ abstract class Module {
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
 
-  // ─── Canonical naming (SignalNamer) ─────────────────────────────
+  // ─── Central naming (Namer) ─────────────────────────────────────
 
-  /// Lazily-constructed namer that owns the [Uniquifier] and the
-  /// sparse Logic→String cache.  Initialized on first access.
+  /// Central namer that owns both the signal and instance namespaces.
+  /// Initialized lazily on first access (after build).
   @internal
-  late final SignalNamer signalNamer = _createSignalNamer();
+  late final Namer namer = _createNamer();
 
-  SignalNamer _createSignalNamer() {
+  Namer _createNamer() {
     assert(hasBuilt, 'Module must be built before canonical names are bound.');
-    return SignalNamer.forModule(
+    return Namer.forModule(
       inputs: _inputs,
       outputs: _outputs,
       inOuts: _inOuts,
-      isAvailableInOtherNamespace: (name) =>
-          !Config.ensureUniqueSignalAndInstanceNames ||
-          instanceNameUniquifier.isAvailable(name),
     );
   }
-
-  /// Separate namespace for submodule instance names.
-  ///
-  /// Instance names and signal names occupy different namespaces in
-  /// SystemVerilog (and most other HDLs), so they must be uniquified
-  /// independently to avoid false collisions.
-  @internal
-  late final Uniquifier instanceNameUniquifier = Uniquifier();
-
-  /// Returns the collision-free signal name for [logic] within this module.
-  String signalName(Logic logic) => signalNamer.nameOf(logic);
-
-  /// Allocates a collision-free signal name in this module's signal namespace.
-  ///
-  /// Used by synthesizers to name connection nets, intermediate wires, and
-  /// other signal artifacts.  The returned name is guaranteed not to collide
-  /// with any other signal name previously allocated in this module.
-  ///
-  /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
-  /// claimed without modification; an exception is thrown if it collides.
-  String allocateSignalName(String baseName, {bool reserved = false}) =>
-      signalNamer.allocate(baseName, reserved: reserved);
-
-  /// Allocates a collision-free instance name in this module's instance
-  /// namespace.
-  ///
-  /// Instance names are kept separate from signal names because in
-  /// SystemVerilog (and other HDLs) they occupy distinct namespaces — a
-  /// signal and a submodule instance may legally share the same identifier
-  /// without collision.  Mixing them into one uniquifier causes spurious
-  /// suffixing.
-  ///
-  /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
-  /// claimed without modification; an exception is thrown if it collides.
-  String allocateInstanceName(String baseName, {bool reserved = false}) {
-    final sanitizedBaseName = Sanitizer.sanitizeSV(baseName);
-
-    if (!Config.ensureUniqueSignalAndInstanceNames) {
-      return instanceNameUniquifier.getUniqueName(
-        initialName: sanitizedBaseName,
-        reserved: reserved,
-      );
-    }
-
-    if (reserved) {
-      if (!instanceNameUniquifier.isAvailable(sanitizedBaseName,
-              reserved: true) ||
-          !signalNamer.isAvailable(sanitizedBaseName)) {
-        throw UnavailableReservedNameException(sanitizedBaseName);
-      }
-
-      return instanceNameUniquifier.getUniqueName(
-        initialName: sanitizedBaseName,
-        reserved: true,
-      );
-    }
-
-    var candidate = sanitizedBaseName;
-    var suffix = 0;
-    while (!instanceNameUniquifier.isAvailable(candidate) ||
-        !signalNamer.isAvailable(candidate)) {
-      candidate = '${sanitizedBaseName}_$suffix';
-      suffix++;
-    }
-
-    return instanceNameUniquifier.getUniqueName(initialName: candidate);
-  }
-
-  /// Returns `true` if [name] has not yet been claimed as a signal name in
-  /// this module's signal namespace.
-  bool isSignalNameAvailable(String name) => signalNamer.isAvailable(name);
-
-  /// Returns `true` if [name] has not yet been claimed as an instance name in
-  /// this module's instance namespace.
-  bool isInstanceNameAvailable(String name) =>
-      instanceNameUniquifier.isAvailable(name);
 
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
