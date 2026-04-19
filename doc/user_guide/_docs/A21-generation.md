@@ -110,11 +110,11 @@ The top-level module is marked with `"top": 1` in its `attributes`.
 
 ### Slim mode
 
-Passing `NetlisterOptions(slimMode: true)` produces a compact JSON that omits cell `connections`. This is useful for transmitting the design dictionary (module hierarchy, ports, signals) without the full connectivity — a remote agent can then fetch connection details per module on demand.
+Passing `NetlistOptions(slimMode: true)` produces a compact JSON that omits cell `connections`. This is useful for transmitting the design dictionary (module hierarchy, ports, signals) without the full connectivity — a remote agent can then fetch connection details per module on demand.
 
 ```dart
 final slimSynth = NetlistSynthesizer(
-  options: const NetlisterOptions(slimMode: true),
+  options: const NetlistOptions(slimMode: true),
 );
 final slimJson = await slimSynth.synthesizeToJson(myModule);
 ```

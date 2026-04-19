@@ -3,7 +3,7 @@
 //
 // netlist_test.dart
 // Tests for the netlist synthesizer: JSON structure, SynthBuilder,
-// NetlistSynthesisResult, collectModuleEntries, NetlisterOptions,
+// NetlistSynthesisResult, collectModuleEntries, NetlistOptions,
 // and example-based smoke tests.
 //
 // 2026 March 31
@@ -437,15 +437,15 @@ void main() {
     });
   });
 
-  // ── NetlisterOptions ──────────────────────────────────────────────────
+  // ── NetlistOptions ───────────────────────────────────────────────────
 
-  group('NetlisterOptions', () {
+  group('NetlistOptions', () {
     test('slimMode omits cell connections', () async {
       final mod = _CompositeModule(Logic(name: 'a'), Logic(name: 'b'));
       await mod.build();
 
       final slimSynth =
-          NetlistSynthesizer(options: const NetlisterOptions(slimMode: true));
+          NetlistSynthesizer(options: const NetlistOptions(slimMode: true));
       final json = await slimSynth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;

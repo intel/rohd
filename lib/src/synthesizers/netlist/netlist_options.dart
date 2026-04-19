@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// netlister_options.dart
+// netlist_options.dart
 // Configuration for netlist synthesis.
 //
 // 2026 March 12
@@ -36,13 +36,13 @@ import 'package:rohd/src/synthesizers/netlist/leaf_cell_mapper.dart';
 ///
 /// Example usage:
 /// ```dart
-/// const options = NetlisterOptions(
+/// const options = NetlistOptions(
 ///   groupStructConversions: true,
 ///   collapseStructGroups: true,
 /// );
 /// final synth = NetlistSynthesizer(options: options);
 /// ```
-class NetlisterOptions {
+class NetlistOptions {
   /// The leaf-cell mapper used to convert ROHD leaf modules to Yosys
   /// primitive cell types.  When `null`, [LeafCellMapper.defaultMapper]
   /// is used.
@@ -85,11 +85,11 @@ class NetlisterOptions {
   /// produce compatible wire IDs.
   final bool slimMode;
 
-  /// Creates a [NetlisterOptions] with the given configuration.
+  /// Creates a [NetlistOptions] with the given configuration.
   ///
   /// All parameters have sensible defaults matching the current
   /// netlist synthesizer behaviour.
-  const NetlisterOptions({
+  const NetlistOptions({
     this.leafCellMapper,
     this.groupStructConversions = false,
     this.collapseStructGroups = false,

@@ -133,7 +133,7 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
 ///
 /// Usage:
 /// ```dart
-/// const options = NetlisterOptions(groupStructConversions: true);
+/// const options = NetlistOptions(groupStructConversions: true);
 /// final synth = NetlistSynthesizer(options: options);
 /// final builder = SynthBuilder(topModule, synth);
 /// final json = await synth.synthesizeToJson(topModule);
@@ -141,8 +141,8 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
 class NetlistSynthesizer extends Synthesizer {
   /// The configuration options controlling netlist synthesis.
   ///
-  /// See [NetlisterOptions] for documentation on individual fields.
-  final NetlisterOptions options;
+  /// See [NetlistOptions] for documentation on individual fields.
+  final NetlistOptions options;
 
   /// Convenience accessor for the leaf-cell mapper.
   LeafCellMapper get leafCellMapper =>
@@ -151,8 +151,8 @@ class NetlistSynthesizer extends Synthesizer {
   /// Creates a [NetlistSynthesizer].
   ///
   /// All synthesis parameters are bundled in [options]; see
-  /// [NetlisterOptions] for documentation on each field.
-  NetlistSynthesizer({this.options = const NetlisterOptions()});
+  /// [NetlistOptions] for documentation on each field.
+  NetlistSynthesizer({this.options = const NetlistOptions()});
 
   @override
   bool generatesDefinition(Module module) =>
@@ -165,8 +165,10 @@ class NetlistSynthesizer extends Synthesizer {
   @override
   SynthesisResult synthesize(
     Module module,
-    String Function(Module module) getInstanceTypeOfModule,
-  ) {
+    String Function(Module module) getInstanceTypeOfModule, {
+    SynthesisResult? Function(Module module)? lookupExistingResult,
+    Map<Module, SynthesisResult>? existingResults,
+  }) {
     final isTop = module.parent == null;
     final attr = <String, Object?>{'src': 'generated'};
     if (isTop) {
@@ -395,9 +397,9 @@ class NetlistSynthesizer extends Synthesizer {
       SynthLogic dstSynthLogic,
     })>[];
 
-    // Track output struct ports of the current module so Step 3
-    // can skip $struct_field collection for them ($struct_compose
-    // handles these instead).
+    // Track struct ports (both output ports of the current module AND
+    // sub-module input struct ports) so Step 3 can skip $struct_field
+    // collection for them ($struct_pack handles these instead).
     final outputStructPortLogics = <Logic>{};
 
     if (synthDef != null) {
@@ -420,10 +422,26 @@ class NetlistSynthesizer extends Synthesizer {
       //    src → dst[lower:upper].  The port-slice IDs become the
       //    leaf's IDs so that the port is composed from its fields.
       //
-      //    Exception: for output struct ports of the CURRENT module,
-      //    we keep distinct port and field IDs and instead collect
-      //    pending $struct_compose cells.  This avoids "shorting"
-      //    where port and field netnames share the same wire IDs.
+      //    For struct ports (both output ports of the current module
+      //    AND sub-module input struct ports), we keep distinct port
+      //    and field IDs and instead collect pending $struct_pack
+      //    cells.  This avoids "shorting" where field wires are
+      //    aliased directly to port bits, which creates multi-driver
+      //    conflicts with $struct_unpack cells emitted in Step 3.
+      //
+      //    For non-struct sub-module input ports, we alias as before.
+
+      /// Recursively add [struct] and all its nested [LogicStructure]
+      /// descendants (excluding [LogicArray]) to [set].
+      void addStructAndDescendants(LogicStructure struct, Set<Logic> set) {
+        set.add(struct);
+        for (final elem in struct.elements) {
+          if (elem is LogicStructure && elem is! LogicArray) {
+            addStructAndDescendants(elem, set);
+          }
+        }
+      }
+
       for (final pa
           in synthDef.assignments.whereType<PartialSynthAssignment>()) {
         final srcIds = getIds(pa.src);
@@ -433,7 +451,13 @@ class NetlistSynthesizer extends Synthesizer {
         final isCurrentModuleOutputPort =
             pa.dst.isPort(module) && pa.dst.logics.any((l) => l.isOutput);
 
-        if (isCurrentModuleOutputPort) {
+        // Detect: is pa.dst a sub-module input struct port?
+        // (LogicStructure but not LogicArray, and not an output of the
+        // current module.)
+        final isSubModuleInputStructPort = !isCurrentModuleOutputPort &&
+            pa.dst.logics.any((l) => l is LogicStructure && l is! LogicArray);
+
+        if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
           // Record as pending compose cell instead of aliasing.
           structComposeCells.add((
             srcIds: srcIds,
@@ -443,14 +467,15 @@ class NetlistSynthesizer extends Synthesizer {
             srcSynthLogic: pa.src,
             dstSynthLogic: pa.dst,
           ));
-          // Track the Logic so Step 3 skips $struct_field for it.
+          // Track the Logic (and nested structs) so Step 3 skips
+          // $struct_unpack for them.
           for (final l in pa.dst.logics) {
-            if (l is LogicStructure) {
-              outputStructPortLogics.add(l);
+            if (l is LogicStructure && l is! LogicArray) {
+              addStructAndDescendants(l, outputStructPortLogics);
             }
           }
         } else {
-          // Sub-module input port: alias as before.
+          // Non-struct sub-module input port: alias as before.
           for (var i = 0; i < srcIds.length; i++) {
             final dstIdx = pa.dstLowerIndex + i;
             if (dstIdx < dstIds.length && dstIds[dstIdx] != srcIds[i]) {
