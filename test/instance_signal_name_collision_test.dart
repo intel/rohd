@@ -18,6 +18,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/config.dart';
 import 'package:test/test.dart';
 
 // ── Minimal repro modules ────────────────────────────────────────────────────
@@ -57,11 +58,19 @@ void main() {
   group('instance / signal name collision (main-branch bug)', () {
     late _CollidingParent mod;
     late SynthModuleDefinition def;
+    late bool previousSetting;
 
     setUpAll(() async {
+      previousSetting = Config.ensureUniqueSignalAndInstanceNames;
+      Config.ensureUniqueSignalAndInstanceNames = false;
+
       mod = _CollidingParent(Logic(width: 8));
       await mod.build();
       def = SynthModuleDefinition(mod);
+    });
+
+    tearDownAll(() {
+      Config.ensureUniqueSignalAndInstanceNames = previousSetting;
     });
 
     test('internal signal named "inner" retains its exact name', () {

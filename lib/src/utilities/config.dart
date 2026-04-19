@@ -11,4 +11,13 @@
 class Config {
   /// The version of the ROHD framework.
   static const String version = '0.6.8';
+
+  /// Controls whether synthesized signal names and instance names must be
+  /// unique across both namespaces.
+  ///
+  /// When `true`, central naming cross-checks both namespaces during
+  /// allocation to avoid collisions in generated output.
+  ///
+  /// When `false`, signal and instance names are uniquified independently.
+  static bool ensureUniqueSignalAndInstanceNames = true;
 }

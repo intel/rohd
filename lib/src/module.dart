@@ -65,6 +65,9 @@ abstract class Module {
       inputs: _inputs,
       outputs: _outputs,
       inOuts: _inOuts,
+      isAvailableInOtherNamespace: (name) =>
+          !Config.ensureUniqueSignalAndInstanceNames ||
+          instanceNameUniquifier.isAvailable(name),
     );
   }
 
@@ -101,11 +104,39 @@ abstract class Module {
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization) is
   /// claimed without modification; an exception is thrown if it collides.
-  String allocateInstanceName(String baseName, {bool reserved = false}) =>
-      instanceNameUniquifier.getUniqueName(
-        initialName: Sanitizer.sanitizeSV(baseName),
+  String allocateInstanceName(String baseName, {bool reserved = false}) {
+    final sanitizedBaseName = Sanitizer.sanitizeSV(baseName);
+
+    if (!Config.ensureUniqueSignalAndInstanceNames) {
+      return instanceNameUniquifier.getUniqueName(
+        initialName: sanitizedBaseName,
         reserved: reserved,
       );
+    }
+
+    if (reserved) {
+      if (!instanceNameUniquifier.isAvailable(sanitizedBaseName,
+              reserved: true) ||
+          !signalNamer.isAvailable(sanitizedBaseName)) {
+        throw UnavailableReservedNameException(sanitizedBaseName);
+      }
+
+      return instanceNameUniquifier.getUniqueName(
+        initialName: sanitizedBaseName,
+        reserved: true,
+      );
+    }
+
+    var candidate = sanitizedBaseName;
+    var suffix = 0;
+    while (!instanceNameUniquifier.isAvailable(candidate) ||
+        !signalNamer.isAvailable(candidate)) {
+      candidate = '${sanitizedBaseName}_$suffix';
+      suffix++;
+    }
+
+    return instanceNameUniquifier.getUniqueName(initialName: candidate);
+  }
 
   /// Returns `true` if [name] has not yet been claimed as a signal name in
   /// this module's signal namespace.

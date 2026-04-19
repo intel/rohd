@@ -23,6 +23,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 @internal
 class SignalNamer {
   final Uniquifier _uniquifier;
+  final bool Function(String name) _isAvailableInOtherNamespace;
 
   /// Sparse cache: only entries where the canonical name has been resolved.
   /// Ports whose sanitized name == logic.name may be absent (fast-path
@@ -36,8 +37,10 @@ class SignalNamer {
     required Uniquifier uniquifier,
     required Map<Logic, String> portRenames,
     required Set<Logic> portLogics,
+    required bool Function(String name) isAvailableInOtherNamespace,
   })  : _uniquifier = uniquifier,
-        _portLogics = portLogics {
+        _portLogics = portLogics,
+        _isAvailableInOtherNamespace = isAvailableInOtherNamespace {
     _names.addAll(portRenames);
   }
 
@@ -49,6 +52,7 @@ class SignalNamer {
     required Map<String, Logic> inputs,
     required Map<String, Logic> outputs,
     required Map<String, Logic> inOuts,
+    bool Function(String name)? isAvailableInOtherNamespace,
   }) {
     final portRenames = <Logic, String>{};
     final portLogics = <Logic>{};
@@ -85,7 +89,34 @@ class SignalNamer {
       uniquifier: uniquifier,
       portRenames: portRenames,
       portLogics: portLogics,
+      isAvailableInOtherNamespace:
+          isAvailableInOtherNamespace ?? ((_) => true),
     );
+  }
+
+  bool _isAvailable(String name, {bool reserved = false}) =>
+      _uniquifier.isAvailable(name, reserved: reserved) &&
+      _isAvailableInOtherNamespace(name);
+
+  String _allocateUniqueName(String baseName, {bool reserved = false}) {
+    if (reserved) {
+      if (!_isAvailable(baseName, reserved: true)) {
+        throw UnavailableReservedNameException(baseName);
+      }
+
+      _uniquifier.getUniqueName(initialName: baseName, reserved: true);
+      return baseName;
+    }
+
+    var candidate = baseName;
+    var suffix = 0;
+    while (!_isAvailable(candidate)) {
+      candidate = '${baseName}_$suffix';
+      suffix++;
+    }
+
+    _uniquifier.getUniqueName(initialName: candidate);
+    return candidate;
   }
 
   /// Returns the canonical name for [logic].
@@ -117,8 +148,8 @@ class SignalNamer {
       baseName = Sanitizer.sanitizeSV(logic.structureName);
     }
 
-    final name = _uniquifier.getUniqueName(
-      initialName: baseName,
+    final name = _allocateUniqueName(
+      baseName,
       reserved: isReservedInternal,
     );
     _names[logic] = name;
@@ -214,7 +245,7 @@ class SignalNamer {
 
     // Preferred-available mergeable.
     for (final logic in preferredMergeable) {
-      if (_uniquifier.isAvailable(baseName(logic))) {
+      if (_isAvailable(baseName(logic))) {
         return _nameAndCacheAll(logic, candidates);
       }
     }
@@ -227,7 +258,7 @@ class SignalNamer {
     // Unpreferred mergeable — prefer available.
     if (unpreferredMergeable.isNotEmpty) {
       final best = unpreferredMergeable
-              .firstWhereOrNull((e) => _uniquifier.isAvailable(baseName(e))) ??
+              .firstWhereOrNull((e) => _isAvailable(baseName(e))) ??
           unpreferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }
@@ -261,11 +292,11 @@ class SignalNamer {
   /// When [reserved] is `true`, the exact [baseName] (after sanitization)
   /// is claimed without modification; an exception is thrown if it collides.
   String allocate(String baseName, {bool reserved = false}) =>
-      _uniquifier.getUniqueName(
-        initialName: Sanitizer.sanitizeSV(baseName),
+      _allocateUniqueName(
+        Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
 
   /// Returns `true` if [name] has not yet been claimed in this namespace.
-  bool isAvailable(String name) => _uniquifier.isAvailable(name);
+  bool isAvailable(String name) => _isAvailable(name);
 }
