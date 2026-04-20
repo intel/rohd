@@ -333,6 +333,38 @@ class NetlistSynthesizer extends Synthesizer {
           }
         }
 
+        // -- Rename Seq/Comb ports to Namer wire names -----------------
+        // The port names from _Always.addInput/addOutput are internal
+        // (e.g. `_out`, `_enable`).  Replace them with the Namer's
+        // resolved wire name so they match SystemVerilog and WaveDumper.
+        if (sub is Combinational || sub is Sequential) {
+          final renames = <String, String>{};
+          for (final portName in cellConns.keys.toList()) {
+            final sl = instance.inputMapping[portName] ??
+                instance.outputMapping[portName] ??
+                instance.inOutMapping[portName];
+            if (sl == null) {
+              continue; // aggregated port, already renamed
+            }
+            final resolved = resolveReplacement(sl);
+            final namerName = tryGetSynthLogicName(resolved);
+            if (namerName != null && namerName != portName) {
+              renames[portName] = namerName;
+            }
+          }
+          for (final entry in renames.entries) {
+            final bits = cellConns.remove(entry.key)!;
+            final dir = cellPortDirs.remove(entry.key)!;
+            var newName = entry.value;
+            // Avoid collision with existing port names.
+            if (cellConns.containsKey(newName)) {
+              newName = '${entry.value}_${entry.key}';
+            }
+            cellConns[newName] = bits;
+            cellPortDirs[newName] = dir;
+          }
+        }
+
         cells[cellKey] = {
           'hide_name': 0,
           'type': mapped?.cellType ?? defaultCellType,
@@ -756,13 +788,121 @@ class NetlistSynthesizer extends Synthesizer {
         // Derive struct name for the cell key.
         final structName = Sanitizer.sanitizeSV(parentLogic.name);
 
+        // Build element range table for the parent struct so we can
+        // derive proper field names even when the leaf Logic objects
+        // have unpreferred names like `_swizzled`.
+        // Same strategy as $struct_pack: walk the hierarchy collecting
+        // (start, end, name, path, indexInParent) and look up the
+        // narrowest non-unpreferred range for each field offset.
+        final suElementRanges =
+            <({
+              int start,
+              int end,
+              String name,
+              String path,
+              int indexInParent,
+            })>[];
+        if (parentLogic is LogicStructure) {
+          void walkStruct(
+              LogicStructure struct, int baseOffset, String parentPath) {
+            var offset = baseOffset;
+            for (var idx = 0; idx < struct.elements.length; idx++) {
+              final elem = struct.elements[idx];
+              final elemEnd = offset + elem.width;
+              final elemPath = parentPath.isEmpty
+                  ? elem.name
+                  : '${parentPath}_${elem.name}';
+              suElementRanges.add((
+                start: offset,
+                end: elemEnd,
+                name: elem.name,
+                path: elemPath,
+                indexInParent: idx,
+              ));
+              if (elem is LogicStructure && elem is! LogicArray) {
+                walkStruct(elem, offset, elemPath);
+              }
+              offset = elemEnd;
+            }
+          }
+
+          walkStruct(parentLogic as LogicStructure, 0, '');
+        }
+
+        String suFieldNameFor(int fieldOffset, String fallbackName) {
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? bestNamed;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? bestAny;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? narrowest;
+
+          for (final r in suElementRanges) {
+            if (fieldOffset >= r.start && fieldOffset < r.end) {
+              final span = r.end - r.start;
+              if (narrowest == null ||
+                  span < (narrowest.end - narrowest.start)) {
+                narrowest = r;
+              }
+              if (bestAny == null || span < (bestAny.end - bestAny.start)) {
+                bestAny = r;
+              }
+              if (!Naming.isUnpreferred(r.name)) {
+                if (bestNamed == null ||
+                    span < (bestNamed.end - bestNamed.start)) {
+                  bestNamed = r;
+                }
+              }
+            }
+          }
+
+          if (bestNamed != null) {
+            if (narrowest != null &&
+                (narrowest.end - narrowest.start) <
+                    (bestNamed.end - bestNamed.start)) {
+              final bestNamedPrefix = bestNamed.path;
+              if (narrowest.path.length > bestNamedPrefix.length &&
+                  narrowest.path.startsWith(bestNamedPrefix)) {
+                final suffix =
+                    narrowest.path.substring(bestNamedPrefix.length + 1);
+                if (!Naming.isUnpreferred(suffix)) {
+                  return '${bestNamed.name}_$suffix';
+                }
+              }
+              return '${bestNamed.name}_${narrowest.indexInParent}';
+            }
+            return bestNamed.name;
+          }
+          // All matching elements have unpreferred names — use the
+          // narrowest element's positional index as discriminator.
+          if (narrowest != null && Naming.isUnpreferred(narrowest.name)) {
+            return 'anonymous_${narrowest.indexInParent}';
+          }
+          return bestAny?.name ?? fallbackName;
+        }
+
         // Build port_directions and connections with one output per field.
         final portDirs = <String, String>{'A': 'input'};
         final conns = <String, List<Object>>{'A': resolvedParentBits};
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          final fieldName = f.elemLogic.name;
+          final fieldName = suFieldNameFor(f.offset, f.elemLogic.name);
           // Disambiguate duplicate field names with index suffix.
           var portName = fieldName;
           if (portDirs.containsKey(portName)) {
@@ -779,7 +919,8 @@ class NetlistSynthesizer extends Synthesizer {
         };
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          params['FIELD_${i}_NAME'] = f.elemLogic.name;
+          params['FIELD_${i}_NAME'] =
+              suFieldNameFor(f.offset, f.elemLogic.name);
           params['FIELD_${i}_OFFSET'] = f.offset;
           params['FIELD_${i}_WIDTH'] = f.width;
         }
@@ -854,14 +995,144 @@ class NetlistSynthesizer extends Synthesizer {
             ? Sanitizer.sanitizeSV(dstLogic.name)
             : 'struct_$spIdx';
 
+        // Build a lookup from bit offset to the best struct element
+        // name, so that field names come from the struct definition
+        // (e.g. "data", "last", "poison") rather than the source
+        // signal name (which may be an internal like "_swizzled").
+        //
+        // Elements pack LSB-first via `rswizzle`, so element[0]
+        // starts at offset 0, element[1] at element[0].width, etc.
+        //
+        // We collect (start, end, name, path, parentElementIndex)
+        // ranges for every element at every nesting level.  The
+        // `path` carries the chain of parent struct names so we can
+        // produce qualified names like "mmu_info_mmuSid".  When
+        // leaf names are unpreferred, `parentElementIndex` provides
+        // a fallback discriminator like "mmu_info_0".
+        final dstElementRanges =
+            <({
+              int start,
+              int end,
+              String name,
+              String path,
+              int indexInParent,
+            })>[];
+        if (dstLogic is LogicStructure) {
+          void walkStruct(
+              LogicStructure struct, int baseOffset, String parentPath) {
+            var offset = baseOffset;
+            for (var idx = 0; idx < struct.elements.length; idx++) {
+              final elem = struct.elements[idx];
+              final elemEnd = offset + elem.width;
+              final elemPath = parentPath.isEmpty
+                  ? elem.name
+                  : '${parentPath}_${elem.name}';
+              dstElementRanges.add((
+                start: offset,
+                end: elemEnd,
+                name: elem.name,
+                path: elemPath,
+                indexInParent: idx,
+              ));
+              if (elem is LogicStructure && elem is! LogicArray) {
+                walkStruct(elem, offset, elemPath);
+              }
+              offset = elemEnd;
+            }
+          }
+
+          walkStruct(dstLogic, 0, '');
+        }
+
+        /// Look up the field name for a compose entry by finding the
+        /// best struct element whose range contains [dstLowerIndex].
+        ///
+        /// Strategy (deepest-first):
+        ///  1. Find the narrowest element with a non-unpreferred name.
+        ///  2. If a narrower unpreferred leaf exists under a named
+        ///     parent, try to qualify with the leaf's proper name
+        ///     (e.g. `mmu_info_mmuSid`).
+        ///  3. If the leaf name is also unpreferred, fall back to the
+        ///     parent name qualified by the leaf's positional index
+        ///     (e.g. `mmu_info_0`, `mmu_info_1`).
+        ///  4. Falls back to the resolved source SynthLogic name.
+        String fieldNameFor(
+          int dstLowerIndex,
+          SynthLogic srcSynthLogic,
+        ) {
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? bestNamed;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? bestAny;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent,
+          })? narrowest;
+
+          for (final r in dstElementRanges) {
+            if (dstLowerIndex >= r.start && dstLowerIndex < r.end) {
+              final span = r.end - r.start;
+              if (narrowest == null ||
+                  span < (narrowest.end - narrowest.start)) {
+                narrowest = r;
+              }
+              if (bestAny == null || span < (bestAny.end - bestAny.start)) {
+                bestAny = r;
+              }
+              if (!Naming.isUnpreferred(r.name)) {
+                if (bestNamed == null ||
+                    span < (bestNamed.end - bestNamed.start)) {
+                  bestNamed = r;
+                }
+              }
+            }
+          }
+
+          if (bestNamed != null) {
+            // Check if there's a narrower child element under
+            // bestNamed that we can use to discriminate.
+            if (narrowest != null &&
+                (narrowest.end - narrowest.start) <
+                    (bestNamed.end - bestNamed.start)) {
+              final bestNamedPrefix = bestNamed.path;
+              // Try using the child's proper name as qualifier.
+              if (narrowest.path.length > bestNamedPrefix.length &&
+                  narrowest.path.startsWith(bestNamedPrefix)) {
+                final suffix =
+                    narrowest.path.substring(bestNamedPrefix.length + 1);
+                if (!Naming.isUnpreferred(suffix)) {
+                  return '${bestNamed.name}_$suffix';
+                }
+              }
+              // Child has unpreferred name — use positional index.
+              return '${bestNamed.name}_${narrowest.indexInParent}';
+            }
+            return bestNamed.name;
+          }
+          return bestAny?.name ??
+              resolveReplacement(srcSynthLogic).name;
+        }
+
         // Build port_directions and connections.
         final portDirs = <String, String>{};
         final conns = <String, List<Object>>{};
 
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          final srcLogic = f.srcSynthLogic.logics.firstOrNull;
-          final fieldName = srcLogic?.name ?? 'field_$i';
+          final fieldName = fieldNameFor(f.dstLowerIndex, f.srcSynthLogic);
           var portName = fieldName;
           if (portDirs.containsKey(portName)) {
             portName = '${fieldName}_$i';
@@ -881,8 +1152,8 @@ class NetlistSynthesizer extends Synthesizer {
         };
         for (var i = 0; i < nonTrivialFields.length; i++) {
           final f = nonTrivialFields[i];
-          final srcLogic = f.srcSynthLogic.logics.firstOrNull;
-          params['FIELD_${i}_NAME'] = srcLogic?.name ?? 'field_$i';
+          params['FIELD_${i}_NAME'] =
+              fieldNameFor(f.dstLowerIndex, f.srcSynthLogic);
           params['FIELD_${i}_OFFSET'] = f.dstLowerIndex;
           params['FIELD_${i}_WIDTH'] = f.dstUpperIndex - f.dstLowerIndex + 1;
         }
@@ -1312,6 +1583,15 @@ class NetlistSynthesizer extends Synthesizer {
       }
       if (options.collapseConcats) {
         applyCollapseConcats(modules);
+      }
+      if (options.collapseSelectsIntoPack) {
+        applyCollapseSelectsIntoPack(modules);
+      }
+      if (options.collapseUnpackToConcat) {
+        applyCollapseUnpackToConcat(modules);
+      }
+      if (options.collapseUnpackToPack) {
+        applyCollapseUnpackToPack(modules);
       }
       applyStructConversionGrouping(modules);
       if (options.collapseStructGroups) {

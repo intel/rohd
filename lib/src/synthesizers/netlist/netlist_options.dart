@@ -72,6 +72,24 @@ class NetlistOptions {
   /// chains to a contiguous sub-range of a single source bus.
   final bool collapseConcats;
 
+  /// When `true`, `$slice` cells whose outputs feed directly into a
+  /// `$struct_pack` input port are absorbed into the pack cell, which
+  /// already describes the field decomposition.  The redundant slices
+  /// are removed.
+  final bool collapseSelectsIntoPack;
+
+  /// When `true`, `$struct_unpack` output ports that feed directly into
+  /// `$concat` input ports are collapsed: the concat is replaced by a
+  /// `$buf` or `$slice` from the unpack's source bus when all inputs
+  /// trace back to it contiguously.
+  final bool collapseUnpackToConcat;
+
+  /// When `true`, `$struct_unpack` output ports that feed (possibly
+  /// through `$buf`/`$slice` chains) into `$struct_pack` input ports
+  /// are collapsed: the intermediate cells are removed and the pack
+  /// input wires are rewired to the unpack output wires directly.
+  final bool collapseUnpackToPack;
+
   /// When `true`, dead-cell elimination is performed after aliasing to
   /// remove cells whose inputs are entirely undriven or whose outputs
   /// are entirely unconsumed.
@@ -95,6 +113,9 @@ class NetlistOptions {
     this.collapseStructGroups = false,
     this.groupMaximalSubsets = false,
     this.collapseConcats = false,
+    this.collapseSelectsIntoPack = false,
+    this.collapseUnpackToConcat = false,
+    this.collapseUnpackToPack = false,
     this.enableDCE = true,
     this.slimMode = false,
   });
