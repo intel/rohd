@@ -794,14 +794,13 @@ class NetlistSynthesizer extends Synthesizer {
         // Same strategy as $struct_pack: walk the hierarchy collecting
         // (start, end, name, path, indexInParent) and look up the
         // narrowest non-unpreferred range for each field offset.
-        final suElementRanges =
-            <({
-              int start,
-              int end,
-              String name,
-              String path,
-              int indexInParent,
-            })>[];
+        final suElementRanges = <({
+          int start,
+          int end,
+          String name,
+          String path,
+          int indexInParent,
+        })>[];
         if (parentLogic is LogicStructure) {
           void walkStruct(
               LogicStructure struct, int baseOffset, String parentPath) {
@@ -809,9 +808,8 @@ class NetlistSynthesizer extends Synthesizer {
             for (var idx = 0; idx < struct.elements.length; idx++) {
               final elem = struct.elements[idx];
               final elemEnd = offset + elem.width;
-              final elemPath = parentPath.isEmpty
-                  ? elem.name
-                  : '${parentPath}_${elem.name}';
+              final elemPath =
+                  parentPath.isEmpty ? elem.name : '${parentPath}_${elem.name}';
               suElementRanges.add((
                 start: offset,
                 end: elemEnd,
@@ -826,7 +824,7 @@ class NetlistSynthesizer extends Synthesizer {
             }
           }
 
-          walkStruct(parentLogic as LogicStructure, 0, '');
+          walkStruct(parentLogic, 0, '');
         }
 
         String suFieldNameFor(int fieldOffset, String fallbackName) {
@@ -1009,14 +1007,13 @@ class NetlistSynthesizer extends Synthesizer {
         // produce qualified names like "mmu_info_mmuSid".  When
         // leaf names are unpreferred, `parentElementIndex` provides
         // a fallback discriminator like "mmu_info_0".
-        final dstElementRanges =
-            <({
-              int start,
-              int end,
-              String name,
-              String path,
-              int indexInParent,
-            })>[];
+        final dstElementRanges = <({
+          int start,
+          int end,
+          String name,
+          String path,
+          int indexInParent,
+        })>[];
         if (dstLogic is LogicStructure) {
           void walkStruct(
               LogicStructure struct, int baseOffset, String parentPath) {
@@ -1024,9 +1021,8 @@ class NetlistSynthesizer extends Synthesizer {
             for (var idx = 0; idx < struct.elements.length; idx++) {
               final elem = struct.elements[idx];
               final elemEnd = offset + elem.width;
-              final elemPath = parentPath.isEmpty
-                  ? elem.name
-                  : '${parentPath}_${elem.name}';
+              final elemPath =
+                  parentPath.isEmpty ? elem.name : '${parentPath}_${elem.name}';
               dstElementRanges.add((
                 start: offset,
                 end: elemEnd,
@@ -1122,8 +1118,7 @@ class NetlistSynthesizer extends Synthesizer {
             }
             return bestNamed.name;
           }
-          return bestAny?.name ??
-              resolveReplacement(srcSynthLogic).name;
+          return bestAny?.name ?? resolveReplacement(srcSynthLogic).name;
         }
 
         // Build port_directions and connections.

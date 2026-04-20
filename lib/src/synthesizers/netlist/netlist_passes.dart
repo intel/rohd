@@ -1609,7 +1609,9 @@ void applyCollapseSelectsIntoPack(
 ) {
   for (final moduleDef in allModules.values) {
     final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
-    if (cells == null || cells.isEmpty) continue;
+    if (cells == null || cells.isEmpty) {
+      continue;
+    }
 
     final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
         buildWireMaps(cells, moduleDef);
@@ -1619,32 +1621,47 @@ void applyCollapseSelectsIntoPack(
     for (final packEntry in cells.entries.toList()) {
       final packName = packEntry.key;
       final packCell = packEntry.value;
-      if ((packCell['type'] as String?) != r'$struct_pack') continue;
+      if ((packCell['type'] as String?) != r'$struct_pack') {
+        continue;
+      }
 
       final conns = packCell['connections'] as Map<String, dynamic>? ?? {};
-      final dirs =
-          packCell['port_directions'] as Map<String, dynamic>? ?? {};
+      final dirs = packCell['port_directions'] as Map<String, dynamic>? ?? {};
 
       for (final portName in conns.keys.toList()) {
-        if (dirs[portName] != 'input') continue;
+        if (dirs[portName] != 'input') {
+          continue;
+        }
         final bits = [
           for (final b in conns[portName] as List)
             if (b is int) b,
         ];
-        if (bits.isEmpty) continue;
+        if (bits.isEmpty) {
+          continue;
+        }
 
         // All bits must be driven by the same $slice cell.
         final firstDriver = wireDriverCell[bits.first];
-        if (firstDriver == null) continue;
+        if (firstDriver == null) {
+          continue;
+        }
         final driverCell = cells[firstDriver];
-        if (driverCell == null) continue;
-        if ((driverCell['type'] as String?) != r'$slice') continue;
-        if (cellsToRemove.contains(firstDriver)) continue;
+        if (driverCell == null) {
+          continue;
+        }
+        if ((driverCell['type'] as String?) != r'$slice') {
+          continue;
+        }
+        if (cellsToRemove.contains(firstDriver)) {
+          continue;
+        }
 
         final allFromSameSlice = bits.every(
           (b) => wireDriverCell[b] == firstDriver,
         );
-        if (!allFromSameSlice) continue;
+        if (!allFromSameSlice) {
+          continue;
+        }
 
         // The slice must exclusively feed this pack.
         final sliceConns =
@@ -1655,16 +1672,19 @@ void applyCollapseSelectsIntoPack(
         ];
         final exclusive = sliceYBits.every((b) {
           final consumers = wireConsumerCells[b];
-          if (consumers == null) return true;
+          if (consumers == null) {
+            return true;
+          }
           return consumers.every((c) => c == packName || c == '__port__');
         });
-        if (!exclusive) continue;
+        if (!exclusive) {
+          continue;
+        }
 
         // Rewire: replace the pack's input bits with the slice's
         // source bits (A port) at the correct offset.
         final sliceABits = sliceConns['A'] as List;
-        final params =
-            driverCell['parameters'] as Map<String, Object?>? ?? {};
+        final params = driverCell['parameters'] as Map<String, Object?>? ?? {};
         final offset = params['OFFSET'] as int? ?? 0;
         final yWidth = sliceYBits.length;
 
@@ -1684,21 +1704,28 @@ void applyCollapseSelectsIntoPack(
     for (final packEntry in cells.entries.toList()) {
       final packName = packEntry.key;
       final packCell = packEntry.value;
-      if ((packCell['type'] as String?) != r'$struct_pack') continue;
+      if ((packCell['type'] as String?) != r'$struct_pack') {
+        continue;
+      }
 
       final conns = packCell['connections'] as Map<String, dynamic>? ?? {};
-      final dirs =
-          packCell['port_directions'] as Map<String, dynamic>? ?? {};
+      final dirs = packCell['port_directions'] as Map<String, dynamic>? ?? {};
 
       // Collect all input bits in field declaration order.
       final allInputBits = <int>[];
       for (final portName in conns.keys) {
-        if (dirs[portName] != 'input') continue;
+        if (dirs[portName] != 'input') {
+          continue;
+        }
         for (final b in conns[portName] as List) {
-          if (b is int) allInputBits.add(b);
+          if (b is int) {
+            allInputBits.add(b);
+          }
         }
       }
-      if (allInputBits.length < 2) continue;
+      if (allInputBits.length < 2) {
+        continue;
+      }
 
       // Check: input bits must form a contiguous ascending sequence.
       var contiguous = true;
@@ -1708,12 +1735,17 @@ void applyCollapseSelectsIntoPack(
           break;
         }
       }
-      if (!contiguous) continue;
+      if (!contiguous) {
+        continue;
+      }
 
       final yBits = <Object>[
-        for (final b in conns['Y'] as List) if (b is int) b,
+        for (final b in conns['Y'] as List)
+          if (b is int) b,
       ];
-      if (yBits.length != allInputBits.length) continue;
+      if (yBits.length != allInputBits.length) {
+        continue;
+      }
 
       // Replace struct_pack with $buf.
       cells[packName] = <String, Object?>{
@@ -1744,7 +1776,9 @@ void applyCollapseUnpackToConcat(
 ) {
   for (final moduleDef in allModules.values) {
     final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
-    if (cells == null || cells.isEmpty) continue;
+    if (cells == null || cells.isEmpty) {
+      continue;
+    }
 
     // Iterate until convergence: each pass may create bufs that enable
     // the next outer concat/unpack to collapse.
@@ -1753,534 +1787,590 @@ void applyCollapseUnpackToConcat(
     while (anyChanged) {
       anyChanged = false;
 
-    final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
-        buildWireMaps(cells, moduleDef);
+      final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
+          buildWireMaps(cells, moduleDef);
 
-    final cellsToRemove = <String>{};
-    final cellsToAdd = <String, Map<String, Object?>>{};
-    var replIdx = globalReplIdx;
+      final cellsToRemove = <String>{};
+      final cellsToAdd = <String, Map<String, Object?>>{};
+      var replIdx = globalReplIdx;
 
-    for (final concatEntry in cells.entries.toList()) {
-      final concatName = concatEntry.key;
-      final concatCell = concatEntry.value;
-      if ((concatCell['type'] as String?) != r'$concat') continue;
-      if (cellsToRemove.contains(concatName)) continue;
+      for (final concatEntry in cells.entries.toList()) {
+        final concatName = concatEntry.key;
+        final concatCell = concatEntry.value;
+        if ((concatCell['type'] as String?) != r'$concat') {
+          continue;
+        }
+        if (cellsToRemove.contains(concatName)) {
+          continue;
+        }
 
-      final conns = concatCell['connections'] as Map<String, dynamic>? ?? {};
+        final conns = concatCell['connections'] as Map<String, dynamic>? ?? {};
 
-      // Parse input ports into ordered list.
-      final inputPorts = <(int lo, String portName, List<int> bits)>[];
-      var hasRangePorts = false;
-      for (final portName in conns.keys) {
-        if (portName == 'Y') continue;
-        final m = rangePortRe.firstMatch(portName);
-        if (m != null) {
-          hasRangePorts = true;
-          final hi = int.parse(m.group(1)!);
-          final lo = m.group(2) != null ? int.parse(m.group(2)!) : hi;
-          inputPorts.add((
-            lo,
-            portName,
-            [for (final b in conns[portName] as List) if (b is int) b],
+        // Parse input ports into ordered list.
+        final inputPorts = <(int lo, String portName, List<int> bits)>[];
+        var hasRangePorts = false;
+        for (final portName in conns.keys) {
+          if (portName == 'Y') {
+            continue;
+          }
+          final m = rangePortRe.firstMatch(portName);
+          if (m != null) {
+            hasRangePorts = true;
+            final hi = int.parse(m.group(1)!);
+            final lo = m.group(2) != null ? int.parse(m.group(2)!) : hi;
+            inputPorts.add((
+              lo,
+              portName,
+              [
+                for (final b in conns[portName] as List)
+                  if (b is int) b
+              ],
+            ));
+          }
+        }
+        if (!hasRangePorts) {
+          if (conns.containsKey('A') && conns.containsKey('B')) {
+            final aBits = [
+              for (final b in conns['A'] as List)
+                if (b is int) b,
+            ];
+            final bBits = [
+              for (final b in conns['B'] as List)
+                if (b is int) b,
+            ];
+            inputPorts
+              ..add((0, 'A', aBits))
+              ..add((aBits.length, 'B', bBits));
+          }
+        }
+        inputPorts.sort((a, b) => a.$1.compareTo(b.$1));
+        if (inputPorts.length < 2) {
+          continue;
+        }
+
+        // --- Extended trace: through $buf/$slice AND $struct_unpack ------
+        final portTraces = <({
+          String? unpackName,
+          List<int>? unpackABits,
+          List<int> sourceIndices,
+          Set<String> intermediates,
+          bool valid,
+        })>[];
+
+        for (final (_, _, bits) in inputPorts) {
+          final sourceIndices = <int>[];
+          final intermediates = <String>{};
+          String? unpackName;
+          List<int>? unpackABits;
+          var valid = true;
+
+          for (final bit in bits) {
+            final (traced, chain) = traceBackward(bit, wireDriverCell, cells);
+            intermediates.addAll(chain);
+
+            // Check if traced bit is driven by a $struct_unpack output.
+            final driverName = wireDriverCell[traced];
+            if (driverName == null) {
+              valid = false;
+              break;
+            }
+            final driverCell = cells[driverName];
+            if (driverCell == null ||
+                (driverCell['type'] as String?) != r'$struct_unpack') {
+              valid = false;
+              break;
+            }
+
+            final uConns =
+                driverCell['connections'] as Map<String, dynamic>? ?? {};
+            final uDirs =
+                driverCell['port_directions'] as Map<String, dynamic>? ?? {};
+            final aBits = [
+              for (final b in uConns['A'] as List)
+                if (b is int) b,
+            ];
+
+            // Find which output port contains this bit and its index
+            // within that port.
+            String? outPort;
+            int? bitIdx;
+            for (final pe in uConns.entries) {
+              if (pe.key == 'A') {
+                continue;
+              }
+              if (uDirs[pe.key] != 'output') {
+                continue;
+              }
+              final pBits = [
+                for (final b in pe.value as List)
+                  if (b is int) b,
+              ];
+              final idx = pBits.indexOf(traced);
+              if (idx >= 0) {
+                outPort = pe.key;
+                bitIdx = idx;
+                break;
+              }
+            }
+
+            if (outPort == null || bitIdx == null) {
+              valid = false;
+              break;
+            }
+
+            // Find the field offset for this output port.
+            final params =
+                driverCell['parameters'] as Map<String, Object?>? ?? {};
+            final fc = params['FIELD_COUNT'] as int? ?? 0;
+            int? fieldOffset;
+            for (var fi = 0; fi < fc; fi++) {
+              final fname = params['FIELD_${fi}_NAME'] as String? ?? '';
+              if (fname == outPort || outPort == '${fname}_$fi') {
+                fieldOffset = params['FIELD_${fi}_OFFSET'] as int? ?? 0;
+                break;
+              }
+            }
+
+            if (fieldOffset == null) {
+              valid = false;
+              break;
+            }
+
+            final aIdx = fieldOffset + bitIdx;
+            if (aIdx >= aBits.length) {
+              valid = false;
+              break;
+            }
+
+            intermediates.add(driverName);
+
+            if (unpackName == null) {
+              unpackName = driverName;
+              unpackABits = aBits;
+            } else if (unpackName != driverName) {
+              valid = false;
+              break;
+            }
+            sourceIndices.add(aIdx);
+          }
+
+          portTraces.add((
+            unpackName: unpackName,
+            unpackABits: unpackABits,
+            sourceIndices: sourceIndices,
+            intermediates: intermediates,
+            valid: valid,
           ));
         }
-      }
-      if (!hasRangePorts) {
-        if (conns.containsKey('A') && conns.containsKey('B')) {
-          final aBits = [
-            for (final b in conns['A'] as List) if (b is int) b,
-          ];
-          final bBits = [
-            for (final b in conns['B'] as List) if (b is int) b,
-          ];
-          inputPorts
-            ..add((0, 'A', aBits))
-            ..add((aBits.length, 'B', bBits));
-        }
-      }
-      inputPorts.sort((a, b) => a.$1.compareTo(b.$1));
-      if (inputPorts.length < 2) continue;
 
-      // --- Extended trace: through $buf/$slice AND $struct_unpack ------
-      final portTraces = <({
-        String? unpackName,
-        List<int>? unpackABits,
-        List<int> sourceIndices,
-        Set<String> intermediates,
-        bool valid,
-      })>[];
-
-      for (final (_, _, bits) in inputPorts) {
-        final sourceIndices = <int>[];
-        final intermediates = <String>{};
-        String? unpackName;
-        List<int>? unpackABits;
-        var valid = true;
-
-        for (final bit in bits) {
-          var (traced, chain) = traceBackward(bit, wireDriverCell, cells);
-          intermediates.addAll(chain);
-
-          // Check if traced bit is driven by a $struct_unpack output.
-          final driverName = wireDriverCell[traced];
-          if (driverName == null) {
-            valid = false;
-            break;
+        // --- Find runs of consecutive ports tracing to the same unpack ---
+        final runs = <(int startIdx, int endIdx)>[];
+        var runStart = 0;
+        while (runStart < inputPorts.length) {
+          final t = portTraces[runStart];
+          if (!t.valid || t.unpackName == null) {
+            runStart++;
+            continue;
           }
-          final driverCell = cells[driverName];
-          if (driverCell == null ||
-              (driverCell['type'] as String?) != r'$struct_unpack') {
-            valid = false;
-            break;
-          }
-
-          final uConns =
-              driverCell['connections'] as Map<String, dynamic>? ?? {};
-          final uDirs =
-              driverCell['port_directions'] as Map<String, dynamic>? ?? {};
-          final aBits = [
-            for (final b in uConns['A'] as List) if (b is int) b,
-          ];
-
-          // Find which output port contains this bit and its index
-          // within that port.
-          String? outPort;
-          int? bitIdx;
-          for (final pe in uConns.entries) {
-            if (pe.key == 'A') continue;
-            if (uDirs[pe.key] != 'output') continue;
-            final pBits = [
-              for (final b in pe.value as List) if (b is int) b,
-            ];
-            final idx = pBits.indexOf(traced);
-            if (idx >= 0) {
-              outPort = pe.key;
-              bitIdx = idx;
+          var runEnd = runStart;
+          while (runEnd + 1 < inputPorts.length) {
+            final nextT = portTraces[runEnd + 1];
+            if (!nextT.valid || nextT.unpackName != t.unpackName) {
               break;
             }
-          }
-
-          if (outPort == null || bitIdx == null) {
-            valid = false;
-            break;
-          }
-
-          // Find the field offset for this output port.
-          final params =
-              driverCell['parameters'] as Map<String, Object?>? ?? {};
-          final fc = params['FIELD_COUNT'] as int? ?? 0;
-          int? fieldOffset;
-          for (var fi = 0; fi < fc; fi++) {
-            final fname = params['FIELD_${fi}_NAME'] as String? ?? '';
-            if (fname == outPort || outPort == '${fname}_$fi') {
-              fieldOffset = params['FIELD_${fi}_OFFSET'] as int? ?? 0;
+            final curLast = portTraces[runEnd].sourceIndices.last;
+            final nextFirst = nextT.sourceIndices.first;
+            if (nextFirst != curLast + 1) {
               break;
             }
+            runEnd++;
+          }
+          if (runEnd > runStart) {
+            runs.add((runStart, runEnd));
+          }
+          runStart = runEnd + 1;
+        }
+
+        if (runs.isEmpty) {
+          // No contiguous ascending runs, but check if ALL ports trace
+          // to the same unpack (general reorder / swizzle case).
+          final allValid = portTraces.every((t) => t.valid);
+          if (!allValid) {
+            continue;
+          }
+          final unpackNames = portTraces.map((t) => t.unpackName).toSet();
+          if (unpackNames.length != 1 || unpackNames.first == null) {
+            continue;
+          }
+          final uName = unpackNames.first!;
+          final uABits = portTraces.first.unpackABits!;
+
+          // Gather all intermediates and verify exclusivity.
+          final allIntermediates = <String>{};
+          for (final t in portTraces) {
+            allIntermediates.addAll(t.intermediates);
+          }
+          final removable = allIntermediates.where((c) {
+            final ct = cells[c]?['type'] as String?;
+            return ct == r'$buf' || ct == r'$slice';
+          }).toSet();
+          if (removable.isNotEmpty &&
+              !isExclusiveChain(
+                intermediates: removable,
+                ownerCell: concatName,
+                cells: cells,
+                wireConsumerCells: wireConsumerCells,
+              )) {
+            continue;
           }
 
-          if (fieldOffset == null) {
-            valid = false;
-            break;
-          }
-
-          final aIdx = fieldOffset + bitIdx;
-          if (aIdx >= aBits.length) {
-            valid = false;
-            break;
-          }
-
-          intermediates.add(driverName);
-
-          if (unpackName == null) {
-            unpackName = driverName;
-            unpackABits = aBits;
-          } else if (unpackName != driverName) {
-            valid = false;
-            break;
-          }
-          sourceIndices.add(aIdx);
-        }
-
-        portTraces.add((
-          unpackName: unpackName,
-          unpackABits: unpackABits,
-          sourceIndices: sourceIndices,
-          intermediates: intermediates,
-          valid: valid,
-        ));
-      }
-
-      // --- Find runs of consecutive ports tracing to the same unpack ---
-      final runs = <(int startIdx, int endIdx)>[];
-      var runStart = 0;
-      while (runStart < inputPorts.length) {
-        final t = portTraces[runStart];
-        if (!t.valid || t.unpackName == null) {
-          runStart++;
-          continue;
-        }
-        var runEnd = runStart;
-        while (runEnd + 1 < inputPorts.length) {
-          final nextT = portTraces[runEnd + 1];
-          if (!nextT.valid || nextT.unpackName != t.unpackName) break;
-          final curLast = portTraces[runEnd].sourceIndices.last;
-          final nextFirst = nextT.sourceIndices.first;
-          if (nextFirst != curLast + 1) break;
-          runEnd++;
-        }
-        if (runEnd > runStart) {
-          runs.add((runStart, runEnd));
-        }
-        runStart = runEnd + 1;
-      }
-
-      if (runs.isEmpty) {
-        // No contiguous ascending runs, but check if ALL ports trace
-        // to the same unpack (general reorder / swizzle case).
-        final allValid = portTraces.every((t) => t.valid);
-        if (!allValid) continue;
-        final unpackNames = portTraces.map((t) => t.unpackName).toSet();
-        if (unpackNames.length != 1 || unpackNames.first == null) continue;
-        final uName = unpackNames.first!;
-        final uABits = portTraces.first.unpackABits!;
-
-        // Gather all intermediates and verify exclusivity.
-        final allIntermediates = <String>{};
-        for (final t in portTraces) {
-          allIntermediates.addAll(t.intermediates);
-        }
-        final removable = allIntermediates.where((c) {
-          final ct = cells[c]?['type'] as String?;
-          return ct == r'$buf' || ct == r'$slice';
-        }).toSet();
-        if (removable.isNotEmpty &&
-            !isExclusiveChain(
-              intermediates: removable,
-              ownerCell: concatName,
-              cells: cells,
-              wireConsumerCells: wireConsumerCells,
-            )) {
-          continue;
-        }
-
-        // Build reordered A bits: for each concat input port (in
-        // order), map the source indices back to the unpack's A bus.
-        final reorderedA = <Object>[];
-        for (final t in portTraces) {
-          for (final aIdx in t.sourceIndices) {
-            reorderedA.add(uABits[aIdx] as Object);
-          }
-        }
-        final outputBits = <Object>[
-          for (final b in conns['Y'] as List) if (b is int) b,
-        ];
-        if (reorderedA.length != outputBits.length) continue;
-
-        cellsToRemove
-          ..addAll(removable)
-          ..add(uName)
-          ..add(concatName);
-        cellsToAdd['unpack_concat_buf_$replIdx'] =
-            makeBufCell(reorderedA.length, reorderedA, outputBits);
-        replIdx++;
-        continue;
-      }
-
-      // --- Verify exclusivity of non-unpack intermediates ------
-      final validRuns =
-          <(int startIdx, int endIdx, Set<String> intermediates)>[];
-      for (final (startIdx, endIdx) in runs) {
-        final allIntermediates = <String>{};
-        for (var i = startIdx; i <= endIdx; i++) {
-          allIntermediates.addAll(portTraces[i].intermediates);
-        }
-        // Only remove $buf/$slice intermediates, not the unpack itself.
-        final removable = allIntermediates.where((c) {
-          final ct = cells[c]?['type'] as String?;
-          return ct == r'$buf' || ct == r'$slice';
-        }).toSet();
-        if (removable.isEmpty ||
-            isExclusiveChain(
-              intermediates: removable,
-              ownerCell: concatName,
-              cells: cells,
-              wireConsumerCells: wireConsumerCells,
-            )) {
-          validRuns.add((startIdx, endIdx, removable));
-        }
-      }
-
-      if (validRuns.isEmpty) continue;
-
-      final allCollapsed = validRuns.length == 1 &&
-          validRuns.first.$1 == 0 &&
-          validRuns.first.$2 == inputPorts.length - 1;
-
-      for (final (_, _, intermediates) in validRuns) {
-        cellsToRemove.addAll(intermediates);
-      }
-
-      if (allCollapsed) {
-        // Full collapse — replace concat with $buf or $slice.
-        // Since we remove intermediates (buf/slice chains between the
-        // unpack outputs and the concat inputs), we must source the
-        // replacement buf from the unpack's A bus, not the concat's
-        // input bits which may reference wires driven by the removed
-        // intermediates.
-        final t0 = portTraces.first;
-        final srcOffset = t0.sourceIndices.first;
-        final yWidth = (conns['Y'] as List).whereType<int>().length;
-        final aWidth = t0.unpackABits!.length;
-        final sourceBits = t0.unpackABits!.cast<Object>().toList();
-        final outputBits = <Object>[
-          for (final b in conns['Y'] as List) if (b is int) b,
-        ];
-
-        cellsToRemove.add(concatName);
-        // Also remove the unpack itself — all its outputs are consumed
-        // exclusively through intermediates into this concat.
-        cellsToRemove.add(t0.unpackName!);
-        if (yWidth == aWidth) {
-          cellsToAdd['unpack_concat_buf_$replIdx'] =
-              makeBufCell(aWidth, sourceBits, outputBits);
-        } else {
-          cellsToAdd['unpack_concat_buf_$replIdx'] = makeSliceCell(
-              srcOffset, aWidth, yWidth, sourceBits, outputBits);
-        }
-        replIdx++;
-        continue;
-      }
-
-      // --- Partial collapse — rebuild concat with fewer ports ---------
-      cellsToRemove.add(concatName);
-
-      final newConns = <String, List<Object>>{};
-      final newDirs = <String, String>{};
-      var outBitOffset = 0;
-
-      var portIdx = 0;
-      while (portIdx < inputPorts.length) {
-        (int, int, Set<String>)? activeRun;
-        for (final run in validRuns) {
-          if (run.$1 == portIdx) {
-            activeRun = run;
-            break;
-          }
-        }
-
-        if (activeRun != null) {
-          final (startIdx, endIdx, _) = activeRun;
-          // Collect the traced source bits — the unpack output bits
-          // that traceBackward found.  We cannot use the concat's raw
-          // input bits because intermediates (buf/slice chains) between
-          // the unpack outputs and the concat are being removed.
-          final tracedBits = <Object>[];
-          final t0 = portTraces[startIdx];
-          final uConns = cells[t0.unpackName!]!['connections']
-              as Map<String, dynamic>? ??
-              {};
-          final uDirs = cells[t0.unpackName!]!['port_directions']
-              as Map<String, dynamic>? ??
-              {};
-          // Rebuild the unpack's output bits in field declaration order
-          // to create a mapping from A-index to wire ID.
-          final unpackOutBitList = <int>[];
-          for (final pe in uConns.entries) {
-            if (pe.key == 'A') continue;
-            if (uDirs[pe.key] != 'output') continue;
-            for (final b in pe.value as List) {
-              if (b is int) unpackOutBitList.add(b);
+          // Build reordered A bits: for each concat input port (in
+          // order), map the source indices back to the unpack's A bus.
+          final reorderedA = <Object>[];
+          for (final t in portTraces) {
+            for (final aIdx in t.sourceIndices) {
+              reorderedA.add(uABits[aIdx] as Object);
             }
           }
-          // Build A-index -> output wire ID map.
-          final aToOutBit = <int, int>{};
-          final uABits = [
-            for (final b in uConns['A'] as List) if (b is int) b,
+          final outputBits = <Object>[
+            for (final b in conns['Y'] as List)
+              if (b is int) b,
           ];
-          final uParams =
-              cells[t0.unpackName!]!['parameters']
-                  as Map<String, Object?>? ??
-                  {};
-          final fc = uParams['FIELD_COUNT'] as int? ?? 0;
-          var outIdx = 0;
-          for (var fi = 0; fi < fc; fi++) {
-            final fw = uParams['FIELD_${fi}_WIDTH'] as int? ?? 0;
-            final fo = uParams['FIELD_${fi}_OFFSET'] as int? ?? 0;
-            for (var bi = 0; bi < fw; bi++) {
-              if (outIdx < unpackOutBitList.length) {
-                aToOutBit[fo + bi] = unpackOutBitList[outIdx];
-              }
-              outIdx++;
-            }
+          if (reorderedA.length != outputBits.length) {
+            continue;
           }
-          for (var i = startIdx; i <= endIdx; i++) {
-            for (final aIdx in portTraces[i].sourceIndices) {
-              final outBit = aToOutBit[aIdx];
-              if (outBit != null) {
-                tracedBits.add(outBit);
-              }
-            }
-          }
-          final width = tracedBits.length;
 
+          cellsToRemove
+            ..addAll(removable)
+            ..add(uName)
+            ..add(concatName);
           cellsToAdd['unpack_concat_buf_$replIdx'] =
-              makeBufCell(width, tracedBits, tracedBits);
+              makeBufCell(reorderedA.length, reorderedA, outputBits);
           replIdx++;
-
-          final hi = outBitOffset + width - 1;
-          final portName =
-              hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
-          newConns[portName] = tracedBits;
-          newDirs[portName] = 'input';
-          outBitOffset += width;
-
-          portIdx = endIdx + 1;
-        } else {
-          final port = inputPorts[portIdx];
-          final width = port.$3.length;
-          final hi = outBitOffset + width - 1;
-          final portName =
-              hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
-          newConns[portName] = port.$3.cast<Object>();
-          newDirs[portName] = 'input';
-          outBitOffset += width;
-          portIdx++;
+          continue;
         }
+
+        // --- Verify exclusivity of non-unpack intermediates ------
+        final validRuns =
+            <(int startIdx, int endIdx, Set<String> intermediates)>[];
+        for (final (startIdx, endIdx) in runs) {
+          final allIntermediates = <String>{};
+          for (var i = startIdx; i <= endIdx; i++) {
+            allIntermediates.addAll(portTraces[i].intermediates);
+          }
+          // Only remove $buf/$slice intermediates, not the unpack itself.
+          final removable = allIntermediates.where((c) {
+            final ct = cells[c]?['type'] as String?;
+            return ct == r'$buf' || ct == r'$slice';
+          }).toSet();
+          if (removable.isEmpty ||
+              isExclusiveChain(
+                intermediates: removable,
+                ownerCell: concatName,
+                cells: cells,
+                wireConsumerCells: wireConsumerCells,
+              )) {
+            validRuns.add((startIdx, endIdx, removable));
+          }
+        }
+
+        if (validRuns.isEmpty) {
+          continue;
+        }
+
+        final allCollapsed = validRuns.length == 1 &&
+            validRuns.first.$1 == 0 &&
+            validRuns.first.$2 == inputPorts.length - 1;
+
+        for (final (_, _, intermediates) in validRuns) {
+          cellsToRemove.addAll(intermediates);
+        }
+
+        if (allCollapsed) {
+          // Full collapse — replace concat with $buf or $slice.
+          // Since we remove intermediates (buf/slice chains between the
+          // unpack outputs and the concat inputs), we must source the
+          // replacement buf from the unpack's A bus, not the concat's
+          // input bits which may reference wires driven by the removed
+          // intermediates.
+          final t0 = portTraces.first;
+          final srcOffset = t0.sourceIndices.first;
+          final yWidth = (conns['Y'] as List).whereType<int>().length;
+          final aWidth = t0.unpackABits!.length;
+          final sourceBits = t0.unpackABits!.cast<Object>().toList();
+          final outputBits = <Object>[
+            for (final b in conns['Y'] as List)
+              if (b is int) b,
+          ];
+
+          cellsToRemove
+            ..add(concatName)
+            // Also remove the unpack itself — all its outputs are consumed
+            // exclusively through intermediates into this concat.
+            ..add(t0.unpackName!);
+          if (yWidth == aWidth) {
+            cellsToAdd['unpack_concat_buf_$replIdx'] =
+                makeBufCell(aWidth, sourceBits, outputBits);
+          } else {
+            cellsToAdd['unpack_concat_buf_$replIdx'] = makeSliceCell(
+                srcOffset, aWidth, yWidth, sourceBits, outputBits);
+          }
+          replIdx++;
+          continue;
+        }
+
+        // --- Partial collapse — rebuild concat with fewer ports ---------
+        cellsToRemove.add(concatName);
+
+        final newConns = <String, List<Object>>{};
+        final newDirs = <String, String>{};
+        var outBitOffset = 0;
+
+        var portIdx = 0;
+        while (portIdx < inputPorts.length) {
+          (int, int, Set<String>)? activeRun;
+          for (final run in validRuns) {
+            if (run.$1 == portIdx) {
+              activeRun = run;
+              break;
+            }
+          }
+
+          if (activeRun != null) {
+            final (startIdx, endIdx, _) = activeRun;
+            // Collect the traced source bits — the unpack output bits
+            // that traceBackward found.  We cannot use the concat's raw
+            // input bits because intermediates (buf/slice chains) between
+            // the unpack outputs and the concat are being removed.
+            final tracedBits = <Object>[];
+            final t0 = portTraces[startIdx];
+            final uConns = cells[t0.unpackName!]!['connections']
+                    as Map<String, dynamic>? ??
+                {};
+            final uDirs = cells[t0.unpackName!]!['port_directions']
+                    as Map<String, dynamic>? ??
+                {};
+            // Rebuild the unpack's output bits in field declaration order
+            // to create a mapping from A-index to wire ID.
+            final unpackOutBitList = <int>[];
+            for (final pe in uConns.entries) {
+              if (pe.key == 'A') {
+                continue;
+              }
+              if (uDirs[pe.key] != 'output') {
+                continue;
+              }
+              for (final b in pe.value as List) {
+                if (b is int) {
+                  unpackOutBitList.add(b);
+                }
+              }
+            }
+            // Build A-index -> output wire ID map.
+            final aToOutBit = <int, int>{};
+            final uParams =
+                cells[t0.unpackName!]!['parameters'] as Map<String, Object?>? ??
+                    {};
+            final fc = uParams['FIELD_COUNT'] as int? ?? 0;
+            var outIdx = 0;
+            for (var fi = 0; fi < fc; fi++) {
+              final fw = uParams['FIELD_${fi}_WIDTH'] as int? ?? 0;
+              final fo = uParams['FIELD_${fi}_OFFSET'] as int? ?? 0;
+              for (var bi = 0; bi < fw; bi++) {
+                if (outIdx < unpackOutBitList.length) {
+                  aToOutBit[fo + bi] = unpackOutBitList[outIdx];
+                }
+                outIdx++;
+              }
+            }
+            for (var i = startIdx; i <= endIdx; i++) {
+              for (final aIdx in portTraces[i].sourceIndices) {
+                final outBit = aToOutBit[aIdx];
+                if (outBit != null) {
+                  tracedBits.add(outBit);
+                }
+              }
+            }
+            final width = tracedBits.length;
+
+            cellsToAdd['unpack_concat_buf_$replIdx'] =
+                makeBufCell(width, tracedBits, tracedBits);
+            replIdx++;
+
+            final hi = outBitOffset + width - 1;
+            final portName =
+                hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
+            newConns[portName] = tracedBits;
+            newDirs[portName] = 'input';
+            outBitOffset += width;
+
+            portIdx = endIdx + 1;
+          } else {
+            final port = inputPorts[portIdx];
+            final width = port.$3.length;
+            final hi = outBitOffset + width - 1;
+            final portName =
+                hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
+            newConns[portName] = port.$3.cast<Object>();
+            newDirs[portName] = 'input';
+            outBitOffset += width;
+            portIdx++;
+          }
+        }
+
+        newConns['Y'] = [for (final b in conns['Y'] as List) b as Object];
+        newDirs['Y'] = 'output';
+
+        cellsToAdd['${concatName}_collapsed'] = {
+          'hide_name': concatCell['hide_name'],
+          'type': r'$concat',
+          'parameters': <String, Object?>{},
+          'attributes': concatCell['attributes'] ?? <String, Object?>{},
+          'port_directions': newDirs,
+          'connections': newConns,
+        };
       }
 
-      newConns['Y'] = [for (final b in conns['Y'] as List) b as Object];
-      newDirs['Y'] = 'output';
-
-      cellsToAdd['${concatName}_collapsed'] = {
-        'hide_name': concatCell['hide_name'],
-        'type': r'$concat',
-        'parameters': <String, Object?>{},
-        'attributes': concatCell['attributes'] ?? <String, Object?>{},
-        'port_directions': newDirs,
-        'connections': newConns,
-      };
-    }
-
-    cellsToRemove.forEach(cells.remove);
-    cells.addAll(cellsToAdd);
-    if (cellsToRemove.isNotEmpty || cellsToAdd.isNotEmpty) {
-      anyChanged = true;
-    }
-    globalReplIdx = replIdx;
-
-    // Second pass: collapse identity struct_unpack → $buf chains.
-    // If ALL outputs of a struct_unpack go exclusively to one $buf whose
-    // A bits are exactly those outputs in order, replace both with a
-    // single $buf from the unpack's A to the buf's Y.
-    final unpacksToRemove = <String>{};
-    final bufsToRemove = <String>{};
-    final bufsToAdd = <String, Map<String, Object?>>{};
-    var identBufIdx = 0;
-
-    final wireMaps2 = buildWireMaps(cells, moduleDef);
-    final wireConsumerCells2 = wireMaps2.wireConsumerCells;
-
-    for (final entry in cells.entries.toList()) {
-      final unpackName = entry.key;
-      final unpackCell = entry.value;
-      if ((unpackCell['type'] as String?) != r'$struct_unpack') continue;
-      if (unpacksToRemove.contains(unpackName)) continue;
-
-      final uConns =
-          unpackCell['connections'] as Map<String, dynamic>? ?? {};
-      final uDirs =
-          unpackCell['port_directions'] as Map<String, dynamic>? ?? {};
-
-      // Collect all output bits in field declaration order.
-      final allOutputBits = <int>[];
-      for (final pname in uConns.keys) {
-        if (uDirs[pname] != 'output') continue;
-        for (final b in uConns[pname] as List) {
-          if (b is int) allOutputBits.add(b);
-        }
+      cellsToRemove.forEach(cells.remove);
+      cells.addAll(cellsToAdd);
+      if (cellsToRemove.isNotEmpty || cellsToAdd.isNotEmpty) {
+        anyChanged = true;
       }
-      if (allOutputBits.isEmpty) continue;
+      globalReplIdx = replIdx;
 
-      // Every output bit must be consumed by exactly one $buf cell
-      // (the same one).
-      String? targetBufName;
-      var allToOneBuf = true;
-      for (final bit in allOutputBits) {
-        final consumers = wireConsumerCells2[bit];
-        if (consumers == null || consumers.length != 1) {
-          allToOneBuf = false;
-          break;
+      // Second pass: collapse identity struct_unpack → $buf chains.
+      // If ALL outputs of a struct_unpack go exclusively to one $buf whose
+      // A bits are exactly those outputs in order, replace both with a
+      // single $buf from the unpack's A to the buf's Y.
+      final unpacksToRemove = <String>{};
+      final bufsToRemove = <String>{};
+      final bufsToAdd = <String, Map<String, Object?>>{};
+      var identBufIdx = 0;
+
+      final wireMaps2 = buildWireMaps(cells, moduleDef);
+      final wireConsumerCells2 = wireMaps2.wireConsumerCells;
+
+      for (final entry in cells.entries.toList()) {
+        final unpackName = entry.key;
+        final unpackCell = entry.value;
+        if ((unpackCell['type'] as String?) != r'$struct_unpack') {
+          continue;
         }
-        final consumer = consumers.first;
-        if (consumer == '__port__') {
-          allToOneBuf = false;
-          break;
+        if (unpacksToRemove.contains(unpackName)) {
+          continue;
         }
-        final consumerCell = cells[consumer];
-        if (consumerCell == null ||
-            (consumerCell['type'] as String?) != r'$buf') {
-          allToOneBuf = false;
-          break;
+
+        final uConns = unpackCell['connections'] as Map<String, dynamic>? ?? {};
+        final uDirs =
+            unpackCell['port_directions'] as Map<String, dynamic>? ?? {};
+
+        // Collect all output bits in field declaration order.
+        final allOutputBits = <int>[];
+        for (final pname in uConns.keys) {
+          if (uDirs[pname] != 'output') {
+            continue;
+          }
+          for (final b in uConns[pname] as List) {
+            if (b is int) {
+              allOutputBits.add(b);
+            }
+          }
         }
-        if (targetBufName == null) {
-          targetBufName = consumer;
-        } else if (consumer != targetBufName) {
-          allToOneBuf = false;
-          break;
+        if (allOutputBits.isEmpty) {
+          continue;
         }
+
+        // Every output bit must be consumed by exactly one $buf cell
+        // (the same one).
+        String? targetBufName;
+        var allToOneBuf = true;
+        for (final bit in allOutputBits) {
+          final consumers = wireConsumerCells2[bit];
+          if (consumers == null || consumers.length != 1) {
+            allToOneBuf = false;
+            break;
+          }
+          final consumer = consumers.first;
+          if (consumer == '__port__') {
+            allToOneBuf = false;
+            break;
+          }
+          final consumerCell = cells[consumer];
+          if (consumerCell == null ||
+              (consumerCell['type'] as String?) != r'$buf') {
+            allToOneBuf = false;
+            break;
+          }
+          if (targetBufName == null) {
+            targetBufName = consumer;
+          } else if (consumer != targetBufName) {
+            allToOneBuf = false;
+            break;
+          }
+        }
+        if (!allToOneBuf || targetBufName == null) {
+          continue;
+        }
+        if (bufsToRemove.contains(targetBufName)) {
+          continue;
+        }
+
+        final bufCell = cells[targetBufName]!;
+        final bufConns = bufCell['connections'] as Map<String, dynamic>? ?? {};
+        final bufABits = <int>[
+          for (final b in bufConns['A'] as List)
+            if (b is int) b,
+        ];
+
+        // The buf's A bits must be exactly the unpack's output bits.
+        if (bufABits.length != allOutputBits.length) {
+          continue;
+        }
+        var bitsMatch = true;
+        for (var i = 0; i < bufABits.length; i++) {
+          if (bufABits[i] != allOutputBits[i]) {
+            bitsMatch = false;
+            break;
+          }
+        }
+        if (!bitsMatch) {
+          continue;
+        }
+
+        // Collapse: single buf from unpack.A → buf.Y
+        final unpackABits = <Object>[
+          for (final b in uConns['A'] as List)
+            if (b is int) b,
+        ];
+        final bufYBits = <Object>[
+          for (final b in bufConns['Y'] as List)
+            if (b is int) b,
+        ];
+
+        if (unpackABits.length != bufYBits.length) {
+          continue;
+        }
+
+        bufsToAdd['${unpackName}_buf_$identBufIdx'] = <String, Object?>{
+          'type': r'$buf',
+          'parameters': <String, Object?>{'WIDTH': unpackABits.length},
+          'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
+          'connections': <String, List<Object>>{
+            'A': unpackABits,
+            'Y': bufYBits,
+          },
+        };
+        identBufIdx++;
+        unpacksToRemove.add(unpackName);
+        bufsToRemove.add(targetBufName);
       }
-      if (!allToOneBuf || targetBufName == null) continue;
-      if (bufsToRemove.contains(targetBufName)) continue;
 
-      final bufCell = cells[targetBufName]!;
-      final bufConns =
-          bufCell['connections'] as Map<String, dynamic>? ?? {};
-      final bufABits = <int>[
-        for (final b in bufConns['A'] as List) if (b is int) b,
-      ];
-
-      // The buf's A bits must be exactly the unpack's output bits.
-      if (bufABits.length != allOutputBits.length) continue;
-      var bitsMatch = true;
-      for (var i = 0; i < bufABits.length; i++) {
-        if (bufABits[i] != allOutputBits[i]) {
-          bitsMatch = false;
-          break;
-        }
+      unpacksToRemove.forEach(cells.remove);
+      bufsToRemove.forEach(cells.remove);
+      cells.addAll(bufsToAdd);
+      if (unpacksToRemove.isNotEmpty || bufsToRemove.isNotEmpty) {
+        anyChanged = true;
       }
-      if (!bitsMatch) continue;
-
-      // Collapse: single buf from unpack.A → buf.Y
-      final unpackABits = <Object>[
-        for (final b in uConns['A'] as List) if (b is int) b,
-      ];
-      final bufYBits = <Object>[
-        for (final b in bufConns['Y'] as List) if (b is int) b,
-      ];
-
-      if (unpackABits.length != bufYBits.length) continue;
-
-      bufsToAdd['${unpackName}_buf_$identBufIdx'] = <String, Object?>{
-        'type': r'$buf',
-        'parameters': <String, Object?>{'WIDTH': unpackABits.length},
-        'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
-        'connections': <String, List<Object>>{
-          'A': unpackABits,
-          'Y': bufYBits,
-        },
-      };
-      identBufIdx++;
-      unpacksToRemove.add(unpackName);
-      bufsToRemove.add(targetBufName);
-    }
-
-    unpacksToRemove.forEach(cells.remove);
-    bufsToRemove.forEach(cells.remove);
-    cells.addAll(bufsToAdd);
-    if (unpacksToRemove.isNotEmpty || bufsToRemove.isNotEmpty) {
-      anyChanged = true;
-    }
-
     } // end while (anyChanged)
   }
 }
@@ -2300,7 +2390,9 @@ void applyCollapseUnpackToPack(
 ) {
   for (final moduleDef in allModules.values) {
     final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
-    if (cells == null || cells.isEmpty) continue;
+    if (cells == null || cells.isEmpty) {
+      continue;
+    }
 
     final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
         buildWireMaps(cells, moduleDef);
@@ -2310,18 +2402,24 @@ void applyCollapseUnpackToPack(
     for (final packEntry in cells.entries.toList()) {
       final packName = packEntry.key;
       final packCell = packEntry.value;
-      if ((packCell['type'] as String?) != r'$struct_pack') continue;
+      if ((packCell['type'] as String?) != r'$struct_pack') {
+        continue;
+      }
 
       final conns = packCell['connections'] as Map<String, dynamic>? ?? {};
-      final dirs =
-          packCell['port_directions'] as Map<String, dynamic>? ?? {};
+      final dirs = packCell['port_directions'] as Map<String, dynamic>? ?? {};
 
       for (final portName in conns.keys.toList()) {
-        if (dirs[portName] != 'input') continue;
+        if (dirs[portName] != 'input') {
+          continue;
+        }
         final bits = [
-          for (final b in conns[portName] as List) if (b is int) b,
+          for (final b in conns[portName] as List)
+            if (b is int) b,
         ];
-        if (bits.isEmpty) continue;
+        if (bits.isEmpty) {
+          continue;
+        }
 
         // Trace each bit backward through $buf/$slice chains.
         final tracedBits = <int>[];
@@ -2330,8 +2428,7 @@ void applyCollapseUnpackToPack(
         String? unpackName;
 
         for (final bit in bits) {
-          final (traced, chain) =
-              traceBackward(bit, wireDriverCell, cells);
+          final (traced, chain) = traceBackward(bit, wireDriverCell, cells);
           intermediates.addAll(chain);
 
           // Check if traced bit is driven by a $struct_unpack.
@@ -2357,7 +2454,9 @@ void applyCollapseUnpackToPack(
           tracedBits.add(traced);
         }
 
-        if (!allTraceToUnpack || intermediates.isEmpty) continue;
+        if (!allTraceToUnpack || intermediates.isEmpty) {
+          continue;
+        }
 
         // Only remove $buf/$slice intermediates (not the unpack itself).
         final removable = intermediates.where((c) {
@@ -2365,7 +2464,9 @@ void applyCollapseUnpackToPack(
           return ct == r'$buf' || ct == r'$slice';
         }).toSet();
 
-        if (removable.isEmpty) continue;
+        if (removable.isEmpty) {
+          continue;
+        }
 
         // Verify exclusivity.
         if (!isExclusiveChain(
