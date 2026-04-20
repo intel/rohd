@@ -86,6 +86,16 @@ class MarkdownHelpButton extends StatefulWidget {
   /// that may not render on all platforms.
   final Widget? titleIcon;
 
+  /// Optional text substitutions applied to the markdown before parsing.
+  ///
+  /// Each key `K` replaces all occurrences of `{{K}}` in the raw markdown
+  /// with the corresponding value.  For example:
+  /// ```dart
+  /// substitutions: {'VERSION': '1.2.3'}
+  /// ```
+  /// will replace `{{VERSION}}` → `1.2.3` in the loaded asset.
+  final Map<String, String>? substitutions;
+
   /// Create a [MarkdownHelpButton].
   const MarkdownHelpButton({
     required this.assetPath,
@@ -94,6 +104,7 @@ class MarkdownHelpButton extends StatefulWidget {
     this.labelIcon,
     this.package,
     this.titleIcon,
+    this.substitutions,
     super.key,
   });
 
@@ -139,6 +150,13 @@ class _MarkdownHelpButtonState extends State<MarkdownHelpButton> {
         }
       } else {
         raw = await rootBundle.loadString(widget.assetPath);
+      }
+      // Apply substitutions before parsing.
+      final subs = widget.substitutions;
+      if (subs != null) {
+        for (final entry in subs.entries) {
+          raw = raw.replaceAll('{{${entry.key}}}', entry.value);
+        }
       }
       if (mounted) {
         setState(() {
