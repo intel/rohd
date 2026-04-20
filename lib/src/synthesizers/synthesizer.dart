@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synthesizer.dart
@@ -6,7 +6,6 @@
 //
 // 2021 August 26
 // Author: Max Korbel <max.korbel@intel.com>
-//
 
 import 'package:rohd/rohd.dart';
 

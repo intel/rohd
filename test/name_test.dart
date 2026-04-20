@@ -136,6 +136,11 @@ void main() {
         final nameTypes = [nameType1, nameType2];
 
         // skip ones that actually *should* cause a failure
+        //
+        // Note: SystemVerilog allows using the same identifier for a signal
+        // and an instance because they are different namespaces.  However,
+        // Icarus Verilog rejects that pattern, so ROHD treats those as
+        // conflicts for simulator compatibility.
         final shouldConflict = [
           {
             NameType.internalModuleDefinition,

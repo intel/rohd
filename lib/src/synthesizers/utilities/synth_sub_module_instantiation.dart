@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_sub_module_instantiation.dart
@@ -11,7 +11,6 @@ import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents an instantiation of a module within another module.
 class SynthSubModuleInstantiation {
@@ -25,13 +24,18 @@ class SynthSubModuleInstantiation {
   String get name => _name!;
 
   /// Selects a name for this module instance. Must be called exactly once.
-  void pickName(Uniquifier uniquifier) {
+  ///
+  /// Names are allocated from [parentModule]'s `Namer`'s instance namespace
+  /// via `Namer.allocateInstanceName`], which is kept separate from the signal
+  /// namespace.  In SystemVerilog (and other HDLs) instance names and signal
+  /// names occupy distinct namespaces, so they must be uniquified
+  /// independently to avoid spurious suffixing.
+  void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = uniquifier.getUniqueName(
-      initialName: module.uniqueInstanceName,
+    _name = parentModule.namer.allocateInstanceName(
+      module.uniqueInstanceName,
       reserved: module.reserveName,
-      nullStarter: 'm',
     );
   }
 
