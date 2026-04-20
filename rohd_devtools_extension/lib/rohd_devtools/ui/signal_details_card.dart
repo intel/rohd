@@ -8,6 +8,7 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 import 'package:flutter/material.dart';
+import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table_text_field.dart';
@@ -17,9 +18,9 @@ class SignalDetailsCard extends StatefulWidget {
   final TreeModel? module;
 
   const SignalDetailsCard({
-    Key? key,
+    super.key,
     this.module,
-  }) : super(key: key);
+  });
 
   @override
   SignalDetailsCardState createState() => SignalDetailsCardState();
@@ -30,6 +31,7 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
   ValueNotifier<bool> inputSelected = ValueNotifier<bool>(true);
   ValueNotifier<bool> outputSelected = ValueNotifier<bool>(true);
   ValueNotifier<int> notifier = ValueNotifier<int>(0);
+  final GlobalKey _boundaryKey = GlobalKey();
 
   void toggleNotifier() {
     notifier.value++;
@@ -84,46 +86,61 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
       );
     }
 
-    return SizedBox(
-      height: MediaQuery.of(context).size.height / 1.4,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  SignalTableTextField(
-                    labelText: 'Search Signals',
-                    onChanged: (value) {
-                      setState(() {
-                        searchTerm = value;
-                      });
-                      toggleNotifier();
-                    },
+    return Stack(
+      children: [
+        RepaintBoundary(
+          key: _boundaryKey,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      SignalTableTextField(
+                        labelText: 'Search Signals',
+                        onChanged: (value) {
+                          setState(() {
+                            searchTerm = value;
+                          });
+                          toggleNotifier();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.filter_list),
+                        onPressed: _showFilterDialog,
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.filter_list),
-                    onPressed: _showFilterDialog,
-                  ),
-                ],
-              ),
+                ),
+                ValueListenableBuilder(
+                  valueListenable: notifier,
+                  builder: (context, _, __) {
+                    return SignalTable(
+                      selectedModule: widget.module!,
+                      searchTerm: searchTerm,
+                      inputSelectedVal: inputSelected.value,
+                      outputSelectedVal: outputSelected.value,
+                    );
+                  },
+                ),
+              ],
             ),
-            ValueListenableBuilder(
-              valueListenable: notifier,
-              builder: (context, _, __) {
-                return SignalTable(
-                  selectedModule: widget.module!,
-                  searchTerm: searchTerm,
-                  inputSelectedVal: inputSelected.value,
-                  outputSelectedVal: outputSelected.value,
-                );
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+        Positioned(
+          right: 8,
+          bottom: 8,
+          child: ExportPngButton(
+            onPressed: () => captureBoundaryToPng(
+              context,
+              boundaryKey: _boundaryKey,
+              filePrefix: 'signal_details',
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

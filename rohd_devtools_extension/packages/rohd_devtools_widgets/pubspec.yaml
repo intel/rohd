@@ -1,0 +1,13 @@
+name: rohd_devtools_widgets
+description: "Shared widgets for ROHD DevTools sub-packages: help button, PNG export, auto-hiding overlay."
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: '>=3.0.0'
+dependencies:
+  flutter: {sdk: flutter}
+  web: ^1.0.0
+dev_dependencies:
+  flutter_test: {sdk: flutter}
+  lints: ^5.0.0
