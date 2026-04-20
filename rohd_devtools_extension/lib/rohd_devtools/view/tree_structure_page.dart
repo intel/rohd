@@ -9,7 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:export_png/export_png.dart';
+import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/rohd_service_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/tree_search_term_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_details_card.dart';

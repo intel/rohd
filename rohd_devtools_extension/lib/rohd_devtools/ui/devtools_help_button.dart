@@ -12,7 +12,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'package:help_api/help_api.dart';
+import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 /// A help button for the ROHD DevTools app bar.
 ///

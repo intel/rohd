@@ -23,10 +23,8 @@ dependencies:
   equatable: ^2.0.5
   flutter_bloc: ^9.0.0
   web: ^1.0.0
-  export_png:
-    path: packages/export_png
-  help_api:
-    path: packages/help_api
+  rohd_devtools_widgets:
+    path: packages/rohd_devtools_widgets
 
 dev_dependencies:
   flutter_test:
