@@ -201,7 +201,7 @@ class NetlistSynthesizer extends Synthesizer {
       // For non-constants, follow replacement chain to resolve merged logics.
       // For constants, keep them separate to create distinct const drivers.
       if (!sl.isConstant) {
-        resolved = resolveReplacement(resolved);
+        resolved = NetlistUtils.resolveReplacement(resolved);
       }
       final ids = synthLogicIds.putIfAbsent(
           resolved, () => List<int>.generate(resolved.width, (_) => nextId++));
@@ -220,7 +220,7 @@ class NetlistSynthesizer extends Synthesizer {
       if (synthLogics != null) {
         for (final sl in synthLogics) {
           final ids = getIds(sl);
-          final portName = portNameForSynthLogic(sl, modulePorts);
+          final portName = NetlistUtils.portNameForSynthLogic(sl, modulePorts);
           if (portName != null) {
             ports[portName] = {'direction': direction, 'bits': ids};
           }
@@ -306,7 +306,7 @@ class NetlistSynthesizer extends Synthesizer {
 
         // -- Collapse bit-slice ports on Combinational / Sequential ----
         if (sub is Combinational || sub is Sequential) {
-          collapseAlwaysBlockPorts(
+          NetlistUtils.collapseAlwaysBlockPorts(
             synthDef,
             instance,
             cellPortDirs,
@@ -322,7 +322,8 @@ class NetlistSynthesizer extends Synthesizer {
             final portName = pe.key;
             final synthLogic = instance.inputMapping[portName] ??
                 instance.inOutMapping[portName];
-            if (synthLogic != null && isConstantSynthLogic(synthLogic)) {
+            if (synthLogic != null &&
+                NetlistUtils.isConstantSynthLogic(synthLogic)) {
               portsToRemove.add(portName);
               blockedConstSynthLogics.add(synthLogic.replacement ?? synthLogic);
             }
@@ -346,8 +347,8 @@ class NetlistSynthesizer extends Synthesizer {
             if (sl == null) {
               continue; // aggregated port, already renamed
             }
-            final resolved = resolveReplacement(sl);
-            final namerName = tryGetSynthLogicName(resolved);
+            final resolved = NetlistUtils.resolveReplacement(sl);
+            final namerName = NetlistUtils.tryGetSynthLogicName(resolved);
             if (namerName != null && namerName != portName) {
               renames[portName] = namerName;
             }
@@ -579,7 +580,7 @@ class NetlistSynthesizer extends Synthesizer {
               arraysWithExplicitCells.add(logic);
             }
             // Also check the resolved replacement chain.
-            final resolved = resolveReplacement(inputSL);
+            final resolved = NetlistUtils.resolveReplacement(inputSL);
             final logic2 = synthDef.logicToSynthMap.entries
                 .where((e) => e.value == resolved)
                 .map((e) => e.key)
@@ -1118,7 +1119,8 @@ class NetlistSynthesizer extends Synthesizer {
             }
             return bestNamed.name;
           }
-          return bestAny?.name ?? resolveReplacement(srcSynthLogic).name;
+          return bestAny?.name ??
+              NetlistUtils.resolveReplacement(srcSynthLogic).name;
         }
 
         // Build port_directions and connections.
@@ -1194,7 +1196,7 @@ class NetlistSynthesizer extends Synthesizer {
         // Insert a $buf cell: input = original (shared) IDs,
         // output = fresh IDs.
         cells['passthrough_buf_$bufIdx'] =
-            makeBufCell(outBits.length, outBits, freshBits);
+            NetlistUtils.makeBufCell(outBits.length, outBits, freshBits);
 
         // Update the output port to use the fresh IDs.
         p.value['bits'] = freshBits;
@@ -1319,7 +1321,7 @@ class NetlistSynthesizer extends Synthesizer {
           .where((e) => !blockedConstSynthLogics.contains(e.key))
           .where((e) => e.value.isNotEmpty)) {
         final sl = entry.key;
-        final constValue = constValueFromSynthLogic(sl);
+        final constValue = NetlistUtils.constValueFromSynthLogic(sl);
         if (constValue == null) {
           continue;
         }
@@ -1338,7 +1340,7 @@ class NetlistSynthesizer extends Synthesizer {
           emittedConstWires.addAll(resolvedIds.whereType<int>());
         }
 
-        final valuePart = constValuePart(constValue);
+        final valuePart = NetlistUtils.constValuePart(constValue);
         final cellName = 'const_${constIdx}_$valuePart';
         final valueLiteral = valuePart.replaceFirst('_', "'");
 
@@ -1485,7 +1487,7 @@ class NetlistSynthesizer extends Synthesizer {
       for (final entry in synthLogicIds.entries
           .where((e) => !e.key.isConstant && !e.key.declarationCleared)) {
         final sl = entry.key;
-        final name = tryGetSynthLogicName(sl);
+        final name = NetlistUtils.tryGetSynthLogicName(sl);
         if (name != null) {
           var bits = applyAlias(entry.value.cast<Object>());
           // For element signals whose IDs were remapped by the
@@ -1574,26 +1576,26 @@ class NetlistSynthesizer extends Synthesizer {
   ) {
     if (options.groupStructConversions) {
       if (options.groupMaximalSubsets) {
-        applyMaximalSubsetGrouping(modules);
+        NetlistPasses.applyMaximalSubsetGrouping(modules);
       }
       if (options.collapseConcats) {
-        applyCollapseConcats(modules);
+        NetlistPasses.applyCollapseConcats(modules);
       }
       if (options.collapseSelectsIntoPack) {
-        applyCollapseSelectsIntoPack(modules);
+        NetlistPasses.applyCollapseSelectsIntoPack(modules);
       }
       if (options.collapseUnpackToConcat) {
-        applyCollapseUnpackToConcat(modules);
+        NetlistPasses.applyCollapseUnpackToConcat(modules);
       }
       if (options.collapseUnpackToPack) {
-        applyCollapseUnpackToPack(modules);
+        NetlistPasses.applyCollapseUnpackToPack(modules);
       }
-      applyStructConversionGrouping(modules);
+      NetlistPasses.applyStructConversionGrouping(modules);
       if (options.collapseStructGroups) {
-        collapseStructGroupModules(modules);
+        NetlistPasses.collapseStructGroupModules(modules);
       }
-      applyStructBufferInsertion(modules);
-      applyConcatToBufferReplacement(modules);
+      NetlistPasses.applyStructBufferInsertion(modules);
+      NetlistPasses.applyConcatToBufferReplacement(modules);
     }
   }
 
@@ -1605,8 +1607,8 @@ class NetlistSynthesizer extends Synthesizer {
   /// avoiding redundant re-synthesis.
   Future<Map<String, Map<String, Object?>>> buildModulesMap(
       SynthBuilder synth, Module top) async {
-    final modules =
-        collectModuleEntries(synth.synthesisResults, topModule: top);
+    final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
+        topModule: top);
 
     applyPostProcessingPasses(modules);
 
@@ -1618,7 +1620,7 @@ class NetlistSynthesizer extends Synthesizer {
     final modules = await buildModulesMap(synth, top);
 
     if (options.compressBitRanges) {
-      compressModulesMap(modules);
+      _compressModulesMap(modules);
     }
 
     final combined = {
@@ -1630,6 +1632,89 @@ class NetlistSynthesizer extends Synthesizer {
         ? const JsonEncoder()
         : const JsonEncoder.withIndent('  ');
     return encoder.convert(combined);
+  }
+
+  /// Compresses a list of bit IDs by replacing contiguous ascending runs of
+  /// 3 or more integers with `"start:end"` range strings.
+  static List<Object> _compressBits(List<Object> bits) {
+    final result = <Object>[];
+    final pending = <int>[];
+
+    void flushPending() {
+      if (pending.isEmpty) {
+        return;
+      }
+      var i = 0;
+      while (i < pending.length) {
+        var j = i;
+        while (j + 1 < pending.length && pending[j + 1] == pending[j] + 1) {
+          j++;
+        }
+        final runLen = j - i + 1;
+        if (runLen >= 3) {
+          result.add('${pending[i]}:${pending[j]}');
+        } else {
+          for (var k = i; k <= j; k++) {
+            result.add(pending[k]);
+          }
+        }
+        i = j + 1;
+      }
+      pending.clear();
+    }
+
+    for (final element in bits) {
+      if (element is int) {
+        pending.add(element);
+      } else {
+        flushPending();
+        result.add(element);
+      }
+    }
+    flushPending();
+    return result;
+  }
+
+  /// Applies [_compressBits] to all `bits` arrays and cell `connections`
+  /// arrays in a modules map.
+  static void _compressModulesMap(
+    Map<String, Map<String, Object?>> modules,
+  ) {
+    for (final moduleDef in modules.values) {
+      final ports = moduleDef['ports'] as Map<String, Map<String, Object?>>?;
+      if (ports != null) {
+        for (final port in ports.values) {
+          final bits = port['bits'];
+          if (bits is List) {
+            port['bits'] = _compressBits(bits.cast<Object>());
+          }
+        }
+      }
+
+      final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
+      if (cells != null) {
+        for (final cell in cells.values) {
+          final conns = cell['connections'] as Map<String, List<Object>>?;
+          if (conns != null) {
+            for (final key in conns.keys.toList()) {
+              conns[key] = _compressBits(conns[key]!);
+            }
+          }
+        }
+      }
+
+      final netnames = moduleDef['netnames'] as Map<String, Object?>?;
+      if (netnames != null) {
+        for (final entry in netnames.values) {
+          if (entry is Map<String, Object?>) {
+            final bits = entry['bits'];
+            if (bits is List) {
+              entry['bits'] = _compressBits(bits.cast<Object>());
+            }
+          }
+        }
+      }
+    }
   }
 
   /// Convenience: synthesize [top] into a combined netlist JSON string.

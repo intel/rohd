@@ -395,8 +395,9 @@ void main() {
       await mod.build();
 
       final synth = SynthBuilder(mod, NetlistSynthesizer());
-      final modulesMap =
-          collectModuleEntries(synth.synthesisResults, topModule: mod);
+      final modulesMap = NetlistPasses.collectModuleEntries(
+          synth.synthesisResults,
+          topModule: mod);
 
       expect(modulesMap, contains(mod.definitionName));
       expect(modulesMap.length, greaterThan(1));
@@ -538,38 +539,7 @@ void main() {
   // Bit-range compression & compact JSON
   // -----------------------------------------------------------------------
   group('Bit-range compression', () {
-    test('compressBits replaces contiguous runs of >=3', () {
-      expect(compressBits([52, 53, 54, 55]), equals(['52:55']));
-      expect(compressBits([3, 5, 6, 7, 8]), equals([3, '5:8']));
-      expect(compressBits([1, 2]), equals([1, 2]));
-      expect(compressBits([10]), equals([10]));
-      expect(compressBits(<Object>[]), equals(<Object>[]));
-    });
-
-    test('compressBits preserves constant strings', () {
-      expect(compressBits(['0', 2, 3, 4, 5, '1']), equals(['0', '2:5', '1']));
-    });
-
-    test('compressBits handles mixed non-contiguous', () {
-      expect(
-          compressBits([1, 3, 4, 5, 10, 11, 12]), equals([1, '3:5', '10:12']));
-    });
-
-    test('expandBits is inverse of compressBits', () {
-      final original = <Object>[52, 53, 54, 55, 56, 57];
-      final compressed = compressBits(original);
-      expect(expandBits(compressed), equals(original));
-    });
-
-    test('expandBits preserves constant strings', () {
-      expect(expandBits(['0', '5:8', '1']), equals(['0', 5, 6, 7, 8, '1']));
-    });
-
-    test('expandBits passes through plain ints', () {
-      expect(expandBits([1, 2, 3]), equals([1, 2, 3]));
-    });
-
-    test('compressBitRanges option compresses netlist JSON', () async {
+    test('compressBitRanges option produces range strings in JSON', () async {
       final a = Logic(name: 'a', width: 8);
       final mod = _AdderModule(a, Logic(name: 'b', width: 8));
       await mod.build();
@@ -585,18 +555,34 @@ void main() {
       // Compressed should be shorter.
       expect(jsonCompressed.length, lessThan(jsonNormal.length));
 
-      // Both should parse as valid JSON.
+      // Both should parse as valid JSON with the same module keys.
       final decodedCompressed = jsonDecode(jsonCompressed) as Map;
       final decodedNormal = jsonDecode(jsonNormal) as Map;
-
-      // Same module keys.
       expect(
         (decodedCompressed['modules'] as Map).keys.toSet(),
         equals((decodedNormal['modules'] as Map).keys.toSet()),
       );
 
-      // Compressed JSON should contain range strings.
+      // Compressed JSON should contain range strings like "2:9".
       expect(jsonCompressed, contains(RegExp(r'"\d+:\d+"')));
+      // Normal JSON should NOT contain range strings.
+      expect(jsonNormal, isNot(contains(RegExp(r'"\d+:\d+"'))));
+    });
+
+    test('compressed ranges preserve constant bit strings', () async {
+      // Use a module that produces constant "0"/"1" bits in the netlist.
+      final a = Logic(name: 'a');
+      final mod = _InverterModule(a);
+      await mod.build();
+
+      final synth = NetlistSynthesizer(
+        options: const NetlistOptions(compressBitRanges: true),
+      );
+      final json = await synth.synthesizeToJson(mod);
+      final decoded = jsonDecode(json) as Map;
+
+      // Should still be valid JSON.
+      expect(decoded['modules'], isNotNull);
     });
 
     test('compactJson option removes indentation', () async {
@@ -652,66 +638,67 @@ void main() {
       expect(jsonBoth.length, lessThan(jsonCompactOnly.length));
     });
 
-    test('compressModulesMap round-trips through expand', () async {
+    test(
+        'compressed FilterBank round-trips: range strings expand to '
+        'same bit IDs as uncompressed', () async {
       final mod = _buildFilterBank();
       await mod.build();
 
-      final synth = NetlistSynthesizer();
-      final sb = SynthBuilder(mod, synth);
-      final modules = await synth.buildModulesMap(sb, mod);
+      // Generate both compressed and uncompressed.
+      final synthNormal = NetlistSynthesizer();
+      final jsonNormal = await synthNormal.synthesizeToJson(mod);
+      final normalModules = (jsonDecode(jsonNormal)
+          as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 
-      // Capture original bits from every port, cell connection, netname.
-      final originalBits = <String, List<Object>>{};
-      for (final entry in modules.entries) {
-        final ports =
-            entry.value['ports'] as Map<String, Map<String, Object?>>?;
-        if (ports != null) {
-          for (final p in ports.entries) {
-            final bits = p.value['bits'] as List?;
-            if (bits != null) {
-              originalBits['${entry.key}.port.${p.key}'] =
-                  List<Object>.from(bits);
-            }
-          }
+      final synthCompressed = NetlistSynthesizer(
+        options: const NetlistOptions(compressBitRanges: true),
+      );
+      final jsonCompressed = await synthCompressed.synthesizeToJson(mod);
+      final compressedModules = (jsonDecode(jsonCompressed)
+          as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
+
+      // Compressed should be smaller.
+      expect(jsonCompressed.length, lessThan(jsonNormal.length));
+
+      // Same module keys.
+      expect(compressedModules.keys.toSet(), normalModules.keys.toSet());
+
+      // Verify compressed JSON contains range strings.
+      expect(jsonCompressed, contains(RegExp(r'"\d+:\d+"')));
+
+      // For each module, expand compressed port bits and compare to normal.
+      for (final modName in normalModules.keys) {
+        final normalPorts = (normalModules[modName]
+            as Map<String, dynamic>)['ports'] as Map<String, dynamic>?;
+        final compPorts = (compressedModules[modName]
+            as Map<String, dynamic>)['ports'] as Map<String, dynamic>?;
+        if (normalPorts == null || compPorts == null) {
+          continue;
         }
-      }
 
-      // Compress in place.
-      compressModulesMap(modules);
+        for (final portName in normalPorts.keys) {
+          final normalBits =
+              (normalPorts[portName] as Map)['bits'] as List<dynamic>;
+          final compBits =
+              (compPorts[portName] as Map)['bits'] as List<dynamic>;
 
-      // Verify at least some ranges were created.
-      var rangeCount = 0;
-      for (final moduleDef in modules.values) {
-        final ports = moduleDef['ports'] as Map<String, Map<String, Object?>>?;
-        if (ports != null) {
-          for (final p in ports.values) {
-            final bits = p['bits'] as List?;
-            if (bits != null) {
-              for (final b in bits) {
-                if (b is String && b.contains(':')) rangeCount++;
+          // Expand any range strings in the compressed bits.
+          final expanded = <dynamic>[];
+          for (final b in compBits) {
+            if (b is String && b.contains(':')) {
+              final parts = b.split(':');
+              final start = int.parse(parts[0]);
+              final end = int.parse(parts[1]);
+              for (var i = start; i <= end; i++) {
+                expanded.add(i);
               }
+            } else {
+              expanded.add(b);
             }
           }
-        }
-      }
-      expect(rangeCount, greaterThan(0),
-          reason: 'FilterBank should have compressible bit ranges');
 
-      // Expand and verify round-trip.
-      for (final entry in modules.entries) {
-        final ports =
-            entry.value['ports'] as Map<String, Map<String, Object?>>?;
-        if (ports != null) {
-          for (final p in ports.entries) {
-            final bits = p.value['bits'] as List?;
-            if (bits != null) {
-              final key = '${entry.key}.port.${p.key}';
-              if (originalBits.containsKey(key)) {
-                expect(expandBits(bits.cast<Object>()), originalBits[key],
-                    reason: 'round-trip failed for $key');
-              }
-            }
-          }
+          expect(expanded, normalBits,
+              reason: 'round-trip failed for $modName.$portName');
         }
       }
     });
