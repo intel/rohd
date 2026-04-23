@@ -517,3 +517,140 @@ String constValuePart(Const c) {
   }
   return '${c.width}_h${value.toRadixString(16)}';
 }
+
+// -- Bit-range compression / expansion ------------------------------------
+
+/// Compresses a list of bit IDs by replacing contiguous ascending runs of
+/// 3 or more integers with `"start:end"` range strings.
+///
+/// Elements that are already strings (Yosys constant bits `"0"` and `"1"`)
+/// are passed through unchanged. Single integers and pairs that don't form
+/// a run of ≥3 are kept as-is.
+///
+/// Example:
+/// ```dart
+/// compressBits([52, 53, 54, 55]) // => ["52:55"]
+/// compressBits([3, 5, 6, 7, 8])  // => [3, "5:8"]
+/// compressBits(["0", 2, 3])      // => ["0", 2, 3]
+/// ```
+List<Object> compressBits(List<Object> bits) {
+  final result = <Object>[];
+  final pending = <int>[];
+
+  void flushPending() {
+    if (pending.isEmpty) {
+      return;
+    }
+    var i = 0;
+    while (i < pending.length) {
+      var j = i;
+      while (j + 1 < pending.length && pending[j + 1] == pending[j] + 1) {
+        j++;
+      }
+      final runLen = j - i + 1;
+      if (runLen >= 3) {
+        result.add('${pending[i]}:${pending[j]}');
+      } else {
+        for (var k = i; k <= j; k++) {
+          result.add(pending[k]);
+        }
+      }
+      i = j + 1;
+    }
+    pending.clear();
+  }
+
+  for (final element in bits) {
+    if (element is int) {
+      pending.add(element);
+    } else {
+      flushPending();
+      result.add(element);
+    }
+  }
+  flushPending();
+  return result;
+}
+
+/// Expands a compressed bit-ID list back to individual elements.
+///
+/// Range strings `"start:end"` are expanded to `[start, start+1, ..., end]`.
+/// Yosys constant strings `"0"` and `"1"` are passed through unchanged.
+/// Integer elements are passed through unchanged.
+///
+/// This is the inverse of [compressBits]:
+/// `expandBits(compressBits(bits))` returns the original list.
+List<Object> expandBits(List<Object> bits) {
+  final result = <Object>[];
+  for (final element in bits) {
+    if (element is int) {
+      result.add(element);
+    } else if (element is String) {
+      final colonIdx = element.indexOf(':');
+      if (colonIdx > 0) {
+        final start = int.tryParse(element.substring(0, colonIdx));
+        final end = int.tryParse(element.substring(colonIdx + 1));
+        if (start != null && end != null && end >= start) {
+          for (var i = start; i <= end; i++) {
+            result.add(i);
+          }
+          continue;
+        }
+      }
+      // Not a range — pass through (e.g. "0", "1").
+      result.add(element);
+    } else {
+      result.add(element);
+    }
+  }
+  return result;
+}
+
+/// Applies [compressBits] to all `bits` arrays and cell `connections`
+/// arrays in a modules map (the top-level `modules` value from a
+/// Yosys-compatible JSON netlist).
+///
+/// Modifies the map in place and returns it for convenience.
+Map<String, Map<String, Object?>> compressModulesMap(
+  Map<String, Map<String, Object?>> modules,
+) {
+  for (final moduleDef in modules.values) {
+    // Compress port bits.
+    final ports = moduleDef['ports'] as Map<String, Map<String, Object?>>?;
+    if (ports != null) {
+      for (final port in ports.values) {
+        final bits = port['bits'];
+        if (bits is List) {
+          port['bits'] = compressBits(bits.cast<Object>());
+        }
+      }
+    }
+
+    // Compress cell connection arrays.
+    final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
+    if (cells != null) {
+      for (final cell in cells.values) {
+        final conns = cell['connections'] as Map<String, List<Object>>?;
+        if (conns != null) {
+          for (final key in conns.keys.toList()) {
+            conns[key] = compressBits(conns[key]!);
+          }
+        }
+      }
+    }
+
+    // Compress netname bits.
+    final netnames = moduleDef['netnames'] as Map<String, Object?>?;
+    if (netnames != null) {
+      for (final entry in netnames.values) {
+        if (entry is Map<String, Object?>) {
+          final bits = entry['bits'];
+          if (bits is List) {
+            entry['bits'] = compressBits(bits.cast<Object>());
+          }
+        }
+      }
+    }
+  }
+  return modules;
+}

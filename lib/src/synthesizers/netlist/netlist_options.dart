@@ -103,6 +103,20 @@ class NetlistOptions {
   /// produce compatible wire IDs.
   final bool slimMode;
 
+  /// When `true`, contiguous ascending runs of ≥3 integer bit IDs in
+  /// `bits` arrays and cell `connections` arrays are replaced with
+  /// `"start:end"` range strings (e.g. `[52, 53, 54, 55]` → `["52:55"]`).
+  ///
+  /// This is backward-compatible: Yosys-format arrays already mix
+  /// integers with constant strings `"0"` and `"1"`.  Parsers can
+  /// detect range strings by the presence of `:`.
+  final bool compressBitRanges;
+
+  /// When `true`, the JSON output uses no indentation (compact form).
+  /// When `false` (default), the JSON is pretty-printed with two-space
+  /// indentation.
+  final bool compactJson;
+
   /// Creates a [NetlistOptions] with the given configuration.
   ///
   /// All parameters have sensible defaults matching the current
@@ -118,5 +132,7 @@ class NetlistOptions {
     this.collapseUnpackToPack = false,
     this.enableDCE = true,
     this.slimMode = false,
+    this.compressBitRanges = false,
+    this.compactJson = false,
   });
 }

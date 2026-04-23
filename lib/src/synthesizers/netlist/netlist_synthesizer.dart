@@ -1616,11 +1616,20 @@ class NetlistSynthesizer extends Synthesizer {
   /// Generate the combined netlist JSON from a [SynthBuilder]'s results.
   Future<String> generateCombinedJson(SynthBuilder synth, Module top) async {
     final modules = await buildModulesMap(synth, top);
+
+    if (options.compressBitRanges) {
+      compressModulesMap(modules);
+    }
+
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
       'modules': modules,
     };
-    return const JsonEncoder.withIndent('  ').convert(combined);
+
+    final encoder = options.compactJson
+        ? const JsonEncoder()
+        : const JsonEncoder.withIndent('  ');
+    return encoder.convert(combined);
   }
 
   /// Convenience: synthesize [top] into a combined netlist JSON string.
