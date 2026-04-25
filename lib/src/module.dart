@@ -333,6 +333,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
+    ModuleServices.instance.rootModule = this;
     ModuleTree.rootModuleInstance = this;
   }
 
