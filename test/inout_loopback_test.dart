@@ -14,9 +14,7 @@ import 'package:test/test.dart';
 /// The two inOut ports exercise the loopback scenario.
 class _SubWithDualInOut extends Module {
   _SubWithDualInOut(Logic inp, LogicNet busA, LogicNet busB)
-      : super(
-            name: 'sub_dual_inout',
-            definitionName: 'SubWithDualInOut') {
+      : super(name: 'sub_dual_inout', definitionName: 'SubWithDualInOut') {
     inp = addInput('inp', inp);
     addOutput('out') <= inp;
     addInOut('portA', busA, width: busA.width);

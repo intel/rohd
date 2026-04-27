@@ -69,8 +69,7 @@ class NetlistService {
     bool register = true,
   }) async {
     if (!module.hasBuilt) {
-      throw Exception(
-          'Module must be built before creating NetlistService. '
+      throw Exception('Module must be built before creating NetlistService. '
           'Call build() first.');
     }
 

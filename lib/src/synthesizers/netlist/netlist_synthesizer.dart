@@ -36,15 +36,33 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // are driven independently (e.g. by constants) and then consumed by
     // submodule input ports.  This parallels what _subsetReceiveArrayPort does
     // on the decomposition side.
+    //
+    // Skip arrays that were merged with a port array's SynthLogic — those
+    // are already structurally decomposed by the $slice cells created above
+    // and reassembling them would create a circular driver on the port bus.
     final portArrays = {
       ...module.inputs.values.whereType<LogicArray>(),
       ...module.outputs.values.whereType<LogicArray>(),
       ...module.inOuts.values.whereType<LogicArray>(),
     };
-    module.internalSignals
-        .whereType<LogicArray>()
-        .where((sig) => !portArrays.contains(sig))
-        .forEach(_concatAssembleArray);
+    final portArraySynthLogics = <SynthLogic>{};
+    for (final pa in portArrays) {
+      final sl = logicToSynthMap[pa];
+      if (sl != null) {
+        portArraySynthLogics.add(sl.replacement ?? sl);
+      }
+    }
+    module.internalSignals.whereType<LogicArray>().where((sig) {
+      if (portArrays.contains(sig)) {
+        return false;
+      }
+      final sl = logicToSynthMap[sig];
+      if (sl == null) {
+        return false;
+      }
+      final resolved = sl.replacement ?? sl;
+      return !portArraySynthLogics.contains(resolved);
+    }).forEach(_concatAssembleArray);
   }
 
   /// Creates explicit `$slice` cells for each element of a [LogicArray] port.
@@ -688,8 +706,9 @@ class NetlistSynthesizer extends Synthesizer {
     }
 
     // Apply aliases to a list of bit IDs / string constants.
-    List<Object> applyAlias(List<Object> bits) =>
-        bits.map((b) => b is int ? resolveAlias(b) : b).toList();
+    List<Object> applyAlias(List<Object> bits) => idAlias.isEmpty
+        ? bits
+        : bits.map((b) => b is int ? resolveAlias(b) : b).toList();
 
     // Alias port bits.
     if (idAlias.isNotEmpty) {
@@ -1607,31 +1626,43 @@ class NetlistSynthesizer extends Synthesizer {
   /// avoiding redundant re-synthesis.
   Future<Map<String, Map<String, Object?>>> buildModulesMap(
       SynthBuilder synth, Module top) async {
+    final swEntries = Stopwatch()..start();
     final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
         topModule: top);
+    swEntries.stop();
 
+    final swPasses = Stopwatch()..start();
     applyPostProcessingPasses(modules);
+    swPasses.stop();
 
     return modules;
   }
 
   /// Generate the combined netlist JSON from a [SynthBuilder]'s results.
   Future<String> generateCombinedJson(SynthBuilder synth, Module top) async {
+    final swCollect = Stopwatch()..start();
     final modules = await buildModulesMap(synth, top);
+    swCollect.stop();
 
+    final swCompress = Stopwatch()..start();
     if (options.compressBitRanges) {
       _compressModulesMap(modules);
     }
+    swCompress.stop();
 
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
       'modules': modules,
     };
 
+    final swEncode = Stopwatch()..start();
     final encoder = options.compactJson
         ? const JsonEncoder()
         : const JsonEncoder.withIndent('  ');
-    return encoder.convert(combined);
+    final result = encoder.convert(combined);
+    swEncode.stop();
+
+    return result;
   }
 
   /// Compresses a list of bit IDs by replacing contiguous ascending runs of
