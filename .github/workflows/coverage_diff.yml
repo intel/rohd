@@ -20,7 +20,7 @@ jobs:
   coverage-diff:
     name: Coverage Comment Bot
     timeout-minutes: 60
-    runs-on: 'ubuntu-latest'
+    runs-on: ${{ github.repository_owner == 'intel' && 'intel-ubuntu-latest' || 'ubuntu-latest' }}
     env:
       DEFAULT_TARGET_BRANCH: main
     steps:
