@@ -1,0 +1,186 @@
+
+name: Coverage Comment Bot
+
+on:
+  pull_request:
+    branches:
+      - main
+
+
+permissions:
+  contents: read
+  pull-requests: write
+
+
+concurrency:
+  group: coverage-diff-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage-diff:
+    name: Coverage Comment Bot
+    timeout-minutes: 60
+    runs-on: 'ubuntu-latest'
+    env:
+      DEFAULT_TARGET_BRANCH: main
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        run: tool/gh_actions/install_dependencies.sh
+
+      - name: Install Icarus Verilog
+        run: tool/gh_actions/install_iverilog.sh
+
+      - name: Generate coverage
+        run: tool/generate_coverage.sh
+
+      - name: Extract current branch coverage
+        id: current
+        shell: bash
+        run: |
+          set -euo pipefail
+          SUMMARY=$(lcov --summary coverage/lcov.info 2>&1 | grep -E "lines\.*:")
+          CURRENT_PERCENT=$(echo "$SUMMARY" | grep -oP '\d+\.\d+' | head -1)
+          if [ -z "$CURRENT_PERCENT" ]; then
+            echo "Could not extract current coverage percentage."
+            exit 1
+          fi
+          echo "percent=${CURRENT_PERCENT}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve PR and target branch
+        id: ctx
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            const branch = process.env.GITHUB_REF_NAME;
+            const pr = github.context.payload.pull_request;
+            const defaultTarget = process.env.DEFAULT_TARGET_BRANCH;
+            core.setOutput('pr_number', pr ? String(pr.number) : '');
+            core.setOutput('target_branch', pr ? pr.base.ref : defaultTarget);
+
+      - name: Get target branch badge coverage
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_BRANCH=${{ steps.ctx.outputs.target_branch }}
+          BADGE_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/badges/coverage/${TARGET_BRANCH}.svg"
+          echo "Fetching target coverage badge: ${BADGE_URL}"
+          if ! curl -fsSL "$BADGE_URL" -o /tmp/target-coverage.svg; then
+            echo "Target badge not found for ${TARGET_BRANCH}."
+            echo "percent=N/A" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TARGET_RAW=$(grep -oP 'aria-label="coverage: \K[0-9]+(\.[0-9]+)?' /tmp/target-coverage.svg | head -1 || true)
+          if [ -z "$TARGET_RAW" ]; then
+            echo "Unable to parse target coverage from badge."
+            echo "percent=N/A" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "percent=${TARGET_RAW}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute coverage delta
+        id: delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT="${{ steps.current.outputs.percent }}"
+          TARGET="${{ steps.target.outputs.percent }}"
+
+          if [ "$TARGET" = "N/A" ]; then
+            echo "value=N/A" >> "$GITHUB_OUTPUT"
+            echo "status=unavailable" >> "$GITHUB_OUTPUT"
+            echo "label=target-unavailable" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          DELTA=$(awk "BEGIN {printf \"%.2f\", ${CURRENT} - ${TARGET}}")
+          if awk "BEGIN {exit !(${DELTA} > 0)}"; then
+            STATUS="increased"
+            LABEL="increased"
+          elif awk "BEGIN {exit !(${DELTA} < 0)}"; then
+            STATUS="decreased"
+            LABEL="decreased"
+          else
+            STATUS="unchanged"
+            LABEL="unchanged"
+          fi
+
+          echo "value=${DELTA}" >> "$GITHUB_OUTPUT"
+          echo "status=${STATUS}" >> "$GITHUB_OUTPUT"
+          echo "label=${LABEL}" >> "$GITHUB_OUTPUT"
+
+      - name: Add workflow summary
+        shell: bash
+        run: |
+          {
+            echo "## Coverage Diff"
+            echo ""
+            echo "- Branch: ${GITHUB_REF_NAME}"
+            echo "- Target branch: ${{ steps.ctx.outputs.target_branch }}"
+            echo "- Current coverage: ${{ steps.current.outputs.percent }}%"
+            if [ "${{ steps.target.outputs.percent }}" = "N/A" ]; then
+              echo "- Target (${{ steps.ctx.outputs.target_branch }}) coverage: unavailable"
+              echo "- Delta: unavailable"
+            else
+              echo "- Target (${{ steps.ctx.outputs.target_branch }}) coverage: ${{ steps.target.outputs.percent }}%"
+              echo "- Delta: ${{ steps.delta.outputs.value }}% (${{ steps.delta.outputs.label }})"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or update PR comment
+        if: steps.ctx.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.ctx.outputs.pr_number }}
+          CURRENT: ${{ steps.current.outputs.percent }}
+          TARGET: ${{ steps.target.outputs.percent }}
+          DELTA: ${{ steps.delta.outputs.value }}
+          STATUS: ${{ steps.delta.outputs.status }}
+          STATUS_LABEL: ${{ steps.delta.outputs.label }}
+          TARGET_BRANCH: ${{ steps.ctx.outputs.target_branch }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = Number(process.env.PR_NUMBER);
+            const marker = '<!-- coverage-diff-comment -->';
+
+            let details;
+            if (process.env.TARGET === 'N/A') {
+              details = [
+                `- Current coverage: **${process.env.CURRENT}%**`,
+                `- Target (${process.env.TARGET_BRANCH}) coverage: **unavailable**`,
+                '- Delta: **unavailable**',
+              ].join('\n');
+            } else {
+              details = [
+                `- Current coverage: **${process.env.CURRENT}%**`,
+                `- Target (${process.env.TARGET_BRANCH}) coverage: **${process.env.TARGET}%**`,
+                `- Delta: **${process.env.DELTA}%** (${process.env.STATUS_LABEL})`,
+              ].join('\n');
+            }
+
+            const body = [
+              marker,
+              '## Coverage Diff',
+              '',
+              `Coverage status: **${process.env.STATUS || 'unavailable'}**`,
+              '',
+              details,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body,
+            });
