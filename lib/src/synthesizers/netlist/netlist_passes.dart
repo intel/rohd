@@ -257,11 +257,29 @@ class NetlistPasses {
   static void applyCollapseConcats(
     Map<String, Map<String, Object?>> allModules,
   ) {
-    for (final moduleDef in allModules.values) {
+    for (final entry in allModules.entries) {
+      final moduleDef = entry.value;
       final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
       if (cells == null || cells.isEmpty) {
         continue;
       }
+
+      final concatCount = cells.values
+          .where((c) => (c['type'] as String?) == r'$concat')
+          .length;
+      if (concatCount == 0) {
+        continue;
+      }
+
+      // Iterate until no more collapses are possible. Nested concat chains
+      // (e.g. swizzle_4 feeding swizzle_3) require multiple passes because
+      // traceBackward only traces through $slice/$buf, not $concat.
+      var changed = true;
+      var replIdx = 0;
+      var iteration = 0;
+      while (changed && iteration < 20) {
+        changed = false;
+        iteration++;
 
       // --- Build wire-driver, wire-consumer, and bit-to-net maps -------
       final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
@@ -269,7 +287,7 @@ class NetlistPasses {
 
       final cellsToRemove = <String>{};
       final cellsToAdd = <String, Map<String, Object?>>{};
-      var replIdx = 0;
+
 
       // --- Process each $concat cell ------------------------------------
       for (final concatEntry in cells.entries.toList()) {
@@ -551,6 +569,8 @@ class NetlistPasses {
         newConns['Y'] = [for (final b in conns['Y'] as List) b as Object];
         newDirs['Y'] = 'output';
 
+        // Remove original concat, add collapsed replacement.
+        cellsToRemove.add(concatName);
         cellsToAdd['${concatName}_collapsed'] = {
           'hide_name': concatCell['hide_name'],
           'type': r'$concat',
@@ -564,6 +584,10 @@ class NetlistPasses {
       // Apply removals and additions.
       cellsToRemove.forEach(cells.remove);
       cells.addAll(cellsToAdd);
+      if (cellsToRemove.isNotEmpty || cellsToAdd.isNotEmpty) {
+        changed = true;
+      }
+      } // end while (changed)
     }
   }
 
@@ -1798,7 +1822,8 @@ class NetlistPasses {
   static void applyCollapseUnpackToConcat(
     Map<String, Map<String, Object?>> allModules,
   ) {
-    for (final moduleDef in allModules.values) {
+    for (final moduleEntry in allModules.entries) {
+      final moduleDef = moduleEntry.value;
       final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
       if (cells == null || cells.isEmpty) {
         continue;
@@ -1808,8 +1833,10 @@ class NetlistPasses {
       // the next outer concat/unpack to collapse.
       var globalReplIdx = 0;
       var anyChanged = true;
-      while (anyChanged) {
+      var iteration = 0;
+      while (anyChanged && iteration < 20) {
         anyChanged = false;
+        iteration++;
 
         final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
             NetlistUtils.buildWireMaps(cells, moduleDef);
@@ -2219,10 +2246,6 @@ class NetlistPasses {
                 }
               }
               final width = tracedBits.length;
-
-              cellsToAdd['unpack_concat_buf_$replIdx'] =
-                  NetlistUtils.makeBufCell(width, tracedBits, tracedBits);
-              replIdx++;
 
               final hi = outBitOffset + width - 1;
               final portName =

@@ -174,6 +174,9 @@ class NetlistUtils {
       if (dt != r'$buf' && dt != r'$slice') {
         break;
       }
+      if (chain.contains(driverName)) {
+        break; // Cycle detected — stop tracing.
+      }
       chain.add(driverName);
       final dc = driverCell['connections'] as Map<String, dynamic>? ?? {};
       if (dt == r'$buf') {
