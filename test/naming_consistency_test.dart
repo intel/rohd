@@ -218,12 +218,10 @@ void main() {
       }
     });
 
-    test('submodule instance names are allocated from the instance namespace',
+    test('submodule instance names are allocated from the shared namespace',
         () async {
-      // Instance names come from Module.namer.allocateInstanceName, which is
-      // separate from the signal namespace (Module.namer.allocateSignalName).
-      // A signal and a submodule instance may therefore share the same
-      // identifier without collision — matching SystemVerilog semantics.
+      // Instance names come from Module.namer.allocateInstanceName, which
+      // shares the same namespace as signal names.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
@@ -238,11 +236,10 @@ void main() {
       expect(instNames, isNotEmpty,
           reason: 'Should have at least one submodule instance');
 
-      // Instance names are claimed in the *instance* namespace, NOT the
-      // signal namespace.
+      // Instance names are claimed in the shared namespace.
       for (final name in instNames) {
         expect(mod.namer.isInstanceNameAvailable(name), isFalse,
-            reason: 'Instance name "$name" should be claimed in instance '
+            reason: 'Instance name "$name" should be claimed in the '
                 'namespace');
       }
     });

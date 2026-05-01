@@ -16,31 +16,17 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// Central namer that manages collision-free names for both signals and
 /// submodule instances within a single module scope.
 ///
-/// Signal names and instance names occupy separate namespaces (matching
-/// SystemVerilog semantics), but can optionally be cross-checked via
-/// [uniquifySignalAndInstanceNames] for simulator compatibility.
+/// All identifiers (signals and instances) share a single namespace,
+/// ensuring no name collisions in the generated SystemVerilog.
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
 /// are allocated explicitly via [allocateInstanceName].
 @internal
 class Namer {
-  /// Controls whether signal names and instance names must be unique
-  /// across both namespaces.
-  ///
-  /// When `true` (the default), allocations cross-check both namespaces
-  /// so that no identifier appears as both a signal and an instance name.
-  /// This is necessary for simulators like Icarus Verilog that reject
-  /// duplicate identifiers even across namespace boundaries.
-  ///
-  /// When `false`, signal and instance names are uniquified independently,
-  /// matching strict SystemVerilog semantics where instance and signal
-  /// identifiers occupy separate namespaces.
-  static bool uniquifySignalAndInstanceNames = true;
+  // ─── Shared namespace ───────────────────────────────────────────
 
-  // ─── Signal namespace ───────────────────────────────────────────
-
-  final Uniquifier _signalUniquifier;
+  final Uniquifier _uniquifier;
 
   /// Sparse cache: only entries where the canonical name has been resolved.
   /// Ports whose sanitized name == logic.name may be absent (fast-path
@@ -50,17 +36,13 @@ class Namer {
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
 
-  // ─── Instance namespace ─────────────────────────────────────────
-
-  final Uniquifier _instanceUniquifier = Uniquifier();
-
   // ─── Construction ───────────────────────────────────────────────
 
   Namer._({
-    required Uniquifier signalUniquifier,
+    required Uniquifier uniquifier,
     required Map<Logic, String> portRenames,
     required Set<Logic> portLogics,
-  })  : _signalUniquifier = signalUniquifier,
+  })  : _uniquifier = uniquifier,
         _portLogics = portLogics {
     _signalNames.addAll(portRenames);
   }
@@ -103,99 +85,65 @@ class Namer {
     }
 
     return Namer._(
-      signalUniquifier: uniquifier,
+      uniquifier: uniquifier,
       portRenames: portRenames,
       portLogics: portLogics,
     );
   }
 
-  // ─── Signal availability / allocation ───────────────────────────
+  // ─── Name availability / allocation ─────────────────────────────
 
-  bool _isSignalAvailable(String name, {bool reserved = false}) =>
-      _signalUniquifier.isAvailable(name, reserved: reserved) &&
-      (!uniquifySignalAndInstanceNames ||
-          _instanceUniquifier.isAvailable(name));
+  bool _isAvailable(String name, {bool reserved = false}) =>
+      _uniquifier.isAvailable(name, reserved: reserved);
 
-  String _allocateUniqueSignalName(String baseName, {bool reserved = false}) {
+  String _allocateUniqueName(String baseName, {bool reserved = false}) {
     if (reserved) {
-      if (!_isSignalAvailable(baseName, reserved: true)) {
+      if (!_isAvailable(baseName, reserved: true)) {
         throw UnavailableReservedNameException(baseName);
       }
 
-      _signalUniquifier.getUniqueName(initialName: baseName, reserved: true);
+      _uniquifier.getUniqueName(initialName: baseName, reserved: true);
       return baseName;
     }
 
     var candidate = baseName;
     var suffix = 0;
-    while (!_isSignalAvailable(candidate)) {
+    while (!_isAvailable(candidate)) {
       candidate = '${baseName}_$suffix';
       suffix++;
     }
 
-    _signalUniquifier.getUniqueName(initialName: candidate);
+    _uniquifier.getUniqueName(initialName: candidate);
     return candidate;
   }
 
-  /// Returns `true` if [name] has not yet been claimed in the signal
-  /// namespace.
-  bool isSignalNameAvailable(String name) => _isSignalAvailable(name);
+  /// Returns `true` if [name] has not yet been claimed in the namespace.
+  bool isNameAvailable(String name) => _isAvailable(name);
 
   /// Allocates a collision-free name in the signal namespace.
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization)
   /// is claimed without modification; an exception is thrown if it collides.
   String allocateSignalName(String baseName, {bool reserved = false}) =>
-      _allocateUniqueSignalName(
+      _allocateUniqueName(
         Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
 
-  // ─── Instance availability / allocation ─────────────────────────
+  // ─── Instance allocation ────────────────────────────────────────
 
-  bool _isInstanceAvailable(String name, {bool reserved = false}) =>
-      _instanceUniquifier.isAvailable(name, reserved: reserved) &&
-      (!uniquifySignalAndInstanceNames || _signalUniquifier.isAvailable(name));
-
-  /// Returns `true` if [name] has not yet been claimed in the instance
-  /// namespace.
-  bool isInstanceNameAvailable(String name) =>
-      _instanceUniquifier.isAvailable(name);
+  /// Returns `true` if [name] has not yet been claimed in the namespace.
+  bool isInstanceNameAvailable(String name) => _isAvailable(name);
 
   /// Allocates a collision-free instance name.
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization)
   /// is claimed without modification; an exception is thrown if it collides.
-  String allocateInstanceName(String baseName, {bool reserved = false}) {
-    final sanitizedBaseName = Sanitizer.sanitizeSV(baseName);
-
-    if (!uniquifySignalAndInstanceNames) {
-      return _instanceUniquifier.getUniqueName(
-        initialName: sanitizedBaseName,
+  String allocateInstanceName(String baseName, {bool reserved = false}) =>
+      _allocateUniqueName(
+        Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
-    }
-
-    if (reserved) {
-      if (!_isInstanceAvailable(sanitizedBaseName, reserved: true)) {
-        throw UnavailableReservedNameException(sanitizedBaseName);
-      }
-
-      return _instanceUniquifier.getUniqueName(
-        initialName: sanitizedBaseName,
-        reserved: true,
-      );
-    }
-
-    var candidate = sanitizedBaseName;
-    var suffix = 0;
-    while (!_isInstanceAvailable(candidate)) {
-      candidate = '${sanitizedBaseName}_$suffix';
-      suffix++;
-    }
-
-    return _instanceUniquifier.getUniqueName(initialName: candidate);
-  }
 
   // ─── Signal naming (Logic → String) ─────────────────────────────
 
@@ -222,7 +170,7 @@ class Namer {
       base = Sanitizer.sanitizeSV(logic.structureName);
     }
 
-    final name = _allocateUniqueSignalName(
+    final name = _allocateUniqueName(
       base,
       reserved: isReservedInternal,
     );
@@ -309,7 +257,7 @@ class Namer {
     }
 
     for (final logic in preferredMergeable) {
-      if (_isSignalAvailable(baseName(logic))) {
+      if (_isAvailable(baseName(logic))) {
         return _nameAndCacheAll(logic, candidates);
       }
     }
@@ -320,7 +268,7 @@ class Namer {
 
     if (unpreferredMergeable.isNotEmpty) {
       final best = unpreferredMergeable
-              .firstWhereOrNull((e) => _isSignalAvailable(baseName(e))) ??
+              .firstWhereOrNull((e) => _isAvailable(baseName(e))) ??
           unpreferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }

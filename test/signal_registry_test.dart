@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_registry_test.dart
-// Tests for Module canonical naming (SignalNamer / signalName / allocateSignalName).
+// Tests for Module canonical naming (Namer / signalName / allocateSignalName).
 //
 // 2026 April 14
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -11,7 +11,6 @@ import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
 import '../example/filter_bank.dart';
-
 // ────────────────────────────────────────────────────────────────
 // Simple test modules
 // ────────────────────────────────────────────────────────────────
@@ -70,6 +69,26 @@ void main() {
       expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
       expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
       expect(mod.namer.signalNameOf(mod.output('val')), equals('val'));
+    });
+
+    test('agrees with signalName after synth', () async {
+      final mod = _Counter(Logic(), Logic());
+      await mod.build();
+
+      for (final entry in mod.inputs.entries) {
+        expect(
+          mod.namer.signalNameOf(entry.value),
+          isNotNull,
+          reason: 'signalName should work for input ${entry.key}',
+        );
+      }
+      for (final entry in mod.outputs.entries) {
+        expect(
+          mod.namer.signalNameOf(entry.value),
+          isNotNull,
+          reason: 'signalName should work for output ${entry.key}',
+        );
+      }
     });
   });
 

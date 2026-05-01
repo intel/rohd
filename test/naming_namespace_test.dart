@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // naming_namespace_test.dart
-// Tests for constant naming via nameOfBest, the tryMerge guard for
-// constNameDisallowed, and separate instance/signal namespaces.
+// Tests for constant naming via nameOfBest and shared instance/signal
+// namespace uniquification.
 //
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/namer.dart';
 import 'package:test/test.dart';
 
 /// A simple submodule whose instance name can collide with a signal name.
@@ -77,8 +76,6 @@ class _ConstNameDisallowedModule extends Module {
 void main() {
   tearDown(() async {
     await Simulator.reset();
-    // Restore default.
-    Namer.uniquifySignalAndInstanceNames = true;
   });
 
   group('constant naming via nameOfBest', () {
@@ -106,46 +103,17 @@ void main() {
     });
   });
 
-  group('separate instance and signal namespaces', () {
+  group('shared instance and signal namespace', () {
     test(
-        'signal and instance with same name do not collide '
-        'when namespaces are independent', () async {
-      Namer.uniquifySignalAndInstanceNames = false;
+        'signal and instance with same name get uniquified '
+        'in the shared namespace', () async {
       final dut = _InstanceSignalCollision();
       await dut.build();
       final sv = dut.generateSynth();
 
-      // With independent namespaces, the signal keeps its name 'inner'
-      // and the instance also keeps 'inner' — no spurious _0 suffix.
-      expect(sv, contains(RegExp(r'logic\s+inner[,;\s]')));
-      expect(sv, isNot(contains('inner_0')));
-    });
-
-    test(
-        'signal and instance get suffixed when '
-        'ensureUniqueSignalAndInstanceNames is true', () async {
-      Namer.uniquifySignalAndInstanceNames = true;
-      final dut = _InstanceSignalCollision();
-      await dut.build();
-      final sv = dut.generateSynth();
-
-      // With cross-namespace checking enabled, the signal 'inner' is
-      // allocated first (during signal naming); when the instance tries
-      // to claim 'inner', it sees the signal namespace has it, so the
-      // instance OR signal gets a suffix.
+      // With a single shared namespace, one of the two "inner" identifiers
+      // must be suffixed to avoid collision.
       expect(sv, contains('inner_0'));
-    });
-
-    test(
-        'signal and instance do not spuriously suffix when '
-        'ensureUniqueSignalAndInstanceNames is false', () async {
-      Namer.uniquifySignalAndInstanceNames = false;
-      final dut = _InstanceSignalCollision();
-      await dut.build();
-      final sv = dut.generateSynth();
-
-      // With independent namespaces, no spurious suffixing.
-      expect(sv, isNot(contains('inner_0')));
     });
 
     test('duplicate instance names get uniquified', () async {
@@ -156,25 +124,6 @@ void main() {
       // Two instances named 'blk' — one should be 'blk', the other 'blk_0'.
       expect(sv, contains('blk'));
       expect(sv, contains(RegExp(r'blk_\d')));
-    });
-  });
-
-  group('instance namespace independence', () {
-    test('allocateInstanceName is independent from allocateSignalName',
-        () async {
-      final dut = _InstanceSignalCollision();
-      await dut.build();
-
-      // After build, the signal namer has 'inner' claimed.
-      // With independent namespaces, instance namespace should also accept
-      // 'inner' without conflict.
-      Namer.uniquifySignalAndInstanceNames = false;
-
-      // The instance namespace should show 'inner' as available before
-      // any instance allocation.
-      // (After synthesis, names are already allocated, so we just verify
-      // the module built without error.)
-      expect(dut.generateSynth(), isNotEmpty);
     });
   });
 }
