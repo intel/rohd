@@ -281,312 +281,310 @@ class NetlistPasses {
         changed = false;
         iteration++;
 
-      // --- Build wire-driver, wire-consumer, and bit-to-net maps -------
-      final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
-          NetlistUtils.buildWireMaps(cells, moduleDef);
+        // --- Build wire-driver, wire-consumer, and bit-to-net maps -------
+        final (:wireDriverCell, :wireConsumerCells, :bitToNetInfo) =
+            NetlistUtils.buildWireMaps(cells, moduleDef);
 
-      final cellsToRemove = <String>{};
-      final cellsToAdd = <String, Map<String, Object?>>{};
+        final cellsToRemove = <String>{};
+        final cellsToAdd = <String, Map<String, Object?>>{};
 
-
-      // --- Process each $concat cell ------------------------------------
-      for (final concatEntry in cells.entries.toList()) {
-        final concatName = concatEntry.key;
-        final concatCell = concatEntry.value;
-        if ((concatCell['type'] as String?) != r'$concat') {
-          continue;
-        }
-        if (cellsToRemove.contains(concatName)) {
-          continue;
-        }
-
-        final conns = concatCell['connections'] as Map<String, dynamic>? ?? {};
-
-        // Parse input ports into an ordered list.
-        // Supports both range-named ports [hi:lo] and A/B form.
-        final inputPorts = <(int lo, String portName, List<int> bits)>[];
-        var hasRangePorts = false;
-        for (final portName in conns.keys) {
-          if (portName == 'Y') {
+        // --- Process each $concat cell ------------------------------------
+        for (final concatEntry in cells.entries.toList()) {
+          final concatName = concatEntry.key;
+          final concatCell = concatEntry.value;
+          if ((concatCell['type'] as String?) != r'$concat') {
             continue;
           }
-          final m = NetlistUtils.rangePortRe.firstMatch(portName);
-          if (m != null) {
-            hasRangePorts = true;
-            final hi = int.parse(m.group(1)!);
-            final lo = m.group(2) != null ? int.parse(m.group(2)!) : hi;
-            inputPorts.add((
-              lo,
-              portName,
-              [
-                for (final b in conns[portName] as List)
+          if (cellsToRemove.contains(concatName)) {
+            continue;
+          }
+
+          final conns =
+              concatCell['connections'] as Map<String, dynamic>? ?? {};
+
+          // Parse input ports into an ordered list.
+          // Supports both range-named ports [hi:lo] and A/B form.
+          final inputPorts = <(int lo, String portName, List<int> bits)>[];
+          var hasRangePorts = false;
+          for (final portName in conns.keys) {
+            if (portName == 'Y') {
+              continue;
+            }
+            final m = NetlistUtils.rangePortRe.firstMatch(portName);
+            if (m != null) {
+              hasRangePorts = true;
+              final hi = int.parse(m.group(1)!);
+              final lo = m.group(2) != null ? int.parse(m.group(2)!) : hi;
+              inputPorts.add((
+                lo,
+                portName,
+                [
+                  for (final b in conns[portName] as List)
+                    if (b is int) b,
+                ],
+              ));
+            }
+          }
+          if (!hasRangePorts) {
+            // A/B form: convert to ordered list.
+            if (conns.containsKey('A') && conns.containsKey('B')) {
+              final aBits = [
+                for (final b in conns['A'] as List)
                   if (b is int) b,
-              ],
-            ));
+              ];
+              final bBits = [
+                for (final b in conns['B'] as List)
+                  if (b is int) b,
+              ];
+              inputPorts
+                ..add((0, 'A', aBits))
+                ..add((aBits.length, 'B', bBits));
+            }
           }
-        }
-        if (!hasRangePorts) {
-          // A/B form: convert to ordered list.
-          if (conns.containsKey('A') && conns.containsKey('B')) {
-            final aBits = [
-              for (final b in conns['A'] as List)
-                if (b is int) b,
-            ];
-            final bBits = [
-              for (final b in conns['B'] as List)
-                if (b is int) b,
-            ];
-            inputPorts
-              ..add((0, 'A', aBits))
-              ..add((aBits.length, 'B', bBits));
-          }
-        }
-        inputPorts.sort((a, b) => a.$1.compareTo(b.$1));
+          inputPorts.sort((a, b) => a.$1.compareTo(b.$1));
 
-        if (inputPorts.length < 2) {
-          continue;
-        }
-
-        // --- Trace each port's bits back to a source bus ----------------
-        final portTraces = <({
-          String? busName,
-          List<int>? busBits,
-          List<int> sourceIndices,
-          Set<String> intermediates,
-          bool valid,
-        })>[];
-
-        for (final (_, _, bits) in inputPorts) {
-          final sourceIndices = <int>[];
-          final intermediates = <String>{};
-          String? busName;
-          List<int>? busBits;
-          var valid = true;
-
-          for (final bit in bits) {
-            final (traced, chain) =
-                NetlistUtils.traceBackward(bit, wireDriverCell, cells);
-            intermediates.addAll(chain);
-
-            // Identify source net.
-            final info = bitToNetInfo[traced];
-            if (info == null) {
-              valid = false;
-              break;
-            }
-            if (busName == null) {
-              busName = info.$1;
-              busBits = info.$2;
-            } else if (busName != info.$1) {
-              valid = false;
-              break;
-            }
-            final idx = busBits!.indexOf(traced);
-            if (idx < 0) {
-              valid = false;
-              break;
-            }
-            sourceIndices.add(idx);
+          if (inputPorts.length < 2) {
+            continue;
           }
 
-          // Check contiguous within this port.
-          if (valid && sourceIndices.length == bits.length) {
-            for (var i = 1; i < sourceIndices.length; i++) {
-              if (sourceIndices[i] != sourceIndices[i - 1] + 1) {
+          // --- Trace each port's bits back to a source bus ----------------
+          final portTraces = <({
+            String? busName,
+            List<int>? busBits,
+            List<int> sourceIndices,
+            Set<String> intermediates,
+            bool valid,
+          })>[];
+
+          for (final (_, _, bits) in inputPorts) {
+            final sourceIndices = <int>[];
+            final intermediates = <String>{};
+            String? busName;
+            List<int>? busBits;
+            var valid = true;
+
+            for (final bit in bits) {
+              final (traced, chain) =
+                  NetlistUtils.traceBackward(bit, wireDriverCell, cells);
+              intermediates.addAll(chain);
+
+              // Identify source net.
+              final info = bitToNetInfo[traced];
+              if (info == null) {
                 valid = false;
                 break;
               }
+              if (busName == null) {
+                busName = info.$1;
+                busBits = info.$2;
+              } else if (busName != info.$1) {
+                valid = false;
+                break;
+              }
+              final idx = busBits!.indexOf(traced);
+              if (idx < 0) {
+                valid = false;
+                break;
+              }
+              sourceIndices.add(idx);
             }
-          } else {
-            valid = false;
+
+            // Check contiguous within this port.
+            if (valid && sourceIndices.length == bits.length) {
+              for (var i = 1; i < sourceIndices.length; i++) {
+                if (sourceIndices[i] != sourceIndices[i - 1] + 1) {
+                  valid = false;
+                  break;
+                }
+              }
+            } else {
+              valid = false;
+            }
+
+            portTraces.add((
+              busName: busName,
+              busBits: busBits,
+              sourceIndices: sourceIndices,
+              intermediates: intermediates,
+              valid: valid,
+            ));
           }
 
-          portTraces.add((
-            busName: busName,
-            busBits: busBits,
-            sourceIndices: sourceIndices,
-            intermediates: intermediates,
-            valid: valid,
-          ));
-        }
+          // --- Find maximal runs of consecutive traceable ports -----------
+          final runs = <(int startIdx, int endIdx)>[];
+          var runStart = 0;
+          while (runStart < inputPorts.length) {
+            final t = portTraces[runStart];
+            if (!t.valid || t.busName == null) {
+              runStart++;
+              continue;
+            }
+            var runEnd = runStart;
+            while (runEnd + 1 < inputPorts.length) {
+              final nextT = portTraces[runEnd + 1];
+              if (!nextT.valid) {
+                break;
+              }
+              if (nextT.busName != t.busName) {
+                break;
+              }
+              // Check contiguity across port boundary.
+              final curLast = portTraces[runEnd].sourceIndices.last;
+              final nextFirst = nextT.sourceIndices.first;
+              if (nextFirst != curLast + 1) {
+                break;
+              }
+              runEnd++;
+            }
+            if (runEnd > runStart) {
+              runs.add((runStart, runEnd));
+            }
+            runStart = runEnd + 1;
+          }
 
-        // --- Find maximal runs of consecutive traceable ports -----------
-        final runs = <(int startIdx, int endIdx)>[];
-        var runStart = 0;
-        while (runStart < inputPorts.length) {
-          final t = portTraces[runStart];
-          if (!t.valid || t.busName == null) {
-            runStart++;
+          if (runs.isEmpty) {
             continue;
           }
-          var runEnd = runStart;
-          while (runEnd + 1 < inputPorts.length) {
-            final nextT = portTraces[runEnd + 1];
-            if (!nextT.valid) {
-              break;
-            }
-            if (nextT.busName != t.busName) {
-              break;
-            }
-            // Check contiguity across port boundary.
-            final curLast = portTraces[runEnd].sourceIndices.last;
-            final nextFirst = nextT.sourceIndices.first;
-            if (nextFirst != curLast + 1) {
-              break;
-            }
-            runEnd++;
-          }
-          if (runEnd > runStart) {
-            runs.add((runStart, runEnd));
-          }
-          runStart = runEnd + 1;
-        }
 
-        if (runs.isEmpty) {
-          continue;
-        }
-
-        // --- Verify exclusivity of intermediate cells for each run ------
-        final validRuns =
-            <(int startIdx, int endIdx, Set<String> intermediates)>[];
-        for (final (startIdx, endIdx) in runs) {
-          final allIntermediates = <String>{};
-          for (var i = startIdx; i <= endIdx; i++) {
-            allIntermediates.addAll(portTraces[i].intermediates);
-          }
-          if (NetlistUtils.isExclusiveChain(
-            intermediates: allIntermediates,
-            ownerCell: concatName,
-            cells: cells,
-            wireConsumerCells: wireConsumerCells,
-          )) {
-            validRuns.add((startIdx, endIdx, allIntermediates));
-          }
-        }
-
-        if (validRuns.isEmpty) {
-          continue;
-        }
-
-        // --- Check whether ALL ports form a single valid run ------------
-        final allCollapsed = validRuns.length == 1 &&
-            validRuns.first.$1 == 0 &&
-            validRuns.first.$2 == inputPorts.length - 1;
-
-        // Remove exclusive intermediate cells for all valid runs.
-        for (final (_, _, intermediates) in validRuns) {
-          cellsToRemove.addAll(intermediates);
-        }
-
-        if (allCollapsed) {
-          // Full collapse — replace concat with a single $slice or $buf.
-          final t0 = portTraces.first;
-          final srcOffset = t0.sourceIndices.first;
-          final yWidth = (conns['Y'] as List).whereType<int>().length;
-          final aWidth = t0.busBits!.length;
-          final sourceBusParentBits = t0.busBits!.cast<Object>().toList();
-          final outputBits = <Object>[
-            for (final b in conns['Y'] as List)
-              if (b is int) b,
-          ];
-
-          cellsToRemove.add(concatName);
-          if (yWidth == aWidth) {
-            cellsToAdd['collapse_buf_$replIdx'] = NetlistUtils.makeBufCell(
-                aWidth, sourceBusParentBits, outputBits);
-          } else {
-            cellsToAdd['collapse_slice_$replIdx'] = NetlistUtils.makeSliceCell(
-                srcOffset, aWidth, yWidth, sourceBusParentBits, outputBits);
-          }
-          replIdx++;
-          continue;
-        }
-
-        // --- Partial collapse — rebuild concat with fewer ports ---------
-        cellsToRemove.add(concatName);
-
-        final newConns = <String, List<Object>>{};
-        final newDirs = <String, String>{};
-        var outBitOffset = 0;
-
-        var portIdx = 0;
-        while (portIdx < inputPorts.length) {
-          // Check if this port starts a valid run.
-          (int, int, Set<String>)? activeRun;
-          for (final run in validRuns) {
-            if (run.$1 == portIdx) {
-              activeRun = run;
-              break;
-            }
-          }
-
-          if (activeRun != null) {
-            final (startIdx, endIdx, _) = activeRun;
-            // Compute combined width and collect original input wire bits.
-            final originalBits = <Object>[];
+          // --- Verify exclusivity of intermediate cells for each run ------
+          final validRuns =
+              <(int startIdx, int endIdx, Set<String> intermediates)>[];
+          for (final (startIdx, endIdx) in runs) {
+            final allIntermediates = <String>{};
             for (var i = startIdx; i <= endIdx; i++) {
-              originalBits.addAll(inputPorts[i].$3.cast<Object>());
+              allIntermediates.addAll(portTraces[i].intermediates);
             }
-            final width = originalBits.length;
-            final t0 = portTraces[startIdx];
-            final srcOffset = t0.sourceIndices.first;
-            final sourceBusBits = t0.busBits!.cast<Object>().toList();
-
-            // Reuse the original concat-input wire bits as the $slice
-            // output so that existing netname associations are preserved.
-            cellsToAdd['collapse_slice_$replIdx'] = NetlistUtils.makeSliceCell(
-                srcOffset,
-                t0.busBits!.length,
-                width,
-                sourceBusBits,
-                originalBits);
-            replIdx++;
-
-            // Add the combined port to the rebuilt concat.
-            final hi = outBitOffset + width - 1;
-            final portName =
-                hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
-            newConns[portName] = originalBits;
-            newDirs[portName] = 'input';
-            outBitOffset += width;
-
-            portIdx = endIdx + 1;
-          } else {
-            // Keep this port as-is.
-            final port = inputPorts[portIdx];
-            final width = port.$3.length;
-            final hi = outBitOffset + width - 1;
-            final portName =
-                hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
-            newConns[portName] = port.$3.cast<Object>();
-            newDirs[portName] = 'input';
-            outBitOffset += width;
-            portIdx++;
+            if (NetlistUtils.isExclusiveChain(
+              intermediates: allIntermediates,
+              ownerCell: concatName,
+              cells: cells,
+              wireConsumerCells: wireConsumerCells,
+            )) {
+              validRuns.add((startIdx, endIdx, allIntermediates));
+            }
           }
+
+          if (validRuns.isEmpty) {
+            continue;
+          }
+
+          // --- Check whether ALL ports form a single valid run ------------
+          final allCollapsed = validRuns.length == 1 &&
+              validRuns.first.$1 == 0 &&
+              validRuns.first.$2 == inputPorts.length - 1;
+
+          // Remove exclusive intermediate cells for all valid runs.
+          for (final (_, _, intermediates) in validRuns) {
+            cellsToRemove.addAll(intermediates);
+          }
+
+          if (allCollapsed) {
+            // Full collapse — replace concat with a single $slice or $buf.
+            final t0 = portTraces.first;
+            final srcOffset = t0.sourceIndices.first;
+            final yWidth = (conns['Y'] as List).whereType<int>().length;
+            final aWidth = t0.busBits!.length;
+            final sourceBusParentBits = t0.busBits!.cast<Object>().toList();
+            final outputBits = <Object>[
+              for (final b in conns['Y'] as List)
+                if (b is int) b,
+            ];
+
+            cellsToRemove.add(concatName);
+            if (yWidth == aWidth) {
+              cellsToAdd['collapse_buf_$replIdx'] = NetlistUtils.makeBufCell(
+                  aWidth, sourceBusParentBits, outputBits);
+            } else {
+              cellsToAdd['collapse_slice_$replIdx'] =
+                  NetlistUtils.makeSliceCell(srcOffset, aWidth, yWidth,
+                      sourceBusParentBits, outputBits);
+            }
+            replIdx++;
+            continue;
+          }
+
+          // --- Partial collapse — rebuild concat with fewer ports ---------
+          cellsToRemove.add(concatName);
+
+          final newConns = <String, List<Object>>{};
+          final newDirs = <String, String>{};
+          var outBitOffset = 0;
+
+          var portIdx = 0;
+          while (portIdx < inputPorts.length) {
+            // Check if this port starts a valid run.
+            (int, int, Set<String>)? activeRun;
+            for (final run in validRuns) {
+              if (run.$1 == portIdx) {
+                activeRun = run;
+                break;
+              }
+            }
+
+            if (activeRun != null) {
+              final (startIdx, endIdx, _) = activeRun;
+              // Compute combined width and collect original input wire bits.
+              final originalBits = <Object>[];
+              for (var i = startIdx; i <= endIdx; i++) {
+                originalBits.addAll(inputPorts[i].$3.cast<Object>());
+              }
+              final width = originalBits.length;
+              final t0 = portTraces[startIdx];
+              final srcOffset = t0.sourceIndices.first;
+              final sourceBusBits = t0.busBits!.cast<Object>().toList();
+
+              // Reuse the original concat-input wire bits as the $slice
+              // output so that existing netname associations are preserved.
+              cellsToAdd['collapse_slice_$replIdx'] =
+                  NetlistUtils.makeSliceCell(srcOffset, t0.busBits!.length,
+                      width, sourceBusBits, originalBits);
+              replIdx++;
+
+              // Add the combined port to the rebuilt concat.
+              final hi = outBitOffset + width - 1;
+              final portName =
+                  hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
+              newConns[portName] = originalBits;
+              newDirs[portName] = 'input';
+              outBitOffset += width;
+
+              portIdx = endIdx + 1;
+            } else {
+              // Keep this port as-is.
+              final port = inputPorts[portIdx];
+              final width = port.$3.length;
+              final hi = outBitOffset + width - 1;
+              final portName =
+                  hi == outBitOffset ? '[$hi]' : '[$hi:$outBitOffset]';
+              newConns[portName] = port.$3.cast<Object>();
+              newDirs[portName] = 'input';
+              outBitOffset += width;
+              portIdx++;
+            }
+          }
+
+          // Preserve Y.
+          newConns['Y'] = [for (final b in conns['Y'] as List) b as Object];
+          newDirs['Y'] = 'output';
+
+          // Remove original concat, add collapsed replacement.
+          cellsToRemove.add(concatName);
+          cellsToAdd['${concatName}_collapsed'] = {
+            'hide_name': concatCell['hide_name'],
+            'type': r'$concat',
+            'parameters': <String, Object?>{},
+            'attributes': concatCell['attributes'] ?? <String, Object?>{},
+            'port_directions': newDirs,
+            'connections': newConns,
+          };
         }
 
-        // Preserve Y.
-        newConns['Y'] = [for (final b in conns['Y'] as List) b as Object];
-        newDirs['Y'] = 'output';
-
-        // Remove original concat, add collapsed replacement.
-        cellsToRemove.add(concatName);
-        cellsToAdd['${concatName}_collapsed'] = {
-          'hide_name': concatCell['hide_name'],
-          'type': r'$concat',
-          'parameters': <String, Object?>{},
-          'attributes': concatCell['attributes'] ?? <String, Object?>{},
-          'port_directions': newDirs,
-          'connections': newConns,
-        };
-      }
-
-      // Apply removals and additions.
-      cellsToRemove.forEach(cells.remove);
-      cells.addAll(cellsToAdd);
-      if (cellsToRemove.isNotEmpty || cellsToAdd.isNotEmpty) {
-        changed = true;
-      }
+        // Apply removals and additions.
+        cellsToRemove.forEach(cells.remove);
+        cells.addAll(cellsToAdd);
+        if (cellsToRemove.isNotEmpty || cellsToAdd.isNotEmpty) {
+          changed = true;
+        }
       } // end while (changed)
     }
   }
