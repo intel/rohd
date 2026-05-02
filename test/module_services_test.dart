@@ -153,6 +153,11 @@ void main() {
 
       final sv = SvService(mod, register: false);
       const dir = 'build/sv_service_test';
+      addTearDown(() {
+        if (Directory(dir).existsSync()) {
+          Directory(dir).deleteSync(recursive: true);
+        }
+      });
       sv.writeFiles(dir);
 
       final files = Directory(dir).listSync().whereType<File>().toList();
@@ -160,9 +165,6 @@ void main() {
       for (final f in files) {
         expect(f.path, endsWith('.sv'));
       }
-
-      // Clean up.
-      Directory(dir).deleteSync(recursive: true);
     });
   });
 
