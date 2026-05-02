@@ -405,28 +405,32 @@ abstract class SimCompare {
           caseSensitive: false));
     }
 
+    var hasError = false;
+
     if (printIfContentsAndCheckError(compileResult.stdout)) {
-      return false;
+      hasError = true;
     }
     if (printIfContentsAndCheckError(compileResult.stderr)) {
-      return false;
+      hasError = true;
     }
 
-    if (!buildOnly) {
+    if (!hasError && !buildOnly) {
       final simResult = Process.runSync('vvp', [tmpOutput]);
       if (printIfContentsAndCheckError(simResult.stdout)) {
-        return false;
+        hasError = true;
       }
       if (printIfContentsAndCheckError(simResult.stderr)) {
-        return false;
+        hasError = true;
       }
     }
 
     if (!dontDeleteTmpFiles) {
       try {
-        File(tmpOutput).deleteSync();
+        if (File(tmpOutput).existsSync()) {
+          File(tmpOutput).deleteSync();
+        }
         File(tmpTestFile).deleteSync();
-        if (dumpWaves) {
+        if (dumpWaves && File(tmpVcdFile).existsSync()) {
           File(tmpVcdFile).deleteSync();
         }
       } on Exception catch (e) {
@@ -434,6 +438,6 @@ abstract class SimCompare {
         return false;
       }
     }
-    return true;
+    return !hasError;
   }
 }

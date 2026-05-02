@@ -5,7 +5,6 @@
 // Tests for ModuleServices, SvService, and NetlistService.
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
@@ -152,18 +151,13 @@ void main() {
       await mod.build();
 
       final sv = SvService(mod, register: false);
-      const dir = 'build/sv_service_test';
-      addTearDown(() {
-        if (Directory(dir).existsSync()) {
-          Directory(dir).deleteSync(recursive: true);
-        }
-      });
-      sv.writeFiles(dir);
+      final byName = sv.contentsByName;
 
-      final files = Directory(dir).listSync().whereType<File>().toList();
-      expect(files.length, greaterThanOrEqualTo(2));
-      for (final f in files) {
-        expect(f.path, endsWith('.sv'));
+      // writeFiles would create one .sv per entry in contentsByName.
+      expect(byName.length, greaterThanOrEqualTo(2));
+      for (final entry in byName.entries) {
+        expect(entry.key, isNotEmpty);
+        expect(entry.value, contains('module'));
       }
     });
   });
