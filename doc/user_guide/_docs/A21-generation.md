@@ -57,3 +57,85 @@ The `Naming.unpreferredName` function will modify a signal name to indicate to d
 ## More advanced generation
 
 Under the hood of `generateSynth`, it's actually using a [`SynthBuilder`](https://intel.github.io/rohd/rohd/SynthBuilder-class.html) which accepts a `Module` and a `Synthesizer` (usually a `SystemVerilogSynthesizer`) as arguments. This `SynthBuilder` can provide a collection of `String` file contents via `getFileContents`, or you can ask for the full set of `synthesisResults`, which contains `SynthesisResult`s which can each be converted `toSynthFileContents` but also has context about the `module` it refers to, the `instanceTypeName`, etc. With these APIs, you can easily generate named files, add file headers, ignore generation of some modules, generate file lists for other tools, etc. The `SynthBuilder.multi` constructor makes it convenient to generate outputs for multiple independent hierarchies.
+
+## Netlist Synthesis
+
+In addition to SystemVerilog, ROHD can synthesize a design to a JSON netlist that follows the [Yosys JSON format](https://yosyshq.readthedocs.io/projects/yosys/en/0.45/cmd/write_json.html). This is the same format produced by `yosys write_json` and consumed by many open-source EDA tools and viewers.
+
+### Basic usage
+
+```dart
+void main() async {
+    final myModule = MyModule();
+    await myModule.build();
+
+    final netlistJson = await NetlistSynthesizer().synthesizeToJson(myModule);
+
+    // write it to a file
+    File('myDesign.rohd.json').writeAsStringSync(netlistJson);
+}
+```
+
+### Output format
+
+The produced JSON has the following top-level structure:
+
+```json
+{
+  "creator": "ROHD ...",
+  "modules": {
+    "<definition_name>": {
+      "attributes": { "top": 1, ... },
+      "ports": {
+        "<port_name>": { "direction": "input"|"output"|"inout", "bits": [...] }
+      },
+      "cells": {
+        "<cell_name>": { "type": "...", "connections": { ... } }
+      },
+      "netnames": {
+        "<signal_name>": { "bits": [...], "hide_name": 0|1 }
+      }
+    }
+  }
+}
+```
+
+Key sections per module:
+
+- **`ports`** — The module's input, output, and inout ports. Each port has a `direction` and a `bits` array of integer wire IDs.
+- **`cells`** — Sub-module instances and primitive gate cells (e.g. `$and`, `$mux`, `$dff`, `$add`). Each cell has a `type`, and in full mode, `connections` mapping port names to wire ID vectors.
+- **`netnames`** — Named signals (wires) internal to the module. Each entry maps a signal name to its `bits` vector.
+
+The top-level module is marked with `"top": 1` in its `attributes`.
+
+### Slim mode
+
+Passing `NetlistOptions(slimMode: true)` produces a compact JSON that omits cell `connections`. This is useful for transmitting the design dictionary (module hierarchy, ports, signals) without the full connectivity — a remote agent can then fetch connection details per module on demand.
+
+```dart
+final slimSynth = NetlistSynthesizer(
+  options: const NetlistOptions(slimMode: true),
+);
+final slimJson = await slimSynth.synthesizeToJson(myModule);
+```
+
+### Using SynthBuilder directly
+
+Just like SystemVerilog synthesis, you can use `SynthBuilder` directly with a `NetlistSynthesizer` for more control:
+
+```dart
+final synthesizer = NetlistSynthesizer();
+final synth = SynthBuilder(myModule, synthesizer);
+
+// Access individual NetlistSynthesisResult objects
+for (final result in synth.synthesisResults) {
+    if (result is NetlistSynthesisResult) {
+        print('${result.instanceTypeName}: '
+              '${result.ports.length} ports, '
+              '${result.cells.length} cells');
+    }
+}
+
+// Or build the combined modules map directly
+final modulesMap = await synthesizer.buildModulesMap(synth, myModule);
+```

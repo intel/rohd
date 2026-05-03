@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module.dart
@@ -11,11 +11,11 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -51,6 +51,22 @@ abstract class Module {
 
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
+
+  // ─── Central naming (Namer) ─────────────────────────────────────
+
+  /// Central namer that owns both the signal and instance namespaces.
+  /// Initialized lazily on first access (after build).
+  @internal
+  late final Namer namer = _createNamer();
+
+  Namer _createNamer() {
+    assert(hasBuilt, 'Module must be built before canonical names are bound.');
+    return Namer.forModule(
+      inputs: _inputs,
+      outputs: _outputs,
+      inOuts: _inOuts,
+    );
+  }
 
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
@@ -317,6 +333,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
+    ModuleServices.instance.rootModule = this;
     ModuleTree.rootModuleInstance = this;
   }
 
