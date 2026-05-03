@@ -606,16 +606,31 @@ class SynthModuleDefinition {
               continue;
             }
 
-            final numSubModulesConnected = logics
+            final connectedSubModules = logics
                 .map((e) => e.parentModule)
                 .nonNulls
                 .where((e) =>
                     e != module &&
                     getSynthSubModuleInstantiation(e).needsInstantiation)
-                .toSet()
-                .length;
+                .toSet();
 
-            if (numSubModulesConnected > 1) {
+            if (connectedSubModules.length > 1) {
+              reducedInternalSignals.add(internalSignal);
+              continue;
+            }
+
+            // If the signal appears in multiple inout port mappings on the
+            // same (single) connected submodule, it's a loopback and needs
+            // a wire declaration so both ports can reference it by name.
+            final hasInOutLoopback = connectedSubModules.any((m) =>
+                getSynthSubModuleInstantiation(m)
+                    .inOutMapping
+                    .values
+                    .where((v) => v == internalSignal)
+                    .length >
+                1);
+
+            if (hasInOutLoopback) {
               reducedInternalSignals.add(internalSignal);
               continue;
             }
