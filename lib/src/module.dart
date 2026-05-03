@@ -667,7 +667,6 @@ abstract class Module {
     }
 
     if (source is LogicStructure) {
-      // ignore: parameter_assignments
       source = source.packed;
     }
 
@@ -704,7 +703,6 @@ abstract class Module {
       String name, LogicType source) {
     _checkForSafePortName(name);
 
-    // ignore: parameter_assignments
     source = _validateType<LogicType>(source, isOutput: false, name: name);
 
     if (source.isNet || (source is LogicStructure && source.hasNets)) {
@@ -813,7 +811,6 @@ abstract class Module {
       throw PortTypeException(source, 'Typed inOuts must be nets.');
     }
 
-    // ignore: parameter_assignments
     source = _validateType<LogicType>(source, isOutput: false, name: name);
 
     _inOutDrivers.add(source);

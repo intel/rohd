@@ -129,7 +129,9 @@ linter:
     - overridden_fields
     - package_names
     - package_prefixed_library_names
-    - parameter_assignments
+    # parameter_assignments - disabled; ROHD idiomatically reassigns
+    # constructor parameters via addInput/addOutput.
+    # - parameter_assignments
     - prefer_adjacent_string_concatenation
     - prefer_asserts_in_initializer_lists
     - prefer_asserts_with_message
