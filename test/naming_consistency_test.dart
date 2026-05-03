@@ -220,7 +220,7 @@ void main() {
 
     test('submodule instance names are allocated from the shared namespace',
         () async {
-      // Instance names come from Module.namer.allocateInstanceName, which
+      // Instance names come from Module.namer.allocateName, which
       // shares the same namespace as signal names.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
@@ -238,7 +238,7 @@ void main() {
 
       // Instance names are claimed in the shared namespace.
       for (final name in instNames) {
-        expect(mod.namer.isInstanceNameAvailable(name), isFalse,
+        expect(mod.namer.isAvailable(name), isFalse,
             reason: 'Instance name "$name" should be claimed in the '
                 'namespace');
       }

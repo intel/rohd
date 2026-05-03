@@ -17,19 +17,6 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 /// Represents a logic signal in the generated code within a module.
 @internal
 class SynthLogic {
-  /// Controls whether two constants with the same value driving separate
-  /// module inputs are merged into a single signal declaration.
-  ///
-  /// When `true` (the default), identical constants are collapsed to one
-  /// declaration — desirable for simulation-oriented output such as
-  /// SystemVerilog, where a single `assign wire = VALUE;` feeds all
-  /// downstream consumers.
-  ///
-  /// When `false`, each constant input keeps its own declaration.  This is
-  /// useful for netlist/visualization outputs where seeing every individual
-  /// constant connection is more informative than an optimized fan-out net.
-  static bool mergeConstantInputs = true;
-
   /// All [Logic]s represented, regardless of type.
   List<Logic> get logics => UnmodifiableListView([
         if (_reservedLogic != null) _reservedLogic!,
@@ -288,12 +275,7 @@ class SynthLogic {
   }
 
   /// Indicates whether two constants can be merged.
-  ///
-  /// Merging is only performed when [SynthLogic.mergeConstantInputs] is
-  /// `true`.  Set it to `false` to keep each constant input as its own
-  /// declaration (e.g. for netlist/visualization output).
   static bool _constantsMergeable(SynthLogic a, SynthLogic b) =>
-      SynthLogic.mergeConstantInputs &&
       a.isConstant &&
       b.isConstant &&
       a._constLogic!.value == b._constLogic!.value &&

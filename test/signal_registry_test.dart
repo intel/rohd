@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_registry_test.dart
-// Tests for Module canonical naming (Namer / signalName / allocateSignalName).
+// Tests for Module canonical naming (Namer).
 //
 // 2026 April 14
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -92,12 +92,12 @@ void main() {
     });
   });
 
-  group('allocateSignalName', () {
+  group('allocateName', () {
     test('avoids collision with existing names', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final allocated = mod.namer.allocateSignalName('en');
+      final allocated = mod.namer.allocateRawName('en');
       expect(allocated, isNot(equals('en')),
           reason: 'Should not collide with existing port name');
       expect(allocated, contains('en'),
@@ -108,8 +108,8 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final a = mod.namer.allocateSignalName('wire');
-      final b = mod.namer.allocateSignalName('wire');
+      final a = mod.namer.allocateRawName('wire');
+      final b = mod.namer.allocateRawName('wire');
       expect(a, isNot(equals(b)), reason: 'Each allocation should be unique');
     });
   });
