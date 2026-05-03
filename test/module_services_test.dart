@@ -3,6 +3,9 @@
 //
 // module_services_test.dart
 // Tests for ModuleServices, SvService, and NetlistService.
+//
+// 2026 April 25
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
 

@@ -6,6 +6,7 @@
 //
 // Extracted from example/tree.dart so it can be imported in web-targeted code.
 //
+// 2026 April
 // Original author: Max Korbel
 
 import 'package:meta/meta.dart';

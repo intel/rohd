@@ -1,7 +1,7 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// logic_values.dart
+// logic_value.dart
 // Definitions for a set of logical values of any width
 //
 // 2021 August 2

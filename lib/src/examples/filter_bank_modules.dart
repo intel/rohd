@@ -4,6 +4,9 @@
 // filter_bank_modules.dart
 // Module class definitions for the polyphase FIR filter bank example.
 //
+// 2025 March 26
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+//
 // Architecture: each FilterChannel uses a single MacUnit that is
 // time-multiplexed across taps.  A tap counter sequences CoeffBank
 // and a delay-line mux so the MAC accumulates one tap per clock cycle.

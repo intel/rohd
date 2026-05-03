@@ -1,7 +1,7 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// definition_name_test.dart
+// name_test.dart
 // Tests for definition names (including reserving them) of Modules.
 //
 // 2022 March 7
