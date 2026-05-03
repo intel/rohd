@@ -21,16 +21,15 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
-/// are allocated explicitly via [allocateInstanceName].
+/// are allocated explicitly via [allocateRawName].
 @internal
 class Namer {
   // ─── Shared namespace ───────────────────────────────────────────
 
   final Uniquifier _uniquifier;
 
-  /// Sparse cache: only entries where the canonical name has been resolved.
-  /// Ports whose sanitized name == logic.name may be absent (fast-path
-  /// through [_portLogics] check).
+  /// Cache of resolved names for internal (non-port) signals only.
+  /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
 
   /// The set of port [Logic] objects, for O(1) port membership tests.
@@ -40,108 +39,48 @@ class Namer {
 
   Namer._({
     required Uniquifier uniquifier,
-    required Map<Logic, String> portRenames,
     required Set<Logic> portLogics,
   })  : _uniquifier = uniquifier,
-        _portLogics = portLogics {
-    _signalNames.addAll(portRenames);
-  }
+        _portLogics = portLogics;
 
   /// Creates a [Namer] for the given module ports.
   ///
-  /// Sanitized port names are reserved in the signal namespace.  Ports
-  /// whose sanitized name differs from [Logic.name] are cached immediately.
+  /// Port names are reserved in the shared namespace.  Port names are
+  /// guaranteed sanitary by [Module]'s `_checkForSafePortName`.
   factory Namer.forModule({
     required Map<String, Logic> inputs,
     required Map<String, Logic> outputs,
     required Map<String, Logic> inOuts,
   }) {
-    final portRenames = <Logic, String>{};
-    final portLogics = <Logic>{};
-    final portNames = <String>[];
-
-    void collectPort(String rawName, Logic logic) {
-      final sanitized = Sanitizer.sanitizeSV(rawName);
-      portNames.add(sanitized);
-      portLogics.add(logic);
-      if (sanitized != logic.name) {
-        portRenames[logic] = sanitized;
-      }
-    }
-
-    for (final entry in inputs.entries) {
-      collectPort(entry.key, entry.value);
-    }
-    for (final entry in outputs.entries) {
-      collectPort(entry.key, entry.value);
-    }
-    for (final entry in inOuts.entries) {
-      collectPort(entry.key, entry.value);
-    }
+    final portLogics = <Logic>{
+      ...inputs.values,
+      ...outputs.values,
+      ...inOuts.values,
+    };
 
     final uniquifier = Uniquifier();
-    for (final name in portNames) {
-      uniquifier.getUniqueName(initialName: name, reserved: true);
+    for (final logic in portLogics) {
+      uniquifier.getUniqueName(initialName: logic.name, reserved: true);
     }
 
     return Namer._(
       uniquifier: uniquifier,
-      portRenames: portRenames,
       portLogics: portLogics,
     );
   }
 
   // ─── Name availability / allocation ─────────────────────────────
 
-  bool _isAvailable(String name, {bool reserved = false}) =>
-      _uniquifier.isAvailable(name, reserved: reserved);
-
-  String _allocateUniqueName(String baseName, {bool reserved = false}) {
-    if (reserved) {
-      if (!_isAvailable(baseName, reserved: true)) {
-        throw UnavailableReservedNameException(baseName);
-      }
-
-      _uniquifier.getUniqueName(initialName: baseName, reserved: true);
-      return baseName;
-    }
-
-    var candidate = baseName;
-    var suffix = 0;
-    while (!_isAvailable(candidate)) {
-      candidate = '${baseName}_$suffix';
-      suffix++;
-    }
-
-    _uniquifier.getUniqueName(initialName: candidate);
-    return candidate;
-  }
-
   /// Returns `true` if [name] has not yet been claimed in the namespace.
-  bool isNameAvailable(String name) => _isAvailable(name);
+  bool isAvailable(String name) => _uniquifier.isAvailable(name);
 
-  /// Allocates a collision-free name in the signal namespace.
+  /// Allocates a collision-free name in the shared namespace.
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization)
   /// is claimed without modification; an exception is thrown if it collides.
-  String allocateSignalName(String baseName, {bool reserved = false}) =>
-      _allocateUniqueName(
-        Sanitizer.sanitizeSV(baseName),
-        reserved: reserved,
-      );
-
-  // ─── Instance allocation ────────────────────────────────────────
-
-  /// Returns `true` if [name] has not yet been claimed in the namespace.
-  bool isInstanceNameAvailable(String name) => _isAvailable(name);
-
-  /// Allocates a collision-free instance name.
-  ///
-  /// When [reserved] is `true`, the exact [baseName] (after sanitization)
-  /// is claimed without modification; an exception is thrown if it collides.
-  String allocateInstanceName(String baseName, {bool reserved = false}) =>
-      _allocateUniqueName(
-        Sanitizer.sanitizeSV(baseName),
+  String allocateRawName(String baseName, {bool reserved = false}) =>
+      _uniquifier.getUniqueName(
+        initialName: Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
 
@@ -170,8 +109,8 @@ class Namer {
       base = Sanitizer.sanitizeSV(logic.structureName);
     }
 
-    final name = _allocateUniqueName(
-      base,
+    final name = _uniquifier.getUniqueName(
+      initialName: base,
       reserved: isReservedInternal,
     );
     _signalNames[logic] = name;
@@ -256,19 +195,16 @@ class Namer {
       return _nameAndCacheAll(renameable, candidates);
     }
 
-    for (final logic in preferredMergeable) {
-      if (_isAvailable(baseName(logic))) {
-        return _nameAndCacheAll(logic, candidates);
-      }
-    }
-
     if (preferredMergeable.isNotEmpty) {
-      return _nameAndCacheAll(preferredMergeable.first, candidates);
+      final best = preferredMergeable
+              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
+          preferredMergeable.first;
+      return _nameAndCacheAll(best, candidates);
     }
 
     if (unpreferredMergeable.isNotEmpty) {
       final best = unpreferredMergeable
-              .firstWhereOrNull((e) => _isAvailable(baseName(e))) ??
+              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
           unpreferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }

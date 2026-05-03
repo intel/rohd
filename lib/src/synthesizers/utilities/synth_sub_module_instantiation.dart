@@ -26,11 +26,11 @@ class SynthSubModuleInstantiation {
   /// Selects a name for this module instance. Must be called exactly once.
   ///
   /// Names are allocated from [parentModule]'s `Namer`'s shared namespace
-  /// via `Namer.allocateInstanceName`.
+  /// via `Namer.allocateName`.
   void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.namer.allocateInstanceName(
+    _name = parentModule.namer.allocateRawName(
       module.uniqueInstanceName,
       reserved: module.reserveName,
     );
