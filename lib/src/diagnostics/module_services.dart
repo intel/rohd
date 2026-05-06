@@ -10,7 +10,6 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/diagnostics/inspector_service.dart';
 
 /// Singleton service registry that provides a unified query surface for
 /// DevTools and other inspection tools.
@@ -23,9 +22,10 @@ import 'package:rohd/src/diagnostics/inspector_service.dart';
 ///
 /// **Opt-in (registered by service constructors):**
 ///  - [svService] — SystemVerilog synthesis results.
+///  - [netlistService] — Yosys-format netlist JSON.
 ///
-/// Additional services (netlist, trace, waveform) can be added by setting
-/// the corresponding field after construction.
+/// Additional services (trace, waveform) can be added by setting the
+/// corresponding field after construction.
 class ModuleServices {
   ModuleServices._();
 
@@ -48,11 +48,30 @@ class ModuleServices {
     return ModuleTree.instance.hierarchyJSON;
   }
 
-  /// Returns the primary inspector JSON for DevTools.
+  /// Returns the unified inspector JSON — the primary entry point for
+  /// DevTools to load the design.
   ///
-  /// Returns the hierarchy JSON.  Downstream branches (e.g. netlist) may
-  /// override this to return richer data when available.
-  String get inspectorJSON => hierarchyJSON;
+  /// When a [NetlistService] is registered, this returns the slim netlist
+  /// (hierarchy + ports + cells without connectivity).
+  ///
+  /// Falls back to the hierarchy JSON when no netlist service is available.
+  String get inspectorJSON {
+    if (netlistService != null) {
+      return netlistService!.slimJson;
+    }
+    return hierarchyJSON;
+  }
+
+  /// Returns the full netlist JSON for a single module definition.
+  ///
+  /// When a [NetlistService] is registered, returns the per-module netlist
+  /// (with full connectivity).
+  String inspectorModuleJSON(String definitionName) {
+    if (netlistService != null) {
+      return netlistService!.moduleJson(definitionName);
+    }
+    return _unavailable('netlist');
+  }
 
   // ─── SystemVerilog service (opt-in) ───────────────────────────
 
@@ -60,9 +79,23 @@ class ModuleServices {
   SvService? svService;
 
   /// Returns SV synthesis metadata as JSON, or an unavailable status.
-  String get svJSON => svService != null
-      ? jsonEncode(svService!.toJson())
-      : _unavailable('sv');
+  String get svJSON =>
+      svService != null ? jsonEncode(svService!.toJson()) : _unavailable('sv');
+
+  // ─── Netlist service (opt-in) ─────────────────────────────────
+
+  /// The active [NetlistService], if one has been registered.
+  NetlistService? netlistService;
+
+  /// Returns the full netlist hierarchy as JSON, or an unavailable status.
+  String get netlistJSON => netlistService != null
+      ? netlistService!.toJson()
+      : _unavailable('netlist');
+
+  /// Returns the netlist for a single module definition, or unavailable.
+  String netlistModuleJSON(String definitionName) => netlistService != null
+      ? netlistService!.moduleJson(definitionName)
+      : _unavailable('netlist');
 
   // ─── Helpers ──────────────────────────────────────────────────
 
@@ -75,5 +108,6 @@ class ModuleServices {
   void reset() {
     rootModule = null;
     svService = null;
+    netlistService = null;
   }
 }

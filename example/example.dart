@@ -11,35 +11,16 @@
 // allow `print` messages (disable lint):
 // ignore_for_file: avoid_print
 
-// Import necessary dart packages for this file.
+// Import necessary dart pacakges for this file.
 import 'dart:async';
 
 // Import the ROHD package.
 import 'package:rohd/rohd.dart';
 
-// Define a class Counter that extends ROHD's abstract Module class.
-class Counter extends Module {
-  // For convenience, map interesting outputs to short variable names for
-  // consumers of this module.
-  Logic get val => output('val');
-
-  // This counter supports any width, determined at run-time.
-  final int width;
-
-  Counter(Logic en, Logic reset, Logic clk,
-      {this.width = 8, super.name = 'counter'}) {
-    // Register inputs and outputs of the module in the constructor.
-    // Module logic must consume registered inputs and output to registered
-    // outputs.
-    en = addInput('en', en);
-    reset = addInput('reset', reset);
-    clk = addInput('clk', clk);
-    addOutput('val', width: width);
-
-    // We can use the `flop` function to automate creation of a `Sequential`.
-    val <= flop(clk, reset: reset, en: en, val + 1);
-  }
-}
+// Re-export the Counter module from the library examples so that
+// existing tests that `import 'example/example.dart'` still see it.
+import 'package:rohd/src/examples/oven_fsm_modules.dart' show Counter;
+export 'package:rohd/src/examples/oven_fsm_modules.dart' show Counter;
 
 // Let's simulate with this counter a little, generate a waveform, and take a
 // look at generated SystemVerilog.
@@ -76,8 +57,9 @@ Future<void> main({bool noPrint = false}) async {
   // Let's also print a message every time the value on the counter changes,
   // just for this example to make it easier to see before we look at waves.
   if (!noPrint) {
-    counter.val.changed
-        .listen((e) => print('@${Simulator.time}: Value changed: $e'));
+    counter.val.changed.listen(
+      (e) => print('@${Simulator.time}: Value changed: $e'),
+    );
   }
 
   // Start off with a disabled counter and asserting reset at the start.
@@ -115,7 +97,9 @@ Future<void> main({bool noPrint = false}) async {
 
   // We can take a look at the waves now.
   if (!noPrint) {
-    print('To view waves, check out waves.vcd with a waveform viewer'
-        ' (e.g. `gtkwave waves.vcd`).');
+    print(
+      'To view waves, check out waves.vcd with a waveform viewer'
+      ' (e.g. `gtkwave waves.vcd`).',
+    );
   }
 }
