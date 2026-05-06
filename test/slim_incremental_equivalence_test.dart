@@ -145,9 +145,8 @@ void main() {
       // The fetched result is {"creator":..., "modules": {key: data}}.
       final fetchedModules =
           fetchedJson['modules'] as Map<String, dynamic>? ?? fetchedJson;
-      final fetchedMod =
-          (fetchedModules[moduleKey] ?? fetchedModules.values.first)
-              as Map<String, dynamic>;
+      final fetchedMod = (fetchedModules[moduleKey] ??
+          fetchedModules.values.first) as Map<String, dynamic>;
 
       final fetchedCells = fetchedMod['cells'] as Map<String, dynamic>? ?? {};
 
