@@ -15,7 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 class TreeService {
-  final invokeFunc = 'ModuleTree.instance.hierarchyJSON';
+  final invokeFunc = 'ModuleServices.instance.hierarchyJSON';
   final EvalOnDartLibrary rohdControllerEval;
   final Disposable evalDisposable;
 
