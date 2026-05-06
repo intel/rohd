@@ -13,7 +13,6 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
@@ -333,7 +332,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
-    ModuleTree.rootModuleInstance = this;
+    ModuleServices.instance.rootModule = this;
   }
 
   /// Confirms that the post-[build] hierarchy is valid.
