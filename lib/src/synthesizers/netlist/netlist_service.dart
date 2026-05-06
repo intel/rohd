@@ -210,8 +210,7 @@ class NetlistService {
       };
     }
 
-    final rootName =
-        module.hasBuilt ? module.uniqueInstanceName : module.name;
+    final rootName = module.hasBuilt ? module.uniqueInstanceName : module.name;
 
     return jsonEncode(<String, dynamic>{
       'netlist': <String, dynamic>{
