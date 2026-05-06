@@ -10,6 +10,7 @@
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
+import '../example/filter_bank.dart';
 // ────────────────────────────────────────────────────────────────
 // Simple test modules
 // ────────────────────────────────────────────────────────────────
@@ -138,6 +139,45 @@ void main() {
       final names2 = await buildAndGetNames();
 
       expect(names1, equals(names2));
+    });
+  });
+
+  group('filter_bank hierarchy', () {
+    test('submodule canonical names work independently', () async {
+      const dataWidth = 16;
+      const numTaps = 3;
+      final clk = SimpleClockGenerator(10).clk;
+      final reset = Logic(name: 'reset');
+      final start = Logic(name: 'start');
+      final samplesIn = LogicArray([2], dataWidth, name: 'samplesIn');
+      final validIn = Logic(name: 'validIn');
+      final inputDone = Logic(name: 'inputDone');
+
+      final dut = FilterBank(
+        clk,
+        reset,
+        start,
+        samplesIn,
+        validIn,
+        inputDone,
+        numTaps: numTaps,
+        dataWidth: dataWidth,
+        coefficients: [
+          [1, 2, 1],
+          [1, -2, 1],
+        ],
+      );
+      await dut.build();
+
+      expect(dut.namer.signalNameOf(dut.input('clk')), equals('clk'));
+      expect(dut.namer.signalNameOf(dut.output('done')), equals('done'));
+
+      for (final sub in dut.subModules) {
+        for (final entry in sub.inputs.entries) {
+          final name = sub.namer.signalNameOf(entry.value);
+          expect(name, isNotEmpty);
+        }
+      }
     });
   });
 }
