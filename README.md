@@ -69,6 +69,5 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
 
 ----------------
-
 Copyright (C) 2021-2026 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause
