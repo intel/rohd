@@ -64,6 +64,9 @@ jobs:
       - name: Install software - Accellera SystemC
         run: tool/gh_actions/install_systemc.sh
 
+      - name: Pre-build SystemC PCH and Makefile
+        run: tool/gh_actions/setup_systemc_pch.sh
+
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
