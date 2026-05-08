@@ -62,14 +62,12 @@ jobs:
         run: tool/gh_actions/install_iverilog.sh
 
       - name: Install software - Accellera SystemC
-        if: ${{ vars.ENABLE_SYSTEMC_TESTS == 'true' }}
         run: tool/gh_actions/install_systemc.sh
 
       - name: Run project tests
         run: tool/gh_actions/run_tests.sh
 
       - name: Run SystemC tests
-        if: ${{ vars.ENABLE_SYSTEMC_TESTS == 'true' }}
         run: dart test test/systemc_vector_test.dart
 
       - name: Check temporary test files
