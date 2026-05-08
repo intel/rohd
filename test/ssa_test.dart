@@ -495,6 +495,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('ssa multi use model bad reuse', () {
@@ -528,6 +529,10 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        // Skip SystemC for modules with unsupported patterns.
+        if (mod is! SsaNested && mod is! SsaModWithStructElements) {
+          SimCompare.checkSystemCVector(mod, vectors);
+        }
       });
     }
   });
@@ -560,6 +565,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('ssa seq of cases', () async {
@@ -590,6 +596,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('ssa uninitialized', () async {

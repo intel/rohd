@@ -5,4 +5,5 @@ export 'synth_builder.dart';
 export 'synth_file_contents.dart';
 export 'synthesis_result.dart';
 export 'synthesizer.dart';
+export 'systemc/systemc.dart';
 export 'systemverilog/systemverilog.dart';

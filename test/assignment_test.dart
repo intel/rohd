@@ -110,6 +110,7 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
 
       test('multiple bits', () async {
@@ -147,6 +148,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     group('logic net is multi-assignable', () {

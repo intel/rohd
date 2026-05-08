@@ -44,7 +44,7 @@ You can also open this repository in a GitHub Codespace to run the example in yo
 - **Simple and fast build**, free of complex build systems and EDA vendor tools
 - Can use the excellent pub.dev **package manager** and all the packages it has to offer
 - Built-in event-based **fast simulator** with **4-value** (0, 1, X, and Z) support and a **waveform dumper** to .vcd file format
-- Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** for integration or downstream tool consumption
+- Conversion of modules to equivalent, human-readable, structurally similar **SystemVerilog** and **SystemC** for integration or downstream tool consumption
 - **Run-time dynamic** module port definitions (numbers, names, widths, etc.) and internal module logic, including recursive module contents
 - Leverage the [ROHD Hardware Component Library (ROHD-HCL)](https://github.com/intel/rohd-hcl) with reusable and configurable design and verification components.
 - Simple, free, **open source tool stack** without any headaches from library dependencies, file ordering, elaboration/analysis options, +defines, etc.
