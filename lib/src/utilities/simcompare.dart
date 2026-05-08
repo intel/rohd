@@ -454,6 +454,10 @@ abstract class SimCompare {
 
   /// Builds the precompiled header for systemc.h if not already done.
   /// Returns the directory containing systemc.h.gch, or null on failure.
+  ///
+  /// In CI, the PCH is pre-built by `tool/gh_actions/setup_systemc_pch.sh`
+  /// before tests run, so this just finds it on disk. Locally it builds
+  /// on first use (safe because local runs are typically sequential).
   static String? _ensurePch(String scHome, String cxxStd) {
     if (_pchPath != null) {
       return _pchPath;
@@ -463,7 +467,7 @@ abstract class SimCompare {
     const pchDir = '$dir/pch';
     const gchFile = '$pchDir/systemc.h.gch';
 
-    // Reuse if already on disk from a previous run
+    // Reuse if already on disk (pre-built by CI or a previous run)
     if (File(gchFile).existsSync()) {
       return _pchPath = pchDir;
     }
@@ -497,6 +501,8 @@ abstract class SimCompare {
 
   /// Creates a shared Makefile once, reused for all compilations.
   /// TARGET and SRC are passed as make variables at invocation time.
+  /// Uses atomic write (write-to-temp + rename) to avoid races when
+  /// multiple test isolates create the file concurrently.
   static String _ensureMakefile({
     required String dir,
     required String cxxStd,
@@ -504,11 +510,17 @@ abstract class SimCompare {
     required String scHome,
     required String scLib,
   }) {
-    if (_makefilePath != null && File(_makefilePath!).existsSync()) {
+    final path = '$dir/Makefile_sc';
+
+    if (_makefilePath != null && File(path).existsSync()) {
       return _makefilePath!;
     }
 
-    final path = '$dir/Makefile_sc';
+    // If already on disk from another isolate, just reuse it
+    if (File(path).existsSync()) {
+      return _makefilePath = path;
+    }
+
     final contents = '''
 CXX = g++
 CXXFLAGS = -std=$cxxStd -pipe $pchInclude-I$scHome
@@ -522,7 +534,14 @@ all: \$(TARGET)
 .PHONY: all
 ''';
     Directory(dir).createSync(recursive: true);
-    File(path).writeAsStringSync(contents);
+
+    // Atomic write: write to temp file, then rename.
+    // rename() is atomic on Linux, so concurrent readers always see
+    // either the old file or the complete new file — never a truncated one.
+    final tmpFile = File('$path.${pid.hashCode}');
+    tmpFile.writeAsStringSync(contents);
+    tmpFile.renameSync(path);
+
     return _makefilePath = path;
   }
 
