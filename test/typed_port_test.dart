@@ -243,6 +243,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('typed array is an array', () async {
@@ -271,6 +272,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('structure containing ports naming properly', () async {
@@ -492,6 +494,9 @@ void main() {
 
             await SimCompare.checkFunctionalVector(mod, vectors);
             SimCompare.checkIverilogVector(mod, vectors);
+            if (!portType.name.contains('net')) {
+              SimCompare.checkSystemCVector(mod, vectors);
+            }
           });
         }
       });
@@ -514,5 +519,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 }
