@@ -542,6 +542,8 @@ void main() {
     await Simulator.reset();
   });
 
+  tearDownAll(SimCompare.cleanupSystemCCache);
+
   // ===== Flop tests (from flop_test.dart) =====
   group('flop', () {
     test('flop bit', () async {
