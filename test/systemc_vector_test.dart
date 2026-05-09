@@ -542,7 +542,7 @@ void main() {
     await Simulator.reset();
   });
 
-  tearDownAll(SimCompare.cleanupSystemCCache);
+  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
 
   // ===== Flop tests (from flop_test.dart) =====
   group('flop', () {
