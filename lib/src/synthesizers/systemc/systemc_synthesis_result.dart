@@ -328,7 +328,7 @@ class SystemCSynthesisResult extends SynthesisResult {
         return '${systemCType(width)}("0x$hex")';
       }
       // For uint64 values above INT64_MAX, add ULL suffix
-      if (bigVal > BigInt.from(0x7FFFFFFFFFFFFFFF)) {
+      if (bigVal > (BigInt.one << 63) - BigInt.one) {
         return '${systemCType(width)}'
             '(${bigVal.toUnsigned(width)}ULL)';
       }
