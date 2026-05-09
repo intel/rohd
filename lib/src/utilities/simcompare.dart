@@ -599,8 +599,9 @@ all: \$(TARGET)
             entity.deleteSync(recursive: true);
           }
         } else {
-          dir.deleteSync(recursive: true);
-          dir.createSync();
+          dir
+            ..deleteSync(recursive: true)
+            ..createSync();
         }
       }
     } on Exception catch (_) {}
