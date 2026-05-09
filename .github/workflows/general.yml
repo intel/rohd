@@ -80,7 +80,10 @@ jobs:
       - name: Build dev container and run tests in it
         uses: devcontainers/ci@v0.3
         with:
-          runCmd: tool/gh_actions/run_tests.sh
+          runCmd: |
+            tool/gh_actions/run_tests.sh
+            dart test test/systemc_vector_test.dart
+            tool/gh_actions/check_tmp_test.sh
 
   deploy-documentation:
     name: Deploy Documentation
