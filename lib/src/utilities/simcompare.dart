@@ -588,6 +588,9 @@ all: \$(TARGET)
     _compilationCache.clear();
     _pchPath = null;
     _makefilePath = null;
+    if (kIsWeb) {
+      return;
+    }
     try {
       final dir = Directory('tmp_test');
       if (dir.existsSync()) {
