@@ -600,6 +600,7 @@ all: \$(TARGET)
           }
         } else {
           dir.deleteSync(recursive: true);
+          dir.createSync();
         }
       }
     } on Exception catch (_) {}
