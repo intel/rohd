@@ -535,12 +535,11 @@ all: \$(TARGET)
 ''';
     Directory(dir).createSync(recursive: true);
 
-    // Atomic write: write to temp file, then rename.
-    // rename() is atomic on Linux, so concurrent readers always see
-    // either the old file or the complete new file — never a truncated one.
-    final tmpFile = File('$path.${pid.hashCode}');
-    tmpFile.writeAsStringSync(contents);
-    tmpFile.renameSync(path);
+    // Atomic write: write to temp file, then rename so concurrent
+    // readers never see a truncated Makefile.
+    File('$path.${pid.hashCode}')
+      ..writeAsStringSync(contents)
+      ..renameSync(path);
 
     return _makefilePath = path;
   }
