@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
-/// are allocated explicitly via [allocateRawName].
+/// are allocated explicitly via [allocateName].
 @internal
 class Namer {
   // ─── Shared namespace ───────────────────────────────────────────
@@ -43,19 +43,15 @@ class Namer {
   })  : _uniquifier = uniquifier,
         _portLogics = portLogics;
 
-  /// Creates a [Namer] for the given module ports.
+  /// Creates a [Namer] for the given [module]'s ports.
   ///
   /// Port names are reserved in the shared namespace.  Port names are
   /// guaranteed sanitary by [Module]'s `_checkForSafePortName`.
-  factory Namer.forModule({
-    required Map<String, Logic> inputs,
-    required Map<String, Logic> outputs,
-    required Map<String, Logic> inOuts,
-  }) {
+  factory Namer.forModule(Module module) {
     final portLogics = <Logic>{
-      ...inputs.values,
-      ...outputs.values,
-      ...inOuts.values,
+      ...module.inputs.values,
+      ...module.outputs.values,
+      ...module.inOuts.values,
     };
 
     final uniquifier = Uniquifier();
@@ -78,7 +74,7 @@ class Namer {
   ///
   /// When [reserved] is `true`, the exact [baseName] (after sanitization)
   /// is claimed without modification; an exception is thrown if it collides.
-  String allocateRawName(String baseName, {bool reserved = false}) =>
+  String allocateName(String baseName, {bool reserved = false}) =>
       _uniquifier.getUniqueName(
         initialName: Sanitizer.sanitizeSV(baseName),
         reserved: reserved,

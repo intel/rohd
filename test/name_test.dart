@@ -137,10 +137,8 @@ void main() {
 
         // skip ones that actually *should* cause a failure
         //
-        // Note: SystemVerilog allows using the same identifier for a signal
-        // and an instance because they are different namespaces.  However,
-        // Icarus Verilog rejects that pattern, so ROHD treats those as
-        // conflicts for simulator compatibility.
+        // Note: SystemVerilog does not allow using the same identifier for a
+        // signal and an instance.
         final shouldConflict = [
           {
             NameType.internalModuleDefinition,

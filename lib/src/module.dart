@@ -61,11 +61,7 @@ abstract class Module {
 
   Namer _createNamer() {
     assert(hasBuilt, 'Module must be built before canonical names are bound.');
-    return Namer.forModule(
-      inputs: _inputs,
-      outputs: _outputs,
-      inOuts: _inOuts,
-    );
+    return Namer.forModule(this);
   }
 
   /// An internal mapping of inOut names to their sources to this [Module].
