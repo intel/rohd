@@ -30,16 +30,12 @@ void main() {
     final modules = netlist['modules'] as Map<String, dynamic>;
 
     // Find the SimpleTest module
-    // ignore: avoid_print
-    print('Module keys: ${modules.keys.toList()}');
     // The module name may be the type name or uniquified; find it
     final simpleTestKey = modules.keys.firstWhere(
       (k) => k.contains('SimpleTest'),
       orElse: () => modules.keys.first,
     );
     final simpleTest = modules[simpleTestKey] as Map<String, dynamic>;
-    // ignore: avoid_print
-    print('Using module: $simpleTestKey');
 
     final ports = simpleTest['ports'] as Map<String, dynamic>;
 
@@ -66,12 +62,5 @@ void main() {
       isFalse,
       reason: 'unused_port should not have connected attribute',
     );
-
-    // Print for visibility
-    for (final p in ports.entries) {
-      final pd = p.value as Map<String, dynamic>;
-      // ignore: avoid_print
-      print('Port ${p.key}: connected=${pd["connected"]}');
-    }
   });
 }

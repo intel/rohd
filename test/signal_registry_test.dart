@@ -179,6 +179,9 @@ void main() {
           expect(name, isNotEmpty);
         }
       }
+    });
+  });
+
   group('isAvailable', () {
     test('port names are not available', () async {
       final mod = _GateMod(Logic(), Logic());

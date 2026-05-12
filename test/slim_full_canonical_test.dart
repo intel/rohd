@@ -98,11 +98,6 @@ void main() {
 
     // Sanity: we tested a reasonable number of modules
     expect(modulesTested, greaterThan(0), reason: 'No modules were tested');
-    // ignore: avoid_print
-    print(
-      'Validated $modulesTested modules — all cell keys match '
-      'between slim and full.',
-    );
   });
 }
 
