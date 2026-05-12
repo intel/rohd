@@ -40,10 +40,7 @@ class _TopModule extends Module {
 }
 
 void main() {
-  tearDown(() async {
-    await Simulator.reset();
-    ModuleServices.instance.reset();
-  });
+  tearDown(ModuleServices.instance.reset);
 
   group('ModuleServices', () {
     test('rootModule is set by Module.build', () async {
