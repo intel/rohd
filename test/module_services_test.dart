@@ -21,9 +21,7 @@ class SimpleModule extends Module {
 }
 
 void main() {
-  tearDown(() {
-    ModuleServices.instance.reset();
-  });
+  tearDown(ModuleServices.instance.reset);
 
   group('ModuleServices', () {
     test('rootModule is set after build', () async {
