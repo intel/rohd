@@ -97,7 +97,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final allocated = mod.namer.allocateRawName('en');
+      final allocated = mod.namer.allocateName('en');
       expect(allocated, isNot(equals('en')),
           reason: 'Should not collide with existing port name');
       expect(allocated, contains('en'),
@@ -108,8 +108,8 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final a = mod.namer.allocateRawName('wire');
-      final b = mod.namer.allocateRawName('wire');
+      final a = mod.namer.allocateName('wire');
+      final b = mod.namer.allocateName('wire');
       expect(a, isNot(equals(b)), reason: 'Each allocation should be unique');
     });
   });
