@@ -11,6 +11,7 @@ import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// Represents an instantiation of a module within another module.
 class SynthSubModuleInstantiation {
@@ -25,12 +26,12 @@ class SynthSubModuleInstantiation {
 
   /// Selects a name for this module instance. Must be called exactly once.
   ///
-  /// Names are allocated from [parentModule]'s `Namer`'s shared namespace
-  /// via `Namer.allocateName`.
+  /// Names are allocated from [parentModule]'s [Namer]'s shared namespace
+  /// via [Namer.allocateName].
   void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.namer.allocateRawName(
+    _name = parentModule.namer.allocateName(
       module.uniqueInstanceName,
       reserved: module.reserveName,
     );
