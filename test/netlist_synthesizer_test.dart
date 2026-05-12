@@ -790,35 +790,6 @@ void main() {
       }
     });
 
-    test('groupStructConversions produces valid netlist', () async {
-      final synth = SynthBuilder(
-        filterBank,
-        NetlistSynthesizer(
-          options: const NetlistOptions(groupStructConversions: true),
-        ),
-      );
-      final json = await (synth.synthesizer as NetlistSynthesizer)
-          .synthesizeToJson(filterBank);
-      final parsed = jsonDecode(json) as Map<String, dynamic>;
-      expect(_modules(parsed), isNotEmpty);
-    });
-
-    test('collapseStructGroups with groupStructConversions', () async {
-      final synth = SynthBuilder(
-        filterBank,
-        NetlistSynthesizer(
-          options: const NetlistOptions(
-            groupStructConversions: true,
-            collapseStructGroups: true,
-          ),
-        ),
-      );
-      final json = await (synth.synthesizer as NetlistSynthesizer)
-          .synthesizeToJson(filterBank);
-      final parsed = jsonDecode(json) as Map<String, dynamic>;
-      expect(_modules(parsed), isNotEmpty);
-    });
-
     test('DCE disabled still produces valid netlist', () async {
       final synth = SynthBuilder(
         filterBank,
@@ -1339,98 +1310,13 @@ void main() {
   // ── Group 10: Post-processing option combinations ──────────────────
 
   group('post-processing options', () {
-    test('groupMaximalSubsets produces valid netlist', () async {
+    test('collapseTransparentClusters produces valid netlist', () async {
       final fb = _buildFilterBank();
       final json = await _synthToMap(
         fb,
-        options: const NetlistOptions(
-          groupStructConversions: true,
-          groupMaximalSubsets: true,
-        ),
+        options: const NetlistOptions(collapseTransparentClusters: true),
       );
       expect(_modules(json), isNotEmpty);
     });
-
-    test('collapseConcats produces valid netlist', () async {
-      final fb = _buildFilterBank();
-      final json = await _synthToMap(
-        fb,
-        options: const NetlistOptions(
-          groupStructConversions: true,
-          collapseConcats: true,
-        ),
-      );
-      expect(_modules(json), isNotEmpty);
-    });
-
-    test(
-      'all post-processing options enabled produces valid netlist',
-      () async {
-        final fb = _buildFilterBank();
-        final json = await _synthToMap(
-          fb,
-          options: const NetlistOptions(
-            groupStructConversions: true,
-            collapseStructGroups: true,
-            groupMaximalSubsets: true,
-            collapseConcats: true,
-          ),
-        );
-        expect(_modules(json), isNotEmpty);
-      },
-    );
-
-    test('groupStructConversions adds synthetic module definitions', () async {
-      final fbPlain = _buildFilterBank();
-      final jsonPlain = await _synthToMap(fbPlain);
-      final plainCount = _modules(jsonPlain).length;
-
-      final fbGrouped = _buildFilterBank();
-      final jsonGrouped = await _synthToMap(
-        fbGrouped,
-        options: const NetlistOptions(groupStructConversions: true),
-      );
-      final groupedCount = _modules(jsonGrouped).length;
-
-      // groupStructConversions should introduce additional synthetic modules
-      expect(
-        groupedCount,
-        greaterThanOrEqualTo(plainCount),
-        reason: 'Struct grouping should add module definitions',
-      );
-    });
-
-    test(
-      'collapseStructGroups reduces cells vs groupStructConversions only',
-      () async {
-        final fb1 = _buildFilterBank();
-        final json1 = await _synthToMap(
-          fb1,
-          options: const NetlistOptions(groupStructConversions: true),
-        );
-        int countCells(Map<String, dynamic> j) {
-          var total = 0;
-          for (final def in _modules(j).values) {
-            total += _cells(def as Map<String, dynamic>).length;
-          }
-          return total;
-        }
-
-        final fb2 = _buildFilterBank();
-        final json2 = await _synthToMap(
-          fb2,
-          options: const NetlistOptions(
-            groupStructConversions: true,
-            collapseStructGroups: true,
-          ),
-        );
-
-        expect(
-          countCells(json2),
-          lessThanOrEqualTo(countCells(json1)),
-          reason: 'Collapsing struct groups should not increase cell count',
-        );
-      },
-    );
   });
 }

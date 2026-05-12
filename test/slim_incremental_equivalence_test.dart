@@ -208,12 +208,6 @@ void main() {
     if (errors.isNotEmpty) {
       fail('Slim incremental equivalence errors:\n${errors.join('\n')}');
     }
-
-    // ignore: avoid_print
-    print(
-      'Validated ${fullModules.length} modules — '
-      'slim + incremental fetch matches full.',
-    );
   }
 
   test('Counter: slim + incremental fetch == full', () async {

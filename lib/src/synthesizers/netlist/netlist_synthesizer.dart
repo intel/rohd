@@ -151,7 +151,7 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
 ///
 /// Usage:
 /// ```dart
-/// const options = NetlistOptions(groupStructConversions: true);
+/// const options = NetlistOptions(collapseTransparentClusters: true);
 /// final synth = NetlistSynthesizer(options: options);
 /// final builder = SynthBuilder(topModule, synth);
 /// final json = await synth.synthesizeToJson(topModule);
@@ -680,6 +680,34 @@ class NetlistSynthesizer extends Synthesizer {
                   parentLogic: logic,
                   fullParentIds: parentIds,
                 ));
+              }
+            } else if (elem is LogicStructure && elem is! LogicArray) {
+              // Nested InterfaceStructure: the intermediate struct
+              // itself has no SynthLogic, but its leaf elements do
+              // (created by _subsetReceiveStructPort).  Walk leaf
+              // elements and emit struct field entries for each,
+              // using the top-level parent as the parent Logic.
+              var leafIdx = idx;
+              for (final leaf in elem.leafElements) {
+                final leafSL = synthDef.logicToSynthMap[leaf];
+                if (leafSL != null) {
+                  final leafIds = getIds(leafSL);
+                  final sliceLen = leafIds.length < parentIds.length - leafIdx
+                      ? leafIds.length
+                      : parentIds.length - leafIdx;
+                  if (sliceLen > 0) {
+                    structFieldCells.add((
+                      parentIds: parentIds.sublist(leafIdx, leafIdx + sliceLen),
+                      elemIds: leafIds.sublist(0, sliceLen),
+                      offset: leafIdx,
+                      width: sliceLen,
+                      elemLogic: leaf,
+                      parentLogic: logic,
+                      fullParentIds: parentIds,
+                    ));
+                  }
+                }
+                leafIdx += leaf.width;
               }
             }
             idx += elem.width;
@@ -1593,28 +1621,8 @@ class NetlistSynthesizer extends Synthesizer {
   void applyPostProcessingPasses(
     Map<String, Map<String, Object?>> modules,
   ) {
-    if (options.groupStructConversions) {
-      if (options.groupMaximalSubsets) {
-        NetlistPasses.applyMaximalSubsetGrouping(modules);
-      }
-      if (options.collapseConcats) {
-        NetlistPasses.applyCollapseConcats(modules);
-      }
-      if (options.collapseSelectsIntoPack) {
-        NetlistPasses.applyCollapseSelectsIntoPack(modules);
-      }
-      if (options.collapseUnpackToConcat) {
-        NetlistPasses.applyCollapseUnpackToConcat(modules);
-      }
-      if (options.collapseUnpackToPack) {
-        NetlistPasses.applyCollapseUnpackToPack(modules);
-      }
-      NetlistPasses.applyStructConversionGrouping(modules);
-      if (options.collapseStructGroups) {
-        NetlistPasses.collapseStructGroupModules(modules);
-      }
-      NetlistPasses.applyStructBufferInsertion(modules);
-      NetlistPasses.applyConcatToBufferReplacement(modules);
+    if (options.collapseTransparentClusters) {
+      NetlistPasses.applyTransparentClustering(modules);
     }
   }
 
