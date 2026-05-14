@@ -240,13 +240,23 @@ class NetlistSynthesizer extends Synthesizer {
           final ids = getIds(sl);
           final portName = NetlistUtils.portNameForSynthLogic(sl, modulePorts);
           if (portName != null) {
-            ports[portName] = {'direction': direction, 'bits': ids};
+            final portLogic = modulePorts[portName];
+            ports[portName] = {
+              'direction': direction,
+              'bits': ids,
+              if (portLogic != null)
+                'logic_type': NetlistUtils.buildLogicType(portLogic, ids),
+            };
           }
         }
       } else {
         for (final entry in modulePorts.entries) {
           final ids = List<int>.generate(entry.value.width, (_) => nextId++);
-          ports[entry.key] = {'direction': direction, 'bits': ids};
+          ports[entry.key] = {
+            'direction': direction,
+            'bits': ids,
+            'logic_type': NetlistUtils.buildLogicType(entry.value, ids),
+          };
         }
       }
     }
@@ -1509,7 +1519,9 @@ class NetlistSynthesizer extends Synthesizer {
     final isInlineSV = module is InlineSystemVerilog;
 
     void addNetname(String name, List<Object> bits,
-        {bool hideName = false, bool computed = false}) {
+        {bool hideName = false,
+        bool computed = false,
+        Map<String, Object?>? logicType}) {
       if (emittedNames.contains(name)) {
         return;
       }
@@ -1517,6 +1529,7 @@ class NetlistSynthesizer extends Synthesizer {
       netnames[name] = {
         'bits': bits,
         if (hideName) 'hide_name': 1,
+        if (logicType != null) 'logic_type': logicType,
         'attributes': <String, Object?>{
           if (computed || isInlineSV) 'computed': 1,
         },
@@ -1525,8 +1538,11 @@ class NetlistSynthesizer extends Synthesizer {
 
     // Port nets (already aliased above).
     for (final p in ports.entries) {
-      addNetname(Sanitizer.sanitizeSV(p.key),
-          (p.value['bits']! as List).cast<Object>());
+      addNetname(
+        Sanitizer.sanitizeSV(p.key),
+        (p.value['bits']! as List).cast<Object>(),
+        logicType: p.value['logic_type'] as Map<String, Object?>?,
+      );
     }
 
     // Named signals from SynthModuleDefinition.
@@ -1545,7 +1561,14 @@ class NetlistSynthesizer extends Synthesizer {
                 .map((b) => b is int ? (arrayConcatOldToNew[b] ?? b) : b)
                 .toList();
           }
-          addNetname(Sanitizer.sanitizeSV(name), bits);
+          final typeLogic = NetlistUtils.typeLogicFromSynthLogic(sl);
+          addNetname(
+            Sanitizer.sanitizeSV(name),
+            bits,
+            logicType: typeLogic != null
+                ? NetlistUtils.buildLogicType(typeLogic, bits)
+                : null,
+          );
         }
       }
     }

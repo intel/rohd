@@ -294,6 +294,68 @@ class NetlistUtils {
     }
   }
 
+  /// Builds a JSON-serializable type descriptor for [logic].
+  ///
+  /// Returns:
+  /// - For a plain [Logic] or [LogicArray]: `{'width': N}` (bitvector is the
+  ///   default)
+  /// - For a [LogicStructure] (non-array): `{'typeName': className, 'fields':
+  ///   [field, ...]}` where each field is `{'name': fieldName, 'width': W}` for
+  ///   leaf fields or `{'name': fieldName, 'type': {...}}` for nested
+  ///   [LogicStructure]s.
+  ///
+  /// Fields are listed in LSB-to-MSB order (matching ROHD's element ordering
+  /// via `rswizzle`: `elements[0]` occupies the lowest bits).
+  ///
+  /// When [bits] is provided, each field entry also includes a `'bits'` key
+  /// containing the slice of [bits] that belongs to that field. This allows
+  /// consumers to identify which net IDs map to which field even when the
+  /// signal is only partially connected (where computing offsets from the flat
+  /// top-level `bits` array would be ambiguous).
+  static Map<String, Object?> buildLogicType(Logic logic,
+      [List<Object>? bits]) {
+    if (logic is LogicStructure && logic is! LogicArray) {
+      var offset = 0;
+      final fields = logic.elements.map((e) {
+        final fieldBits = bits?.sublist(offset, offset + e.width);
+        offset += e.width;
+        if (e is LogicStructure && e is! LogicArray) {
+          return <String, Object?>{
+            'name': e.name,
+            if (fieldBits != null) 'bits': fieldBits,
+            'type': buildLogicType(e, fieldBits),
+          };
+        } else {
+          return <String, Object?>{
+            'name': e.name,
+            'width': e.width,
+            if (fieldBits != null) 'bits': fieldBits,
+          };
+        }
+      }).toList();
+      return {
+        'typeName': logic.runtimeType.toString(),
+        'fields': fields,
+      };
+    } else {
+      return {'width': logic.width};
+    }
+  }
+
+  /// Returns the most type-specific [Logic] from [sl]'s [Logic] list for
+  /// use in [buildLogicType].
+  ///
+  /// Prefers a [LogicStructure] (non-array) over a plain [Logic], since it
+  /// carries richer field metadata.
+  static Logic? typeLogicFromSynthLogic(SynthLogic sl) {
+    final logics = sl.logics;
+    return logics
+            .whereType<LogicStructure>()
+            .where((l) => l is! LogicArray)
+            .firstOrNull ??
+        logics.firstOrNull;
+  }
+
   /// Check if a SynthLogic is a constant (following replacement chain).
   static bool isConstantSynthLogic(SynthLogic sl) =>
       resolveReplacement(sl).isConstant;

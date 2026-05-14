@@ -41,16 +41,14 @@ Future<void> main({bool noPrint = false}) async {
   final clk = SimpleClockGenerator(10).clk;
   final reset = Logic(name: 'reset');
   final start = Logic(name: 'start');
-  final samplesIn = LogicArray([2], dataWidth, name: 'samplesIn');
-  final validIn = Logic(name: 'validIn');
+  final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
   final inputDone = Logic(name: 'inputDone');
 
   final dut = FilterBank(
     clk,
     reset,
     start,
-    samplesIn,
-    validIn,
+    samples,
     inputDone,
     numTaps: numTaps,
     dataWidth: dataWidth,
@@ -74,9 +72,10 @@ Future<void> main({bool noPrint = false}) async {
   // ── Reset ──
   reset.inject(1);
   start.inject(0);
-  samplesIn.elements[0].inject(0);
-  samplesIn.elements[1].inject(0);
-  validIn.inject(0);
+  samples[0].data.inject(0);
+  samples[0].valid.inject(0);
+  samples[1].data.inject(0);
+  samples[1].valid.inject(0);
   inputDone.inject(0);
 
   await clk.nextPosedge;
@@ -88,22 +87,24 @@ Future<void> main({bool noPrint = false}) async {
   start.inject(1);
   await clk.nextPosedge;
   start.inject(0);
-  validIn.inject(1);
+  samples[0].valid.inject(1);
+  samples[1].valid.inject(1);
 
   // ── Feed sample stream: impulse response test ──
   // Send a single '1' followed by zeros to get the impulse response
-  samplesIn.elements[0].inject(1);
-  samplesIn.elements[1].inject(1);
+  samples[0].data.inject(1);
+  samples[1].data.inject(1);
   await clk.nextPosedge;
 
   for (var i = 0; i < 8; i++) {
-    samplesIn.elements[0].inject(0);
-    samplesIn.elements[1].inject(0);
+    samples[0].data.inject(0);
+    samples[1].data.inject(0);
     await clk.nextPosedge;
   }
 
   // ── Signal end of input ──
-  validIn.inject(0);
+  samples[0].valid.inject(0);
+  samples[1].valid.inject(0);
   inputDone.inject(1);
   await clk.nextPosedge;
   inputDone.inject(0);

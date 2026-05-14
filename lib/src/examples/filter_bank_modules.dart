@@ -36,7 +36,7 @@ import 'package:rohd/rohd.dart';
 
 /// A structured signal bundling a data sample with metadata.
 ///
-/// Packs three fields — [data], [valid], and [channel] — into a single
+/// Packs three fields — [data], and [valid] — into a single
 /// bus that can be driven and sampled as a unit.  Used throughout the
 /// [FilterBank] to carry tagged samples between modules.
 class FilterSample extends LogicStructure {
@@ -46,9 +46,6 @@ class FilterSample extends LogicStructure {
   /// Whether this sample is valid.
   late final Logic valid;
 
-  /// The channel index this sample belongs to.
-  late final Logic channel;
-
   /// Creates a [FilterSample] with the given [dataWidth] (default 16)
   /// and optional [name].
   FilterSample({int dataWidth = 16, String? name})
@@ -56,20 +53,17 @@ class FilterSample extends LogicStructure {
           [
             Logic(name: 'data', width: dataWidth),
             Logic(name: 'valid'),
-            Logic(name: 'channel'),
           ],
           name: name ?? 'filter_sample',
         ) {
     data = elements[0];
     valid = elements[1];
-    channel = elements[2];
   }
 
   // Private constructor for clone to share element structure.
   FilterSample._clone(super.elements, {required super.name}) {
     data = elements[0];
     valid = elements[1];
-    channel = elements[2];
   }
 
   @override
@@ -812,13 +806,9 @@ class FilterBank extends Module {
   @protected
   Logic get startPin => input('start');
 
-  /// Per-channel sample input array.
+  /// Input [FilterSample] port for channel [ch].
   @protected
-  LogicArray get samplesInPin => input('samplesIn') as LogicArray;
-
-  /// Input valid strobe.
-  @protected
-  Logic get validInPin => input('validIn');
+  FilterSample samplePin(int ch) => input('sample$ch') as FilterSample;
 
   /// Input-done strobe.
   @protected
@@ -838,9 +828,8 @@ class FilterBank extends Module {
   /// Each channel has [numTaps] FIR taps at [dataWidth] bits.
   /// [coefficients] is a list of per-channel coefficient lists —
   /// `coefficients[i]` supplies the tap weights for channel `i`.
-  /// [samplesIn] is a [LogicArray] with one element per channel.
-  /// [validIn] qualifies the sample data. Assert [start] to begin
-  /// and [inputDone] when the input stream is complete.
+  /// [samples] is a [LogicArray] with one element per channel.
+  /// [inputDone] when the input stream is complete.
   ///
   /// Optionally pass [dataBus] (a `LogicNet`) and [writeEnable] to
   /// attach a bidirectional shared data bus via [SharedDataBus].
@@ -850,8 +839,7 @@ class FilterBank extends Module {
     Logic clk,
     Logic reset,
     Logic start,
-    LogicArray samplesIn,
-    Logic validIn,
+    List<FilterSample> samples,
     Logic inputDone, {
     required this.numTaps,
     required this.dataWidth,
@@ -871,26 +859,21 @@ class FilterBank extends Module {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
     start = addInput('start', start);
-    samplesIn = addInputArray('samplesIn', samplesIn,
-        dimensions: [numChannels], elementWidth: dataWidth);
-    validIn = addInput('validIn', validIn);
     inputDone = addInput('inputDone', inputDone);
 
-    final channelOut = addOutputArray('channelOut',
-        dimensions: [numChannels], elementWidth: dataWidth);
+    // One typed FilterSample input port per channel.
+    final inPorts = <FilterSample>[];
+    for (var ch = 0; ch < numChannels; ch++) {
+      inPorts.add(addTypedInput('sample$ch', samples[ch]));
+    }
+
+    final channelOut = addTypedOutput<LogicArray>(
+        'channelOut',
+        ({name = 'channelOut'}) =>
+            LogicArray([numChannels], dataWidth, name: name));
     final validOut = addOutput('validOut');
     final done = addOutput('done');
     final state = addOutput('state', width: 3);
-
-    // ── FilterSample LogicStructure for input bundling ──
-    final samples = <FilterSample>[];
-    for (var ch = 0; ch < numChannels; ch++) {
-      final sample = FilterSample(dataWidth: dataWidth, name: 'sample$ch');
-      sample.data <= samplesIn.elements[ch];
-      sample.valid <= validIn;
-      sample.channel <= Const(ch);
-      samples.add(sample);
-    }
 
     // ── Controller FSM ──
     // Drain cycles: numTaps cycles per accumulation + pipeline depth (2) + 1
@@ -898,7 +881,7 @@ class FilterBank extends Module {
       clk,
       reset,
       start,
-      validIn,
+      inPorts[0].valid, // valid is shared across channels
       inputDone,
       drainCycles: numTaps + 3,
       name: 'controller',
@@ -910,8 +893,8 @@ class FilterBank extends Module {
     final srcIntfs = <FilterDataInterface>[];
     for (var ch = 0; ch < numChannels; ch++) {
       final srcIntf = FilterDataInterface(dataWidth: dataWidth);
-      srcIntf.sampleIn <= samples[ch].data;
-      srcIntf.validIn <= samples[ch].valid;
+      srcIntf.sampleIn <= inPorts[ch].data;
+      srcIntf.validIn <= inPorts[ch].valid;
 
       FilterChannel(
         srcIntf,

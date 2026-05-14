@@ -9,6 +9,7 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/examples/filter_bank_modules.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart' as ex;
@@ -73,15 +74,13 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final reset = Logic(name: 'reset');
       final start = Logic(name: 'start');
-      final samplesIn = LogicArray([2], 16, name: 'samplesIn');
-      final validIn = Logic(name: 'validIn');
+      final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
       final inputDone = Logic(name: 'inputDone');
       final filterBank = FilterBank(
         clk,
         reset,
         start,
-        samplesIn,
-        validIn,
+        samples,
         inputDone,
         numTaps: 4,
         dataWidth: 16,

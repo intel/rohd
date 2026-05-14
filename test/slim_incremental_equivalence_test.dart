@@ -240,16 +240,14 @@ void main() {
     final clk = SimpleClockGenerator(10).clk;
     final reset = Logic(name: 'reset');
     final start = Logic(name: 'start');
-    final samplesIn = LogicArray([2], dataWidth, name: 'samplesIn');
-    final validIn = Logic(name: 'validIn');
+    final samples = List.generate(2, (ch) => FilterSample(name: 'sample$ch'));
     final inputDone = Logic(name: 'inputDone');
 
     final dut = FilterBank(
       clk,
       reset,
       start,
-      samplesIn,
-      validIn,
+      samples,
       inputDone,
       numTaps: 3,
       dataWidth: dataWidth,
