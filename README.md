@@ -9,6 +9,7 @@
 [![Chat](https://img.shields.io/discord/1001179329411166267?label=Chat)](https://discord.gg/jubxF84yGw)
 [![License](https://img.shields.io/badge/License-BSD--3-blue)](https://github.com/intel/rohd/blob/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/intel/rohd/blob/main/CODE_OF_CONDUCT.md)
+[![Coverage](https://raw.githubusercontent.com/intel/rohd/refs/heads/badges/coverage/main.svg)](https://github.com/intel/rohd/blob/main/.github/workflows/coverage.yml)
 
 ROHD (pronounced like "road") is a framework for describing and verifying hardware in the Dart programming language.
 
@@ -68,6 +69,5 @@ One of ROHD's goals is to help grow an open-source community around reusable har
 ROHD is under active development.  If you're interested in contributing, have feedback or a question, or found a bug, please see [CONTRIBUTING.md](https://github.com/intel/rohd/blob/main/CONTRIBUTING.md).
 
 ----------------
-
 Copyright (C) 2021-2026 Intel Corporation  
 SPDX-License-Identifier: BSD-3-Clause
