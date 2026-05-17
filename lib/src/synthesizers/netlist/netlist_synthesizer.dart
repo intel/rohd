@@ -1615,6 +1615,42 @@ class NetlistSynthesizer extends Synthesizer {
       }
     }
 
+    // -- Remove orphaned netnames after DCE --------------------------------
+    // DCE may remove cells that drove certain named signals.  Remove
+    // netnames whose integer bits are ALL undriven (not output of any
+    // remaining cell, not a module input/inout port bit).  This prevents
+    // dead signals from appearing in the schematic viewer.
+    if (options.enableDCE) {
+      final drivenBits = <int>{
+        ...ports.values
+            .where(
+                (p) => p['direction'] == 'input' || p['direction'] == 'inout')
+            .expand((p) => p['bits']! as List)
+            .whereType<int>(),
+        ...cells.values.expand((c) {
+          final cell = c as Map<String, dynamic>;
+          final conns =
+              cell['connections'] as Map<String, dynamic>? ?? const {};
+          final pdirs =
+              cell['port_directions'] as Map<String, dynamic>? ?? const {};
+          return conns.entries
+              .where((pe) => pdirs[pe.key] == 'output')
+              .expand((pe) => pe.value as List)
+              .whereType<int>();
+        }),
+      };
+
+      netnames.removeWhere((name, nnRaw) {
+        final nn = nnRaw as Map<String, Object?>?;
+        if (nn == null) return false;
+        final bits = nn['bits'] as List?;
+        if (bits == null) return false;
+        final intBits = bits.whereType<int>();
+        if (intBits.isEmpty) return false;
+        return !intBits.any(drivenBits.contains);
+      });
+    }
+
     // -- Slim: strip cell connections ------------------------------------
     // The full pipeline ran identically, so the cell set (keys, ordering)
     // is canonical.  Now drop the connection maps to reduce the output
@@ -1625,6 +1661,14 @@ class NetlistSynthesizer extends Synthesizer {
       }
     }
 
+    // -- Structural validation -------------------------------------------
+    // Debug-mode checks to catch netlist bugs early.  These verify that
+    // every signal has a driver and every cell is connected.
+    assert(() {
+      _validateNetlist(ports, cells, netnames, module.name);
+      return true;
+    }());
+
     return NetlistSynthesisResult(
       module,
       getInstanceTypeOfModule,
@@ -1633,6 +1677,98 @@ class NetlistSynthesizer extends Synthesizer {
       netnames: netnames,
       attributes: attr,
     );
+  }
+
+  /// Validates structural integrity of the netlist.
+  ///
+  /// Checks:
+  ///  1. No non-transparent cell is fully disconnected — every logic gate
+  ///     must have at least one output bit consumed by another cell's
+  ///     input or a module output/inout port.
+  ///  2. No `$const` cell drives wire IDs that nothing consumes.
+  ///
+  /// These fire only under `assert()` (i.e. `--enable-asserts`) so they
+  /// don't affect production runs.
+  static void _validateNetlist(
+    Map<String, Map<String, Object?>> ports,
+    Map<String, Map<String, Object?>> cells,
+    Map<String, Object?> netnames,
+    String moduleName,
+  ) {
+    // Collect all wire IDs consumed by cell input ports or module
+    // output/inout ports.
+    final consumedBits = <int>{
+      ...ports.values
+          .where(
+              (p) => p['direction'] == 'output' || p['direction'] == 'inout')
+          .expand((p) => (p['bits'] as List?) ?? [])
+          .whereType<int>(),
+      ...cells.values.expand((c) {
+        final conns = c['connections'] as Map<String, dynamic>? ?? {};
+        final pdirs = c['port_directions'] as Map<String, dynamic>? ?? {};
+        return conns.entries
+            .where((pe) => pdirs[pe.key] == 'input')
+            .expand((pe) => (pe.value as List?) ?? [])
+            .whereType<int>();
+      }),
+    };
+
+    const transparentTypes = {
+      r'$buf',
+      r'$slice',
+      r'$concat',
+      r'$struct_unpack',
+      r'$struct_pack',
+    };
+
+    // Check 1: no logic gate is fully disconnected.
+    for (final entry in cells.entries) {
+      final cell = entry.value;
+      final type = cell['type'] as String? ?? '';
+      if (transparentTypes.contains(type) || type == r'$const') continue;
+
+      final conns = cell['connections'] as Map<String, dynamic>?;
+      final pdirs = cell['port_directions'] as Map<String, dynamic>?;
+      if (conns == null || pdirs == null) continue;
+
+      final outputBits = conns.entries
+          .where((pe) => pdirs[pe.key] == 'output')
+          .expand((pe) => (pe.value as List?) ?? [])
+          .whereType<int>()
+          .toList();
+
+      if (outputBits.isNotEmpty &&
+          !outputBits.any(consumedBits.contains)) {
+        // ignore: avoid_print
+        print('[netlist-validate] WARNING: $moduleName: '
+            'cell "${entry.key}" (type: $type) has no consumed outputs '
+            '— fully disconnected logic gate');
+      }
+    }
+
+    // Check 2: no $const cell drives unconsumed wires.
+    for (final entry in cells.entries) {
+      final cell = entry.value;
+      if (cell['type'] != r'$const') continue;
+
+      final conns = cell['connections'] as Map<String, dynamic>?;
+      final pdirs = cell['port_directions'] as Map<String, dynamic>?;
+      if (conns == null || pdirs == null) continue;
+
+      final outputBits = conns.entries
+          .where((pe) => pdirs[pe.key] == 'output')
+          .expand((pe) => (pe.value as List?) ?? [])
+          .whereType<int>()
+          .toList();
+
+      if (outputBits.isNotEmpty &&
+          !outputBits.any(consumedBits.contains)) {
+        // ignore: avoid_print
+        print('[netlist-validate] WARNING: $moduleName: '
+            r'$const cell "${entry.key}" drives wires consumed by nothing '
+            '— floating constant');
+      }
+    }
   }
 
   /// Apply all post-processing passes to the modules map.

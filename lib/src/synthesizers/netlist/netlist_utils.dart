@@ -253,6 +253,22 @@ class NetlistUtils {
         continue;
       }
 
+      // Skip collapsing when any member's SynthLogic is a port of the
+      // parent module.  Collapsing replaces the individual output ports
+      // with a single aggregate that uses the downstream Swizzle's bit
+      // IDs, which would orphan the module-level port bits (they would
+      // no longer be driven by any cell).
+      final parentModule = synthDef.module;
+      final hasModulePort = entry.value.any((member) {
+        final sl = instance.outputMapping[member.$1];
+        if (sl == null) return false;
+        final resolved = resolveReplacement(sl);
+        return resolved.isPort(parentModule);
+      });
+      if (hasModulePort) {
+        continue;
+      }
+
       final swizOutSL = entry.key;
       final ports = entry.value..sort((a, b) => a.$2.compareTo(b.$2));
 
