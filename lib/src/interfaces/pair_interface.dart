@@ -164,7 +164,8 @@ class PairInterface extends Interface<PairDirection> {
       {Iterable<PairDirection>? inputTags,
       Iterable<PairDirection>? outputTags,
       Iterable<PairDirection>? inOutTags,
-      String Function(String original)? uniquify}) {
+      String Function(String original)? uniquify,
+      String? groupName}) {
     final nonNullUniquify = uniquify ?? (original) => original;
     // ignore: deprecated_member_use_from_same_package
     final nonNullModify = modify ?? (original) => original;
@@ -175,7 +176,8 @@ class PairInterface extends Interface<PairDirection> {
         inputTags: inputTags,
         outputTags: outputTags,
         inOutTags: inOutTags,
-        uniquify: newUniquify);
+        uniquify: newUniquify,
+        groupName: groupName);
 
     if (subInterfaces.isNotEmpty) {
       if (srcInterface is! PairInterface) {
@@ -241,6 +243,7 @@ class PairInterface extends Interface<PairDirection> {
           outputTags: subIntfOutputTags,
           inOutTags: subIntfInOutTags,
           uniquify: newSubIntfUniquify,
+          groupName: subInterfaceName,
         );
       }
     }

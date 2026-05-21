@@ -52,6 +52,29 @@ abstract class Module {
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
 
+  /// Maps port names to their interface group name.
+  ///
+  /// Populated during [Interface.connectIO] to record which ports were
+  /// registered together as part of the same interface.  The group name
+  /// is derived from the `uniquify` prefix applied during connection.
+  ///
+  /// This enables netlist synthesis to emit port-grouping annotations
+  /// without relying on naming heuristics.
+  final Map<String, String> _portGroups = {};
+
+  /// Returns an unmodifiable view of the port-to-interface-group mapping.
+  ///
+  /// Keys are port names; values are the interface group name shared by
+  /// all ports registered in the same [Interface.connectIO] call.
+  Map<String, String> get portGroups => UnmodifiableMapView(_portGroups);
+
+  /// Registers [portName] as belonging to interface group [groupName].
+  ///
+  /// Called by [Interface.connectIO] during port registration.
+  void registerPortGroup(String portName, String groupName) {
+    _portGroups[portName] = groupName;
+  }
+
   // ─── Central naming (Namer) ─────────────────────────────────────
 
   /// Central namer that owns both the signal and instance namespaces.
