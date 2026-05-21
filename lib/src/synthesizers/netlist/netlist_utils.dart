@@ -261,7 +261,9 @@ class NetlistUtils {
       final parentModule = synthDef.module;
       final hasModulePort = entry.value.any((member) {
         final sl = instance.outputMapping[member.$1];
-        if (sl == null) return false;
+        if (sl == null) {
+          return false;
+        }
         final resolved = resolveReplacement(sl);
         return resolved.isPort(parentModule);
       });
@@ -330,7 +332,25 @@ class NetlistUtils {
   /// top-level `bits` array would be ambiguous).
   static Map<String, Object?> buildLogicType(Logic logic,
       [List<Object>? bits]) {
-    if (logic is LogicStructure && logic is! LogicArray) {
+    if (logic is LogicArray) {
+      final result = <String, Object?>{
+        'width': logic.width,
+        'arrayDims': logic.dimensions,
+        'elementWidth': logic.elementWidth,
+      };
+      // If the leaf elements are LogicStructures (array of structs),
+      // include the element type metadata for recursive expansion.
+      if (logic.elements.isNotEmpty) {
+        final first = logic.elements.first;
+        if (first is LogicStructure && first is! LogicArray) {
+          result['elementType'] = buildLogicType(first);
+        } else if (first is LogicArray) {
+          // Nested array — encode inner dimensions via recursive call.
+          result['elementType'] = buildLogicType(first);
+        }
+      }
+      return result;
+    } else if (logic is LogicStructure) {
       var offset = 0;
       final fields = logic.elements.map((e) {
         final fieldBits = bits?.sublist(offset, offset + e.width);
@@ -338,6 +358,13 @@ class NetlistUtils {
         if (e is LogicStructure && e is! LogicArray) {
           return <String, Object?>{
             'name': e.name,
+            if (fieldBits != null) 'bits': fieldBits,
+            'type': buildLogicType(e, fieldBits),
+          };
+        } else if (e is LogicArray) {
+          return <String, Object?>{
+            'name': e.name,
+            'width': e.width,
             if (fieldBits != null) 'bits': fieldBits,
             'type': buildLogicType(e, fieldBits),
           };

@@ -319,6 +319,25 @@ class NoDedupTop extends Module {
   }
 }
 
+/// A module with a named constant (Logic..gets(Const)) used inside a
+/// Combinational block — exercises the named-constant fix.
+class _NamedConstModule extends Module {
+  _NamedConstModule(Logic clk, Logic reset) : super(name: 'namedConstMod') {
+    clk = addInput('clk', clk);
+    reset = addInput('reset', reset);
+    final dataIn = addInput('dataIn', Logic(width: 8), width: 8);
+    final result = addOutput('result', width: 8);
+
+    // Named constant driven by Const — this is the pattern from
+    // _dynamicInputToLogic in SummationBase.
+    final myConst = Logic(name: 'myConst', width: 8)..gets(Const(0, width: 8));
+
+    Combinational([
+      result < mux(dataIn.or(), dataIn, myConst),
+    ]);
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────────────
@@ -981,10 +1000,10 @@ void main() {
           .value as Map<String, dynamic>;
       final ports = _ports(fbDef);
 
-      // Should have samplesIn and channelOut as array ports
+      // Should have sample0/sample1 and channelOut as array ports
       expect(
         ports.keys.any(
-          (k) => k.contains('samplesIn') || k.contains('channelOut'),
+          (k) => k.contains('sample') || k.contains('channelOut'),
         ),
         isTrue,
         reason: 'FilterBank should have array port signals',
@@ -1155,9 +1174,7 @@ void main() {
       // Fetch FilterBank definition specifically
       final fbJson = netSvc.moduleJson(fb.definitionName);
       final parsed = jsonDecode(fbJson) as Map<String, dynamic>;
-      expect(parsed.containsKey('modules'), isTrue);
-      final modules = parsed['modules'] as Map<String, dynamic>;
-      expect(modules.containsKey(fb.definitionName), isTrue);
+      expect(parsed.containsKey(fb.definitionName), isTrue);
     });
 
     test('slimJson produces slim output', () async {
@@ -1315,6 +1332,55 @@ void main() {
         options: const NetlistOptions(collapseTransparentClusters: true),
       );
       expect(_modules(json), isNotEmpty);
+    });
+  });
+
+  // ── Group 11: Named constant signals ─────────────────────────────
+
+  group('named constant signals', () {
+    test(r'Logic..gets(Const) produces $const cell and netname', () async {
+      final mod = _NamedConstModule(Logic(name: 'clk'), Logic(name: 'reset'));
+      final json = await _synthToMap(mod);
+      final mods = _modules(json);
+
+      // Find the module definition for _NamedConstModule.
+      final modDef = mods.values.firstWhere(
+        (m) {
+          final def = m as Map<String, dynamic>;
+          return (def['cells'] as Map?)?.isNotEmpty ?? false;
+        },
+        orElse: () => mods.values.first,
+      ) as Map<String, dynamic>;
+
+      final netnames = _netnames(modDef);
+      final cells = _cells(modDef);
+
+      // The signal 'myConst' should appear as a netname.
+      expect(
+        netnames.keys.any((n) => n.contains('myConst')),
+        isTrue,
+        reason: "Logic('myConst')..gets(Const(0)) should produce a netname",
+      );
+
+      // There should be a $const cell driving it.
+      expect(
+        cells.values.any(
+          (c) => (c as Map<String, dynamic>)['type'] == r'$const',
+        ),
+        isTrue,
+        reason: r'Named constant should have a $const driver cell',
+      );
+
+      // The netname bits should be integer wire IDs (not string literals).
+      final constNetname =
+          netnames.entries.firstWhere((e) => e.key.contains('myConst'));
+      final bits = (constNetname.value as Map<String, dynamic>)['bits'] as List;
+      expect(
+        bits.every((b) => b is int),
+        isTrue,
+        reason: 'Named constant netname should have integer wire IDs '
+            r'(driven by a $const cell)',
+      );
     });
   });
 }

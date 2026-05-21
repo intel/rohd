@@ -27,10 +27,11 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
         .forEach(_subsetReceiveArrayPort);
 
     // Same for LogicArray outputs on submodules (received into this scope).
-    module.subModules
+    final subModuleOutputArrays = module.subModules
         .expand((sub) => sub.outputs.values)
         .whereType<LogicArray>()
-        .forEach(_subsetReceiveArrayPort);
+        .toSet()
+      ..forEach(_subsetReceiveArrayPort);
 
     // Create explicit $concat cells for internal LogicArrays whose elements
     // are driven independently (e.g. by constants) and then consumed by
@@ -40,20 +41,40 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // Skip arrays that were merged with a port array's SynthLogic — those
     // are already structurally decomposed by the $slice cells created above
     // and reassembling them would create a circular driver on the port bus.
+    // Also skip submodule output arrays that already received $slice cells.
     final portArrays = {
       ...module.inputs.values.whereType<LogicArray>(),
       ...module.outputs.values.whereType<LogicArray>(),
       ...module.inOuts.values.whereType<LogicArray>(),
     };
+    final excludedArrays = <LogicArray>{
+      ...portArrays,
+      ...subModuleOutputArrays,
+    };
+    // For multi-dimensional arrays, also exclude nested sub-arrays.
+    // E.g. LogicArray([10,2],8) has 10 children each being LogicArray([2],8).
+    // Without this, the sub-arrays get spurious $concat cells creating
+    // multi-driver conflicts on the parent port's bits.
+    void addNestedArrays(LogicArray arr) {
+      for (final elem in arr.elements) {
+        if (elem is LogicArray) {
+          excludedArrays.add(elem);
+          addNestedArrays(elem);
+        }
+      }
+    }
+
+    <LogicArray>{...portArrays, ...subModuleOutputArrays}
+        .forEach(addNestedArrays);
     final portArraySynthLogics = <SynthLogic>{};
-    for (final pa in portArrays) {
+    for (final pa in excludedArrays) {
       final sl = logicToSynthMap[pa];
       if (sl != null) {
         portArraySynthLogics.add(sl.replacement ?? sl);
       }
     }
     module.internalSignals.whereType<LogicArray>().where((sig) {
-      if (portArrays.contains(sig)) {
+      if (excludedArrays.contains(sig)) {
         return false;
       }
       final sl = logicToSynthMap[sig];
@@ -748,6 +769,11 @@ class NetlistSynthesizer extends Synthesizer {
         ? bits
         : bits.map((b) => b is int ? resolveAlias(b) : b).toList();
 
+    // -- Break shared wire IDs for array_slice cells -----------------------
+    // (Populated inside the alias block below; declared here so netnames
+    // can reference it later.)
+    final arraySliceOldToNew = <int, int>{};
+
     // Alias port bits.
     if (idAlias.isNotEmpty) {
       for (final p in ports.values) {
@@ -758,6 +784,64 @@ class NetlistSynthesizer extends Synthesizer {
         final conns = c['connections']! as Map<String, dynamic>;
         for (final key in conns.keys.toList()) {
           conns[key] = applyAlias((conns[key] as List).cast<Object>());
+        }
+      }
+
+      // After aliasing, the slice output Y bits share the same wire IDs
+      // as the corresponding sub-range of input A (because LogicArray
+      // elements share the parent's bit storage).  This makes the slice
+      // trivial and it would be elided below.
+      //
+      // To preserve the structural decomposition in the schematic, we
+      // allocate fresh wire IDs for each array_slice Y output, then
+      // redirect all other cells that consume those IDs as inputs to
+      // read from the fresh IDs instead.  The slice input A keeps the
+      // original parent-array IDs, so the data flow becomes:
+      //   parent (original IDs) → slice A → slice Y (fresh IDs) → consumer
+
+      for (final cellEntry in cells.entries) {
+        if (!cellEntry.key.startsWith('array_slice')) {
+          continue;
+        }
+        final cell = cellEntry.value as Map<String, dynamic>;
+        final conns = cell['connections'] as Map<String, dynamic>;
+        final dirs = cell['port_directions'] as Map<String, dynamic>;
+
+        for (final portEntry in conns.entries.toList()) {
+          if (dirs[portEntry.key] != 'output') {
+            continue;
+          }
+          final oldBits = (portEntry.value as List).cast<Object>();
+          conns[portEntry.key] = [
+            for (final b in oldBits)
+              b is int ? arraySliceOldToNew.putIfAbsent(b, () => nextId++) : b,
+          ];
+        }
+      }
+
+      // Redirect other cells: any input port bit that matches an old ID
+      // gets replaced with the corresponding fresh ID.
+      if (arraySliceOldToNew.isNotEmpty) {
+        for (final cellEntry in cells.entries) {
+          if (cellEntry.key.startsWith('array_slice')) {
+            continue; // skip the slice cells themselves
+          }
+          final cell = cellEntry.value as Map<String, dynamic>;
+          final conns = cell['connections'] as Map<String, dynamic>;
+          final dirs = cell['port_directions'] as Map<String, dynamic>;
+
+          for (final portEntry in conns.entries.toList()) {
+            if (dirs[portEntry.key] != 'input') {
+              continue;
+            }
+            final bits = (portEntry.value as List).cast<Object>();
+            final newBits = [
+              for (final b in bits) b is int ? (arraySliceOldToNew[b] ?? b) : b,
+            ];
+            if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
+              conns[portEntry.key] = newBits;
+            }
+          }
         }
       }
 
@@ -1554,6 +1638,14 @@ class NetlistSynthesizer extends Synthesizer {
         if (name != null) {
           var bits = applyAlias(entry.value.cast<Object>());
           // For element signals whose IDs were remapped by the
+          // array_slice fresh-ID pass, apply that mapping so the
+          // element netname matches the slice output (fresh) IDs.
+          if (arraySliceOldToNew.isNotEmpty && sl is SynthLogicArrayElement) {
+            bits = bits
+                .map((b) => b is int ? (arraySliceOldToNew[b] ?? b) : b)
+                .toList();
+          }
+          // For element signals whose IDs were remapped by the
           // array_concat fresh-ID pass, apply that mapping so the
           // element netname matches the concat input (fresh) IDs.
           if (arrayConcatOldToNew.isNotEmpty && sl is SynthLogicArrayElement) {
@@ -1642,11 +1734,17 @@ class NetlistSynthesizer extends Synthesizer {
 
       netnames.removeWhere((name, nnRaw) {
         final nn = nnRaw as Map<String, Object?>?;
-        if (nn == null) return false;
+        if (nn == null) {
+          return false;
+        }
         final bits = nn['bits'] as List?;
-        if (bits == null) return false;
+        if (bits == null) {
+          return false;
+        }
         final intBits = bits.whereType<int>();
-        if (intBits.isEmpty) return false;
+        if (intBits.isEmpty) {
+          return false;
+        }
         return !intBits.any(drivenBits.contains);
       });
     }
@@ -1667,7 +1765,7 @@ class NetlistSynthesizer extends Synthesizer {
     assert(() {
       _validateNetlist(ports, cells, netnames, module.name);
       return true;
-    }());
+    }(), 'Netlist structural validation failed for ${module.name}');
 
     return NetlistSynthesisResult(
       module,
@@ -1699,8 +1797,7 @@ class NetlistSynthesizer extends Synthesizer {
     // output/inout ports.
     final consumedBits = <int>{
       ...ports.values
-          .where(
-              (p) => p['direction'] == 'output' || p['direction'] == 'inout')
+          .where((p) => p['direction'] == 'output' || p['direction'] == 'inout')
           .expand((p) => (p['bits'] as List?) ?? [])
           .whereType<int>(),
       ...cells.values.expand((c) {
@@ -1725,11 +1822,15 @@ class NetlistSynthesizer extends Synthesizer {
     for (final entry in cells.entries) {
       final cell = entry.value;
       final type = cell['type'] as String? ?? '';
-      if (transparentTypes.contains(type) || type == r'$const') continue;
+      if (transparentTypes.contains(type) || type == r'$const') {
+        continue;
+      }
 
       final conns = cell['connections'] as Map<String, dynamic>?;
       final pdirs = cell['port_directions'] as Map<String, dynamic>?;
-      if (conns == null || pdirs == null) continue;
+      if (conns == null || pdirs == null) {
+        continue;
+      }
 
       final outputBits = conns.entries
           .where((pe) => pdirs[pe.key] == 'output')
@@ -1737,8 +1838,7 @@ class NetlistSynthesizer extends Synthesizer {
           .whereType<int>()
           .toList();
 
-      if (outputBits.isNotEmpty &&
-          !outputBits.any(consumedBits.contains)) {
+      if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
         // ignore: avoid_print
         print('[netlist-validate] WARNING: $moduleName: '
             'cell "${entry.key}" (type: $type) has no consumed outputs '
@@ -1749,11 +1849,15 @@ class NetlistSynthesizer extends Synthesizer {
     // Check 2: no $const cell drives unconsumed wires.
     for (final entry in cells.entries) {
       final cell = entry.value;
-      if (cell['type'] != r'$const') continue;
+      if (cell['type'] != r'$const') {
+        continue;
+      }
 
       final conns = cell['connections'] as Map<String, dynamic>?;
       final pdirs = cell['port_directions'] as Map<String, dynamic>?;
-      if (conns == null || pdirs == null) continue;
+      if (conns == null || pdirs == null) {
+        continue;
+      }
 
       final outputBits = conns.entries
           .where((pe) => pdirs[pe.key] == 'output')
@@ -1761,8 +1865,7 @@ class NetlistSynthesizer extends Synthesizer {
           .whereType<int>()
           .toList();
 
-      if (outputBits.isNotEmpty &&
-          !outputBits.any(consumedBits.contains)) {
+      if (outputBits.isNotEmpty && !outputBits.any(consumedBits.contains)) {
         // ignore: avoid_print
         print('[netlist-validate] WARNING: $moduleName: '
             r'$const cell "${entry.key}" drives wires consumed by nothing '
