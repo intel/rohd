@@ -71,6 +71,7 @@ class NetlistSynthesisResult extends SynthesisResult {
     };
     final contents = const JsonEncoder.withIndent('  ').convert({
       'creator': 'NetlistSynthesizer (rohd)',
+      'version': NetlistService.formatVersion,
       'modules': {typeName: moduleEntry},
     });
     return [

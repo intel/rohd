@@ -31,6 +31,9 @@ import 'package:rohd/rohd.dart';
 /// print(netlist.moduleJson('FilterChannel'));
 /// ```
 class NetlistService {
+  /// The current format version for netlist JSON produced by this service.
+  static const String formatVersion = '0.0.5';
+
   /// The top-level [Module] being synthesized.
   final Module module;
 
@@ -53,7 +56,35 @@ class NetlistService {
     final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
     _modulesMap =
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    _loadedVersion = decoded['version'] as String?;
   }
+
+  /// The format version found in the loaded JSON, or `null` if absent.
+  String? _loadedVersion;
+
+  /// The format version string from the loaded netlist JSON.
+  ///
+  /// Returns the `version` field from the JSON if present, otherwise
+  /// returns [formatVersion] (assumes current format).
+  String get version => _loadedVersion ?? formatVersion;
+
+  /// Checks whether [version] is compatible with the current
+  /// [formatVersion].
+  ///
+  /// Compatible means the major version matches. Returns `true` if
+  /// the loaded JSON can be consumed by this version of the service.
+  static bool isCompatibleVersion(String version) {
+    final current = formatVersion.split('.');
+    final other = version.split('.');
+    if (other.length < 2 || current.length < 2) {
+      return false;
+    }
+    // Major and minor must match for compatibility.
+    return current[0] == other[0] && current[1] == other[1];
+  }
+
+  /// Whether the loaded netlist JSON is compatible with the current format.
+  bool get isCompatible => isCompatibleVersion(version);
 
   /// Creates a [NetlistService] for [module].
   ///
@@ -102,6 +133,7 @@ class NetlistService {
         }
         return jsonEncode(<String, Object?>{
           'creator': 'ROHD netlist synthesizer',
+          'version': formatVersion,
           'modules': <String, Object?>{definitionName: modData},
         });
       });
@@ -215,6 +247,7 @@ class NetlistService {
     return jsonEncode(<String, dynamic>{
       'netlist': <String, dynamic>{
         'creator': 'ROHD NetlistService (slim)',
+        'version': formatVersion,
         'rootInstanceName': rootName,
         'modules': slimModules,
       },

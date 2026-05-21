@@ -1922,6 +1922,7 @@ class NetlistSynthesizer extends Synthesizer {
 
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
+      'version': NetlistService.formatVersion,
       'modules': modules,
     };
 

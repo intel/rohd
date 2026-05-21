@@ -1174,7 +1174,8 @@ void main() {
       // Fetch FilterBank definition specifically
       final fbJson = netSvc.moduleJson(fb.definitionName);
       final parsed = jsonDecode(fbJson) as Map<String, dynamic>;
-      expect(parsed.containsKey(fb.definitionName), isTrue);
+      final modules = parsed['modules'] as Map<String, dynamic>;
+      expect(modules.containsKey(fb.definitionName), isTrue);
     });
 
     test('slimJson produces slim output', () async {
