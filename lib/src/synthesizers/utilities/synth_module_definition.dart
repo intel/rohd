@@ -14,6 +14,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
@@ -758,11 +759,11 @@ class SynthModuleDefinition {
 
   /// Picks names of signals and sub-modules.
   ///
-  /// Signal names are read from `Namer.signalNameOf` (for user-created
+  /// Signal names are read from [Namer.signalNameOf] for user-created
   /// [Logic] objects) or kept as literal constants and are allocated from
-  /// `Namer.signalNameOf`.  Submodule instance names are allocated
-  /// from `Namer.allocateRawName`.  All names share a single
-  /// namespace managed by the module's `Namer`.
+  /// [Namer.signalNameOf].  Submodule instance names are allocated
+  /// from [Namer.allocateName].  All names share a single
+  /// namespace managed by the module's [Namer].
   void _pickNames() {
     // Name allocation order matters — earlier claims get the unsuffixed name
     // when there are collisions.  This matches production ROHD priority:

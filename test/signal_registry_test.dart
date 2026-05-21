@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/namer.dart';
 import 'package:test/test.dart';
 
 // ────────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final allocated = mod.namer.allocateRawName('en');
+      final allocated = mod.namer.allocateName('en');
       expect(allocated, isNot(equals('en')),
           reason: 'Should not collide with existing port name');
       expect(allocated, contains('en'),
@@ -107,8 +108,8 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final a = mod.namer.allocateRawName('wire');
-      final b = mod.namer.allocateRawName('wire');
+      final a = mod.namer.allocateName('wire');
+      final b = mod.namer.allocateName('wire');
       expect(a, isNot(equals(b)), reason: 'Each allocation should be unique');
     });
   });
@@ -138,6 +139,177 @@ void main() {
       final names2 = await buildAndGetNames();
 
       expect(names1, equals(names2));
+    });
+  });
+
+  group('isAvailable', () {
+    test('port names are not available', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      expect(mod.namer.isAvailable('a'), isFalse);
+      expect(mod.namer.isAvailable('b'), isFalse);
+      expect(mod.namer.isAvailable('a_bar'), isFalse);
+      expect(mod.namer.isAvailable('a_and_b'), isFalse);
+    });
+
+    test('unallocated names are available', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      expect(mod.namer.isAvailable('xyz'), isTrue);
+      expect(mod.namer.isAvailable('new_signal'), isTrue);
+    });
+
+    test('allocated names become unavailable', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final name = mod.namer.allocateName('wire');
+      expect(mod.namer.isAvailable(name), isFalse);
+    });
+  });
+
+  group('allocateName reserved', () {
+    test('reserved allocation claims exact name', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final name = mod.namer.allocateName('my_wire', reserved: true);
+      expect(name, equals('my_wire'));
+      expect(mod.namer.isAvailable('my_wire'), isFalse);
+    });
+
+    test('reserved collision throws', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      // 'a' is already a port name
+      expect(
+        () => mod.namer.allocateName('a', reserved: true),
+        throwsException,
+      );
+    });
+  });
+
+  group('baseName', () {
+    test('reserved signal uses name directly', () {
+      final sig = Logic(name: 'myReserved', naming: Naming.reserved);
+      expect(Namer.baseName(sig), equals('myReserved'));
+    });
+
+    test('renameable signal uses sanitized structureName', () {
+      final sig = Logic(name: 'mySignal', naming: Naming.renameable);
+      // structureName for a top-level signal equals its name
+      expect(Namer.baseName(sig), contains('mySignal'));
+    });
+
+    test('unpreferred name detected', () {
+      expect(Naming.isUnpreferred('_hidden'), isTrue);
+      expect(Naming.isUnpreferred('visible'), isFalse);
+    });
+  });
+
+  group('signalNameOfBest', () {
+    test('const value returns value string', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final c = Const(LogicValue.ofString('01'));
+      final sig = Logic(name: 'x');
+      final name = mod.namer.signalNameOfBest(
+        [sig],
+        constValue: c,
+      );
+      expect(name, equals(c.value.toString()));
+    });
+
+    test('constNameDisallowed falls through to candidates', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final c = Const(LogicValue.ofString('01'));
+      final sig = Logic(name: 'fallback', naming: Naming.renameable);
+      final name = mod.namer.signalNameOfBest(
+        [sig],
+        constValue: c,
+        constNameDisallowed: true,
+      );
+      expect(name, isNot(equals(c.value.toString())));
+      expect(name, contains('fallback'));
+    });
+
+    test('port wins over other candidates', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final port = mod.input('a'); // this module's port
+      final reserved = Logic(name: 'res', naming: Naming.reserved);
+      final name = mod.namer.signalNameOfBest([reserved, port]);
+      expect(name, equals('a'));
+    });
+
+    test('reserved wins over mergeable', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final reserved = Logic(name: 'special', naming: Naming.reserved);
+      final mergeable = Logic(name: 'other', naming: Naming.mergeable);
+      final name = mod.namer.signalNameOfBest([mergeable, reserved]);
+      expect(name, equals('special'));
+    });
+
+    test('renameable wins over mergeable', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final renameable = Logic(name: 'ren', naming: Naming.renameable);
+      final mergeable = Logic(name: 'mrg', naming: Naming.mergeable);
+      final name = mod.namer.signalNameOfBest([mergeable, renameable]);
+      expect(name, contains('ren'));
+    });
+
+    test('preferred mergeable wins over unpreferred', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final preferred = Logic(name: 'good', naming: Naming.mergeable);
+      final unpreferred =
+          Logic(name: Naming.unpreferredName('bad'), naming: Naming.mergeable);
+      final name = mod.namer.signalNameOfBest([unpreferred, preferred]);
+      expect(name, contains('good'));
+    });
+
+    test('caches name for all candidates', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final s1 = Logic(name: 'winner', naming: Naming.renameable);
+      final s2 = Logic(name: 'loser', naming: Naming.mergeable);
+      final name = mod.namer.signalNameOfBest([s1, s2]);
+
+      // Both should resolve to the same cached name
+      expect(mod.namer.signalNameOf(s1), equals(name));
+      expect(mod.namer.signalNameOf(s2), equals(name));
+    });
+
+    test('empty candidates throws', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      expect(
+        () => mod.namer.signalNameOfBest([]),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('unnamed signals get a name', () async {
+      final mod = _GateMod(Logic(), Logic());
+      await mod.build();
+
+      final unnamed = Logic(naming: Naming.unnamed);
+      final name = mod.namer.signalNameOfBest([unnamed]);
+      expect(name, isNotEmpty);
     });
   });
 }
