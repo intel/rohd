@@ -7,6 +7,9 @@
 // 2026 May
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+@Tags(['ffi'])
+library;
 // ignore_for_file: avoid_print
 
 import 'dart:async';
