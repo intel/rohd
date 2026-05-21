@@ -268,8 +268,7 @@ class SystemCFfiCosim {
         .split('\n')
         .where((line) => !line.contains('Generation time:'))
         .join('\n');
-    final contentHash =
-        stableCode.hashCode.toUnsigned(32).toRadixString(16);
+    final contentHash = stableCode.hashCode.toUnsigned(32).toRadixString(16);
     final uniqueName = '${module.definitionName}_$contentHash';
 
     // Rename the top-level SC_MODULE in the generated code to the unique name
@@ -675,8 +674,8 @@ class SystemCFfiCosim {
       ..writeln()
       ..writeln('    auto* ctx = new CosimContext();')
 
-    // Instantiate DUT
-    ..writeln('    ctx->dut = new $topModule("dut");');
+      // Instantiate DUT
+      ..writeln('    ctx->dut = new $topModule("dut");');
 
     // Bind all inputs (including clocks — driven via sc_signal<bool>)
     for (final name in _inputWidths.keys) {
