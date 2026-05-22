@@ -114,7 +114,7 @@ void main() {
       } finally {
         dir.deleteSync(recursive: true);
       }
-    });
+    }, testOn: 'vm');
 
     test('register false does not register', () async {
       final mod = SimpleModule(Logic());
