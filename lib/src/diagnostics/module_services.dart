@@ -60,9 +60,8 @@ class ModuleServices {
   SvService? svService;
 
   /// Returns SV synthesis metadata as JSON, or an unavailable status.
-  String get svJSON => svService != null
-      ? jsonEncode(svService!.toJson())
-      : _unavailable('sv');
+  String get svJSON =>
+      svService != null ? jsonEncode(svService!.toJson()) : _unavailable('sv');
 
   // ─── Helpers ──────────────────────────────────────────────────
 

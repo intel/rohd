@@ -425,14 +425,22 @@ abstract class SimCompare {
 
     if (!dontDeleteTmpFiles) {
       try {
-        File(tmpOutput).deleteSync();
-        File(tmpTestFile).deleteSync();
+        final outFile = File(tmpOutput);
+        if (outFile.existsSync()) {
+          outFile.deleteSync();
+        }
+        final testFile = File(tmpTestFile);
+        if (testFile.existsSync()) {
+          testFile.deleteSync();
+        }
         if (dumpWaves) {
-          File(tmpVcdFile).deleteSync();
+          final vcdFile = File(tmpVcdFile);
+          if (vcdFile.existsSync()) {
+            vcdFile.deleteSync();
+          }
         }
       } on Exception catch (e) {
         print("Couldn't delete: $e");
-        return false;
       }
     }
     return true;
@@ -496,54 +504,6 @@ abstract class SimCompare {
     return _pchPath = pchDir;
   }
 
-  /// Cached path to the shared Makefile (one per compiler-flags combination).
-  static String? _makefilePath;
-
-  /// Creates a shared Makefile once, reused for all compilations.
-  /// TARGET and SRC are passed as make variables at invocation time.
-  /// Uses atomic write (write-to-temp + rename) to avoid races when
-  /// multiple test isolates create the file concurrently.
-  static String _ensureMakefile({
-    required String dir,
-    required String cxxStd,
-    required String pchInclude,
-    required String scHome,
-    required String scLib,
-  }) {
-    final path = '$dir/Makefile_sc';
-
-    if (_makefilePath != null && File(path).existsSync()) {
-      return _makefilePath!;
-    }
-
-    // If already on disk from another isolate, just reuse it
-    if (File(path).existsSync()) {
-      return _makefilePath = path;
-    }
-
-    final contents = '''
-CXX = g++
-CXXFLAGS = -std=$cxxStd -pipe $pchInclude-I$scHome
-LDFLAGS = -L$scLib -lsystemc
-
-all: \$(TARGET)
-
-\$(TARGET): \$(SRC)
-\t\$(CXX) \$(CXXFLAGS) -o \$(TARGET) \$(SRC) \$(LDFLAGS)
-
-.PHONY: all
-''';
-    Directory(dir).createSync(recursive: true);
-
-    // Atomic write: write to temp file, then rename so concurrent
-    // readers never see a truncated Makefile.
-    File('$path.${pid.hashCode}')
-      ..writeAsStringSync(contents)
-      ..renameSync(path);
-
-    return _makefilePath = path;
-  }
-
   /// Resolves SystemC home/lib paths. If explicit paths are given, uses them.
   /// Otherwise uses the default Accellera install paths.
   static (String?, String?) _resolveSystemCPaths(String scHome, String scLib) {
@@ -587,7 +547,6 @@ all: \$(TARGET)
   static void cleanupSystemCCache({bool keepPch = true}) {
     _compilationCache.clear();
     _pchPath = null;
-    _makefilePath = null;
     if (kIsWeb) {
       return;
     }
@@ -596,7 +555,12 @@ all: \$(TARGET)
       if (dir.existsSync()) {
         if (keepPch) {
           for (final entity in dir.listSync()) {
+            final name = entity.uri.pathSegments.last;
+            // Only remove SystemC artifacts (tmp_sc_*), preserve iverilog files
             if (entity is Directory && entity.path.endsWith('/pch')) {
+              continue;
+            }
+            if (!name.startsWith('tmp_sc_') && name != 'Makefile_sc') {
               continue;
             }
             entity.deleteSync(recursive: true);
@@ -844,19 +808,19 @@ all: \$(TARGET)
 
     // Build precompiled header on first use
     final pchDir = _ensurePch(resolvedHome, cxxStd);
-    final pchInclude = pchDir != null ? '-I$pchDir ' : '';
+    final pchArgs = pchDir != null ? ['-I$pchDir'] : <String>[];
 
-    // Create shared Makefile once (keyed by compiler flags)
-    final makefile = _ensureMakefile(
-      dir: dir,
-      cxxStd: cxxStd,
-      pchInclude: pchInclude,
-      scHome: resolvedHome,
-      scLib: resolvedLib,
-    );
-
-    final compileResult = Process.runSync(
-        'make', ['-f', makefile, 'TARGET=$tmpOutput', 'SRC=$tmpCppFile']);
+    final compileResult = Process.runSync('g++', [
+      '-std=$cxxStd',
+      '-pipe',
+      ...pchArgs,
+      '-I$resolvedHome',
+      '-o',
+      tmpOutput,
+      tmpCppFile,
+      '-L$resolvedLib',
+      '-lsystemc',
+    ]);
     if (compileResult.exitCode != 0) {
       print('SystemC compilation failed:');
       print(compileResult.stdout);

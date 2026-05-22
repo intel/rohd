@@ -47,8 +47,7 @@ class SvService {
   /// DevTools access.
   SvService(this.module, {bool register = true}) {
     if (!module.hasBuilt) {
-      throw Exception(
-          'Module must be built before creating SvService. '
+      throw Exception('Module must be built before creating SvService. '
           'Call build() first.');
     }
 
@@ -65,8 +64,7 @@ class SvService {
 
   /// Returns the concatenated SystemVerilog output as a single string,
   /// matching the format of [Module.generateSynth].
-  String get allContents =>
-      fileContents.map((fc) => fc.contents).join('\n\n');
+  String get allContents => fileContents.map((fc) => fc.contents).join('\n\n');
 
   /// Returns a map from module definition name to its SV file contents.
   ///

@@ -40,26 +40,3 @@ g++ -std="$CXX_STD" -I"$SC_HOME" -x c++-header \
     -o "$PCH_DIR/systemc.h.gch" "$SC_HOME/systemc.h"
 
 echo "PCH built: $PCH_DIR/systemc.h.gch"
-
-# Pre-create the shared Makefile
-MAKEFILE="tmp_test/Makefile_sc"
-cat > "$MAKEFILE" <<'EOF'
-CXX = g++
-CXXFLAGS = -std=__CXX_STD__ -pipe -I__PCH_DIR__ -I__SC_HOME__
-LDFLAGS = -L__SC_LIB__ -lsystemc
-
-all: $(TARGET)
-
-$(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRC) $(LDFLAGS)
-
-.PHONY: all
-EOF
-
-# Substitute paths into the Makefile
-sed -i "s|__CXX_STD__|$CXX_STD|g" "$MAKEFILE"
-sed -i "s|__PCH_DIR__|$PCH_DIR|g" "$MAKEFILE"
-sed -i "s|__SC_HOME__|$SC_HOME|g" "$MAKEFILE"
-sed -i "s|__SC_LIB__|$SC_LIB|g" "$MAKEFILE"
-
-echo "Makefile created: $MAKEFILE"
