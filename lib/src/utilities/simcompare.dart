@@ -553,22 +553,22 @@ abstract class SimCompare {
     try {
       final dir = Directory('tmp_test');
       if (dir.existsSync()) {
-        if (keepPch) {
-          for (final entity in dir.listSync()) {
-            final name = entity.uri.pathSegments.last;
-            // Only remove SystemC artifacts (tmp_sc_*), preserve iverilog files
-            if (entity is Directory && entity.path.endsWith('/pch')) {
-              continue;
-            }
-            if (!name.startsWith('tmp_sc_') && name != 'Makefile_sc') {
-              continue;
-            }
+        for (final entity in dir.listSync()) {
+          final name = entity.uri.pathSegments.last;
+
+          // Always remove SystemC artifacts (tmp_sc_*, Makefile_sc)
+          if (name.startsWith('tmp_sc_') || name == 'Makefile_sc') {
             entity.deleteSync(recursive: true);
+            continue;
           }
-        } else {
-          dir
-            ..deleteSync(recursive: true)
-            ..createSync();
+
+          // Remove pch/ directory only when keepPch is false
+          if (!keepPch && entity is Directory && entity.path.endsWith('/pch')) {
+            entity.deleteSync(recursive: true);
+            continue;
+          }
+
+          // Leave everything else (iverilog files from parallel tests) alone
         }
       }
     } on Exception catch (_) {}

@@ -66,6 +66,72 @@ class SystemCSynthesisResult extends SynthesisResult {
       ]);
 
   // ────────────────────────────────────────────────────────────────────
+  // Line/column position tracking for debug tracing
+  // ────────────────────────────────────────────────────────────────────
+
+  /// SystemC line map: signal/instance name → `'line:col'` position in the
+  /// generated SystemC output (both 1-based).
+  ///
+  /// Populated by [_buildScLineMap] after the final text is assembled.
+  /// Keys match the names used in the FLC trace data: canonical signal
+  /// names (from [SynthLogic.name]) for signals and
+  /// [Module.uniqueInstanceName] for submodule instances.
+  Map<String, String> get scLineMap => Map.unmodifiable(_scLineMap);
+  final Map<String, String> _scLineMap = {};
+
+  /// Walks the already-generated [scText] counting newlines, and records
+  /// the 1-based `line:col` of each signal declaration, port, and
+  /// submodule instance member.
+  ///
+  /// This mirrors the approach used by the SystemVerilog synthesizer's
+  /// `_buildSvLineMap` in the `source_debug` branch, enabling the
+  /// `SignalSourceTracer` to emit FLC data with both SV and SC positions.
+  void _buildScLineMap(String scText) {
+    _scLineMap.clear();
+
+    final lines = scText.split('\n');
+
+    /// Scans forward from [startLine] for a line containing [name] as a
+    /// standalone identifier, then records it at its 1-based line:col
+    /// position.
+    void scanAndRecord(String name, {int startLine = 0}) {
+      final escaped = RegExp.escape(name);
+      final symbolRe = RegExp(r'\b' + escaped + r'\b');
+      for (var i = startLine; i < lines.length; i++) {
+        final match = symbolRe.firstMatch(lines[i]);
+        if (match != null) {
+          final col = match.start + 1; // 1-based
+          _scLineMap.putIfAbsent(name, () => '${i + 1}:$col');
+          return;
+        }
+      }
+    }
+
+    // Ports — scan for sc_in/sc_out/sc_inout declarations.
+    for (final sig in _synthModuleDefinition.inputs) {
+      scanAndRecord(sig.name);
+    }
+    for (final sig in _synthModuleDefinition.outputs) {
+      scanAndRecord(sig.name);
+    }
+    for (final sig in _synthModuleDefinition.inOuts) {
+      scanAndRecord(sig.name);
+    }
+
+    // Internal signals — sc_signal declarations.
+    for (final sig in _synthModuleDefinition.internalSignals
+        .where((e) => e.needsDeclaration)) {
+      scanAndRecord(sig.name);
+    }
+
+    // Sub-module instances — member declarations (e.g. `inner* inner_inst;`).
+    for (final smi in _synthModuleDefinition.subModuleInstantiations
+        .where((s) => s.needsInstantiation)) {
+      scanAndRecord(smi.name);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────
   // Clock/reset detection
   // ────────────────────────────────────────────────────────────────────
 
@@ -788,6 +854,7 @@ class SystemCSynthesisResult extends SynthesisResult {
           final resolved = _resolveClockAndEdge(triggerSL, isPosedge);
           // Skip if the resolved signal is constant
           final resolvedSL = _synthModuleDefinition.logicToSynthMap.values
+              .where((sl) => sl.replacement == null && !sl.declarationCleared)
               .where((sl) => sl.name == resolved.clockName)
               .firstOrNull;
           if (resolvedSL != null && resolvedSL.isConstant) {
@@ -1551,7 +1618,11 @@ class SystemCSynthesisResult extends SynthesisResult {
     }
 
     buf.writeln('};');
-    return buf.toString();
+    final text = buf.toString();
+
+    _buildScLineMap(text);
+
+    return text;
   }
 }
 
