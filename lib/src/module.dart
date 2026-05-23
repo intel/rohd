@@ -1103,12 +1103,12 @@ abstract class Module {
   /// [LogicStructure] ports (named `<prefix>_in` / `<prefix>_out`) rather than
   /// individual leaf ports. The prefix is derived from [uniquify].
   InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
-              TagType extends Enum>(InterfaceType source,
-          {Iterable<TagType>? inputTags,
-          Iterable<TagType>? outputTags,
-          Iterable<TagType>? inOutTags,
-          String Function(String original)? uniquify,
-          bool asStruct = false}) {
+          TagType extends Enum>(InterfaceType source,
+      {Iterable<TagType>? inputTags,
+      Iterable<TagType>? outputTags,
+      Iterable<TagType>? inOutTags,
+      String Function(String original)? uniquify,
+      bool asStruct = false}) {
     if (!asStruct) {
       return (source.clone() as InterfaceType)
         ..connectIO(this, source,
@@ -1135,34 +1135,14 @@ abstract class Module {
   /// individual leaf ports. The prefix is derived from [uniquify].
   InterfaceType addPairInterfacePorts<InterfaceType extends PairInterface>(
       InterfaceType source, PairRole role,
-      {String Function(String original)? uniquify,
-      bool asStruct = false}) {
+      {String Function(String original)? uniquify, bool asStruct = false}) {
     if (!asStruct) {
       return (source.clone() as InterfaceType)
         ..pairConnectIO(this, source, role, uniquify: uniquify);
     }
 
-    // Determine input/output tags based on role (mirrors pairConnectIO logic).
-    final List<PairDirection> inputTags;
-    final List<PairDirection> outputTags;
-    final inOutTags = [PairDirection.commonInOuts];
-
-    switch (role) {
-      case PairRole.consumer:
-        inputTags = [PairDirection.sharedInputs, PairDirection.fromProvider];
-        outputTags = [PairDirection.fromConsumer];
-      case PairRole.provider:
-        inputTags = [PairDirection.sharedInputs, PairDirection.fromConsumer];
-        outputTags = [PairDirection.fromProvider];
-    }
-
-    return _addInterfacePortsAsStruct<InterfaceType, PairDirection>(
-      source,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
-      uniquify: uniquify,
-    );
+    return (source.clone() as InterfaceType)
+      ..pairConnectIOAsStruct(this, source, role, uniquify: uniquify);
   }
 
   /// Derives a group prefix from [uniquify], or falls back to 'intf'.
@@ -1213,8 +1193,7 @@ abstract class Module {
       if (srcInputPorts.isNotEmpty) {
         // Create elements matching source port widths/names.
         final elements = [
-          for (final p in srcInputPorts)
-            Logic(name: u(p.name), width: p.width),
+          for (final p in srcInputPorts) Logic(name: u(p.name), width: p.width),
         ];
         final structIn = LogicStructure(elements, name: '${prefix}_in');
         final inPort = addTypedInput('${prefix}_in', structIn);
@@ -1266,8 +1245,8 @@ abstract class Module {
 
       for (final port in srcInOutPorts) {
         final portName = u(port.name);
-        final inOutPort = addInOut(portName, source.port(port.name),
-            width: port.width);
+        final inOutPort =
+            addInOut(portName, source.port(port.name), width: port.width);
         (cloned as Interface<TagType>).port(port.name) <= inOutPort;
       }
     }
