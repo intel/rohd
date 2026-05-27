@@ -69,19 +69,26 @@ class SystemCSynthesisResult extends SynthesisResult {
   // Line/column position tracking for debug tracing
   // ────────────────────────────────────────────────────────────────────
 
-  /// SystemC line map: signal/instance name → `'line:col'` position in the
-  /// generated SystemC output (both 1-based).
+  /// SystemC line map: signal/instance name → list of `'line:col'` positions
+  /// in the generated SystemC output (both 1-based).
+  ///
+  /// Each name's list contains the first occurrence (the declaration / port /
+  /// submodule member line) followed by each assignment LHS line where that
+  /// name appears on the left of `=` in a method body. Positions are in
+  /// textual (source) order; consumers that need the "assignments first,
+  /// declaration last" convention should reorder at emit time.
   ///
   /// Populated by [_buildScLineMap] after the final text is assembled.
   /// Keys match the names used in the FLC trace data: canonical signal
   /// names (from [SynthLogic.name]) for signals and
   /// [Module.uniqueInstanceName] for submodule instances.
-  Map<String, String> get scLineMap => Map.unmodifiable(_scLineMap);
-  final Map<String, String> _scLineMap = {};
+  Map<String, List<String>> get scLineMap => Map.unmodifiable(
+      _scLineMap.map((k, v) => MapEntry(k, List<String>.unmodifiable(v))));
+  final Map<String, List<String>> _scLineMap = {};
 
   /// Walks the already-generated [scText] counting newlines, and records
-  /// the 1-based `line:col` of each signal declaration, port, and
-  /// submodule instance member.
+  /// the 1-based `line:col` of each signal declaration, port, submodule
+  /// instance member, and assignment LHS.
   ///
   /// This mirrors the approach used by the SystemVerilog synthesizer's
   /// `_buildSvLineMap` in the `source_debug` branch, enabling the
@@ -106,6 +113,8 @@ class SystemCSynthesisResult extends SynthesisResult {
     }
 
     // Single-pass: tokenize each line once, check tokens against target set.
+    // Record the first occurrence (declaration) and any subsequent occurrence
+    // that is an assignment LHS (identifier followed by `=` but not `==`).
     final identRe = RegExp(r'[A-Za-z_]\w*');
     var lineNum = 1;
     var lineStart = 0;
@@ -113,19 +122,44 @@ class SystemCSynthesisResult extends SynthesisResult {
 
     for (var i = 0; i <= len; i++) {
       if (i == len || scText[i] == '\n') {
-        if (_scLineMap.length < targets.length) {
-          final lineText = scText.substring(lineStart, i);
-          for (final match in identRe.allMatches(lineText)) {
-            final word = match.group(0)!;
-            if (targets.contains(word)) {
-              _scLineMap.putIfAbsent(word, () => '$lineNum:${match.start + 1}');
-            }
+        final lineText = scText.substring(lineStart, i);
+        for (final match in identRe.allMatches(lineText)) {
+          final word = match.group(0)!;
+          if (!targets.contains(word)) {
+            continue;
+          }
+          final pos = '$lineNum:${match.start + 1}';
+          final list = _scLineMap[word];
+          if (list == null) {
+            // First occurrence — declaration / port / sub-module member.
+            _scLineMap[word] = [pos];
+          } else if (_isAssignmentLhs(lineText, match.end) &&
+              !list.contains(pos)) {
+            // Subsequent occurrence on an assignment LHS — record it.
+            list.add(pos);
           }
         }
         lineNum++;
         lineStart = i + 1;
       }
     }
+  }
+
+  /// Returns true if the identifier ending at [afterIdent] in [lineText] is
+  /// followed (after optional whitespace) by a single `=` (and not `==`).
+  static bool _isAssignmentLhs(String lineText, int afterIdent) {
+    var j = afterIdent;
+    while (j < lineText.length &&
+        (lineText.codeUnitAt(j) == 0x20 || lineText.codeUnitAt(j) == 0x09)) {
+      j++;
+    }
+    if (j >= lineText.length || lineText[j] != '=') {
+      return false;
+    }
+    if (j + 1 < lineText.length && lineText[j + 1] == '=') {
+      return false;
+    }
+    return true;
   }
 
   // ────────────────────────────────────────────────────────────────────
