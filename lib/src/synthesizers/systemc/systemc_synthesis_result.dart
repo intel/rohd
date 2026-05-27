@@ -89,45 +89,42 @@ class SystemCSynthesisResult extends SynthesisResult {
   void _buildScLineMap(String scText) {
     _scLineMap.clear();
 
-    final lines = scText.split('\n');
+    final targets = <String>{
+      for (final sig in _synthModuleDefinition.inputs) sig.name,
+      for (final sig in _synthModuleDefinition.outputs) sig.name,
+      for (final sig in _synthModuleDefinition.inOuts) sig.name,
+      for (final sig in _synthModuleDefinition.internalSignals
+          .where((e) => e.needsDeclaration))
+        sig.name,
+      for (final smi in _synthModuleDefinition.subModuleInstantiations
+          .where((s) => s.needsInstantiation))
+        smi.name,
+    };
 
-    /// Scans forward from [startLine] for a line containing [name] as a
-    /// standalone identifier, then records it at its 1-based line:col
-    /// position.
-    void scanAndRecord(String name, {int startLine = 0}) {
-      final escaped = RegExp.escape(name);
-      final symbolRe = RegExp(r'\b' + escaped + r'\b');
-      for (var i = startLine; i < lines.length; i++) {
-        final match = symbolRe.firstMatch(lines[i]);
-        if (match != null) {
-          final col = match.start + 1; // 1-based
-          _scLineMap.putIfAbsent(name, () => '${i + 1}:$col');
-          return;
+    if (targets.isEmpty) {
+      return;
+    }
+
+    // Single-pass: tokenize each line once, check tokens against target set.
+    final identRe = RegExp(r'[A-Za-z_]\w*');
+    var lineNum = 1;
+    var lineStart = 0;
+    final len = scText.length;
+
+    for (var i = 0; i <= len; i++) {
+      if (i == len || scText[i] == '\n') {
+        if (_scLineMap.length < targets.length) {
+          final lineText = scText.substring(lineStart, i);
+          for (final match in identRe.allMatches(lineText)) {
+            final word = match.group(0)!;
+            if (targets.contains(word)) {
+              _scLineMap.putIfAbsent(word, () => '$lineNum:${match.start + 1}');
+            }
+          }
         }
+        lineNum++;
+        lineStart = i + 1;
       }
-    }
-
-    // Ports — scan for sc_in/sc_out/sc_inout declarations.
-    for (final sig in _synthModuleDefinition.inputs) {
-      scanAndRecord(sig.name);
-    }
-    for (final sig in _synthModuleDefinition.outputs) {
-      scanAndRecord(sig.name);
-    }
-    for (final sig in _synthModuleDefinition.inOuts) {
-      scanAndRecord(sig.name);
-    }
-
-    // Internal signals — sc_signal declarations.
-    for (final sig in _synthModuleDefinition.internalSignals
-        .where((e) => e.needsDeclaration)) {
-      scanAndRecord(sig.name);
-    }
-
-    // Sub-module instances — member declarations (e.g. `inner* inner_inst;`).
-    for (final smi in _synthModuleDefinition.subModuleInstantiations
-        .where((s) => s.needsInstantiation)) {
-      scanAndRecord(smi.name);
     }
   }
 
