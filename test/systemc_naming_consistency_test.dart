@@ -290,9 +290,15 @@ void main() {
       for (final portName in [...mod.inputs.keys, ...mod.outputs.keys]) {
         expect(lineMap, contains(portName),
             reason: 'scLineMap should contain port "$portName"');
-        // Each entry should be 'line:col' format.
-        expect(lineMap[portName], matches(RegExp(r'^\d+:\d+$')),
-            reason: 'Entry for "$portName" should be "line:col" format');
+        // Each entry should be a non-empty list of 'line:col' strings.
+        final positions = lineMap[portName]!;
+        expect(positions, isNotEmpty,
+            reason: 'Entry for "$portName" should have at least one position');
+        for (final p in positions) {
+          expect(p, matches(RegExp(r'^\d+:\d+$')),
+              reason: 'Position "$p" for "$portName" '
+                  'should be "line:col" format');
+        }
       }
     });
 
@@ -308,26 +314,83 @@ void main() {
       final lineMap = topResult.scLineMap;
       final lines = text.split('\n');
 
-      // Verify that each recorded position actually contains the symbol name.
+      // Verify that every recorded position actually contains the symbol name.
       for (final entry in lineMap.entries) {
         final name = entry.key;
-        final lineCol = entry.value;
-        final parts = lineCol.split(':');
-        final line = int.parse(parts[0]) - 1; // 0-based
-        final col = int.parse(parts[1]) - 1; // 0-based
+        for (final lineCol in entry.value) {
+          final parts = lineCol.split(':');
+          final line = int.parse(parts[0]) - 1; // 0-based
+          final col = int.parse(parts[1]) - 1; // 0-based
 
-        expect(line, lessThan(lines.length),
-            reason: 'Line for "$name" should be within text');
-        expect(lines[line], contains(name),
-            reason: 'Line ${line + 1} should contain "$name".\n'
-                'Actual line: "${lines[line]}"');
-        // Verify column position points to the name.
-        final colEnd = col + name.length;
-        if (colEnd <= lines[line].length) {
-          expect(lines[line].substring(col, colEnd), equals(name),
-              reason: 'Column position for "$name" should point to the name');
+          expect(line, lessThan(lines.length),
+              reason: 'Line for "$name" should be within text');
+          expect(lines[line], contains(name),
+              reason: 'Line ${line + 1} should contain "$name".\n'
+                  'Actual line: "${lines[line]}"');
+          // Verify column position points to the name.
+          final colEnd = col + name.length;
+          if (colEnd <= lines[line].length) {
+            expect(lines[line].substring(col, colEnd), equals(name),
+                reason:
+                    'Column position for "$name" should point to the name');
+          }
         }
       }
+    });
+
+    test('scLineMap records multiple positions for re-assigned signals',
+        () async {
+      // _CombModule drives output `y` from two arms of an If/Else, so the
+      // SystemC output contains the declaration line plus two assignment
+      // LHS lines for `y`. All three should be recorded.
+      final mod = _CombModule(Logic(width: 8), Logic(width: 8));
+      await mod.build();
+
+      final synthBuilder = SynthBuilder(mod, SystemCSynthesizer());
+      final results = synthBuilder.synthesisResults;
+      final topResult =
+          results.firstWhere((r) => r.module == mod) as SystemCSynthesisResult;
+      final text = topResult.toFileContents();
+      final lineMap = topResult.scLineMap;
+      final lines = text.split('\n');
+
+      final yPositions = lineMap['y'];
+      expect(yPositions, isNotNull, reason: 'output `y` must be recorded');
+      expect(yPositions!.length, greaterThanOrEqualTo(3),
+          reason: 'Expected the declaration plus at least two assignment '
+              'positions for `y`, got: $yPositions');
+
+      // Positions must be in textual (line-number) order.
+      final lineNumbers =
+          yPositions.map((p) => int.parse(p.split(':')[0])).toList();
+      final sorted = [...lineNumbers]..sort();
+      expect(lineNumbers, equals(sorted),
+          reason: 'scLineMap positions must be in source order');
+
+      // No duplicates.
+      expect(yPositions.toSet().length, equals(yPositions.length),
+          reason: 'scLineMap should not record duplicate positions');
+
+      // Each recorded line must literally contain `y` at the recorded col.
+      for (final p in yPositions) {
+        final parts = p.split(':');
+        final line = int.parse(parts[0]) - 1;
+        final col = int.parse(parts[1]) - 1;
+        expect(lines[line].substring(col, col + 1), equals('y'),
+            reason: 'Position $p should point to `y`');
+      }
+
+      // Verify at least two of the recorded lines are assignment LHS
+      // (i.e. line text matches `<spaces>y<spaces>=<non `=`>`).
+      final assignLhsRe = RegExp(r'^\s*y\s*=(?!=)');
+      final assignmentLines =
+          yPositions.where((p) {
+        final line = int.parse(p.split(':')[0]) - 1;
+        return assignLhsRe.hasMatch(lines[line]);
+      }).toList();
+      expect(assignmentLines.length, greaterThanOrEqualTo(2),
+          reason: 'Expected at least two assignment LHS lines for `y`, '
+              'got: $assignmentLines');
     });
   });
 }
