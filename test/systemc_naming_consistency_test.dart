@@ -331,8 +331,7 @@ void main() {
           final colEnd = col + name.length;
           if (colEnd <= lines[line].length) {
             expect(lines[line].substring(col, colEnd), equals(name),
-                reason:
-                    'Column position for "$name" should point to the name');
+                reason: 'Column position for "$name" should point to the name');
           }
         }
       }
@@ -383,8 +382,7 @@ void main() {
       // Verify at least two of the recorded lines are assignment LHS
       // (i.e. line text matches `<spaces>y<spaces>=<non `=`>`).
       final assignLhsRe = RegExp(r'^\s*y\s*=(?!=)');
-      final assignmentLines =
-          yPositions.where((p) {
+      final assignmentLines = yPositions.where((p) {
         final line = int.parse(p.split(':')[0]) - 1;
         return assignLhsRe.hasMatch(lines[line]);
       }).toList();
