@@ -1,3 +1,7 @@
+## Next release
+
+- Improved generated SystemVerilog to inline single-bit array-element connections (e.g. a bus blasted into a `LogicArray` whose elements drive 1-bit submodule ports) directly into the consuming ports, eliminating unnecessary intermediate array declarations, `assign`s, and `net_connect`s when it is safe to do so.
+
 ## 0.6.9
 
 - Fixed a bug where unnamed or mergeable inOut loop-back connections on a single module could be incorrectly omitted from the generated SystemVerilog (<https://github.com/intel/rohd/pull/655>).

@@ -65,6 +65,75 @@ class ArrayWithShuffledAssignment extends Module {
   }
 }
 
+/// Inverts a single bit.
+class OneBitInverter extends Module {
+  Logic get o => output('o');
+  OneBitInverter(Logic i) {
+    i = addInput('i', i);
+    addOutput('o') <= ~i;
+  }
+}
+
+/// Bidirectionally connects two single-bit nets.
+class OneBitNetPassthrough extends Module {
+  OneBitNetPassthrough(Logic x, Logic y) {
+    x = addInOut('x', x);
+    y = addInOut('y', y);
+    x <= y;
+  }
+}
+
+/// A flat input bus blasted into an array, each element feeding a 1-bit
+/// submodule input.  The intermediate array should disappear and the submodule
+/// ports should reference `a[i]` directly.
+class LogicArrayElementsToSubmodules extends Module {
+  LogicArrayElementsToSubmodules(Logic a, {bool reversed = false}) {
+    a = addInput('a', a, width: 4);
+    final arr = LogicArray([4], 1, name: 'arr', naming: Naming.mergeable);
+    arr <= a;
+
+    final results = <Logic>[];
+    for (var i = 0; i < 4; i++) {
+      final srcIdx = reversed ? 3 - i : i;
+      results.add(OneBitInverter(arr.elements[srcIdx]).o);
+    }
+
+    addOutput('y', width: 4) <= results.rswizzle();
+  }
+}
+
+/// A flat inout bus blasted into a net array, each element feeding a 1-bit
+/// submodule inout, which bidirectionally connects to an output bus.
+class NetArrayElementsToSubmodules extends Module {
+  NetArrayElementsToSubmodules(LogicNet a, LogicNet b) {
+    a = addInOut('a', a, width: 4);
+    b = addInOut('b', b, width: 4);
+    final arr = LogicArray.net([4], 1, name: 'arr', naming: Naming.mergeable);
+    arr <= a;
+
+    for (var i = 0; i < 4; i++) {
+      OneBitNetPassthrough(arr.elements[i], b.elements[i]);
+    }
+  }
+}
+
+/// An array where only some elements are driven (by submodule-feeding subsets)
+/// and the rest are undriven, with the whole array reconstructed via a swizzle.
+/// This must NOT be inlined away (partial inlining would change `x`/`z`
+/// behavior of the undriven bits).
+class PartiallyDrivenArray extends Module {
+  PartiallyDrivenArray(Logic a) {
+    a = addInput('a', a, width: 2);
+    final arr = LogicArray([4], 1, name: 'arr', naming: Naming.mergeable);
+
+    // only drive the middle two bits from `a`
+    arr.elements[1] <= a[0];
+    arr.elements[2] <= a[1];
+
+    addOutput('y', width: 4) <= arr.elements.rswizzle();
+  }
+}
+
 class ArrayModuleWithNetIntermediates extends Module {
   ArrayModuleWithNetIntermediates(LogicArray a, LogicArray b) {
     a = addInOutArray('a', a,
@@ -181,5 +250,91 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  group('array element inlining', () {
+    test('logic elements inline directly into submodules', () async {
+      final mod = LogicArrayElementsToSubmodules(Logic(width: 4));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // the intermediate array should be gone
+      expect(sv, isNot(contains('arr')));
+      // submodule inputs should reference `a[i]` directly
+      for (var i = 0; i < 4; i++) {
+        expect(sv, contains('.i((a[$i]))'));
+      }
+
+      final vectors = [
+        Vector({'a': bin('0000')}, {'y': bin('1111')}),
+        Vector({'a': bin('1010')}, {'y': bin('0101')}),
+        Vector({'a': bin('1100')}, {'y': bin('0011')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('reversed/out-of-order logic elements inline directly', () async {
+      final mod =
+          LogicArrayElementsToSubmodules(Logic(width: 4), reversed: true);
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      expect(sv, isNot(contains('arr')));
+      for (var i = 0; i < 4; i++) {
+        expect(sv, contains('.i((a[$i]))'));
+      }
+
+      // y[i] = ~a[3-i]
+      final vectors = [
+        Vector({'a': bin('0000')}, {'y': bin('1111')}),
+        Vector({'a': bin('1010')}, {'y': bin('1010')}),
+        Vector({'a': bin('1000')}, {'y': bin('1110')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('net elements inline directly without net_connect', () async {
+      final mod =
+          NetArrayElementsToSubmodules(LogicNet(width: 4), LogicNet(width: 4));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // the intermediate array and its net_connects should be gone
+      expect(sv, isNot(contains('wire [3:0] arr')));
+      expect(sv, isNot(contains('net_connect (arr')));
+      for (var i = 0; i < 4; i++) {
+        expect(sv, contains('.x((a[$i]))'));
+      }
+
+      final vectors = [
+        Vector({'a': bin('0000')}, {'b': bin('0000')}),
+        Vector({'a': bin('1010')}, {'b': bin('1010')}),
+        Vector({'a': bin('1101')}, {'b': bin('1101')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('partially-driven array is not inlined', () async {
+      final mod = PartiallyDrivenArray(Logic(width: 2));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // the array must remain declared since undriven bits must stay `z`
+      expect(sv, contains('logic [3:0] arr'));
+
+      final vectors = [
+        Vector({'a': bin('01')}, {'y': LogicValue.ofString('z01z')}),
+        Vector({'a': bin('10')}, {'y': LogicValue.ofString('z10z')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 }

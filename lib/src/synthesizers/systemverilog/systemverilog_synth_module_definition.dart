@@ -126,12 +126,115 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
 
+    // Resolves a [SynthLogic] through any replacement that may have occurred
+    // during earlier merging so that identity comparisons are consistent.
+    SynthLogic resolve(SynthLogic synthLogic) =>
+        synthLogic.replacement ?? synthLogic;
+
+    // Arrays which are used as a whole (not just element-by-element) anywhere:
+    // as a port of this module, in a submodule port mapping, or in an
+    // assignment.  We must NOT inline away the elements of such arrays, since
+    // the array declaration is still needed (and elements could lose
+    // connections).
+    final aggregateUsedArrays = <SynthLogic>{};
+    void markIfAggregateArray(SynthLogic? synthLogic) {
+      if (synthLogic != null && synthLogic.isArray) {
+        aggregateUsedArrays.add(resolve(synthLogic));
+      }
+    }
+
+    [...inputs, ...outputs, ...inOuts].forEach(markIfAggregateArray);
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.outputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values,
+      ].forEach(markIfAggregateArray);
+    }
+    for (final assignment in assignments) {
+      markIfAggregateArray(assignment.src);
+      markIfAggregateArray(assignment.dst);
+    }
+
+    // Signals still referenced directly by an assignment must not be inlined
+    // away.  This is especially important for array elements, whose assignments
+    // are not collapsed away like mergeable signals.
+    final assignmentReferencedSignals = <SynthLogic>{
+      for (final assignment in assignments) ...[
+        // don't need to [resolve] since assignment takes care of that
+        assignment.src,
+        assignment.dst,
+      ]
+    };
+
+    // The set of [SynthLogic]s which are the (single) result of an inlineable
+    // submodule that still needs instantiation (e.g. a 1-bit `BusSubset`).
+    final inlineableResultLogics = <SynthLogic>{};
+    for (final subModuleInstantiation in inlineableSubmoduleInstantiations) {
+      final resultLogic = subModuleInstantiation.inlineResultLogic;
+      if (resultLogic != null && subModuleInstantiation.needsInstantiation) {
+        inlineableResultLogics.add(resolve(resultLogic));
+      }
+    }
+
+    /// Whether [signal] is an array element produced by an inlineable submodule
+    /// that could (subject to whole-array checks below) be safely inlined
+    /// directly into its single consumer.
+    bool isInlineableArrayElementCandidate(SynthLogic signal) =>
+        signal is SynthLogicArrayElement &&
+        // produced by an inlineable submodule (e.g. a 1-bit `BusSubset`)
+        inlineableResultLogics.contains(resolve(signal)) &&
+        // must be clearable (not a port of this module) so the element and,
+        // once the whole array is consumed, the array declaration can be
+        // dropped
+        signal.isClearable &&
+        // the parent array must not be used as a whole anywhere
+        !aggregateUsedArrays.contains(resolve(signal.parentArray)) &&
+        // the element must not still be referenced by an assignment
+        !assignmentReferencedSignals.contains(resolve(signal));
+
+    // individually-safe, single-use array-element results
+    final candidateElements = <SynthLogic>{};
+    signalUsage.forEach((signal, signalUsageCount) {
+      if (signalUsageCount == 1 && isInlineableArrayElementCandidate(signal)) {
+        candidateElements.add(resolve(signal));
+      }
+    });
+
+    // Only inline array elements when the WHOLE parent array will be replaced,
+    // i.e. every element of the array is itself an inlineable candidate.
+    // Partial inlining is unsafe: the array would remain declared and its
+    // remaining (e.g. undriven or differently-driven) elements could change
+    // behavior (such as `x` vs `z` on undriven bits).
+    final approvedElements = <SynthLogic>{};
+    final candidatesByArray = <SynthLogic, Set<SynthLogic>>{};
+    for (final element in candidateElements) {
+      candidatesByArray
+          .putIfAbsent(resolve((element as SynthLogicArrayElement).parentArray),
+              () => {})
+          .add(element);
+    }
+    candidatesByArray.forEach((parentArray, arrayCandidates) {
+      final allElementSynthLogics = parentArray.logics
+          .whereType<LogicArray>()
+          .expand((logicArray) => logicArray.elements)
+          .map(getSynthLogic)
+          .nonNulls
+          .map(resolve)
+          .toSet();
+      if (allElementSynthLogics.isNotEmpty &&
+          allElementSynthLogics.every(candidateElements.contains)) {
+        approvedElements.addAll(arrayCandidates);
+      }
+    });
+
     final singleUseSignals = <SynthLogic>{};
     signalUsage.forEach((signal, signalUsageCount) {
       // don't collapse if:
       //  - used more than once
       //  - inline modules for preferred names
-      if (signalUsageCount == 1 && signal.mergeable) {
+      if (signalUsageCount == 1 &&
+          (signal.mergeable || approvedElements.contains(resolve(signal)))) {
         singleUseSignals.add(signal);
       }
     });
@@ -169,6 +272,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     final synthLogicToInlineableSynthSubmoduleMap =
         <SynthLogic, SystemVerilogSynthSubModuleInstantiation>{};
+    final inlinedParentArrays = <SynthLogic>{};
     for (final subModuleInstantiation
         in singleUsageInlineableSubmoduleInstantiations) {
       (subModuleInstantiation.module as InlineSystemVerilog).resultSignalName;
@@ -179,11 +283,38 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // clear declaration of intermediate signal replaced by inline
       internalSignals.remove(resultSynthLogic);
 
+      // when inlining an array element, its declaration comes from the parent
+      // array, so clear it explicitly and remember the parent array so we can
+      // (potentially) drop the whole array if all its elements are inlined
+      if (resultSynthLogic is SynthLogicArrayElement) {
+        resultSynthLogic.clearDeclaration();
+        inlinedParentArrays.add(resolve(resultSynthLogic.parentArray));
+      }
+
       // clear declaration of instantiation for inline module
       subModuleInstantiation.clearInstantiation();
 
       synthLogicToInlineableSynthSubmoduleMap[resultSynthLogic] =
           subModuleInstantiation;
+    }
+
+    // Drop any parent array whose elements have all been inlined away, so the
+    // now-unused array declaration is not emitted.
+    for (final parentArray in inlinedParentArrays) {
+      if (parentArray.declarationCleared ||
+          !parentArray.isClearable ||
+          parentArray.isPort(module) ||
+          parentArray.isStructPortElement(module)) {
+        continue;
+      }
+
+      final anyElementPresent = parentArray.logics.any((logic) =>
+          (logic as LogicArray).elements.any(logicHasPresentSynthLogic));
+
+      if (!anyElementPresent) {
+        parentArray.clearDeclaration();
+        internalSignals.remove(parentArray);
+      }
     }
 
     for (final subModuleInstantiation in subModuleInstantiations) {
