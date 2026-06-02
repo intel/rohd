@@ -299,21 +299,41 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
 
     // Drop any parent array whose elements have all been inlined away, so the
-    // now-unused array declaration is not emitted.
-    for (final parentArray in inlinedParentArrays) {
-      if (parentArray.declarationCleared ||
-          !parentArray.isClearable ||
-          parentArray.isPort(module) ||
-          parentArray.isStructPortElement(module)) {
-        continue;
+    // now-unused array declaration is not emitted.  This considers the whole
+    // array hierarchy (collecting ancestors) so that, for multi-dimensional
+    // arrays, a parent array whose sub-arrays were all dropped is itself
+    // dropped.  A fixed-point loop is used since dropping one sub-array can
+    // make its parent droppable regardless of visitation order.
+    final candidateParentArrays = <SynthLogic>{};
+    final ancestorsToCollect = [...inlinedParentArrays];
+    while (ancestorsToCollect.isNotEmpty) {
+      final parentArray = resolve(ancestorsToCollect.removeLast());
+      if (candidateParentArrays.add(parentArray) &&
+          parentArray is SynthLogicArrayElement) {
+        ancestorsToCollect.add(parentArray.parentArray);
       }
+    }
 
-      final anyElementPresent = parentArray.logics.any((logic) =>
-          (logic as LogicArray).elements.any(logicHasPresentSynthLogic));
+    bool elementsAllAbsent(SynthLogic parentArray) =>
+        parentArray.logics.every((logic) =>
+            !(logic as LogicArray).elements.any(logicHasPresentSynthLogic));
 
-      if (!anyElementPresent) {
-        parentArray.clearDeclaration();
-        internalSignals.remove(parentArray);
+    var droppedAny = true;
+    while (droppedAny) {
+      droppedAny = false;
+      for (final parentArray in candidateParentArrays) {
+        if (parentArray.declarationCleared ||
+            !parentArray.isClearable ||
+            parentArray.isPort(module) ||
+            parentArray.isStructPortElement(module)) {
+          continue;
+        }
+
+        if (elementsAllAbsent(parentArray)) {
+          parentArray.clearDeclaration();
+          internalSignals.remove(parentArray);
+          droppedAny = true;
+        }
       }
     }
 
