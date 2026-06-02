@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus.dart
@@ -188,8 +188,10 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   final List<Logic> _swizzleInputs = [];
 
-  /// Whether this [Swizzle] is for [LogicNet]s.
-  final bool _isNet;
+  /// Whether this [Swizzle] concatenates [LogicNet]s (so its output is a net
+  /// that can be driven bidirectionally).
+  @internal
+  final bool isNet;
 
   @internal
   @override
@@ -197,10 +199,10 @@ class Swizzle extends Module with InlineSystemVerilog {
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})
-      : _isNet = signals.any((e) => e.isNet) {
+      : isNet = signals.any((e) => e.isNet) {
     var outputWidth = 0;
 
-    final inputCreator = _isNet ? addInOut : addInput;
+    final inputCreator = isNet ? addInOut : addInput;
 
     var idx = 0;
     for (final signal in signals.reversed) {
@@ -212,7 +214,7 @@ class Swizzle extends Module with InlineSystemVerilog {
       outputWidth += signal.width;
     }
 
-    if (_isNet) {
+    if (isNet) {
       out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
 
@@ -252,7 +254,7 @@ class Swizzle extends Module with InlineSystemVerilog {
   String inlineVerilog(Map<String, String> inputs) {
     assert(
         inputs.length == _swizzleInputs.length ||
-            (inputs.length == _swizzleInputs.length + 1 && _isNet),
+            (inputs.length == _swizzleInputs.length + 1 && isNet),
         'This swizzle has ${_swizzleInputs.length} inputs,'
         ' but saw $inputs with ${inputs.length} values.');
 

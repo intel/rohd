@@ -745,22 +745,19 @@ class SynthModuleDefinition {
     for (final submoduleInstantiation in subModuleInstantiations) {
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
-        submoduleInstantiation.setInputMapping(
-            inputName, orig.replacement ?? orig,
+        submoduleInstantiation.setInputMapping(inputName, orig.resolved,
             replace: true);
       }
 
       for (final outputName in submoduleInstantiation.module.outputs.keys) {
         final orig = submoduleInstantiation.outputMapping[outputName]!;
-        submoduleInstantiation.setOutputMapping(
-            outputName, orig.replacement ?? orig,
+        submoduleInstantiation.setOutputMapping(outputName, orig.resolved,
             replace: true);
       }
 
       for (final inOutName in submoduleInstantiation.module.inOuts.keys) {
         final orig = submoduleInstantiation.inOutMapping[inOutName]!;
-        submoduleInstantiation.setInOutMapping(
-            inOutName, orig.replacement ?? orig,
+        submoduleInstantiation.setInOutMapping(inOutName, orig.resolved,
             replace: true);
       }
     }

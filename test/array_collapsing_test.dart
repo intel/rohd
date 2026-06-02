@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // array_collapsing_test.dart
@@ -328,6 +328,98 @@ class MultiUseAggregate extends Module {
     }
     addOutput('y', width: n) <= ArrayPortInvChild(arr, n: n).y;
     addOutput('z', width: n) <= ArrayPortInvChild(arr, n: n).y;
+  }
+}
+
+/// Child with a single array output port whose whole value is the inverted
+/// input bus (`a = ~x`).
+class ArrayOutChild extends Module {
+  LogicArray get a => output('a') as LogicArray;
+  ArrayOutChild(Logic x, {int n = 4}) : super(name: 'array_out_child') {
+    x = addInput('x', x, width: n);
+    addOutputArray('a', dimensions: [n]) <= (~x).elements.rswizzle();
+  }
+}
+
+/// The opposite shape of the originally-reported issue (logic direction): a
+/// submodule's array *output* port whose individual elements each drive a
+/// separate single (scalar) output wire.  This must generate correct
+/// SystemVerilog.
+class ArrayPortToIndividualSignals extends Module {
+  ArrayPortToIndividualSignals(Logic x, {int n = 4}) {
+    x = addInput('x', x, width: n);
+    final child = ArrayOutChild(x, n: n);
+    for (var i = 0; i < n; i++) {
+      addOutput('y$i') <= child.a.elements[i];
+    }
+  }
+}
+
+/// The opposite shape of the originally-reported issue (net direction): a
+/// submodule's inout array port whose individual elements each connect to a
+/// separate single (scalar) net.  The intermediate array and its
+/// `net_connect`s should collapse into a single inline concatenation.
+class ArrayPortToIndividualNets extends Module {
+  ArrayPortToIndividualNets(List<LogicNet> sigs, LogicNet b) {
+    final n = sigs.length;
+    final outs = [for (var i = 0; i < n; i++) addInOut('y$i', sigs[i])];
+    b = addInOut('b', b, width: n);
+    final arr = LogicArray.net([n], 1, name: 'arr', naming: Naming.mergeable);
+    ArrayPortNetChild(arr, b, n: n);
+    for (var i = 0; i < n; i++) {
+      outs[i] <= arr.elements[i];
+    }
+  }
+}
+
+/// An intermediate mergeable array whose elements are all driven by elements of
+/// one common parent array (here, reversed), then passed to a child array port.
+/// The common-parent guard must leave this to the other collapsing mechanisms
+/// rather than fabricating a redundant concatenation.
+class RearrangeOneArray extends Module {
+  Logic get y => output('y');
+  RearrangeOneArray(LogicArray src, {int n = 4}) {
+    src = addInputArray('src', src, dimensions: [n]);
+    final arr = LogicArray([n], 1, name: 'arr', naming: Naming.mergeable);
+    final child = ArrayPortInvChild(arr, n: n);
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <= src.elements[n - 1 - i];
+    }
+    addOutput('y', width: n) <= child.y;
+  }
+}
+
+/// A child whose array input port `a` is declared *expressionless*, so the
+/// aggregate connection inlining must NOT inline a concatenation into it; the
+/// intermediate array and its per-element assignments must remain.
+class ExpressionlessArrayPortChild extends Module with SystemVerilog {
+  Logic get y => output('y');
+  ExpressionlessArrayPortChild(LogicArray a, {int n = 4})
+      : super(name: 'expressionless_child') {
+    a = addInputArray('a', a, dimensions: [n]);
+    addOutput('y', width: n) <= a.elements.rswizzle();
+  }
+
+  @override
+  List<String> get expressionlessInputs => const ['a'];
+
+  @override
+  String? definitionVerilog(String definitionType) => null;
+}
+
+/// Feeds individual signals through a mergeable array into the expressionless
+/// array port of [ExpressionlessArrayPortChild].
+class IndividualSignalsToExpressionlessPort extends Module {
+  Logic get y => output('y');
+  IndividualSignalsToExpressionlessPort(List<Logic> sigs) {
+    final n = sigs.length;
+    final ins = [for (var i = 0; i < n; i++) addInput('sig$i', sigs[i])];
+    final arr = LogicArray([n], 1, name: 'arr', naming: Naming.mergeable);
+    final child = ExpressionlessArrayPortChild(arr, n: n);
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <= ins[i];
+    }
+    addOutput('y', width: n) <= child.y;
   }
 }
 
@@ -710,6 +802,105 @@ void main() {
           }, {
             'y': (~pattern) & 0xF,
             'z': (~pattern) & 0xF,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    // The original issue was about *individual signals -> array port*; these
+    // exercise the opposite shape (*array port -> individual signals*) to
+    // confirm both directions generate correct SystemVerilog.
+    test('array output port distributed to individual signals (logic)',
+        () async {
+      final mod = ArrayPortToIndividualSignals(Logic(width: 4));
+      await mod.build();
+
+      final vectors = [
+        for (final x in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            'x': x
+          }, {
+            for (var i = 0; i < 4; i++) 'y$i': (~x >> i) & 1,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('array port elements collapse into individual nets (net)', () async {
+      final mod = ArrayPortToIndividualNets(
+          List.generate(4, (_) => LogicNet()), LogicNet(width: 4));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // the intermediate array and its net_connects collapse into a single
+      // inline concatenation on the child port
+      expect(topBody, isNot(contains('net_connect')));
+      expect(topBody, contains('.a(({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            for (var i = 0; i < 4; i++) 'y$i': (pattern >> i) & 1
+          }, {
+            // child mirrors element i to b bit i, and element i == y$i
+            'b': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('re-arrangement of one array is left to other mechanisms', () async {
+      // every element source shares one common parent array, so the
+      // common-parent guard skips this (no fabricated concatenation); the
+      // result must still be correct.
+      final mod = RearrangeOneArray(LogicArray([4], 1));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // this pass did not fabricate a consolidating concatenation on the port
+      expect(topBody, isNot(contains('.a(({')));
+
+      final vectors = [
+        for (final src in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            'src': src
+          }, {
+            // arr element i = src element (3 - i); child inverts the swizzle
+            'y': [
+              for (var i = 0; i < 4; i++)
+                ~LogicValue.ofInt((src >> (3 - i)) & 1, 1)
+            ].rswizzle()
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('expressionless array port is not inlined into', () async {
+      // the child's array port is declared expressionless, so no concatenation
+      // may be inlined into it; the array and its assignments must remain.
+      final mod = IndividualSignalsToExpressionlessPort(
+          List.generate(4, (_) => Logic()));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // no inline concatenation on the expressionless port; per-element
+      // assignments to the intermediate array remain
+      expect(topBody, isNot(contains('.a(({')));
+      expect(topBody, contains('assign'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            for (var i = 0; i < 4; i++) 'sig$i': (pattern >> i) & 1
+          }, {
+            'y': pattern,
           })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);

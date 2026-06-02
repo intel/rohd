@@ -100,11 +100,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// concatenation is a legal net lvalue) and non-nets (a driven
   /// concatenation).
   void _collapseAggregateConnections() {
-    // Resolves a [SynthLogic] through any merge replacement so identity
-    // comparisons are consistent.
-    SynthLogic resolve(SynthLogic synthLogic) =>
-        synthLogic.replacement ?? synthLogic;
-
     // Loop until no further collapses occur: collapsing one aggregate can make
     // another eligible (e.g. chains of aggregates).  Each collapse strictly
     // removes work (clears an aggregate and its element assignments) and an
@@ -125,8 +120,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       void noteWholeUse(SynthLogic? synthLogic) {
         if (synthLogic != null && synthLogic.isArray) {
-          final resolved = resolve(synthLogic);
-          aggregateUseCount.update(resolved, (v) => v + 1, ifAbsent: () => 1);
+          aggregateUseCount.update(synthLogic.resolved, (v) => v + 1,
+              ifAbsent: () => 1);
         }
       }
 
@@ -135,14 +130,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         for (final entry in instantiation.inputMapping.entries) {
           noteWholeUse(entry.value);
           if (entry.value.isArray) {
-            aggregatePortUse[resolve(entry.value)] =
+            aggregatePortUse[entry.value.resolved] =
                 (instantiation: instantiation, portName: entry.key);
           }
         }
         for (final entry in instantiation.inOutMapping.entries) {
           noteWholeUse(entry.value);
           if (entry.value.isArray) {
-            aggregatePortUse[resolve(entry.value)] =
+            aggregatePortUse[entry.value.resolved] =
                 (instantiation: instantiation, portName: entry.key);
           }
         }
@@ -167,7 +162,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       final elementUseCount = <SynthLogic, int>{};
       void noteElementUse(SynthLogic? synthLogic) {
         if (synthLogic is SynthLogicArrayElement) {
-          elementUseCount.update(resolve(synthLogic), (v) => v + 1,
+          elementUseCount.update(synthLogic.resolved, (v) => v + 1,
               ifAbsent: () => 1);
         }
       }
@@ -184,7 +179,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         for (final end in [assignment.src, assignment.dst]) {
           if (end is SynthLogicArrayElement) {
             elementAssignments
-                .putIfAbsent(resolve(end), () => [])
+                .putIfAbsent(end.resolved, () => [])
                 .add(assignment);
           }
         }
@@ -227,7 +222,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             .first
             .elements
             .map(getSynthLogic)
-            .map((e) => e == null ? null : resolve(e))
+            .map((e) => e?.resolved)
             .toList();
 
         final elementSources = <SynthLogic>[];
@@ -279,7 +274,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // otherwise-separate signals into a single concatenation.
         if (elementSources.every((e) => e is SynthLogicArrayElement)) {
           final parents = elementSources
-              .map((e) => resolve((e as SynthLogicArrayElement).parentArray))
+              .map((e) => (e as SynthLogicArrayElement).parentArray.resolved)
               .toSet();
           if (parents.length == 1) {
             continue;
@@ -296,8 +291,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         // declaration.
         final elementSet = elementLogics.nonNulls.toSet();
         assignments.removeWhere((assignment) =>
-            elementSet.contains(resolve(assignment.src)) ||
-            elementSet.contains(resolve(assignment.dst)));
+            elementSet.contains(assignment.src.resolved) ||
+            elementSet.contains(assignment.dst.resolved));
         agg.clearDeclaration();
         internalSignals.remove(agg);
 
@@ -312,10 +307,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   void _addSwizzleConnect(SynthLogic agg, List<SynthLogic> elementSources) {
     final isNet = agg.isNet;
 
-    // signals are MSB-first for the [Swizzle] (out = {signals[0], ...}).
-    final sourcesInSignalOrder = elementSources.reversed.toList();
+    // The [Swizzle] concatenates its `signals` with `signals[0]` as the MSB,
+    // i.e. `out = {signals[0], signals[1], ..., signals[last]}`.  Our
+    // [elementSources] are LSB-first (index 0 is the LSB), so we reverse them
+    // to build the swizzle's MSB-first signal list.  Only the widths and order
+    // of these dummy signals matter; they are throwaway placeholders since the
+    // real sources are mapped onto the ports below.
     final dummySignals = <Logic>[
-      for (final source in sourcesInSignalOrder)
+      for (final source in elementSources.reversed)
         isNet ? LogicNet(width: source.width) : Logic(width: source.width),
     ];
 
@@ -403,11 +402,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
 
-    // Resolves a [SynthLogic] through any replacement that may have occurred
-    // during earlier merging so that identity comparisons are consistent.
-    SynthLogic resolve(SynthLogic synthLogic) =>
-        synthLogic.replacement ?? synthLogic;
-
     // Arrays which are used as a whole (not just element-by-element) anywhere:
     // as a port of this module, in a submodule port mapping, or in an
     // assignment.  We must NOT inline away the elements of such arrays, since
@@ -416,7 +410,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final aggregateUsedArrays = <SynthLogic>{};
     void markIfAggregateArray(SynthLogic? synthLogic) {
       if (synthLogic != null && synthLogic.isArray) {
-        aggregateUsedArrays.add(resolve(synthLogic));
+        aggregateUsedArrays.add(synthLogic.resolved);
       }
     }
 
@@ -450,7 +444,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final subModuleInstantiation in inlineableSubmoduleInstantiations) {
       final resultLogic = subModuleInstantiation.inlineResultLogic;
       if (resultLogic != null && subModuleInstantiation.needsInstantiation) {
-        inlineableResultLogics.add(resolve(resultLogic));
+        inlineableResultLogics.add(resultLogic.resolved);
       }
     }
 
@@ -460,21 +454,21 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     bool isInlineableArrayElementCandidate(SynthLogic signal) =>
         signal is SynthLogicArrayElement &&
         // produced by an inlineable submodule (e.g. a 1-bit `BusSubset`)
-        inlineableResultLogics.contains(resolve(signal)) &&
+        inlineableResultLogics.contains(signal.resolved) &&
         // must be clearable (not a port of this module) so the element and,
         // once the whole array is consumed, the array declaration can be
         // dropped
         signal.isClearable &&
         // the parent array must not be used as a whole anywhere
-        !aggregateUsedArrays.contains(resolve(signal.parentArray)) &&
+        !aggregateUsedArrays.contains(signal.parentArray.resolved) &&
         // the element must not still be referenced by an assignment
-        !assignmentReferencedSignals.contains(resolve(signal));
+        !assignmentReferencedSignals.contains(signal.resolved);
 
     // individually-safe, single-use array-element results
     final candidateElements = <SynthLogic>{};
     signalUsage.forEach((signal, signalUsageCount) {
       if (signalUsageCount == 1 && isInlineableArrayElementCandidate(signal)) {
-        candidateElements.add(resolve(signal));
+        candidateElements.add(signal.resolved);
       }
     });
 
@@ -487,7 +481,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final candidatesByArray = <SynthLogic, Set<SynthLogic>>{};
     for (final element in candidateElements) {
       candidatesByArray
-          .putIfAbsent(resolve((element as SynthLogicArrayElement).parentArray),
+          .putIfAbsent((element as SynthLogicArrayElement).parentArray.resolved,
               () => {})
           .add(element);
     }
@@ -497,7 +491,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           .expand((logicArray) => logicArray.elements)
           .map(getSynthLogic)
           .nonNulls
-          .map(resolve)
+          .map((e) => e.resolved)
           .toSet();
       if (allElementSynthLogics.isNotEmpty &&
           allElementSynthLogics.every(candidateElements.contains)) {
@@ -511,7 +505,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       //  - used more than once
       //  - inline modules for preferred names
       if (signalUsageCount == 1 &&
-          (signal.mergeable || approvedElements.contains(resolve(signal)))) {
+          (signal.mergeable || approvedElements.contains(signal.resolved))) {
         singleUseSignals.add(signal);
       }
     });
@@ -564,7 +558,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // (potentially) drop the whole array if all its elements are inlined
       if (resultSynthLogic is SynthLogicArrayElement) {
         resultSynthLogic.clearDeclaration();
-        inlinedParentArrays.add(resolve(resultSynthLogic.parentArray));
+        inlinedParentArrays.add(resultSynthLogic.parentArray.resolved);
       }
 
       // clear declaration of instantiation for inline module
@@ -583,7 +577,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final candidateParentArrays = <SynthLogic>{};
     final ancestorsToCollect = [...inlinedParentArrays];
     while (ancestorsToCollect.isNotEmpty) {
-      final parentArray = resolve(ancestorsToCollect.removeLast());
+      final parentArray = ancestorsToCollect.removeLast().resolved;
       if (candidateParentArrays.add(parentArray) &&
           parentArray is SynthLogicArrayElement) {
         ancestorsToCollect.add(parentArray.parentArray);
@@ -736,7 +730,4 @@ class _SwizzleConnect extends Swizzle {
         .where((name) => name != resultSignalName)
         .toList();
   }
-
-  /// Whether this swizzle is for [LogicNet]s.
-  bool get isNet => inOuts.isNotEmpty;
 }
