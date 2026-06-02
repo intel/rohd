@@ -16,8 +16,19 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [SystemVerilogSynthModuleDefinition] for the given [module].
   SystemVerilogSynthModuleDefinition(super.module);
 
+  /// A shared mapping from [SynthLogic]s which are the result of an inlineable
+  /// submodule to the instantiation that produces them.
+  ///
+  /// Populated by both [_collapseAggregateConnections] and
+  /// [_collapseChainableModules], then distributed to every submodule
+  /// instantiation so that inline rendering (including recursive, multi-level
+  /// chains) can resolve them.
+  final Map<SynthLogic, SystemVerilogSynthSubModuleInstantiation>
+      _inlineableSubmoduleMap = {};
+
   @override
   void process() {
+    _collapseAggregateConnections();
     _replaceNetConnections();
     _collapseChainableModules();
     _replaceInOutConnectionInlineableModules();
@@ -71,6 +82,272 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         ..clear()
         ..addAll(reducedAssignments);
     }
+  }
+
+  /// Collapses an internal aggregate signal (e.g. a [LogicArray]) whose
+  /// individual elements are each connected one-to-one to some other signal,
+  /// and which is itself used as a whole in exactly one place, by replacing
+  /// that single aggregate use with an inlined concatenation ([Swizzle]) of the
+  /// per-element sources.
+  ///
+  /// For example, a parent with individual nets `sig0..sigN` each connected to
+  /// an element of an internal array `arr` that feeds a single child array
+  /// port would otherwise emit one `net_connect` (or `assign`) per element plus
+  /// a declaration of `arr`.  This collapses all of that into a single
+  /// `.port({sigN, ..., sig0})` connection and drops `arr`.
+  ///
+  /// This works for both nets (bidirectional `inout` connections, where the
+  /// concatenation is a legal net lvalue) and non-nets (a driven
+  /// concatenation).
+  void _collapseAggregateConnections() {
+    // Resolves a [SynthLogic] through any merge replacement so identity
+    // comparisons are consistent.
+    SynthLogic resolve(SynthLogic synthLogic) =>
+        synthLogic.replacement ?? synthLogic;
+
+    // Loop until no further collapses occur: collapsing one aggregate can make
+    // another eligible (e.g. chains of aggregates).  Each collapse strictly
+    // removes work (clears an aggregate and its element assignments) and an
+    // already-collapsed aggregate is no longer a candidate, so this terminates.
+    var changed = true;
+    while (changed) {
+      changed = false;
+
+      // Count how many times each array [SynthLogic] is used "as a whole",
+      // along with where (a submodule port mapping is the only use we can
+      // currently inline into).
+      final aggregateUseCount = <SynthLogic, int>{};
+      final aggregatePortUse = <SynthLogic,
+          ({
+        SystemVerilogSynthSubModuleInstantiation instantiation,
+        String portName,
+      })>{};
+
+      void noteWholeUse(SynthLogic? synthLogic) {
+        if (synthLogic != null && synthLogic.isArray) {
+          final resolved = resolve(synthLogic);
+          aggregateUseCount.update(resolved, (v) => v + 1, ifAbsent: () => 1);
+        }
+      }
+
+      for (final instantiation in subModuleInstantiations) {
+        instantiation as SystemVerilogSynthSubModuleInstantiation;
+        for (final entry in instantiation.inputMapping.entries) {
+          noteWholeUse(entry.value);
+          if (entry.value.isArray) {
+            aggregatePortUse[resolve(entry.value)] =
+                (instantiation: instantiation, portName: entry.key);
+          }
+        }
+        for (final entry in instantiation.inOutMapping.entries) {
+          noteWholeUse(entry.value);
+          if (entry.value.isArray) {
+            aggregatePortUse[resolve(entry.value)] =
+                (instantiation: instantiation, portName: entry.key);
+          }
+        }
+        // outputs of submodules can't be replaced by an inline concatenation
+        instantiation.outputMapping.values.forEach(noteWholeUse);
+      }
+
+      // Assignments and this-module ports also count as whole-aggregate uses
+      // (and we cannot inline into those today, so they just disqualify).
+      [...inputs, ...outputs, ...inOuts].forEach(noteWholeUse);
+      for (final assignment in assignments) {
+        noteWholeUse(assignment.src);
+        noteWholeUse(assignment.dst);
+      }
+
+      // Map from each array element to the assignment(s) connecting it, and a
+      // count of every place each array element is used (submodule port
+      // mappings and assignments).  An element is only safe to inline if its
+      // sole appearance is its single connecting assignment; if it is read
+      // anywhere else (e.g. by a reduction), the aggregate must stay intact.
+      final elementAssignments = <SynthLogic, List<SynthAssignment>>{};
+      final elementUseCount = <SynthLogic, int>{};
+      void noteElementUse(SynthLogic? synthLogic) {
+        if (synthLogic is SynthLogicArrayElement) {
+          elementUseCount.update(resolve(synthLogic), (v) => v + 1,
+              ifAbsent: () => 1);
+        }
+      }
+
+      for (final instantiation in subModuleInstantiations) {
+        instantiation as SystemVerilogSynthSubModuleInstantiation;
+        instantiation.inputMapping.values.forEach(noteElementUse);
+        instantiation.outputMapping.values.forEach(noteElementUse);
+        instantiation.inOutMapping.values.forEach(noteElementUse);
+      }
+      for (final assignment in assignments) {
+        noteElementUse(assignment.src);
+        noteElementUse(assignment.dst);
+        for (final end in [assignment.src, assignment.dst]) {
+          if (end is SynthLogicArrayElement) {
+            elementAssignments
+                .putIfAbsent(resolve(end), () => [])
+                .add(assignment);
+          }
+        }
+      }
+
+      for (final aggEntry in aggregatePortUse.entries) {
+        final agg = aggEntry.key;
+        final use = aggEntry.value;
+
+        // Restriction: exactly one whole-aggregate use, which is the port use
+        // we found.  This single-use restriction mirrors the other collapsing
+        // mechanisms; it could be relaxed later (e.g. duplicating the
+        // concatenation into multiple consumers).
+        if ((aggregateUseCount[agg] ?? 0) != 1) {
+          continue;
+        }
+
+        // The aggregate must be a clearable internal signal: mergeable (so its
+        // name carries no meaning to preserve) and not a port.  This mirrors
+        // the conservatism of the other collapsing mechanisms: renameable or
+        // reserved aggregates are left intact so their declared names survive.
+        if (agg.declarationCleared ||
+            !agg.isClearable ||
+            agg.isPort(module) ||
+            !internalSignals.contains(agg)) {
+          continue;
+        }
+
+        // The consuming port must accept expressions.
+        final consumer = use.instantiation.module;
+        if (consumer is SystemVerilog &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
+
+        // Gather each element's single source (the other end of its single
+        // connecting assignment), in element order (index 0 = LSB).
+        final elementLogics = agg.logics
+            .whereType<LogicArray>()
+            .first
+            .elements
+            .map(getSynthLogic)
+            .map((e) => e == null ? null : resolve(e))
+            .toList();
+
+        final elementSources = <SynthLogic>[];
+        var allElementsSingleSourced = true;
+        for (final element in elementLogics) {
+          if (element == null) {
+            allElementsSingleSourced = false;
+            break;
+          }
+          final connectingAssignments = elementAssignments[element];
+          if (connectingAssignments == null ||
+              connectingAssignments.length != 1) {
+            allElementsSingleSourced = false;
+            break;
+          }
+          // The element must not be used anywhere other than its single
+          // connecting assignment (e.g. it must not also be read by a
+          // reduction or feed another submodule); otherwise the aggregate's
+          // declaration is still needed.
+          if ((elementUseCount[element] ?? 0) != 1) {
+            allElementsSingleSourced = false;
+            break;
+          }
+          final assignment = connectingAssignments.single;
+          final source =
+              assignment.src == element ? assignment.dst : assignment.src;
+          if (source == element) {
+            allElementsSingleSourced = false;
+            break;
+          }
+          elementSources.add(source);
+        }
+
+        if (!allElementsSingleSourced || elementSources.isEmpty) {
+          continue;
+        }
+
+        // Net aggregates can only collapse if their sources are also nets (the
+        // concatenation is a net lvalue), and non-net likewise.
+        if (elementSources.any((e) => e.isNet != agg.isNet)) {
+          continue;
+        }
+
+        // If every source is an element of one common parent array (in any
+        // order), the aggregate is just a re-arrangement of an existing array
+        // and there is nothing to consolidate; passing that array (or letting
+        // the other collapsing mechanisms merge it) yields cleaner output, so
+        // leave it alone.  The value of this optimization is consolidating
+        // otherwise-separate signals into a single concatenation.
+        if (elementSources.every((e) => e is SynthLogicArrayElement)) {
+          final parents = elementSources
+              .map((e) => resolve((e as SynthLogicArrayElement).parentArray))
+              .toSet();
+          if (parents.length == 1) {
+            continue;
+          }
+        }
+
+        // Fabricate a swizzle (post-build instrumentation, not connected to the
+        // real hardware) whose concatenation reproduces the aggregate, and
+        // register it so the single aggregate use renders as the inline
+        // concatenation.
+        _addSwizzleConnect(agg, elementSources);
+
+        // Remove the now-inlined element assignments and clear the aggregate
+        // declaration.
+        final elementSet = elementLogics.nonNulls.toSet();
+        assignments.removeWhere((assignment) =>
+            elementSet.contains(resolve(assignment.src)) ||
+            elementSet.contains(resolve(assignment.dst)));
+        agg.clearDeclaration();
+        internalSignals.remove(agg);
+
+        changed = true;
+      }
+    }
+  }
+
+  /// Fabricates a [_SwizzleConnect] that represents [agg] as the inline
+  /// concatenation of [elementSources] (ordered with index 0 as the LSB), and
+  /// registers it in [_inlineableSubmoduleMap].
+  void _addSwizzleConnect(SynthLogic agg, List<SynthLogic> elementSources) {
+    final isNet = agg.isNet;
+
+    // signals are MSB-first for the [Swizzle] (out = {signals[0], ...}).
+    final sourcesInSignalOrder = elementSources.reversed.toList();
+    final dummySignals = <Logic>[
+      for (final source in sourcesInSignalOrder)
+        isNet ? LogicNet(width: source.width) : Logic(width: source.width),
+    ];
+
+    final swizzle = _SwizzleConnect(dummySignals);
+
+    final swizzleInst = getSynthSubModuleInstantiation(swizzle)
+        as SystemVerilogSynthSubModuleInstantiation;
+
+    // [orderedInputPortNames] are in creation order (`in0`, `in1`, ...), which
+    // the [Swizzle] assigns to `signals.reversed`; i.e. `in0` is the LSB.  So
+    // port `in${i}` corresponds to element `i` (LSB-first).
+    for (var i = 0; i < elementSources.length; i++) {
+      final portName = swizzle.orderedInputPortNames[i];
+      final source = elementSources[i];
+      if (isNet) {
+        swizzleInst.setInOutMapping(portName, source);
+      } else {
+        swizzleInst.setInputMapping(portName, source);
+      }
+    }
+
+    if (isNet) {
+      swizzleInst.setInOutMapping(swizzle.resultSignalName, agg);
+    } else {
+      swizzleInst.setOutputMapping(swizzle.resultSignalName, agg);
+    }
+
+    swizzleInst.clearInstantiation();
+
+    supportingModules.add(swizzle);
+
+    _inlineableSubmoduleMap[agg] = swizzleInst;
   }
 
   /// Collapses chainable, inlineable modules.
@@ -270,8 +547,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
 
-    final synthLogicToInlineableSynthSubmoduleMap =
-        <SynthLogic, SystemVerilogSynthSubModuleInstantiation>{};
+    final synthLogicToInlineableSynthSubmoduleMap = _inlineableSubmoduleMap;
     final inlinedParentArrays = <SynthLogic>{};
     for (final subModuleInstantiation
         in singleUsageInlineableSubmoduleInstantiations) {
@@ -436,4 +712,31 @@ class _NetConnect extends Module with SystemVerilog {
 module $definitionType #(parameter int WIDTH=1) (w, w);
 inout wire[WIDTH-1:0] w;
 endmodule''';
+}
+
+/// A [Swizzle] fabricated post-build purely as instrumentation for
+/// SystemVerilog generation; it is never connected to the real hardware
+/// hierarchy or used in simulation.
+///
+/// Used by
+/// [SystemVerilogSynthModuleDefinition._collapseAggregateConnections] to
+/// render an aggregate's single use as an inline concatenation of its
+/// per-element sources.
+class _SwizzleConnect extends Swizzle {
+  /// The names of the input ports, in the same order as the `signals` passed to
+  /// the constructor.
+  late final List<String> orderedInputPortNames;
+
+  @override
+  // forced since it is generated post-build
+  bool get hasBuilt => true;
+
+  _SwizzleConnect(super.signals) {
+    orderedInputPortNames = (isNet ? inOuts.keys : inputs.keys)
+        .where((name) => name != resultSignalName)
+        .toList();
+  }
+
+  /// Whether this swizzle is for [LogicNet]s.
+  bool get isNet => inOuts.isNotEmpty;
 }

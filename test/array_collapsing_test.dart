@@ -250,6 +250,94 @@ class ArrayModuleWithNetIntermediates extends Module {
   }
 }
 
+/// Child with a single array input port whose whole value is inverted to `y`.
+class ArrayPortInvChild extends Module {
+  Logic get y => output('y');
+  ArrayPortInvChild(LogicArray a, {int n = 4, int elementWidth = 1})
+      : super(name: 'arr_inv_child') {
+    a = addInputArray('a', a, dimensions: [n], elementWidth: elementWidth);
+    addOutput('y', width: n * elementWidth) <= ~a.elements.rswizzle();
+  }
+}
+
+/// Parent feeding `n` individual signals (each `elementWidth` wide) into a
+/// single child array port, element-by-element through a mergeable intermediate
+/// array.  `perm` optionally reorders which signal drives which element.
+///
+/// The intermediate array (and all of its per-element assignments) should be
+/// collapsed into a single inline concatenation on the child port.
+class IndividualSignalsToArrayPort extends Module {
+  Logic get y => output('y');
+  IndividualSignalsToArrayPort(List<Logic> sigs,
+      {int elementWidth = 1, List<int>? perm}) {
+    final n = sigs.length;
+    final ins = [
+      for (var i = 0; i < n; i++)
+        addInput('sig$i', sigs[i], width: elementWidth)
+    ];
+    final arr =
+        LogicArray([n], elementWidth, name: 'arr', naming: Naming.mergeable);
+    final child = ArrayPortInvChild(arr, n: n, elementWidth: elementWidth);
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <= ins[perm == null ? i : perm[i]];
+    }
+    addOutput('y', width: n * elementWidth) <= child.y;
+  }
+}
+
+/// Child with a single inout net array port bidirectionally mirrored to `b`.
+class ArrayPortNetChild extends Module {
+  ArrayPortNetChild(LogicArray a, LogicNet b, {int n = 4})
+      : super(name: 'arr_net_child') {
+    a = addInOutArray('a', a, dimensions: [n]);
+    b = addInOut('b', b, width: n);
+    b <= a.elements.rswizzle();
+  }
+}
+
+/// Net version of [IndividualSignalsToArrayPort]: `n` individual inout nets are
+/// connected element-by-element to a single child inout array port through a
+/// mergeable intermediate net array.  The intermediate array and its
+/// `net_connect`s should be collapsed into a single inline concatenation.
+class IndividualNetsToArrayPort extends Module {
+  IndividualNetsToArrayPort(List<LogicNet> sigs, LogicNet out,
+      {List<int>? perm}) {
+    final n = sigs.length;
+    final ins = [for (var i = 0; i < n; i++) addInOut('sig$i', sigs[i])];
+    final o = addInOut('out', out, width: n);
+    final arr = LogicArray.net([n], 1, name: 'arr', naming: Naming.mergeable);
+    ArrayPortNetChild(arr, o, n: n);
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <= ins[perm == null ? i : perm[i]];
+    }
+  }
+}
+
+/// Builds a mergeable array from individual signals and uses it as a whole
+/// twice (two child array ports), so the single-aggregate-use restriction
+/// prevents collapsing and the array stays declared.
+class MultiUseAggregate extends Module {
+  Logic get y => output('y');
+  Logic get z => output('z');
+  MultiUseAggregate(List<Logic> sigs) {
+    final n = sigs.length;
+    final ins = [for (var i = 0; i < n; i++) addInput('sig$i', sigs[i])];
+    final arr = LogicArray([n], 1, name: 'arr', naming: Naming.mergeable);
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <= ins[i];
+    }
+    addOutput('y', width: n) <= ArrayPortInvChild(arr, n: n).y;
+    addOutput('z', width: n) <= ArrayPortInvChild(arr, n: n).y;
+  }
+}
+
+/// Returns the body of the last (top-level) module declaration in [sv],
+/// avoiding false matches inside `endmodule`.
+String _topModuleBody(String sv) {
+  final matches = RegExp(r'(?:^|\n)module ').allMatches(sv).toList();
+  return sv.substring(matches.last.start);
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -504,6 +592,125 @@ void main() {
         Vector({'s': 0x00}, {'y': 0xF}),
         Vector({'s': 0x14}, {'y': 0xB}),
         Vector({'s': 0x1F}, {'y': 0x0}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  });
+
+  group('aggregate connection inlining', () {
+    final logicConfigs =
+        <({String name, int n, int elementWidth, List<int>? perm})>[
+      (name: '1d in order', n: 4, elementWidth: 1, perm: null),
+      (name: '1d out of order', n: 4, elementWidth: 1, perm: [2, 3, 0, 1]),
+      (name: 'wide elements', n: 3, elementWidth: 4, perm: null),
+      (
+        name: 'wide elements out of order',
+        n: 3,
+        elementWidth: 4,
+        perm: [2, 0, 1]
+      ),
+    ];
+
+    for (final cfg in logicConfigs) {
+      test('individual signals collapse into array port (${cfg.name})',
+          () async {
+        final mod = IndividualSignalsToArrayPort(
+            List.generate(cfg.n, (_) => Logic(width: cfg.elementWidth)),
+            elementWidth: cfg.elementWidth,
+            perm: cfg.perm);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the intermediate array (and every per-element assignment) is gone,
+        // replaced by a single inline concatenation on the child port
+        expect(topBody, isNot(contains('assign')));
+        expect(topBody, contains('.a(({'));
+
+        final total = cfg.n * cfg.elementWidth;
+        // element i is driven by signal perm[i] (or i), and the child
+        // inverts each element; element 0 is the least-significant chunk
+        LogicValue expected(int Function(int) sigVal) => [
+              for (var i = 0; i < cfg.n; i++)
+                ~LogicValue.ofInt(sigVal(cfg.perm == null ? i : cfg.perm![i]),
+                    cfg.elementWidth)
+            ].rswizzle();
+
+        final vectors = [
+          for (final pattern in [0, 1, 2])
+            Vector({
+              for (var i = 0; i < cfg.n; i++)
+                'sig$i': (pattern * 7 + i * 3) & ((1 << cfg.elementWidth) - 1)
+            }, {
+              'y': expected(
+                  (s) => (pattern * 7 + s * 3) & ((1 << cfg.elementWidth) - 1))
+            })
+        ];
+        expect(total, lessThanOrEqualTo(32));
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    final netConfigs = <({String name, int n, List<int>? perm})>[
+      (name: '1d in order', n: 4, perm: null),
+      (name: '1d out of order', n: 4, perm: [2, 3, 0, 1]),
+    ];
+
+    for (final cfg in netConfigs) {
+      test('individual nets collapse into array port (${cfg.name})', () async {
+        final mod = IndividualNetsToArrayPort(
+            List.generate(cfg.n, (_) => LogicNet()), LogicNet(width: cfg.n),
+            perm: cfg.perm);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the intermediate array and its net_connects are gone, replaced by a
+        // single inline concatenation on the child port
+        expect(topBody, isNot(contains('net_connect')));
+        expect(topBody, contains('.a(({'));
+
+        final vectors = [
+          for (final pattern in [0x0, 0xA, 0x5, 0xF])
+            Vector({
+              for (var i = 0; i < cfg.n; i++) 'sig$i': (pattern >> i) & 1
+            }, {
+              // out bit i mirrors element i, driven by signal perm[i] (or i)
+              'out': [
+                for (var i = 0; i < cfg.n; i++)
+                  LogicValue.ofInt(
+                      (pattern >> (cfg.perm == null ? i : cfg.perm![i])) & 1, 1)
+              ].rswizzle()
+            })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    test('multiple aggregate uses are not collapsed', () async {
+      // when the array is used as a whole more than once, the single-use
+      // restriction prevents collapsing and the array stays declared
+      final mod = MultiUseAggregate(List.generate(4, (_) => Logic()));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // with two whole-array uses, the array stays declared and its per-element
+      // assignments remain (no inline concatenation on the ports)
+      expect(topBody, contains('assign'));
+      expect(topBody, isNot(contains('.a(({')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            for (var i = 0; i < 4; i++) 'sig$i': (pattern >> i) & 1
+          }, {
+            'y': (~pattern) & 0xF,
+            'z': (~pattern) & 0xF,
+          })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);

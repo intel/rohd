@@ -1,6 +1,7 @@
 ## Next release
 
 - Improved generated SystemVerilog to inline single-bit array-element connections (e.g. a bus blasted into a `LogicArray` whose elements drive 1-bit submodule ports) directly into the consuming ports, eliminating unnecessary intermediate array declarations, `assign`s, and `net_connect`s when it is safe to do so.
+- Improved generated SystemVerilog to inline aggregate connections, so that an intermediate `LogicArray` whose elements are individually driven by separate signals and which is used as a whole in a single place is replaced by an inline concatenation on that use, eliminating the intermediate array declaration and its per-element `assign`s or `net_connect`s when it is safe to do so.
 
 ## 0.6.9
 
