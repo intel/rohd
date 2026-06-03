@@ -1465,8 +1465,7 @@ void main() {
 
     test('non-net assignSubset driver forwards into child input', () async {
       const n = 4;
-      final mod =
-          AssignSubsetLogicDriver(List.generate(n, (_) => Logic()));
+      final mod = AssignSubsetLogicDriver(List.generate(n, (_) => Logic()));
       await mod.build();
       final sv = mod.generateSynth();
       final topBody = _topModuleBody(sv);
