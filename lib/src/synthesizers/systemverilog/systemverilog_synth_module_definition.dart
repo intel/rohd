@@ -668,6 +668,21 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     while (changed) {
       changed = false;
 
+      // Only instantiations that will actually render count as real uses: a
+      // module that still needs instantiation, or a fabricated inlineable
+      // (e.g. a [_SwizzleConnect] from an earlier collapse) registered in
+      // [_inlineableSubmoduleMap].  Dead/consumed definers (e.g. a [BusSubset]
+      // already cleared by [_collapseWholeNetBuses]) carry stale port mappings
+      // that must NOT be mistaken for live uses.
+      final activeInlineables = _inlineableSubmoduleMap.values.toSet();
+      bool isActive(SystemVerilogSynthSubModuleInstantiation inst) =>
+          inst.needsInstantiation || activeInlineables.contains(inst);
+
+      final activeInstantiations = [
+        for (final inst in subModuleInstantiations)
+          if (isActive(inst as SystemVerilogSynthSubModuleInstantiation)) inst
+      ];
+
       // Arrays used "as a whole" anywhere must keep their elements intact, so
       // their elements are not eligible for forwarding.
       final aggregateUsedArrays = <SynthLogic>{};
@@ -678,8 +693,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
 
       [...inputs, ...outputs, ...inOuts].forEach(markIfAggregateArray);
-      for (final inst in subModuleInstantiations) {
-        inst as SystemVerilogSynthSubModuleInstantiation;
+      for (final inst in activeInstantiations) {
         inst.inputMapping.values.forEach(markIfAggregateArray);
         inst.outputMapping.values.forEach(markIfAggregateArray);
         inst.inOutMapping.values.forEach(markIfAggregateArray);
@@ -708,8 +722,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
       }
 
-      for (final inst in subModuleInstantiations) {
-        inst as SystemVerilogSynthSubModuleInstantiation;
+      for (final inst in activeInstantiations) {
         final isInlineable = inst.module is InlineSystemVerilog;
         final resultLogic =
             isInlineable ? inst.inlineResultLogic?.resolved : null;

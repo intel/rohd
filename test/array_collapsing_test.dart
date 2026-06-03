@@ -605,6 +605,73 @@ class AssignSubsetReceiverScrambled extends Module {
   }
 }
 
+/// The driver-direction counterpart of [AssignSubsetReceiver]: each external
+/// bit net *receives* a one-bit slice of a child's whole net bus via
+/// `assignSubset`.  The per-bit `*_subset` pass-throughs must still be
+/// forwarded away so the whole connection collapses with no per-bit
+/// `net_connect`.
+class AssignSubsetDriver extends Module {
+  AssignSubsetDriver(List<LogicNet> nets, LogicNet mirror,
+      {Naming busNaming = Naming.mergeable})
+      : super(name: 'assign_subset_driver') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: busNaming);
+    WholeNetBusChild(bus, mirror, n: n);
+    for (var i = 0; i < n; i++) {
+      netPorts[i].assignSubset([bus.slice(i, i)]);
+    }
+  }
+}
+
+/// A non-net child whose input `i` is inverted onto output `o`.
+class LogicInvChild extends Module {
+  LogicInvChild(Logic i, {int n = 4}) : super(name: 'logic_inv_child') {
+    i = addInput('i', i, width: n);
+    addOutput('o', width: n) <= ~i;
+  }
+}
+
+/// Non-net (regular [Logic]) driver-direction `assignSubset`: each external bit
+/// drives one bit of `sig` via `assignSubset`, and `sig` feeds a child input.
+/// The intermediate `*_subset` array must be forwarded straight into the child
+/// connection with no surviving `assign`.
+class AssignSubsetLogicDriver extends Module {
+  AssignSubsetLogicDriver(List<Logic> bits, {int n = 4})
+      : super(name: 'assign_subset_logic_driver') {
+    final ins = [for (var i = 0; i < n; i++) addInput('b$i', bits[i])];
+    final sig = Logic(width: n, name: 'sig', naming: Naming.mergeable);
+    final child = LogicInvChild(sig, n: n);
+    addOutput('y', width: n) <= child.output('o');
+    for (var i = 0; i < n; i++) {
+      sig.assignSubset([ins[i]], start: i);
+    }
+  }
+}
+
+/// Partial `assignSubset`: only the low half of the child bus is driven; the
+/// high half stays undriven (`z`).  Because not every element is a
+/// pass-through, the intermediate `*_subset` array must be conservatively
+/// preserved (no collapse) so the undriven high bits remain `z`.
+class AssignSubsetPartial extends Module {
+  AssignSubsetPartial(List<LogicNet> nets, LogicNet mirror, {int n = 4})
+      : super(name: 'assign_subset_partial') {
+    final lo = n ~/ 2;
+    final netPorts = [
+      for (var i = 0; i < lo; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: Naming.mergeable);
+    WholeNetBusChild(bus, mirror, n: n);
+    for (var i = 0; i < lo; i++) {
+      bus.assignSubset([netPorts[i]], start: i);
+    }
+  }
+}
+
 /// Returns the body of the last (top-level) module declaration in [sv],
 /// avoiding false matches inside `endmodule`.
 String _topModuleBody(String sv) {
@@ -1363,6 +1430,84 @@ void main() {
             for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
           }, {
             'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('driver-direction assignSubset into whole net bus collapses',
+        () async {
+      const n = 4;
+      final mod = AssignSubsetDriver(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // the per-bit `*_subset` pass-throughs and per-bit `net_connect`s are
+      // forwarded away so the whole connection is a single inline concatenation
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, isNot(contains('net_connect')));
+      expect(topBody, contains('.data(({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF, 0x3])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('non-net assignSubset driver forwards into child input', () async {
+      const n = 4;
+      final mod =
+          AssignSubsetLogicDriver(List.generate(n, (_) => Logic()));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // the intermediate `sig_subset` array is forwarded straight into the
+      // child input with no surviving per-bit `assign`
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, isNot(contains('assign')));
+      expect(topBody, contains('.i(({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF, 0x6])
+          Vector({
+            for (var i = 0; i < n; i++) 'b$i': (pattern >> i) & 1
+          }, {
+            'y': (~pattern) & 0xF,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('partial assignSubset is conservatively preserved (undriven stays z)',
+        () async {
+      const n = 4;
+      final mod = AssignSubsetPartial(
+          List.generate(n ~/ 2, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // not every element is a pass-through, so the subset array is preserved
+      expect(topBody, contains('_subset'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0x3])
+          Vector({
+            for (var i = 0; i < n ~/ 2; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            // high half is undriven => z, low half mirrors the driven bits
+            'mirror': 'zz${(pattern >> 1) & 1}${pattern & 1}',
           })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
