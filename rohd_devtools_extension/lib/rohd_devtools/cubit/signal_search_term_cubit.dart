@@ -9,9 +9,12 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Cubit that stores the current signal-table search term.
 class SignalSearchTermCubit extends Cubit<String?> {
+  /// Creates the signal-search cubit with no initial term.
   SignalSearchTermCubit() : super(null);
 
+  /// Updates the search term.
   void setTerm(String term) {
     emit(term);
   }

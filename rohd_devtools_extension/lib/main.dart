@@ -14,19 +14,22 @@ import 'package:rohd_devtools_extension/rohd_devtools/view/rohd_devtools_page.da
 
 import 'package:rohd_devtools_extension/rohd_devtools_observer.dart';
 
+/// Entry point for the DevTools extension app.
 void main() {
-  /// Initializing the [BlocObserver] created and calling runApp
   Bloc.observer = const RohdDevToolsObserver();
 
   runApp(const RohdDevToolsApp());
 }
 
+/// Top-level app widget for the DevTools extension.
 class RohdDevToolsApp extends StatelessWidget {
+  /// Creates the DevTools app.
   const RohdDevToolsApp({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return const DevToolsExtension(
-      child: RohdDevToolsPage(),
-    );
-  }
+
+  /// Builds the DevTools extension host widget tree.
+  Widget build(BuildContext context) => const DevToolsExtension(
+        child: RohdDevToolsPage(),
+      );
 }

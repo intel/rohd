@@ -7,52 +7,68 @@
 // 2025 January 28
 // Author: Roberto Torres <roberto.torres@intel.com>
 
-import 'package:devtools_app_shared/service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/ui/devtool_appbar.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 
+/// Main page for the embedded ROHD DevTools experience.
 class RohdDevToolsPage extends StatelessWidget {
+  /// Creates the DevTools page.
   const RohdDevToolsPage({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => RohdServiceCubit(),
+
+  /// Builds the themed DevTools page and its bloc providers.
+  Widget build(BuildContext context) => MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => DevToolsThemeCubit(),
+          ),
+          BlocProvider(
+            create: (context) => RohdServiceCubit(),
+          ),
+          BlocProvider(
+            create: (context) => TreeSearchTermCubit(),
+          ),
+          BlocProvider(
+            create: (context) => SelectedModuleCubit(),
+          ),
+          BlocProvider(
+            create: (context) => SignalSearchTermCubit(),
+          ),
+          BlocProvider(
+            create: (context) => DetailsTabCubit(),
+          ),
+        ],
+        child: BlocBuilder<DevToolsThemeCubit, DevToolsThemeMode>(
+          builder: (context, themeMode) {
+            final theme = themeMode == DevToolsThemeMode.dark
+                ? buildDarkTheme()
+                : buildLightTheme();
+
+            return Theme(data: theme, child: const RohdExtensionModule());
+          },
         ),
-        BlocProvider(
-          create: (context) => TreeSearchTermCubit(),
-        ),
-        BlocProvider(
-          create: (context) => SelectedModuleCubit(),
-        ),
-        BlocProvider(
-          create: (context) => SignalSearchTermCubit(),
-        ),
-      ],
-      child: const RohdExtensionModule(),
-    );
-  }
+      );
 }
 
+/// Extension module wrapper used by the DevTools host.
 class RohdExtensionModule extends StatefulWidget {
+  /// Creates the extension module.
   const RohdExtensionModule({super.key});
 
   @override
+
+  /// Creates the module state.
   State<RohdExtensionModule> createState() => _RohdExtensionModuleState();
 }
 
 class _RohdExtensionModuleState extends State<RohdExtensionModule> {
-  late final EvalOnDartLibrary rohdControllerEval;
-
   @override
-  void initState() {
-    super.initState();
-  }
 
-  @override
+  /// Builds the module scaffold and tree view.
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 

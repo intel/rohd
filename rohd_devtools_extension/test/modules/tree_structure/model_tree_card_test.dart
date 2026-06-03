@@ -7,9 +7,11 @@
 // 2024 January 9
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 @Skip('Currently failing, revisit to fix the failing testcase')
+library;
+
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/rohd_devtools.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/module_tree_card.dart';
@@ -27,8 +29,7 @@ void main() {
     registerFallbackValue(TreeModelStub.selectedModule);
   });
 
-  testWidgets('ModuleTreeCard renders tree correctly',
-      (WidgetTester tester) async {
+  testWidgets('ModuleTreeCard renders tree correctly', (tester) async {
     // Initialize the futureModuleTree
     final futureModuleTree = TreeModelStub.simpleTreeModel;
 

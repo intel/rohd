@@ -9,9 +9,12 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Cubit that stores the current tree search term.
 class TreeSearchTermCubit extends Cubit<String?> {
+  /// Creates the tree-search cubit with no initial term.
   TreeSearchTermCubit() : super(null);
 
+  /// Updates the search term.
   void setTerm(String term) {
     emit(term);
   }

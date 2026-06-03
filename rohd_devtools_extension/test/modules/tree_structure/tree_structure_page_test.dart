@@ -8,6 +8,8 @@
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
 
 @Skip('Currently failing, difficulty debugging due to flutter testing bug')
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,8 +31,8 @@ void main() {
     });
 
     testWidgets(
-        'displays ModuleTreeCard when state is RohdServiceLoaded with treeModel',
-        (tester) async {
+        'displays ModuleTreeCard when state is RohdServiceLoaded '
+        'with treeModel', (tester) async {
       final treeModel = MockTreeModel();
 
       when(() => rohdServiceCubit.state)
@@ -61,8 +63,8 @@ void main() {
     });
 
     testWidgets(
-        'displays SignalDetailsCard when state is RohdServiceLoaded with selected module',
-        (tester) async {
+        'displays SignalDetailsCard when state is RohdServiceLoaded '
+        'with selected module', (tester) async {
       final treeModel = MockTreeModel();
       final signalModelList = <SignalModel>[
         MockSignalModel(),
