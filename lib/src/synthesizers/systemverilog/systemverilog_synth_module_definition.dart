@@ -29,6 +29,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   @override
   void process() {
     _collapseAggregateConnections();
+    _collapseWholeNetBuses();
     _replaceNetConnections();
     _collapseChainableModules();
     _replaceInOutConnectionInlineableModules();
@@ -107,6 +108,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     var changed = true;
     while (changed) {
       changed = false;
+
+      // Resolved view of every net [BusSubset], used to discover element
+      // sources that are tied through a pass-through net bus rather than via a
+      // direct assignment (see [_traceNetSubsetSource]).
+      final netSubsets = _netSubsetLookups();
 
       // Count how many times each array [SynthLogic] is used "as a whole",
       // along with where (a submodule port mapping is the only use we can
@@ -227,36 +233,64 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         final elementSources = <SynthLogic>[];
         var allElementsSingleSourced = true;
+
+        // Net [BusSubset]s consumed while tracing element sources through
+        // pass-through buses; their instantiations are cleared and the buses
+        // dropped only if the whole collapse succeeds.
+        final tracedSubsets = <SystemVerilogSynthSubModuleInstantiation>{};
+        final tracedBuses = <SynthLogic>{};
+
         for (final element in elementLogics) {
           if (element == null) {
             allElementsSingleSourced = false;
             break;
           }
+
+          // Preferred path: the element is connected by exactly one assignment
+          // and used nowhere else.
           final connectingAssignments = elementAssignments[element];
-          if (connectingAssignments == null ||
-              connectingAssignments.length != 1) {
+          if (connectingAssignments != null &&
+              connectingAssignments.length == 1 &&
+              (elementUseCount[element] ?? 0) == 1) {
+            final assignment = connectingAssignments.single;
+            final source =
+                assignment.src == element ? assignment.dst : assignment.src;
+            if (source == element) {
+              allElementsSingleSourced = false;
+              break;
+            }
+            elementSources.add(source);
+            continue;
+          }
+
+          // Fallback (net) path: the element is the [subset] of a [BusSubset]
+          // whose [original] is a pass-through bus, and the same bit of that
+          // bus is tied to exactly one other net.  Trace through to that net
+          // so the bus and its [BusSubset]s can be eliminated.
+          final traced = _traceNetSubsetSource(
+            element,
+            netSubsets,
+            elementUseCount,
+            elementAssignments,
+            tracedSubsets,
+            tracedBuses,
+          );
+          if (traced == null) {
             allElementsSingleSourced = false;
             break;
           }
-          // The element must not be used anywhere other than its single
-          // connecting assignment (e.g. it must not also be read by a
-          // reduction or feed another submodule); otherwise the aggregate's
-          // declaration is still needed.
-          if ((elementUseCount[element] ?? 0) != 1) {
-            allElementsSingleSourced = false;
-            break;
-          }
-          final assignment = connectingAssignments.single;
-          final source =
-              assignment.src == element ? assignment.dst : assignment.src;
-          if (source == element) {
-            allElementsSingleSourced = false;
-            break;
-          }
-          elementSources.add(source);
+          elementSources.add(traced);
         }
 
         if (!allElementsSingleSourced || elementSources.isEmpty) {
+          continue;
+        }
+
+        // A traced pass-through bus may only be dropped if it is fully consumed
+        // by this collapse: every net [BusSubset] referencing it must have been
+        // traced, and it must be a clearable/renameable internal non-port.
+        if (!_tracedBusesFullyConsumed(
+            tracedBuses, tracedSubsets, netSubsets)) {
           continue;
         }
 
@@ -295,6 +329,317 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             elementSet.contains(assignment.dst.resolved));
         agg.clearDeclaration();
         internalSignals.remove(agg);
+
+        // Drop any pass-through buses and clear the [BusSubset]s traced through
+        // them.
+        for (final subsetInst in tracedSubsets) {
+          subsetInst.clearInstantiation();
+        }
+        for (final bus in tracedBuses) {
+          bus.clearDeclaration();
+          internalSignals.remove(bus);
+        }
+
+        changed = true;
+      }
+    }
+  }
+
+  /// Builds resolved lookups over every net [BusSubset] instantiation: a list
+  /// of all views, plus maps keyed by the resolved `original` bus and the
+  /// resolved `subset`.  Reversed slices (`start > end`) are skipped because
+  /// they cannot be safely re-expressed as a simple concatenation here.
+  ({
+    Map<SynthLogic, List<_NetSubsetView>> byOriginal,
+    Map<SynthLogic, List<_NetSubsetView>> bySubset,
+  }) _netSubsetLookups() {
+    final byOriginal = <SynthLogic, List<_NetSubsetView>>{};
+    final bySubset = <SynthLogic, List<_NetSubsetView>>{};
+
+    for (final instantiation in subModuleInstantiations) {
+      instantiation as SystemVerilogSynthSubModuleInstantiation;
+      final m = instantiation.module;
+      if (m is! BusSubset || !m.original.isNet) {
+        continue;
+      }
+      if (m.startIndex > m.endIndex) {
+        // Reversed slice: skip conservatively.
+        continue;
+      }
+      final original = instantiation.inOutMapping[m.original.name]?.resolved;
+      final subset = instantiation.inOutMapping[m.subset.name]?.resolved;
+      if (original == null || subset == null) {
+        continue;
+      }
+      final view = (
+        inst: instantiation,
+        original: original,
+        subset: subset,
+        start: m.startIndex,
+        end: m.endIndex,
+      );
+      byOriginal.putIfAbsent(original, () => []).add(view);
+      bySubset.putIfAbsent(subset, () => []).add(view);
+    }
+
+    return (byOriginal: byOriginal, bySubset: bySubset);
+  }
+
+  /// Attempts to find the real source for array `element` when it is the
+  /// `subset` of a single-bit net [BusSubset] off a pass-through bus.
+  ///
+  /// The shape handled (the "bit-wise" case) is: the bus bit `i` is
+  /// sliced once to feed `element` (`bus[i] -> element`) and once more to tie
+  /// to some other net (`bus[i] -> net`).  This traces `element` to that
+  /// net, recording the consumed [BusSubset]s and bus so they can be
+  /// dropped once the whole aggregate collapse is committed.
+  ///
+  /// Returns the resolved source net, or `null` if `element` does not
+  /// match this shape.
+  SynthLogic? _traceNetSubsetSource(
+    SynthLogic element,
+    ({
+      Map<SynthLogic, List<_NetSubsetView>> byOriginal,
+      Map<SynthLogic, List<_NetSubsetView>> bySubset,
+    }) netSubsets,
+    Map<SynthLogic, int> elementUseCount,
+    Map<SynthLogic, List<SynthAssignment>> elementAssignments,
+    Set<SystemVerilogSynthSubModuleInstantiation> tracedSubsets,
+    Set<SynthLogic> tracedBuses,
+  ) {
+    // [element] must only be used as the subset side of a single BusSubset.
+    final asSubset = netSubsets.bySubset[element];
+    if (asSubset == null || asSubset.length != 1) {
+      return null;
+    }
+    final elementView = asSubset.single;
+
+    // Only single-bit slices are handled (one element per bus bit).
+    if (elementView.start != elementView.end) {
+      return null;
+    }
+    final bit = elementView.start;
+    final bus = elementView.original;
+
+    // The bus must be a clearable/renameable internal non-port pass-through.
+    if (bus.declarationCleared ||
+        !bus.isClearableOrRenameable ||
+        bus.isPort(module) ||
+        !internalSignals.contains(bus)) {
+      return null;
+    }
+
+    // Find the sibling slice of the same bus bit that ties to another net.
+    final siblings = (netSubsets.byOriginal[bus] ?? [])
+        .where((v) => v.start == bit && v.end == bit && v.subset != element)
+        .toList();
+    if (siblings.length != 1) {
+      return null;
+    }
+    final siblingView = siblings.single;
+    final sourceNet = siblingView.subset;
+
+    if (sourceNet == element) {
+      return null;
+    }
+
+    tracedSubsets
+      ..add(elementView.inst)
+      ..add(siblingView.inst);
+    tracedBuses.add(bus);
+
+    return sourceNet;
+  }
+
+  /// Verifies that every pass-through bus in `tracedBuses` is fully consumed:
+  /// every net [BusSubset] referencing it (as its `original`) was traced into
+  /// `tracedSubsets`.  This ensures dropping the bus leaves no dangling
+  /// references.
+  bool _tracedBusesFullyConsumed(
+    Set<SynthLogic> tracedBuses,
+    Set<SystemVerilogSynthSubModuleInstantiation> tracedSubsets,
+    ({
+      Map<SynthLogic, List<_NetSubsetView>> byOriginal,
+      Map<SynthLogic, List<_NetSubsetView>> bySubset,
+    }) netSubsets,
+  ) {
+    for (final bus in tracedBuses) {
+      final allViews = netSubsets.byOriginal[bus] ?? const [];
+      for (final view in allViews) {
+        if (!tracedSubsets.contains(view.inst)) {
+          return false;
+        }
+      }
+      // The bus must not be referenced as a *subset* of some other slice
+      // (i.e. it must be a true root pass-through, not itself sliced into).
+      if ((netSubsets.bySubset[bus] ?? const []).isNotEmpty) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Collapses a flat (non-array) internal net bus that is used as a whole in
+  /// exactly one submodule port, and whose every bit is tied 1:1 to some other
+  /// net via single-bit net [BusSubset]s, into an inline concatenation of
+  /// those nets.
+  ///
+  /// This is the flat analogue of [_collapseAggregateConnections]: where that
+  /// method handles arrays whose *elements* are individually connected, this
+  /// handles a plain bus whose *bits* are individually tied (e.g. each bit
+  /// driven to/from a separate net), and which is then passed whole to a
+  /// child.  It turns
+  /// ```systemverilog
+  ///   wire [7:0] bus;
+  ///   net_connect (bus[0], a0); ... net_connect (bus[7], a7);
+  ///   child c (.data(bus));
+  /// ```
+  /// into `child c (.data({a7, ..., a0}));`, dropping `bus` and all the
+  /// `net_connect`s.
+  void _collapseWholeNetBuses() {
+    var changed = true;
+    while (changed) {
+      changed = false;
+
+      final netSubsets = _netSubsetLookups();
+
+      // Count whole uses of each candidate bus and remember the single
+      // submodule port use we can inline into.  Uses as the [original] of a
+      // [BusSubset] are definers, not whole uses, so they are excluded here.
+      final wholeUseCount = <SynthLogic, int>{};
+      final portUse = <SynthLogic,
+          ({
+        SystemVerilogSynthSubModuleInstantiation instantiation,
+        String portName,
+      })>{};
+
+      final busOriginals = netSubsets.byOriginal.keys.toSet();
+
+      void noteWholeUse(SynthLogic? synthLogic) {
+        if (synthLogic == null) {
+          return;
+        }
+        final resolved = synthLogic.resolved;
+        if (busOriginals.contains(resolved)) {
+          wholeUseCount.update(resolved, (v) => v + 1, ifAbsent: () => 1);
+        }
+      }
+
+      for (final instantiation in subModuleInstantiations) {
+        instantiation as SystemVerilogSynthSubModuleInstantiation;
+
+        // A BusSubset reading this bus as `original` is a definer, not a
+        // whole use; skip those mappings entirely.
+        final isDefiner = instantiation.module is BusSubset;
+
+        for (final entry in instantiation.inOutMapping.entries) {
+          if (isDefiner) {
+            continue;
+          }
+          noteWholeUse(entry.value);
+          final resolved = entry.value.resolved;
+          if (busOriginals.contains(resolved)) {
+            portUse[resolved] =
+                (instantiation: instantiation, portName: entry.key);
+          }
+        }
+        // Nets only connect via inouts, but reads on input/output ports (or
+        // outputs) would still count as disqualifying whole uses.
+        if (!isDefiner) {
+          instantiation.inputMapping.values.forEach(noteWholeUse);
+          instantiation.outputMapping.values.forEach(noteWholeUse);
+        }
+      }
+
+      // This-module ports and assignments are whole uses we cannot inline
+      // into, so they disqualify the bus.
+      [...inputs, ...outputs, ...inOuts].forEach(noteWholeUse);
+      for (final assignment in assignments) {
+        noteWholeUse(assignment.src);
+        noteWholeUse(assignment.dst);
+      }
+
+      for (final busEntry in portUse.entries) {
+        final bus = busEntry.key;
+        final use = busEntry.value;
+
+        // Exactly one whole use: the port use we found.
+        if ((wholeUseCount[bus] ?? 0) != 1) {
+          continue;
+        }
+
+        // The bus must be a clearable/renameable internal non-port net.
+        if (bus.declarationCleared ||
+            !bus.isNet ||
+            bus.isArray ||
+            !bus.isClearableOrRenameable ||
+            bus.isPort(module) ||
+            !internalSignals.contains(bus)) {
+          continue;
+        }
+
+        // The bus must not itself be a subset of another bus.
+        if ((netSubsets.bySubset[bus] ?? const []).isNotEmpty) {
+          continue;
+        }
+
+        // The consuming port must accept expressions.
+        final consumer = use.instantiation.module;
+        if (consumer is SystemVerilog &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
+
+        // Every bit of the bus must be tiled exactly once by a single-bit
+        // [BusSubset] definer, covering [0, width).
+        final definers = netSubsets.byOriginal[bus]!;
+        if (definers.any((v) => v.start != v.end)) {
+          continue;
+        }
+        if (definers.length != bus.width) {
+          continue;
+        }
+        final byBit = <int, _NetSubsetView>{};
+        var tiledExactly = true;
+        for (final view in definers) {
+          if (byBit.containsKey(view.start)) {
+            tiledExactly = false;
+            break;
+          }
+          byBit[view.start] = view;
+        }
+        if (!tiledExactly) {
+          continue;
+        }
+        for (var bit = 0; bit < bus.width; bit++) {
+          if (!byBit.containsKey(bit)) {
+            tiledExactly = false;
+            break;
+          }
+        }
+        if (!tiledExactly) {
+          continue;
+        }
+
+        // Build the per-bit source nets, LSB-first.
+        final elementSources = <SynthLogic>[
+          for (var bit = 0; bit < bus.width; bit++) byBit[bit]!.subset,
+        ];
+
+        // The sources must all be nets (the concatenation is a net lvalue).
+        if (elementSources.any((e) => !e.isNet)) {
+          continue;
+        }
+
+        // Inline the bus as a concatenation of its per-bit nets and drop the
+        // bus plus its definer [BusSubset]s.
+        _addSwizzleConnect(bus, elementSources);
+
+        for (final view in definers) {
+          view.inst.clearInstantiation();
+        }
+        bus.clearDeclaration();
+        internalSignals.remove(bus);
 
         changed = true;
       }
@@ -654,6 +999,17 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 }
+
+/// A resolved view of a net [BusSubset] instantiation: the resolved
+/// `original` and `subset` signals and the (non-reversed) `[start, end]`
+/// inclusive bit range of the slice on the original bus.
+typedef _NetSubsetView = ({
+  SystemVerilogSynthSubModuleInstantiation inst,
+  SynthLogic original,
+  SynthLogic subset,
+  int start,
+  int end,
+});
 
 /// A special [Module] for connecting or assigning two SystemVerilog nets
 /// together bidirectionally.

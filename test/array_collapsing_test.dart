@@ -423,6 +423,142 @@ class IndividualSignalsToExpressionlessPort extends Module {
   }
 }
 
+/// A child whose single inout net array port `data` is bidirectionally mirrored
+/// to `mirror` (`mirror = data.rswizzle()`).
+class WholeNetBusChild extends Module {
+  WholeNetBusChild(LogicNet data, LogicNet mirror, {int n = 8})
+      : super(name: 'whole_net_bus_child') {
+    data = addInOut('data', data, width: n);
+    mirror = addInOut('mirror', mirror, width: n);
+    mirror <= data;
+  }
+}
+
+/// Case A (flat whole-bus): a flat net bus `bus` whose every bit is tied
+/// bit-by-bit to an individual net, and which is then passed *as a whole* to a
+/// child inout port.  The bus and all of its per-bit `net_connect`s should
+/// collapse into a single inline concatenation of those nets on the child port.
+///
+/// `busNaming` controls whether the intermediate bus is collapsible.
+class WholeNetBusToPort extends Module {
+  WholeNetBusToPort(List<LogicNet> nets, LogicNet mirror,
+      {Naming busNaming = Naming.mergeable})
+      : super(name: 'whole_net_bus_to_port') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: busNaming);
+    for (var i = 0; i < n; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+    WholeNetBusChild(bus, mirror, n: n);
+  }
+}
+
+/// A child whose inout net *array* port `data` is bidirectionally mirrored to
+/// `mirror` (`mirror = data.elements.rswizzle()`).
+class ArrayNetBusChild extends Module {
+  ArrayNetBusChild(LogicNet bus, LogicNet mirror, {int n = 8})
+      : super(name: 'array_net_bus_child') {
+    final data = addInOutArray('data', bus, dimensions: [n]);
+    mirror = addInOut('mirror', mirror, width: n);
+    mirror <= data.elements.rswizzle();
+  }
+}
+
+/// Case B (bit-wise pass-through into array port): a flat net bus `bus` whose
+/// every bit is tied to an individual net, then passed to a child inout *array*
+/// port.  Because the bus bit-selects feed the array elements through
+/// pass-through `BusSubset`s, the bus and all of its `net_connect`s should be
+/// traced away and collapsed into a single inline concatenation of those nets
+/// on the child port.
+class BitwiseNetBusToArrayPort extends Module {
+  BitwiseNetBusToArrayPort(List<LogicNet> nets, LogicNet mirror,
+      {Naming busNaming = Naming.mergeable})
+      : super(name: 'bitwise_net_bus_to_array_port') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: busNaming);
+    for (var i = 0; i < n; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+    ArrayNetBusChild(bus, mirror, n: n);
+  }
+}
+
+/// A flat net bus passed as a whole to a child port, but also read by a second
+/// consumer (another child).  The extra whole use must prevent the bus from
+/// collapsing.
+class WholeNetBusMultiUse extends Module {
+  WholeNetBusMultiUse(List<LogicNet> nets, LogicNet mirror1, LogicNet mirror2)
+      : super(name: 'whole_net_bus_multi_use') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror1 = addInOut('mirror1', mirror1, width: n);
+    mirror2 = addInOut('mirror2', mirror2, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: Naming.mergeable);
+    for (var i = 0; i < n; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+    WholeNetBusChild(bus, mirror1, n: n);
+    WholeNetBusChild(bus, mirror2, n: n);
+  }
+}
+
+/// A flat net bus whose lower bits are tied to individual nets, but whose
+/// top bit is tied to *another bit of itself* (`bus[n-1] <= bus[0]`).  That
+/// self-connection puts a second `BusSubset` definer on bit 0, so the bus must
+/// *not* be collapsed (the "each bit driven exactly once" guard must reject
+/// it).  Sends the bus either as a whole (`toArray` false) or into an array
+/// port (`toArray` true).
+class SelfBitNetBus extends Module {
+  SelfBitNetBus(List<LogicNet> nets, LogicNet mirror, {bool toArray = false})
+      : super(name: 'self_bit_net_bus') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: Naming.mergeable);
+    for (var i = 0; i < n - 1; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+    // top bit follows bit 0 of the same bus
+    bus.slice(n - 1, n - 1) <= bus.slice(0, 0);
+    if (toArray) {
+      ArrayNetBusChild(bus, mirror, n: n);
+    } else {
+      WholeNetBusChild(bus, mirror, n: n);
+    }
+  }
+}
+
+/// A pure self-loop net bus: `bus[1] <= bus[0]` with no other drivers, passed
+/// as a whole to a child port.  Both bits merge into a single standalone net,
+/// so the bus may safely collapse into `{M, M}` where `M` is that merged net
+/// (it is *not* a slice of the deleted bus, so there is no dangling
+/// self-reference).
+class PureSelfLoopNetBus extends Module {
+  PureSelfLoopNetBus(LogicNet mirror, {bool toArray = false})
+      : super(name: 'pure_self_loop_net_bus') {
+    mirror = addInOut('mirror', mirror, width: 2);
+    final bus = LogicNet(width: 2, name: 'bus', naming: Naming.mergeable);
+    bus.slice(1, 1) <= bus.slice(0, 0);
+    if (toArray) {
+      ArrayNetBusChild(bus, mirror, n: 2);
+    } else {
+      WholeNetBusChild(bus, mirror, n: 2);
+    }
+  }
+}
+
 /// Returns the body of the last (top-level) module declaration in [sv],
 /// avoiding false matches inside `endmodule`.
 String _topModuleBody(String sv) {
@@ -906,5 +1042,200 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  group('flat net bus collapsing', () {
+    // Case A: a flat net bus tied bit-by-bit to individual nets and passed as a
+    // whole to a child inout port collapses into a single inline concatenation
+    // of those nets.
+    for (final busNaming in [Naming.mergeable, Naming.renameable]) {
+      test('whole net bus to port collapses ($busNaming)', () async {
+        const n = 8;
+        final mod = WholeNetBusToPort(
+            List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+            busNaming: busNaming);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the bus and its per-bit net_connects are gone, replaced by a single
+        // inline concatenation on the child port
+        expect(topBody, isNot(contains('net_connect')));
+        expect(topBody, isNot(contains('wire [7:0] bus')));
+        expect(topBody, contains('.data(({'));
+
+        final vectors = [
+          for (final pattern in [0x0, 0xA, 0x5, 0xFF, 0x3C])
+            Vector({
+              for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+            }, {
+              'mirror': pattern,
+            })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    test('reserved-named whole net bus is not collapsed', () async {
+      const n = 8;
+      final mod = WholeNetBusToPort(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+          busNaming: Naming.reserved);
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // a reserved name must be preserved, so the bus and its net_connects stay
+      expect(topBody, contains('bus'));
+      expect(topBody, contains('net_connect'));
+      expect(topBody, isNot(contains('.data(({')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0xFF])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('multiply-used whole net bus is not collapsed', () async {
+      const n = 8;
+      final mod = WholeNetBusMultiUse(List.generate(n, (_) => LogicNet()),
+          LogicNet(width: n), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // used as a whole twice, so the single-use restriction keeps the bus
+      expect(topBody, contains('bus'));
+      expect(topBody, contains('net_connect'));
+      expect(topBody, isNot(contains('.data(({')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0xFF])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror1': pattern,
+            'mirror2': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    // Case B: a flat net bus tied bit-by-bit to individual nets and passed to a
+    // child inout *array* port traces through the pass-through bus and
+    // collapses into a single inline concatenation of those nets.
+    for (final busNaming in [Naming.mergeable, Naming.renameable]) {
+      test('bitwise net bus into array port collapses ($busNaming)', () async {
+        const n = 8;
+        final mod = BitwiseNetBusToArrayPort(
+            List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+            busNaming: busNaming);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the bus and its net_connects are traced away and replaced by a
+        // single inline concatenation of those nets on the child array port
+        expect(topBody, isNot(contains('net_connect')));
+        expect(topBody, isNot(contains('wire [7:0] bus')));
+        expect(topBody, contains('.data(({'));
+
+        final vectors = [
+          for (final pattern in [0x0, 0xA, 0x5, 0xFF, 0x3C])
+            Vector({
+              for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+            }, {
+              'mirror': pattern,
+            })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    test('reserved-named bitwise net bus into array port is not collapsed',
+        () async {
+      const n = 8;
+      final mod = BitwiseNetBusToArrayPort(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+          busNaming: Naming.reserved);
+      await mod.build();
+      final sv = mod.generateSynth();
+
+      // a reserved bus name must be preserved, so it is not traced away
+      expect(sv, contains('bus'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0xFF])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    // Corner case: a bit connected to *another bit of the same bus*.  When that
+    // bit is also externally driven, it gets a second `BusSubset` definer, so
+    // the "each bit driven exactly once" guard must keep the bus intact.
+    for (final toArray in [false, true]) {
+      test('self-bit-connected net bus is not collapsed (toArray=$toArray)',
+          () async {
+        const n = 8;
+        final mod = SelfBitNetBus(
+            List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+            toArray: toArray);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the self-connection leaves a per-bit net_connect structure intact
+        expect(topBody, contains('net_connect'));
+        expect(topBody, isNot(contains('.data(({')));
+
+        final vectors = [
+          for (final pattern in [0x0, 0x2A, 0x55, 0x7F])
+            Vector({
+              // only the lower n-1 bits are externally driven
+              for (var i = 0; i < n - 1; i++) 'net$i': (pattern >> i) & 1
+            }, {
+              // bits 0..n-2 mirror their nets; the top bit follows bit 0
+              'mirror':
+                  (pattern & ((1 << (n - 1)) - 1)) | ((pattern & 1) << (n - 1)),
+            })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    // Corner case: a pure self-loop (bit1 <= bit0, no other drivers) merges
+    // both bits into a single standalone net and may safely collapse without
+    // producing a dangling reference to the deleted bus.
+    for (final toArray in [false, true]) {
+      test('pure self-loop net bus collapses safely (toArray=$toArray)',
+          () async {
+        final mod = PureSelfLoopNetBus(LogicNet(width: 2), toArray: toArray);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        // the bus collapses into an inline concatenation of the merged net, and
+        // the swizzle must not reference a now-deleted bus slice
+        expect(topBody, isNot(contains('net_connect')));
+        expect(topBody, isNot(contains('wire [1:0] bus')));
+        expect(topBody, contains('.data(({'));
+      });
+    }
   });
 }

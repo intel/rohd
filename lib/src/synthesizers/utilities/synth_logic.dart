@@ -131,6 +131,15 @@ class SynthLogic {
   /// may be additional conditions that prevent clearing.
   bool get isClearable => mergeable;
 
+  /// Like [isClearable], but additionally permits a *renameable* signal (whose
+  /// chosen name carries no semantic meaning and would simply be dropped).
+  ///
+  /// This is `false` only for [isReserved] (e.g. ports) and constant signals,
+  /// whose identities must be preserved.  It is used by the aggregate-collapse
+  /// optimizations to eliminate intermediate (possibly named) nets.
+  bool get isClearableOrRenameable =>
+      _reservedLogic == null && _constLogic == null;
+
   /// The source connections to any [Logic] in this [SynthLogic] which are not
   /// also contained within this [SynthLogic].
   Iterable<Logic> get srcConnections {
