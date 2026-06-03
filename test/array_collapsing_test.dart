@@ -559,6 +559,52 @@ class PureSelfLoopNetBus extends Module {
   }
 }
 
+/// Models the `connectPorts(top.bit_i, child.netPort[i])` receiver scenario:
+/// each external bit net is tied into one bit of a child's whole net bus via
+/// [Logic.assignSubset].  `assignSubset` introduces an intermediate `*_subset`
+/// net array whose elements are pure pass-throughs; those elements must be
+/// forwarded directly into the child connection so that no per-bit
+/// `net_connect` remains.
+class AssignSubsetReceiver extends Module {
+  AssignSubsetReceiver(List<LogicNet> nets, LogicNet mirror,
+      {Naming busNaming = Naming.mergeable})
+      : super(name: 'assign_subset_receiver') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: busNaming);
+    WholeNetBusChild(bus, mirror, n: n);
+    for (var i = 0; i < n; i++) {
+      bus.assignSubset([netPorts[i]], start: i);
+    }
+  }
+}
+
+/// Like [AssignSubsetReceiver] but assigns the external bits in non-monotonic
+/// order, exercising that the forwarding preserves per-bit positions.
+class AssignSubsetReceiverScrambled extends Module {
+  AssignSubsetReceiverScrambled(List<LogicNet> nets, LogicNet mirror)
+      : super(name: 'assign_subset_receiver_scrambled') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus', naming: Naming.mergeable);
+    WholeNetBusChild(bus, mirror, n: n);
+    // assign in a scrambled order; each still targets its own bit
+    for (final i in [3, 0, 2, 1].where((i) => i < n)) {
+      bus.assignSubset([netPorts[i]], start: i);
+    }
+    // cover any remaining bits in order (for n != 4)
+    for (var i = 4; i < n; i++) {
+      bus.assignSubset([netPorts[i]], start: i);
+    }
+  }
+}
+
 /// Returns the body of the last (top-level) module declaration in [sv],
 /// avoiding false matches inside `endmodule`.
 String _topModuleBody(String sv) {
@@ -1237,5 +1283,90 @@ void main() {
         expect(topBody, contains('.data(({'));
       });
     }
+  });
+
+  group('assignSubset pass-through forwarding', () {
+    // The `connectPorts(top.bit_i, child.netPort[i])` receiver scenario:
+    // `assignSubset` ties each external bit net into one bit of a child's net
+    // bus.  The intermediate `*_subset` net array must be forwarded away so the
+    // whole connection becomes a single inline concatenation with no per-bit
+    // `net_connect`.
+    test('per-bit assignSubset into whole net bus collapses', () async {
+      const n = 4;
+      final mod = AssignSubsetReceiver(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // no intermediate subset array, and no per-bit net_connects remain
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, isNot(contains('net_connect')));
+      expect(topBody, contains('.data(({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF, 0x3])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('scrambled-order assignSubset preserves per-bit positions', () async {
+      const n = 4;
+      final mod = AssignSubsetReceiverScrambled(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, isNot(contains('net_connect')));
+      expect(topBody, contains('.data(({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF, 0x6])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('renameable subset target is still forwarded but bus is preserved',
+        () async {
+      const n = 4;
+      final mod = AssignSubsetReceiver(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n),
+          busNaming: Naming.renameable);
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      // the named bus is preserved, but the per-bit `*_subset` pass-through and
+      // its per-bit net_connects are still forwarded away (a single net_connect
+      // carries the whole inline concatenation onto the bus)
+      expect(topBody, isNot(contains('_subset')));
+      expect(topBody, contains('bus'));
+      expect(topBody, contains('({'));
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0xF])
+          Vector({
+            for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1
+          }, {
+            'mirror': pattern,
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
   });
 }

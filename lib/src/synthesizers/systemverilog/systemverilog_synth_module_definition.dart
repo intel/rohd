@@ -30,6 +30,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   void process() {
     _collapseAggregateConnections();
     _collapseWholeNetBuses();
+    _forwardPassthroughElementsIntoInlineables();
     _replaceNetConnections();
     _collapseChainableModules();
     _replaceInOutConnectionInlineableModules();
@@ -646,6 +647,209 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
+  /// Forwards the per-element sources of a pass-through [LogicArray] directly
+  /// into the single inlineable submodule (e.g. a [Swizzle]) that consumes
+  /// those elements, then drops the now-dead array.
+  ///
+  /// `assignSubset` (e.g. via `connectPorts`/`Logic.assignSubset`) introduces
+  /// an intermediate net [LogicArray] (`*_subset`) whose elements are each
+  /// tied by a single assignment to one external signal and then read
+  /// element-by-element by an inlineable submodule.  Array elements never
+  /// merge away (they carry positional `x`/`z` semantics), so without this
+  /// pass each such element would materialize as its own `net_connect`.  When
+  /// *every* element of the array is a pure pass-through, we rewire the
+  /// consuming submodule's ports straight to the per-element sources and drop
+  /// the intermediate array entirely, leaving a single inline concatenation.
+  void _forwardPassthroughElementsIntoInlineables() {
+    // Loop until no further forwarding occurs: forwarding one array can make
+    // another eligible.  Each forward strictly removes work (an array and its
+    // element assignments), so this terminates.
+    var changed = true;
+    while (changed) {
+      changed = false;
+
+      // Arrays used "as a whole" anywhere must keep their elements intact, so
+      // their elements are not eligible for forwarding.
+      final aggregateUsedArrays = <SynthLogic>{};
+      void markIfAggregateArray(SynthLogic? synthLogic) {
+        if (synthLogic != null && synthLogic.isArray) {
+          aggregateUsedArrays.add(synthLogic.resolved);
+        }
+      }
+
+      [...inputs, ...outputs, ...inOuts].forEach(markIfAggregateArray);
+      for (final inst in subModuleInstantiations) {
+        inst as SystemVerilogSynthSubModuleInstantiation;
+        inst.inputMapping.values.forEach(markIfAggregateArray);
+        inst.outputMapping.values.forEach(markIfAggregateArray);
+        inst.inOutMapping.values.forEach(markIfAggregateArray);
+      }
+      for (final assignment in assignments) {
+        markIfAggregateArray(assignment.src);
+        markIfAggregateArray(assignment.dst);
+      }
+
+      // For each array element: the inlineable-submodule input/inout ports
+      // that read it, the assignments connecting it, and whether it has any
+      // other (disqualifying) use.
+      final inlineablePortReads = <SynthLogic,
+          List<
+              ({
+                SystemVerilogSynthSubModuleInstantiation instantiation,
+                String portName,
+                bool isInOut,
+              })>>{};
+      final elementAssignments = <SynthLogic, List<SynthAssignment>>{};
+      final disqualified = <SynthLogic>{};
+
+      void noteOtherUse(SynthLogic? s) {
+        if (s is SynthLogicArrayElement) {
+          disqualified.add(s.resolved);
+        }
+      }
+
+      for (final inst in subModuleInstantiations) {
+        inst as SystemVerilogSynthSubModuleInstantiation;
+        final isInlineable = inst.module is InlineSystemVerilog;
+        final resultLogic =
+            isInlineable ? inst.inlineResultLogic?.resolved : null;
+
+        void handleRead(String name, SynthLogic value,
+            {required bool isInOut}) {
+          if (value is! SynthLogicArrayElement) {
+            return;
+          }
+          final resolved = value.resolved;
+          // A read by an inlineable submodule input/inout port (but not its
+          // own result) is the only "use" we can forward into; anything else
+          // disqualifies the element.
+          if (isInlineable && resolved != resultLogic) {
+            inlineablePortReads
+                .putIfAbsent(resolved, () => [])
+                .add((instantiation: inst, portName: name, isInOut: isInOut));
+          } else {
+            noteOtherUse(value);
+          }
+        }
+
+        inst.inputMapping.forEach((n, v) => handleRead(n, v, isInOut: false));
+        inst.inOutMapping.forEach((n, v) => handleRead(n, v, isInOut: true));
+        inst.outputMapping.values.forEach(noteOtherUse);
+      }
+
+      for (final assignment in assignments) {
+        for (final end in [assignment.src, assignment.dst]) {
+          if (end is SynthLogicArrayElement) {
+            elementAssignments
+                .putIfAbsent(end.resolved, () => [])
+                .add(assignment);
+          }
+        }
+      }
+
+      // An element is a pure pass-through if it is read by exactly one
+      // inlineable submodule port, connected by exactly one assignment to some
+      // other signal, used nowhere else, and lives in a clearable internal
+      // array that is not used as a whole.
+      bool isPassThrough(SynthLogic element) {
+        if (disqualified.contains(element)) {
+          return false;
+        }
+        final reads = inlineablePortReads[element];
+        final assigns = elementAssignments[element];
+        if (reads == null || reads.length != 1) {
+          return false;
+        }
+        if (assigns == null || assigns.length != 1) {
+          return false;
+        }
+        final assignment = assigns.single;
+        final partner = assignment.src.resolved == element
+            ? assignment.dst
+            : assignment.src;
+        if (partner.resolved == element) {
+          return false;
+        }
+        if (!element.isClearable) {
+          return false;
+        }
+        final parentArray =
+            (element as SynthLogicArrayElement).parentArray.resolved;
+        if (aggregateUsedArrays.contains(parentArray)) {
+          return false;
+        }
+        return true;
+      }
+
+      // Group candidate pass-through elements by parent array.
+      final candidatesByArray = <SynthLogic, Set<SynthLogic>>{};
+      for (final element in inlineablePortReads.keys) {
+        if (isPassThrough(element)) {
+          candidatesByArray
+              .putIfAbsent(
+                  (element as SynthLogicArrayElement).parentArray.resolved,
+                  () => {})
+              .add(element);
+        }
+      }
+
+      // Only forward when EVERY element of an array is a pass-through, so the
+      // whole array can be dropped.  Partial forwarding is unsafe: the array
+      // would stay declared and its remaining (e.g. differently-driven or
+      // undriven `x`/`z`) elements could change behavior.
+      final droppedArrays = <SynthLogic>[];
+      candidatesByArray.forEach((parentArray, arrayCandidates) {
+        if (parentArray.declarationCleared ||
+            !parentArray.isClearable ||
+            parentArray.isPort(module) ||
+            !internalSignals.contains(parentArray)) {
+          return;
+        }
+
+        final allElements = parentArray.logics
+            .whereType<LogicArray>()
+            .expand((logicArray) => logicArray.elements)
+            .map(getSynthLogic)
+            .nonNulls
+            .map((e) => e.resolved)
+            .toSet();
+
+        if (allElements.isEmpty ||
+            !allElements.every(arrayCandidates.contains)) {
+          return;
+        }
+
+        // Rewire each element's consuming port straight to the element's
+        // source, and remove the now-redundant element assignment.
+        final removedAssignments = <SynthAssignment>{};
+        for (final element in arrayCandidates) {
+          final read = inlineablePortReads[element]!.single;
+          final assignment = elementAssignments[element]!.single;
+          final partner = assignment.src.resolved == element
+              ? assignment.dst
+              : assignment.src;
+
+          if (read.isInOut) {
+            read.instantiation
+                .setInOutMapping(read.portName, partner, replace: true);
+          } else {
+            read.instantiation
+                .setInputMapping(read.portName, partner, replace: true);
+          }
+
+          removedAssignments.add(assignment);
+          (element as SynthLogicArrayElement).clearDeclaration();
+        }
+
+        assignments.removeWhere(removedAssignments.contains);
+        droppedArrays.add(parentArray);
+        changed = true;
+      });
+
+      _dropEmptiedArrays(droppedArrays);
+    }
+  }
+
   /// Fabricates a [_SwizzleConnect] that represents [agg] as the inline
   /// concatenation of [elementSources] (ordered with index 0 as the LSB), and
   /// registers it in [_inlineableSubmoduleMap].
@@ -914,13 +1118,27 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
 
     // Drop any parent array whose elements have all been inlined away, so the
-    // now-unused array declaration is not emitted.  This considers the whole
-    // array hierarchy (collecting ancestors) so that, for multi-dimensional
-    // arrays, a parent array whose sub-arrays were all dropped is itself
-    // dropped.  A fixed-point loop is used since dropping one sub-array can
-    // make its parent droppable regardless of visitation order.
+    // now-unused array declaration is not emitted.
+    _dropEmptiedArrays(inlinedParentArrays);
+
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
+
+      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
+          synthLogicToInlineableSynthSubmoduleMap;
+    }
+  }
+
+  /// Drops the declarations of any [LogicArray] (seeded from [emptiedArrays])
+  /// whose elements have all been inlined or forwarded away.
+  ///
+  /// This considers the whole array hierarchy (collecting ancestors) so that,
+  /// for multi-dimensional arrays, a parent array whose sub-arrays were all
+  /// dropped is itself dropped.  A fixed-point loop is used since dropping one
+  /// sub-array can make its parent droppable regardless of visitation order.
+  void _dropEmptiedArrays(Iterable<SynthLogic> emptiedArrays) {
     final candidateParentArrays = <SynthLogic>{};
-    final ancestorsToCollect = [...inlinedParentArrays];
+    final ancestorsToCollect = [...emptiedArrays];
     while (ancestorsToCollect.isNotEmpty) {
       final parentArray = ancestorsToCollect.removeLast().resolved;
       if (candidateParentArrays.add(parentArray) &&
@@ -950,13 +1168,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           droppedAny = true;
         }
       }
-    }
-
-    for (final subModuleInstantiation in subModuleInstantiations) {
-      subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
-
-      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
-          synthLogicToInlineableSynthSubmoduleMap;
     }
   }
 
