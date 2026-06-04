@@ -627,6 +627,185 @@ class AssignSubsetDriver extends Module {
   }
 }
 
+/// A non-net child mirroring a whole input bus `data` to output `mirror`.
+class WholeBusChild extends Module {
+  WholeBusChild(Logic data, {int n = 4}) : super(name: 'whole_bus_child') {
+    data = addInput('data', data, width: n);
+    addOutput('mirror', width: n) <= data;
+  }
+}
+
+/// A non-net child mirroring an input *array* bus `data` to output `mirror`.
+class ArrayBusChild extends Module {
+  ArrayBusChild(Logic data, {int n = 4}) : super(name: 'array_bus_child') {
+    final d = addInputArray('data', data, dimensions: [n]);
+    addOutput('mirror', width: n) <= d.elements.rswizzle();
+  }
+}
+
+/// How individual bits are tied into the intermediate bus in the kitchen-sink
+/// collapse modules.
+enum TieMechanism {
+  /// `bus.slice(i, i) <= bit[i]` (nets only — non-net slices are read-only).
+  directSlice,
+
+  /// `bus.assignSubset([bit[i]], start: i)` (the receiver direction).
+  subsetReceiver,
+
+  /// `bit[i].assignSubset([bus.slice(i, i)])` (the driver direction; nets
+  /// only).
+  subsetDriver,
+}
+
+/// A configuration of independent toggles describing one collapse scenario, so
+/// a single parameterized module can exercise every combination of them.
+class CollapseConfig {
+  /// Whether the signals/bus are nets (`LogicNet`) or plain `Logic`.
+  final bool isNet;
+
+  /// How the individual bits are tied into the bus.
+  final TieMechanism mechanism;
+
+  /// Whether the bus is consumed via a child *array* port (vs a whole port).
+  final bool toArray;
+
+  /// Whether the bits are tied in a non-monotonic order.
+  final bool scrambled;
+
+  /// Whether the bus may collapse (`Naming.mergeable`) or must be preserved
+  /// (`Naming.renameable`).
+  final bool collapsibleBus;
+
+  /// Whether only the low half of the bus is driven (undriven bits stay `z`).
+  final bool partial;
+
+  /// Whether a second consumer reads the whole bus (which blocks collapse).
+  final bool multiUse;
+
+  const CollapseConfig({
+    required this.isNet,
+    required this.mechanism,
+    required this.toArray,
+    required this.scrambled,
+    required this.collapsibleBus,
+    required this.partial,
+    required this.multiUse,
+  });
+
+  /// The bus width used by the kitchen-sink modules.
+  static const width = 4;
+
+  /// The number of bits actually tied into the bus (half when [partial]).
+  int get driven => partial ? width ~/ 2 : width;
+
+  /// The intermediate bus and any `*_subset` arrays should fully dissolve into
+  /// a single inline concatenation only when the bus is collapsible, drives a
+  /// *whole* (non-array) child port, and there is no partial drive or extra
+  /// use.  Array ports are bit-blasted into per-element connections, so the
+  /// bus survives as a named intermediate there.
+  bool get fullyCollapses =>
+      collapsibleBus && !partial && !multiUse && !toArray;
+
+  /// The `*_subset` pass-through arrays should be forwarded away whenever the
+  /// whole connection can collapse (independent of bus naming).
+  bool get noSubset => !partial && !multiUse;
+
+  String get description => [
+        if (isNet) 'net' else 'logic',
+        mechanism.name,
+        if (toArray) 'arrayPort' else 'wholePort',
+        if (scrambled) 'scrambled' else 'inOrder',
+        if (collapsibleBus) 'mergeableBus' else 'renameableBus',
+        if (partial) 'partial' else 'full',
+        if (multiUse) 'multiUse' else 'singleUse',
+      ].join('/');
+}
+
+/// A deterministic order (possibly non-monotonic) in which to tie the [k] bits.
+List<int> _tieOrder(int k, {required bool scrambled}) {
+  if (!scrambled) {
+    return [for (var i = 0; i < k; i++) i];
+  }
+  return [
+    ...[3, 0, 2, 1].where((i) => i < k),
+    for (var i = 4; i < k; i++) i,
+  ];
+}
+
+/// The net (`LogicNet`) kitchen-sink: ties `k` external nets into an
+/// intermediate bus via [CollapseConfig.mechanism], then mirrors the bus to
+/// one (or two, when [CollapseConfig.multiUse]) child(ren).  Because nets are
+/// bidirectional, driving the external nets propagates through to every mirror
+/// regardless of which `assignSubset` direction is used.
+class NetKitchenSink extends Module {
+  final CollapseConfig config;
+  NetKitchenSink(this.config, List<LogicNet> nets, LogicNet mirror1,
+      [LogicNet? mirror2])
+      : super(name: 'net_kitchen_sink') {
+    const n = CollapseConfig.width;
+    final k = config.driven;
+    final netPorts = [
+      for (var i = 0; i < k; i++) addInOut('net$i', nets[i]),
+    ];
+    final bus = LogicNet(
+      width: n,
+      name: 'bus',
+      naming: config.collapsibleBus ? Naming.mergeable : Naming.renameable,
+    );
+    for (final i in _tieOrder(k, scrambled: config.scrambled)) {
+      switch (config.mechanism) {
+        case TieMechanism.directSlice:
+          bus.slice(i, i) <= netPorts[i];
+        case TieMechanism.subsetReceiver:
+          bus.assignSubset([netPorts[i]], start: i);
+        case TieMechanism.subsetDriver:
+          netPorts[i].assignSubset([bus.slice(i, i)]);
+      }
+    }
+    _consume(bus, addInOut('mirror1', mirror1, width: n), n);
+    if (config.multiUse) {
+      _consume(bus, addInOut('mirror2', mirror2!, width: n), n);
+    }
+  }
+
+  void _consume(LogicNet bus, LogicNet mirror, int n) {
+    if (config.toArray) {
+      ArrayNetBusChild(bus, mirror, n: n);
+    } else {
+      WholeNetBusChild(bus, mirror, n: n);
+    }
+  }
+}
+
+/// The non-net (`Logic`) kitchen-sink: ties external input bits into an
+/// intermediate bus via `assignSubset` (the only valid non-net mechanism),
+/// then mirrors the bus to one (or two, when [CollapseConfig.multiUse])
+/// child(ren) whose outputs are surfaced on `y` (and `y2`).
+class LogicKitchenSink extends Module {
+  final CollapseConfig config;
+  LogicKitchenSink(this.config, List<Logic> bits)
+      : super(name: 'logic_kitchen_sink') {
+    const n = CollapseConfig.width;
+    final ins = [for (var i = 0; i < n; i++) addInput('b$i', bits[i])];
+    final bus = Logic(
+      width: n,
+      name: 'bus',
+      naming: config.collapsibleBus ? Naming.mergeable : Naming.renameable,
+    );
+    for (final i in _tieOrder(n, scrambled: config.scrambled)) {
+      bus.assignSubset([ins[i]], start: i);
+    }
+    addOutput('y', width: n) <= _consume(bus, n);
+    if (config.multiUse) {
+      addOutput('y2', width: n) <= _consume(bus, n);
+    }
+  }
+
+  Logic _consume(Logic bus, int n) => config.toArray
+      ? (ArrayBusChild(bus, n: n).output('mirror'))
+      : (WholeBusChild(bus, n: n).output('mirror'));
+}
+
 /// A non-net child whose input `i` is inverted onto output `o`.
 class LogicInvChild extends Module {
   LogicInvChild(Logic i, {int n = 4}) : super(name: 'logic_inv_child') {
@@ -1512,5 +1691,114 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  group('kitchen-sink collapse combinations', () {
+    // Enumerate every valid combination of the independent collapse toggles for
+    // both nets and non-nets.  For every combination we always check functional
+    // correctness (functional + iverilog), and for the combinations whose
+    // structure we can confidently predict we also assert the generated
+    // SystemVerilog looks the way it should.  The cost of a silent corner-case
+    // bug here is high, so coverage is intentionally exhaustive.
+    final configs = <CollapseConfig>[];
+    for (final isNet in [true, false]) {
+      final mechanisms =
+          isNet ? TieMechanism.values : const [TieMechanism.subsetReceiver];
+      for (final mechanism in mechanisms) {
+        for (final toArray in [false, true]) {
+          for (final scrambled in [false, true]) {
+            for (final collapsibleBus in [true, false]) {
+              // partial drive only has well-defined `z` semantics for nets
+              for (final partial in isNet ? [false, true] : [false]) {
+                for (final multiUse in [false, true]) {
+                  configs.add(CollapseConfig(
+                    isNet: isNet,
+                    mechanism: mechanism,
+                    toArray: toArray,
+                    scrambled: scrambled,
+                    collapsibleBus: collapsibleBus,
+                    partial: partial,
+                    multiUse: multiUse,
+                  ));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (final config in configs) {
+      test(config.description, () async {
+        const n = CollapseConfig.width;
+        final k = config.driven;
+        final reason = config.description;
+
+        final Module mod;
+        final List<Vector> vectors;
+        if (config.isNet) {
+          final netMod = NetKitchenSink(
+            config,
+            List.generate(k, (_) => LogicNet()),
+            LogicNet(width: n),
+            config.multiUse ? LogicNet(width: n) : null,
+          );
+          mod = netMod;
+          String expected(int pattern) => config.partial
+              ? ('z' * (n - k)) + pattern.toRadixString(2).padLeft(k, '0')
+              : LogicValue.ofInt(pattern, n).toString(includeWidth: false);
+          final patterns =
+              config.partial ? [0x0, 0x1, 0x2, 0x3] : [0x0, 0xA, 0x5, 0xF, 0x6];
+          vectors = [
+            for (final pattern in patterns)
+              Vector({
+                for (var i = 0; i < k; i++) 'net$i': (pattern >> i) & 1,
+              }, {
+                'mirror1': expected(pattern),
+                if (config.multiUse) 'mirror2': expected(pattern),
+              }),
+          ];
+        } else {
+          final logicMod =
+              LogicKitchenSink(config, List.generate(n, (_) => Logic()));
+          mod = logicMod;
+          final patterns = [0x0, 0xA, 0x5, 0xF, 0x6];
+          vectors = [
+            for (final pattern in patterns)
+              Vector({
+                for (var i = 0; i < n; i++) 'b$i': (pattern >> i) & 1,
+              }, {
+                'y': pattern,
+                if (config.multiUse) 'y2': pattern,
+              }),
+          ];
+        }
+
+        await mod.build();
+        final topBody = _topModuleBody(mod.generateSynth());
+
+        // --- structural expectations (only where confidently predictable) ---
+        if (config.noSubset) {
+          expect(topBody, isNot(contains('_subset')),
+              reason: 'subset pass-throughs should be forwarded away: $reason');
+        }
+
+        if (config.fullyCollapses) {
+          expect(topBody, isNot(contains(RegExp(r'\bbus\b'))),
+              reason: 'mergeable bus should dissolve entirely: $reason');
+          expect(topBody, contains('.data(({'),
+              reason: 'an inline concatenation should drive the child: '
+                  '$reason');
+          if (config.isNet) {
+            expect(topBody, isNot(contains('net_connect')),
+                reason: 'no per-bit net_connect should remain: $reason');
+          }
+        }
+
+        // --- functional correctness (always) ---
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
   });
 }

@@ -591,6 +591,15 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           continue;
         }
 
+        // A whole-width use of a [Swizzle] is its concatenation *result*, which
+        // already drives this bus; the per-bit subsets are then reads of the
+        // bus (e.g. bit-blasting it onto an array port) rather than its
+        // definers, so collapsing here would double-drive the bus and orphan
+        // its real consumer.  Skip these.
+        if (consumer is Swizzle) {
+          continue;
+        }
+
         // Every bit of the bus must be tiled exactly once by a single-bit
         // [BusSubset] definer, covering [0, width).
         final definers = netSubsets.byOriginal[bus]!;
