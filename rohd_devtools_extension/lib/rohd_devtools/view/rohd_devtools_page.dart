@@ -23,24 +23,13 @@ class RohdDevToolsPage extends StatelessWidget {
   /// Builds the themed DevTools page and its bloc providers.
   Widget build(BuildContext context) => MultiBlocProvider(
         providers: [
-          BlocProvider(
-            create: (context) => DevToolsThemeCubit(),
-          ),
-          BlocProvider(
-            create: (context) => RohdServiceCubit(),
-          ),
-          BlocProvider(
-            create: (context) => TreeSearchTermCubit(),
-          ),
-          BlocProvider(
-            create: (context) => SelectedModuleCubit(),
-          ),
-          BlocProvider(
-            create: (context) => SignalSearchTermCubit(),
-          ),
-          BlocProvider(
-            create: (context) => DetailsTabCubit(),
-          ),
+          BlocProvider(create: (context) => DevToolsThemeCubit()),
+          BlocProvider(create: (context) => RohdServiceCubit()),
+          BlocProvider(create: (context) => TreeSearchTermCubit()),
+          BlocProvider(create: (context) => SelectedModuleCubit()),
+          BlocProvider(create: (context) => SignalSearchTermCubit()),
+          BlocProvider(create: (context) => DetailsTabCubit()),
+          BlocProvider(create: (context) => SnapshotCubit()),
         ],
         child: BlocBuilder<DevToolsThemeCubit, DevToolsThemeMode>(
           builder: (context, themeMode) {
@@ -74,9 +63,7 @@ class _RohdExtensionModuleState extends State<RohdExtensionModule> {
 
     return Scaffold(
       appBar: const DevtoolAppBar(),
-      body: TreeStructurePage(
-        screenSize: screenSize,
-      ),
+      body: TreeStructurePage(screenSize: screenSize),
     );
   }
 }

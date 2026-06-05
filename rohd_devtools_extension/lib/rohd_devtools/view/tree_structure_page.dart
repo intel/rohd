@@ -17,10 +17,7 @@ import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 /// Split-pane page showing the module tree and selected module details.
 class TreeStructurePage extends StatelessWidget {
   /// Creates the tree structure page.
-  TreeStructurePage({
-    required this.screenSize,
-    super.key,
-  });
+  TreeStructurePage({required this.screenSize, super.key});
 
   /// Available size used to split the page into two panes.
   final Size screenSize;
@@ -43,16 +40,39 @@ class TreeStructurePage extends StatelessWidget {
   @override
 
   /// Builds the split-pane tree structure page.
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTreePane(context),
-              _buildDetailsPane(context),
-            ],
+  Widget build(BuildContext context) => MultiBlocListener(
+        listeners: [
+          BlocListener<RohdServiceCubit, RohdServiceState>(
+            listener: (context, state) {
+              final snapshotCubit = context.read<SnapshotCubit>();
+
+              if (state is RohdServiceLoaded) {
+                final source =
+                    context.read<RohdServiceCubit>().signalValueSource;
+                if (source == null) {
+                  return;
+                }
+
+                if (snapshotCubit.mode != SignalTrackingMode.video) {
+                  snapshotCubit.setMode(SignalTrackingMode.video);
+                }
+
+                snapshotCubit.startVideoTracking(source);
+              } else if (state is RohdServiceInitial ||
+                  state is RohdServiceError) {
+                snapshotCubit.clear();
+              }
+            },
+          ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [_buildTreePane(context), _buildDetailsPane(context)],
+            ),
           ),
         ),
       );
@@ -133,9 +153,8 @@ class TreeStructurePage extends StatelessWidget {
                       onChanged: (value) {
                         context.read<TreeSearchTermCubit>().setTerm(value);
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Search Tree',
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Search Tree'),
                     ),
                   ),
                   IconButton(
@@ -197,15 +216,23 @@ class TreeStructurePage extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 20, right: 20),
                         child: BlocBuilder<SelectedModuleCubit,
                             SelectedModuleState>(
-                          builder: (context, state) {
-                            if (state is SelectedModuleLoaded) {
-                              return SignalDetailsCard(module: state.module);
-                            }
+                          builder: (context, state) =>
+                              BlocBuilder<SnapshotCubit, SnapshotState>(
+                            builder: (context, snapshotState) {
+                              if (state is SelectedModuleLoaded) {
+                                return SignalDetailsCard(
+                                  module: state.module,
+                                  snapshot: snapshotState is SnapshotLoaded
+                                      ? snapshotState
+                                      : null,
+                                );
+                              }
 
-                            return const Center(
-                              child: Text('No module selected'),
-                            );
-                          },
+                              return const Center(
+                                child: Text('No module selected'),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       _buildFeaturePlaceholderPane(
@@ -255,10 +282,7 @@ class TreeStructurePage extends StatelessWidget {
             children: [
               icon,
               const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
                 message,

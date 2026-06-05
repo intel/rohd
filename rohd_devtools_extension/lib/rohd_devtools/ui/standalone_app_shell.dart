@@ -15,6 +15,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/const/app_theme.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/cubit/cubits.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/dtd_vm_service_info.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/connection_state_machine.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/ui.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/view/tree_structure_page.dart';
 
@@ -97,6 +98,7 @@ class _StandaloneDevToolsPageState
   late final RohdServiceCubit _rohdServiceCubit = RohdServiceCubit(
     manageServiceManager: false,
   );
+  late final SnapshotCubit _snapshotCubit = SnapshotCubit();
   late final TreeSearchTermCubit _treeSearchTermCubit = TreeSearchTermCubit();
   late final SelectedModuleCubit _selectedModuleCubit = SelectedModuleCubit();
   late final SignalSearchTermCubit _signalSearchTermCubit =
@@ -161,13 +163,18 @@ class _StandaloneDevToolsPageState
       result.vmService,
       result.isolateId,
     );
-    await _rohdServiceCubit.evalModuleTree();
+    await _loadHierarchyFromVm();
   }
+
+  @override
+  Future<void> onCsmLoadHierarchy() => _loadHierarchyFromVm();
 
   @override
 
   /// Clears the standalone tree service when the connection is torn down.
-  Future<void> tearDownOldConnection() async {
+  Future<void> tearDownOldConnection({
+    required VmConnectionTransition transition,
+  }) async {
     _rohdServiceCubit.treeService = null;
   }
 
@@ -192,7 +199,19 @@ class _StandaloneDevToolsPageState
       result.vmService,
       result.isolateId,
     );
+    await _loadHierarchyFromVm();
+  }
+
+  Future<void> _loadHierarchyFromVm() async {
     await _rohdServiceCubit.evalModuleTree();
+
+    final state = _rohdServiceCubit.state;
+    final success = switch (state) {
+      RohdServiceLoaded(treeModel: _) => true,
+      _ => false,
+    };
+
+    connectionStateMachine.handleEvent(HierarchyLoadResult(success: success));
   }
 
   @override
@@ -200,6 +219,7 @@ class _StandaloneDevToolsPageState
   /// Releases cubits used by the standalone shell.
   void dispose() {
     unawaited(_rohdServiceCubit.close());
+    unawaited(_snapshotCubit.close());
     unawaited(_treeSearchTermCubit.close());
     unawaited(_selectedModuleCubit.close());
     unawaited(_signalSearchTermCubit.close());
@@ -347,6 +367,7 @@ class _StandaloneDevToolsPageState
           : MultiBlocProvider(
               providers: [
                 BlocProvider.value(value: _rohdServiceCubit),
+                BlocProvider.value(value: _snapshotCubit),
                 BlocProvider.value(value: _treeSearchTermCubit),
                 BlocProvider.value(value: _selectedModuleCubit),
                 BlocProvider.value(value: _signalSearchTermCubit),

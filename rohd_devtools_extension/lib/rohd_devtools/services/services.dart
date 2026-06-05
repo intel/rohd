@@ -11,4 +11,6 @@ export 'connection_state_machine.dart';
 export 'platform_vm_connection_strategy.dart';
 export 'service_manager_bridge.dart';
 export 'signal_service.dart';
+export 'signal_value_source.dart';
 export 'tree_service.dart';
+export 'vm_service_signal_value_source.dart';

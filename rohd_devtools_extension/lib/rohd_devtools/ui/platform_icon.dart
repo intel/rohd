@@ -41,13 +41,11 @@ class PlatformIcon extends StatelessWidget {
     this.emoji, {
     this.size,
     this.color,
-    this.hasColorEmoji = false,
+    this.hasColorEmoji = true,
     super.key,
   });
 
   @override
-
-  /// Adds this widget's diagnostic properties.
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
@@ -65,8 +63,6 @@ class PlatformIcon extends StatelessWidget {
   }
 
   @override
-
-  /// Builds either the emoji text or the fallback material icon.
   Widget build(BuildContext context) {
     if (hasColorEmoji) {
       return Text(
@@ -92,7 +88,7 @@ Widget platformIcon(
   String emoji, {
   double? size,
   Color? color,
-  bool hasColorEmoji = false,
+  bool hasColorEmoji = true,
 }) =>
     PlatformIcon(
       nativeIcon,
@@ -103,12 +99,10 @@ Widget platformIcon(
     );
 
 /// Check whether a color emoji font (Noto Color Emoji) is installed on the
-/// system. On web we conservatively return false so UI falls back to Material
-/// icons and avoids runtime missing-glyph warnings.
-/// Returns true if the font is detected on the host system.
+/// system. Returns true on web (always has emoji), or checks fc-list on Linux.
 Future<bool> isEmojiFontInstalled() async {
   if (kIsWeb) {
-    return false;
+    return true; // Web always has color emoji
   }
 
   try {

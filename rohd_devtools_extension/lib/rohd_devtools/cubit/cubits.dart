@@ -8,5 +8,6 @@ export 'details_tab_cubit.dart';
 export 'rohd_service_cubit.dart';
 export 'selected_module_cubit.dart';
 export 'signal_search_term_cubit.dart';
+export 'snapshot_cubit.dart';
 export 'theme_cubit.dart';
 export 'tree_search_term_cubit.dart';

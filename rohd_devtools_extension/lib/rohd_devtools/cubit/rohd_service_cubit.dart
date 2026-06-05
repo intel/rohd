@@ -11,11 +11,14 @@ import 'dart:async';
 
 import 'package:devtools_app_shared/service.dart';
 import 'package:devtools_app_shared/utils.dart';
+import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
-import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source_binding.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
 import 'package:vm_service/vm_service.dart' as vm;
 
 part 'rohd_service_state.dart';
@@ -31,6 +34,10 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
 
   /// The TreeService instance for ROHD.
   TreeService? treeService;
+
+  /// Shared value source for live signal overlays, when available.
+  SignalValueSource? get signalValueSource => _signalValueSource;
+  SignalValueSource? _signalValueSource;
 
   /// The discovered ROHD isolate ID.
   ///
@@ -62,6 +69,7 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
     String isolateId,
   ) async {
     _rohdIsolateId = null;
+    _disposeSignalValueSource();
 
     if (_localServiceManager != null &&
         _localServiceClosedSignal != null &&
@@ -105,6 +113,7 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
       // VM disconnected — reset so tree page can tear down waveforms
       // and other stale references.
       treeService = null;
+      _disposeSignalValueSource();
       _rohdIsolateId = null;
       emit(RohdServiceInitial());
     }
@@ -120,6 +129,7 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
         !_localServiceClosedSignal!.isCompleted) {
       _localServiceClosedSignal!.complete();
     }
+    _disposeSignalValueSource();
     _localServiceManager = null;
     return super.close();
   }
@@ -236,6 +246,12 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
           vmService: service,
           isolateId: _rohdIsolateId,
         );
+
+        _disposeSignalValueSource();
+        _signalValueSource = createSignalValueSourceBinding(
+          treeService: treeService!,
+          vmService: service,
+        );
       }
 
       debugPrint('[RohdServiceCubit] Calling operation...');
@@ -247,8 +263,14 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
       debugPrint('[RohdServiceCubit] Error: $error');
       // Reset treeService so next attempt re-scans for the ROHD isolate.
       treeService = null;
+      _disposeSignalValueSource();
       _rohdIsolateId = null;
       emit(RohdServiceError(error.toString(), trace));
     }
+  }
+
+  void _disposeSignalValueSource() {
+    unawaited(disposeSignalValueSourceBinding(_signalValueSource));
+    _signalValueSource = null;
   }
 }

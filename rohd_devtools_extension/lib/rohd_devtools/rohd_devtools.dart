@@ -10,6 +10,7 @@ export 'cubit/details_tab_cubit.dart';
 export 'cubit/rohd_service_cubit.dart';
 export 'cubit/selected_module_cubit.dart';
 export 'cubit/signal_search_term_cubit.dart';
+export 'cubit/snapshot_cubit.dart';
 export 'cubit/theme_cubit.dart';
 export 'cubit/tree_search_term_cubit.dart';
 export 'view/view.dart';

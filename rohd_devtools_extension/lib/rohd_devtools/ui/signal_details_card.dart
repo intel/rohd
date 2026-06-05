@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/details_help_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
@@ -22,11 +23,11 @@ class SignalDetailsCard extends StatefulWidget {
   /// The module currently selected for inspection.
   final TreeModel? module;
 
+  /// Optional snapshot data to overlay signal values.
+  final SnapshotLoaded? snapshot;
+
   /// Creates a signal details card for the selected module.
-  const SignalDetailsCard({
-    super.key,
-    this.module,
-  });
+  const SignalDetailsCard({super.key, this.module, this.snapshot});
 
   @override
 
@@ -36,7 +37,9 @@ class SignalDetailsCard extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<TreeModel?>('module', module));
+    properties
+      ..add(DiagnosticsProperty<TreeModel?>('module', module))
+      ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot));
   }
 }
 
@@ -112,6 +115,7 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Stack(
+      fit: StackFit.expand,
       children: [
         RepaintBoundary(
           key: _boundaryKey,
@@ -146,6 +150,7 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
                     searchTerm: searchTerm,
                     inputSelectedVal: inputSelected.value,
                     outputSelectedVal: outputSelected.value,
+                    snapshot: widget.snapshot,
                   ),
                 ),
               ],

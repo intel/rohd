@@ -11,6 +11,5 @@ import 'package:devtools_app_shared/service.dart';
 import 'package:vm_service/vm_service.dart' as vm;
 
 // Native fallback: keep an app-local ServiceManager instance.
-/// Local service manager used on native platforms.
 final ServiceManager<vm.VmService> serviceManager =
     ServiceManager<vm.VmService>();
