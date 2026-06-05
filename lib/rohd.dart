@@ -6,6 +6,7 @@ export 'src/external.dart';
 export 'src/finite_state_machine.dart';
 export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
+export 'src/module_parameter.dart';
 export 'src/modules/modules.dart';
 export 'src/selection.dart';
 export 'src/signals/signals.dart';

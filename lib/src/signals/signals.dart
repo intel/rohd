@@ -18,6 +18,7 @@ export 'port.dart';
 
 part 'const.dart';
 part 'logic.dart';
+part 'parameter_const.dart';
 part 'wire.dart';
 part 'wire_net.dart';
 part 'logic_structure.dart';

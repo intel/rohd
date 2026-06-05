@@ -200,22 +200,34 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ].join(',\n');
 
   String? _verilogParameters(Module module) {
+    // Collect parameters from multiple sources.
+    final allParams = <SystemVerilogParameterDefinition>[];
+
+    // 1. From the SystemVerilog mixin's definitionParameters (if applicable).
     if (module is SystemVerilog) {
       final defParams = module.definitionParameters;
-      if (defParams == null || defParams.isEmpty) {
-        return null;
+      if (defParams != null) {
+        allParams.addAll(defParams);
       }
-
-      return [
-        '#(',
-        defParams
-            .map((p) => 'parameter ${p.type} ${p.name} = ${p.defaultValue}')
-            .join(',\n'),
-        ')',
-      ].join('\n');
     }
 
-    return null;
+    // 2. From registered ModuleParameters on the Module.
+    for (final mp in module.moduleParameters) {
+      allParams.add(mp.toSvParameterDefinition());
+    }
+
+    if (allParams.isEmpty) {
+      return null;
+    }
+
+    return [
+      '#(',
+      allParams
+          .map((p) => '${p.isLocalParam ? 'localparam' : 'parameter'}'
+              ' ${p.type} ${p.name} = ${p.defaultValue}')
+          .join(',\n'),
+      ')',
+    ].join('\n');
   }
 
   /// The full SV representation of this module.

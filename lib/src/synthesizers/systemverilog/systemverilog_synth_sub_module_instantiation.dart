@@ -68,10 +68,24 @@ class SystemVerilogSynthSubModuleInstantiation
     if (!needsInstantiation) {
       return null;
     }
+
+    // Collect instantiation parameters from registered ModuleParameters.
+    Map<String, String>? parameters;
+    if (module.moduleParameters.isNotEmpty) {
+      parameters = {
+        for (final mp in module.moduleParameters)
+          if (!mp.isLocalParam) mp.name: mp.svDefault,
+      };
+      if (parameters.isEmpty) {
+        parameters = null;
+      }
+    }
+
     return SystemVerilogSynthesizer.instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
         instanceName: name,
+        parameters: parameters,
         ports: _modulePortsMapWithInline({
           ...inputMapping,
           ...outputMapping,

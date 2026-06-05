@@ -55,6 +55,26 @@ abstract class Module {
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
 
+  /// Registered [ModuleParameter]s for this [Module].
+  ///
+  /// These are used during SystemVerilog generation to emit `parameter` or
+  /// `localparam` declarations in the module definition header.
+  ///
+  /// Use [addModuleParameter] to register parameters.
+  final List<ModuleParameter<dynamic>> _moduleParameters = [];
+
+  /// An unmodifiable view of the registered [ModuleParameter]s.
+  List<ModuleParameter<dynamic>> get moduleParameters =>
+      List.unmodifiable(_moduleParameters);
+
+  /// Registers a [ModuleParameter] on this [Module].
+  ///
+  /// The parameter will appear in generated SystemVerilog as a `parameter` or
+  /// `localparam` declaration in the module definition header.
+  void addModuleParameter(ModuleParameter<dynamic> param) {
+    _moduleParameters.add(param);
+  }
+
   /// The parent [Module] of this [Module].
   ///
   /// This only gets populated after its parent [Module], if it exists, has
@@ -660,7 +680,8 @@ abstract class Module {
   /// The return value is the same as what is returned by [input] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inputSource].
-  Logic addInput(String name, Logic source, {int width = 1}) {
+  Logic addInput(String name, Logic source,
+      {int width = 1, ParameterExpression? widthExpression}) {
     _checkForSafePortName(name);
     if (source.width != width) {
       throw PortWidthMismatchException(source, width);
@@ -670,7 +691,11 @@ abstract class Module {
       source = source.packed;
     }
 
-    final inPort = Logic(name: name, width: width, naming: Naming.reserved)
+    final inPort = Logic(
+        name: name,
+        width: width,
+        naming: Naming.reserved,
+        widthExpression: widthExpression)
       ..gets(source)
       ..parentModule = this;
 
@@ -741,7 +766,8 @@ abstract class Module {
   /// The return value is the same as what is returned by [inOut] and should
   /// only be used within this [Module]. The provided [source] is accessible via
   /// [inOutSource].
-  LogicNet addInOut(String name, Logic source, {int width = 1}) {
+  LogicNet addInOut(String name, Logic source,
+      {int width = 1, ParameterExpression? widthExpression}) {
     _checkForSafePortName(name);
     if (source.width != width) {
       throw PortWidthMismatchException(source, width);
@@ -773,10 +799,13 @@ abstract class Module {
       _inOutDrivers.add(source.packed);
     }
 
-    final inOutPort =
-        LogicNet(name: name, width: width, naming: Naming.reserved)
-          ..parentModule = this
-          ..gets(source);
+    final inOutPort = LogicNet(
+        name: name,
+        width: width,
+        naming: Naming.reserved,
+        widthExpression: widthExpression)
+      ..parentModule = this
+      ..gets(source);
 
     _inOuts[name] = inOutPort;
 
@@ -868,6 +897,8 @@ abstract class Module {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
+    List<ParameterExpression?>? dimensionExpressions,
+    ParameterExpression? elementWidthExpression,
   }) {
     _checkForSafePortName(name);
 
@@ -877,6 +908,8 @@ abstract class Module {
       elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
+      dimensionExpressions: dimensionExpressions,
+      elementWidthExpression: elementWidthExpression,
     )
       ..gets(source)
       ..setAllParentModule(this);
@@ -892,10 +925,15 @@ abstract class Module {
   /// can be driven by this [Module] or consumed outside of it.
   ///
   /// The return value is the same as what is returned by [output].
-  Logic addOutput(String name, {int width = 1}) {
+  Logic addOutput(String name,
+      {int width = 1, ParameterExpression? widthExpression}) {
     _checkForSafePortName(name);
 
-    final outPort = Logic(name: name, width: width, naming: Naming.reserved)
+    final outPort = Logic(
+        name: name,
+        width: width,
+        naming: Naming.reserved,
+        widthExpression: widthExpression)
       ..parentModule = this;
 
     _outputs[name] = outPort;
@@ -992,6 +1030,8 @@ abstract class Module {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
+    List<ParameterExpression?>? dimensionExpressions,
+    ParameterExpression? elementWidthExpression,
   }) {
     _checkForSafePortName(name);
 
@@ -1001,6 +1041,8 @@ abstract class Module {
       elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
+      dimensionExpressions: dimensionExpressions,
+      elementWidthExpression: elementWidthExpression,
     )..setAllParentModule(this);
 
     _outputs[name] = outArr;
@@ -1022,6 +1064,8 @@ abstract class Module {
     List<int> dimensions = const [1],
     int elementWidth = 1,
     int numUnpackedDimensions = 0,
+    List<ParameterExpression?>? dimensionExpressions,
+    ParameterExpression? elementWidthExpression,
   }) {
     _checkForSafePortName(name);
 
@@ -1046,6 +1090,8 @@ abstract class Module {
       elementWidth,
       numUnpackedDimensions: numUnpackedDimensions,
       naming: Naming.reserved,
+      dimensionExpressions: dimensionExpressions,
+      elementWidthExpression: elementWidthExpression,
     )
       ..gets(source)
       ..setAllParentModule(this);
