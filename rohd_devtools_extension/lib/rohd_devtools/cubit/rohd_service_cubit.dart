@@ -11,11 +11,11 @@ import 'dart:async';
 
 import 'package:devtools_app_shared/service.dart';
 import 'package:devtools_app_shared/utils.dart';
-import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/services/service_manager_bridge.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/signal_value_source_binding.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/tree_service.dart';
