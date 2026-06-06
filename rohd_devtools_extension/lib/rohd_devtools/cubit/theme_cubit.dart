@@ -4,9 +4,6 @@
 // theme_cubit.dart
 // Manages light/dark theme toggle for ROHD DevTools.
 
-// 2026 June
-// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Enum for theme modes.
