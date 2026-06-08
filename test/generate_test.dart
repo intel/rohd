@@ -148,6 +148,51 @@ class MismatchedOutputModule extends Module {
   }
 }
 
+/// A parameterized buffer submodule (identity with parameterized width).
+class ParameterizedBuffer extends Module {
+  Logic get out => output('out');
+
+  final ModuleParameter<int> widthParam;
+
+  ParameterizedBuffer(Logic inp,
+      {int width = 8,
+      String? svDefaultValue,
+      super.name = 'parameterized_buffer'})
+      : widthParam = ModuleParameter<int>('WIDTH',
+            defaultValue: width, svDefaultValue: svDefaultValue),
+        super() {
+    addModuleParameter(widthParam);
+
+    final widthExpr = widthParam.toExpression();
+
+    inp = addInput('inp', inp, width: width, widthExpression: widthExpr);
+    addOutput('out', width: width, widthExpression: widthExpr);
+
+    out <= inp;
+  }
+}
+
+/// Top module that has its own WIDTH parameter and passes it to a submodule.
+class TopWithParameterPassthrough extends Module {
+  Logic get result => output('result');
+
+  final ModuleParameter<int> widthParam;
+
+  TopWithParameterPassthrough(Logic a, {int width = 8})
+      : widthParam = ModuleParameter<int>('WIDTH', defaultValue: width),
+        super(name: 'top_param_passthrough') {
+    addModuleParameter(widthParam);
+
+    final widthExpr = widthParam.toExpression();
+
+    a = addInput('a', a, width: width, widthExpression: widthExpr);
+    addOutput('result', width: width, widthExpression: widthExpr);
+
+    // Instantiate submodule, passing our parameter name as its svDefaultValue
+    result <= ParameterizedBuffer(a, width: width, svDefaultValue: 'WIDTH').out;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -306,6 +351,41 @@ void main() {
 
       inp.put(1);
       expect(mod.out.value.toInt(), equals(0));
+    });
+  });
+
+  group('Parameter passthrough', () {
+    test('top module passes parameter to submodule in SV', () async {
+      final a = Logic(name: 'a', width: 16);
+      final mod = TopWithParameterPassthrough(a, width: 16);
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Print so the user can inspect
+      // ignore: avoid_print
+      print(sv);
+
+      // Top module should declare its own WIDTH parameter
+      expect(sv, contains('parameter int WIDTH = 16'));
+
+      // Top module ports should use WIDTH expression
+      expect(sv, contains('[WIDTH - 1:0]'));
+
+      // Submodule instantiation should pass WIDTH through
+      expect(sv, contains('#(.WIDTH(WIDTH))'));
+
+      // Submodule definition should also have its own WIDTH parameter
+      expect(sv, contains('module ParameterizedBuffer'));
+    });
+
+    test('simulation still works with parameter passthrough', () async {
+      final a = Logic(name: 'a', width: 16);
+      final mod = TopWithParameterPassthrough(a, width: 16);
+      await mod.build();
+
+      a.put(0xABCD);
+      expect(mod.result.value.toInt(), equals(0xABCD));
     });
   });
 }
