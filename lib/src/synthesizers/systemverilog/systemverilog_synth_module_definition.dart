@@ -93,9 +93,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// per-element sources.
   ///
   /// For example, a parent with individual nets `sig0..sigN` each connected to
-  /// an element of an internal array `arr` that feeds a single child array
-  /// port would otherwise emit one `net_connect` (or `assign`) per element plus
-  /// a declaration of `arr`.  This collapses all of that into a single
+  /// an element of an internal array `arr` that feeds a single child array port
+  /// would otherwise emit one `net_connect` (or `assign`) per element plus a
+  /// declaration of `arr`.  This collapses all of that into a single
   /// `.port({sigN, ..., sig0})` connection and drops `arr`.
   ///
   /// This works for both nets (bidirectional `inout` connections, where the
@@ -266,8 +266,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
           // Fallback (net) path: the element is the [subset] of a [BusSubset]
           // whose [original] is a pass-through bus, and the same bit of that
-          // bus is tied to exactly one other net.  Trace through to that net
-          // so the bus and its [BusSubset]s can be eliminated.
+          // bus is tied to exactly one other net.  Trace through to that net so
+          // the bus and its [BusSubset]s can be eliminated.
           final traced = _traceNetSubsetSource(
             element,
             netSubsets,
@@ -389,14 +389,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Attempts to find the real source for array `element` when it is the
   /// `subset` of a single-bit net [BusSubset] off a pass-through bus.
   ///
-  /// The shape handled (the "bit-wise" case) is: the bus bit `i` is
-  /// sliced once to feed `element` (`bus[i] -> element`) and once more to tie
-  /// to some other net (`bus[i] -> net`).  This traces `element` to that
-  /// net, recording the consumed [BusSubset]s and bus so they can be
-  /// dropped once the whole aggregate collapse is committed.
+  /// The shape handled (the "bit-wise" case) is: the bus bit `i` is sliced once
+  /// to feed `element` (`bus[i] -> element`) and once more to tie to some other
+  /// net (`bus[i] -> net`).  This traces `element` to that net, recording the
+  /// consumed [BusSubset]s and bus so they can be dropped once the whole
+  /// aggregate collapse is committed.
   ///
-  /// Returns the resolved source net, or `null` if `element` does not
-  /// match this shape.
+  /// Returns the resolved source net, or `null` if `element` does not match
+  /// this shape.
   SynthLogic? _traceNetSubsetSource(
     SynthLogic element,
     ({
@@ -482,14 +482,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   /// Collapses a flat (non-array) internal net bus that is used as a whole in
   /// exactly one submodule port, and whose every bit is tied 1:1 to some other
-  /// net via single-bit net [BusSubset]s, into an inline concatenation of
-  /// those nets.
+  /// net via single-bit net [BusSubset]s, into an inline concatenation of those
+  /// nets.
   ///
   /// This is the flat analogue of [_collapseAggregateConnections]: where that
   /// method handles arrays whose *elements* are individually connected, this
   /// handles a plain bus whose *bits* are individually tied (e.g. each bit
-  /// driven to/from a separate net), and which is then passed whole to a
-  /// child.  It turns
+  /// driven to/from a separate net), and which is then passed whole to a child.
+  /// It turns
   /// ```systemverilog
   ///   wire [7:0] bus;
   ///   net_connect (bus[0], a0); ... net_connect (bus[7], a7);
@@ -661,14 +661,14 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// those elements, then drops the now-dead array.
   ///
   /// `assignSubset` (e.g. via `connectPorts`/`Logic.assignSubset`) introduces
-  /// an intermediate net [LogicArray] (`*_subset`) whose elements are each
-  /// tied by a single assignment to one external signal and then read
-  /// element-by-element by an inlineable submodule.  Array elements never
-  /// merge away (they carry positional `x`/`z` semantics), so without this
-  /// pass each such element would materialize as its own `net_connect`.  When
-  /// *every* element of the array is a pure pass-through, we rewire the
-  /// consuming submodule's ports straight to the per-element sources and drop
-  /// the intermediate array entirely, leaving a single inline concatenation.
+  /// an intermediate net [LogicArray] (`*_subset`) whose elements are each tied
+  /// by a single assignment to one external signal and then read
+  /// element-by-element by an inlineable submodule.  Array elements never merge
+  /// away (they carry positional `x`/`z` semantics), so without this pass each
+  /// such element would materialize as its own `net_connect`.  When *every*
+  /// element of the array is a pure pass-through, we rewire the consuming
+  /// submodule's ports straight to the per-element sources and drop the
+  /// intermediate array entirely, leaving a single inline concatenation.
   void _forwardPassthroughElementsIntoInlineables() {
     // Loop until no further forwarding occurs: forwarding one array can make
     // another eligible.  Each forward strictly removes work (an array and its
@@ -678,8 +678,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       changed = false;
 
       // Only instantiations that will actually render count as real uses: a
-      // module that still needs instantiation, or a fabricated inlineable
-      // (e.g. a [_SwizzleConnect] from an earlier collapse) registered in
+      // module that still needs instantiation, or a fabricated inlineable (e.g.
+      // a [_SwizzleConnect] from an earlier collapse) registered in
       // [_inlineableSubmoduleMap].  Dead/consumed definers (e.g. a [BusSubset]
       // already cleared by [_collapseWholeNetBuses]) carry stale port mappings
       // that must NOT be mistaken for live uses.
@@ -712,9 +712,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         markIfAggregateArray(assignment.dst);
       }
 
-      // For each array element: the inlineable-submodule input/inout ports
-      // that read it, the assignments connecting it, and whether it has any
-      // other (disqualifying) use.
+      // For each array element: the inlineable-submodule input/inout ports that
+      // read it, the assignments connecting it, and whether it has any other
+      // (disqualifying) use.
       final inlineablePortReads = <SynthLogic,
           List<
               ({
@@ -742,8 +742,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             return;
           }
           final resolved = value.resolved;
-          // A read by an inlineable submodule input/inout port (but not its
-          // own result) is the only "use" we can forward into; anything else
+          // A read by an inlineable submodule input/inout port (but not its own
+          // result) is the only "use" we can forward into; anything else
           // disqualifies the element.
           if (isInlineable && resolved != resultLogic) {
             inlineablePortReads
@@ -1233,9 +1233,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   }
 }
 
-/// A resolved view of a net [BusSubset] instantiation: the resolved
-/// `original` and `subset` signals and the (non-reversed) `[start, end]`
-/// inclusive bit range of the slice on the original bus.
+/// A resolved view of a net [BusSubset] instantiation: the resolved `original`
+/// and `subset` signals and the (non-reversed) `[start, end]` inclusive bit
+/// range of the slice on the original bus.
 typedef _NetSubsetView = ({
   SystemVerilogSynthSubModuleInstantiation inst,
   SynthLogic original,
@@ -1301,9 +1301,8 @@ endmodule''';
 /// SystemVerilog generation; it is never connected to the real hardware
 /// hierarchy or used in simulation.
 ///
-/// Used by
-/// [SystemVerilogSynthModuleDefinition._collapseAggregateConnections] to
-/// render an aggregate's single use as an inline concatenation of its
+/// Used by [SystemVerilogSynthModuleDefinition._collapseAggregateConnections]
+/// to render an aggregate's single use as an inline concatenation of its
 /// per-element sources.
 class _SwizzleConnect extends Swizzle {
   /// The names of the input ports, in the same order as the `signals` passed to
