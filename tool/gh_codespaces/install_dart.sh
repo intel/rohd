@@ -11,21 +11,22 @@
 
 set -euo pipefail
 
+set -euo pipefail
+
+sudo apt-get update
+sudo apt-get install -y wget gpg apt-transport-https
+
+sudo mkdir -p /usr/share/keyrings
+wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub \
+  | gpg --dearmor \
+  | sudo tee /usr/share/keyrings/dart.gpg >/dev/null
+
 # Add Dart repository key.
 
-declare -r input_pubkey_file='tool/gh_codespaces/pubkeys/dart.pub'
-declare -r output_pubkey_file='/usr/share/keyrings/dart.gpg'
-
-sudo gpg --output ${output_pubkey_file} --dearmor ${input_pubkey_file}
-
-# Add Dart repository.
-
-declare -r dart_repository_url='https://storage.googleapis.com/download.dartlang.org/linux/debian'
-declare -r dart_repository_file='/etc/apt/sources.list.d/dart.list'
-
-echo "deb [signed-by=${output_pubkey_file}] ${dart_repository_url} stable main" | sudo tee ${dart_repository_file}
+echo "deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main" \
+  | sudo tee /etc/apt/sources.list.d/dart_stable.list
 
 # Install Dart.
 
 sudo apt-get update
-sudo apt-get install dart
+sudo apt-get install -y dart
