@@ -11,8 +11,6 @@
 
 set -euo pipefail
 
-set -euo pipefail
-
 sudo apt-get update
 sudo apt-get install -y wget gpg apt-transport-https
 
