@@ -19,7 +19,7 @@ wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub \
   | gpg --dearmor \
   | sudo tee /usr/share/keyrings/dart.gpg >/dev/null
 
-# Add Dart repository key.
+# Add Dart repository.
 
 echo "deb [signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main" \
   | sudo tee /etc/apt/sources.list.d/dart_stable.list
