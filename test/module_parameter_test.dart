@@ -112,8 +112,7 @@ class ModuleWithParameterizedArray extends Module {
   final ModuleParameter<int> nParam;
   final ModuleParameter<int> wParam;
 
-  ModuleWithParameterizedArray(LogicArray inp, LogicArray src,
-      {int n = 4, int w = 8})
+  ModuleWithParameterizedArray(LogicArray inp, {int n = 4, int w = 8})
       : nParam = ModuleParameter<int>('N', defaultValue: n),
         wParam = ModuleParameter<int>('W', defaultValue: w),
         super(name: 'param_array_module') {
@@ -410,8 +409,7 @@ void main() {
     });
 
     test('parameterized LogicArray dimensions in SV', () async {
-      final mod =
-          ModuleWithParameterizedArray(LogicArray([4], 8), LogicArray([4], 8));
+      final mod = ModuleWithParameterizedArray(LogicArray([4], 8));
       await mod.build();
       final sv = mod.generateSynth();
 
