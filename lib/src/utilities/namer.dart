@@ -32,15 +32,6 @@ class Namer {
   /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
 
-  /// Cache of resolved instance names, keyed by [Module.instanceNameKey].
-  ///
-  /// Allocating an instance name mutates [_uniquifier], so without this
-  /// cache a second synthesis pass over the same (already-built) module
-  /// hierarchy would re-allocate and drift the numeric suffixes.  Caching
-  /// by the stable [Module.instanceNameKey] (the [Module] itself for built
-  /// modules, or the driven [Logic] for synthesis-time throwaway modules)
-  /// keeps instance names canonical across repeated synthesizer runs.
-  final Map<Object, String> _instanceNames = {};
 
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
