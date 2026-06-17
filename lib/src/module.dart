@@ -13,10 +13,8 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
-import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
-import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents a synthesizable hardware entity with clearly defined interface
@@ -1136,6 +1134,10 @@ abstract class Module {
   ///
   /// Currently returns one long file in SystemVerilog, but in the future
   /// may have other output formats, languages, files, etc.
+  ///
+  /// Deprecated: use [SvService] instead, which provides richer access to
+  /// per-module file contents, named maps, and individual file writing.
+  @Deprecated('Use SvService instead.')
   String generateSynth() {
     if (!_hasBuilt) {
       throw ModuleNotBuiltException(this);

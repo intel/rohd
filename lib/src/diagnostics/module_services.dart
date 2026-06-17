@@ -23,8 +23,9 @@ import 'package:rohd/src/diagnostics/inspector_service.dart';
 ///
 /// **Opt-in (registered by service constructors):**
 ///  - [svService] — SystemVerilog synthesis results.
+///  - [waveformService] — waveform capture (file output + optional streaming).
 ///
-/// Additional services (netlist, trace, waveform) can be added by setting
+/// Additional services (netlist, trace) can be added by setting
 /// the corresponding field after construction.
 class ModuleServices {
   ModuleServices._();
@@ -63,6 +64,16 @@ class ModuleServices {
   String get svJSON =>
       svService != null ? jsonEncode(svService!.toJson()) : _unavailable('sv');
 
+  // ─── Waveform service (opt-in) ───────────────────────────────
+
+  /// The active [WaveformService], if one has been registered.
+  WaveformService? waveformService;
+
+  /// Returns waveform service metadata as JSON, or an unavailable status.
+  String get waveformJSON => waveformService != null
+      ? jsonEncode(waveformService!.toJson())
+      : _unavailable('waveform');
+
   // ─── Helpers ──────────────────────────────────────────────────
 
   static String _unavailable(String service) => jsonEncode(<String, String>{
@@ -74,5 +85,6 @@ class ModuleServices {
   void reset() {
     rootModule = null;
     svService = null;
+    waveformService = null;
   }
 }
