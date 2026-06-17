@@ -19,6 +19,13 @@ import 'package:rohd/src/utilities/namer.dart';
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
 class _BusSubsetForStructSlice extends BusSubset {
+  /// The stable destination [Logic] this slice drives.
+  ///
+  /// Used as the [instanceNameKey] so that, although a fresh
+  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
+  /// canonical instance name is memoized against the persistent destination
+  /// signal and therefore does not drift run-to-run.
+
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
@@ -30,6 +37,7 @@ class _BusSubsetForStructSlice extends BusSubset {
   // we override this since it's added post-build
   @override
   bool get hasBuilt => true;
+
 }
 
 /// Represents the definition of a module.
