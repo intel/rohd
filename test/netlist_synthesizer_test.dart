@@ -1157,7 +1157,7 @@ void main() {
       final counter = Counter(en, reset, clk);
 
       await counter.build();
-      final netSvc = await NetlistService.create(counter);
+      final netSvc = NetlistService(counter);
 
       final fullJson = netSvc.toJson();
       expect(fullJson, isNotNull);
@@ -1169,7 +1169,7 @@ void main() {
     test('moduleJson returns per-module data', () async {
       final fb = _buildFilterBank();
       await fb.build();
-      final netSvc = await NetlistService.create(fb);
+      final netSvc = NetlistService(fb);
 
       // Fetch FilterBank definition specifically
       final fbJson = netSvc.moduleJson(fb.definitionName);
@@ -1181,7 +1181,7 @@ void main() {
     test('slimJson produces slim output', () async {
       final fb = _buildFilterBank();
       await fb.build();
-      final netSvc = await NetlistService.create(fb);
+      final netSvc = NetlistService(fb);
 
       final slimJson = netSvc.slimJson;
 

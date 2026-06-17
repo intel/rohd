@@ -1894,8 +1894,8 @@ class NetlistSynthesizer extends Synthesizer {
   /// after all post-processing passes have been applied.  This allows
   /// callers to retain per-module results for incremental serving while
   /// avoiding redundant re-synthesis.
-  Future<Map<String, Map<String, Object?>>> buildModulesMap(
-      SynthBuilder synth, Module top) async {
+    Map<String, Map<String, Object?>> buildModulesMap(
+      SynthBuilder synth, Module top) {
     final swEntries = Stopwatch()..start();
     final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
         topModule: top);
@@ -1909,9 +1909,9 @@ class NetlistSynthesizer extends Synthesizer {
   }
 
   /// Generate the combined netlist JSON from a [SynthBuilder]'s results.
-  Future<String> generateCombinedJson(SynthBuilder synth, Module top) async {
+  String generateCombinedJson(SynthBuilder synth, Module top) {
     final swCollect = Stopwatch()..start();
-    final modules = await buildModulesMap(synth, top);
+    final modules = buildModulesMap(synth, top);
     swCollect.stop();
 
     final swCompress = Stopwatch()..start();
@@ -2022,7 +2022,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// Convenience: synthesize [top] into a combined netlist JSON string.
   ///
   /// Builds a [SynthBuilder] internally and returns the full JSON.
-  Future<String> synthesizeToJson(Module top) async {
+  String synthesizeToJson(Module top) {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top);
   }

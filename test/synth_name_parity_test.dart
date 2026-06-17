@@ -45,7 +45,7 @@ void main() {
     test('counter — returns names after netlist synthesis', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
-      await NetlistService.create(mod);
+      NetlistService(mod);
 
       expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
       expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
@@ -75,7 +75,7 @@ void main() {
         ],
       );
       await dut.build();
-      await NetlistService.create(dut);
+      NetlistService(dut);
 
       expect(dut.namer.signalNameOf(dut.input('clk')), equals('clk'));
       expect(dut.namer.signalNameOf(dut.input('reset')), equals('reset'));
@@ -101,7 +101,7 @@ void main() {
       () async {
         final modNetlist = _Counter(Logic(), Logic());
         await modNetlist.build();
-        await NetlistService.create(modNetlist);
+        NetlistService(modNetlist);
         await Simulator.reset();
 
         final modSv = _Counter(Logic(), Logic());

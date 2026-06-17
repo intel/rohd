@@ -38,7 +38,7 @@ void main() {
       ],
     );
     await dut.build();
-    final netSvc = await NetlistService.create(dut);
+    final netSvc = NetlistService(dut);
 
     // 1. Get slim JSON
     final slimJsonStr = netSvc.slimJson;

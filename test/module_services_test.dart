@@ -98,7 +98,7 @@ void main() {
       final b = Logic(name: 'b');
       final mod = _TopModule(a, b);
       await mod.build();
-      await NetlistService.create(mod);
+      NetlistService(mod);
 
       final json = ModuleServices.instance.inspectorJSON;
       final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -124,7 +124,7 @@ void main() {
       final b = Logic(name: 'b');
       final mod = _TopModule(a, b);
       await mod.build();
-      final netSvc = await NetlistService.create(mod);
+      final netSvc = NetlistService(mod);
 
       for (final name in netSvc.moduleNames) {
         final json = ModuleServices.instance.inspectorModuleJSON(name);
@@ -208,7 +208,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      final netlist = await NetlistService.create(mod);
+      final netlist = NetlistService(mod);
       final json = netlist.toJson();
       final decoded = jsonDecode(json) as Map<String, dynamic>;
 
@@ -222,7 +222,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      await NetlistService.create(mod);
+      NetlistService(mod);
 
       expect(ModuleServices.instance.netlistService, isNotNull);
       final json = ModuleServices.instance.netlistJSON;
@@ -236,7 +236,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      await NetlistService.create(mod, register: false);
+      NetlistService(mod, register: false);
 
       expect(ModuleServices.instance.netlistService, isNull);
     });
@@ -247,7 +247,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      final netlist = await NetlistService.create(mod, register: false);
+      final netlist = NetlistService(mod, register: false);
 
       // Query for a module that exists.
       for (final name in netlist.moduleNames) {
@@ -269,7 +269,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      final netlist = await NetlistService.create(mod, register: false);
+      final netlist = NetlistService(mod, register: false);
       final slim = netlist.slimJson;
       final decoded = jsonDecode(slim) as Map<String, dynamic>;
 
@@ -297,7 +297,7 @@ void main() {
       final mod = _TopModule(a, b);
       await mod.build();
 
-      final netlist = await NetlistService.create(mod, register: false);
+      final netlist = NetlistService(mod, register: false);
       final modules = netlist.synthesizedModules;
       expect(modules, isNotEmpty);
       expect(modules.keys, equals(netlist.moduleNames));

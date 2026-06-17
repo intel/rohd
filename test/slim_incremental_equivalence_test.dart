@@ -32,7 +32,7 @@ void main() {
   ///     that exactly match those in the full netlist.
   Future<void> validateSlimIncrementalEquivalence(Module module) async {
     await module.build();
-    final netSvc = await NetlistService.create(module);
+    final netSvc = NetlistService(module);
 
     // ── Pull full netlist in one shot ─────────────────────────────
     final fullJsonStr = netSvc.toJson();

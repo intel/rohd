@@ -22,7 +22,7 @@ import 'package:rohd/rohd.dart';
 /// ```dart
 /// final dut = MyModule(...);
 /// await dut.build();
-/// final netlist = await NetlistService.create(dut);
+/// final netlist = NetlistService(dut);
 ///
 /// // Full hierarchy JSON:
 /// print(netlist.toJson());
@@ -52,11 +52,27 @@ class NetlistService {
   /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
-  NetlistService._(this.module, this.synthesizer, this._fullJson) {
+  NetlistService(
+    this.module, {
+    NetlistOptions options = const NetlistOptions(),
+    bool register = true,
+  }) : synthesizer = NetlistSynthesizer(options: options) {
+    if (!module.hasBuilt) {
+      throw Exception('Module must be built before creating NetlistService. '
+          'Call build() first.');
+    }
+
+    synthBuilder = SynthBuilder(module, synthesizer);
+    _fullJson = synthesizer.generateCombinedJson(synthBuilder, module);
+
     final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
     _modulesMap =
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
+
+    if (register) {
+      ModuleServices.instance.netlistService = this;
+    }
   }
 
   /// The format version found in the loaded JSON, or `null` if absent.
@@ -85,36 +101,6 @@ class NetlistService {
 
   /// Whether the loaded netlist JSON is compatible with the current format.
   bool get isCompatible => isCompatibleVersion(version);
-
-  /// Creates a [NetlistService] for [module].
-  ///
-  /// [module] must already be built.  Set [register] to `true` (the
-  /// default) to register this service with [ModuleServices] for
-  /// DevTools access.
-  ///
-  /// The [options] parameter controls netlist synthesis behaviour;
-  /// see [NetlistOptions] for details.
-  static Future<NetlistService> create(
-    Module module, {
-    NetlistOptions options = const NetlistOptions(),
-    bool register = true,
-  }) async {
-    if (!module.hasBuilt) {
-      throw Exception('Module must be built before creating NetlistService. '
-          'Call build() first.');
-    }
-
-    final synthesizer = NetlistSynthesizer(options: options);
-    final json = await synthesizer.synthesizeToJson(module);
-
-    final service = NetlistService._(module, synthesizer, json);
-
-    if (register) {
-      ModuleServices.instance.netlistService = service;
-    }
-
-    return service;
-  }
 
   /// Returns the full netlist hierarchy as a JSON string.
   String toJson() => _fullJson;

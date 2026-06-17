@@ -21,7 +21,7 @@ void main() {
     final a = Logic(width: 8, name: 'a');
     final mod = SimpleModule(a);
     await mod.build();
-    final netSvc = await NetlistService.create(mod);
+    final netSvc = NetlistService(mod);
 
     final slim = netSvc.slimJson;
 

@@ -345,7 +345,7 @@ abstract class Module {
 
     // Optionally synthesize a netlist and register the service.
     if (netlistOptions != null) {
-      await NetlistService.create(this, options: netlistOptions);
+      NetlistService(this, options: netlistOptions);
     }
   }
 

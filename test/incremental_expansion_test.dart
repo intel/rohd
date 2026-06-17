@@ -30,7 +30,7 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final counter = ex.Counter(en, reset, clk);
       await counter.build();
-      final netSvc = await NetlistService.create(counter);
+      final netSvc = NetlistService(counter);
 
       final slimStr = netSvc.slimJson;
       final unified = jsonDecode(slimStr) as Map<String, dynamic>;
@@ -87,7 +87,7 @@ void main() {
         coefficients: [List.filled(4, 1), List.filled(4, 1)],
       );
       await filterBank.build();
-      final netSvc = await NetlistService.create(filterBank);
+      final netSvc = NetlistService(filterBank);
 
       final slimStr = netSvc.slimJson;
       final unified = jsonDecode(slimStr) as Map<String, dynamic>;
