@@ -537,7 +537,7 @@ void main() {
         final gtm =
             ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 0);
         await gtm.build();
-        final sv = gtm.generateSynth();
+        final sv = SvService(gtm).synthOutput;
 
         expect(sv, isNot(contains("0'h0")));
 

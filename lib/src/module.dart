@@ -1137,6 +1137,7 @@ abstract class Module {
   ///
   /// Deprecated: use [SvService] instead, which provides richer access to
   /// per-module file contents, named maps, and individual file writing.
+  /// For the legacy one-shot API, prefer [SvService.synthOutput].
   @Deprecated('Use SvService instead.')
   String generateSynth() {
     if (!_hasBuilt) {

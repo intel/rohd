@@ -54,7 +54,7 @@ void main() {
             .isNotEmpty,
         'Should find a z two levels deep');
 
-    final synth = ftm.generateSynth();
+    final synth = SvService(ftm).synthOutput;
 
     // "z = 1" means it correctly traversed down from inputs
     assert(synth.contains('z = 1'),

@@ -91,7 +91,7 @@ void main() {
       final mod = AddWithCarryMod(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvService(mod).synthOutput;
 
       expect(sv, contains('assign {carry, sum} = a + b'));
     });
@@ -119,7 +119,7 @@ void main() {
     final gtm = MathTestModule(Logic(width: 8), Logic(width: 8));
     await gtm.build();
 
-    final sv = gtm.generateSynth();
+    final sv = SvService(gtm).synthOutput;
     final lines = sv.split('\n');
 
     // ensure we never lshift by a constant directly

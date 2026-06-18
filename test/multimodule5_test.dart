@@ -35,7 +35,7 @@ void main() {
     final mod = TopModule(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     expect(sv, contains('Passthrough'));
   });

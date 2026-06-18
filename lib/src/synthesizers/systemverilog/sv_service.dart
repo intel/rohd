@@ -14,36 +14,6 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 
-/// Configuration for constructing an [SvService].
-///
-/// Example — write a single concatenated `.sv` file:
-/// ```dart
-/// final sv = SvService(
-///   dut,
-///   options: SvServiceOptions(outputPath: 'build/out.sv'),
-/// );
-/// ```
-///
-/// For writing one file per module definition, call [SvService.writeFiles]
-/// after construction.
-class SvServiceOptions {
-  /// Whether to register this service with [ModuleServices].
-  final bool register;
-
-  /// Optional path where the single-file SV output should be written.
-  ///
-  /// If non-null, the concatenated SV output (with generation header) is
-  /// written to this file on construction.  The parent directory is created
-  /// if needed.  Use [SvService.writeFiles] for per-module file output.
-  final String? outputPath;
-
-  /// Creates [SvService] options.
-  const SvServiceOptions({
-    this.register = true,
-    this.outputPath,
-  });
-}
-
 /// A service that wraps SystemVerilog synthesis of a [Module] hierarchy.
 ///
 /// Provides access to the generated SV file contents and per-module
@@ -68,6 +38,7 @@ class SvService {
   ///
   /// Matches the format historically produced by `Module.generateSynth()`.
   static const moduleSeparator = '\n\n////////////////////\n\n';
+
   /// The top-level [Module] being synthesized.
   final Module module;
 
@@ -81,35 +52,24 @@ class SvService {
   ///
   /// [module] must already be built.
   ///
-  /// You can provide [options] to control registration and output path.
-  /// For backward compatibility, [register] and [outputPath] can still be
-  /// provided directly; those values override [options] when specified.
-  ///
-  /// If an output path is provided (via [outputPath] or `options.outputPath`),
-  /// the concatenated SV output (with header) is written to that file.
-  /// The parent directory is created if needed.
-  SvService(this.module,
-      {SvServiceOptions options = const SvServiceOptions(),
-      bool? register,
-      String? outputPath}) {
+  /// If [outputPath] is provided, the concatenated SV output (with header) is
+  /// written to that file.  The parent directory is created if needed.
+  SvService(this.module, {bool register = true, String? outputPath}) {
     if (!module.hasBuilt) {
       throw Exception('Module must be built before creating SvService. '
           'Call build() first.');
     }
 
-    final effectiveRegister = register ?? options.register;
-    final effectiveOutputPath = outputPath ?? options.outputPath;
-
     synthBuilder = SynthBuilder(module, SystemVerilogSynthesizer());
     fileContents = synthBuilder.getSynthFileContents();
 
-    if (effectiveOutputPath != null) {
-      final file = File(effectiveOutputPath);
+    if (outputPath != null) {
+      final file = File(outputPath);
       file.parent.createSync(recursive: true);
       file.writeAsStringSync(synthOutput);
     }
 
-    if (effectiveRegister) {
+    if (register) {
       ModuleServices.instance.svService = this;
     }
   }

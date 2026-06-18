@@ -85,7 +85,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Below will generate an output of the ROHD-generated SystemVerilog:
   await tree.build();
-  final generatedSystemVerilog = tree.generateSynth();
+  final generatedSystemVerilog = SvService(tree).synthOutput;
   if (!noPrint) {
     print(generatedSystemVerilog);
   }

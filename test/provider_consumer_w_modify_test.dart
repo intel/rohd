@@ -146,7 +146,7 @@ void main() {
       Vector({}, {'rsp_data': 9}),
     ];
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     expect(sv, contains('''
 module Provider (

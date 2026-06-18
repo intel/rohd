@@ -42,110 +42,15 @@ enum OverwritePolicy {
   failIfExists,
 }
 
-// ─── Options ─────────────────────────────────────────────────────────────────
-
-/// Configuration for [WaveformService].
-///
-/// Example — capture only ports, write FST, fail if file exists:
-/// ```dart
-/// final svc = WaveformService(
-///   dut,
-///   options: WaveformServiceOptions(
-///     outputPath: 'build/waves.fst',
-///     format: WaveOutputFormat.fst,
-///     signalFilter: (sig) => sig.isPort,
-///     overwritePolicy: OverwritePolicy.failIfExists,
-///   ),
-/// );
-/// ```
-class WaveformServiceOptions {
-  /// Path of the output waveform file.
-  ///
-  /// The parent directory is created if necessary.
-  /// Defaults to `'waves.vcd'`.
-  final String outputPath;
-
-  /// Output format.  Defaults to [WaveOutputFormat.vcd].
-  final WaveOutputFormat format;
-
-  /// Optional predicate that determines whether a given [Logic] signal is
-  /// captured.
-  ///
-  /// When `null`, all non-[Const] signals in the hierarchy are captured
-  /// (matching the existing [WaveDumper] behaviour).
-  final bool Function(Logic signal)? signalFilter;
-
-  /// VCD timescale string, e.g. `'1ps'`, `'1ns'`.
-  ///
-  /// Defaults to `'1ps'`.
-  final String timescale;
-
-  /// Simulation time at which recording begins.
-  ///
-  /// Signals are still collected before this time so they appear in the
-  /// scope definition, but value-change events are suppressed until
-  /// [startTime] is reached.  `null` means "from the very start".
-  final int? startTime;
-
-  /// Simulation time at which recording ends.
-  ///
-  /// Value-change events after this time are suppressed.
-  /// `null` means "until end of simulation".
-  final int? stopTime;
-
-  /// Number of characters accumulated in the write buffer before it is
-  /// flushed to disk.
-  ///
-  /// Larger values reduce I/O syscalls but increase peak memory usage.
-  /// Defaults to `100000`.
-  final int flushBufferSize;
-
-  /// What to do when the output file already exists.
-  ///
-  /// Defaults to [OverwritePolicy.overwrite].
-  final OverwritePolicy overwritePolicy;
-
-  /// Whether to register this service with [ModuleServices] for inspection.
-  ///
-  /// Defaults to `true`.
-  final bool register;
-
-  /// Whether to enable DevTools streaming.
-  ///
-  /// When `true`, the service (or a subclass) may attach VM service
-  /// extensions and in-memory signal tracking for live DevTools access.
-  ///
-  /// The base [WaveformService] stores this flag but takes no action on it.
-  /// The DevTools subclass uses it to conditionally register extensions.
-  ///
-  /// Defaults to `false`.
-  final bool enableDevToolsStreaming;
-
-  /// Creates [WaveformServiceOptions].
-  const WaveformServiceOptions({
-    this.outputPath = 'waves.vcd',
-    this.format = WaveOutputFormat.vcd,
-    this.signalFilter,
-    this.timescale = '1ps',
-    this.startTime,
-    this.stopTime,
-    this.flushBufferSize = 100000,
-    this.overwritePolicy = OverwritePolicy.overwrite,
-    this.register = true,
-    this.enableDevToolsStreaming = false,
-  });
-}
-
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 /// A waveform capture service that writes signal changes to a file.
 ///
 /// This is the base class for waveform capture.  It handles:
-/// - Signal collection (with optional [WaveformServiceOptions.signalFilter])
-/// - VCD file output with configurable [WaveformServiceOptions.timescale]
-/// - Selective recording via [WaveformServiceOptions.startTime] /
-///   [WaveformServiceOptions.stopTime]
-/// - Periodic buffer flushing and [WaveformServiceOptions.overwritePolicy]
+/// - Signal collection (with optional [signalFilter])
+/// - VCD file output with configurable [timescale]
+/// - Selective recording via [startTime] / [stopTime]
+/// - Periodic buffer flushing and [overwritePolicy]
 /// - Optional registration with [ModuleServices]
 ///
 /// **Subclassing for DevTools streaming:**
@@ -156,8 +61,8 @@ class WaveformServiceOptions {
 /// - [onSignalCollected] — called once per tracked signal at startup; use
 ///   it to register signals in a VM-service index.
 /// - [onValueChange] — called for every value-change event within the
-///   [WaveformServiceOptions.startTime]/[WaveformServiceOptions.stopTime]
-///   window; use it to feed an in-memory store for streaming.
+///   [startTime]/[stopTime] window; use it to feed an in-memory store for
+///   streaming.
 /// - [onTimestampCapture] — called once per simulation timestamp that
 ///   contains at least one change; the full changed-signal set is passed.
 /// - [onSimulationEnd] — called after the final timestamp is written and
@@ -166,7 +71,7 @@ class WaveformServiceOptions {
 /// Example subclass skeleton:
 /// ```dart
 /// class DevToolsWaveformService extends WaveformService {
-///   DevToolsWaveformService(super.module, {super.options});
+///   DevToolsWaveformService(super.module, {super.outputPath});
 ///
 ///   @override
 ///   void onSignalCollected(Logic signal) {
@@ -185,8 +90,52 @@ class WaveformService {
   /// The top-level [Module] being captured.
   final Module module;
 
-  /// The options controlling this service.
-  final WaveformServiceOptions options;
+  /// Path of the output waveform file.
+  ///
+  /// The parent directory is created if necessary.
+  final String outputPath;
+
+  /// Output format.
+  final WaveOutputFormat format;
+
+  /// Optional predicate that determines whether a given [Logic] signal is
+  /// captured.
+  ///
+  /// When `null`, all non-[Const] signals in the hierarchy are captured,
+  /// matching the legacy waveform dumper behaviour.
+  final bool Function(Logic signal)? signalFilter;
+
+  /// VCD timescale string, e.g. `'1ps'`, `'1ns'`.
+  final String timescale;
+
+  /// Simulation time at which recording begins.
+  ///
+  /// Signals are still collected before this time so they appear in the scope
+  /// definition, but value-change events are suppressed until [startTime] is
+  /// reached.  `null` means "from the very start".
+  final int? startTime;
+
+  /// Simulation time at which recording ends.
+  ///
+  /// Value-change events after this time are suppressed.  `null` means "until
+  /// end of simulation".
+  final int? stopTime;
+
+  /// Number of characters accumulated in the write buffer before it is flushed
+  /// to disk.
+  final int flushBufferSize;
+
+  /// What to do when the output file already exists.
+  final OverwritePolicy overwritePolicy;
+
+  /// Whether to register this service with [ModuleServices] for inspection.
+  final bool register;
+
+  /// Whether to enable DevTools streaming.
+  ///
+  /// The base [WaveformService] stores this flag but takes no action on it.
+  /// The DevTools subclass uses it to conditionally register extensions.
+  final bool enableDevToolsStreaming;
 
   // ─── Internal file-writing state ─────────────────────────────
 
@@ -196,8 +145,7 @@ class WaveformService {
   /// Sink writing into [_outputFile].
   late final IOSink _outFileSink;
 
-  /// Write buffer; flushed when it exceeds
-  /// [WaveformServiceOptions.flushBufferSize].
+  /// Write buffer; flushed when it exceeds [flushBufferSize].
   final StringBuffer _fileBuffer = StringBuffer();
 
   /// Counter for assigning compact signal markers in the VCD.
@@ -218,26 +166,37 @@ class WaveformService {
   ///
   /// [module] must be built before construction.
   ///
-  /// Provide [options] to configure format, path, filtering, timescale,
-  /// start/stop times, flush size, and overwrite policy.
-  WaveformService(this.module,
-      {this.options = const WaveformServiceOptions()}) {
+  /// Use the optional constructor parameters to configure format, path,
+  /// filtering, timescale, start/stop times, flush size, and overwrite policy.
+  WaveformService(
+    this.module, {
+    this.outputPath = 'waves.vcd',
+    this.format = WaveOutputFormat.vcd,
+    this.signalFilter,
+    this.timescale = '1ps',
+    this.startTime,
+    this.stopTime,
+    this.flushBufferSize = 100000,
+    this.overwritePolicy = OverwritePolicy.overwrite,
+    this.register = true,
+    this.enableDevToolsStreaming = false,
+  }) {
     if (!module.hasBuilt) {
       throw Exception('Module must be built before creating WaveformService. '
           'Call build() first.');
     }
 
-    if (options.overwritePolicy == OverwritePolicy.failIfExists) {
-      final f = File(options.outputPath);
+    if (overwritePolicy == OverwritePolicy.failIfExists) {
+      final f = File(outputPath);
       if (f.existsSync()) {
         throw FileSystemException(
             'Waveform output file already exists and overwritePolicy is '
             'failIfExists.',
-            options.outputPath);
+            outputPath);
       }
     }
 
-    _outputFile = File(options.outputPath)..createSync(recursive: true);
+    _outputFile = File(outputPath)..createSync(recursive: true);
     _outFileSink = _outputFile.openWrite();
 
     _collectSignals();
@@ -259,7 +218,7 @@ class WaveformService {
       onSimulationEnd();
     });
 
-    if (options.register) {
+    if (register) {
       ModuleServices.instance.waveformService = this;
     }
   }
@@ -267,7 +226,7 @@ class WaveformService {
   // ─── Extensibility hooks ──────────────────────────────────────
 
   /// Called once for each [Logic] signal that passes
-  /// [WaveformServiceOptions.signalFilter] during initial signal collection.
+  /// [signalFilter] during initial signal collection.
   ///
   /// Override in a subclass to register signals with an in-memory store,
   /// VM service index, or FST handle map.  Always call `super` first.
@@ -276,8 +235,7 @@ class WaveformService {
 
   /// Called for every value-change event on [signal] at [timestamp].
   ///
-  /// Only called within the [WaveformServiceOptions.startTime] /
-  /// [WaveformServiceOptions.stopTime] window.
+  /// Only called within the [startTime] / [stopTime] window.
   ///
   /// Override in a subclass to feed an in-memory waveform store or
   /// streaming buffer.  Always call `super` first.
@@ -311,7 +269,7 @@ class WaveformService {
         if (sig is Const) {
           continue;
         }
-        if (options.signalFilter != null && !options.signalFilter!(sig)) {
+        if (signalFilter != null && !signalFilter!(sig)) {
           continue;
         }
 
@@ -345,7 +303,7 @@ class WaveformService {
 \$comment
   Generated by ROHD - www.github.com/intel/rohd
 \$end
-\$timescale ${options.timescale} \$end
+\$timescale $timescale \$end
 ''';
     _writeToBuffer(header);
   }
@@ -391,10 +349,10 @@ class WaveformService {
   }
 
   bool _isInRecordingWindow(int timestamp) {
-    if (options.startTime != null && timestamp < options.startTime!) {
+    if (startTime != null && timestamp < startTime!) {
       return false;
     }
-    if (options.stopTime != null && timestamp > options.stopTime!) {
+    if (stopTime != null && timestamp > stopTime!) {
       return false;
     }
     return true;
@@ -434,7 +392,7 @@ class WaveformService {
 
   void _writeToBuffer(String contents) {
     _fileBuffer.write(contents);
-    if (_fileBuffer.length > options.flushBufferSize) {
+    if (_fileBuffer.length > flushBufferSize) {
       _flushBuffer();
     }
   }
@@ -454,11 +412,11 @@ class WaveformService {
 
   /// Returns a JSON-serialisable summary of this service.
   Map<String, Object> toJson() => {
-        'outputPath': options.outputPath,
-        'format': options.format.name,
+        'outputPath': outputPath,
+        'format': format.name,
         'signalCount': _signalToMarkerMap.length,
-        'timescale': options.timescale,
-        if (options.startTime != null) 'startTime': options.startTime!,
-        if (options.stopTime != null) 'stopTime': options.stopTime!,
+        'timescale': timescale,
+        if (startTime != null) 'startTime': startTime!,
+        if (stopTime != null) 'stopTime': stopTime!,
       };
 }
