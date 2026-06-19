@@ -34,7 +34,7 @@ void main() {
   ) async {
     final synth = SynthBuilder(top, NetlistSynthesizer());
     final jsonStr =
-        (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
+        await (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
     if (!isJS) {
       final file = File(outPath);
       await file.create(recursive: true);
@@ -173,8 +173,8 @@ void main() {
 
       // Only verify JSON generation succeeds; the deeply nested hierarchy
       // causes a stack overflow in any recursive parser (pure Dart or JS).
-      final json =
-          (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
+      final json = await (synth.synthesizer as NetlistSynthesizer)
+          .synthesizeToJson(tree);
       expect(
         json,
         isNotEmpty,
@@ -269,7 +269,7 @@ void main() {
     const outPath = 'build/TreeOfTwoInputModules.rohd.json';
     final synth = SynthBuilder(tree, NetlistSynthesizer());
     final json =
-        (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
+        await (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
     expect(
       json,
       isNotEmpty,
