@@ -21,9 +21,8 @@ Signal Values
 | Value column | Displays the current value of each signal |
 | Width column | Shows the bit width of each signal |
 
-## Snapshots
+## Export
 
 | Action | Description |
 | --- | --- |
-| 📸 Camera | Capture all signal values at current simulation time |
-| 🎥 Video | Auto-capture signal values on each breakpoint |
+| 📷 Camera | Export signal table as PNG image |
