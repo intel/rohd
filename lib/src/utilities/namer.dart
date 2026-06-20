@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
-/// are assigned lazily on the first [instanceNameOf] call.
+/// are allocated explicitly via [allocateName].
 @internal
 class Namer {
   // ─── Shared namespace ───────────────────────────────────────────
@@ -31,15 +31,6 @@ class Namer {
   /// Cache of resolved names for internal (non-port) signals only.
   /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
-
-  /// Cache of resolved instance names, keyed by [Module.instanceNameKey].
-  ///
-  /// Allocating an instance name mutates [_uniquifier], so without this cache a
-  /// second synthesis pass over the same already-built module hierarchy would
-  /// re-allocate names and drift numeric suffixes. Caching by the stable
-  /// [Module.instanceNameKey] keeps instance names canonical across repeated
-  /// synthesizer runs.
-  final Map<Object, String> _instanceNames = {};
 
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
@@ -83,29 +74,6 @@ class Namer {
         initialName: Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
-
-  // ─── Instance naming (Module → String) ──────────────────────────
-
-  /// Returns the canonical instance name for [submodule].
-  ///
-  /// The first call for a stable [Module.instanceNameKey] allocates a
-  /// collision-free name in the shared namespace. Subsequent calls return the
-  /// cached result so repeated synthesis passes produce consistent instance
-  /// names.
-  String instanceNameOf(Module submodule) {
-    final key = submodule.instanceNameKey;
-    final cached = _instanceNames[key];
-    if (cached != null) {
-      return cached;
-    }
-
-    final name = _uniquifier.getUniqueName(
-      initialName: Sanitizer.sanitizeSV(submodule.uniqueInstanceName),
-      reserved: submodule.reserveName,
-    );
-    _instanceNames[key] = name;
-    return name;
-  }
 
   // ─── Signal naming (Logic → String) ─────────────────────────────
 

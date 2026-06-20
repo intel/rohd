@@ -27,6 +27,9 @@ class _BusSubsetForStructSlice extends BusSubset {
   /// signal and therefore does not drift run-to-run.
   final Logic _destination;
 
+  @override
+  Object get instanceNameKey => _destination;
+
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
@@ -40,9 +43,6 @@ class _BusSubsetForStructSlice extends BusSubset {
   // we override this since it's added post-build
   @override
   bool get hasBuilt => true;
-
-  @override
-  Object get instanceNameKey => _destination;
 }
 
 /// Represents the definition of a module.
