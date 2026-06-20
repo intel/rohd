@@ -37,7 +37,6 @@ class _BusSubsetForStructSlice extends BusSubset {
   // we override this since it's added post-build
   @override
   bool get hasBuilt => true;
-
 }
 
 /// Represents the definition of a module.
