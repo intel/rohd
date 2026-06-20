@@ -32,6 +32,13 @@ class Namer {
   /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
 
+  /// Cache of resolved instance names, keyed by [Module.instanceNameKey].
+  ///
+  /// Instance-name allocation mutates [_uniquifier]. Without this cache,
+  /// repeated synthesis passes over the same module hierarchy would allocate
+  /// fresh suffixes for the same submodule instances.
+  final Map<Object, String> _instanceNames = {};
+
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
 
@@ -79,6 +86,27 @@ class Namer {
         initialName: Sanitizer.sanitizeSV(baseName),
         reserved: reserved,
       );
+
+  // ─── Instance naming (Module → String) ──────────────────────────
+
+  /// Returns the canonical instance name for [submodule].
+  ///
+  /// The first call allocates a collision-free name in the shared namespace;
+  /// later calls for the same [Module.instanceNameKey] return the cached name.
+  String instanceNameOf(Module submodule) {
+    final key = submodule.instanceNameKey;
+    final cached = _instanceNames[key];
+    if (cached != null) {
+      return cached;
+    }
+
+    final name = allocateName(
+      submodule.uniqueInstanceName,
+      reserved: submodule.reserveName,
+    );
+    _instanceNames[key] = name;
+    return name;
+  }
 
   // ─── Signal naming (Logic → String) ─────────────────────────────
 
