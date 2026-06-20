@@ -33,8 +33,9 @@ void main() {
     String outPath,
   ) async {
     final synth = SynthBuilder(top, NetlistSynthesizer());
-    final jsonStr =
-        (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
+    final jsonStr = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+      top,
+    );
     if (!isJS) {
       final file = File(outPath);
       await file.create(recursive: true);
@@ -51,7 +52,7 @@ void main() {
 
     final counter = Counter(en, reset, clk);
     await counter.build();
-    counter.generateSynth();
+    SvService(counter, register: false).synthOutput;
 
     final modules = await convertTestWriteNetlist(
       counter,
@@ -95,8 +96,18 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final inputVal = Logic(name: 'inputVal', width: 8);
 
-      final fir =
-          FirFilter(en, resetB, clk, inputVal, [0, 0, 0, 1], bitWidth: 8);
+      final fir = FirFilter(
+          en,
+          resetB,
+          clk,
+          inputVal,
+          [
+            0,
+            0,
+            0,
+            1,
+          ],
+          bitWidth: 8);
       await fir.build();
 
       final synth = SynthBuilder(fir, NetlistSynthesizer());
@@ -173,8 +184,9 @@ void main() {
 
       // Only verify JSON generation succeeds; the deeply nested hierarchy
       // causes a stack overflow in any recursive parser (pure Dart or JS).
-      final json =
-          (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
+      final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+        tree,
+      );
       expect(
         json,
         isNotEmpty,
@@ -268,8 +280,9 @@ void main() {
     // causes a stack overflow in any recursive parser.
     const outPath = 'build/TreeOfTwoInputModules.rohd.json';
     final synth = SynthBuilder(tree, NetlistSynthesizer());
-    final json =
-        (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
+    final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+      tree,
+    );
     expect(
       json,
       isNotEmpty,

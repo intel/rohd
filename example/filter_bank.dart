@@ -63,7 +63,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(dut, outputPath: 'filter_bank.vcd');
+    WaveformService(dut, outputPath: 'filter_bank.vcd');
   }
 
   // Kick off the simulation.

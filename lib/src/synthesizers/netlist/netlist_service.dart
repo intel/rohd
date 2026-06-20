@@ -30,7 +30,7 @@ import 'package:rohd/rohd.dart';
 /// // Single module (lazy, cached):
 /// print(netlist.moduleJson('FilterChannel'));
 /// ```
-class NetlistService {
+class NetlistService implements NetlistInspectionService {
   /// The current format version for netlist JSON produced by this service.
   static const String formatVersion = '0.0.5';
 
@@ -62,8 +62,10 @@ class NetlistService {
     bool register = true,
   }) : synthesizer = NetlistSynthesizer(options: options) {
     if (!module.hasBuilt) {
-      throw Exception('Module must be built before creating NetlistService. '
-          'Call build() first.');
+      throw Exception(
+        'Module must be built before creating NetlistService. '
+        'Call build() first.',
+      );
     }
 
     synthBuilder = SynthBuilder(module, synthesizer);
@@ -107,11 +109,13 @@ class NetlistService {
   bool get isCompatible => isCompatibleVersion(version);
 
   /// Returns the full netlist hierarchy as a JSON string.
+  @override
   String toJson() => _fullJson;
 
   /// Returns the netlist JSON for a single module [definitionName].
   ///
   /// If the module is not found, returns a JSON error object.
+  @override
   String moduleJson(String definitionName) =>
       _moduleJsonCache.putIfAbsent(definitionName, () {
         final modData = _modulesMap[definitionName];
@@ -148,6 +152,7 @@ class NetlistService {
   /// + port_widths), and netnames so the DevTools extension can render the
   /// hierarchy and signal tree without the full connectivity payload.
   /// Full per-module connectivity is fetched on demand via [moduleJson].
+  @override
   String get slimJson => _slimJsonCache ??= _buildSlimJson();
 
   String _buildSlimJson() {

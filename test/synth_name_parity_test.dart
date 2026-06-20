@@ -88,7 +88,7 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      mod.generateSynth();
+      SvService(mod, register: false).synthOutput;
 
       expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
       expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
@@ -106,7 +106,7 @@ void main() {
 
         final modSv = _Counter(Logic(), Logic());
         await modSv.build();
-        modSv.generateSynth();
+        SvService(modSv, register: false).synthOutput;
 
         // Both paths use the same Namer, so names must match.
         final enNetlist = modNetlist.namer.signalNameOf(modNetlist.input('en'));

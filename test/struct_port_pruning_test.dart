@@ -75,7 +75,7 @@ void main() {
       final dut = StructPipeTop(Logic(), Logic());
       await dut.build();
 
-      final svStr = dut.generateSynth();
+      final svStr = SvService(dut, register: false).synthOutput;
 
       // The struct_producer submodule should appear in the SV.
       expect(
@@ -111,7 +111,7 @@ void main() {
       final dut = StructProducer(Logic(), Logic());
       await dut.build();
 
-      final svStr = dut.generateSynth();
+      final svStr = SvService(dut, register: false).synthOutput;
 
       // Inside StructProducer, the struct elements (a, b from PairStruct)
       // drive the output via struct_slice decomposition.  They must not
@@ -128,7 +128,7 @@ void main() {
       final dut = StructConsumer(Logic(width: 2));
       await dut.build();
 
-      final svStr = dut.generateSynth();
+      final svStr = SvService(dut, register: false).synthOutput;
 
       // Inside StructConsumer, the struct elements are extracted from the
       // packed input.  The XOR of elements drives the output.

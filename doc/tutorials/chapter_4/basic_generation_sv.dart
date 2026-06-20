@@ -78,7 +78,7 @@ void main() async {
 
   await nbitAdder.build();
 
-  print(nbitAdder.generateSynth());
+  print(SvService(nbitAdder).synthOutput);
 
   test('should return 10 when both inputs are 5.', () async {
     a.put(5);

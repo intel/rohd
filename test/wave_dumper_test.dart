@@ -40,11 +40,11 @@ const tempDumpDir = 'tmp_test';
 /// Gets the path of the VCD file based on a name.
 String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
-/// Attaches a [WaveDumper] to [module] to VCD with [name].
+/// Attaches a [WaveformService] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = temporaryDumpPath(name);
-  WaveDumper(module, outputPath: tmpDumpFile);
+  WaveformService(module, outputPath: tmpDumpFile);
 }
 
 /// Deletes the temporary VCD file associated with [name].
@@ -241,7 +241,8 @@ void main() {
 
     const dir1Path = '$tempDumpDir/dir1';
 
-    final waveDumper = WaveDumper(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+    final waveDumper =
+        WaveformService(mod, outputPath: '$dir1Path/dir2/waves.vcd');
 
     expect(File(waveDumper.outputPath).existsSync(), equals(true));
 
