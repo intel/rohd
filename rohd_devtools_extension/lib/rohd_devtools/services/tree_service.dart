@@ -10,7 +10,6 @@
 import 'dart:convert';
 
 import 'package:devtools_app_shared/service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 
 class TreeService {
@@ -29,7 +28,7 @@ class TreeService {
     final treeObj = jsonDecode(treeInstance.valueAsString ?? '') as Map;
 
     if (treeObj['status'] == 'fail') {
-      debugPrint('error');
+      print('error');
 
       return null;
     } else {
