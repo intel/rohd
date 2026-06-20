@@ -1894,7 +1894,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// after all post-processing passes have been applied.  This allows
   /// callers to retain per-module results for incremental serving while
   /// avoiding redundant re-synthesis.
-    Map<String, Map<String, Object?>> buildModulesMap(
+  Map<String, Map<String, Object?>> buildModulesMap(
       SynthBuilder synth, Module top) {
     final swEntries = Stopwatch()..start();
     final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,

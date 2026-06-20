@@ -374,7 +374,7 @@ Future<Map<String, dynamic>> _synthToMap(
 }) async {
   await mod.build();
   final synth = SynthBuilder(mod, NetlistSynthesizer(options: options));
-  final json = await (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
+  final json = (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(
     mod,
   );
   return jsonDecode(json) as Map<String, dynamic>;
@@ -774,7 +774,7 @@ void main() {
 
     test('default options produce valid netlist', () async {
       final synth = SynthBuilder(filterBank, NetlistSynthesizer());
-      final json = await (synth.synthesizer as NetlistSynthesizer)
+      final json = (synth.synthesizer as NetlistSynthesizer)
           .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
@@ -785,7 +785,7 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
       );
-      final json = await (synth.synthesizer as NetlistSynthesizer)
+      final json = (synth.synthesizer as NetlistSynthesizer)
           .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final mod = _modules(parsed);
@@ -812,7 +812,7 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
       );
-      final json = await (synth.synthesizer as NetlistSynthesizer)
+      final json = (synth.synthesizer as NetlistSynthesizer)
           .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
@@ -823,7 +823,7 @@ void main() {
         filterBank,
         NetlistSynthesizer(options: const NetlistOptions(enableDCE: false)),
       );
-      final json = await (synth.synthesizer as NetlistSynthesizer)
+      final json = (synth.synthesizer as NetlistSynthesizer)
           .synthesizeToJson(filterBank);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       expect(_modules(parsed), isNotEmpty);
@@ -831,7 +831,7 @@ void main() {
 
     test('slim and full produce same module definitions', () async {
       final fullSynth = SynthBuilder(filterBank, NetlistSynthesizer());
-      final fullJson = await (fullSynth.synthesizer as NetlistSynthesizer)
+      final fullJson = (fullSynth.synthesizer as NetlistSynthesizer)
           .synthesizeToJson(filterBank);
       final fullParsed = jsonDecode(fullJson) as Map<String, dynamic>;
 
@@ -843,8 +843,8 @@ void main() {
         fb2,
         NetlistSynthesizer(options: const NetlistOptions(slimMode: true)),
       );
-      final slimJson = await (slimSynth.synthesizer as NetlistSynthesizer)
-          .synthesizeToJson(fb2);
+      final slimJson =
+          (slimSynth.synthesizer as NetlistSynthesizer).synthesizeToJson(fb2);
       final slimParsed = jsonDecode(slimJson) as Map<String, dynamic>;
 
       // Same module definition names
@@ -941,8 +941,8 @@ void main() {
       final tree = TreeOfTwoInputModules(seq, (a, b) => mux(a > b, a, b));
       await tree.build();
       final synth = SynthBuilder(tree, NetlistSynthesizer());
-      final json = await (synth.synthesizer as NetlistSynthesizer)
-          .synthesizeToJson(tree);
+      final json =
+          (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(tree);
       expect(json, isNotEmpty);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final mod = _modules(parsed);

@@ -32,7 +32,6 @@ class Namer {
   /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
 
-
   /// The set of port [Logic] objects, for O(1) port membership tests.
   final Set<Logic> _portLogics;
 

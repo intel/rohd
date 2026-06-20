@@ -78,7 +78,7 @@ Future<Map<String, dynamic>> _synthesizeAndWrite(
 ) async {
   final synth = SynthBuilder(top, NetlistSynthesizer());
   final jsonStr =
-      await (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
+      (synth.synthesizer as NetlistSynthesizer).synthesizeToJson(top);
   if (!_isJS) {
     final file = File(outPath);
     await file.create(recursive: true);
@@ -198,7 +198,7 @@ void main() {
 
       // Only verify JSON generation succeeds; the deeply nested hierarchy
       // causes a stack overflow in any recursive parser.
-      final json = await NetlistSynthesizer().synthesizeToJson(tree);
+      final json = NetlistSynthesizer().synthesizeToJson(tree);
       expect(json, isNotEmpty);
       if (!_isJS) {
         final file = File('build/TreeOfTwoInputModules.rohd.json');
@@ -226,7 +226,7 @@ void main() {
       final mod = _InverterModule(Logic(name: 'inp'));
       await mod.build();
 
-      final json = await NetlistSynthesizer().synthesizeToJson(mod);
+      final json = NetlistSynthesizer().synthesizeToJson(mod);
       expect(json, isNotEmpty);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       expect(decoded, contains('modules'));
@@ -237,7 +237,7 @@ void main() {
       final mod = _InverterModule(Logic(name: 'inp'));
       await mod.build();
 
-      final json = await NetlistSynthesizer().synthesizeToJson(mod);
+      final json = NetlistSynthesizer().synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;
       expect(modules, contains(mod.definitionName));
@@ -264,7 +264,7 @@ void main() {
           width: width);
       await mod.build();
 
-      final json = await NetlistSynthesizer().synthesizeToJson(mod);
+      final json = NetlistSynthesizer().synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;
       final topMod = modules[mod.definitionName] as Map<String, dynamic>;
@@ -279,7 +279,7 @@ void main() {
       final mod = _CompositeModule(Logic(name: 'a'), Logic(name: 'b'));
       await mod.build();
 
-      final json = await NetlistSynthesizer().synthesizeToJson(mod);
+      final json = NetlistSynthesizer().synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;
       final topMod = modules[mod.definitionName] as Map<String, dynamic>;
@@ -301,8 +301,8 @@ void main() {
       final synthesizer = NetlistSynthesizer();
       final synth = SynthBuilder(mod, synthesizer);
 
-      final fromCombined = await synthesizer.generateCombinedJson(synth, mod);
-      final fromConvenience = await NetlistSynthesizer().synthesizeToJson(mod);
+      final fromCombined = synthesizer.generateCombinedJson(synth, mod);
+      final fromConvenience = NetlistSynthesizer().synthesizeToJson(mod);
 
       final combinedModules =
           (jsonDecode(fromCombined) as Map)['modules'] as Map;
@@ -423,7 +423,7 @@ void main() {
 
       final synthesizer = NetlistSynthesizer();
       final synth = SynthBuilder(mod, synthesizer);
-      final modulesMap = await synthesizer.buildModulesMap(synth, mod);
+      final modulesMap = synthesizer.buildModulesMap(synth, mod);
 
       expect(modulesMap, contains(mod.definitionName));
       expect(modulesMap.length, greaterThan(1));
@@ -445,7 +445,7 @@ void main() {
 
       final slimSynth =
           NetlistSynthesizer(options: const NetlistOptions(slimMode: true));
-      final json = await slimSynth.synthesizeToJson(mod);
+      final json = slimSynth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       final modules = decoded['modules'] as Map<String, dynamic>;
 
@@ -486,7 +486,7 @@ void main() {
       final mod = _buildFilterBank();
       await mod.build();
 
-      final json = await NetlistSynthesizer().synthesizeToJson(mod);
+      final json = NetlistSynthesizer().synthesizeToJson(mod);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final modules = parsed['modules'] as Map<String, dynamic>;
       final channelDefs =
@@ -503,7 +503,7 @@ void main() {
 
       final synthesizer = NetlistSynthesizer();
       final synth = SynthBuilder(mod, synthesizer);
-      final modulesMap = await synthesizer.buildModulesMap(synth, mod);
+      final modulesMap = synthesizer.buildModulesMap(synth, mod);
 
       for (final entry in modulesMap.entries) {
         final data = entry.value;
@@ -545,10 +545,10 @@ void main() {
       final synthCompressed = NetlistSynthesizer(
         options: const NetlistOptions(compressBitRanges: true),
       );
-      final jsonCompressed = await synthCompressed.synthesizeToJson(mod);
+      final jsonCompressed = synthCompressed.synthesizeToJson(mod);
 
       final synthNormal = NetlistSynthesizer();
-      final jsonNormal = await synthNormal.synthesizeToJson(mod);
+      final jsonNormal = synthNormal.synthesizeToJson(mod);
 
       // Compressed should be shorter.
       expect(jsonCompressed.length, lessThan(jsonNormal.length));
@@ -576,7 +576,7 @@ void main() {
       final synth = NetlistSynthesizer(
         options: const NetlistOptions(compressBitRanges: true),
       );
-      final json = await synth.synthesizeToJson(mod);
+      final json = synth.synthesizeToJson(mod);
       final decoded = jsonDecode(json) as Map;
 
       // Should still be valid JSON.
@@ -591,10 +591,10 @@ void main() {
       final synthCompact = NetlistSynthesizer(
         options: const NetlistOptions(compactJson: true),
       );
-      final jsonCompact = await synthCompact.synthesizeToJson(mod);
+      final jsonCompact = synthCompact.synthesizeToJson(mod);
 
       final synthNormal = NetlistSynthesizer();
-      final jsonNormal = await synthNormal.synthesizeToJson(mod);
+      final jsonNormal = synthNormal.synthesizeToJson(mod);
 
       // Compact should be shorter.
       expect(jsonCompact.length, lessThan(jsonNormal.length));
@@ -620,17 +620,17 @@ void main() {
           compactJson: true,
         ),
       );
-      final jsonBoth = await synthBoth.synthesizeToJson(mod);
+      final jsonBoth = synthBoth.synthesizeToJson(mod);
 
       final synthCompressOnly = NetlistSynthesizer(
         options: const NetlistOptions(compressBitRanges: true),
       );
-      final jsonCompressOnly = await synthCompressOnly.synthesizeToJson(mod);
+      final jsonCompressOnly = synthCompressOnly.synthesizeToJson(mod);
 
       final synthCompactOnly = NetlistSynthesizer(
         options: const NetlistOptions(compactJson: true),
       );
-      final jsonCompactOnly = await synthCompactOnly.synthesizeToJson(mod);
+      final jsonCompactOnly = synthCompactOnly.synthesizeToJson(mod);
 
       expect(jsonBoth.length, lessThan(jsonCompressOnly.length));
       expect(jsonBoth.length, lessThan(jsonCompactOnly.length));
@@ -644,14 +644,14 @@ void main() {
 
       // Generate both compressed and uncompressed.
       final synthNormal = NetlistSynthesizer();
-      final jsonNormal = await synthNormal.synthesizeToJson(mod);
+      final jsonNormal = synthNormal.synthesizeToJson(mod);
       final normalModules = (jsonDecode(jsonNormal)
           as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 
       final synthCompressed = NetlistSynthesizer(
         options: const NetlistOptions(compressBitRanges: true),
       );
-      final jsonCompressed = await synthCompressed.synthesizeToJson(mod);
+      final jsonCompressed = synthCompressed.synthesizeToJson(mod);
       final compressedModules = (jsonDecode(jsonCompressed)
           as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 

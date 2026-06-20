@@ -52,6 +52,10 @@ class NetlistService {
   /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
+  /// Creates a netlist service for a built [module].
+  ///
+  /// Uses [options] for netlist synthesis configuration and optionally
+  /// [register]s this instance with [ModuleServices] for DevTools lookup.
   NetlistService(
     this.module, {
     NetlistOptions options = const NetlistOptions(),
