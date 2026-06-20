@@ -27,13 +27,14 @@ class SynthSubModuleInstantiation {
   /// Selects a name for this module instance. Must be called exactly once.
   ///
   /// Names are allocated from [parentModule]'s [Namer]'s shared namespace
-  /// via [Namer.instanceNameOf], which memoizes by [Module.instanceNameKey] so
-  /// the same instance receives an identical canonical name across repeated
-  /// synthesis passes.
+  /// via [Namer.allocateName].
   void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.namer.instanceNameOf(module);
+    _name = parentModule.namer.allocateName(
+      module.uniqueInstanceName,
+      reserved: module.reserveName,
+    );
   }
 
   /// A mapping of input port name to [SynthLogic].
