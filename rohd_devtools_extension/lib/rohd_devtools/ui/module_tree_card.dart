@@ -74,8 +74,9 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color:
-                isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+            color: isSelected
+                ? Colors.blue.withValues(alpha: 0.2)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(4.0),
           ),
           padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),

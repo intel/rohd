@@ -17,9 +17,9 @@ class SignalDetailsCard extends StatefulWidget {
   final TreeModel? module;
 
   const SignalDetailsCard({
-    Key? key,
+    super.key,
     this.module,
-  }) : super(key: key);
+  });
 
   @override
   SignalDetailsCardState createState() => SignalDetailsCardState();
