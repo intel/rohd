@@ -161,6 +161,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
 
   test('provider and consumer', () async {
     final mod = PCTop(Logic());
