@@ -220,8 +220,8 @@ void main() {
 
     test('submodule instance names are allocated from the shared namespace',
         () async {
-      // Instance names come from Module.namer.allocateName, which
-      // shares the same namespace as signal names.
+      // Instance names come from Module.namer.instanceNameOf, which shares the
+      // same namespace as signal names.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
@@ -242,6 +242,28 @@ void main() {
             reason: 'Instance name "$name" should be claimed in the '
                 'namespace');
       }
+    });
+
+    test('submodule instance names are stable across repeated definitions',
+        () async {
+      final mod = _Outer(Logic(width: 8), Logic(width: 8));
+      await mod.build();
+
+      final def1 = SynthModuleDefinition(mod);
+      final def2 = SynthModuleDefinition(mod);
+
+      final names1 = def1.subModuleInstantiations
+          .where((s) => s.needsInstantiation)
+          .map((s) => s.name)
+          .toList();
+      final names2 = def2.subModuleInstantiations
+          .where((s) => s.needsInstantiation)
+          .map((s) => s.name)
+          .toList();
+
+      expect(names2, names1,
+          reason: 'Repeated synthesis passes should reuse cached instance '
+              'names instead of drifting numeric suffixes.');
     });
   });
 }
