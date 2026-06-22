@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
-/// are allocated explicitly via [allocateName].
+/// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
   // ─── Shared namespace ───────────────────────────────────────────
@@ -44,8 +44,10 @@ class Namer {
 
   // ─── Construction ───────────────────────────────────────────────
 
-  Namer._({required Uniquifier uniquifier, required Set<Logic> portLogics})
-      : _uniquifier = uniquifier,
+  Namer._({
+    required Uniquifier uniquifier,
+    required Set<Logic> portLogics,
+  })  : _uniquifier = uniquifier,
         _portLogics = portLogics;
 
   /// Creates a [Namer] for the given [module]'s ports.
@@ -56,7 +58,7 @@ class Namer {
     final portLogics = <Logic>{
       ...module.inputs.values,
       ...module.outputs.values,
-      ...module.inOuts.values
+      ...module.inOuts.values,
     };
 
     final uniquifier = Uniquifier();
@@ -64,7 +66,10 @@ class Namer {
       uniquifier.getUniqueName(initialName: logic.name, reserved: true);
     }
 
-    return Namer._(uniquifier: uniquifier, portLogics: portLogics);
+    return Namer._(
+      uniquifier: uniquifier,
+      portLogics: portLogics,
+    );
   }
 
   // ─── Name availability / allocation ─────────────────────────────
@@ -78,7 +83,9 @@ class Namer {
   /// is claimed without modification; an exception is thrown if it collides.
   String allocateName(String baseName, {bool reserved = false}) =>
       _uniquifier.getUniqueName(
-          initialName: Sanitizer.sanitizeSV(baseName), reserved: reserved);
+        initialName: Sanitizer.sanitizeSV(baseName),
+        reserved: reserved,
+      );
 
   // ─── Instance naming (Module → String) ──────────────────────────
 
@@ -93,8 +100,10 @@ class Namer {
       return cached;
     }
 
-    final name = allocateName(submodule.uniqueInstanceName,
-        reserved: submodule.reserveName);
+    final name = allocateName(
+      submodule.uniqueInstanceName,
+      reserved: submodule.reserveName,
+    );
     _instanceNames[key] = name;
     return name;
   }
@@ -125,7 +134,9 @@ class Namer {
     }
 
     final name = _uniquifier.getUniqueName(
-        initialName: base, reserved: isReservedInternal);
+      initialName: base,
+      reserved: isReservedInternal,
+    );
     _signalNames[logic] = name;
     return name;
   }
@@ -156,8 +167,11 @@ class Namer {
   /// The winning name is allocated once and cached for the chosen [Logic].
   /// All other non-port [Logic]s in [candidates] are also cached to the
   /// same name.
-  String signalNameOfBest(Iterable<Logic> candidates,
-      {Const? constValue, bool constNameDisallowed = false}) {
+  String signalNameOfBest(
+    Iterable<Logic> candidates, {
+    Const? constValue,
+    bool constNameDisallowed = false,
+  }) {
     if (constValue != null && !constNameDisallowed) {
       return constValue.value.toString();
     }
