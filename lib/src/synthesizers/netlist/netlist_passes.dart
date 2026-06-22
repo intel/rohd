@@ -127,9 +127,7 @@ class NetlistPasses {
 
       // ── Phase 1: connected components ──
 
-      final adj = <String, Set<String>>{
-        for (final tc in tCells) tc: {},
-      };
+      final adj = <String, Set<String>>{for (final tc in tCells) tc: {}};
 
       for (final tc in tCells) {
         final dirs =
@@ -249,8 +247,11 @@ class NetlistPasses {
           continue;
         }
 
-        cellsToAdd['cluster_buf_${comp.first}'] =
-            NetlistUtils.makeBufCell(aList.length, aList, yList);
+        cellsToAdd['cluster_buf_${comp.first}'] = NetlistUtils.makeBufCell(
+          aList.length,
+          aList,
+          yList,
+        );
         cellsToRemove.addAll(comp);
       }
 
@@ -261,10 +262,7 @@ class NetlistPasses {
 
   /// Populates [bitMap] with output-wire-bit → input-wire-bit entries
   /// for a single transparent cell.
-  static void _mapCellBits(
-    Map<String, Object?> cell,
-    Map<int, Object> bitMap,
-  ) {
+  static void _mapCellBits(Map<String, Object?> cell, Map<int, Object> bitMap) {
     final type = cell['type']! as String;
     final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
     final conns = cell['connections'] as Map<String, dynamic>? ?? {};

@@ -175,7 +175,7 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
 /// const options = NetlistOptions(collapseTransparentClusters: true);
 /// final synth = NetlistSynthesizer(options: options);
 /// final builder = SynthBuilder(topModule, synth);
-/// final json = await synth.synthesizeToJson(topModule);
+/// final json = synth.synthesizeToJson(topModule);
 /// ```
 class NetlistSynthesizer extends Synthesizer {
   /// The configuration options controlling netlist synthesis.
@@ -1897,8 +1897,10 @@ class NetlistSynthesizer extends Synthesizer {
   Map<String, Map<String, Object?>> buildModulesMap(
       SynthBuilder synth, Module top) {
     final swEntries = Stopwatch()..start();
-    final modules = NetlistPasses.collectModuleEntries(synth.synthesisResults,
-        topModule: top);
+    final modules = NetlistPasses.collectModuleEntries(
+      synth.synthesisResults,
+      topModule: top,
+    );
     swEntries.stop();
 
     final swPasses = Stopwatch()..start();
@@ -2022,7 +2024,10 @@ class NetlistSynthesizer extends Synthesizer {
   /// Convenience: synthesize [top] into a combined netlist JSON string.
   ///
   /// Builds a [SynthBuilder] internally and returns the full JSON.
-  String synthesizeToJson(Module top) {
+  ///
+  /// The [packageRoot] parameter is accepted for API compatibility with
+  /// downstream trace-enabled branches.
+  String synthesizeToJson(Module top, {String? packageRoot}) {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top);
   }

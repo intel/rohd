@@ -38,7 +38,7 @@ class NetlistService implements NetlistInspectionService {
   final Module module;
 
   /// The [NetlistSynthesizer] used for synthesis.
-  final NetlistSynthesizer synthesizer;
+  late final NetlistSynthesizer synthesizer;
 
   /// The underlying [SynthBuilder].
   late final SynthBuilder synthBuilder;
@@ -52,6 +52,12 @@ class NetlistService implements NetlistInspectionService {
   /// The parsed modules map from the combined JSON.
   late final Map<String, dynamic> _modulesMap;
 
+  /// The package root directory used for FLC trace injection.
+  ///
+  /// When non-null, downstream trace-enabled branches use this path to embed
+  /// `rohd.src_trace` attributes in the netlist JSON.
+  late final String? packageRoot;
+
   /// Creates a netlist service for a built [module].
   ///
   /// Uses [options] for netlist synthesis configuration and optionally
@@ -59,8 +65,9 @@ class NetlistService implements NetlistInspectionService {
   NetlistService(
     this.module, {
     NetlistOptions options = const NetlistOptions(),
+    String? packageRoot,
     bool register = true,
-  }) : synthesizer = NetlistSynthesizer(options: options) {
+  }) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating NetlistService. '
@@ -68,8 +75,14 @@ class NetlistService implements NetlistInspectionService {
       );
     }
 
+    final effectiveRoot = packageRoot;
+    synthesizer = NetlistSynthesizer(options: options);
+    this.packageRoot = effectiveRoot;
     synthBuilder = SynthBuilder(module, synthesizer);
-    _fullJson = synthesizer.generateCombinedJson(synthBuilder, module);
+    _fullJson = synthesizer.synthesizeToJson(
+      module,
+      packageRoot: effectiveRoot,
+    );
 
     final decoded = jsonDecode(_fullJson) as Map<String, dynamic>;
     _modulesMap =
@@ -113,6 +126,11 @@ class NetlistService implements NetlistInspectionService {
   String toJson() => _fullJson;
 
   /// Returns the netlist JSON for a single module [definitionName].
+  ///
+  /// The returned JSON is keyed by definition name:
+  /// `{"DefinitionName": { ports, cells, netnames }}`.
+  /// This matches the format expected by the DevTools schematic viewer
+  /// for incremental module fetches.
   ///
   /// If the module is not found, returns a JSON error object.
   @override
