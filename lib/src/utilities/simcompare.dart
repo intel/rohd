@@ -987,6 +987,12 @@ abstract class SimCompare {
       return;
     }
     final passed = runSystemCVectors(exe, vectors);
+    if (!dontDeleteTmpFiles) {
+      // Single-shot path: clean up this process's compiled artifacts now so
+      // tests that call checkSystemCVector do not require a tearDownAll.
+      // The PCH is kept to avoid rebuilding it for subsequent calls.
+      cleanupSystemCCache();
+    }
     expect(passed, true);
   }
 
