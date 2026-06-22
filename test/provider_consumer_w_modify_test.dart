@@ -25,10 +25,8 @@ class DataInterface extends PairInterface {
       : super(
             portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
             portsFromConsumer: [Logic.port('ready')],
-            modify: (original) => [
-                  if (prefix != null) prefix,
-                  original,
-                ].join('_'));
+            modify: (original) =>
+                [if (prefix != null) prefix, original].join('_'));
   @override
   DataInterface clone() => DataInterface(prefix: prefix);
 }
@@ -87,7 +85,7 @@ class Provider extends Module {
 
     Sequential(clk, reset: reset, [
       reqIntf.writeDatas[0].data.incr(val: 2),
-      reqIntf.writeDatas[1].data.incr(),
+      reqIntf.writeDatas[1].data.incr()
     ]);
   }
 }
@@ -108,7 +106,7 @@ class Consumer extends Module {
       rspIntf.readData.data <
           reqIntf.writeDatas.map((e) => e.data).reduce((a, b) => a + b),
       reqIntf.writeDatas[0].ready < 1,
-      reqIntf.writeDatas[1].ready < 1,
+      reqIntf.writeDatas[1].ready < 1
     ]);
   }
 }
@@ -143,7 +141,7 @@ void main() {
       Vector({}, {}),
       Vector({}, {'rsp_data': 3}),
       Vector({}, {'rsp_data': 6}),
-      Vector({}, {'rsp_data': 9}),
+      Vector({}, {'rsp_data': 9})
     ];
 
     final sv = SvService(mod).synthOutput;

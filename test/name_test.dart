@@ -24,16 +24,12 @@ class TopModule extends Module {
 }
 
 class SpeciallyNamedModule extends Module {
-  SpeciallyNamedModule(
-    Logic a,
-    bool reserveDefName,
-    bool reserveInstanceName, {
-    super.name = 'specialInstanceName',
-    super.definitionName = 'specialName',
-  }) : super(
-          reserveName: reserveInstanceName,
-          reserveDefinitionName: reserveDefName,
-        ) {
+  SpeciallyNamedModule(Logic a, bool reserveDefName, bool reserveInstanceName,
+      {super.name = 'specialInstanceName',
+      super.definitionName = 'specialName'})
+      : super(
+            reserveName: reserveInstanceName,
+            reserveDefinitionName: reserveDefName) {
     addInput('a', a, width: a.width);
   }
 }
@@ -41,20 +37,19 @@ class SpeciallyNamedModule extends Module {
 class RenameableModule extends Module {
   final String inputPortName;
   final String outputPortName;
-  RenameableModule(
-    Logic inputPort, {
-    this.outputPortName = 'outputPort',
-    String internalSignalName = 'internalSignal',
-    String reservedInternalSignalName = 'reservedInternalSignal',
-    String internalModuleInstanceName = 'internalModuleInstanceName',
-    String reservedInternalModuleInstanceName =
-        'reservedInternalModuleInstanceName',
-    String internalModuleDefinitionName = 'internalModuleDefinitionName',
-    super.definitionName = 'moduleDefinitionName',
-    super.name = 'moduleInstanceName',
-    super.reserveDefinitionName = true,
-    super.reserveName = true,
-  }) : inputPortName = inputPort.name {
+  RenameableModule(Logic inputPort,
+      {this.outputPortName = 'outputPort',
+      String internalSignalName = 'internalSignal',
+      String reservedInternalSignalName = 'reservedInternalSignal',
+      String internalModuleInstanceName = 'internalModuleInstanceName',
+      String reservedInternalModuleInstanceName =
+          'reservedInternalModuleInstanceName',
+      String internalModuleDefinitionName = 'internalModuleDefinitionName',
+      super.definitionName = 'moduleDefinitionName',
+      super.name = 'moduleInstanceName',
+      super.reserveDefinitionName = true,
+      super.reserveName = true})
+      : inputPortName = inputPort.name {
     inputPort = addInput(inputPort.name, inputPort);
     final outputPort = addOutput(outputPortName);
 
@@ -64,21 +59,13 @@ class RenameableModule extends Module {
     Combinational([internalSignal < ~inputPort]);
     Combinational([outputPort < internalSignal]);
 
-    SpeciallyNamedModule(
-      ~internalSignal,
-      true,
-      false,
-      name: internalModuleInstanceName,
-      definitionName: internalModuleDefinitionName,
-    );
+    SpeciallyNamedModule(~internalSignal, true, false,
+        name: internalModuleInstanceName,
+        definitionName: internalModuleDefinitionName);
 
-    SpeciallyNamedModule(
-      ~reservedInternalSignal,
-      true,
-      true,
-      name: reservedInternalModuleInstanceName,
-      definitionName: internalModuleDefinitionName,
-    );
+    SpeciallyNamedModule(~reservedInternalSignal, true, true,
+        name: reservedInternalModuleInstanceName,
+        definitionName: internalModuleDefinitionName);
   }
 }
 
@@ -105,7 +92,7 @@ void main() {
 
       final vectors = [
         Vector({mod.inputPortName: 0}, {mod.outputPortName: 1}),
-        Vector({mod.inputPortName: 1}, {mod.outputPortName: 0}),
+        Vector({mod.inputPortName: 1}, {mod.outputPortName: 0})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -115,19 +102,17 @@ void main() {
     }
 
     Future<void> runTestGen(Map<NameType, String> names) async =>
-        runTest(RenameableModule(
-          Logic(name: names[NameType.inputPort]),
-          outputPortName: names[NameType.outputPort]!,
-          internalSignalName: names[NameType.internalSignal]!,
-          reservedInternalSignalName: names[NameType.reservedInternalSignal]!,
-          internalModuleInstanceName: names[NameType.internalModuleInstance]!,
-          reservedInternalModuleInstanceName:
-              names[NameType.reservedInternalModuleInstance]!,
-          internalModuleDefinitionName:
-              names[NameType.internalModuleDefinition]!,
-          definitionName: names[NameType.topDefinitionName],
-          name: names[NameType.topName]!,
-        ));
+        runTest(RenameableModule(Logic(name: names[NameType.inputPort]),
+            outputPortName: names[NameType.outputPort]!,
+            internalSignalName: names[NameType.internalSignal]!,
+            reservedInternalSignalName: names[NameType.reservedInternalSignal]!,
+            internalModuleInstanceName: names[NameType.internalModuleInstance]!,
+            reservedInternalModuleInstanceName:
+                names[NameType.reservedInternalModuleInstance]!,
+            internalModuleDefinitionName:
+                names[NameType.internalModuleDefinition]!,
+            definitionName: names[NameType.topDefinitionName],
+            name: names[NameType.topName]!));
 
     for (var i = 0; i < NameType.values.length; i++) {
       for (var j = i + 1; j < NameType.values.length; j++) {
@@ -140,16 +125,13 @@ void main() {
         // Note: SystemVerilog does not allow using the same identifier for a
         // signal and an instance.
         final shouldConflict = [
-          {
-            NameType.internalModuleDefinition,
-            NameType.topDefinitionName,
-          },
+          {NameType.internalModuleDefinition, NameType.topDefinitionName},
           {
             NameType.inputPort,
             NameType.outputPort,
             NameType.reservedInternalSignal,
-            NameType.reservedInternalModuleInstance,
-          },
+            NameType.reservedInternalModuleInstance
+          }
         ];
 
         var expectFail = false;

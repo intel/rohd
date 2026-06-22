@@ -37,76 +37,55 @@ class SynthSubModuleInstantiation {
   }
 
   /// A mapping of input port name to [SynthLogic].
-  late final Map<String, SynthLogic> inputMapping = UnmodifiableMapView(
-    _inputMapping,
-  );
+  late final Map<String, SynthLogic> inputMapping =
+      UnmodifiableMapView(_inputMapping);
   final Map<String, SynthLogic> _inputMapping = {};
 
   /// Adds an input mapping from [name] to [synthLogic].
-  void setInputMapping(
-    String name,
-    SynthLogic synthLogic, {
-    bool replace = false,
-  }) {
+  void setInputMapping(String name, SynthLogic synthLogic,
+      {bool replace = false}) {
+    assert(module.inputs.containsKey(name),
+        'Input $name not found in module ${module.name}.');
     assert(
-      module.inputs.containsKey(name),
-      'Input $name not found in module ${module.name}.',
-    );
-    assert(
-      (replace && _inputMapping.containsKey(name)) ||
-          !_inputMapping.containsKey(name),
-      'A mapping already exists to this input: $name.',
-    );
+        (replace && _inputMapping.containsKey(name)) ||
+            !_inputMapping.containsKey(name),
+        'A mapping already exists to this input: $name.');
 
     _inputMapping[name] = synthLogic;
   }
 
   /// A mapping of output port name to [SynthLogic].
-  late final Map<String, SynthLogic> outputMapping = UnmodifiableMapView(
-    _outputMapping,
-  );
+  late final Map<String, SynthLogic> outputMapping =
+      UnmodifiableMapView(_outputMapping);
   final Map<String, SynthLogic> _outputMapping = {};
 
   /// Adds an output mapping from [name] to [synthLogic].
-  void setOutputMapping(
-    String name,
-    SynthLogic synthLogic, {
-    bool replace = false,
-  }) {
+  void setOutputMapping(String name, SynthLogic synthLogic,
+      {bool replace = false}) {
+    assert(module.outputs.containsKey(name),
+        'Output $name not found in module ${module.name}.');
     assert(
-      module.outputs.containsKey(name),
-      'Output $name not found in module ${module.name}.',
-    );
-    assert(
-      (replace && _outputMapping.containsKey(name)) ||
-          !_outputMapping.containsKey(name),
-      'A mapping already exists to this output: $name.',
-    );
+        (replace && _outputMapping.containsKey(name)) ||
+            !_outputMapping.containsKey(name),
+        'A mapping already exists to this output: $name.');
 
     _outputMapping[name] = synthLogic;
   }
 
   /// A mapping of output port name to [SynthLogic].
-  late final Map<String, SynthLogic> inOutMapping = UnmodifiableMapView(
-    _inOutMapping,
-  );
+  late final Map<String, SynthLogic> inOutMapping =
+      UnmodifiableMapView(_inOutMapping);
   final Map<String, SynthLogic> _inOutMapping = {};
 
   /// Adds an inOut mapping from [name] to [synthLogic].
-  void setInOutMapping(
-    String name,
-    SynthLogic synthLogic, {
-    bool replace = false,
-  }) {
+  void setInOutMapping(String name, SynthLogic synthLogic,
+      {bool replace = false}) {
+    assert(module.inOuts.containsKey(name),
+        'InOut $name not found in module ${module.name}.');
     assert(
-      module.inOuts.containsKey(name),
-      'InOut $name not found in module ${module.name}.',
-    );
-    assert(
-      (replace && _inOutMapping.containsKey(name)) ||
-          !_inOutMapping.containsKey(name),
-      'A mapping already exists to this output: $name.',
-    );
+        (replace && _inOutMapping.containsKey(name)) ||
+            !_inOutMapping.containsKey(name),
+        'A mapping already exists to this output: $name.');
 
     _inOutMapping[name] = synthLogic;
   }

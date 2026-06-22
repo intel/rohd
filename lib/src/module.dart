@@ -115,7 +115,7 @@ abstract class Module {
         ..._inputs.values,
         ..._outputs.values,
         ..._inOuts.values,
-        ...internalSignals,
+        ...internalSignals
       ]);
 
   /// Accesses the [Logic] associated with this [Module]s [input] port
@@ -353,10 +353,9 @@ abstract class Module {
   ///
   /// - No module exists in two separate hierarchies.
   /// - No module is a submodule of itself.
-  void _checkValidHierarchy({
-    required Map<Module, List<Module>> visited,
-    List<Module> hierarchy = const [],
-  }) {
+  void _checkValidHierarchy(
+      {required Map<Module, List<Module>> visited,
+      List<Module> hierarchy = const []}) {
     final newHierarchy = [...hierarchy, this];
 
     if (hierarchy.contains(this)) {
@@ -891,22 +890,18 @@ abstract class Module {
   ///
   /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  LogicArray addInputArray(
-    String name,
-    Logic source, {
-    List<int> dimensions = const [1],
-    int elementWidth = 1,
-    int numUnpackedDimensions = 0,
-  }) {
+  LogicArray addInputArray(String name, Logic source,
+      {List<int> dimensions = const [1],
+      int elementWidth = 1,
+      int numUnpackedDimensions = 0}) {
     _checkForSafePortName(name);
 
     final inArr = LogicArray(
-      name: name,
-      dimensions,
-      elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions,
-      naming: Naming.reserved,
-    )
+        name: name,
+        dimensions,
+        elementWidth,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.reserved)
       ..gets(source)
       ..setAllParentModule(this);
 
@@ -1016,21 +1011,19 @@ abstract class Module {
   /// named [name].
   ///
   /// This is very similar to [addOutput], except for [LogicArray]s.
-  LogicArray addOutputArray(
-    String name, {
-    List<int> dimensions = const [1],
-    int elementWidth = 1,
-    int numUnpackedDimensions = 0,
-  }) {
+  LogicArray addOutputArray(String name,
+      {List<int> dimensions = const [1],
+      int elementWidth = 1,
+      int numUnpackedDimensions = 0}) {
     _checkForSafePortName(name);
 
     final outArr = LogicArray(
-      name: name,
-      dimensions,
-      elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions,
-      naming: Naming.reserved,
-    )..setAllParentModule(this);
+        name: name,
+        dimensions,
+        elementWidth,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.reserved)
+      ..setAllParentModule(this);
 
     _outputs[name] = outArr;
 
@@ -1045,13 +1038,10 @@ abstract class Module {
   ///
   /// Performs validation on overall width matching for [source], but not on
   /// [dimensions], [elementWidth], or [numUnpackedDimensions].
-  LogicArray addInOutArray(
-    String name,
-    Logic source, {
-    List<int> dimensions = const [1],
-    int elementWidth = 1,
-    int numUnpackedDimensions = 0,
-  }) {
+  LogicArray addInOutArray(String name, Logic source,
+      {List<int> dimensions = const [1],
+      int elementWidth = 1,
+      int numUnpackedDimensions = 0}) {
     _checkForSafePortName(name);
 
     // make sure we register all the _inOutDrivers properly
@@ -1070,12 +1060,11 @@ abstract class Module {
     }
 
     final inOutArr = LogicArray.net(
-      name: name,
-      dimensions,
-      elementWidth,
-      numUnpackedDimensions: numUnpackedDimensions,
-      naming: Naming.reserved,
-    )
+        name: name,
+        dimensions,
+        elementWidth,
+        numUnpackedDimensions: numUnpackedDimensions,
+        naming: Naming.reserved)
       ..gets(source)
       ..setAllParentModule(this);
 

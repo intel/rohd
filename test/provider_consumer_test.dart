@@ -37,11 +37,8 @@ class RequestInterface extends PairInterface {
   final int numWd;
   RequestInterface({this.numWd = 2}) {
     for (var wd = 0; wd < numWd; wd++) {
-      writeDatas.add(addSubInterface(
-        'write_data$wd',
-        DataInterface(),
-        uniquify: withPrefix('wd$wd'),
-      ));
+      writeDatas.add(addSubInterface('write_data$wd', DataInterface(),
+          uniquify: withPrefix('wd$wd')));
     }
   }
 
@@ -52,12 +49,8 @@ class RequestInterface extends PairInterface {
 class ResponseInterface extends PairInterface {
   late final DataInterface readData;
   ResponseInterface() : super() {
-    readData = addSubInterface(
-      'read_data',
-      DataInterface(),
-      reverse: true,
-      uniquify: withPrefix('rd'),
-    );
+    readData = addSubInterface('read_data', DataInterface(),
+        reverse: true, uniquify: withPrefix('rd'));
   }
   @override
   ResponseInterface clone() => ResponseInterface();
@@ -67,16 +60,10 @@ class PCInterface extends PairInterface {
   late final RequestInterface req;
   late final ResponseInterface rsp;
   PCInterface() {
-    req = addSubInterface(
-      'req',
-      RequestInterface(),
-      uniquify: withSuffix('req'),
-    );
-    rsp = addSubInterface(
-      'rsp',
-      ResponseInterface(),
-      uniquify: withSuffix('rsp'),
-    );
+    req =
+        addSubInterface('req', RequestInterface(), uniquify: withSuffix('req'));
+    rsp = addSubInterface('rsp', ResponseInterface(),
+        uniquify: withSuffix('rsp'));
   }
   @override
   PCInterface clone() => PCInterface();
@@ -88,26 +75,18 @@ class Provider extends Module {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
     reqIntf = reqIntf.clone()
-      ..pairConnectIO(
-        this,
-        reqIntf,
-        PairRole.provider,
-        uniquify: withSuffix('req'),
-      );
+      ..pairConnectIO(this, reqIntf, PairRole.provider,
+          uniquify: withSuffix('req'));
     rspIntf = rspIntf.clone()
-      ..pairConnectIO(
-        this,
-        rspIntf,
-        PairRole.provider,
-        uniquify: withSuffix('rsp'),
-      );
+      ..pairConnectIO(this, rspIntf, PairRole.provider,
+          uniquify: withSuffix('rsp'));
 
     reqIntf.writeDatas[0].valid <= Const(1);
     reqIntf.writeDatas[1].valid <= Const(1);
 
     Sequential(clk, reset: reset, [
       reqIntf.writeDatas[0].data.incr(val: 2),
-      reqIntf.writeDatas[1].data.incr(),
+      reqIntf.writeDatas[1].data.incr()
     ]);
   }
 }
@@ -118,19 +97,11 @@ class Consumer extends Module {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
     reqIntf = reqIntf.clone()
-      ..pairConnectIO(
-        this,
-        reqIntf,
-        PairRole.consumer,
-        uniquify: withSuffix('req'),
-      );
+      ..pairConnectIO(this, reqIntf, PairRole.consumer,
+          uniquify: withSuffix('req'));
     rspIntf = rspIntf.clone()
-      ..pairConnectIO(
-        this,
-        rspIntf,
-        PairRole.consumer,
-        uniquify: withSuffix('rsp'),
-      );
+      ..pairConnectIO(this, rspIntf, PairRole.consumer,
+          uniquify: withSuffix('rsp'));
 
     rspIntf.readData.valid <= Const(1);
 
@@ -138,7 +109,7 @@ class Consumer extends Module {
       rspIntf.readData.data <
           reqIntf.writeDatas.map((e) => e.data).reduce((a, b) => a + b),
       reqIntf.writeDatas[0].ready < 1,
-      reqIntf.writeDatas[1].ready < 1,
+      reqIntf.writeDatas[1].ready < 1
     ]);
   }
 }
@@ -173,7 +144,7 @@ void main() {
       Vector({}, {}),
       Vector({}, {'rsp_data': 3}),
       Vector({}, {'rsp_data': 6}),
-      Vector({}, {'rsp_data': 9}),
+      Vector({}, {'rsp_data': 9})
     ];
 
     final sv = SvService(mod).synthOutput;

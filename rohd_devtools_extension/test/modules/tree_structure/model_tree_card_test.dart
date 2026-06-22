@@ -42,22 +42,17 @@ void main() {
         .thenAnswer((_) => Stream.value(null));
 
     // Wrap the ModuleTreeCard widget in MultiBlocProvider for Bloc Providers
-    await tester.pumpWidget(
-      MultiBlocProvider(
+    await tester.pumpWidget(MultiBlocProvider(
         providers: [
           BlocProvider<SelectedModuleCubit>.value(
               value: mockSelectedModuleCubit),
           BlocProvider<RohdServiceCubit>.value(value: mockRohdServiceCubit),
           BlocProvider<TreeSearchTermCubit>.value(
-              value: mockTreeSearchTermCubit),
+              value: mockTreeSearchTermCubit)
         ],
         child: MaterialApp(
-          home: Scaffold(
-            body: ModuleTreeCard(futureModuleTree: futureModuleTree),
-          ),
-        ),
-      ),
-    );
+            home: Scaffold(
+                body: ModuleTreeCard(futureModuleTree: futureModuleTree)))));
 
     await tester.pumpAndSettle();
 

@@ -50,11 +50,7 @@ class SystemVerilogSynthesizer extends Synthesizer {
       bool forceStandardInstantiation = false}) {
     if (!forceStandardInstantiation) {
       if (module is SystemVerilog) {
-        return module.instantiationVerilog(
-              instanceType,
-              instanceName,
-              ports,
-            ) ??
+        return module.instantiationVerilog(instanceType, instanceName, ports) ??
             instantiationVerilogFor(
                 module: module,
                 instanceType: instanceType,
@@ -65,13 +61,12 @@ class SystemVerilogSynthesizer extends Synthesizer {
       // ignore: deprecated_member_use_from_same_package
       else if (module is CustomSystemVerilog) {
         return module.instantiationVerilog(
-          instanceType,
-          instanceName,
-          Map.fromEntries(ports.entries
-              .where((element) => module.inputs.containsKey(element.key))),
-          Map.fromEntries(ports.entries
-              .where((element) => module.outputs.containsKey(element.key))),
-        );
+            instanceType,
+            instanceName,
+            Map.fromEntries(ports.entries
+                .where((element) => module.inputs.containsKey(element.key))),
+            Map.fromEntries(ports.entries
+                .where((element) => module.outputs.containsKey(element.key))));
       }
     }
 
@@ -127,13 +122,12 @@ class SystemVerilogSynthesizer extends Synthesizer {
           Map<String, String>? parameters,
           bool forceStandardInstantiation = false}) =>
       instantiationVerilogFor(
-        module: module,
-        instanceType: instanceType,
-        instanceName: instanceName,
-        ports: {...inputs, ...outputs, ...inOuts},
-        parameters: parameters,
-        forceStandardInstantiation: forceStandardInstantiation,
-      );
+          module: module,
+          instanceType: instanceType,
+          instanceName: instanceName,
+          ports: {...inputs, ...outputs, ...inOuts},
+          parameters: parameters,
+          forceStandardInstantiation: forceStandardInstantiation);
 
   @override
   SynthesisResult synthesize(

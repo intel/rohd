@@ -30,7 +30,7 @@ enum WaveOutputFormat {
   ///
   /// Requires an FST writer to be available; see the DevTools subclass for
   /// a fully FST-backed implementation.
-  fst,
+  fst
 }
 
 /// Policy applied when the output file already exists at construction time.
@@ -39,7 +39,7 @@ enum OverwritePolicy {
   overwrite,
 
   /// Throw a [FileSystemException] if the file already exists.
-  failIfExists,
+  failIfExists
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -168,19 +168,17 @@ class WaveformService {
   ///
   /// Use the optional constructor parameters to configure format, path,
   /// filtering, timescale, start/stop times, flush size, and overwrite policy.
-  WaveformService(
-    this.module, {
-    this.outputPath = 'waves.vcd',
-    this.format = WaveOutputFormat.vcd,
-    this.signalFilter,
-    this.timescale = '1ps',
-    this.startTime,
-    this.stopTime,
-    this.flushBufferSize = 100000,
-    this.overwritePolicy = OverwritePolicy.overwrite,
-    this.register = true,
-    this.enableDevToolsStreaming = false,
-  }) {
+  WaveformService(this.module,
+      {this.outputPath = 'waves.vcd',
+      this.format = WaveOutputFormat.vcd,
+      this.signalFilter,
+      this.timescale = '1ps',
+      this.startTime,
+      this.stopTime,
+      this.flushBufferSize = 100000,
+      this.overwritePolicy = OverwritePolicy.overwrite,
+      this.register = true,
+      this.enableDevToolsStreaming = false}) {
     if (!module.hasBuilt) {
       throw Exception('Module must be built before creating WaveformService. '
           'Call build() first.');
@@ -417,6 +415,6 @@ class WaveformService {
         'signalCount': _signalToMarkerMap.length,
         'timescale': timescale,
         if (startTime != null) 'startTime': startTime!,
-        if (stopTime != null) 'stopTime': stopTime!,
+        if (stopTime != null) 'stopTime': stopTime!
       };
 }

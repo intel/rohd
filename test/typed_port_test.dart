@@ -19,13 +19,12 @@ class MyStruct extends LogicStructure {
   final bool asNet;
 
   factory MyStruct({String? name, bool asNet = false}) => MyStruct._(
-        (asNet ? LogicNet.new : Logic.new)(
-            name: 'ready', naming: Naming.mergeable),
-        (asNet ? LogicNet.new : Logic.new)(
-            name: 'valid', naming: Naming.mergeable),
-        name: name,
-        asNet: asNet,
-      );
+      (asNet ? LogicNet.new : Logic.new)(
+          name: 'ready', naming: Naming.mergeable),
+      (asNet ? LogicNet.new : Logic.new)(
+          name: 'valid', naming: Naming.mergeable),
+      name: name,
+      asNet: asNet);
 
   MyStruct._(this.ready, this.valid,
       {required String? name, required this.asNet})
@@ -178,10 +177,7 @@ class ParentModuleWithStructsContainingPorts extends Module {
   ParentModuleWithStructsContainingPorts(Logic x) {
     x = addInput('x', x);
 
-    final child = ChildModuleForStructsOfPorts(
-      x,
-      LogicNet(name: 'y'),
-    );
+    final child = ChildModuleForStructsOfPorts(x, LogicNet(name: 'y'));
 
     LogicStructure(name: 'BADNAMEO2', [child.out2]) ^ x;
   }
@@ -204,9 +200,7 @@ class ChildModuleForStructsOfPorts extends Module {
 }
 
 class ParentModuleWithPackingSubModuleOutput extends Module {
-  ParentModuleWithPackingSubModuleOutput(
-    Logic x,
-  ) {
+  ParentModuleWithPackingSubModuleOutput(Logic x) {
     x = addInput('x', x);
     ChildModuleWithPackingOutput(x).myOut.packed.xor() ^ x;
   }
@@ -238,7 +232,7 @@ void main() {
 
     final vectors = [
       Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
-      Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+      Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -266,7 +260,7 @@ void main() {
       Vector({'inp': '00'}, {'out': '01'}),
       Vector({'inp': '10'}, {'out': '01'}),
       Vector({'inp': '01'}, {'out': '01'}),
-      Vector({'inp': '11'}, {'out': '10'}),
+      Vector({'inp': '11'}, {'out': '10'})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -308,16 +302,13 @@ void main() {
           .addTypedOutput<LogicType>(
               'p', logic.clone as LogicType Function({String name})),
       'inOut': <LogicType extends Logic>(LogicType logic) =>
-          DummyModule().addTypedInOut<LogicType>('p', logic),
+          DummyModule().addTypedInOut<LogicType>('p', logic)
     };
 
     for (final MapEntry(key: portType, value: creator)
         in typedPortCreators.entries) {
       test('$portType with const', () {
-        expect(
-          () => creator(Const(1)),
-          throwsA(isA<PortTypeException>()),
-        );
+        expect(() => creator(Const(1)), throwsA(isA<PortTypeException>()));
       });
 
       test('$portType with const but param as Logic', () {
@@ -332,10 +323,8 @@ void main() {
       });
 
       test('$portType with struct containing const', () {
-        expect(
-          () => creator(StructWithConst()),
-          throwsA(isA<PortTypeException>()),
-        );
+        expect(() => creator(StructWithConst()),
+            throwsA(isA<PortTypeException>()));
       });
 
       test('$portType with struct containing const but param as Logic', () {
@@ -372,7 +361,7 @@ void main() {
 
       final vectors = [
         Vector({'a1': 0, 'a2': 1}, {'b1': 1, 'b2': 0}),
-        Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1}),
+        Vector({'a1': 1, 'a2': 0}, {'b1': 0, 'b2': 1})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -384,7 +373,7 @@ void main() {
 
       final vectorsReversed = [
         Vector({'b1': 1, 'b2': 0}, {'a1': 0, 'a2': 1}),
-        Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0}),
+        Vector({'b1': 0, 'b2': 1}, {'a1': 1, 'a2': 0})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectorsReversed);
@@ -396,17 +385,15 @@ void main() {
     final typedPortCreators = {
       'input': (Logic logic) => DummyModule().addTypedInput('p', logic),
       'output': (Logic logic) => DummyModule().addTypedOutput('p', logic.clone),
-      'inOut': (Logic logic) => DummyModule().addTypedInOut('p', logic),
+      'inOut': (Logic logic) => DummyModule().addTypedInOut('p', logic)
     };
 
     group('struct with partial nets fails', () {
       for (final MapEntry(key: portType, value: creator)
           in typedPortCreators.entries) {
         test(portType, () {
-          expect(
-            () => creator(LogicStructure([Logic(), LogicNet()])),
-            throwsA(isA<PortTypeException>()),
-          );
+          expect(() => creator(LogicStructure([Logic(), LogicNet()])),
+              throwsA(isA<PortTypeException>()));
         });
       }
     });
@@ -461,13 +448,13 @@ void main() {
               LogicArray.net([4], 1),
               LogicStructure([LogicNet(width: 2)])
             ])
-      ),
+      )
     ];
 
     final modMakers = [
       (name: 'basic', maker: MatcherModule.new, invert: true),
       (name: 'wrapper', maker: MatcherModuleWrapper.new, invert: true),
-      (name: 'pass through', maker: MatcherPassThrough.new, invert: false),
+      (name: 'pass through', maker: MatcherPassThrough.new, invert: false)
     ];
 
     for (final modMaker in modMakers) {
@@ -486,8 +473,7 @@ void main() {
                   {'anyIn': 0xa5}, {'anyOut': modMaker.invert ? 0x5a : 0xa5}),
               Vector(
                   {'anyIn': 0xff}, {'anyOut': modMaker.invert ? 0x00 : 0xff}),
-              Vector(
-                  {'anyIn': 0x13}, {'anyOut': modMaker.invert ? 0xec : 0x13}),
+              Vector({'anyIn': 0x13}, {'anyOut': modMaker.invert ? 0xec : 0x13})
             ];
 
             await SimCompare.checkFunctionalVector(mod, vectors);
@@ -509,7 +495,7 @@ void main() {
 
     final vectors = [
       Vector({'inStruct': 0}, {'outStruct': 0}),
-      Vector({'inStruct': 1}, {'outStruct': 1}),
+      Vector({'inStruct': 1}, {'outStruct': 1})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);

@@ -59,10 +59,8 @@ class SvService {
   /// if needed.
   SvService(this.module, {bool register = true, String? outputPath}) {
     if (!module.hasBuilt) {
-      throw Exception(
-        'Module must be built before creating SvService. '
-        'Call build() first.',
-      );
+      throw Exception('Module must be built before creating SvService. '
+          'Call build() first.');
     }
 
     synthBuilder = SynthBuilder(module, SystemVerilogSynthesizer());
@@ -110,9 +108,8 @@ class SvService {
   ///
   /// Keys are [SynthesisResult.instanceTypeName] (the uniquified definition
   /// name used in the generated SV).
-  Map<String, String> get contentsByName => {
-        for (final fc in fileContents) fc.name: fc.contents,
-      };
+  Map<String, String> get contentsByName =>
+      {for (final fc in fileContents) fc.name: fc.contents};
 
   /// Returns a map from module definition name
   /// ([Module.definitionName]) to its SV file contents.
@@ -147,6 +144,6 @@ class SvService {
   ///
   /// Contains the list of generated module definition names.
   Map<String, Object> toJson() => <String, Object>{
-        'modules': [for (final fc in fileContents) fc.name],
+        'modules': [for (final fc in fileContents) fc.name]
       };
 }

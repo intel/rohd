@@ -41,19 +41,15 @@ void main() {
       when(() => treeSearchTermCubit.stream)
           .thenAnswer((_) => Stream.value(null));
 
-      await tester.pumpWidget(
-        MultiBlocProvider(
+      await tester.pumpWidget(MultiBlocProvider(
           providers: [
             BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
-            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit),
+            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit)
           ],
           child: MaterialApp(
-            home: Scaffold(
-              body: TreeStructurePage(screenSize: const Size(2000, 1000)),
-            ),
-          ),
-        ),
-      );
+              home: Scaffold(
+                  body:
+                      TreeStructurePage(screenSize: const Size(2000, 1000))))));
 
       await tester.pumpAndSettle();
 
@@ -77,19 +73,14 @@ void main() {
       when(() => treeSearchTermCubit.stream)
           .thenAnswer((_) => Stream.value(null));
 
-      await tester.pumpWidget(
-        MultiBlocProvider(
+      await tester.pumpWidget(MultiBlocProvider(
           providers: [
             BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
-            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit),
+            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit)
           ],
           child: MaterialApp(
-            home: Scaffold(
-              body: TreeStructurePage(screenSize: const Size(800, 600)),
-            ),
-          ),
-        ),
-      );
+              home: Scaffold(
+                  body: TreeStructurePage(screenSize: const Size(800, 600))))));
 
       await tester.pumpAndSettle();
 

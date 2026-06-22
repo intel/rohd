@@ -40,9 +40,7 @@ class DelaySignal extends Module {
     Sequential(clk, [
       If.block([
         Iff(en, zList),
-        Else([
-          out < 0,
-        ])
+        Else([out < 0])
       ])
     ]);
   }
@@ -76,23 +74,16 @@ class ShorthandSeqModule extends Module {
 
     final clk = SimpleClockGenerator(10).clk;
 
-    Sequential(
-      clk,
-      [
-        piOut.incr(),
-        pdOut.decr(),
-        maOut.mulAssign(2),
-        daOut.divAssign(2),
-      ],
-      reset: reset,
-      resetValues: {
-        piOut: initialVal,
-        pdOut: initialVal,
-        maOut: initialVal,
-        daOut: initialVal,
-        if (useArrays && doubleResetError) daOut.elements[0]: initialVal,
-      },
-    );
+    Sequential(clk,
+        [piOut.incr(), pdOut.decr(), maOut.mulAssign(2), daOut.divAssign(2)],
+        reset: reset,
+        resetValues: {
+          piOut: initialVal,
+          pdOut: initialVal,
+          maOut: initialVal,
+          daOut: initialVal,
+          if (useArrays && doubleResetError) daOut.elements[0]: initialVal
+        });
   }
 }
 
@@ -108,20 +99,10 @@ class SeqResetValTypes extends Module {
     final d = addOutput('d', width: 8); // none
 
     Sequential(
-      clk,
-      reset: reset,
-      resetValues: {
-        a: 7,
-        b: LogicValue.ofInt(12, 8),
-        c: i,
-      },
-      [
-        a < 8,
-        b < LogicValue.ofInt(13, 8),
-        c < i + 1,
-        d < 4,
-      ],
-    );
+        clk,
+        reset: reset,
+        resetValues: {a: 7, b: LogicValue.ofInt(12, 8), c: i},
+        [a < 8, b < LogicValue.ofInt(13, 8), c < i + 1, d < 4]);
   }
 }
 
@@ -131,11 +112,7 @@ class NegedgeTriggeredSeq extends Module {
     final b = addOutput('b');
     final clk = SimpleClockGenerator(10).clk;
 
-    Sequential.multi(
-      [],
-      negedgeTriggers: [~clk],
-      [b < a],
-    );
+    Sequential.multi([], negedgeTriggers: [~clk], [b < a]);
   }
 }
 
@@ -145,12 +122,7 @@ class BothTriggeredSeq extends Module {
     final b = addOutput('b', width: 8);
     final clk = SimpleClockGenerator(10).clk;
 
-    Sequential.multi(
-      [clk],
-      reset: reset,
-      negedgeTriggers: [clk],
-      [b < b + 1],
-    );
+    Sequential.multi([clk], reset: reset, negedgeTriggers: [clk], [b < b + 1]);
   }
 }
 
@@ -160,10 +132,7 @@ void main() {
   });
 
   test('simple pipeline', () async {
-    final dut = DelaySignal(
-      Logic(),
-      Logic(width: 4),
-    );
+    final dut = DelaySignal(Logic(), Logic(width: 4));
     await dut.build();
 
     final vectors = [
@@ -178,7 +147,7 @@ void main() {
       Vector({'inputVal': 8, 'en': 1}, {'out': 0}),
       Vector({'inputVal': 9, 'en': 1}, {'out': 3}),
       Vector({}, {'out': 4}),
-      Vector({}, {'out': 5}),
+      Vector({}, {'out': 5})
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
     SimCompare.checkIverilogVector(dut, vectors);
@@ -198,7 +167,7 @@ void main() {
         Vector(
             {'reset': 0}, {'piOut': 16, 'pdOut': 16, 'maOut': 16, 'daOut': 16}),
         Vector(
-            {'reset': 0}, {'piOut': 17, 'pdOut': 15, 'maOut': 32, 'daOut': 8}),
+            {'reset': 0}, {'piOut': 17, 'pdOut': 15, 'maOut': 32, 'daOut': 8})
       ];
 
       // await SimCompare.checkFunctionalVector(mod, vectors);
@@ -220,17 +189,14 @@ void main() {
   });
 
   test('reset and value types', () async {
-    final dut = SeqResetValTypes(
-      Logic(),
-      Logic(width: 8),
-    );
+    final dut = SeqResetValTypes(Logic(), Logic(width: 8));
     await dut.build();
 
     final vectors = [
       Vector({'reset': 1, 'i': 17}, {}),
       Vector({'reset': 1}, {'a': 7, 'b': 12, 'c': 17, 'd': 0}),
       Vector({'reset': 0}, {'a': 7, 'b': 12, 'c': 17, 'd': 0}),
-      Vector({'reset': 0}, {'a': 8, 'b': 13, 'c': 18, 'd': 4}),
+      Vector({'reset': 0}, {'a': 8, 'b': 13, 'c': 18, 'd': 4})
     ];
 
     await SimCompare.checkFunctionalVector(dut, vectors);
@@ -247,7 +213,7 @@ void main() {
     final vectors = [
       Vector({'a': 0}, {}),
       Vector({'a': 1}, {'b': 0}),
-      Vector({'a': 0}, {'b': 1}),
+      Vector({'a': 0}, {'b': 1})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -264,7 +230,7 @@ void main() {
       Vector({'reset': 0}, {'b': 0}),
       Vector({}, {'b': 2}),
       Vector({}, {'b': 4}),
-      Vector({}, {'b': 6}),
+      Vector({}, {'b': 6})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);

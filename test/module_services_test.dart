@@ -60,7 +60,7 @@ class FakeTraceService implements TraceInspectionService {
 
   @override
   Map<String, Object>? get flcHierarchy => <String, Object>{
-        'modules': <String, Object>{module.definitionName: <String, Object>{}},
+        'modules': <String, Object>{module.definitionName: <String, Object>{}}
       };
 
   @override
@@ -109,10 +109,8 @@ void main() {
       final b = Logic(name: 'b');
       final mod = _TopModule(a, b);
       await mod.build();
-      expect(
-        ModuleServices.instance.inspectorJSON,
-        equals(ModuleServices.instance.hierarchyJSON),
-      );
+      expect(ModuleServices.instance.inspectorJSON,
+          equals(ModuleServices.instance.hierarchyJSON));
     });
 
     test('inspectorJSON uses registered netlist service', () async {
@@ -122,8 +120,8 @@ void main() {
       final netlistJson = jsonDecode(ModuleServices.instance.netlistJSON)
           as Map<String, Object?>;
       final moduleJson = jsonDecode(
-        ModuleServices.instance.inspectorModuleJSON('SimpleModule'),
-      ) as Map<String, Object?>;
+              ModuleServices.instance.inspectorModuleJSON('SimpleModule'))
+          as Map<String, Object?>;
 
       expect(inspectorJson['kind'], equals('slim'));
       expect(netlistJson['kind'], equals('full'));
@@ -150,14 +148,12 @@ void main() {
       expect(File(flcPath).existsSync(), isTrue);
     });
 
-    test(
-      'netlistJSON returns unavailable when no NetlistService registered',
-      () {
-        final json = ModuleServices.instance.netlistJSON;
-        final decoded = jsonDecode(json) as Map<String, dynamic>;
-        expect(decoded['status'], equals('unavailable'));
-      },
-    );
+    test('netlistJSON returns unavailable when no NetlistService registered',
+        () {
+      final json = ModuleServices.instance.netlistJSON;
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      expect(decoded['status'], equals('unavailable'));
+    });
 
     test('reset clears all services', () async {
       final a = Logic(name: 'a');
@@ -175,22 +171,20 @@ void main() {
       expect(ModuleServices.instance.traceService, isNull);
     });
 
-    test(
-      'inspectorJSON returns slim netlist when service registered',
-      () async {
-        final a = Logic(name: 'a');
-        final b = Logic(name: 'b');
-        final mod = _TopModule(a, b);
-        await mod.build();
-        NetlistService(mod);
+    test('inspectorJSON returns slim netlist when service registered',
+        () async {
+      final a = Logic(name: 'a');
+      final b = Logic(name: 'b');
+      final mod = _TopModule(a, b);
+      await mod.build();
+      NetlistService(mod);
 
-        final json = ModuleServices.instance.inspectorJSON;
-        final decoded = jsonDecode(json) as Map<String, dynamic>;
-        expect(decoded['netlist'], isA<Map<String, dynamic>>());
-        final netlist = decoded['netlist'] as Map<String, dynamic>;
-        expect(netlist['modules'], isA<Map<String, dynamic>>());
-      },
-    );
+      final json = ModuleServices.instance.inspectorJSON;
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      expect(decoded['netlist'], isA<Map<String, dynamic>>());
+      final netlist = decoded['netlist'] as Map<String, dynamic>;
+      expect(netlist['modules'], isA<Map<String, dynamic>>());
+    });
 
     test('inspectorJSON falls back to hierarchy when no netlist', () async {
       final a = Logic(name: 'a');
@@ -370,11 +364,8 @@ void main() {
             (modEntry as Map<String, dynamic>)['cells'] as Map<String, dynamic>;
         for (final cellEntry in cells.values) {
           final cell = cellEntry as Map<String, dynamic>;
-          expect(
-            cell.containsKey('connections'),
-            isFalse,
-            reason: 'Slim cells should not have connections',
-          );
+          expect(cell.containsKey('connections'), isFalse,
+              reason: 'Slim cells should not have connections');
         }
       }
     });

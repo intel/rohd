@@ -18,11 +18,9 @@ class ReadyValidStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory ReadyValidStruct({String name = 'readyValid'}) => ReadyValidStruct._(
-        Logic(name: 'ready'),
-        Logic(name: 'valid'),
-        name: name,
-      );
+  factory ReadyValidStruct({String name = 'readyValid'}) =>
+      ReadyValidStruct._(Logic(name: 'ready'), Logic(name: 'valid'),
+          name: name);
 
   ReadyValidStruct._(this.ready, this.valid, {required String name})
       : super([ready, valid], name: name);
@@ -36,11 +34,8 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
-        Logic(name: 'ready'),
-        Logic(name: 'valid'),
-        name: name,
-      );
+  factory MyStruct({String name = 'myStruct'}) =>
+      MyStruct._(Logic(name: 'ready'), Logic(name: 'valid'), name: name);
 
   MyStruct._(this.ready, this.valid, {required super.name})
       : super([ready, valid]);
@@ -55,12 +50,9 @@ class MyFancyStruct extends LogicStructure {
   final LogicStructure subStruct;
 
   factory MyFancyStruct({int busWidth = 12, String name = 'myFancyStruct'}) =>
-      MyFancyStruct._(
-        LogicArray([3, 3], 8, name: 'arr'),
-        Logic(name: 'bus', width: busWidth),
-        MyStruct(),
-        name: name,
-      );
+      MyFancyStruct._(LogicArray([3, 3], 8, name: 'arr'),
+          Logic(name: 'bus', width: busWidth), MyStruct(),
+          name: name);
 
   MyFancyStruct._(this.arr, this.bus, this.subStruct,
       {super.name = 'myFancyStruct'})
@@ -183,18 +175,13 @@ void main() {
 
   group('LogicStructure construction', () {
     test('simple construction', () {
-      final s = LogicStructure([
-        Logic(),
-        Logic(),
-      ], name: 'structure');
+      final s = LogicStructure([Logic(), Logic()], name: 'structure');
 
       expect(s.name, 'structure');
     });
 
     test('sub logic in two structures throws exception', () {
-      final s = LogicStructure([
-        Logic(),
-      ], name: 'structure');
+      final s = LogicStructure([Logic()], name: 'structure');
 
       expect(() => LogicStructure([s.elements.first]),
           throwsA(isA<LogicConstructionException>()));
@@ -203,9 +190,7 @@ void main() {
     test('sub structure in two structures throws exception', () {
       final subS = LogicStructure([Logic()]);
 
-      LogicStructure([
-        subS,
-      ], name: 'structure');
+      LogicStructure([subS], name: 'structure');
 
       expect(() => LogicStructure([subS]),
           throwsA(isA<LogicConstructionException>()));
@@ -251,7 +236,7 @@ void main() {
 
       final vectors = [
         Vector({'ready': 0}, {'valid': 0}),
-        Vector({'ready': 1}, {'valid': 1}),
+        Vector({'ready': 1}, {'valid': 1})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -266,7 +251,7 @@ void main() {
       final vectors = [
         Vector({'sIn': 0}, {'sOut': 0}),
         Vector({'sIn': LogicValue.ofString('10')},
-            {'sOut': LogicValue.ofString('10')}),
+            {'sOut': LogicValue.ofString('10')})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);
@@ -288,7 +273,7 @@ void main() {
         Vector({'sIn': 0},
             {'sOut': LogicValue.filled(struct.width, LogicValue.one)}),
         Vector({'sIn': LogicValue.ofString('10' * (struct.width ~/ 2))},
-            {'sOut': LogicValue.ofString('01' * (struct.width ~/ 2))}),
+            {'sOut': LogicValue.ofString('01' * (struct.width ~/ 2))})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vectors);

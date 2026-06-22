@@ -17,23 +17,12 @@ class RohdDevToolsPage extends StatelessWidget {
   const RohdDevToolsPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => RohdServiceCubit(),
-        ),
-        BlocProvider(
-          create: (context) => TreeSearchTermCubit(),
-        ),
-        BlocProvider(
-          create: (context) => SelectedModuleCubit(),
-        ),
-        BlocProvider(
-          create: (context) => SignalSearchTermCubit(),
-        ),
-      ],
-      child: const RohdExtensionModule(),
-    );
+    return MultiBlocProvider(providers: [
+      BlocProvider(create: (context) => RohdServiceCubit()),
+      BlocProvider(create: (context) => TreeSearchTermCubit()),
+      BlocProvider(create: (context) => SelectedModuleCubit()),
+      BlocProvider(create: (context) => SignalSearchTermCubit())
+    ], child: const RohdExtensionModule());
   }
 }
 
@@ -57,10 +46,7 @@ class _RohdExtensionModuleState extends State<RohdExtensionModule> {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const DevtoolAppBar(),
-      body: TreeStructurePage(
-        screenSize: screenSize,
-      ),
-    );
+        appBar: const DevtoolAppBar(),
+        body: TreeStructurePage(screenSize: screenSize));
   }
 }

@@ -245,15 +245,8 @@ class Logic {
   ///
   /// The [naming] and [name], if unspecified, are chosen based on the rules in
   /// [Naming.chooseNaming] and [Naming.chooseName], respectively.
-  Logic({
-    String? name,
-    int width = 1,
-    Naming? naming,
-  }) : this._(
-          name: name,
-          width: width,
-          naming: naming,
-        );
+  Logic({String? name, int width = 1, Naming? naming})
+      : this._(name: name, width: width, naming: naming);
 
   /// A cloning utility for [clone] and [named].
   Logic _clone({String? name, Naming? naming}) =>
@@ -290,12 +283,8 @@ class Logic {
 
   /// An internal constructor for [Logic] which additional provides access to
   /// setting the [wire].
-  Logic._({
-    String? name,
-    int width = 1,
-    Naming? naming,
-    _Wire? wire,
-  })  : naming = Naming.chooseNaming(name, naming),
+  Logic._({String? name, int width = 1, Naming? naming, _Wire? wire})
+      : naming = Naming.chooseNaming(name, naming),
         name = Naming.chooseName(name, naming),
         _wire = wire ?? _Wire(width: width) {
     if (width < 0) {
@@ -314,13 +303,12 @@ class Logic {
     }
 
     return Logic(
-      name: name,
-      width: width,
+        name: name,
+        width: width,
 
-      // make port names mergeable so we don't duplicate the ports
-      // when calling connectIO
-      naming: Naming.mergeable,
-    );
+        // make port names mergeable so we don't duplicate the ports
+        // when calling connectIO
+        naming: Naming.mergeable);
   }
 
   @override
@@ -422,10 +410,7 @@ class Logic {
     // tell all downstream signals to update to the new wire as well
     final Iterable<Logic> toUpdateWire;
     if (this is LogicNet) {
-      toUpdateWire = [
-        ...dstConnections,
-        ...srcConnections,
-      ].where(
+      toUpdateWire = [...dstConnections, ...srcConnections].where(
           (connection) => connection._wire != _wire && connection is LogicNet);
     } else {
       toUpdateWire = dstConnections.where((element) => element is! LogicNet);
@@ -482,10 +467,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          this[-1].replicate(shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [this[-1].replicate(shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -502,10 +484,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          getRange(0, -shamt),
-          Const(0, width: shamt),
-        ].swizzle();
+        return [getRange(0, -shamt), Const(0, width: shamt)].swizzle();
       }
     }
 
@@ -522,10 +501,7 @@ class Logic {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
       if (shamt != null) {
-        return [
-          Const(0, width: shamt),
-          getRange(shamt),
-        ].swizzle();
+        return [Const(0, width: shamt), getRange(shamt)].swizzle();
       }
     }
 
@@ -831,10 +807,7 @@ class Logic {
       throw Exception(
           'New width $newWidth must be greater than or equal to width $width.');
     }
-    return [
-      Const(0, width: newWidth - width),
-      this,
-    ].swizzle();
+    return [Const(0, width: newWidth - width), this].swizzle();
   }
 
   /// Calculates the absolute value of a signal, assuming that the
@@ -859,10 +832,7 @@ class Logic {
     if (width == 1) {
       return replicate(newWidth);
     } else if (newWidth > width) {
-      return [
-        this[-1].replicate(newWidth - width),
-        this,
-      ].swizzle();
+      return [this[-1].replicate(newWidth - width), this].swizzle();
     } else if (newWidth == width) {
       return this;
     }
@@ -896,7 +866,7 @@ class Logic {
     return [
       getRange(startIndex + update.width, width),
       update,
-      getRange(0, startIndex),
+      getRange(0, startIndex)
     ].swizzle();
   }
 
@@ -953,18 +923,16 @@ class Logic {
         width: busList.first.width,
         naming: Naming.mergeable);
 
-    Combinational(
-      [
-        Case(
-            this,
-            [
-              for (var i = 0; i < busList.length; i++)
-                CaseItem(Const(i, width: width), [selected < busList[i]])
-            ],
-            conditionalType: ConditionalType.unique,
-            defaultItem: [selected < (defaultValue ?? 0)])
-      ],
-    );
+    Combinational([
+      Case(
+          this,
+          [
+            for (var i = 0; i < busList.length; i++)
+              CaseItem(Const(i, width: width), [selected < busList[i]])
+          ],
+          conditionalType: ConditionalType.unique,
+          defaultItem: [selected < (defaultValue ?? 0)])
+    ]);
 
     return selected;
   }
@@ -992,12 +960,8 @@ class Logic {
     }
 
     if (_subsetDriver == null) {
-      _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)(
-        [width],
-        1,
-        name: '${name}_subset',
-        naming: Naming.unnamed,
-      );
+      _subsetDriver = (isNet ? LogicArray.net : LogicArray.new)([width], 1,
+          name: '${name}_subset', naming: Naming.unnamed);
       this <= _subsetDriver!;
     }
 

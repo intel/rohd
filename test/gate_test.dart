@@ -220,11 +220,7 @@ void main() {
       final d0 = Logic(width: 8)..put(LogicValue.ofInt(2, 8));
       final d1 = Logic(width: 8)..put(LogicValue.ofInt(3, 8));
       final result = cases(
-          control,
-          {
-            d0: LogicValue.ofInt(2, 8),
-            d1: LogicValue.ofInt(3, 8),
-          },
+          control, {d0: LogicValue.ofInt(2, 8), d1: LogicValue.ofInt(3, 8)},
           width: 8);
 
       control.put(2);
@@ -241,14 +237,7 @@ void main() {
       const d0 = 2;
       const d1 = 3;
 
-      final result = cases(
-          control,
-          {
-            d0: 2,
-            d1: 3,
-          },
-          width: 4,
-          defaultValue: 3);
+      final result = cases(control, {d0: 2, d1: 3}, width: 4, defaultValue: 3);
 
       expect(result.value, LogicValue.ofInt(2, 4));
     });
@@ -257,10 +246,7 @@ void main() {
       final control = Logic();
       final d0 = Logic()..put(LogicValue.zero);
       final d1 = Logic()..put(LogicValue.one);
-      final result = cases(control, {
-        d0: LogicValue.zero,
-        d1: LogicValue.one,
-      });
+      final result = cases(control, {d0: LogicValue.zero, d1: LogicValue.one});
 
       control.put(0);
       expect(result.value, LogicValue.zero);
@@ -273,14 +259,7 @@ void main() {
       final control = Logic(width: 4);
       const d0 = 1;
       const d1 = 2;
-      final result = cases(
-          control,
-          {
-            d0: 1,
-            d1: 2,
-          },
-          width: 4,
-          defaultValue: 3);
+      final result = cases(control, {d0: 1, d1: 2}, width: 4, defaultValue: 3);
 
       control.put(LogicValue.zero);
       expect(result.value, LogicValue.ofInt(3, 4));
@@ -358,7 +337,7 @@ void main() {
       await gtm.build();
       final vectors = [
         Vector({'a': 1}, {'a_bar': 0}),
-        Vector({'a': 0}, {'a_bar': 1}),
+        Vector({'a': 0}, {'a_bar': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
@@ -371,7 +350,7 @@ void main() {
         Vector({'a': bin('0000')}, {'a_and': 0}),
         Vector({'a': bin('1010')}, {'a_and': 0}),
         Vector({'a': bin('1111')}, {'a_and': 1}),
-        Vector({'a': bin('0001')}, {'a_and': 0}),
+        Vector({'a': bin('0001')}, {'a_and': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -385,7 +364,7 @@ void main() {
         Vector({'a': bin('0000')}, {'a_or': 0}),
         Vector({'a': bin('1010')}, {'a_or': 1}),
         Vector({'a': bin('1111')}, {'a_or': 1}),
-        Vector({'a': bin('0001')}, {'a_or': 1}),
+        Vector({'a': bin('0001')}, {'a_or': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -399,7 +378,7 @@ void main() {
         Vector({'a': bin('0000')}, {'a_xor': 0}),
         Vector({'a': bin('1010')}, {'a_xor': 0}),
         Vector({'a': bin('1111')}, {'a_xor': 0}),
-        Vector({'a': bin('0001')}, {'a_xor': 1}),
+        Vector({'a': bin('0001')}, {'a_xor': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -412,7 +391,7 @@ void main() {
       final vectors = [
         Vector({'control': 1, 'd0': 0, 'd1': 1}, {'y': 1}),
         Vector({'control': 0, 'd0': 0, 'd1': 1}, {'y': 0}),
-        Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1}),
+        Vector({'control': 0, 'd0': 1, 'd1': 1}, {'y': 1})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
@@ -426,7 +405,7 @@ void main() {
         Vector({'a': bin('1111')}, {'y': bin('0001')}),
         Vector({'a': bin('0110')}, {'y': bin('0110')}),
         Vector({'a': bin('0010')}, {'y': bin('0010')}),
-        Vector({'a': bin('1011')}, {'y': bin('0101')}),
+        Vector({'a': bin('1011')}, {'y': bin('0101')})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       final simResult = SimCompare.iverilogVector(mod, vectors);
@@ -441,7 +420,7 @@ void main() {
         Vector({'control': 0, 'd0': 18, 'd1': 7}, {'y': 18}),
         Vector({'control': 0, 'd0': 3, 'd1': 6}, {'y': 3}),
         Vector({'control': 0, 'd0': 10, 'd1': LogicValue.z}, {'y': 10}),
-        Vector({'control': 1, 'd0': LogicValue.z, 'd1': 6}, {'y': 6}),
+        Vector({'control': 1, 'd0': LogicValue.z, 'd1': 6}, {'y': 6})
       ];
 
       final vector2 = [
@@ -450,7 +429,7 @@ void main() {
         Vector(
             {'control': LogicValue.z, 'd0': 10, 'd1': 6}, {'y': LogicValue.x}),
         Vector(
-            {'control': 0, 'd0': LogicValue.z, 'd1': 10}, {'y': LogicValue.x}),
+            {'control': 0, 'd0': LogicValue.z, 'd1': 10}, {'y': LogicValue.x})
       ];
 
       await SimCompare.checkFunctionalVector(mod, vector1 + vector2);
@@ -466,7 +445,7 @@ void main() {
           Vector({'a': bin('010'), 'b': 0}, {'a_lshift_b': bin('010')}),
           Vector({'a': bin('010'), 'b': 1}, {'a_lshift_b': bin('100')}),
           Vector({'a': bin('010'), 'b': 2}, {'a_lshift_b': bin('000')}),
-          Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')}),
+          Vector({'a': bin('010'), 'b': 6}, {'a_lshift_b': bin('000')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -479,7 +458,7 @@ void main() {
           Vector({'a': bin('010'), 'b': 0}, {'a_rshift_b': bin('010')}),
           Vector({'a': bin('010'), 'b': 1}, {'a_rshift_b': bin('001')}),
           Vector({'a': bin('010'), 'b': 2}, {'a_rshift_b': bin('000')}),
-          Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')}),
+          Vector({'a': bin('010'), 'b': 6}, {'a_rshift_b': bin('000')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -494,7 +473,7 @@ void main() {
           Vector({'a': bin('010'), 'b': 2}, {'a_arshift_b': bin('000')}),
           Vector({'a': bin('010'), 'b': 6}, {'a_arshift_b': bin('000')}),
           Vector({'a': bin('110'), 'b': 0}, {'a_arshift_b': bin('110')}),
-          Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')}),
+          Vector({'a': bin('110'), 'b': 6}, {'a_arshift_b': bin('111')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -505,7 +484,7 @@ void main() {
             ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
         await gtm.build();
         final vectors = [
-          Vector({'a': bin('010')}, {'a_lshift_const': bin('100')}),
+          Vector({'a': bin('010')}, {'a_lshift_const': bin('100')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -516,7 +495,7 @@ void main() {
             ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
         await gtm.build();
         final vectors = [
-          Vector({'a': bin('010')}, {'a_rshift_const': bin('001')}),
+          Vector({'a': bin('010')}, {'a_rshift_const': bin('001')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -527,7 +506,7 @@ void main() {
             ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 1);
         await gtm.build();
         final vectors = [
-          Vector({'a': bin('010')}, {'a_arshift_const': bin('001')}),
+          Vector({'a': bin('010')}, {'a_arshift_const': bin('001')})
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -548,7 +527,7 @@ void main() {
             'a_arshift_const': bin('010'),
             'a_lshift_const': bin('010'),
             'a_rshift_const': bin('010')
-          }),
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -568,8 +547,8 @@ void main() {
             'a_arshift_const': BigInt.one << 30,
             'a_lshift_b': BigInt.one << 170,
             'a_rshift_b': BigInt.one << 30,
-            'a_arshift_b': BigInt.one << 30,
-          }),
+            'a_arshift_b': BigInt.one << 30
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -589,8 +568,8 @@ void main() {
             'a_arshift_const': BigInt.one << 30,
             'a_lshift_b': BigInt.one << 170,
             'a_rshift_b': BigInt.one << 30,
-            'a_arshift_b': BigInt.one << 30,
-          }),
+            'a_arshift_b': BigInt.one << 30
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -610,8 +589,8 @@ void main() {
             'a_arshift_const': BigInt.one << 10,
             'a_lshift_b': BigInt.one << 30,
             'a_rshift_b': BigInt.one << 10,
-            'a_arshift_b': BigInt.one << 10,
-          }),
+            'a_arshift_b': BigInt.one << 10
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -631,8 +610,8 @@ void main() {
             'a_arshift_const': LogicValue.filled(200, LogicValue.one),
             'a_lshift_b': 0,
             'a_rshift_b': 0,
-            'a_arshift_b': LogicValue.filled(200, LogicValue.one),
-          }),
+            'a_arshift_b': LogicValue.filled(200, LogicValue.one)
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -652,8 +631,8 @@ void main() {
             'a_arshift_const': LogicValue.filled(40, LogicValue.zero),
             'a_lshift_b': 0,
             'a_rshift_b': 0,
-            'a_arshift_b': LogicValue.filled(40, LogicValue.zero),
-          }),
+            'a_arshift_b': LogicValue.filled(40, LogicValue.zero)
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -673,8 +652,8 @@ void main() {
             'a_arshift_const': LogicValue.filled(20, LogicValue.zero),
             'a_lshift_b': 0,
             'a_rshift_b': 0,
-            'a_arshift_b': LogicValue.filled(20, LogicValue.zero),
-          }),
+            'a_arshift_b': LogicValue.filled(20, LogicValue.zero)
+          })
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
@@ -688,7 +667,7 @@ void main() {
         Vector({'a': 0, 'b': 0}, {'a_and_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_and_b': 0}),
         Vector({'a': 1, 'b': 0}, {'a_and_b': 0}),
-        Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
+        Vector({'a': 1, 'b': 1}, {'a_and_b': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -702,7 +681,7 @@ void main() {
         Vector({'a': 0, 'b': 0}, {'a_or_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_or_b': 1}),
         Vector({'a': 1, 'b': 0}, {'a_or_b': 1}),
-        Vector({'a': 1, 'b': 1}, {'a_or_b': 1}),
+        Vector({'a': 1, 'b': 1}, {'a_or_b': 1})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -716,7 +695,7 @@ void main() {
         Vector({'a': 0, 'b': 0}, {'a_xor_b': 0}),
         Vector({'a': 0, 'b': 1}, {'a_xor_b': 1}),
         Vector({'a': 1, 'b': 0}, {'a_xor_b': 1}),
-        Vector({'a': 1, 'b': 1}, {'a_xor_b': 0}),
+        Vector({'a': 1, 'b': 1}, {'a_xor_b': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);

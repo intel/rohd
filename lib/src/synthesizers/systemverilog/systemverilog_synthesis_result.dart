@@ -101,10 +101,10 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   @override
   List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
         SynthFileContents(
-          name: instanceTypeName,
-          description: 'SystemVerilog module definition for $instanceTypeName',
-          contents: _toVerilog(),
-        )
+            name: instanceTypeName,
+            description:
+                'SystemVerilog module definition for $instanceTypeName',
+            contents: _toVerilog())
       ]);
 
   /// Representation of all input port declarations in generated SV.
@@ -189,14 +189,14 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       [
         _verilogInternalSignals(),
         _verilogAssignments(), // order matters!
-        _verilogSubModuleInstantiations(getInstanceTypeOfModule),
+        _verilogSubModuleInstantiations(getInstanceTypeOfModule)
       ].where((element) => element.isNotEmpty).join('\n');
 
   /// The representation of all port declarations.
   String _verilogPorts() => [
         ..._verilogInputs(),
         ..._verilogOutputs(),
-        ..._verilogInOuts(),
+        ..._verilogInOuts()
       ].join(',\n');
 
   String? _verilogParameters(Module module) {
@@ -211,7 +211,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
         defParams
             .map((p) => 'parameter ${p.type} ${p.name} = ${p.defaultValue}')
             .join(',\n'),
-        ')',
+        ')'
       ].join('\n');
     }
 
@@ -222,11 +222,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   String _toVerilog() {
     final verilogModuleName = getInstanceTypeOfModule(module);
     return [
-      [
-        'module $verilogModuleName',
-        _parameterString,
-        '(',
-      ].nonNulls.join(' '),
+      ['module $verilogModuleName', _parameterString, '('].nonNulls.join(' '),
       _portsString,
       ');',
       _moduleContentsString,

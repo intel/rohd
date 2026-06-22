@@ -15,12 +15,11 @@ class TreeModel {
   final List<SignalModel> outputs;
   final List<TreeModel> subModules;
 
-  TreeModel({
-    required this.name,
-    required this.inputs,
-    required this.outputs,
-    required this.subModules,
-  });
+  TreeModel(
+      {required this.name,
+      required this.inputs,
+      required this.outputs,
+      required this.subModules});
 
   factory TreeModel.fromJson(Map<String, dynamic> json) {
     List<SignalModel> inputSignalsList = [];
@@ -31,7 +30,7 @@ class TreeModel {
         'name': inputSignal.key,
         'direction': 'Input',
         'value': inputSignal.value['value'],
-        'width': inputSignal.value['width'],
+        'width': inputSignal.value['width']
       });
       inputSignalsList.add(signal);
     }
@@ -41,19 +40,18 @@ class TreeModel {
         'name': outputSignal.key,
         'direction': 'Input',
         'value': outputSignal.value['value'],
-        'width': outputSignal.value['width'],
+        'width': outputSignal.value['width']
       });
 
       outputSignalsList.add(signal);
     }
 
     return TreeModel(
-      name: json['name'],
-      inputs: inputSignalsList,
-      outputs: outputSignalsList,
-      subModules: (json["subModules"] as List)
-          .map((subModule) => TreeModel.fromJson(subModule))
-          .toList(),
-    );
+        name: json['name'],
+        inputs: inputSignalsList,
+        outputs: outputSignalsList,
+        subModules: (json["subModules"] as List)
+            .map((subModule) => TreeModel.fromJson(subModule))
+            .toList());
   }
 }

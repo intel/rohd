@@ -173,15 +173,12 @@ class ModuleServices {
         ..createSync(recursive: true);
       final path = '${dir.path}/${service.module.definitionName}.flc.json';
       File(path).writeAsStringSync(
-        const JsonEncoder.withIndent('  ').convert(hierarchy),
-      );
+          const JsonEncoder.withIndent('  ').convert(hierarchy));
       _flcFilePathCache = path;
       return path;
     } on Exception catch (error) {
-      return jsonEncode(<String, String>{
-        'status': 'error',
-        'reason': error.toString(),
-      });
+      return jsonEncode(
+          <String, String>{'status': 'error', 'reason': error.toString()});
     }
   }
 
@@ -189,7 +186,7 @@ class ModuleServices {
 
   static String _unavailable(String service) => jsonEncode(<String, String>{
         'status': 'unavailable',
-        'reason': '$service service not registered',
+        'reason': '$service service not registered'
       });
 
   /// Resets all services.  Intended for test teardown.

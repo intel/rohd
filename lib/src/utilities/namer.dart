@@ -56,7 +56,7 @@ class Namer {
     final portLogics = <Logic>{
       ...module.inputs.values,
       ...module.outputs.values,
-      ...module.inOuts.values,
+      ...module.inOuts.values
     };
 
     final uniquifier = Uniquifier();
@@ -78,9 +78,7 @@ class Namer {
   /// is claimed without modification; an exception is thrown if it collides.
   String allocateName(String baseName, {bool reserved = false}) =>
       _uniquifier.getUniqueName(
-        initialName: Sanitizer.sanitizeSV(baseName),
-        reserved: reserved,
-      );
+          initialName: Sanitizer.sanitizeSV(baseName), reserved: reserved);
 
   // ─── Instance naming (Module → String) ──────────────────────────
 
@@ -95,10 +93,8 @@ class Namer {
       return cached;
     }
 
-    final name = allocateName(
-      submodule.uniqueInstanceName,
-      reserved: submodule.reserveName,
-    );
+    final name = allocateName(submodule.uniqueInstanceName,
+        reserved: submodule.reserveName);
     _instanceNames[key] = name;
     return name;
   }
@@ -129,9 +125,7 @@ class Namer {
     }
 
     final name = _uniquifier.getUniqueName(
-      initialName: base,
-      reserved: isReservedInternal,
-    );
+        initialName: base, reserved: isReservedInternal);
     _signalNames[logic] = name;
     return name;
   }
@@ -162,11 +156,8 @@ class Namer {
   /// The winning name is allocated once and cached for the chosen [Logic].
   /// All other non-port [Logic]s in [candidates] are also cached to the
   /// same name.
-  String signalNameOfBest(
-    Iterable<Logic> candidates, {
-    Const? constValue,
-    bool constNameDisallowed = false,
-  }) {
+  String signalNameOfBest(Iterable<Logic> candidates,
+      {Const? constValue, bool constNameDisallowed = false}) {
     if (constValue != null && !constNameDisallowed) {
       return constValue.value.toString();
     }
@@ -215,17 +206,15 @@ class Namer {
     }
 
     if (preferredMergeable.isNotEmpty) {
-      final best = preferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
+      final best = preferredMergeable
+              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
           preferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }
 
     if (unpreferredMergeable.isNotEmpty) {
-      final best = unpreferredMergeable.firstWhereOrNull(
-            (e) => isAvailable(baseName(e)),
-          ) ??
+      final best = unpreferredMergeable
+              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
           unpreferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }

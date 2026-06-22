@@ -227,10 +227,8 @@ void main() {
 
     final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
 
-    expect(
-      VcdParser.confirmValue(vcdContents, 'a', 99, LogicValue.one),
-      equals(true),
-    );
+    expect(VcdParser.confirmValue(vcdContents, 'a', 99, LogicValue.one),
+        equals(true));
 
     deleteTemporaryDump(dumpName);
   });

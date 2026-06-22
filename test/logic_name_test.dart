@@ -18,11 +18,8 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
-        Logic(name: 'ready'),
-        Logic(name: 'valid'),
-        name: name,
-      );
+  factory MyStruct({String name = 'myStruct'}) =>
+      MyStruct._(Logic(name: 'ready'), Logic(name: 'valid'), name: name);
 
   MyStruct._(this.ready, this.valid, {required String name})
       : super([ready, valid], name: name);
@@ -156,7 +153,7 @@ class VariousNamingStruct extends LogicStructure {
           Logic(name: 'reserved_$name', naming: Naming.reserved),
           Logic(name: 'mergeable', naming: Naming.mergeable),
           Logic(name: 'unnamed', naming: Naming.unnamed),
-          MyStruct(name: 'my_sub_struct'),
+          MyStruct(name: 'my_sub_struct')
         ]);
 
   @override
@@ -275,9 +272,8 @@ void main() {
 
   test('array port and simple port with _num name conflict', () async {
     final mod = NameCollisionArrayTop(
-      // mark as renameable so that it doesnt get pruned away (no name needed)
-      portANaming: Naming.renameable,
-    );
+        // mark as renameable so that it doesnt get pruned away (no name needed)
+        portANaming: Naming.renameable);
     await mod.build();
     final sv = SvService(mod).synthOutput;
 
@@ -357,11 +353,10 @@ void main() {
           for (final newNaming in [...Naming.values, null]) {
             final selectedName = newName ?? originalName;
             final selectedNaming = Naming.chooseCloneNaming(
-              originalName: originalName,
-              newName: newName,
-              originalNaming: originalNaming,
-              newNaming: newNaming,
-            );
+                originalName: originalName,
+                newName: newName,
+                originalNaming: originalNaming,
+                newNaming: newNaming);
 
             final reason = 'original: ($originalName, ${originalNaming.name}),'
                 ' new: ($newName, ${newNaming?.name})'
@@ -508,12 +503,10 @@ void main() {
 
     test('structure', () {
       final a = logic_structure_test.MyFancyStruct();
-      final b = a.named(
-        'b',
+      final b = a.named('b',
 
-        // naming should have no effect
-        naming: Naming.reserved,
-      );
+          // naming should have no effect
+          naming: Naming.reserved);
 
       expect(b.name, 'b');
 

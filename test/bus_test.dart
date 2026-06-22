@@ -233,7 +233,7 @@ void main() {
 
     final vectors = [
       Vector({'oneBit': 0}, {'result': 0}),
-      Vector({'oneBit': 1}, {'result': 1}),
+      Vector({'oneBit': 1}, {'result': 1})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -384,7 +384,7 @@ void main() {
         final mod = ConstBusModule(0xabcd, subset: true);
         await mod.build();
         final vectors = [
-          Vector({}, {'const_subset': 0xcd}),
+          Vector({}, {'const_subset': 0xcd})
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -395,7 +395,7 @@ void main() {
         final mod = ConstBusModule(0xabcd, subset: false);
         await mod.build();
         final vectors = [
-          Vector({}, {'const_subset': 0xabcd}),
+          Vector({}, {'const_subset': 0xabcd})
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -413,7 +413,7 @@ void main() {
         Vector({'a': 0xff}, {'a_bar': 0}),
         Vector({'a': 0}, {'a_bar': 0xff}),
         Vector({'a': 0x55}, {'a_bar': 0xaa}),
-        Vector({'a': 1}, {'a_bar': 0xfe}),
+        Vector({'a': 1}, {'a_bar': 0xfe})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -428,7 +428,7 @@ void main() {
         Vector({'a': 0, 'b': 1}, {'a_and_b': 0}),
         Vector({'a': 1, 'b': 0}, {'a_and_b': 0}),
         Vector({'a': 1, 'b': 1}, {'a_and_b': 1}),
-        Vector({'a': 0xff, 'b': 0xaa}, {'a_and_b': 0xaa}),
+        Vector({'a': 0xff, 'b': 0xaa}, {'a_and_b': 0xaa})
       ];
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
@@ -445,7 +445,7 @@ void main() {
         Vector({'a': bin('11101111')}, {'a_operator_indexing3': 0}),
         Vector({'a': bin('11111110')}, {'a_operator_neg_indexing1': 0}),
         Vector({'a': bin('10000000')}, {'a_operator_neg_indexing2': 1}),
-        Vector({'a': bin('10111111')}, {'a_operator_neg_indexing3': 0}),
+        Vector({'a': bin('10111111')}, {'a_operator_neg_indexing3': 0})
       ];
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
@@ -532,7 +532,7 @@ void main() {
       final vectors = [
         Vector({'a': 0}, {'a_reversed': 0}),
         Vector({'a': 0xff}, {'a_reversed': 0xff}),
-        Vector({'a': 0xf5}, {'a_reversed': 0xaf}),
+        Vector({'a': 0xf5}, {'a_reversed': 0xaf})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -577,7 +577,7 @@ void main() {
         // Test set 4
         Vector({'a': 0}, {'a_neg_range4': 0}),
         Vector({'a': 0xaf}, {'a_neg_range4': 5}),
-        Vector({'a': bin('11000101')}, {'a_neg_range4': bin('110')}),
+        Vector({'a': bin('11000101')}, {'a_neg_range4': bin('110')})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -592,7 +592,7 @@ void main() {
         Vector({'a': 0xff, 'b': 0xff}, {'a_b_joined': 0xffff}),
         Vector({'a': 0xff, 'b': 0}, {'a_b_joined': 0xff}),
         Vector({'a': 0, 'b': 0xff}, {'a_b_joined': 0xff00}),
-        Vector({'a': 0xaa, 'b': 0x55}, {'a_b_joined': 0x55aa}),
+        Vector({'a': 0xaa, 'b': 0x55}, {'a_b_joined': 0x55aa})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -605,7 +605,7 @@ void main() {
       final vectors = [
         Vector({'a': 0}, {'a1': 0}),
         Vector({'a': 0xff}, {'a1': 1}),
-        Vector({'a': 0xf5}, {'a1': 0}),
+        Vector({'a': 0xf5}, {'a1': 0})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -620,7 +620,7 @@ void main() {
         Vector({'a': 0, 'b': 1}, {'a_plus_b': 1}),
         Vector({'a': 1, 'b': 0}, {'a_plus_b': 1}),
         Vector({'a': 1, 'b': 1}, {'a_plus_b': 2}),
-        Vector({'a': 6, 'b': 7}, {'a_plus_b': 13}),
+        Vector({'a': 6, 'b': 7}, {'a_plus_b': 13})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);
@@ -631,7 +631,7 @@ void main() {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
       final vectors = [
-        Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2}),
+        Vector({'a': 1, 'b': 1}, {'expression_bit_select': 2})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
@@ -661,7 +661,7 @@ void main() {
       await gtm.build();
       final vectors = [
         Vector({'a1': 1, 'a2': 2, 'a3': 3, 'b': 4, 'defaultValue': 5},
-            {'selectFromValue': 5, 'selectIndexValue': 5}),
+            {'selectFromValue': 5, 'selectIndexValue': 5})
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       final simResult = SimCompare.iverilogVector(gtm, vectors);

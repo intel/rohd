@@ -28,21 +28,13 @@ class TestModule extends Module {
     final clk = testingAsyncReset ? Const(0) : SimpleClockGenerator(10).clk;
     reset = addInput('reset', reset);
     final states = [
-      State<MyStates>(MyStates.state1, events: {
-        a: MyStates.state2,
-        ~a: MyStates.state3
-      }, actions: [
-        b < c,
-      ]),
+      State<MyStates>(MyStates.state1,
+          events: {a: MyStates.state2, ~a: MyStates.state3}, actions: [b < c]),
       State<MyStates>(MyStates.state2,
           conditionalType: ConditionalType.priority,
           events: {},
-          actions: [
-            b < 1,
-          ]),
-      State<MyStates>(MyStates.state3, events: {}, actions: [
-        b < ~c,
-      ]),
+          actions: [b < 1]),
+      State<MyStates>(MyStates.state3, events: {}, actions: [b < ~c])
     ];
 
     final fsm = FiniteStateMachine<MyStates>(
@@ -63,16 +55,14 @@ class DefaultStateFsmMod extends Module {
     final b = addOutput('b', width: 8);
 
     _fsm = FiniteStateMachine<MyStates>(clk, reset, MyStates.state1, [
-      State(
-        MyStates.state1,
-        events: {Const(0): MyStates.state2},
-        actions: [b < 1],
-        defaultNextState: MyStates.state3,
-      ),
+      State(MyStates.state1,
+          events: {Const(0): MyStates.state2},
+          actions: [b < 1],
+          defaultNextState: MyStates.state3),
       State(MyStates.state2, events: {}, actions: [b < 2]),
       State(MyStates.state3,
           events: {}, actions: [b < 3], defaultNextState: MyStates.state4),
-      State(MyStates.state4, events: {}, actions: [b < 4]),
+      State(MyStates.state4, events: {}, actions: [b < 4])
     ]);
   }
 }
@@ -119,48 +109,32 @@ class TrafficTestModule extends Module {
 
     final states = <State<LightStates>>[
       State(LightStates.northFlowing, events: {
-        TrafficPresence.isEastActive(traffic): LightStates.northSlowing,
+        TrafficPresence.isEastActive(traffic): LightStates.northSlowing
       }, actions: [
-        northLight < LightColor.green.value,
+        northLight < LightColor.green.value
       ]),
-      State(
-        LightStates.northSlowing,
-        events: {},
-        defaultNextState: LightStates.eastFlowing,
-        actions: [
-          northLight < LightColor.yellow.value,
-        ],
-      ),
-      State(
-        LightStates.eastFlowing,
-        events: {
-          TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing,
-        },
-        actions: [
-          eastLight < LightColor.green.value,
-        ],
-      ),
-      State(
-        LightStates.eastSlowing,
-        events: {},
-        defaultNextState: LightStates.northFlowing,
-        actions: [
-          eastLight < LightColor.yellow.value,
-        ],
-      ),
+      State(LightStates.northSlowing,
+          events: {},
+          defaultNextState: LightStates.eastFlowing,
+          actions: [northLight < LightColor.yellow.value]),
+      State(LightStates.eastFlowing, events: {
+        TrafficPresence.isNorthActive(traffic): LightStates.eastSlowing
+      }, actions: [
+        eastLight < LightColor.green.value
+      ]),
+      State(LightStates.eastSlowing,
+          events: {},
+          defaultNextState: LightStates.northFlowing,
+          actions: [eastLight < LightColor.yellow.value])
     ];
 
     final fsm = FiniteStateMachine<LightStates>(
-      clk,
-      reset,
-      LightStates.northFlowing,
-      states,
-      setupActions: [
-        // by default, lights should be red
-        northLight < LightColor.red.value,
-        eastLight < LightColor.red.value,
-      ],
-    );
+        clk, reset, LightStates.northFlowing, states,
+        setupActions: [
+          // by default, lights should be red
+          northLight < LightColor.red.value,
+          eastLight < LightColor.red.value
+        ]);
 
     if (!kIsWeb) {
       fsm.generateDiagram(outputPath: _trafficFSMPath);
@@ -230,17 +204,15 @@ void main() {
               FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1, [
                 State(MyStates.state1, events: {}, actions: []),
                 State(MyStates.state2, events: {}, actions: []),
-                State(MyStates.state2, events: {}, actions: []),
+                State(MyStates.state2, events: {}, actions: [])
               ]),
           throwsA(isA<IllegalConfigurationException>()));
     });
 
     test('missing reset state throws exception', () {
       expect(
-          () =>
-              FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1, [
-                State(MyStates.state2, events: {}, actions: []),
-              ]),
+          () => FiniteStateMachine<MyStates>(Logic(), Logic(), MyStates.state1,
+              [State(MyStates.state2, events: {}, actions: [])]),
           throwsA(isA<IllegalConfigurationException>()));
     });
   });
@@ -251,7 +223,7 @@ void main() {
           State(MyStates.state4, events: {}, actions: []),
           State(MyStates.state1, events: {}, actions: []),
           State(MyStates.state3, events: {}, actions: []),
-          State(MyStates.state2, events: {}, actions: []),
+          State(MyStates.state2, events: {}, actions: [])
         ]).getStateIndex(MyStates.state2),
         3);
   });
@@ -266,7 +238,7 @@ void main() {
         Vector({'reset': 1, 'a': 0, 'c': 0}, {}),
         Vector({'reset': 0}, {'b': 0}),
         Vector({}, {'b': 1}),
-        Vector({'c': 1}, {'b': 0}),
+        Vector({'c': 1}, {'b': 0})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
@@ -282,7 +254,7 @@ void main() {
 
       final vectors = [
         Vector({'reset': 0, 'a': 0, 'c': 0}, {}),
-        Vector({'reset': 1}, {'b': 0}),
+        Vector({'reset': 1}, {'b': 0})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
@@ -300,7 +272,7 @@ void main() {
         Vector({'reset': 0}, {'b': 1}),
         Vector({'reset': 0}, {'b': 3}),
         Vector({'reset': 0}, {'b': 4}),
-        Vector({'reset': 0}, {'b': 4}),
+        Vector({'reset': 0}, {'b': 4})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);

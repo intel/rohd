@@ -17,13 +17,12 @@ class SignalTable extends StatefulWidget {
   final String? searchTerm;
   final bool inputSelectedVal;
   final bool outputSelectedVal;
-  const SignalTable({
-    super.key,
-    required this.selectedModule,
-    required this.searchTerm,
-    required this.inputSelectedVal,
-    required this.outputSelectedVal,
-  });
+  const SignalTable(
+      {super.key,
+      required this.selectedModule,
+      required this.searchTerm,
+      required this.inputSelectedVal,
+      required this.outputSelectedVal});
 
   @override
   State<StatefulWidget> createState() => _SignalTableState();
@@ -35,36 +34,24 @@ class _SignalTableState extends State<SignalTable> {
     final tableHeaders = ['Name', 'Direction', 'Value', 'Width'];
 
     return Table(
-      border: TableBorder.all(),
-      columnWidths: const <int, TableColumnWidth>{
-        0: FlexColumnWidth(),
-        1: FlexColumnWidth(),
-        2: FlexColumnWidth(),
-      },
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: <TableRow>[
-        TableRow(
-          children: List<Widget>.generate(
-            tableHeaders.length,
-            (index) => _buildTableHeader(text: tableHeaders[index]),
-          ),
-        ),
-        ...generateSignalsRow(
-          widget.selectedModule,
-          widget.searchTerm,
-          widget.inputSelectedVal,
-          widget.outputSelectedVal,
-        ),
-      ],
-    );
+        border: TableBorder.all(),
+        columnWidths: const <int, TableColumnWidth>{
+          0: FlexColumnWidth(),
+          1: FlexColumnWidth(),
+          2: FlexColumnWidth()
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: <TableRow>[
+          TableRow(
+              children: List<Widget>.generate(tableHeaders.length,
+                  (index) => _buildTableHeader(text: tableHeaders[index]))),
+          ...generateSignalsRow(widget.selectedModule, widget.searchTerm,
+              widget.inputSelectedVal, widget.outputSelectedVal)
+        ]);
   }
 
-  List<TableRow> generateSignalsRow(
-    TreeModel module,
-    String? searchTerm,
-    bool inputSelected,
-    bool outputSelected,
-  ) {
+  List<TableRow> generateSignalsRow(TreeModel module, String? searchTerm,
+      bool inputSelected, bool outputSelected) {
     List<TableRow> rows = [];
 
     // Filter signals
@@ -88,48 +75,20 @@ class _SignalTableState extends State<SignalTable> {
   }
 
   TableRow _generateSignalRow(SignalModel signal) {
-    return TableRow(
-      children: <Widget>[
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.name),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.direction),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.value),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.width.toString()),
-          ),
-        ),
-      ],
-    );
+    return TableRow(children: <Widget>[
+      SizedBox(height: 32, child: Center(child: Text(signal.name))),
+      SizedBox(height: 32, child: Center(child: Text(signal.direction))),
+      SizedBox(height: 32, child: Center(child: Text(signal.value))),
+      SizedBox(height: 32, child: Center(child: Text(signal.width.toString())))
+    ]);
   }
 
   Widget _buildTableHeader({required String text}) {
     return SizedBox(
-      height: 32,
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
-      ),
-    );
+        height: 32,
+        child: Center(
+            child: Text(text,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 15))));
   }
 }

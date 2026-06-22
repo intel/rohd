@@ -121,7 +121,7 @@ class SimpleStruct extends LogicStructure {
           (asNet ? LogicNet.new : Logic.new)(
               name: 'field4', width: 4, naming: elementNaming),
           (asNet ? LogicNet.new : Logic.new)(
-              name: 'field8', width: 8, naming: elementNaming),
+              name: 'field8', width: 8, naming: elementNaming)
         ]);
 
   @override
@@ -154,20 +154,20 @@ class TopWithUnusedSubModPorts extends Module {
   late final LogicArray outArrTopC;
   late final Logic outStructTopC;
 
-  TopWithUnusedSubModPorts({
-    required Logic topIn,
-    required LogicNet topIo,
-    required LogicNet outTopIoA,
-    required LogicNet outTopIoB,
-    required LogicNet outTopIoC,
-    required LogicArray topArrIn,
-    required SimpleStruct topStructIn,
-    required LogicArray topArrNetIn,
-    required SimpleStruct topStructNetIn,
-    required LogicArray outTopIoArrA,
-    required SimpleStruct outTopIoStructA,
-    required Naming internalNaming,
-  }) : super(name: 'TopWithUnusedSubModPorts') {
+  TopWithUnusedSubModPorts(
+      {required Logic topIn,
+      required LogicNet topIo,
+      required LogicNet outTopIoA,
+      required LogicNet outTopIoB,
+      required LogicNet outTopIoC,
+      required LogicArray topArrIn,
+      required SimpleStruct topStructIn,
+      required LogicArray topArrNetIn,
+      required SimpleStruct topStructNetIn,
+      required LogicArray outTopIoArrA,
+      required SimpleStruct outTopIoStructA,
+      required Naming internalNaming})
+      : super(name: 'TopWithUnusedSubModPorts') {
     // Connectivity description:
     //                 ^ outTopA
     //                 |      between
@@ -217,23 +217,22 @@ class TopWithUnusedSubModPorts extends Module {
             : null);
 
     final subModA = SubModWithSomePortsUsed(
-      fromIn: topIn,
-      fromIo: topIo,
-      fromArrIn: topArrIn,
-      fromStructIn: topStructIn,
-      fromArrNetIn: topArrNetIn,
-      fromStructNetIn: topStructNetIn,
-      inpNotUsed: inpNotUsed,
-      ioNotUsed: ioNotUsedA,
-      arrInNotUsed: arrInNotUsed,
-      structInNotUsed: structInNotUsed,
-      arrNetInNotUsed: arrNetInNotUsed,
-      structNetInNotUsed: structNetInNotUsed,
-      outIoTo: outTopIoA,
-      outIoArrTo: outTopIoArrA,
-      outIoStructTo: outTopIoStructA,
-      name: 'subModA',
-    );
+        fromIn: topIn,
+        fromIo: topIo,
+        fromArrIn: topArrIn,
+        fromStructIn: topStructIn,
+        fromArrNetIn: topArrNetIn,
+        fromStructNetIn: topStructNetIn,
+        inpNotUsed: inpNotUsed,
+        ioNotUsed: ioNotUsedA,
+        arrInNotUsed: arrInNotUsed,
+        structInNotUsed: structInNotUsed,
+        arrNetInNotUsed: arrNetInNotUsed,
+        structNetInNotUsed: structNetInNotUsed,
+        outIoTo: outTopIoA,
+        outIoArrTo: outTopIoArrA,
+        outIoStructTo: outTopIoStructA,
+        name: 'subModA');
 
     outTopA = addOutput('outTopA', width: topIn.width)..gets(subModA.outTo);
     outArrTopA = addOutputArray('outArrTopA',
@@ -243,25 +242,24 @@ class TopWithUnusedSubModPorts extends Module {
       ..gets(subModA.outStructTo);
 
     final subModB = SubModWithSomePortsUsed(
-      fromIn: subModA.outTo,
-      fromIo: betweenAtoBNet,
-      fromArrIn: subModA.outArrTo.elements[0] as LogicArray,
-      fromStructIn: subModA.outStructTo.elements[0],
-      fromArrNetIn: topArrNetIn,
-      fromStructNetIn: topStructNetIn,
-      inpNotUsed: inpNotUsed,
-      ioNotUsed: LogicNet(
-          name: 'ioNotUsedB',
-          naming: internalNaming), // don't multiply connect IO
-      arrInNotUsed: arrInNotUsed,
-      structInNotUsed: structInNotUsed,
-      arrNetInNotUsed: arrNetInNotUsed.clone(),
-      structNetInNotUsed: structNetInNotUsed.clone(),
-      outIoTo: outTopIoB,
-      outIoArrTo: betweenAtoBArrNet,
-      outIoStructTo: betweenAtoBStructNet,
-      name: 'subModB',
-    );
+        fromIn: subModA.outTo,
+        fromIo: betweenAtoBNet,
+        fromArrIn: subModA.outArrTo.elements[0] as LogicArray,
+        fromStructIn: subModA.outStructTo.elements[0],
+        fromArrNetIn: topArrNetIn,
+        fromStructNetIn: topStructNetIn,
+        inpNotUsed: inpNotUsed,
+        ioNotUsed: LogicNet(
+            name: 'ioNotUsedB',
+            naming: internalNaming), // don't multiply connect IO
+        arrInNotUsed: arrInNotUsed,
+        structInNotUsed: structInNotUsed,
+        arrNetInNotUsed: arrNetInNotUsed.clone(),
+        structNetInNotUsed: structNetInNotUsed.clone(),
+        outIoTo: outTopIoB,
+        outIoArrTo: betweenAtoBArrNet,
+        outIoStructTo: betweenAtoBStructNet,
+        name: 'subModB');
 
     outTopB = addOutput('outTopB', width: topIn.width)..gets(subModB.outTo);
     outArrTopB = addOutputArray('outArrTopB',
@@ -272,32 +270,32 @@ class TopWithUnusedSubModPorts extends Module {
       ..gets(subModB.outStructTo);
 
     final subModC = SubModWithSomePortsUsed(
-      fromIn: subModA.outTo,
-      fromIo: betweenAtoBNet,
-      fromArrIn: LogicArray(
-          [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
-        ..elements[0].gets(subModA.outArrTo)
-        ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
-      fromStructIn: LogicStructure([
-        SimpleStruct(elementNaming: internalNaming)..gets(subModA.outStructTo),
-        SimpleStruct(elementNaming: internalNaming)
-          ..gets(Const(3, width: subModA.outStructTo.width))
-      ]),
-      fromArrNetIn: topArrNetIn,
-      fromStructNetIn: topStructNetIn,
-      inpNotUsed: inpNotUsed,
-      ioNotUsed: LogicNet(
-          name: 'ioNotUsedC',
-          naming: internalNaming), // don't multiply connect IO
-      arrInNotUsed: arrInNotUsed,
-      structInNotUsed: structInNotUsed,
-      arrNetInNotUsed: arrNetInNotUsed.clone(),
-      structNetInNotUsed: structNetInNotUsed.clone(),
-      outIoTo: outTopIoC,
-      outIoArrTo: betweenAtoBArrNet,
-      outIoStructTo: betweenAtoBStructNet,
-      name: 'subModC',
-    );
+        fromIn: subModA.outTo,
+        fromIo: betweenAtoBNet,
+        fromArrIn: LogicArray(
+            [2, ...subModA.outArrTo.dimensions], subModA.outArrTo.elementWidth)
+          ..elements[0].gets(subModA.outArrTo)
+          ..elements[1].gets(Const(3, width: subModA.outArrTo.width)),
+        fromStructIn: LogicStructure([
+          SimpleStruct(elementNaming: internalNaming)
+            ..gets(subModA.outStructTo),
+          SimpleStruct(elementNaming: internalNaming)
+            ..gets(Const(3, width: subModA.outStructTo.width))
+        ]),
+        fromArrNetIn: topArrNetIn,
+        fromStructNetIn: topStructNetIn,
+        inpNotUsed: inpNotUsed,
+        ioNotUsed: LogicNet(
+            name: 'ioNotUsedC',
+            naming: internalNaming), // don't multiply connect IO
+        arrInNotUsed: arrInNotUsed,
+        structInNotUsed: structInNotUsed,
+        arrNetInNotUsed: arrNetInNotUsed.clone(),
+        structNetInNotUsed: structNetInNotUsed.clone(),
+        outIoTo: outTopIoC,
+        outIoArrTo: betweenAtoBArrNet,
+        outIoStructTo: betweenAtoBStructNet,
+        name: 'subModC');
 
     outTopC = addOutput('outTopC', width: topIn.width)..gets(subModC.outTo);
     outArrTopC = addOutputArray('outArrTopC',
@@ -628,21 +626,19 @@ class _StructLeafNamingStruct extends LogicStructure {
 
   @override
   _StructLeafNamingStruct clone({String? name}) => _StructLeafNamingStruct(
-        a: a.clone(),
-        b: b.clone(), // key: element.clone() → Naming.mergeable
-        name: name ?? this.name,
-      );
+      a: a.clone(),
+      b: b.clone(), // key: element.clone() → Naming.mergeable
+      name: name ?? this.name);
 }
 
 class _StructLeafNamingModule extends Module {
   _StructLeafNamingModule() {
     final inp = addTypedInput(
-      'inp',
-      _StructLeafNamingStruct(
-        a: Logic(name: 'a', width: 4),
-        b: Logic(width: 4), // unnamed → auto '_s'
-      ),
-    );
+        'inp',
+        _StructLeafNamingStruct(
+          a: Logic(name: 'a', width: 4),
+          b: Logic(width: 4), // unnamed → auto '_s'
+        ));
     addOutput('out', width: 4) <= inp.b ^ inp.a;
   }
 }
@@ -684,7 +680,7 @@ void main() {
     await mod.build();
 
     final vectors = [
-      Vector({}, {'b': 0xff}),
+      Vector({}, {'b': 0xff})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -707,8 +703,8 @@ void main() {
           final vectors = [
             Vector({}, {
               'outApple': 'zzzzzzzzz00zzzzz',
-              'outBanana': 'zzzzzzzzz00zzzzz',
-            }),
+              'outBanana': 'zzzzzzzzz00zzzzz'
+            })
           ];
 
           await SimCompare.checkFunctionalVector(mod, vectors);
@@ -726,10 +722,7 @@ void main() {
 
           // simcompare to make sure simulation works as expected
           final vectors = [
-            Vector({}, {
-              'outApple': 0,
-              'outBanana': 0,
-            }),
+            Vector({}, {'outApple': 0, 'outBanana': 0})
           ];
 
           await SimCompare.checkFunctionalVector(mod, vectors);
@@ -868,7 +861,7 @@ void main() {
 
     final vectors = [
       Vector({'a': 1}, {'b': 1}),
-      Vector({'a': 0}, {'b': 0}),
+      Vector({'a': 0}, {'b': 0})
     ];
 
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -905,7 +898,7 @@ endmodule : ModWithUselessWireMods'''));
 
     final vectors = [
       Vector({'a': 42}, {'b': 42}),
-      Vector({'a': 255}, {'b': 255}),
+      Vector({'a': 255}, {'b': 255})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
@@ -915,19 +908,18 @@ endmodule : ModWithUselessWireMods'''));
     for (final naming in [Naming.renameable, Naming.mergeable]) {
       test('with naming $naming', () async {
         final mod = TopWithUnusedSubModPorts(
-          topIn: Logic(),
-          topIo: LogicNet(width: 2),
-          topArrIn: LogicArray([4, 3], 2),
-          topStructIn: SimpleStruct(elementNaming: naming),
-          topArrNetIn: LogicArray.net([2, 2], 3),
-          topStructNetIn: SimpleStruct(elementNaming: naming, asNet: true),
-          internalNaming: naming,
-          outTopIoA: LogicNet(width: 2),
-          outTopIoB: LogicNet(width: 2),
-          outTopIoC: LogicNet(width: 2),
-          outTopIoArrA: LogicArray.net([2, 2], 3),
-          outTopIoStructA: SimpleStruct(elementNaming: naming, asNet: true),
-        );
+            topIn: Logic(),
+            topIo: LogicNet(width: 2),
+            topArrIn: LogicArray([4, 3], 2),
+            topStructIn: SimpleStruct(elementNaming: naming),
+            topArrNetIn: LogicArray.net([2, 2], 3),
+            topStructNetIn: SimpleStruct(elementNaming: naming, asNet: true),
+            internalNaming: naming,
+            outTopIoA: LogicNet(width: 2),
+            outTopIoB: LogicNet(width: 2),
+            outTopIoC: LogicNet(width: 2),
+            outTopIoArrA: LogicArray.net([2, 2], 3),
+            outTopIoStructA: SimpleStruct(elementNaming: naming, asNet: true));
         await mod.build();
 
         final topSv = SynthBuilder(mod, SystemVerilogSynthesizer())
@@ -1002,7 +994,7 @@ endmodule : ModWithUselessWireMods'''));
             'topStructIn': LogicValue.of('110011110011'),
             'topIo': '10',
             'topArrNetIn': LogicValue.of('110011').replicate(2),
-            'topStructNetIn': LogicValue.of('101011101010'),
+            'topStructNetIn': LogicValue.of('101011101010')
           }, {
             'outTopA': 1,
             'outTopB': 1,
@@ -1016,16 +1008,13 @@ endmodule : ModWithUselessWireMods'''));
             'outStructTopA': LogicValue.of('110011110011'),
             'outStructTopB': LogicValue.of('0011'),
             'outStructTopC': [
-              LogicValue.ofInt(
-                3,
-                12,
-              ),
+              LogicValue.ofInt(3, 12),
               LogicValue.of('110011110011')
             ].swizzle(),
             'outTopIoA': '10',
             'outTopIoArrA': LogicValue.of('110011').replicate(2),
             'outTopIoStructA': LogicValue.of('101011101010')
-          }),
+          })
         ];
 
         await SimCompare.checkFunctionalVector(mod, vectors);
@@ -1047,7 +1036,7 @@ endmodule : ModWithUselessWireMods'''));
 
     final vectors = [
       Vector({'clk': 0}, {'clkB': 1}),
-      Vector({'clk': 1}, {'clkB': 0}),
+      Vector({'clk': 1}, {'clkB': 0})
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

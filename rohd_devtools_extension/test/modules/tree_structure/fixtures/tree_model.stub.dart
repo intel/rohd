@@ -15,86 +15,42 @@ final class TreeModelStub {
   const TreeModelStub._();
 
   static final simpleTreeModel = TreeModel(name: 'counter', inputs: [
-    SignalModel.fromMap({
-      'name': 'en',
-      'direction': 'Input',
-      'value': '1\'h0',
-      'width': 1,
-    }),
-    SignalModel.fromMap({
-      'name': 'reset',
-      'direction': 'Input',
-      'value': '1\'h1',
-      'width': 1,
-    }),
-    SignalModel.fromMap({
-      'name': 'clk',
-      'direction': 'Input',
-      'value': '1\'h0',
-      'width': 1,
-    }),
+    SignalModel.fromMap(
+        {'name': 'en', 'direction': 'Input', 'value': '1\'h0', 'width': 1}),
+    SignalModel.fromMap(
+        {'name': 'reset', 'direction': 'Input', 'value': '1\'h1', 'width': 1}),
+    SignalModel.fromMap(
+        {'name': 'clk', 'direction': 'Input', 'value': '1\'h0', 'width': 1})
   ], outputs: [
-    SignalModel.fromMap({
-      'name': 'val',
-      'direction': 'Input',
-      'value': '1\'h0',
-      'width': 1,
-    }),
+    SignalModel.fromMap(
+        {'name': 'val', 'direction': 'Input', 'value': '1\'h0', 'width': 1})
   ], subModules: [
     TreeModel(name: 'topmod', inputs: [
-      SignalModel.fromMap({
-        'name': 'in_a',
-        'direction': 'Input',
-        'value': '1\'h0',
-        'width': 1,
-      }),
-      SignalModel.fromMap({
-        'name': 'in_b',
-        'direction': 'Input',
-        'value': '1\'h1',
-        'width': 1,
-      }),
+      SignalModel.fromMap(
+          {'name': 'in_a', 'direction': 'Input', 'value': '1\'h0', 'width': 1}),
+      SignalModel.fromMap(
+          {'name': 'in_b', 'direction': 'Input', 'value': '1\'h1', 'width': 1})
     ], outputs: [
       SignalModel.fromMap({
         'name': 'out_a',
         'direction': 'Input',
         'value': '1\'h1',
-        'width': 1,
+        'width': 1
       }),
-      SignalModel.fromMap({
-        'name': 'out_b',
-        'direction': 'Input',
-        'value': '1\'h1',
-        'width': 1,
-      }),
+      SignalModel.fromMap(
+          {'name': 'out_b', 'direction': 'Input', 'value': '1\'h1', 'width': 1})
     ], subModules: [])
   ]);
 
   static final selectedModule = TreeModel(name: 'topmod', inputs: [
-    SignalModel.fromMap({
-      'name': 'in_a',
-      'direction': 'Input',
-      'value': '1\'h0',
-      'width': 1,
-    }),
-    SignalModel.fromMap({
-      'name': 'in_b',
-      'direction': 'Input',
-      'value': '1\'h1',
-      'width': 1,
-    }),
+    SignalModel.fromMap(
+        {'name': 'in_a', 'direction': 'Input', 'value': '1\'h0', 'width': 1}),
+    SignalModel.fromMap(
+        {'name': 'in_b', 'direction': 'Input', 'value': '1\'h1', 'width': 1})
   ], outputs: [
-    SignalModel.fromMap({
-      'name': 'out_a',
-      'direction': 'Input',
-      'value': '1\'h1',
-      'width': 1,
-    }),
-    SignalModel.fromMap({
-      'name': 'out_b',
-      'direction': 'Input',
-      'value': '1\'h1',
-      'width': 1,
-    }),
+    SignalModel.fromMap(
+        {'name': 'out_a', 'direction': 'Input', 'value': '1\'h1', 'width': 1}),
+    SignalModel.fromMap(
+        {'name': 'out_b', 'direction': 'Input', 'value': '1\'h1', 'width': 1})
   ], subModules: []);
 }
