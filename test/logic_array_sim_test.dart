@@ -120,6 +120,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
 
   group('LogicArray simulation', () {
     group('sequential flop per element', () {

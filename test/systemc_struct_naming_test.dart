@@ -570,6 +570,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+  tearDownAll(() => SimCompare.cleanupSystemCCache(keepPch: false));
 
   group('SystemC generation with LogicStructure ports', () {
     test('Case 1: struct input - generates without assertion failure',
