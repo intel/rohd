@@ -540,7 +540,9 @@ abstract class SimCompare {
       final dir = Directory('tmp_test');
       if (dir.existsSync()) {
         for (final entity in dir.listSync()) {
-          final name = entity.uri.pathSegments.last;
+          // Use entity.path (not entity.uri) to get the basename: Directory.uri
+          // always appends a trailing slash, making pathSegments.last == "".
+          final name = entity.path.split('/').last;
 
           // Remove only SystemC artifacts owned by this test process. Other
           // test isolates may be compiling or running from the same tmp_test
