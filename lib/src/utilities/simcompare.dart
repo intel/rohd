@@ -438,14 +438,11 @@ abstract class SimCompare {
   /// Cache of compiled SystemC executables keyed by generated code hash.
   static final _compilationCache = <int, SystemCExecutable>{};
 
-<<<<<<< HEAD
   /// Prefix for SystemC artifacts owned by this test process.
   static final String _systemCTempPrefix =
       'tmp_sc_${pid}_${DateTime.now().microsecondsSinceEpoch}_'
       '${Object().hashCode}';
 
-=======
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
   /// Path to the precompiled header, built lazily on first compilation.
   static String? _pchPath;
 
@@ -481,11 +478,7 @@ abstract class SimCompare {
       'c++-header',
       '-o',
       gchFile,
-<<<<<<< HEAD
       '$scHome/systemc.h'
-=======
-      '$scHome/systemc.h',
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     ];
     final result = Process.runSync('g++', args);
     if (result.exitCode != 0) {
@@ -549,15 +542,10 @@ abstract class SimCompare {
         for (final entity in dir.listSync()) {
           final name = entity.uri.pathSegments.last;
 
-<<<<<<< HEAD
           // Remove only SystemC artifacts owned by this test process. Other
           // test isolates may be compiling or running from the same tmp_test
           // directory concurrently.
           if (name.startsWith(_systemCTempPrefix) || name == 'Makefile_sc') {
-=======
-          // Always remove SystemC artifacts (tmp_sc_*, Makefile_sc)
-          if (name.startsWith('tmp_sc_') || name == 'Makefile_sc') {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
             entity.deleteSync(recursive: true);
             continue;
           }
@@ -580,23 +568,12 @@ abstract class SimCompare {
   /// sets without recompilation. Use in `setUpAll` for test groups.
   /// Results are cached — calling this with the same module definition
   /// returns the previously compiled binary.
-<<<<<<< HEAD
   static SystemCExecutable? buildSystemCExecutable(Module module,
       {String? moduleName,
       String? clockName,
       String? resetName,
       String? systemcHome,
       String? systemcLib}) {
-=======
-  static SystemCExecutable? buildSystemCExecutable(
-    Module module, {
-    String? moduleName,
-    String? clockName,
-    String? resetName,
-    String? systemcHome,
-    String? systemcLib,
-  }) {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     if (kIsWeb) {
       return null;
     }
@@ -804,21 +781,12 @@ abstract class SimCompare {
     final testbenchCode = tb.toString();
 
     // Write and compile
-<<<<<<< HEAD
     const dir = 'tmp_test';
     Directory(dir).createSync(recursive: true);
     final compileDir = Directory(dir)
         .createTempSync('${_systemCTempPrefix}_${generatedSystemC.hashCode}_');
     final tmpCppFile = '${compileDir.path}/main.cpp';
     final tmpOutput = '${compileDir.path}/sim';
-=======
-    final uniqueId = generatedSystemC.hashCode;
-    const dir = 'tmp_test';
-    final tmpCppFile = '$dir/tmp_sc_$uniqueId.cpp';
-    final tmpOutput = '$dir/tmp_sc_out_$uniqueId';
-
-    Directory(dir).createSync(recursive: true);
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     File(tmpCppFile).writeAsStringSync(testbenchCode);
 
     // Detect C++ standard for this installation
@@ -837,11 +805,7 @@ abstract class SimCompare {
       tmpOutput,
       tmpCppFile,
       '-L$resolvedLib',
-<<<<<<< HEAD
       '-lsystemc'
-=======
-      '-lsystemc',
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     ]);
     if (compileResult.exitCode != 0) {
       print('SystemC compilation failed:');
@@ -851,22 +815,12 @@ abstract class SimCompare {
     }
 
     final exe = SystemCExecutable._(
-<<<<<<< HEAD
         binaryPath: tmpOutput,
         cppFile: tmpCppFile,
         scLib: resolvedLib,
         clockSignals: clockSignals,
         inputPorts: inputPorts,
         outputPorts: outputPorts);
-=======
-      binaryPath: tmpOutput,
-      cppFile: tmpCppFile,
-      scLib: resolvedLib,
-      clockSignals: clockSignals,
-      inputPorts: inputPorts,
-      outputPorts: outputPorts,
-    );
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     _compilationCache[cacheKey] = exe;
     return exe;
   }
@@ -874,14 +828,7 @@ abstract class SimCompare {
   /// Runs [vectors] against a pre-compiled [SystemCExecutable].
   ///
   /// Returns `true` if all vectors pass.
-<<<<<<< HEAD
   static bool runSystemCVectors(SystemCExecutable exe, List<Vector> vectors) {
-=======
-  static bool runSystemCVectors(
-    SystemCExecutable exe,
-    List<Vector> vectors,
-  ) {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     if (!File(exe.binaryPath).existsSync()) {
       print('SystemC binary not found: ${exe.binaryPath}');
       return false;
@@ -896,11 +843,7 @@ abstract class SimCompare {
 
     // Track last-driven values (persist across vectors like iverilog)
     final lastValues = <String, String>{
-<<<<<<< HEAD
       for (final name in drivableInputs) name: '0'
-=======
-      for (final name in drivableInputs) name: '0',
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     };
 
     for (final vector in vectors) {
@@ -955,7 +898,6 @@ abstract class SimCompare {
       sb.writeln();
     }
 
-<<<<<<< HEAD
     // Write vectors to a unique temp file, redirect as stdin.
     final stdinDir = Directory('tmp_test').createTempSync('sc_input_');
     final stdinFile = '${stdinDir.path}/input.txt';
@@ -975,22 +917,6 @@ abstract class SimCompare {
         stdinDir.deleteSync(recursive: true);
       }
     }
-=======
-    // Write vectors to temp file, redirect as stdin
-    final stdinFile = '${exe.binaryPath}_input.txt';
-    File(stdinFile).writeAsStringSync(sb.toString());
-
-    final result = Process.runSync(
-      'sh',
-      ['-c', '${exe.binaryPath} < $stdinFile'],
-      environment: {
-        'LD_LIBRARY_PATH': exe.scLib,
-        'SC_COPYRIGHT_MESSAGE': 'DISABLE',
-      },
-    );
-
-    File(stdinFile).deleteSync();
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
 
     final stdout = result.stdout.toString();
     final stderr = result.stderr.toString();
@@ -1007,14 +933,7 @@ abstract class SimCompare {
 
   /// Convenience: runs [vectors] against a pre-compiled executable and
   /// asserts the result.
-<<<<<<< HEAD
   static void checkSystemCVectors(SystemCExecutable exe, List<Vector> vectors) {
-=======
-  static void checkSystemCVectors(
-    SystemCExecutable exe,
-    List<Vector> vectors,
-  ) {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     expect(runSystemCVectors(exe, vectors), true);
   }
 
@@ -1044,7 +963,6 @@ abstract class SimCompare {
 
   /// Executes [vectors] against a SystemC simulator compiled with g++ and
   /// checks that it passes (single-shot, compiles each time).
-<<<<<<< HEAD
   static void checkSystemCVector(Module module, List<Vector> vectors,
       {String? moduleName,
       bool dontDeleteTmpFiles = false,
@@ -1053,41 +971,17 @@ abstract class SimCompare {
       String? systemcHome,
       String? systemcLib,
       bool buildOnly = false}) {
-=======
-  static void checkSystemCVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    String? clockName,
-    String? resetName,
-    String? systemcHome,
-    String? systemcLib,
-    bool buildOnly = false,
-  }) {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     if (buildOnly) {
       // Just verify SystemC code generation succeeds
       module.generateSystemC();
       return;
     }
-<<<<<<< HEAD
     final exe = buildSystemCExecutable(module,
         moduleName: moduleName,
         clockName: clockName,
         resetName: resetName,
         systemcHome: systemcHome,
         systemcLib: systemcLib);
-=======
-    final exe = buildSystemCExecutable(
-      module,
-      moduleName: moduleName,
-      clockName: clockName,
-      resetName: resetName,
-      systemcHome: systemcHome,
-      systemcLib: systemcLib,
-    );
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     if (exe == null) {
       // SystemC not available — skip gracefully.
       return;
@@ -1097,7 +991,6 @@ abstract class SimCompare {
   }
 
   /// Legacy API — returns bool.
-<<<<<<< HEAD
   static bool systemcVector(Module module, List<Vector> vectors,
       {String? moduleName,
       bool dontDeleteTmpFiles = false,
@@ -1115,30 +1008,6 @@ abstract class SimCompare {
         resetName: resetName,
         systemcHome: systemcHome,
         systemcLib: systemcLib);
-=======
-  static bool systemcVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    String? clockName,
-    String? resetName,
-    String? systemcHome,
-    String? systemcLib,
-    bool buildOnly = false,
-  }) {
-    if (kIsWeb) {
-      return true;
-    }
-    final exe = buildSystemCExecutable(
-      module,
-      moduleName: moduleName,
-      clockName: clockName,
-      resetName: resetName,
-      systemcHome: systemcHome,
-      systemcLib: systemcLib,
-    );
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     if (exe == null) {
       return false;
     }
@@ -1176,7 +1045,6 @@ abstract class SimCompare {
   ///   },
   /// );
   /// ```
-<<<<<<< HEAD
   static Future<bool> systemcSimCompare(Module module, Logic clk,
       {required Future<void> Function() stimulus,
       List<String>? inputNames,
@@ -1186,20 +1054,6 @@ abstract class SimCompare {
       bool dontDeleteTmpFiles = false,
       String? systemcHome,
       String? systemcLib}) async {
-=======
-  static Future<bool> systemcSimCompare(
-    Module module,
-    Logic clk, {
-    required Future<void> Function() stimulus,
-    List<String>? inputNames,
-    List<String>? outputNames,
-    String? clockName,
-    String? resetName,
-    bool dontDeleteTmpFiles = false,
-    String? systemcHome,
-    String? systemcLib,
-  }) async {
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
     // Determine which signals to record
     final clkName = clockName ??
         module.inputs.keys.firstWhere((n) => n == 'clk' || n.contains('clock'),
@@ -1259,24 +1113,12 @@ abstract class SimCompare {
     // check-before-edge timing. Just pass recordings directly as vectors.
 
     // Run through SystemC
-<<<<<<< HEAD
     return systemcVector(module, recordings,
         clockName: clkName,
         resetName: resetName,
         dontDeleteTmpFiles: dontDeleteTmpFiles,
         systemcHome: systemcHome,
         systemcLib: systemcLib);
-=======
-    return systemcVector(
-      module,
-      recordings,
-      clockName: clkName,
-      resetName: resetName,
-      dontDeleteTmpFiles: dontDeleteTmpFiles,
-      systemcHome: systemcHome,
-      systemcLib: systemcLib,
-    );
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
   }
 }
 
@@ -1300,7 +1142,6 @@ class SystemCExecutable {
   /// Output port names and widths.
   final Map<String, int> outputPorts;
 
-<<<<<<< HEAD
   SystemCExecutable._(
       {required this.binaryPath,
       required this.cppFile,
@@ -1308,16 +1149,6 @@ class SystemCExecutable {
       required this.clockSignals,
       required this.inputPorts,
       required this.outputPorts});
-=======
-  SystemCExecutable._({
-    required this.binaryPath,
-    required this.cppFile,
-    required this.scLib,
-    required this.clockSignals,
-    required this.inputPorts,
-    required this.outputPorts,
-  });
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
 
   /// Deletes the compiled binary and source.
   void cleanup() {
@@ -1329,7 +1160,6 @@ class SystemCExecutable {
     }
 
     try {
-<<<<<<< HEAD
       final compileDir = File(cppFile).parent;
       if (compileDir.existsSync() &&
           compileDir.uri.pathSegments.last
@@ -1337,8 +1167,6 @@ class SystemCExecutable {
         compileDir.deleteSync(recursive: true);
         return;
       }
-=======
->>>>>>> 881fb08e4f1c98b26b3b5f8327313720c100e819
       tryDelete(cppFile);
       tryDelete(binaryPath);
     } on Exception catch (_) {}
