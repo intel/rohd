@@ -4,6 +4,8 @@
 export 'src/exceptions/exceptions.dart';
 export 'src/external.dart';
 export 'src/finite_state_machine.dart';
+export 'src/fst/fst_types.dart';
+export 'src/fst/fst_writer.dart';
 export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
 export 'src/modules/modules.dart';
