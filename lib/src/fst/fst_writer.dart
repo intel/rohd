@@ -246,8 +246,11 @@ class FstWriter {
   }
 
   /// Pushes a new scope onto the hierarchy.
-  void pushScope(String name,
-      {FstScopeType type = FstScopeType.module, String component = ''}) {
+  void pushScope(
+    String name, {
+    FstScopeType type = FstScopeType.module,
+    String component = '',
+  }) {
     _hierEntries.add(_ScopeEntry(type, name, component: component));
     _scopeCount++;
   }
@@ -393,12 +396,14 @@ class FstWriter {
     final blockEndPos = _file.positionSync();
 
     // Record block in the index for read-back
-    _blockIndex.add(FstBlockIndex(
-      fileOffset: blockOffset,
-      sectionLength: blockEndPos - blockOffset - 1,
-      startTime: blockStart,
-      endTime: blockEnd,
-    ));
+    _blockIndex.add(
+      FstBlockIndex(
+        fileOffset: blockOffset,
+        sectionLength: blockEndPos - blockOffset - 1,
+        startTime: blockStart,
+        endTime: blockEnd,
+      ),
+    );
     _vcSectionCount++;
 
     // Update global time range
@@ -417,7 +422,7 @@ class FstWriter {
   /// Index of all flushed VcData blocks.
   ///
   /// Each entry contains the file offset and time range, enabling
-  /// the [FstBlockReader] to read specific blocks on demand.
+  /// the `FstBlockReader` to read specific blocks on demand.
   List<FstBlockIndex> get blockIndex => List.unmodifiable(_blockIndex);
 
   /// Number of declared signals.
@@ -428,7 +433,7 @@ class FstWriter {
       .map((s) => FstSignalInfo(name: s.name, width: s.width, isReal: s.isReal))
       .toList();
 
-  /// The output file handle for read-back by [FstBlockReader].
+  /// The output file handle for read-back by `FstBlockReader`.
   ///
   /// **Warning**: The caller must not close or modify the file position
   /// without restoring it. The writer uses this same handle for writing.
@@ -444,10 +449,12 @@ class FstWriter {
     int endTime,
   ) =>
       _changes
-          .where((c) =>
-              c.handleIndex == handleIndex &&
-              c.time >= startTime &&
-              c.time <= endTime)
+          .where(
+            (c) =>
+                c.handleIndex == handleIndex &&
+                c.time >= startTime &&
+                c.time <= endTime,
+          )
           .map((c) => (time: c.time, value: c.value))
           .toList();
 
@@ -493,7 +500,8 @@ class FstWriter {
     //   end_time(8) + endian_test(8) + memory_used(8) + scope_count(8) +
     //   var_count(8) + max_var_id(8) = offset 65
     _file.setPositionSync(
-        1 + 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8); // at vc_section_count
+      1 + 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8,
+    ); // at vc_section_count
     _writeU64(_vcSectionCount);
     _file.setPositionSync(savedPos);
   }
@@ -530,8 +538,10 @@ class FstWriter {
     }
 
     final uncompressed = buf.toBytes();
-    assert(handleCount == _signals.length,
-        'Handle count mismatch: $handleCount vs ${_signals.length}');
+    assert(
+      handleCount == _signals.length,
+      'Handle count mismatch: $handleCount vs ${_signals.length}',
+    );
 
     // Write as FST_BL_HIER (type 4) with gzip compression
     _file.writeByteSync(FstBlockType.hierarchy.value);
@@ -560,8 +570,11 @@ class FstWriter {
       buf.add(encodeVarint(sig.geometryValue));
     }
     final uncompressed = buf.toBytes();
-    final compressed =
-        _zlibCompress(uncompressed, config.compressionLevel, allowRaw: true);
+    final compressed = _zlibCompress(
+      uncompressed,
+      config.compressionLevel,
+      allowRaw: true,
+    );
 
     _file.writeByteSync(FstBlockType.geometry.value);
     final sectionLength = 3 * 8 + compressed.length;
@@ -623,8 +636,11 @@ class FstWriter {
 
     // Build frame bytes
     final frameBytes = _buildFrameBytes(frameValues);
-    final frameCompressed =
-        _zlibCompress(frameBytes, config.compressionLevel, allowRaw: true);
+    final frameCompressed = _zlibCompress(
+      frameBytes,
+      config.compressionLevel,
+      allowRaw: true,
+    );
 
     // Build the signal offset chain (DynamicAlias2 format)
     final chainBytes = _buildOffsetChain(packedSignals);
@@ -652,7 +668,6 @@ class FstWriter {
       ..writeFromSync(encodeVarint(frameCompressed.length)) // comp len
       ..writeFromSync(encodeVarint(_signals.length)) // max_handle
       ..writeFromSync(frameCompressed)
-
       // Value change section
       ..writeFromSync(encodeVarint(_signals.length)) // max_handle
       ..writeByteSync(0x5A); // pack_type = 'Z' (zlib)
@@ -702,7 +717,9 @@ class FstWriter {
   /// Each byte array contains the encoded value change chain for that signal.
   /// Changes at [blockStartTime] are skipped (captured in the frame).
   List<Uint8List> _buildSignalData(
-      Map<int, int> timeToIndex, int blockStartTime) {
+    Map<int, int> timeToIndex,
+    int blockStartTime,
+  ) {
     // Group changes by signal handle index
     final signalChanges = List<List<_ValueChange>>.generate(
       _signals.length,
@@ -872,8 +889,11 @@ class FstWriter {
       prevTime = t;
     }
     final uncompressed = deltaBuf.toBytes();
-    final compressed =
-        _zlibCompress(uncompressed, config.compressionLevel, allowRaw: true);
+    final compressed = _zlibCompress(
+      uncompressed,
+      config.compressionLevel,
+      allowRaw: true,
+    );
 
     // Build the full time section: compressed data + 3 u64s
     final result = BytesBuilder(copy: false)
@@ -984,8 +1004,11 @@ class FstWriter {
   }
 
   /// Compresses bytes using zlib (with zlib header, for geometry/frame/etc).
-  static Uint8List _zlibCompress(Uint8List data, int level,
-      {bool allowRaw = false}) {
+  static Uint8List _zlibCompress(
+    Uint8List data,
+    int level, {
+    bool allowRaw = false,
+  }) {
     final compressed = ZLibCodec(level: level).encode(data);
     final result = Uint8List.fromList(compressed);
     if (allowRaw && result.length >= data.length) {
