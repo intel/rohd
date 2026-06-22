@@ -49,7 +49,6 @@ class WaveDumper {
   /// The output filepath of the generated waveforms.
   final String outputPath;
 
-
   /// The waveform output format (VCD or FST).
   final WaveFormat format;
 
@@ -107,7 +106,6 @@ class WaveDumper {
           'Module must be built before passed to dumper.  Call build() first.');
     }
 
-
     if (format == WaveFormat.fst) {
       _initFst();
     } else {
@@ -158,7 +156,6 @@ class WaveDumper {
 
     // Write header after all signals declared
     _fstWriter!.writeHeader();
-
   }
 
   /// Collects signals from the module hierarchy and declares them in the FST

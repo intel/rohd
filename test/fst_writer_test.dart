@@ -42,8 +42,7 @@ String _temporaryFstPath(String name) => '$_tempDumpDir/temp_dump_$name.fst';
 void _createFstDump(Module module, String name) {
   Directory(_tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = _temporaryFstPath(name);
-  WaveDumper(module,
-      outputPath: tmpDumpFile, format: WaveFormat.fst);
+  WaveDumper(module, outputPath: tmpDumpFile, format: WaveFormat.fst);
 }
 
 /// Deletes the temporary FST file associated with [name].
@@ -277,8 +276,7 @@ void main() {
       const dir1Path = '$_tempDumpDir/fst_dir1';
       const fstPath = '$dir1Path/dir2/waves.fst';
 
-      WaveDumper(mod,
-          outputPath: fstPath, format: WaveFormat.fst);
+      WaveDumper(mod, outputPath: fstPath, format: WaveFormat.fst);
 
       a.put(0);
       Simulator.setMaxSimTime(10);
