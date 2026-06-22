@@ -169,7 +169,9 @@ class SystemCFfiCosim {
     _loadedLibs.clear();
     const dir = 'tmp_test';
     final d = Directory(dir);
-    if (!d.existsSync()) return;
+    if (!d.existsSync()) {
+      return;
+    }
     for (final entity in d.listSync()) {
       final name = entity.uri.pathSegments.last;
       if (name.startsWith('cosim_ffi_') || name.startsWith('libcosim_ffi_')) {
