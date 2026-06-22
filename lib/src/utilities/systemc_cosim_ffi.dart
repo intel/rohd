@@ -176,7 +176,7 @@ class SystemCFfiCosim {
         try {
           entity.deleteSync(recursive: true);
         } on Exception catch (_) {
-          // ignore
+          // ignore deletion errors (file may be locked or already removed)
         }
       }
     }
