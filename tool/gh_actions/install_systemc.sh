@@ -27,8 +27,8 @@ fi
 echo "Installing Accellera SystemC $SYSTEMC_VERSION to $INSTALL_PREFIX ..."
 
 # Install build dependencies
-apt-get update -qq
-apt-get install --yes --no-install-recommends cmake g++ make
+sudo apt-get update -qq
+sudo apt-get install --yes --no-install-recommends cmake g++ make
 
 # Download source
 TARBALL="systemc-$SYSTEMC_VERSION.tar.gz"
@@ -51,6 +51,6 @@ cmake .. \
   -DDISABLE_COPYRIGHT_MESSAGE=ON
 
 make -j"$(nproc)"
-make install
+sudo make install
 
 echo "SystemC $SYSTEMC_VERSION installed to $INSTALL_PREFIX"
