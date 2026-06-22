@@ -25,6 +25,8 @@ class RohdDevToolsApp extends StatelessWidget {
   const RohdDevToolsApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return const DevToolsExtension(child: RohdDevToolsPage());
+    return const DevToolsExtension(
+      child: RohdDevToolsPage(),
+    );
   }
 }

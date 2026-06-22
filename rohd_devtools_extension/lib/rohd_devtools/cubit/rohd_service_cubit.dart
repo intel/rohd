@@ -41,11 +41,13 @@ class RohdServiceCubit extends Cubit<RohdServiceState> {
         throw Exception('ServiceManager is not initialized');
       }
       treeService ??= TreeService(
-          EvalOnDartLibrary(
-              'package:rohd/src/diagnostics/inspector_service.dart',
-              serviceManager.service!,
-              serviceManager: serviceManager),
-          Disposable());
+        EvalOnDartLibrary(
+          'package:rohd/src/diagnostics/inspector_service.dart',
+          serviceManager.service!,
+          serviceManager: serviceManager,
+        ),
+        Disposable(),
+      );
       final treeModel = await operation(treeService!);
       emit(RohdServiceLoaded(treeModel));
     } catch (error, trace) {

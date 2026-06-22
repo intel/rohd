@@ -20,8 +20,10 @@ class TreeService {
   TreeService(this.rohdControllerEval, this.evalDisposable);
 
   Future<TreeModel?> evalModuleTree() async {
-    final treeInstance = await rohdControllerEval.evalInstance(invokeFunc,
-        isAlive: evalDisposable);
+    final treeInstance = await rohdControllerEval.evalInstance(
+      invokeFunc,
+      isAlive: evalDisposable,
+    );
 
     final treeObj = jsonDecode(treeInstance.valueAsString ?? '') as Map;
 
