@@ -21,7 +21,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 ///
 /// Port names are reserved at construction time.  Internal signal names
 /// are assigned lazily on the first [signalNameOf] call.  Instance names
-/// are allocated explicitly via [allocateName].
+/// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
   // ─── Shared namespace ───────────────────────────────────────────
