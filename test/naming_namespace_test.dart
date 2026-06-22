@@ -124,8 +124,7 @@ void main() {
       final dut = _InstanceSignalCollision();
       await dut.build();
 
-      final instanceName =
-          dut.namer.instanceNameOf(dut.subModules.first);
+      final instanceName = dut.namer.instanceNameOf(dut.subModules.first);
       expect(instanceName, equals('inner'),
           reason: 'Instance should win the shared namespace '
               'and keep the bare name');
