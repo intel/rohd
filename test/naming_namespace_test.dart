@@ -116,6 +116,46 @@ void main() {
       expect(sv, contains('inner_0'));
     });
 
+    test('instance name wins the shared namespace; signal gets the suffix',
+        () async {
+      // Non-reserved submodule instances are picked before non-reserved
+      // internal signals, so the instance claims the bare name and the
+      // colliding signal is uniquified.
+      final dut = _InstanceSignalCollision();
+      await dut.build();
+
+      final instanceName = dut.namer.instanceNameOf(dut.subModules.first);
+      expect(instanceName, equals('inner'),
+          reason: 'Instance should win the shared namespace '
+              'and keep the bare name');
+
+      final sv = dut.generateSynth();
+      // The wire (signal) must carry the suffix, not the instance.
+      expect(sv, contains('inner_0'),
+          reason: 'Colliding signal should be renamed to inner_0');
+      expect(sv, isNot(contains('inner_0 inner')),
+          reason: 'Instance itself must not be named inner_0');
+    });
+
+    test(
+        'instance-signal collision resolution is stable across '
+        'repeated synthesis passes', () async {
+      final dut = _InstanceSignalCollision();
+      await dut.build();
+
+      // Strip the generated header (contains a wall-clock timestamp) before
+      // comparing so the test does not fail on timing jitter.
+      String stripHeader(String sv) =>
+          sv.replaceFirst(RegExp(r'/\*\*.*?\*/\n', dotAll: true), '');
+
+      final sv1 = stripHeader(dut.generateSynth());
+      final sv2 = stripHeader(dut.generateSynth());
+
+      expect(sv2, equals(sv1),
+          reason: 'Repeated synthesis passes must produce identical '
+              'SV output; instance and signal names must not drift.');
+    });
+
     test('duplicate instance names get uniquified', () async {
       final dut = _DuplicateInstances();
       await dut.build();

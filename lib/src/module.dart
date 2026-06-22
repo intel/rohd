@@ -237,6 +237,18 @@ abstract class Module {
           this, 'Module must be built to access uniquified name.');
   String _uniqueInstanceName;
 
+  /// A stable identity used to memoize this module's canonical instance name
+  /// across repeated synthesis passes (e.g. netlist then SystemVerilog).
+  ///
+  /// Defaults to the [Module] itself, which is correct for modules that are
+  /// part of the built hierarchy and therefore persist across passes.
+  /// Synthesis-time throwaway modules that are *recreated* on every pass (and
+  /// thus have a fresh [Module] identity each time) must override this to
+  /// return a stable identity — typically the [Logic] they drive — so their
+  /// instance name does not drift run-to-run.
+  @internal
+  Object get instanceNameKey => this;
+
   /// If true, guarantees [uniqueInstanceName] matches [name] or else the
   /// [build] will fail.
   final bool reserveName;
