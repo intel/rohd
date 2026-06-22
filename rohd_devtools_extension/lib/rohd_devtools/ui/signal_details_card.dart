@@ -64,41 +64,32 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
   void toggleNotifier() => notifier.value++;
 
   void _showFilterDialog() {
-    unawaited(
-      showDialog(
+    unawaited(showDialog(
         context: context,
         builder: (context) => StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            title: const Text('Filter Signals'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                CheckboxListTile(
-                  title: const Text('Input'),
-                  value: inputSelected.value,
-                  onChanged: (value) {
-                    setState(() {
-                      inputSelected.value = value!;
-                    });
-                    toggleNotifier();
-                  },
-                ),
-                CheckboxListTile(
-                  title: const Text('Output'),
-                  value: outputSelected.value,
-                  onChanged: (value) {
-                    setState(() {
-                      outputSelected.value = value!;
-                    });
-                    toggleNotifier();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+            builder: (context, setState) => AlertDialog(
+                title: const Text('Filter Signals'),
+                content:
+                    Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                  CheckboxListTile(
+                      title: const Text('Input'),
+                      value: inputSelected.value,
+                      onChanged: (value) {
+                        setState(() {
+                          inputSelected.value = value!;
+                        });
+                        toggleNotifier();
+                      }),
+                  CheckboxListTile(
+                      title: const Text('Output'),
+                      value: outputSelected.value,
+                      onChanged: (value) {
+                        setState(() {
+                          outputSelected.value = value!;
+                        });
+                        toggleNotifier();
+                      })
+                ])))));
   }
 
   @override
@@ -107,69 +98,49 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
   Widget build(BuildContext context) {
     if (widget.module == null) {
       return const Padding(
-        padding: EdgeInsets.only(top: 20),
-        child: Center(child: Text('No module selected')),
-      );
+          padding: EdgeInsets.only(top: 20),
+          child: Center(child: Text('No module selected')));
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        RepaintBoundary(
+    return Stack(fit: StackFit.expand, children: [
+      RepaintBoundary(
           key: _boundaryKey,
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: [
-                      SignalTableTextField(
-                        labelText: 'Search Signals',
-                        onChanged: (value) {
-                          setState(() {
-                            searchTerm = value;
-                          });
-                          toggleNotifier();
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.filter_list),
-                        onPressed: _showFilterDialog,
-                      ),
-                      DetailsHelpButton(isDark: isDark),
-                    ],
-                  ),
-                ),
-                ValueListenableBuilder(
-                  valueListenable: notifier,
-                  builder: (context, _, __) => SignalTable(
+              child: Column(children: [
+            Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(children: [
+                  SignalTableTextField(
+                      labelText: 'Search Signals',
+                      onChanged: (value) {
+                        setState(() {
+                          searchTerm = value;
+                        });
+                        toggleNotifier();
+                      }),
+                  IconButton(
+                      icon: const Icon(Icons.filter_list),
+                      onPressed: _showFilterDialog),
+                  DetailsHelpButton(isDark: isDark)
+                ])),
+            ValueListenableBuilder(
+                valueListenable: notifier,
+                builder: (context, _, __) => SignalTable(
                     selectedModule: widget.module!,
                     searchTerm: searchTerm,
                     inputSelectedVal: inputSelected.value,
                     outputSelectedVal: outputSelected.value,
-                    snapshot: widget.snapshot,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
+                    snapshot: widget.snapshot))
+          ]))),
+      Positioned(
           right: 8,
           bottom: 8,
           child: ExportPngButton(
-            onPressed: () => captureBoundaryToPng(
-              context,
-              boundaryKey: _boundaryKey,
-              filePrefix: 'signal_details',
-            ),
-          ),
-        ),
-      ],
-    );
+              onPressed: () => captureBoundaryToPng(context,
+                  boundaryKey: _boundaryKey, filePrefix: 'signal_details')))
+    ]);
   }
 
   @override

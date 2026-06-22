@@ -55,59 +55,47 @@ void main() {
 ///    controlled reconnect.
 void _installMessageInterceptor() {
   web.window.addEventListener(
-    'message',
-    ((web.MessageEvent e) {
-      try {
-        final data = e.data.dartify();
-        if (data is! Map) {
-          return;
-        }
-        final type = data['type'];
+      'message',
+      ((web.MessageEvent e) {
+        try {
+          final data = e.data.dartify();
+          if (data is! Map) {
+            return;
+          }
+          final type = data['type'];
 
-        final source = data['source'] ?? '?';
-        debugPrint(
-          '[ROHD-MSG] type=$type source=$source '
-          'data=${data['data']}',
-        );
+          final source = data['source'] ?? '?';
+          debugPrint('[ROHD-MSG] type=$type source=$source '
+              'data=${data['data']}');
 
-        if (type == 'forceReload') {
-          debugPrint(
-            '[ROHD-MSG] BLOCKED forceReload — '
-            'triggering graceful reconnection',
-          );
-          e.stopImmediatePropagation();
+          if (type == 'forceReload') {
+            debugPrint('[ROHD-MSG] BLOCKED forceReload — '
+                'triggering graceful reconnection');
+            e.stopImmediatePropagation();
 
-          // After blocking the page reload, disconnect the stale VM
-          // service and ask DevTools for the current (restarted) URI.
-          // A short delay lets the DevTools wrapper finish its own
-          // transition before we re-request.
-          Future<void>.delayed(const Duration(milliseconds: 300), () async {
-            try {
-              if (serviceManager.connectedState.value.connected) {
-                debugPrint('[ROHD-MSG] Disconnecting stale VM...');
-                await serviceManager.manuallyDisconnect();
+            // After blocking the page reload, disconnect the stale VM
+            // service and ask DevTools for the current (restarted) URI.
+            // A short delay lets the DevTools wrapper finish its own
+            // transition before we re-request.
+            Future<void>.delayed(const Duration(milliseconds: 300), () async {
+              try {
+                if (serviceManager.connectedState.value.connected) {
+                  debugPrint('[ROHD-MSG] Disconnecting stale VM...');
+                  await serviceManager.manuallyDisconnect();
+                }
+                debugPrint('[ROHD-MSG] Requesting fresh VM URI '
+                    'from DevTools...');
+                extensionManager.postMessageToDevTools(DevToolsExtensionEvent(
+                    DevToolsExtensionEventType.vmServiceConnection));
+              } on Object catch (err) {
+                debugPrint('[ROHD-MSG] Reconnection request '
+                    'failed: $err');
               }
-              debugPrint(
-                '[ROHD-MSG] Requesting fresh VM URI '
-                'from DevTools...',
-              );
-              extensionManager.postMessageToDevTools(
-                DevToolsExtensionEvent(
-                  DevToolsExtensionEventType.vmServiceConnection,
-                ),
-              );
-            } on Object catch (err) {
-              debugPrint(
-                '[ROHD-MSG] Reconnection request '
-                'failed: $err',
-              );
-            }
-          });
-          return;
-        }
-      } on Object catch (_) {}
-    }).toJS,
-  );
+            });
+            return;
+          }
+        } on Object catch (_) {}
+      }).toJS);
 }
 
 /// The main ROHD DevTools application.
@@ -119,27 +107,22 @@ class RohdDevToolsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     debugPrint('[RohdDevToolsApp] Building app widget...');
     return DevToolsExtension(
-      // Reset IdeTheme scaling so extension renders at 1× size
-      // regardless of the IDE's editor.fontSize setting.
-      child: Builder(
-        builder: (context) {
-          final current = ideTheme;
-          setGlobal(
-            IdeTheme,
-            IdeTheme(
+        // Reset IdeTheme scaling so extension renders at 1× size
+        // regardless of the IDE's editor.fontSize setting.
+        child: Builder(builder: (context) {
+      final current = ideTheme;
+      setGlobal(
+          IdeTheme,
+          IdeTheme(
               backgroundColor: current.backgroundColor,
               foregroundColor: current.foregroundColor,
               embedMode: current.embedMode,
-              isDarkMode: current.isDarkMode,
-            ),
-          );
+              isDarkMode: current.isDarkMode));
 
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final base = isDark ? buildDarkTheme() : buildLightTheme();
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final base = isDark ? buildDarkTheme() : buildLightTheme();
 
-          return Theme(data: base, child: const RohdDevToolsPage());
-        },
-      ),
-    );
+      return Theme(data: base, child: const RohdDevToolsPage());
+    }));
   }
 }

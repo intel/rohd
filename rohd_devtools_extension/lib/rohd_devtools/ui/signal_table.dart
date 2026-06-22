@@ -32,14 +32,13 @@ class SignalTable extends StatefulWidget {
   final SnapshotLoaded? snapshot;
 
   /// Creates a signal table for the given module and filters.
-  const SignalTable({
-    required this.selectedModule,
-    required this.searchTerm,
-    required this.inputSelectedVal,
-    required this.outputSelectedVal,
-    this.snapshot,
-    super.key,
-  });
+  const SignalTable(
+      {required this.selectedModule,
+      required this.searchTerm,
+      required this.inputSelectedVal,
+      required this.outputSelectedVal,
+      this.snapshot,
+      super.key});
 
   @override
 
@@ -69,37 +68,29 @@ class _SignalTableState extends State<SignalTable> {
     final tableHeaders = ['Name', 'Direction', valueHeader, 'Width'];
 
     return Table(
-      border: TableBorder.all(),
-      columnWidths: const <int, TableColumnWidth>{
-        0: FlexColumnWidth(),
-        1: FlexColumnWidth(),
-        2: FlexColumnWidth(),
-      },
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: <TableRow>[
-        TableRow(
-          children: List<Widget>.generate(
-            tableHeaders.length,
-            (index) => _buildTableHeader(text: tableHeaders[index]),
-          ),
-        ),
-        ...generateSignalsRow(
-          widget.selectedModule,
-          searchTerm: widget.searchTerm,
-          inputSelected: widget.inputSelectedVal,
-          outputSelected: widget.outputSelectedVal,
-        ),
-      ],
-    );
+        border: TableBorder.all(),
+        columnWidths: const <int, TableColumnWidth>{
+          0: FlexColumnWidth(),
+          1: FlexColumnWidth(),
+          2: FlexColumnWidth()
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: <TableRow>[
+          TableRow(
+              children: List<Widget>.generate(tableHeaders.length,
+                  (index) => _buildTableHeader(text: tableHeaders[index]))),
+          ...generateSignalsRow(widget.selectedModule,
+              searchTerm: widget.searchTerm,
+              inputSelected: widget.inputSelectedVal,
+              outputSelected: widget.outputSelectedVal)
+        ]);
   }
 
   /// Builds the rows for the signals that match the selected filters.
-  List<TableRow> generateSignalsRow(
-    TreeModel module, {
-    required String? searchTerm,
-    required bool inputSelected,
-    required bool outputSelected,
-  }) {
+  List<TableRow> generateSignalsRow(TreeModel module,
+      {required String? searchTerm,
+      required bool inputSelected,
+      required bool outputSelected}) {
     final rows = <TableRow>[];
 
     // Filter signals
@@ -122,16 +113,14 @@ class _SignalTableState extends State<SignalTable> {
     return rows;
   }
 
-  TableRow _generateSignalRow(SignalModel signal) => TableRow(
-        children: <Widget>[
-          SizedBox(height: 32, child: Center(child: Text(signal.name))),
-          SizedBox(height: 32, child: Center(child: Text(signal.direction))),
-          SizedBox(
-              height: 32, child: Center(child: Text(_lookupValue(signal)))),
-          SizedBox(
-              height: 32, child: Center(child: Text(signal.width.toString()))),
-        ],
-      );
+  TableRow _generateSignalRow(SignalModel signal) =>
+      TableRow(children: <Widget>[
+        SizedBox(height: 32, child: Center(child: Text(signal.name))),
+        SizedBox(height: 32, child: Center(child: Text(signal.direction))),
+        SizedBox(height: 32, child: Center(child: Text(_lookupValue(signal)))),
+        SizedBox(
+            height: 32, child: Center(child: Text(signal.width.toString())))
+      ]);
 
   String _lookupValue(SignalModel signal) {
     // Snapshot overlay is currently keyed by signal name because the upstream
@@ -149,12 +138,9 @@ class _SignalTableState extends State<SignalTable> {
   }
 
   Widget _buildTableHeader({required String text}) => SizedBox(
-        height: 32,
-        child: Center(
-          child: Text(
-            text,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          ),
-        ),
-      );
+      height: 32,
+      child: Center(
+          child: Text(text,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))));
 }

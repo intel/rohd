@@ -22,10 +22,7 @@ class ModuleTreeCard extends StatefulWidget {
   final TreeModel futureModuleTree;
 
   /// Creates a module tree card for the provided module tree.
-  const ModuleTreeCard({
-    required this.futureModuleTree,
-    super.key,
-  });
+  const ModuleTreeCard({required this.futureModuleTree, super.key});
 
   @override
 
@@ -36,8 +33,7 @@ class ModuleTreeCard extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(
-      DiagnosticsProperty<TreeModel>('futureModuleTree', futureModuleTree),
-    );
+        DiagnosticsProperty<TreeModel>('futureModuleTree', futureModuleTree));
   }
 }
 
@@ -48,9 +44,8 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
   @override
 
   /// Builds the module tree widget.
-  Widget build(BuildContext context) => genModuleTree(
-        moduleTree: widget.futureModuleTree,
-      );
+  Widget build(BuildContext context) =>
+      genModuleTree(moduleTree: widget.futureModuleTree);
 
   /// Builds a tree node for [module], returning null if it is filtered out.
   TreeNode? buildNode(TreeModel module) {
@@ -66,17 +61,14 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
     final childrenNodes = buildChildrenNodes(module);
 
     return TreeNode(
-      content: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () {
-            context.read<SelectedModuleCubit>().setModule(module);
-          },
-          child: getNodeContent(module),
-        ),
-      ),
-      children: childrenNodes,
-    );
+        content: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+                onTap: () {
+                  context.read<SelectedModuleCubit>().setModule(module);
+                },
+                child: getNodeContent(module))),
+        children: childrenNodes);
   }
 
   /// Builds the visible text and icon for a tree node.
@@ -88,40 +80,30 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
     final isSelected = selectedModule is SelectedModuleLoaded &&
         selectedModule.module == module;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
           decoration: BoxDecoration(
-            color: isSelected
-                ? Colors.blue.withValues(alpha: 0.2)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-          ),
+              color: isSelected
+                  ? Colors.blue.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(4)),
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: Row(
-            children: [
-              Icon(Icons.memory, color: colorScheme.onSurface),
-              const SizedBox(width: 2),
-              Text(
-                module.name,
+          child: Row(children: [
+            Icon(Icons.memory, color: colorScheme.onSurface),
+            const SizedBox(width: 2),
+            Text(module.name,
                 style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color:
-                      isSelected ? colorScheme.primary : colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurface))
+          ]))
+    ]);
   }
 
   /// Builds child tree nodes for the given module.
-  List<TreeNode> buildChildrenNodes(
-    TreeModel treeModule,
-  ) {
+  List<TreeNode> buildChildrenNodes(TreeModel treeModule) {
     final childrenNodes = <TreeNode>[];
     final subModules = treeModule.subModules;
     if (subModules.isNotEmpty) {
@@ -139,9 +121,7 @@ class _ModuleTreeCardState extends State<ModuleTreeCard> {
   TreeNode? buildTreeFromModule(TreeModel node) => buildNode(node);
 
   /// Builds the full tree view widget for [moduleTree].
-  Widget genModuleTree({
-    required TreeModel moduleTree,
-  }) {
+  Widget genModuleTree({required TreeModel moduleTree}) {
     final root = buildNode(moduleTree);
     if (root != null) {
       return TreeView(nodes: [root]);

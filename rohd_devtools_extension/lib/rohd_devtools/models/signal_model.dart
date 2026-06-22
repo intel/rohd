@@ -22,26 +22,20 @@ class SignalModel {
   final int width;
 
   /// Creates a signal model.
-  SignalModel({
-    required this.name,
-    required this.direction,
-    required this.value,
-    required this.width,
-  });
+  SignalModel(
+      {required this.name,
+      required this.direction,
+      required this.value,
+      required this.width});
 
   /// Builds a signal model from a map representation.
   factory SignalModel.fromMap(Map<String, dynamic> map) => SignalModel(
-        name: map['name'] as String,
-        direction: map['direction'] as String,
-        value: map['value'] as String,
-        width: map['width'] as int,
-      );
+      name: map['name'] as String,
+      direction: map['direction'] as String,
+      value: map['value'] as String,
+      width: map['width'] as int);
 
   /// Converts the signal model to a JSON-compatible map.
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'direction': direction,
-        'value': value,
-        'width': width,
-      };
+  Map<String, dynamic> toMap() =>
+      {'name': name, 'direction': direction, 'value': value, 'width': width};
 }

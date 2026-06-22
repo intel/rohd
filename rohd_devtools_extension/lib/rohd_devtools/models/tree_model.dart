@@ -24,12 +24,11 @@ class TreeModel {
   final List<TreeModel> subModules;
 
   /// Creates a tree model for a module hierarchy node.
-  TreeModel({
-    required this.name,
-    required this.inputs,
-    required this.outputs,
-    required this.subModules,
-  });
+  TreeModel(
+      {required this.name,
+      required this.inputs,
+      required this.outputs,
+      required this.subModules});
 
   /// Builds a tree model from a JSON map.
   factory TreeModel.fromJson(Map<String, dynamic> json) {
@@ -44,7 +43,7 @@ class TreeModel {
         'name': inputSignal.key,
         'direction': 'Input',
         'value': inputValue['value'],
-        'width': inputValue['width'],
+        'width': inputValue['width']
       });
       inputSignalsList.add(signal);
     }
@@ -55,20 +54,19 @@ class TreeModel {
         'name': outputSignal.key,
         'direction': 'Output',
         'value': outputValue['value'],
-        'width': outputValue['width'],
+        'width': outputValue['width']
       });
 
       outputSignalsList.add(signal);
     }
 
     return TreeModel(
-      name: json['name'] as String,
-      inputs: inputSignalsList,
-      outputs: outputSignalsList,
-      subModules: (json['subModules'] as List)
-          .map((subModule) =>
-              TreeModel.fromJson(subModule as Map<String, dynamic>))
-          .toList(),
-    );
+        name: json['name'] as String,
+        inputs: inputSignalsList,
+        outputs: outputSignalsList,
+        subModules: (json['subModules'] as List)
+            .map((subModule) =>
+                TreeModel.fromJson(subModule as Map<String, dynamic>))
+            .toList());
   }
 }

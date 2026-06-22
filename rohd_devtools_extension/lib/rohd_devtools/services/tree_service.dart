@@ -37,12 +37,8 @@ class TreeService {
   final String? isolateId;
 
   /// Creates a tree service around the given eval wrapper.
-  TreeService(
-    this.rohdControllerEval,
-    this.evalDisposable, {
-    this.vmService,
-    this.isolateId,
-  });
+  TreeService(this.rohdControllerEval, this.evalDisposable,
+      {this.vmService, this.isolateId});
 
   /// Evaluates the module tree from the ROHD service.
   Future<TreeModel?> evalModuleTree() async {
@@ -54,10 +50,8 @@ class TreeService {
 
     final decoded = jsonDecode(payload);
     if (decoded is! Map<String, dynamic>) {
-      debugPrint(
-        '[TreeService] evalModuleTree failed: unexpected payload type '
-        '${decoded.runtimeType}',
-      );
+      debugPrint('[TreeService] evalModuleTree failed: unexpected payload type '
+          '${decoded.runtimeType}');
       return null;
     }
 
@@ -78,15 +72,11 @@ class TreeService {
 
     for (final expression in expressions) {
       try {
-        final treeInstance = await rohdControllerEval.evalInstance(
-          expression,
-          isAlive: evalDisposable,
-        );
+        final treeInstance = await rohdControllerEval.evalInstance(expression,
+            isAlive: evalDisposable);
         return treeInstance.valueAsString;
       } on Exception catch (e) {
-        debugPrint(
-          '[TreeService] Eval failed for "$expression": $e',
-        );
+        debugPrint('[TreeService] Eval failed for "$expression": $e');
       }
     }
 
@@ -95,9 +85,7 @@ class TreeService {
 
   /// Returns whether the current module or any descendant matches the search.
   static bool isNodeOrDescendentMatching(
-    TreeModel module,
-    String? treeSearchTerm,
-  ) {
+      TreeModel module, String? treeSearchTerm) {
     if (module.name.toLowerCase().contains(treeSearchTerm!.toLowerCase())) {
       return true;
     }
