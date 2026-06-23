@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_services_test.dart
-// Unit tests for ModuleServices and SvService.
+// Unit tests for ModuleServices, the service base types, and SvService.
 //
 // 2026 April 25
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -23,41 +23,21 @@ class SimpleModule extends Module {
   }
 }
 
-class FakeNetlistService implements NetlistInspectionService {
-  @override
-  String get slimJson => jsonEncode(<String, Object>{'kind': 'slim'});
-
-  @override
-  String toJson() => jsonEncode(<String, Object>{'kind': 'full'});
-
-  @override
-  String moduleJson(String definitionName) =>
-      jsonEncode(<String, Object>{'module': definitionName});
-}
-
-class FakeTraceService implements TraceInspectionService {
-  FakeTraceService(this.module);
+/// A minimal [ModuleService] used to exercise the type-keyed registry.
+class FakeService implements ModuleService {
+  FakeService(this.module);
 
   @override
   final Module module;
 
   @override
-  Map<String, Object>? get flcHierarchy => <String, Object>{
-        'modules': <String, Object>{module.definitionName: <String, Object>{}},
-      };
-
-  @override
-  String get flcJson => jsonEncode(flcHierarchy);
-
-  @override
-  String flcModuleJson(String definitionName) =>
-      jsonEncode(<String, Object>{'module': definitionName});
+  Map<String, Object?> toJson() => <String, Object?>{'kind': 'fake'};
 }
 
 void main() {
   tearDown(ModuleServices.instance.reset);
 
-  group('ModuleServices', () {
+  group('ModuleServices registry', () {
     test('rootModule is set after build', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
@@ -71,75 +51,51 @@ void main() {
       expect(() => jsonDecode(json), returnsNormally);
     });
 
-    test('inspectorJSON matches hierarchyJSON', () async {
+    test('register and lookup round-trips a service', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      expect(
-        ModuleServices.instance.inspectorJSON,
-        equals(ModuleServices.instance.hierarchyJSON),
-      );
+      final fake = FakeService(mod);
+      ModuleServices.instance.register<FakeService>(fake);
+      expect(ModuleServices.instance.lookup<FakeService>(), same(fake));
     });
 
-    test('inspectorJSON uses registered netlist service', () async {
-      ModuleServices.instance.netlistService = FakeNetlistService();
-      final inspectorJson = jsonDecode(ModuleServices.instance.inspectorJSON)
-          as Map<String, Object?>;
-      final netlistJson = jsonDecode(ModuleServices.instance.netlistJSON)
-          as Map<String, Object?>;
-      final moduleJson = jsonDecode(
-        ModuleServices.instance.inspectorModuleJSON('SimpleModule'),
-      ) as Map<String, Object?>;
-
-      expect(inspectorJson['kind'], equals('slim'));
-      expect(netlistJson['kind'], equals('full'));
-      expect(moduleJson['module'], equals('SimpleModule'));
+    test('lookup returns null when no service registered', () {
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
 
-    test('trace service exposes FLC JSON and file path', () async {
+    test('unregister removes a service', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      ModuleServices.instance.traceService = FakeTraceService(mod);
-      final flcJson =
-          jsonDecode(ModuleServices.instance.flcJSON) as Map<String, Object?>;
-      final moduleJson =
-          jsonDecode(ModuleServices.instance.flcModuleJSON('SimpleModule'))
-              as Map<String, Object?>;
-
-      expect(flcJson, isA<Map<String, Object?>>());
-      expect(moduleJson['module'], equals('SimpleModule'));
-
-      final flcPath = ModuleServices.instance.flcFilePath;
-      expect(flcPath, isNot(startsWith('{')));
-      expect(File(flcPath).existsSync(), isTrue);
+      ModuleServices.instance.register<FakeService>(FakeService(mod));
+      ModuleServices.instance.unregister<FakeService>();
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
 
-    test('svJSON returns unavailable when no service registered', () async {
+    test('reset clears rootModule and all services', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final result =
-          jsonDecode(ModuleServices.instance.svJSON) as Map<String, dynamic>;
-      expect(result['status'], equals('unavailable'));
-    });
-
-    test('reset clears all services', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
+      ModuleServices.instance.register<FakeService>(FakeService(mod));
       expect(ModuleServices.instance.rootModule, isNotNull);
+
       ModuleServices.instance.reset();
       expect(ModuleServices.instance.rootModule, isNull);
-      expect(ModuleServices.instance.svService, isNull);
-      expect(ModuleServices.instance.netlistService, isNull);
-      expect(ModuleServices.instance.waveformService, isNull);
-      expect(ModuleServices.instance.traceService, isNull);
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
   });
 
   group('SvService', () {
-    test('registers with ModuleServices on creation', () async {
+    test('registers with ModuleServices and sets current', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
       final sv = SvService(mod);
-      expect(ModuleServices.instance.svService, equals(sv));
+      expect(ModuleServices.instance.lookup<SvService>(), same(sv));
+      expect(SvService.current, same(sv));
+    });
+
+    test('is a CodegenService', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      expect(SvService(mod), isA<CodegenService>());
     });
 
     test('allContents is non-empty', () async {
@@ -147,6 +103,13 @@ void main() {
       await mod.build();
       final sv = SvService(mod);
       expect(sv.allContents, isNotEmpty);
+    });
+
+    test('output equals synthOutput', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.output, equals(sv.synthOutput));
     });
 
     test('contentsByName has entries', () async {
@@ -164,13 +127,19 @@ void main() {
       expect(sv.contentsByDefinitionName.containsKey('SimpleModule'), isTrue);
     });
 
-    test('svJSON returns valid JSON after registration', () async {
+    test('moduleOutput returns the definition contents', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      SvService(mod);
-      final result =
-          jsonDecode(ModuleServices.instance.svJSON) as Map<String, dynamic>;
-      expect(result['modules'], isList);
+      final sv = SvService(mod);
+      expect(sv.moduleOutput('SimpleModule'), isNotNull);
+      expect(sv.moduleOutput('DoesNotExist'), isNull);
+    });
+
+    test('toJson lists generated modules', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.toJson()['modules'], isList);
     });
 
     test('writeFiles creates SV files', () async {
@@ -188,12 +157,40 @@ void main() {
       }
     });
 
+    test('write() emits a single file', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod, register: false);
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final path = '${dir.path}/out.sv';
+        sv.write(path);
+        expect(File(path).readAsStringSync(), equals(sv.synthOutput));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('write() with multiFile emits a directory of files', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        // Construction with outputPath writes immediately.
+        SvService(mod, register: false, outputPath: dir.path, multiFile: true);
+        final files = dir.listSync().whereType<File>().toList();
+        expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('register false does not register', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
       ModuleServices.instance.reset();
       SvService(mod, register: false);
-      expect(ModuleServices.instance.svService, isNull);
+      expect(ModuleServices.instance.lookup<SvService>(), isNull);
     });
 
     test('throws if module not built', () {
