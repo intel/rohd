@@ -1132,10 +1132,9 @@ abstract class Module {
   /// Currently returns one long file in SystemVerilog, but in the future
   /// may have other output formats, languages, files, etc.
   ///
-  /// Deprecated: use [SvService] instead, which provides richer access to
-  /// per-module file contents, named maps, and individual file writing.
-  /// For the legacy one-shot API, prefer [SvService.synthOutput].
-  @Deprecated('Use SvService instead.')
+  /// For richer access to per-module file contents, named maps, and individual
+  /// file writing, see [SvService] (and [SvService.synthOutput] for the
+  /// equivalent one-shot string).
   String generateSynth() {
     if (!_hasBuilt) {
       throw ModuleNotBuiltException(this);
