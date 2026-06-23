@@ -10,6 +10,7 @@
 // Author: Auto-generated
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/examples/filter_bank_modules.dart';
@@ -1159,7 +1160,7 @@ void main() {
       await counter.build();
       final netSvc = NetlistService(counter);
 
-      final fullJson = netSvc.toJson();
+      final fullJson = netSvc.json;
       expect(fullJson, isNotNull);
 
       final parsed = jsonDecode(fullJson) as Map<String, dynamic>;
@@ -1190,6 +1191,46 @@ void main() {
       final netlist = parsed['netlist'] as Map<String, dynamic>;
       final modules = netlist['modules'] as Map<String, dynamic>;
       expect(modules, isNotEmpty);
+    });
+
+    test('NetlistService is an OutputService and registers itself', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      final netSvc = NetlistService(fb);
+
+      expect(netSvc, isA<OutputService>());
+      expect(ModuleServices.instance.lookup<NetlistService>(), same(netSvc));
+      expect(NetlistService.current, same(netSvc));
+
+      final summary = netSvc.toJson();
+      expect(summary['version'], equals(netSvc.version));
+      expect(summary['modules'], isList);
+
+      ModuleServices.instance.reset();
+      expect(ModuleServices.instance.lookup<NetlistService>(), isNull);
+    });
+
+    test('register false keeps NetlistService out of the registry', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      ModuleServices.instance.reset();
+      NetlistService(fb, register: false);
+      expect(ModuleServices.instance.lookup<NetlistService>(), isNull);
+    });
+
+    test('write() emits the full netlist JSON to a file', () async {
+      final fb = _buildFilterBank();
+      await fb.build();
+      final netSvc = NetlistService(fb, register: false);
+
+      final dir = Directory.systemTemp.createTempSync('rohd_netlist_');
+      try {
+        final path = '${dir.path}/netlist.json';
+        netSvc.write(path);
+        expect(File(path).readAsStringSync(), equals(netSvc.json));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
     });
   });
 

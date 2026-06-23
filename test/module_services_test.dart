@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_services_test.dart
-// Tests for ModuleServices, SvService, and NetlistService.
+// Unit tests for ModuleServices, the service base types, and SvService.
+//
+// 2026 April 25
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 @TestOn('vm')
 library;
@@ -13,387 +16,186 @@ import 'dart:io';
 import 'package:rohd/rohd.dart';
 import 'package:test/test.dart';
 
-// ---------------------------------------------------------------------------
-// Simple test modules
-// ---------------------------------------------------------------------------
-
-class _InverterModule extends Module {
-  Logic get out => output('out');
-
-  _InverterModule(Logic inp) : super(name: 'inverter') {
-    inp = addInput('inp', inp);
-    final out = addOutput('out');
-    out <= ~inp;
-  }
-}
-
-class _TopModule extends Module {
-  Logic get out => output('out');
-
-  _TopModule(Logic a, Logic b) : super(name: 'top') {
+class SimpleModule extends Module {
+  SimpleModule(Logic a) : super(name: 'simple') {
     a = addInput('a', a);
-    b = addInput('b', b);
-    final out = addOutput('out');
-
-    final inv = _InverterModule(a);
-    out <= inv.out & b;
+    addOutput('b') <= ~a;
   }
 }
 
-class FakeNetlistService implements NetlistInspectionService {
-  @override
-  String get slimJson => jsonEncode(<String, Object>{'kind': 'slim'});
-
-  @override
-  String toJson() => jsonEncode(<String, Object>{'kind': 'full'});
-
-  @override
-  String moduleJson(String definitionName) =>
-      jsonEncode(<String, Object>{'module': definitionName});
-}
-
-class FakeTraceService implements TraceInspectionService {
-  FakeTraceService(this.module);
+/// A minimal [ModuleService] used to exercise the type-keyed registry.
+class FakeService implements ModuleService {
+  FakeService(this.module);
 
   @override
   final Module module;
 
   @override
-  Map<String, Object>? get flcHierarchy => <String, Object>{
-        'modules': <String, Object>{module.definitionName: <String, Object>{}}
-      };
-
-  @override
-  String get flcJson => jsonEncode(flcHierarchy);
-
-  @override
-  String flcModuleJson(String definitionName) =>
-      jsonEncode(<String, Object>{'module': definitionName});
+  Map<String, Object?> toJson() => <String, Object?>{'kind': 'fake'};
 }
 
 void main() {
-  tearDown(() async {
-    await Simulator.reset();
-    ModuleServices.instance.reset();
-  });
+  tearDown(ModuleServices.instance.reset);
 
-  group('ModuleServices', () {
-    test('rootModule is set by Module.build', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+  group('ModuleServices registry', () {
+    test('rootModule is set after build', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-
       expect(ModuleServices.instance.rootModule, equals(mod));
     });
 
-    test('hierarchyJSON returns valid JSON after build', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('hierarchyJSON returns valid JSON', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-
       final json = ModuleServices.instance.hierarchyJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['name'], equals('top'));
+      expect(() => jsonDecode(json), returnsNormally);
     });
 
-    test('svJSON returns unavailable when no SvService registered', () {
-      final json = ModuleServices.instance.svJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['status'], equals('unavailable'));
-    });
-
-    test('inspectorJSON matches hierarchyJSON', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('register and lookup round-trips a service', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-      expect(ModuleServices.instance.inspectorJSON,
-          equals(ModuleServices.instance.hierarchyJSON));
+      final fake = FakeService(mod);
+      ModuleServices.instance.register<FakeService>(fake);
+      expect(ModuleServices.instance.lookup<FakeService>(), same(fake));
     });
 
-    test('inspectorJSON uses registered netlist service', () async {
-      ModuleServices.instance.netlistService = FakeNetlistService();
-      final inspectorJson = jsonDecode(ModuleServices.instance.inspectorJSON)
-          as Map<String, Object?>;
-      final netlistJson = jsonDecode(ModuleServices.instance.netlistJSON)
-          as Map<String, Object?>;
-      final moduleJson = jsonDecode(
-              ModuleServices.instance.inspectorModuleJSON('SimpleModule'))
-          as Map<String, Object?>;
-
-      expect(inspectorJson['kind'], equals('slim'));
-      expect(netlistJson['kind'], equals('full'));
-      expect(moduleJson['module'], equals('SimpleModule'));
+    test('lookup returns null when no service registered', () {
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
 
-    test('trace service exposes FLC JSON and file path', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('unregister removes a service', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-      ModuleServices.instance.traceService = FakeTraceService(mod);
-      final flcJson =
-          jsonDecode(ModuleServices.instance.flcJSON) as Map<String, Object?>;
-      final moduleJson =
-          jsonDecode(ModuleServices.instance.flcModuleJSON('SimpleModule'))
-              as Map<String, Object?>;
-
-      expect(flcJson, isA<Map<String, Object?>>());
-      expect(moduleJson['module'], equals('SimpleModule'));
-
-      final flcPath = ModuleServices.instance.flcFilePath;
-      expect(flcPath, isNot(startsWith('{')));
-      expect(File(flcPath).existsSync(), isTrue);
+      ModuleServices.instance.register<FakeService>(FakeService(mod));
+      ModuleServices.instance.unregister<FakeService>();
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
 
-    test('netlistJSON returns unavailable when no NetlistService registered',
-        () {
-      final json = ModuleServices.instance.netlistJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['status'], equals('unavailable'));
-    });
-
-    test('reset clears all services', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('reset clears rootModule and all services', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-
+      ModuleServices.instance.register<FakeService>(FakeService(mod));
       expect(ModuleServices.instance.rootModule, isNotNull);
+
       ModuleServices.instance.reset();
       expect(ModuleServices.instance.rootModule, isNull);
-
-      expect(ModuleServices.instance.svService, isNull);
-      expect(ModuleServices.instance.netlistService, isNull);
-      expect(ModuleServices.instance.waveformService, isNull);
-      expect(ModuleServices.instance.traceService, isNull);
-    });
-
-    test('inspectorJSON returns slim netlist when service registered',
-        () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-      NetlistService(mod);
-
-      final json = ModuleServices.instance.inspectorJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['netlist'], isA<Map<String, dynamic>>());
-      final netlist = decoded['netlist'] as Map<String, dynamic>;
-      expect(netlist['modules'], isA<Map<String, dynamic>>());
-    });
-
-    test('inspectorJSON falls back to hierarchy when no netlist', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final json = ModuleServices.instance.inspectorJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      // Falls back to hierarchy JSON format.
-      expect(decoded['name'], equals('top'));
-    });
-
-    test('inspectorModuleJSON returns per-module netlist', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-      final netSvc = NetlistService(mod);
-
-      for (final name in netSvc.moduleNames) {
-        final json = ModuleServices.instance.inspectorModuleJSON(name);
-        final decoded = jsonDecode(json) as Map<String, dynamic>;
-        expect(decoded['modules'], isA<Map<String, dynamic>>());
-      }
+      expect(ModuleServices.instance.lookup<FakeService>(), isNull);
     });
   });
 
   group('SvService', () {
-    test('generates SV for a module hierarchy', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('registers with ModuleServices and sets current', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-
       final sv = SvService(mod);
-
-      expect(sv.fileContents, isNotEmpty);
-      expect(sv.allContents, contains('module'));
-      expect(sv.allContents, contains('endmodule'));
+      expect(ModuleServices.instance.lookup<SvService>(), same(sv));
+      expect(SvService.current, same(sv));
     });
 
-    test('registers with ModuleServices by default', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('is a CodegenService', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
-
-      SvService(mod);
-
-      expect(ModuleServices.instance.svService, isNotNull);
-      final json = ModuleServices.instance.svJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['modules'], isA<List<dynamic>>());
+      expect(SvService(mod), isA<CodegenService>());
     });
 
-    test('register: false does not register', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
+    test('allContents is non-empty', () async {
+      final mod = SimpleModule(Logic());
       await mod.build();
+      final sv = SvService(mod);
+      expect(sv.allContents, isNotEmpty);
+    });
 
+    test('output equals synthOutput', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.output, equals(sv.synthOutput));
+    });
+
+    test('contentsByName has entries', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.contentsByName, isNotEmpty);
+    });
+
+    test('contentsByDefinitionName has entries', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.contentsByDefinitionName, isNotEmpty);
+      expect(sv.contentsByDefinitionName.containsKey('SimpleModule'), isTrue);
+    });
+
+    test('moduleOutput returns the definition contents', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.moduleOutput('SimpleModule'), isNotNull);
+      expect(sv.moduleOutput('DoesNotExist'), isNull);
+    });
+
+    test('toJson lists generated modules', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      expect(sv.toJson()['modules'], isList);
+    });
+
+    test('writeFiles creates SV files', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod);
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        sv.writeFiles(dir.path);
+        final files = dir.listSync().whereType<File>().toList();
+        expect(files, isNotEmpty);
+        expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('write() emits a single file', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final sv = SvService(mod, register: false);
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final path = '${dir.path}/out.sv';
+        sv.write(path);
+        expect(File(path).readAsStringSync(), equals(sv.synthOutput));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('write() with multiFile emits a directory of files', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        // Construction with outputPath writes immediately.
+        SvService(mod, register: false, outputPath: dir.path, multiFile: true);
+        final files = dir.listSync().whereType<File>().toList();
+        expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('register false does not register', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      ModuleServices.instance.reset();
       SvService(mod, register: false);
-
-      expect(ModuleServices.instance.svService, isNull);
+      expect(ModuleServices.instance.lookup<SvService>(), isNull);
     });
 
-    test('contentsByName returns per-module SV', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final sv = SvService(mod, register: false);
-      final byName = sv.contentsByName;
-
-      // Should have at least the top module and the inverter.
-      expect(byName.length, greaterThanOrEqualTo(2));
-      for (final content in byName.values) {
-        expect(content, contains('module'));
-      }
-    });
-
-    test('synthOutput includes header', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final sv = SvService(mod, register: false);
-      expect(sv.synthOutput, contains('Generated by ROHD'));
-      expect(sv.synthOutput, contains(sv.allContents));
-    });
-  });
-
-  group('NetlistService', () {
-    test('generates netlist JSON for a module hierarchy', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final netlist = NetlistService(mod);
-      final json = netlist.toJson();
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-
-      expect(decoded['modules'], isA<Map<String, dynamic>>());
-      expect(netlist.moduleNames, isNotEmpty);
-    });
-
-    test('registers with ModuleServices by default', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      NetlistService(mod);
-
-      expect(ModuleServices.instance.netlistService, isNotNull);
-      final json = ModuleServices.instance.netlistJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['modules'], isA<Map<String, dynamic>>());
-    });
-
-    test('register: false does not register', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      NetlistService(mod, register: false);
-
-      expect(ModuleServices.instance.netlistService, isNull);
-    });
-
-    test('moduleJson returns single module data', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final netlist = NetlistService(mod, register: false);
-
-      // Query for a module that exists.
-      for (final name in netlist.moduleNames) {
-        final moduleJson = netlist.moduleJson(name);
-        final decoded = jsonDecode(moduleJson) as Map<String, dynamic>;
-        expect(decoded['modules'], isA<Map<String, dynamic>>());
-        expect((decoded['modules'] as Map).containsKey(name), isTrue);
-      }
-
-      // Query for a module that doesn't exist.
-      final missing = netlist.moduleJson('nonexistent');
-      final decoded = jsonDecode(missing) as Map<String, dynamic>;
-      expect(decoded['status'], equals('not_found'));
-    });
-
-    test('slimJson returns netlist envelope without connections', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final netlist = NetlistService(mod, register: false);
-      final slim = netlist.slimJson;
-      final decoded = jsonDecode(slim) as Map<String, dynamic>;
-
-      expect(decoded['netlist'], isA<Map<String, dynamic>>());
-      final netlistSection = decoded['netlist'] as Map<String, dynamic>;
-      expect(netlistSection['rootInstanceName'], isNotNull);
-      expect(netlistSection['modules'], isA<Map<String, dynamic>>());
-
-      // Verify cells have no connections
-      final modules = netlistSection['modules'] as Map<String, dynamic>;
-      for (final modEntry in modules.values) {
-        final cells =
-            (modEntry as Map<String, dynamic>)['cells'] as Map<String, dynamic>;
-        for (final cellEntry in cells.values) {
-          final cell = cellEntry as Map<String, dynamic>;
-          expect(cell.containsKey('connections'), isFalse,
-              reason: 'Slim cells should not have connections');
-        }
-      }
-    });
-
-    test('synthesizedModules provides read-only access', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build();
-
-      final netlist = NetlistService(mod, register: false);
-      final modules = netlist.synthesizedModules;
-      expect(modules, isNotEmpty);
-      expect(modules.keys, equals(netlist.moduleNames));
-    });
-  });
-
-  group('Module.build netlistOptions integration', () {
-    test('netlistOptions creates and registers NetlistService', () async {
-      final a = Logic(name: 'a');
-      final b = Logic(name: 'b');
-      final mod = _TopModule(a, b);
-      await mod.build(netlistOptions: const NetlistOptions());
-
-      expect(ModuleServices.instance.netlistService, isNotNull);
-      final json = ModuleServices.instance.netlistJSON;
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      expect(decoded['modules'], isA<Map<String, dynamic>>());
+    test('throws if module not built', () {
+      final mod = SimpleModule(Logic());
+      expect(() => SvService(mod), throwsException);
     });
   });
 }

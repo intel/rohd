@@ -32,15 +32,30 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// // Or get the concatenated output (like generateSynth):
 /// print(sv.allContents);
 /// ```
-class SvService {
+class SvService extends CodegenService {
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
   ///
   /// Matches the format historically produced by `Module.generateSynth()`.
   static const moduleSeparator = '\n\n////////////////////\n\n';
 
+  /// The most recently registered [SvService], or `null`.
+  static SvService? current;
+
   /// The top-level [Module] being synthesized.
+  @override
   final Module module;
+
+  /// The default location written by [write].
+  ///
+  /// A directory when [multiFile] is `true`, otherwise a single file path.
+  @override
+  final String? outputPath;
+
+  /// Whether [write] emits one `.sv` file per module definition (`true`) or a
+  /// single concatenated file (`false`).
+  @override
+  final bool multiFile;
 
   /// The underlying [SynthBuilder] that drove synthesis.
   late final SynthBuilder synthBuilder;
@@ -50,40 +65,38 @@ class SvService {
 
   /// Creates an [SvService] for [module].
   ///
-  /// [module] must already be built.  Set [register] to `true` (the
-  /// default) to register this service with [ModuleServices] for
-  /// DevTools access.
+  /// [module] must already be built.
   ///
-  /// If [outputPath] is provided, the concatenated SV output (with
-  /// header) is written to that file.  The parent directory is created
-  /// if needed.
-  SvService(this.module, {bool register = true, String? outputPath}) {
+  /// If [outputPath] is provided, output is written immediately: a directory
+  /// of per-module files when [multiFile] is `true`, otherwise the
+  /// concatenated SV output (with header) to that single file.
+  SvService(this.module,
+      {bool register = true, this.outputPath, this.multiFile = false}) {
     if (!module.hasBuilt) {
-      throw Exception('Module must be built before creating SvService. '
-          'Call build() first.');
+      throw Exception(
+        'Module must be built before creating SvService. '
+        'Call build() first.',
+      );
     }
 
     synthBuilder = SynthBuilder(module, SystemVerilogSynthesizer());
     fileContents = synthBuilder.getSynthFileContents();
 
     if (outputPath != null) {
-      final file = File(outputPath);
-      file.parent.createSync(recursive: true);
-      file.writeAsStringSync(synthOutput);
+      write();
     }
 
     if (register) {
-      ModuleServices.instance.svService = this;
+      current = this;
+      ModuleServices.instance.register<SvService>(this);
     }
   }
 
   /// All [SynthesisResult]s produced by synthesis.
   Set<SynthesisResult> get synthesisResults => synthBuilder.synthesisResults;
 
-  // ─── Single-file output ───────────────────────────────────────
-
-  /// Returns the concatenated SystemVerilog module definitions as a
-  /// single string, without the generation header.
+  /// Returns the concatenated SystemVerilog module definitions as a single
+  /// string, without the generation header.
   ///
   /// For the full output with header (matching `Module.generateSynth()`),
   /// use [synthOutput].
@@ -102,20 +115,29 @@ class SvService {
 
   /// Returns the full single-file SystemVerilog output with header,
   /// identical to `Module.generateSynth()`.
-  String get synthOutput => synthHeader + allContents;
+  ///
+  /// Computed once and cached so the timestamped header is stable for the
+  /// lifetime of this service.
+  late final String synthOutput = synthHeader + allContents;
+
+  /// The combined single-file generated output (alias for [synthOutput]).
+  @override
+  String get output => synthOutput;
 
   /// Returns a map from module definition name to its SV file contents.
   ///
   /// Keys are [SynthesisResult.instanceTypeName] (the uniquified definition
   /// name used in the generated SV).
-  Map<String, String> get contentsByName =>
-      {for (final fc in fileContents) fc.name: fc.contents};
+  Map<String, String> get contentsByName => {
+        for (final fc in fileContents) fc.name: fc.contents,
+      };
 
   /// Returns a map from module definition name
   /// ([Module.definitionName]) to its SV file contents.
   ///
   /// This uses the original definition name (not uniquified), matching
   /// the keys used by FLC trace data.
+  @override
   Map<String, String> get contentsByDefinitionName {
     final result = <String, String>{};
     for (final sr in synthesisResults) {
@@ -140,10 +162,33 @@ class SvService {
     }
   }
 
+  /// Writes the SV output to [path], or to [outputPath] when [path] is omitted.
+  ///
+  /// When [multiFile] is `true`, writes one `.sv` file per module definition
+  /// into the target directory (see [writeFiles]); otherwise writes the
+  /// concatenated [synthOutput] to the target file.
+  @override
+  void write([String? path]) {
+    final target = path ?? outputPath;
+    if (target == null) {
+      throw ArgumentError(
+        'No output path provided: pass a path to write() or set outputPath.',
+      );
+    }
+    if (multiFile) {
+      writeFiles(target);
+    } else {
+      File(target)
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync(synthOutput);
+    }
+  }
+
   /// Returns a JSON-serialisable summary of the SV synthesis.
   ///
   /// Contains the list of generated module definition names.
+  @override
   Map<String, Object> toJson() => <String, Object>{
-        'modules': [for (final fc in fileContents) fc.name]
+        'modules': [for (final fc in fileContents) fc.name],
       };
 }

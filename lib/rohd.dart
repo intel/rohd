@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 export 'src/diagnostics/inspector_service.dart';
+export 'src/diagnostics/module_service.dart';
 export 'src/diagnostics/module_services.dart';
 export 'src/diagnostics/waveform_service.dart';
 export 'src/exceptions/exceptions.dart';

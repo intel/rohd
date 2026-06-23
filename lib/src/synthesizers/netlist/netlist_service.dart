@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:rohd/rohd.dart';
 
@@ -25,17 +26,30 @@ import 'package:rohd/rohd.dart';
 /// final netlist = NetlistService(dut);
 ///
 /// // Full hierarchy JSON:
-/// print(netlist.toJson());
+/// print(netlist.json);
 ///
 /// // Single module (lazy, cached):
 /// print(netlist.moduleJson('FilterChannel'));
 /// ```
-class NetlistService implements NetlistInspectionService {
+class NetlistService extends OutputService {
   /// The current format version for netlist JSON produced by this service.
   static const String formatVersion = '0.0.5';
 
+  /// The most recently registered [NetlistService], or `null`.
+  static NetlistService? current;
+
   /// The top-level [Module] being synthesized.
+  @override
   final Module module;
+
+  /// The default location written by [write], or `null`.
+  @override
+  final String? outputPath;
+
+  /// Whether [write] emits multiple files. Netlist output is a single JSON
+  /// document, so this is always `false`.
+  @override
+  bool get multiFile => false;
 
   /// The [NetlistSynthesizer] used for synthesis.
   late final NetlistSynthesizer synthesizer;
@@ -67,6 +81,7 @@ class NetlistService implements NetlistInspectionService {
     NetlistOptions options = const NetlistOptions(),
     String? packageRoot,
     bool register = true,
+    this.outputPath,
   }) {
     if (!module.hasBuilt) {
       throw Exception(
@@ -89,8 +104,13 @@ class NetlistService implements NetlistInspectionService {
         (decoded['modules'] as Map<String, dynamic>?) ?? <String, dynamic>{};
     _loadedVersion = decoded['version'] as String?;
 
+    if (outputPath != null) {
+      write();
+    }
+
     if (register) {
-      ModuleServices.instance.netlistService = this;
+      current = this;
+      ModuleServices.instance.register<NetlistService>(this);
     }
   }
 
@@ -122,8 +142,33 @@ class NetlistService implements NetlistInspectionService {
   bool get isCompatible => isCompatibleVersion(version);
 
   /// Returns the full netlist hierarchy as a JSON string.
+  String get json => _fullJson;
+
+  /// Writes the full netlist [json] to [path], or to [outputPath] when [path]
+  /// is omitted.
   @override
-  String toJson() => _fullJson;
+  void write([String? path]) {
+    final target = path ?? outputPath;
+    if (target == null) {
+      throw ArgumentError(
+        'No output path provided: pass a path to write() or set outputPath.',
+      );
+    }
+    File(target)
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync(_fullJson);
+  }
+
+  /// Returns a JSON-serialisable summary of the netlist synthesis.
+  ///
+  /// Contains the netlist format version and the list of module definition
+  /// names. For the full netlist document, use [json].
+  @override
+  Map<String, Object?> toJson() => <String, Object?>{
+        'creator': 'ROHD netlist synthesizer',
+        'version': version,
+        'modules': moduleNames.toList(),
+      };
 
   /// Returns the netlist JSON for a single module [definitionName].
   ///
@@ -133,7 +178,6 @@ class NetlistService implements NetlistInspectionService {
   /// for incremental module fetches.
   ///
   /// If the module is not found, returns a JSON error object.
-  @override
   String moduleJson(String definitionName) =>
       _moduleJsonCache.putIfAbsent(definitionName, () {
         final modData = _modulesMap[definitionName];
@@ -170,7 +214,6 @@ class NetlistService implements NetlistInspectionService {
   /// + port_widths), and netnames so the DevTools extension can render the
   /// hierarchy and signal tree without the full connectivity payload.
   /// Full per-module connectivity is fetched on demand via [moduleJson].
-  @override
   String get slimJson => _slimJsonCache ??= _buildSlimJson();
 
   String _buildSlimJson() {

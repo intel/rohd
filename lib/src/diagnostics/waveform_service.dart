@@ -86,8 +86,12 @@ enum OverwritePolicy {
 ///   }
 /// }
 /// ```
-class WaveformService {
+class WaveformService implements ModuleService {
+  /// The most recently registered [WaveformService], or `null`.
+  static WaveformService? current;
+
   /// The top-level [Module] being captured.
+  @override
   final Module module;
 
   /// Path of the output waveform file.
@@ -217,7 +221,8 @@ class WaveformService {
     });
 
     if (register) {
-      ModuleServices.instance.waveformService = this;
+      current = this;
+      ModuleServices.instance.register<WaveformService>(this);
     }
   }
 
@@ -409,6 +414,7 @@ class WaveformService {
   // ─── Inspection ───────────────────────────────────────────────
 
   /// Returns a JSON-serialisable summary of this service.
+  @override
   Map<String, Object> toJson() => {
         'outputPath': outputPath,
         'format': format.name,

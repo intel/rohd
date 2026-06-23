@@ -35,7 +35,7 @@ void main() {
     final netSvc = NetlistService(module);
 
     // ── Pull full netlist in one shot ─────────────────────────────
-    final fullJsonStr = netSvc.toJson();
+    final fullJsonStr = netSvc.json;
     final fullNetlist = jsonDecode(fullJsonStr) as Map<String, dynamic>;
     final fullModules = fullNetlist['modules'] as Map<String, dynamic>;
 
