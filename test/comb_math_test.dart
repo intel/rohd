@@ -218,6 +218,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
   // thank you to @chykon in issue #158 for providing this example!
@@ -236,6 +237,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   group('simpler example', () {
@@ -264,6 +266,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 
@@ -293,6 +296,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 
