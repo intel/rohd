@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2026 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_sub_module_instantiation.dart
@@ -11,7 +11,7 @@ import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// Represents an instantiation of a module within another module.
 class SynthSubModuleInstantiation {
@@ -25,15 +25,13 @@ class SynthSubModuleInstantiation {
   String get name => _name!;
 
   /// Selects a name for this module instance. Must be called exactly once.
-  ///
-  /// Names are allocated from [parentModule]'s [Namer]'s shared namespace
-  /// via [Namer.allocateName].
-  void pickName(Module parentModule) {
+  void pickName(Uniquifier uniquifier) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = parentModule.namer.allocateName(
-      module.uniqueInstanceName,
+    _name = uniquifier.getUniqueName(
+      initialName: module.uniqueInstanceName,
       reserved: module.reserveName,
+      nullStarter: 'm',
     );
   }
 

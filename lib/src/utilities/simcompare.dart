@@ -47,8 +47,12 @@ class Vector {
   /// Computes a SystemVerilog code string that checks in a SystemVerilog
   /// simulation whether a signal [sigName] has the [expected] value given
   /// the [inputValues].
-  static String _errorCheckString(String sigName, dynamic expected,
-      LogicValue expectedVal, String inputValues) {
+  static String _errorCheckString(
+    String sigName,
+    dynamic expected,
+    LogicValue expectedVal,
+    String inputValues,
+  ) {
     if (expected is! int &&
         expected is! LogicValue &&
         expected is! BigInt &&
@@ -58,8 +62,9 @@ class Vector {
 
     String expectedHexStr;
     if (expected is int) {
-      expectedHexStr =
-          BigInt.from(expected).toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr = BigInt.from(
+        expected,
+      ).toUnsigned(expectedVal.width).toRadixString(16);
       expectedHexStr = '0x$expectedHexStr';
     } else if (expected is BigInt) {
       expectedHexStr = expected.toUnsigned(expectedVal.width).toRadixString(16);
@@ -84,8 +89,10 @@ class Vector {
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
-        final fullVal =
-            LogicValue.of(inputValues[signalName], width: signal.width);
+        final fullVal = LogicValue.of(
+          inputValues[signalName],
+          width: signal.width,
+        );
         for (final leaf in signal.leafElements) {
           final subVal = fullVal.getRange(index, index + leaf.width);
           arrAssigns.writeln('${leaf.structureName} = $subVal;');
@@ -93,8 +100,10 @@ class Vector {
         }
         return arrAssigns.toString();
       } else {
-        final signalVal =
-            LogicValue.of(inputValues[signalName], width: signal.width);
+        final signalVal = LogicValue.of(
+          inputValues[signalName],
+          width: signal.width,
+        );
         return '$signalName = $signalVal;';
       }
     }).join('\n');
@@ -112,19 +121,30 @@ class Vector {
         var index = 0;
         for (final leaf in outputPort.leafElements) {
           final subVal = expectedValue.getRange(index, index + leaf.width);
-          checksList.add(_errorCheckString(
-              leaf.structureName, subVal, subVal, inputStimulus));
+          checksList.add(
+            _errorCheckString(
+              leaf.structureName,
+              subVal,
+              subVal,
+              inputStimulus,
+            ),
+          );
           index += leaf.width;
         }
       } else {
-        checksList.add(_errorCheckString(
-            outputName, expected, expectedValue, inputStimulus));
+        checksList.add(
+          _errorCheckString(outputName, expected, expectedValue, inputStimulus),
+        );
       }
     }
     final checks = checksList.join('\n');
 
-    final tbVerilog =
-        [assignments, '#$_offset', checks, '#${_period - _offset}'].join('\n');
+    final tbVerilog = [
+      assignments,
+      '#$_offset',
+      checks,
+      '#${_period - _offset}',
+    ].join('\n');
     return tbVerilog;
   }
 }
@@ -137,8 +157,11 @@ abstract class SimCompare {
   ///
   /// If [enableChecking] is set to false, then it will drive the simulation
   /// but not check that the outputs match.
-  static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
-      {bool enableChecking = true}) async {
+  static Future<void> checkFunctionalVector(
+    Module module,
+    List<Vector> vectors, {
+    bool enableChecking = true,
+  }) async {
     var timestamp = 1;
 
     final ioInputDrivers = <String, Logic>{};
@@ -158,54 +181,70 @@ abstract class SimCompare {
       Simulator.registerAction(timestamp, () async {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
-          (module.tryInput(signalName) ?? getIoInputDriver(signalName))
-              .put(value);
+          (module.tryInput(signalName) ?? getIoInputDriver(signalName)).put(
+            value,
+          );
         }
 
         if (enableChecking) {
-          unawaited(Simulator.postTick.first.then((value) {
-            for (final signalName in vector.expectedOutputValues.keys) {
-              final value = vector.expectedOutputValues[signalName];
-              final o =
-                  module.tryOutput(signalName) ?? module.inOut(signalName);
+          unawaited(
+            Simulator.postTick.first.then((value) {
+              for (final signalName in vector.expectedOutputValues.keys) {
+                final value = vector.expectedOutputValues[signalName];
+                final o =
+                    module.tryOutput(signalName) ?? module.inOut(signalName);
 
-              final errorReason =
-                  'For vector #${vectors.indexOf(vector)} $vector,'
-                  ' expected $o to be $value, but it was ${o.value}.';
-              if (value is int) {
-                expect(o.value.isValid, isTrue, reason: errorReason);
-                expect(o.value.toBigInt(),
+                final errorReason =
+                    'For vector #${vectors.indexOf(vector)} $vector,'
+                    ' expected $o to be $value, but it was ${o.value}.';
+                if (value is int) {
+                  expect(o.value.isValid, isTrue, reason: errorReason);
+                  expect(
+                    o.value.toBigInt(),
                     equals(BigInt.from(value).toUnsigned(o.width)),
-                    reason: errorReason);
-              } else if (value is BigInt) {
-                expect(o.value.isValid, isTrue, reason: errorReason);
-                expect(o.value.toBigInt(), equals(value), reason: errorReason);
-              } else if (value is LogicValue) {
-                if (o.width > 1 &&
-                    (value == LogicValue.x || value == LogicValue.z)) {
-                  for (final oBit in o.value.toList()) {
-                    expect(oBit, equals(value), reason: errorReason);
+                    reason: errorReason,
+                  );
+                } else if (value is BigInt) {
+                  expect(o.value.isValid, isTrue, reason: errorReason);
+                  expect(
+                    o.value.toBigInt(),
+                    equals(value),
+                    reason: errorReason,
+                  );
+                } else if (value is LogicValue) {
+                  if (o.width > 1 &&
+                      (value == LogicValue.x || value == LogicValue.z)) {
+                    for (final oBit in o.value.toList()) {
+                      expect(oBit, equals(value), reason: errorReason);
+                    }
+                  } else {
+                    expect(o.value, equals(value), reason: errorReason);
                   }
+                } else if (value is String) {
+                  expect(
+                    o.value,
+                    LogicValue.of(value, width: o.width),
+                    reason: errorReason,
+                  );
                 } else {
-                  expect(o.value, equals(value), reason: errorReason);
+                  throw NonSupportedTypeException(value);
                 }
-              } else if (value is String) {
-                expect(o.value, LogicValue.of(value, width: o.width),
-                    reason: errorReason);
-              } else {
-                throw NonSupportedTypeException(value);
               }
-            }
-          }).catchError(test: (error) => error is Exception,
-              (Object err, StackTrace stackTrace) {
-            Simulator.throwException(err as Exception, stackTrace);
-          }));
+            }).catchError(test: (error) => error is Exception, (
+              Object err,
+              StackTrace stackTrace,
+            ) {
+              Simulator.throwException(err as Exception, stackTrace);
+            }),
+          );
         }
       });
       timestamp += Vector._period;
     }
-    Simulator.registerAction(timestamp + Vector._period,
-        () {}); // just so it does one more thing at the end
+    Simulator.registerAction(
+      timestamp + Vector._period,
+      () {},
+    ); // just so it does one more thing at the end
     Simulator.setMaxSimTime(timestamp + 2 * Vector._period);
     await Simulator.run();
   }
@@ -213,53 +252,66 @@ abstract class SimCompare {
   /// A collection of warnings that are fine to ignore usually.
   static final List<RegExp> _knownWarnings = [
     RegExp('sorry: Case unique/unique0 qualities are ignored.'),
-    RegExp(r'sorry: constant selects in always_\* processes'
-        ' are not currently supported'),
+    RegExp(
+      r'sorry: constant selects in always_\* processes'
+      ' are not currently supported',
+    ),
     RegExp('warning: always_comb process has no sensitivities'),
-    RegExp('finish called at')
+    RegExp('finish called at'),
   ];
 
   /// Executes [vectors] against the Icarus Verilog simulator and checks
   /// that it passes.
-  static void checkIverilogVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      bool dumpWaves = false,
-      List<String> iverilogExtraArgs = const [],
-      bool allowWarnings = false,
-      bool maskKnownWarnings = true,
-      bool enableChecking = true,
-      bool buildOnly = false}) {
-    final result = iverilogVector(module, vectors,
-        moduleName: moduleName,
-        dontDeleteTmpFiles: dontDeleteTmpFiles,
-        dumpWaves: dumpWaves,
-        iverilogExtraArgs: iverilogExtraArgs,
-        allowWarnings: allowWarnings,
-        maskKnownWarnings: maskKnownWarnings,
-        buildOnly: buildOnly);
+  static void checkIverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool enableChecking = true,
+    bool buildOnly = false,
+  }) {
+    final result = iverilogVector(
+      module,
+      vectors,
+      moduleName: moduleName,
+      dontDeleteTmpFiles: dontDeleteTmpFiles,
+      dumpWaves: dumpWaves,
+      iverilogExtraArgs: iverilogExtraArgs,
+      allowWarnings: allowWarnings,
+      maskKnownWarnings: maskKnownWarnings,
+      buildOnly: buildOnly,
+    );
     if (enableChecking) {
       expect(result, true);
     }
   }
 
   /// Executes [vectors] against the Icarus Verilog simulator.
-  static bool iverilogVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      bool dumpWaves = false,
-      List<String> iverilogExtraArgs = const [],
-      bool allowWarnings = false,
-      bool maskKnownWarnings = true,
-      bool buildOnly = false}) {
+  static bool iverilogVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    bool dumpWaves = false,
+    List<String> iverilogExtraArgs = const [],
+    bool allowWarnings = false,
+    bool maskKnownWarnings = true,
+    bool buildOnly = false,
+  }) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
       return true;
     }
 
-    String signalDeclaration(String signalName,
-        {String Function(String original)? adjust,
-        String? signalTypeOverride}) {
+    String signalDeclaration(
+      String signalName, {
+      String Function(String original)? adjust,
+      String? signalTypeOverride,
+    }) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
       final signalType = signalTypeOverride ??
@@ -272,10 +324,14 @@ abstract class SimCompare {
       }
 
       if (signal is LogicArray) {
-        final unpackedDims =
-            signal.dimensions.getRange(0, signal.numUnpackedDimensions);
-        final packedDims = signal.dimensions
-            .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
+        final unpackedDims = signal.dimensions.getRange(
+          0,
+          signal.numUnpackedDimensions,
+        );
+        final packedDims = signal.dimensions.getRange(
+          signal.numUnpackedDimensions,
+          signal.dimensions.length,
+        );
         // ignore: prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
@@ -293,35 +349,44 @@ abstract class SimCompare {
     final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
       for (final v in vectors) ...v.inputValues.keys,
-      for (final v in vectors) ...v.expectedOutputValues.keys
+      for (final v in vectors) ...v.expectedOutputValues.keys,
     };
 
     late final tbWireUniquifier = Uniquifier();
     late final alreadyMappedLogicToWires = <String, String>{};
     String toTbWireName(String name) => alreadyMappedLogicToWires.putIfAbsent(
-        name, () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'));
+          name,
+          () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'),
+        );
 
-    final logicToWireMapping = Map.fromEntries(vectors
-        .map((v) => v.inputValues.keys)
-        .flattened
-        .where((name) => module.tryInOut(name) != null)
-        .map((name) => MapEntry(name, toTbWireName(name))));
+    final logicToWireMapping = Map.fromEntries(
+      vectors
+          .map((v) => v.inputValues.keys)
+          .flattened
+          .where((name) => module.tryInOut(name) != null)
+          .map((name) => MapEntry(name, toTbWireName(name))),
+    );
 
     final localDeclarations = [
       ...allSignals.map((e) {
-        final sigDecl = signalDeclaration(e,
-            signalTypeOverride:
-                logicToWireMapping.containsKey(e) ? 'logic' : null);
+        final sigDecl = signalDeclaration(
+          e,
+          signalTypeOverride:
+              logicToWireMapping.containsKey(e) ? 'logic' : null,
+        );
         return '$sigDecl;';
       }),
       ...logicToWireMapping.entries.map((e) {
         final logicName = e.key;
         final wireName = e.value;
 
-        final sigDecl = signalDeclaration(logicName,
-            adjust: toTbWireName, signalTypeOverride: 'wire');
+        final sigDecl = signalDeclaration(
+          logicName,
+          adjust: toTbWireName,
+          signalTypeOverride: 'wire',
+        );
         return '$sigDecl; assign $wireName = $logicName;';
-      })
+      }),
     ].join('\n');
 
     final moduleConnections =
@@ -356,13 +421,18 @@ abstract class SimCompare {
       stimulus,
       r'$finish;', // so the test doesn't run forever if there's a clock gen
       'end',
-      'endmodule'
+      'endmodule',
     ].join('\n');
 
     Directory(dir).createSync(recursive: true);
     File(tmpTestFile).writeAsStringSync(testbench);
-    final compileResult = Process.runSync('iverilog',
-        ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
+    final compileResult = Process.runSync('iverilog', [
+      '-g2012',
+      '-o',
+      tmpOutput,
+      ...iverilogExtraArgs,
+      tmpTestFile,
+    ]);
     bool printIfContentsAndCheckError(dynamic output) {
       final maskedOutput = output
           .toString()
@@ -382,9 +452,12 @@ abstract class SimCompare {
         print(maskedOutput);
       }
 
-      return output.toString().contains(RegExp(
-          ['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
-          caseSensitive: false));
+      return output.toString().contains(
+            RegExp(
+              ['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
+              caseSensitive: false,
+            ),
+          );
     }
 
     if (printIfContentsAndCheckError(compileResult.stdout)) {
@@ -450,26 +523,35 @@ abstract class SimCompare {
   /// Returns the directory containing systemc.h.gch, or null on failure.
   ///
   /// In CI, the PCH is pre-built by `tool/gh_actions/setup_systemc_pch.sh`
-  /// before tests run, so this just finds it on disk. Locally it builds
-  /// on first use (safe because local runs are typically sequential).
+  /// before tests run, so this first looks for the shared CI path. Locally,
+  /// each test process builds its own PCH directory to avoid parallel races.
   static String? _ensurePch(String scHome, String cxxStd) {
     if (_pchPath != null) {
       return _pchPath;
     }
 
     const dir = 'tmp_test';
-    const pchDir = '$dir/pch';
-    const gchFile = '$pchDir/systemc.h.gch';
+    const sharedPchDir = '$dir/pch';
+    const sharedGchFile = '$sharedPchDir/systemc.h.gch';
 
-    // Reuse if already on disk (pre-built by CI or a previous run)
+    // Reuse the CI-prebuilt PCH if available.
+    if (File(sharedGchFile).existsSync()) {
+      return _pchPath = sharedPchDir;
+    }
+
+    final pchDir = '$dir/${_systemCTempPrefix}_pch';
+    final gchFile = '$pchDir/systemc.h.gch';
+
+    // Reuse if this process already built it on disk.
     if (File(gchFile).existsSync()) {
       return _pchPath = pchDir;
     }
 
     Directory(pchDir).createSync(recursive: true);
 
-    // Copy the original header next to the .gch so g++ matches them
-    File('$scHome/systemc.h').copySync('$pchDir/systemc.h');
+    // Copy the original header next to the .gch so g++ matches them.
+    final pchHeader = '$pchDir/systemc.h';
+    File('$scHome/systemc.h').copySync(pchHeader);
 
     final args = [
       '-std=$cxxStd',
@@ -478,7 +560,7 @@ abstract class SimCompare {
       'c++-header',
       '-o',
       gchFile,
-      '$scHome/systemc.h'
+      pchHeader,
     ];
     final result = Process.runSync('g++', args);
     if (result.exitCode != 0) {
@@ -540,9 +622,7 @@ abstract class SimCompare {
       final dir = Directory('tmp_test');
       if (dir.existsSync()) {
         for (final entity in dir.listSync()) {
-          // Use entity.path (not entity.uri) to get the basename: Directory.uri
-          // always appends a trailing slash, making pathSegments.last == "".
-          final name = entity.path.split('/').last;
+          final name = entity.uri.pathSegments.last;
 
           // Remove only SystemC artifacts owned by this test process. Other
           // test isolates may be compiling or running from the same tmp_test
@@ -570,12 +650,14 @@ abstract class SimCompare {
   /// sets without recompilation. Use in `setUpAll` for test groups.
   /// Results are cached — calling this with the same module definition
   /// returns the previously compiled binary.
-  static SystemCExecutable? buildSystemCExecutable(Module module,
-      {String? moduleName,
-      String? clockName,
-      String? resetName,
-      String? systemcHome,
-      String? systemcLib}) {
+  static SystemCExecutable? buildSystemCExecutable(
+    Module module, {
+    String? moduleName,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+  }) {
     if (kIsWeb) {
       return null;
     }
@@ -653,7 +735,8 @@ abstract class SimCompare {
     // Clock
     for (final clkName in clockSignals) {
       tb.writeln(
-          '    sc_clock $clkName("$clkName", ${Vector._period}, SC_NS);');
+        '    sc_clock $clkName("$clkName", ${Vector._period}, SC_NS);',
+      );
     }
 
     // Signals for all non-clock input ports
@@ -662,15 +745,17 @@ abstract class SimCompare {
         continue;
       }
       tb.writeln(
-          '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
-          ' ${entry.key};');
+        '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
+        ' ${entry.key};',
+      );
     }
 
     // Signals for all output ports
     for (final entry in outputPorts.entries) {
       tb.writeln(
-          '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
-          ' ${entry.key};');
+        '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
+        ' ${entry.key};',
+      );
     }
 
     tb
@@ -752,9 +837,11 @@ abstract class SimCompare {
           ..writeln('                if ($name.read() != _tb_exp) {');
       }
       tb
-        ..writeln('                    cout << "ERROR vector " << _tb_v'
-            ' << ": expected $name=" << _tb_exp'
-            ' << ", got " << $name.read() << endl;')
+        ..writeln(
+          '                    cout << "ERROR vector " << _tb_v'
+          ' << ": expected $name=" << _tb_exp'
+          ' << ", got " << $name.read() << endl;',
+        )
         ..writeln('                    _tb_errors++;')
         ..writeln('                }');
     }
@@ -768,8 +855,10 @@ abstract class SimCompare {
     tb
       ..writeln('        }')
       ..writeln()
-      ..writeln('        sc_start(sc_time('
-          '${Vector._period - Vector._offset}, SC_NS));')
+      ..writeln(
+        '        sc_start(sc_time('
+        '${Vector._period - Vector._offset}, SC_NS));',
+      )
       ..writeln('    }')
       ..writeln()
       ..writeln('    if (_tb_errors == 0) {')
@@ -785,8 +874,9 @@ abstract class SimCompare {
     // Write and compile
     const dir = 'tmp_test';
     Directory(dir).createSync(recursive: true);
-    final compileDir = Directory(dir)
-        .createTempSync('${_systemCTempPrefix}_${generatedSystemC.hashCode}_');
+    final compileDir = Directory(
+      dir,
+    ).createTempSync('${_systemCTempPrefix}_${generatedSystemC.hashCode}_');
     final tmpCppFile = '${compileDir.path}/main.cpp';
     final tmpOutput = '${compileDir.path}/sim';
     File(tmpCppFile).writeAsStringSync(testbenchCode);
@@ -807,7 +897,7 @@ abstract class SimCompare {
       tmpOutput,
       tmpCppFile,
       '-L$resolvedLib',
-      '-lsystemc'
+      '-lsystemc',
     ]);
     if (compileResult.exitCode != 0) {
       print('SystemC compilation failed:');
@@ -817,12 +907,13 @@ abstract class SimCompare {
     }
 
     final exe = SystemCExecutable._(
-        binaryPath: tmpOutput,
-        cppFile: tmpCppFile,
-        scLib: resolvedLib,
-        clockSignals: clockSignals,
-        inputPorts: inputPorts,
-        outputPorts: outputPorts);
+      binaryPath: tmpOutput,
+      cppFile: tmpCppFile,
+      scLib: resolvedLib,
+      clockSignals: clockSignals,
+      inputPorts: inputPorts,
+      outputPorts: outputPorts,
+    );
     _compilationCache[cacheKey] = exe;
     return exe;
   }
@@ -845,7 +936,7 @@ abstract class SimCompare {
 
     // Track last-driven values (persist across vectors like iverilog)
     final lastValues = <String, String>{
-      for (final name in drivableInputs) name: '0'
+      for (final name in drivableInputs) name: '0',
     };
 
     for (final vector in vectors) {
@@ -907,13 +998,14 @@ abstract class SimCompare {
     try {
       File(stdinFile).writeAsStringSync(sb.toString());
 
-      result = Process.runSync('sh', [
-        '-c',
-        '${exe.binaryPath} < $stdinFile'
-      ], environment: {
-        'LD_LIBRARY_PATH': exe.scLib,
-        'SC_COPYRIGHT_MESSAGE': 'DISABLE'
-      });
+      result = Process.runSync(
+        'sh',
+        ['-c', '${exe.binaryPath} < $stdinFile'],
+        environment: {
+          'LD_LIBRARY_PATH': exe.scLib,
+          'SC_COPYRIGHT_MESSAGE': 'DISABLE',
+        },
+      );
     } finally {
       if (stdinDir.existsSync()) {
         stdinDir.deleteSync(recursive: true);
@@ -965,57 +1057,61 @@ abstract class SimCompare {
 
   /// Executes [vectors] against a SystemC simulator compiled with g++ and
   /// checks that it passes (single-shot, compiles each time).
-  static void checkSystemCVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      String? clockName,
-      String? resetName,
-      String? systemcHome,
-      String? systemcLib,
-      bool buildOnly = false}) {
+  static void checkSystemCVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+    bool buildOnly = false,
+  }) {
     if (buildOnly) {
       // Just verify SystemC code generation succeeds
       module.generateSystemC();
       return;
     }
-    final exe = buildSystemCExecutable(module,
-        moduleName: moduleName,
-        clockName: clockName,
-        resetName: resetName,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib);
+    final exe = buildSystemCExecutable(
+      module,
+      moduleName: moduleName,
+      clockName: clockName,
+      resetName: resetName,
+      systemcHome: systemcHome,
+      systemcLib: systemcLib,
+    );
     if (exe == null) {
       // SystemC not available — skip gracefully.
       return;
     }
     final passed = runSystemCVectors(exe, vectors);
-    if (!dontDeleteTmpFiles) {
-      // Single-shot path: clean up this process's compiled artifacts now so
-      // tests that call checkSystemCVector do not require a tearDownAll.
-      // The PCH is kept to avoid rebuilding it for subsequent calls.
-      cleanupSystemCCache();
-    }
     expect(passed, true);
   }
 
   /// Legacy API — returns bool.
-  static bool systemcVector(Module module, List<Vector> vectors,
-      {String? moduleName,
-      bool dontDeleteTmpFiles = false,
-      String? clockName,
-      String? resetName,
-      String? systemcHome,
-      String? systemcLib,
-      bool buildOnly = false}) {
+  static bool systemcVector(
+    Module module,
+    List<Vector> vectors, {
+    String? moduleName,
+    bool dontDeleteTmpFiles = false,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+    bool buildOnly = false,
+  }) {
     if (kIsWeb) {
       return true;
     }
-    final exe = buildSystemCExecutable(module,
-        moduleName: moduleName,
-        clockName: clockName,
-        resetName: resetName,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib);
+    final exe = buildSystemCExecutable(
+      module,
+      moduleName: moduleName,
+      clockName: clockName,
+      resetName: resetName,
+      systemcHome: systemcHome,
+      systemcLib: systemcLib,
+    );
     if (exe == null) {
       return false;
     }
@@ -1053,19 +1149,24 @@ abstract class SimCompare {
   ///   },
   /// );
   /// ```
-  static Future<bool> systemcSimCompare(Module module, Logic clk,
-      {required Future<void> Function() stimulus,
-      List<String>? inputNames,
-      List<String>? outputNames,
-      String? clockName,
-      String? resetName,
-      bool dontDeleteTmpFiles = false,
-      String? systemcHome,
-      String? systemcLib}) async {
+  static Future<bool> systemcSimCompare(
+    Module module,
+    Logic clk, {
+    required Future<void> Function() stimulus,
+    List<String>? inputNames,
+    List<String>? outputNames,
+    String? clockName,
+    String? resetName,
+    bool dontDeleteTmpFiles = false,
+    String? systemcHome,
+    String? systemcLib,
+  }) async {
     // Determine which signals to record
     final clkName = clockName ??
-        module.inputs.keys.firstWhere((n) => n == 'clk' || n.contains('clock'),
-            orElse: () => 'clk');
+        module.inputs.keys.firstWhere(
+          (n) => n == 'clk' || n.contains('clock'),
+          orElse: () => 'clk',
+        );
 
     final inputs =
         inputNames ?? module.inputs.keys.where((n) => n != clkName).toList();
@@ -1111,8 +1212,10 @@ abstract class SimCompare {
     await Simulator.run();
 
     if (recordings.length < 2) {
-      print('Warning: only ${recordings.length} clock edges recorded,'
-          ' need at least 2 for comparison');
+      print(
+        'Warning: only ${recordings.length} clock edges recorded,'
+        ' need at least 2 for comparison',
+      );
       return true;
     }
 
@@ -1121,12 +1224,15 @@ abstract class SimCompare {
     // check-before-edge timing. Just pass recordings directly as vectors.
 
     // Run through SystemC
-    return systemcVector(module, recordings,
-        clockName: clkName,
-        resetName: resetName,
-        dontDeleteTmpFiles: dontDeleteTmpFiles,
-        systemcHome: systemcHome,
-        systemcLib: systemcLib);
+    return systemcVector(
+      module,
+      recordings,
+      clockName: clkName,
+      resetName: resetName,
+      dontDeleteTmpFiles: dontDeleteTmpFiles,
+      systemcHome: systemcHome,
+      systemcLib: systemcLib,
+    );
   }
 }
 
@@ -1150,13 +1256,14 @@ class SystemCExecutable {
   /// Output port names and widths.
   final Map<String, int> outputPorts;
 
-  SystemCExecutable._(
-      {required this.binaryPath,
-      required this.cppFile,
-      required this.scLib,
-      required this.clockSignals,
-      required this.inputPorts,
-      required this.outputPorts});
+  SystemCExecutable._({
+    required this.binaryPath,
+    required this.cppFile,
+    required this.scLib,
+    required this.clockSignals,
+    required this.inputPorts,
+    required this.outputPorts,
+  });
 
   /// Deletes the compiled binary and source.
   void cleanup() {
@@ -1170,8 +1277,9 @@ class SystemCExecutable {
     try {
       final compileDir = File(cppFile).parent;
       if (compileDir.existsSync() &&
-          compileDir.uri.pathSegments.last
-              .startsWith(SimCompare._systemCTempPrefix)) {
+          compileDir.uri.pathSegments.last.startsWith(
+            SimCompare._systemCTempPrefix,
+          )) {
         compileDir.deleteSync(recursive: true);
         return;
       }

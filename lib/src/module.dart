@@ -13,8 +13,8 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
+import 'package:rohd/src/diagnostics/inspector_service.dart';
 import 'package:rohd/src/utilities/config.dart';
-import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
@@ -50,18 +50,6 @@ abstract class Module {
 
   /// An internal mapping of input names to their sources to this [Module].
   late final Map<String, Logic> _inputSources = {};
-
-  // ─── Central naming (Namer) ─────────────────────────────────────
-
-  /// Central namer that owns both the signal and instance namespaces.
-  /// Initialized lazily on first access (after build).
-  @internal
-  late final Namer namer = _createNamer();
-
-  Namer _createNamer() {
-    assert(hasBuilt, 'Module must be built before canonical names are bound.');
-    return Namer.forModule(this);
-  }
 
   /// An internal mapping of inOut names to their sources to this [Module].
   late final Map<String, Logic> _inOutSources = {};
@@ -213,18 +201,6 @@ abstract class Module {
           this, 'Module must be built to access uniquified name.');
   String _uniqueInstanceName;
 
-  /// A stable identity used to memoize this module's canonical instance name
-  /// across repeated synthesis passes (e.g. netlist then SystemVerilog).
-  ///
-  /// Defaults to the [Module] itself, which is correct for modules that are
-  /// part of the built hierarchy and therefore persist across passes.
-  /// Synthesis-time throwaway modules that are *recreated* on every pass (and
-  /// thus have a fresh [Module] identity each time) must override this to
-  /// return a stable identity — typically the [Logic] they drive — so their
-  /// instance name does not drift run-to-run.
-  @internal
-  Object get instanceNameKey => this;
-
   /// If true, guarantees [uniqueInstanceName] matches [name] or else the
   /// [build] will fail.
   final bool reserveName;
@@ -340,7 +316,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
-    ModuleServices.instance.rootModule = this;
+    ModuleTree.rootModuleInstance = this;
   }
 
   /// Confirms that the post-[build] hierarchy is valid.

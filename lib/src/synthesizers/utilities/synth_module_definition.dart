@@ -14,18 +14,11 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
 class _BusSubsetForStructSlice extends BusSubset {
-  /// The stable destination [Logic] this slice drives.
-  ///
-  /// Used as the [instanceNameKey] so that, although a fresh
-  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
-  /// canonical instance name is memoized against the persistent destination
-  /// signal and therefore does not drift run-to-run.
-
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
@@ -116,6 +109,10 @@ class SynthModuleDefinition {
 
   @override
   String toString() => "module name: '${module.name}'";
+
+  /// Used to uniquify any identifiers, including signal names
+  /// and module instances.
+  final Uniquifier _synthInstantiationNameUniquifier;
 
   /// Indicates whether [logic] has a corresponding present [SynthLogic] in
   /// this definition.
@@ -292,7 +289,14 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : assert(
+      : _synthInstantiationNameUniquifier = Uniquifier(
+          reservedNames: {
+            ...module.inputs.keys,
+            ...module.outputs.keys,
+            ...module.inOuts.keys,
+          },
+        ),
+        assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
                     DefinitionGenerationType.none),
@@ -461,7 +465,6 @@ class SynthModuleDefinition {
 
       final receiverIsSubModuleOutput =
           receiver.isOutput && (receiver.parentModule?.parent == module);
-
       if (receiverIsSubModuleOutput) {
         final subModule = receiver.parentModule!;
 
@@ -510,7 +513,6 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
-
     _pruneUnused();
     process();
     _pickNames();
@@ -765,59 +767,49 @@ class SynthModuleDefinition {
   }
 
   /// Picks names of signals and sub-modules.
-  ///
-  /// Signal names are read from [Namer.signalNameOf] for user-created
-  /// [Logic] objects) or kept as literal constants and are allocated from
-  /// [Namer.signalNameOf].  Submodule instance names are allocated
-  /// from [Namer.allocateName].  All names share a single
-  /// namespace managed by the module's [Namer].
   void _pickNames() {
-    // Name allocation order matters — earlier claims get the unsuffixed name
-    // when there are collisions.  This matches production ROHD priority:
-    //   1. Ports (reserved by _initNamespace, claimed via signalName)
-    //   2. Reserved submodule instances
-    //   3. Reserved internal signals
-    //   4. Non-reserved submodule instances
-    //   5. Non-reserved internal signals
+    // first ports get priority
     for (final input in inputs) {
-      input.pickName();
+      input.pickName(_synthInstantiationNameUniquifier);
     }
     for (final output in outputs) {
-      output.pickName();
+      output.pickName(_synthInstantiationNameUniquifier);
     }
     for (final inOut in inOuts) {
-      inOut.pickName();
+      inOut.pickName(_synthInstantiationNameUniquifier);
     }
 
-    // Reserved submodule instances first (they assert their exact name).
+    // pick names of *reserved* submodule instances
+    final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
-        submodule.pickName(module);
+        submodule.pickName(_synthInstantiationNameUniquifier);
         assert(submodule.module.name == submodule.name,
             'Expect reserved names to retain their name.');
+      } else {
+        nonReservedSubmodules.add(submodule);
       }
     }
 
-    // Reserved internal signals next.
+    // then *reserved* internal signals get priority
     final nonReservedSignals = <SynthLogic>[];
     for (final signal in internalSignals) {
       if (signal.isReserved) {
-        signal.pickName();
+        signal.pickName(_synthInstantiationNameUniquifier);
       } else {
         nonReservedSignals.add(signal);
       }
     }
 
-    // Then non-reserved submodule instances.
-    for (final submodule in subModuleInstantiations) {
-      if (!submodule.module.reserveName && submodule.needsInstantiation) {
-        submodule.pickName(module);
-      }
+    // then submodule instances
+    for (final submodule in nonReservedSubmodules
+        .where((element) => element.needsInstantiation)) {
+      submodule.pickName(_synthInstantiationNameUniquifier);
     }
 
-    // Then the rest of the internal signals.
+    // then the rest of the internal signals
     for (final signal in nonReservedSignals) {
-      signal.pickName();
+      signal.pickName(_synthInstantiationNameUniquifier);
     }
   }
 
