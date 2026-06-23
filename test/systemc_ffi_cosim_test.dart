@@ -50,6 +50,7 @@ void main() {
   tearDown(() async {
     await Simulator.reset();
   });
+  tearDownAll(SystemCFfiCosim.cleanupCache);
 
   /// The core test logic — parametrized so it can run against either the
   /// native ROHD module or the SystemC FFI co-simulated module.

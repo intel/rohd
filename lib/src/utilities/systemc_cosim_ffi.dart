@@ -161,6 +161,29 @@ class SystemCFfiCosim {
   /// would crash SystemC's singleton kernel (E113).
   static final _loadedLibs = <String, _LoadedCosimLib>{};
 
+  /// Deletes all `cosim_ffi_*` source and shared-library files from
+  /// `tmp_test/` and clears the in-process cache.
+  ///
+  /// Call from `tearDownAll` in tests to satisfy `check_tmp_test.sh`.
+  static void cleanupCache() {
+    _loadedLibs.clear();
+    const dir = 'tmp_test';
+    final d = Directory(dir);
+    if (!d.existsSync()) {
+      return;
+    }
+    for (final entity in d.listSync()) {
+      final name = entity.uri.pathSegments.last;
+      if (name.startsWith('cosim_ffi_') || name.startsWith('libcosim_ffi_')) {
+        try {
+          entity.deleteSync(recursive: true);
+        } on Exception catch (_) {
+          // ignore deletion errors (file may be locked or already removed)
+        }
+      }
+    }
+  }
+
   SystemCFfiCosim._(this.module, this.clk, {required this.clockPeriodNs});
 
   /// Compiles the module's SystemC output to a shared library, loads it,
