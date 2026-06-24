@@ -65,20 +65,18 @@ void main() {
         continue;
       }
 
-      final fullModules = fullJson['modules'] as Map<String, dynamic>?;
-      final fullMod = fullModules?[moduleKey] as Map<String, dynamic>?;
+      // moduleJson returns {creator, version, modules: {name: modData}}.
+      final modulesMap =
+          (fullJson['modules'] as Map<String, dynamic>?) ?? fullJson;
+      final fullMod = modulesMap[moduleKey] as Map<String, dynamic>?;
       if (fullMod == null) {
-        // The full data might be under a different key (base definition).
-        // Try the first key.
-        final firstKey = fullModules?.keys.first;
-        final altMod = firstKey != null
-            ? fullModules![firstKey] as Map<String, dynamic>?
-            : null;
+        // Try the first key in case the definition name differs.
+        final firstKey = modulesMap.keys.first;
+        final altMod = modulesMap[firstKey] as Map<String, dynamic>?;
         if (altMod == null) {
           mismatches.add('$moduleKey: no module data in full response');
           continue;
         }
-        // Use the alt module
         _compareCells(moduleKey, slimCells, altMod, mismatches);
       } else {
         _compareCells(moduleKey, slimCells, fullMod, mismatches);
