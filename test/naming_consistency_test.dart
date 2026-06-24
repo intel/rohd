@@ -201,27 +201,28 @@ void main() {
       }
     });
 
-    test('Namer.signalNameOf matches SynthLogic.name for ports', () async {
+    test('Namer.signalNameOfBest matches SynthLogic.name for ports', () async {
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
       final def = SynthModuleDefinition(mod);
       final synthNames = _collectNames(def);
 
-      // Module.namer.signalNameOf uses Namer directly
+      // Module.namer.signalNameOfBest uses Namer directly
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
-        final moduleName = mod.namer.signalNameOf(port);
+        final moduleName = mod.namer.signalNameOfBest([port]);
         final synthName = synthNames[port];
         expect(synthName, moduleName,
-            reason: 'SynthLogic.name and Module.namer.signalNameOf must agree '
+            reason:
+                'SynthLogic.name and Module.namer.signalNameOfBest must agree '
                 'for port ${port.name}');
       }
     });
 
     test('submodule instance names are allocated from the shared namespace',
         () async {
-      // Instance names come from Module.namer.instanceNameOf, which shares the
-      // same namespace as signal names.
+      // Instance names come from Module.namer.instanceNameOf,
+      // which shares the same namespace as signal names.
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
