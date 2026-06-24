@@ -19,12 +19,6 @@ import 'package:rohd/src/utilities/namer.dart';
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
 class _BusSubsetForStructSlice extends BusSubset {
-  /// The stable destination [Logic] this slice drives.
-  ///
-  /// Used as the [instanceNameKey] so that, although a fresh
-  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
-  /// canonical instance name is memoized against the persistent destination
-  /// signal and therefore does not drift run-to-run.
   final Logic _destination;
 
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
@@ -805,11 +799,10 @@ class SynthModuleDefinition {
 
   /// Picks names of signals and sub-modules.
   ///
-  /// Signal names are read from [Namer.signalNameOf] for user-created
-  /// [Logic] objects) or kept as literal constants and are allocated from
-  /// [Namer.signalNameOf].  Submodule instance names are allocated
-  /// from [Namer.allocateName].  All names share a single
-  /// namespace managed by the module's [Namer].
+  /// Signal names are selected through [Namer.signalNameOfBest] or kept as
+  /// literal constants. Submodule names are selected through
+  /// [Namer.instanceNameOf]. All non-constant names share a single namespace
+  /// managed by the module's [Namer].
   void _pickNames() {
     // Name allocation order matters — earlier claims get the unsuffixed name
     // when there are collisions.  This matches production ROHD priority:

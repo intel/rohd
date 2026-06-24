@@ -47,9 +47,9 @@ void main() {
       await mod.build();
       NetlistService(mod);
 
-      expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
-      expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
-      expect(mod.namer.signalNameOf(mod.output('val')), equals('val'));
+      expect(mod.namer.signalNameOfBest([mod.input('en')]), equals('en'));
+      expect(mod.namer.signalNameOfBest([mod.input('reset')]), equals('reset'));
+      expect(mod.namer.signalNameOfBest([mod.output('val')]), equals('val'));
     });
 
     test('filter_bank — returns names for sub-module signals', () async {
@@ -77,9 +77,9 @@ void main() {
       await dut.build();
       NetlistService(dut);
 
-      expect(dut.namer.signalNameOf(dut.input('clk')), equals('clk'));
-      expect(dut.namer.signalNameOf(dut.input('reset')), equals('reset'));
-      expect(dut.namer.signalNameOf(dut.output('done')), equals('done'));
+      expect(dut.namer.signalNameOfBest([dut.input('clk')]), equals('clk'));
+      expect(dut.namer.signalNameOfBest([dut.input('reset')]), equals('reset'));
+      expect(dut.namer.signalNameOfBest([dut.output('done')]), equals('done'));
     });
   });
 
@@ -90,8 +90,8 @@ void main() {
 
       SvService(mod, register: false).synthOutput;
 
-      expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
-      expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
+      expect(mod.namer.signalNameOfBest([mod.input('en')]), equals('en'));
+      expect(mod.namer.signalNameOfBest([mod.input('reset')]), equals('reset'));
     });
   });
 
@@ -109,8 +109,10 @@ void main() {
         SvService(modSv, register: false).synthOutput;
 
         // Both paths use the same Namer, so names must match.
-        final enNetlist = modNetlist.namer.signalNameOf(modNetlist.input('en'));
-        final enSv = modSv.namer.signalNameOf(modSv.input('en'));
+        final enNetlist = modNetlist.namer.signalNameOfBest([
+          modNetlist.input('en'),
+        ]);
+        final enSv = modSv.namer.signalNameOfBest([modSv.input('en')]);
 
         expect(
           enSv,

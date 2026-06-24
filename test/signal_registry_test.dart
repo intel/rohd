@@ -58,48 +58,51 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      expect(mod.namer.signalNameOf(mod.input('a')), equals('a'));
-      expect(mod.namer.signalNameOf(mod.input('b')), equals('b'));
-      expect(mod.namer.signalNameOf(mod.output('a_bar')), equals('a_bar'));
-      expect(mod.namer.signalNameOf(mod.output('a_and_b')), equals('a_and_b'));
+      expect(mod.namer.signalNameOfBest([mod.input('a')]), equals('a'));
+      expect(mod.namer.signalNameOfBest([mod.input('b')]), equals('b'));
+      expect(
+          mod.namer.signalNameOfBest([mod.output('a_bar')]), equals('a_bar'));
+      expect(mod.namer.signalNameOfBest([mod.output('a_and_b')]),
+          equals('a_and_b'));
     });
 
     test('returns internal signal names', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      expect(mod.namer.signalNameOf(mod.input('en')), equals('en'));
-      expect(mod.namer.signalNameOf(mod.input('reset')), equals('reset'));
-      expect(mod.namer.signalNameOf(mod.output('val')), equals('val'));
+      expect(mod.namer.signalNameOfBest([mod.input('en')]), equals('en'));
+      expect(mod.namer.signalNameOfBest([mod.input('reset')]), equals('reset'));
+      expect(mod.namer.signalNameOfBest([mod.output('val')]), equals('val'));
     });
 
-    test('agrees with signalName after synth', () async {
+    test('agrees with signalNameOfBest after synth', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
       for (final entry in mod.inputs.entries) {
         expect(
-          mod.namer.signalNameOf(entry.value),
+          mod.namer.signalNameOfBest([entry.value]),
           isNotNull,
-          reason: 'signalName should work for input ${entry.key}',
+          reason: 'signalNameOfBest should work for input ${entry.key}',
         );
       }
       for (final entry in mod.outputs.entries) {
         expect(
-          mod.namer.signalNameOf(entry.value),
+          mod.namer.signalNameOfBest([entry.value]),
           isNotNull,
-          reason: 'signalName should work for output ${entry.key}',
+          reason: 'signalNameOfBest should work for output ${entry.key}',
         );
       }
     });
   });
 
-  group('allocateName', () {
+  group('single-signal allocation', () {
     test('avoids collision with existing names', () async {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final allocated = mod.namer.allocateName('en');
+      final sig = Logic(name: 'en', naming: Naming.renameable);
+      final allocated = mod.namer.signalNameOfBest([sig]);
       expect(allocated, isNot(equals('en')),
           reason: 'Should not collide with existing port name');
       expect(allocated, contains('en'),
@@ -110,8 +113,12 @@ void main() {
       final mod = _Counter(Logic(), Logic());
       await mod.build();
 
-      final a = mod.namer.allocateName('wire');
-      final b = mod.namer.allocateName('wire');
+      final a = mod.namer.signalNameOfBest([
+        Logic(name: 'wire', naming: Naming.renameable),
+      ]);
+      final b = mod.namer.signalNameOfBest([
+        Logic(name: 'wire', naming: Naming.renameable),
+      ]);
       expect(a, isNot(equals(b)), reason: 'Each allocation should be unique');
     });
   });
@@ -121,7 +128,7 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      expect(mod.namer.signalNameOf(mod.input('a')), equals('a'));
+      expect(mod.namer.signalNameOfBest([mod.input('a')]), equals('a'));
       expect(mod.input('a').name, equals('a'));
     });
   });
@@ -132,7 +139,8 @@ void main() {
         final mod = _Counter(Logic(), Logic());
         await mod.build();
         return {
-          for (final sig in mod.signals) sig.name: mod.namer.signalNameOf(sig),
+          for (final sig in mod.signals)
+            sig.name: mod.namer.signalNameOfBest([sig]),
         };
       }
 
@@ -169,12 +177,12 @@ void main() {
       );
       await dut.build();
 
-      expect(dut.namer.signalNameOf(dut.input('clk')), equals('clk'));
-      expect(dut.namer.signalNameOf(dut.output('done')), equals('done'));
+      expect(dut.namer.signalNameOfBest([dut.input('clk')]), equals('clk'));
+      expect(dut.namer.signalNameOfBest([dut.output('done')]), equals('done'));
 
       for (final sub in dut.subModules) {
         for (final entry in sub.inputs.entries) {
-          final name = sub.namer.signalNameOf(entry.value);
+          final name = sub.namer.signalNameOfBest([entry.value]);
           expect(name, isNotEmpty);
         }
       }
@@ -204,17 +212,20 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      final name = mod.namer.allocateName('wire');
+      final name = mod.namer.signalNameOfBest([
+        Logic(name: 'wire', naming: Naming.renameable),
+      ]);
       expect(mod.namer.isAvailable(name), isFalse);
     });
   });
 
-  group('allocateName reserved', () {
-    test('reserved allocation claims exact name', () async {
+  group('reserved single-signal allocation', () {
+    test('reserved signal claims exact name', () async {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      final name = mod.namer.allocateName('my_wire', reserved: true);
+      final sig = Logic(name: 'my_wire', naming: Naming.reserved);
+      final name = mod.namer.signalNameOfBest([sig]);
       expect(name, equals('my_wire'));
       expect(mod.namer.isAvailable('my_wire'), isFalse);
     });
@@ -223,9 +234,10 @@ void main() {
       final mod = _GateMod(Logic(), Logic());
       await mod.build();
 
-      // 'a' is already a port name
       expect(
-        () => mod.namer.allocateName('a', reserved: true),
+        () => mod.namer.signalNameOfBest([
+          Logic(name: 'a', naming: Naming.reserved),
+        ]),
         throwsException,
       );
     });
@@ -328,8 +340,8 @@ void main() {
       final name = mod.namer.signalNameOfBest([s1, s2]);
 
       // Both should resolve to the same cached name
-      expect(mod.namer.signalNameOf(s1), equals(name));
-      expect(mod.namer.signalNameOf(s2), equals(name));
+      expect(mod.namer.signalNameOfBest([s1]), equals(name));
+      expect(mod.namer.signalNameOfBest([s2]), equals(name));
     });
 
     test('empty candidates throws', () async {
