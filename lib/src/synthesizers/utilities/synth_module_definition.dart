@@ -999,12 +999,16 @@ class SynthModuleDefinition {
       logicOrder[logic] = nextOrder++;
     }
 
-    int orderOf(SynthLogic signal) =>
-        signal.logics
-            .map((logic) => logicOrder[logic])
-            .whereType<int>()
-            .minOrNull ??
-        nextOrder;
+    int orderOf(SynthLogic signal) {
+      var earliestOrder = nextOrder;
+      for (final logic in signal.logics) {
+        final order = logicOrder[logic];
+        if (order != null && order < earliestOrder) {
+          earliestOrder = order;
+        }
+      }
+      return earliestOrder;
+    }
 
     final indexedSignals = signals.indexed.toList()
       ..sort((a, b) {
