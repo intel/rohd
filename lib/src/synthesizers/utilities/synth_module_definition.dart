@@ -920,13 +920,16 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    // Name allocation order matters — earlier claims get the unsuffixed name
-    // when there are collisions.  This matches production ROHD priority:
+    // Name allocation order matters -- earlier claims get the unsuffixed name
+    // when there are collisions. Weak-name claimants are intentionally deferred
+    // so emitted objects get first chance at the shortest basenames:
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
-    //   3. Reserved internal signals
-    //   4. Non-reserved submodule instances
-    //   5. Non-reserved internal signals
+    //   3. Reserved internal signals with strong claims
+    //   4. Non-reserved submodule instances with strong claims
+    //   5. Non-reserved internal signals with strong claims
+    //   6. Weak submodule instances
+    //   7. Weak internal signals
     for (final input in inputs) {
       input.pickName();
     }
