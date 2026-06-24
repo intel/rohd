@@ -20,7 +20,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// ensuring no name collisions in the generated SystemVerilog.
 ///
 /// Port names are reserved at construction time.  Internal signal names
-/// are assigned lazily on the first [signalNameOf] call.  Instance names
+/// are assigned lazily on the first [signalNameOfBest] call.  Instance names
 /// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
@@ -34,7 +34,7 @@ class Namer {
 
   /// Cache of resolved instance names, keyed by [Module.instanceNameKey].
   ///
-  /// Instance-name allocation mutates [_uniquifier]. Without this cache,
+  /// Instance-name lookup claims names in [_uniquifier]. Without this cache,
   /// repeated synthesis passes over the same module hierarchy would allocate
   /// fresh suffixes for the same submodule instances.
   final Map<Object, String> _instanceNames = {};
@@ -77,16 +77,6 @@ class Namer {
   /// Returns `true` if [name] has not yet been claimed in the namespace.
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
 
-  /// Allocates a collision-free name in the shared namespace.
-  ///
-  /// When [reserved] is `true`, the exact [baseName] (after sanitization)
-  /// is claimed without modification; an exception is thrown if it collides.
-  String allocateName(String baseName, {bool reserved = false}) =>
-      _uniquifier.getUniqueName(
-        initialName: Sanitizer.sanitizeSV(baseName),
-        reserved: reserved,
-      );
-
   // ─── Instance naming (Module → String) ──────────────────────────
 
   /// Returns the canonical instance name for [submodule].
@@ -100,8 +90,8 @@ class Namer {
       return cached;
     }
 
-    final name = allocateName(
-      submodule.uniqueInstanceName,
+    final name = _uniquifier.getUniqueName(
+      initialName: Sanitizer.sanitizeSV(submodule.uniqueInstanceName),
       reserved: submodule.reserveName,
     );
     _instanceNames[key] = name;
@@ -115,7 +105,7 @@ class Namer {
   /// The first call for a given [logic] allocates a collision-free name
   /// via the underlying [Uniquifier].  Subsequent calls return the cached
   /// result in O(1).
-  String signalNameOf(Logic logic) {
+  String _signalNameOf(Logic logic) {
     final cached = _signalNames[logic];
     if (cached != null) {
       return cached;
@@ -243,10 +233,10 @@ class Namer {
     throw StateError('No Logic candidates to name.');
   }
 
-  /// Names [chosen] via [signalNameOf], then caches the same name for all
-  /// other non-port [Logic]s in [all].
+  /// Names [chosen] with the single-signal allocator, then caches the
+  /// same name for all other non-port [Logic]s in [all].
   String _nameAndCacheAll(Logic chosen, Iterable<Logic> all) {
-    final name = signalNameOf(chosen);
+    final name = _signalNameOf(chosen);
     for (final logic in all) {
       if (!identical(logic, chosen) && !_portLogics.contains(logic)) {
         _signalNames[logic] = name;
