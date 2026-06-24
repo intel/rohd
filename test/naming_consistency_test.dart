@@ -68,7 +68,7 @@ class _CollapsedInstanceCollidingNames extends Module {
   late final Logic retainedDup;
 
   _CollapsedInstanceCollidingNames(Logic a, Logic b)
-    : super(name: 'collapsedInstanceCollidingNames') {
+      : super(name: 'collapsedInstanceCollidingNames') {
     a = addInput('a', a);
     b = addInput('b', b);
     final y = addOutput('y');
@@ -85,7 +85,7 @@ class _CollapsedInstanceCollidingNames extends Module {
 
 Future<String> _retainedDupNameAfter(
   SynthModuleDefinition Function(_CollapsedInstanceCollidingNames)
-  createDefinition,
+      createDefinition,
 ) async {
   final mod = _CollapsedInstanceCollidingNames(Logic(), Logic());
   await mod.build();
@@ -144,8 +144,7 @@ void main() {
           expect(
             baseNames[logic],
             svNames[logic],
-            reason:
-                'Name mismatch for ${logic.name} '
+            reason: 'Name mismatch for ${logic.name} '
                 '(${logic.runtimeType}, naming=${logic.naming})',
           );
         }
@@ -250,8 +249,7 @@ void main() {
           expect(
             names2[logic],
             names1[logic],
-            reason:
-                'Shared namer should produce same name for '
+            reason: 'Shared namer should produce same name for '
                 '${logic.name}',
           );
         }
@@ -306,8 +304,7 @@ void main() {
           expect(
             mod.namer.isAvailable(name),
             isFalse,
-            reason:
-                'Instance name "$name" should be claimed in the '
+            reason: 'Instance name "$name" should be claimed in the '
                 'namespace',
           );
         }
@@ -335,8 +332,7 @@ void main() {
         expect(
           names2,
           names1,
-          reason:
-              'Repeated synthesis passes should reuse cached instance '
+          reason: 'Repeated synthesis passes should reuse cached instance '
               'names instead of drifting numeric suffixes.',
         );
       },

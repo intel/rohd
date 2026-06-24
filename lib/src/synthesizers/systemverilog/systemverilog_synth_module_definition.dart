@@ -54,7 +54,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // instantiate the module within the definition
     final netConnectSynthSubModInst =
         (getSynthSubModuleInstantiation(netConnect)
-              as SystemVerilogSynthSubModuleInstantiation)
+            as SystemVerilogSynthSubModuleInstantiation)
           // map inouts to the appropriate `_SynthLogic`s
           ..setInOutMapping(_NetConnect.n0Name, dst)
           ..setInOutMapping(_NetConnect.n1Name, src);
@@ -101,9 +101,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
     final synthLogicToInlineableSynthSubmoduleMap =
         <SynthLogic, SystemVerilogSynthSubModuleInstantiation>{};
-    for (final subModuleInstantiation
-        in chainableModulesToCollapse
-            .cast<SystemVerilogSynthSubModuleInstantiation>()) {
+    for (final subModuleInstantiation in chainableModulesToCollapse
+        .cast<SystemVerilogSynthSubModuleInstantiation>()) {
       (subModuleInstantiation.module as InlineSystemVerilog).resultSignalName;
 
       // inlineable modules have only 1 result signal
@@ -134,12 +133,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
     for (final subModuleInstantiation in subModuleInstantiations.toList().where(
-      (e) =>
-          e.module is InlineSystemVerilog &&
-          e.needsInstantiation &&
-          e.outputMapping.isEmpty &&
-          e.inOutMapping.isNotEmpty,
-    )) {
+          (e) =>
+              e.module is InlineSystemVerilog &&
+              e.needsInstantiation &&
+              e.outputMapping.isEmpty &&
+              e.inOutMapping.isNotEmpty,
+        )) {
       // algorithm:
       // - mark module as not needing declaration
       // - add a net_connect
@@ -194,9 +193,9 @@ class _NetConnect extends Module with SystemVerilog {
   static final String n1Name = Naming.unpreferredName('n1');
 
   _NetConnect(LogicNet n0, LogicNet n1)
-    : assert(n0.width == n1.width, 'Widths must be equal.'),
-      width = n0.width,
-      super(definitionName: _definitionName, name: _definitionName) {
+      : assert(n0.width == n1.width, 'Widths must be equal.'),
+        width = n0.width,
+        super(definitionName: _definitionName, name: _definitionName) {
     n0 = addInOut(n0Name, n0, width: width);
     n1 = addInOut(n1Name, n1, width: width);
   }
@@ -218,8 +217,7 @@ class _NetConnect extends Module with SystemVerilog {
   }
 
   @override
-  String? definitionVerilog(String definitionType) =>
-      '''
+  String? definitionVerilog(String definitionType) => '''
 // A special module for connecting two nets bidirectionally
 module $definitionType #(parameter int WIDTH=1) (w, w);
 inout wire[WIDTH-1:0] w;
