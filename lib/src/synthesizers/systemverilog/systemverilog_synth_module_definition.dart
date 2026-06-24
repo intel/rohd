@@ -17,34 +17,23 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   SystemVerilogSynthModuleDefinition(super.module);
 
   @override
-  void prepareForNaming() {
-    _replaceNetConnections();
-    super.prepareForNaming();
-    _clearMarkedChainableInstantiations();
-    _replaceInOutConnectionInlineableModules();
-  }
-
-  @override
   void process() {
+    _buildNetConnectsForNaming(pickName: true);
     _collapseMarkedChainableModules();
+    _replaceInOutConnectionInlineableModules();
   }
 
   @override
   SynthSubModuleInstantiation createSubModuleInstantiation(Module m) =>
       SystemVerilogSynthSubModuleInstantiation(m);
 
-  void _clearMarkedChainableInstantiations() {
-    for (final subModuleInstantiation in chainableModulesToCollapse) {
-      subModuleInstantiation.clearInstantiation();
-    }
-  }
-
   /// Creates a new [_NetConnect] module to synthesize assignment between two
   /// [LogicNet]s.
   SystemVerilogSynthSubModuleInstantiation _addNetConnect(
     SynthLogic dst,
-    SynthLogic src,
-  ) {
+    SynthLogic src, {
+    bool pickName = false,
+  }) {
     // make an (unconnected) module representing the assignment
     final netConnect = _NetConnect(
       LogicNet(width: dst.width),
@@ -62,11 +51,15 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // notify the `SynthBuilder` that it needs declaration
     supportingModules.add(netConnect);
 
+    if (pickName) {
+      netConnectSynthSubModInst.pickName(module);
+    }
+
     return netConnectSynthSubModInst;
   }
 
-  /// Replace all [assignments] between two [LogicNet]s with a [_NetConnect].
-  void _replaceNetConnections() {
+  /// Builds [_NetConnect] instances for [LogicNet] assignments.
+  void _buildNetConnectsForNaming({bool pickName = false}) {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {
@@ -76,7 +69,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           'Net connections should not be partial assignments.',
         );
 
-        _addNetConnect(assignment.dst, assignment.src);
+        _addNetConnect(assignment.dst, assignment.src, pickName: pickName);
       } else {
         reducedAssignments.add(assignment);
       }
@@ -160,8 +153,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         parentSynthModuleDefinition: this,
       );
 
-      final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
-        ..synthLogicToInlineableSynthSubmoduleMap ??= {};
+      final netConnectSynthSubmod = _addNetConnect(
+        subModResult,
+        dummy,
+        pickName: true,
+      )..synthLogicToInlineableSynthSubmoduleMap ??= {};
 
       netConnectSynthSubmod.synthLogicToInlineableSynthSubmoduleMap![dummy] =
           subModuleInstantiation;

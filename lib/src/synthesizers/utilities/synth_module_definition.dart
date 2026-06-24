@@ -76,6 +76,9 @@ class SynthModuleDefinition {
   @protected
   final Set<SynthSubModuleInstantiation> chainableModulesToCollapse = {};
 
+  // Weak-name marks do not remove objects from naming. They make likely
+  // collapsed objects claim names after unmarked objects, so in a collision
+  // the unmarked object keeps the basename and the marked object gets a suffix.
   final Set<SynthSubModuleInstantiation> _weakNameClaimSubmodules = {};
 
   final Set<SynthLogic> _weakNameClaimSignals = {};
@@ -521,15 +524,30 @@ class SynthModuleDefinition {
     _assignSubmodulePortMapping();
 
     _pruneUnused();
+
+    // Naming has two base-owned phases: mark likely-collapsed objects as weak
+    // name claimants, then pick names. After that, synthesizers may
+    // process/collapse the marked objects.
     prepareForNaming();
     _pickNames();
     process();
   }
 
-  /// Performs any synthesis-specific analysis needed before names are picked.
-  @protected
-  @visibleForOverriding
+  /// Performs base-owned preparation before names are picked.
+  ///
+  /// Synthesizers must not override this method.
+  @nonVirtual
   void prepareForNaming() {
+    _markPotentiallyCollapsedObjectsForNaming();
+  }
+
+  /// Marks objects likely to be collapsed by some synthesizers as weak name
+  /// claimants.
+  ///
+  /// Marked objects are still named. They just claim names after unmarked
+  /// objects, biasing collision resolution so unmarked objects keep basenames
+  /// and marked objects receive suffixes like `_1` or `_2`.
+  void _markPotentiallyCollapsedObjectsForNaming() {
     chainableModulesToCollapse
       ..clear()
       ..addAll(_findChainableModulesToCollapse());
