@@ -64,6 +64,37 @@ class _FlopOuter extends Module {
   }
 }
 
+class _CollapsedInstanceCollidingNames extends Module {
+  late final Logic retainedDup;
+
+  _CollapsedInstanceCollidingNames(Logic a, Logic b)
+    : super(name: 'collapsedInstanceCollidingNames') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final y = addOutput('y');
+    final z = addOutput('z');
+
+    final collapsedInstanceOut = And2Gate(a, b, name: 'dup').out;
+    retainedDup = Logic(name: 'dup');
+
+    retainedDup <= a | b;
+    y <= collapsedInstanceOut ^ retainedDup;
+    z <= retainedDup;
+  }
+}
+
+Future<String> _retainedDupNameAfter(
+  SynthModuleDefinition Function(_CollapsedInstanceCollidingNames)
+  createDefinition,
+) async {
+  final mod = _CollapsedInstanceCollidingNames(Logic(), Logic());
+  await mod.build();
+
+  createDefinition(mod);
+
+  return mod.namer.signalNameOfBest([mod.retainedDup]);
+}
+
 /// Builds [SynthModuleDefinition]s from both bases and collects a
 /// Logic→name mapping for all present SynthLogics.
 ///
@@ -110,20 +141,33 @@ void main() {
       // Every Logic present in both must have the same name.
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(baseNames[logic], svNames[logic],
-              reason: 'Name mismatch for ${logic.name} '
-                  '(${logic.runtimeType}, naming=${logic.naming})');
+          expect(
+            baseNames[logic],
+            svNames[logic],
+            reason:
+                'Name mismatch for ${logic.name} '
+                '(${logic.runtimeType}, naming=${logic.naming})',
+          );
         }
       }
 
       // Port names specifically must match.
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
-        expect(svNames[port], isNotNull,
-            reason: 'SV def should have port ${port.name}');
-        expect(baseNames[port], isNotNull,
-            reason: 'Base def should have port ${port.name}');
-        expect(svNames[port], baseNames[port],
-            reason: 'Port name must match for ${port.name}');
+        expect(
+          svNames[port],
+          isNotNull,
+          reason: 'SV def should have port ${port.name}',
+        );
+        expect(
+          baseNames[port],
+          isNotNull,
+          reason: 'Base def should have port ${port.name}',
+        );
+        expect(
+          svNames[port],
+          baseNames[port],
+          reason: 'Port name must match for ${port.name}',
+        );
       }
     });
 
@@ -139,8 +183,11 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(baseNames[logic], svNames[logic],
-              reason: 'Name mismatch for ${logic.name}');
+          expect(
+            baseNames[logic],
+            svNames[logic],
+            reason: 'Name mismatch for ${logic.name}',
+          );
         }
       }
     });
@@ -157,8 +204,11 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(baseNames[logic], svNames[logic],
-              reason: 'Name mismatch for ${logic.name}');
+          expect(
+            baseNames[logic],
+            svNames[logic],
+            reason: 'Name mismatch for ${logic.name}',
+          );
         }
       }
     });
@@ -175,8 +225,11 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(baseNames[logic], svNames[logic],
-              reason: 'Name mismatch for ${logic.name}');
+          expect(
+            baseNames[logic],
+            svNames[logic],
+            reason: 'Name mismatch for ${logic.name}',
+          );
         }
       }
     });
@@ -194,9 +247,13 @@ void main() {
 
       for (final logic in names1.keys) {
         if (names2.containsKey(logic)) {
-          expect(names2[logic], names1[logic],
-              reason: 'Shared namer should produce same name for '
-                  '${logic.name}');
+          expect(
+            names2[logic],
+            names1[logic],
+            reason:
+                'Shared namer should produce same name for '
+                '${logic.name}',
+          );
         }
       }
     });
@@ -212,59 +269,92 @@ void main() {
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
         final moduleName = mod.namer.signalNameOfBest([port]);
         final synthName = synthNames[port];
-        expect(synthName, moduleName,
+        expect(
+          synthName,
+          moduleName,
+          reason:
+              'SynthLogic.name and Module.namer.signalNameOfBest must agree '
+              'for port ${port.name}',
+        );
+      }
+    });
+
+    test(
+      'submodule instance names are allocated from the shared namespace',
+      () async {
+        // Instance names come from Module.namer.instanceNameOf,
+        // which shares the same namespace as signal names.
+        final mod = _Outer(Logic(width: 8), Logic(width: 8));
+        await mod.build();
+
+        final def = SynthModuleDefinition(mod);
+
+        final instNames = def.subModuleInstantiations
+            .where((s) => s.needsInstantiation)
+            .map((s) => s.name)
+            .toSet();
+
+        // The inner module instance should have a name
+        expect(
+          instNames,
+          isNotEmpty,
+          reason: 'Should have at least one submodule instance',
+        );
+
+        // Instance names are claimed in the shared namespace.
+        for (final name in instNames) {
+          expect(
+            mod.namer.isAvailable(name),
+            isFalse,
             reason:
-                'SynthLogic.name and Module.namer.signalNameOfBest must agree '
-                'for port ${port.name}');
-      }
-    });
+                'Instance name "$name" should be claimed in the '
+                'namespace',
+          );
+        }
+      },
+    );
 
-    test('submodule instance names are allocated from the shared namespace',
-        () async {
-      // Instance names come from Module.namer.instanceNameOf,
-      // which shares the same namespace as signal names.
-      final mod = _Outer(Logic(width: 8), Logic(width: 8));
-      await mod.build();
+    test(
+      'submodule instance names are stable across repeated definitions',
+      () async {
+        final mod = _Outer(Logic(width: 8), Logic(width: 8));
+        await mod.build();
 
-      final def = SynthModuleDefinition(mod);
+        final def1 = SynthModuleDefinition(mod);
+        final def2 = SynthModuleDefinition(mod);
 
-      final instNames = def.subModuleInstantiations
-          .where((s) => s.needsInstantiation)
-          .map((s) => s.name)
-          .toSet();
+        final names1 = def1.subModuleInstantiations
+            .where((s) => s.needsInstantiation)
+            .map((s) => s.name)
+            .toList();
+        final names2 = def2.subModuleInstantiations
+            .where((s) => s.needsInstantiation)
+            .map((s) => s.name)
+            .toList();
 
-      // The inner module instance should have a name
-      expect(instNames, isNotEmpty,
-          reason: 'Should have at least one submodule instance');
+        expect(
+          names2,
+          names1,
+          reason:
+              'Repeated synthesis passes should reuse cached instance '
+              'names instead of drifting numeric suffixes.',
+        );
+      },
+    );
 
-      // Instance names are claimed in the shared namespace.
-      for (final name in instNames) {
-        expect(mod.namer.isAvailable(name), isFalse,
-            reason: 'Instance name "$name" should be claimed in the '
-                'namespace');
-      }
-    });
+    test(
+      'collapsed instance does not steal basename from retained signal',
+      () async {
+        final baseName = await _retainedDupNameAfter(SynthModuleDefinition.new);
+        await Simulator.reset();
 
-    test('submodule instance names are stable across repeated definitions',
-        () async {
-      final mod = _Outer(Logic(width: 8), Logic(width: 8));
-      await mod.build();
+        final svName = await _retainedDupNameAfter(
+          SystemVerilogSynthModuleDefinition.new,
+        );
 
-      final def1 = SynthModuleDefinition(mod);
-      final def2 = SynthModuleDefinition(mod);
-
-      final names1 = def1.subModuleInstantiations
-          .where((s) => s.needsInstantiation)
-          .map((s) => s.name)
-          .toList();
-      final names2 = def2.subModuleInstantiations
-          .where((s) => s.needsInstantiation)
-          .map((s) => s.name)
-          .toList();
-
-      expect(names2, names1,
-          reason: 'Repeated synthesis passes should reuse cached instance '
-              'names instead of drifting numeric suffixes.');
-    });
+        expect(svName, equals(baseName));
+        expect(baseName, equals('dup'));
+      },
+    );
   });
 }
