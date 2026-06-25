@@ -133,15 +133,7 @@ class SynthModuleDefinition {
   @internal
   bool logicHasPresentSynthLogic(Logic logic) {
     final synthLogic = logicToSynthMap[logic];
-    if (synthLogic == null) {
-      return false;
-    } else if (synthLogic.declarationCleared) {
-      return false;
-    } else if (synthLogic.isStructPortElement()) {
-      return true;
-    } else {
-      return true;
-    }
+    return synthLogic != null && !synthLogic.declarationCleared;
   }
 
   /// Either accesses a previously created [SynthLogic] corresponding to
@@ -618,17 +610,16 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
-      if (subModule is SystemVerilog) {
+      final expressionlessInputs = subModule is SystemVerilog
+          ? subModule.expressionlessInputs
+          // ignore: deprecated_member_use_from_same_package
+          : subModule is CustomSystemVerilog
+              ? subModule.expressionlessInputs
+              : const <String>[];
+
+      if (expressionlessInputs.isNotEmpty) {
         singleUseSignals.removeAll(
-          subModule.expressionlessInputs.map(
-            (e) =>
-                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
-          ),
-        );
-        // ignore: deprecated_member_use_from_same_package
-      } else if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(
-          subModule.expressionlessInputs.map(
+          expressionlessInputs.map(
             (e) =>
                 instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
           ),

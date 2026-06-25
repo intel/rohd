@@ -96,8 +96,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         <SynthLogic, SystemVerilogSynthSubModuleInstantiation>{};
     for (final subModuleInstantiation in chainableModulesToCollapse
         .cast<SystemVerilogSynthSubModuleInstantiation>()) {
-      (subModuleInstantiation.module as InlineSystemVerilog).resultSignalName;
-
       // inlineable modules have only 1 result signal
       final resultSynthLogic = subModuleInstantiation.inlineResultLogic!;
 
