@@ -2,30 +2,27 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_services.dart
-// Singleton service registry for DevTools integration.
+// Slim, type-keyed registry of module-scoped services for DevTools and other
+// inspection tools.
 //
 // 2026 April 25
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'dart:convert';
-
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 
-/// Singleton service registry that provides a unified query surface for
-/// DevTools and other inspection tools.
+/// A slim, type-keyed registry of [ModuleService]s.
 ///
-/// Services register themselves here on construction; DevTools evaluates
-/// getters on [instance] via `EvalOnDartLibrary` to pull data.
+/// Services register themselves here on construction (keyed by their concrete
+/// type) and are retrieved with [lookup].  The registry intentionally exposes
+/// no per-format accessors: each service owns its own JSON and output methods,
+/// reached through [lookup] or the service's own static `current` accessor.
+///
+/// The registry references no specific service type, so it is identical across
+/// all feature branches that contribute services.
 ///
 /// **Auto-registered:**
 ///  - [rootModule] / [hierarchyJSON] — set by [Module.build].
-///
-/// **Opt-in (registered by service constructors):**
-///  - [svService] — SystemVerilog synthesis results.
-///
-/// Additional services (netlist, trace, waveform) can be added by setting
-/// the corresponding field after construction.
 class ModuleServices {
   ModuleServices._();
 
@@ -41,38 +38,36 @@ class ModuleServices {
 
   /// Returns the module hierarchy as a JSON string.
   ///
-  /// DevTools evaluates this via `EvalOnDartLibrary` to display
-  /// the module hierarchy.
+  /// DevTools evaluates this via `EvalOnDartLibrary` to display the module
+  /// hierarchy.  Richer design views (e.g. a slim netlist) are composed by the
+  /// DevTools client from the relevant registered service.
   String get hierarchyJSON {
     ModuleTree.rootModuleInstance = rootModule;
     return ModuleTree.instance.hierarchyJSON;
   }
 
-  /// Returns the primary inspector JSON for DevTools.
+  // ─── Type-keyed service registry ──────────────────────────────
+
+  final Map<Type, ModuleService> _services = <Type, ModuleService>{};
+
+  /// Registers [service] under the type argument [T].
   ///
-  /// Returns the hierarchy JSON.  Downstream branches (e.g. netlist) may
-  /// override this to return richer data when available.
-  String get inspectorJSON => hierarchyJSON;
+  /// Replaces any previously registered service of the same type.
+  void register<T extends ModuleService>(T service) {
+    _services[T] = service;
+  }
 
-  // ─── SystemVerilog service (opt-in) ───────────────────────────
+  /// Returns the registered service of type [T], or `null` if none.
+  T? lookup<T extends ModuleService>() => _services[T] as T?;
 
-  /// The active [SvService], if one has been registered.
-  SvService? svService;
-
-  /// Returns SV synthesis metadata as JSON, or an unavailable status.
-  String get svJSON =>
-      svService != null ? jsonEncode(svService!.toJson()) : _unavailable('sv');
-
-  // ─── Helpers ──────────────────────────────────────────────────
-
-  static String _unavailable(String service) => jsonEncode(<String, String>{
-        'status': 'unavailable',
-        'reason': '$service service not registered',
-      });
+  /// Removes the registered service of type [T], if any.
+  void unregister<T extends ModuleService>() {
+    _services.remove(T);
+  }
 
   /// Resets all services.  Intended for test teardown.
   void reset() {
     rootModule = null;
-    svService = null;
+    _services.clear();
   }
 }
