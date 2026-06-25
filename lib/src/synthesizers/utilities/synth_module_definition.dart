@@ -953,7 +953,7 @@ class SynthModuleDefinition {
     // Reserved internal signals next.
     final nonReservedSignals = <SynthLogic>[];
     final weakSignals = <SynthLogic>[];
-    for (final signal in _signalsInModuleOrder(internalSignals)) {
+    for (final signal in internalSignals) {
       if (_weakNameClaimSignals.contains(signal)) {
         weakSignals.add(signal);
       } else if (signal.isReserved) {
@@ -977,7 +977,7 @@ class SynthModuleDefinition {
     }
 
     // Then the rest of the internal signals with strong name claims.
-    for (final signal in _signalsInModuleOrder(nonReservedSignals)) {
+    for (final signal in nonReservedSignals) {
       signal.pickName();
     }
 
@@ -986,39 +986,9 @@ class SynthModuleDefinition {
     for (final submodule in weakSubmodules) {
       submodule.pickName(module);
     }
-    for (final signal in _signalsInModuleOrder(weakSignals)) {
+    for (final signal in weakSignals) {
       signal.pickName();
     }
-  }
-
-  List<SynthLogic> _signalsInModuleOrder(Iterable<SynthLogic> signals) {
-    final logicOrder = <Logic, int>{};
-    var nextOrder = 0;
-    for (final logic in module.signals) {
-      logicOrder[logic] = nextOrder++;
-    }
-
-    int orderOf(SynthLogic signal) {
-      var earliestOrder = nextOrder;
-      for (final logic in signal.logics) {
-        final order = logicOrder[logic];
-        if (order != null && order < earliestOrder) {
-          earliestOrder = order;
-        }
-      }
-      return earliestOrder;
-    }
-
-    final indexedSignals = signals.indexed.toList()
-      ..sort((a, b) {
-        final byModuleOrder = orderOf(a.$2).compareTo(orderOf(b.$2));
-        if (byModuleOrder != 0) {
-          return byModuleOrder;
-        }
-        return a.$1.compareTo(b.$1);
-      });
-
-    return indexedSignals.map((entry) => entry.$2).toList(growable: false);
   }
 
   /// Merges bit blasted array assignments into one single assignment when
