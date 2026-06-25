@@ -24,8 +24,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
-  // ─── Shared namespace ───────────────────────────────────────────
-
+  /// The [Uniquifier] that manages the shared namespace for this module.
   final Uniquifier _uniquifier;
 
   /// Cache of resolved names for internal (non-port) signals only.
@@ -70,6 +69,7 @@ class Namer {
   // ─── Name availability / allocation ─────────────────────────────
 
   /// Returns `true` if [name] has not yet been claimed in the namespace.
+  @visibleForTesting
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
 
   // ─── Instance naming (Module → String) ──────────────────────────
