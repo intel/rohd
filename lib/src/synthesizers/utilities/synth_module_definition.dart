@@ -920,9 +920,9 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    // Name allocation order matters -- earlier claims get the unsuffixed name
-    // when there are collisions. Weak-name claimants are intentionally deferred
-    // so emitted objects get 1st chance at the shortest basenames:
+    // Name allocation order matters -- earlier claims receive the unsuffixed
+    // name when there are collisions. Weak-name claimants are intentionally
+    // deferred so emitted objects get 1st chance at the shortest basenames:
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
     //   3. Reserved internal signals with strong claims
