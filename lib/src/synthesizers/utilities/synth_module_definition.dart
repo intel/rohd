@@ -82,6 +82,17 @@ class SynthModuleDefinition {
   Iterable<SynthSubModuleInstantiation> get subModuleInstantiations =>
       moduleToSubModuleInstantiationMap.values;
 
+  /// Chainable inline modules that should claim names after emitted objects.
+  @protected
+  final Set<SynthSubModuleInstantiation> chainableModulesToCollapse = {};
+
+  // Weak-name marks do not remove objects from naming. They make likely
+  // collapsed objects claim names after unmarked objects, so in a collision
+  // the unmarked object keeps the basename and the marked object gets a suffix.
+  final Set<SynthSubModuleInstantiation> _weakNameClaimSubmodules = {};
+
+  final Set<SynthLogic> _weakNameClaimSignals = {};
+
   /// Indicates that [m] is a submodule used within this definition.
   ///
   /// This is only valid to call after all the submodules have been detected.
@@ -524,8 +535,124 @@ class SynthModuleDefinition {
     _assignSubmodulePortMapping();
 
     _pruneUnused();
-    process();
+
+    // Naming has two base-owned phases: mark likely-collapsed objects as weak
+    // name claimants, then pick names. After that, synthesizers may
+    // process/collapse the marked objects.
+    prepareForNaming();
     _pickNames();
+    process();
+  }
+
+  /// Performs base-owned preparation before names are picked.
+  ///
+  /// Synthesizers must not override this method.
+  @nonVirtual
+  void prepareForNaming() {
+    _markPotentiallyCollapsedObjectsForNaming();
+  }
+
+  /// Marks objects likely to be collapsed by some synthesizers as weak name
+  /// claimants.
+  ///
+  /// Marked objects are still named. They just claim names after unmarked
+  /// objects, biasing collision resolution so unmarked objects keep basenames
+  /// and marked objects receive suffixes like `_1` or `_2`.
+  void _markPotentiallyCollapsedObjectsForNaming() {
+    chainableModulesToCollapse
+      ..clear()
+      ..addAll(_findChainableModulesToCollapse());
+    _weakNameClaimSubmodules.clear();
+    _weakNameClaimSignals.clear();
+
+    for (final subModuleInstantiation in chainableModulesToCollapse) {
+      _weakNameClaimSubmodules.add(subModuleInstantiation);
+      final resultLogic = _inlineResultLogic(subModuleInstantiation);
+      if (resultLogic != null) {
+        _weakNameClaimSignals.add(resultLogic);
+      }
+    }
+  }
+
+  /// Finds chainable, inlineable modules.
+  Iterable<SynthSubModuleInstantiation> _findChainableModulesToCollapse() {
+    final inlineableSubmoduleInstantiations = subModuleInstantiations.where(
+      (submoduleInstantiation) =>
+          submoduleInstantiation.module is InlineSystemVerilog,
+    );
+
+    final signalUsage = <SynthLogic, int>{};
+
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      for (final inSynthLogic in [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values,
+      ]) {
+        if (inputs.contains(inSynthLogic) || inOuts.contains(inSynthLogic)) {
+          continue;
+        }
+
+        if (_inlineResultLogic(subModuleInstantiation) == inSynthLogic) {
+          continue;
+        }
+
+        signalUsage.update(
+          inSynthLogic,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
+
+    final singleUseSignals = <SynthLogic>{};
+    signalUsage.forEach((signal, signalUsageCount) {
+      if (signalUsageCount == 1 && signal.mergeable) {
+        singleUseSignals.add(signal);
+      }
+    });
+
+    for (final partialAssignment
+        in assignments.whereType<PartialSynthAssignment>()) {
+      singleUseSignals.remove(partialAssignment.src);
+    }
+
+    for (final instantiation in subModuleInstantiations) {
+      final subModule = instantiation.module;
+      if (subModule is SystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+        // ignore: deprecated_member_use_from_same_package
+      } else if (subModule is CustomSystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+      }
+    }
+
+    return inlineableSubmoduleInstantiations.where((subModuleInstantiation) {
+      final resultSynthLogic = _inlineResultLogic(subModuleInstantiation);
+
+      return resultSynthLogic != null &&
+          singleUseSignals.contains(resultSynthLogic) &&
+          subModuleInstantiation.needsInstantiation;
+    });
+  }
+
+  SynthLogic? _inlineResultLogic(SynthSubModuleInstantiation instantiation) {
+    final subModule = instantiation.module;
+    if (subModule is! InlineSystemVerilog) {
+      return null;
+    }
+
+    return instantiation.outputMapping[subModule.resultSignalName] ??
+        instantiation.inOutMapping[subModule.resultSignalName];
   }
 
   /// Performs additional processing on the current definition to simplify,
@@ -804,13 +931,17 @@ class SynthModuleDefinition {
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    // Name allocation order matters — earlier claims get the unsuffixed name
-    // when there are collisions.  This matches production ROHD priority:
+    // first ports get priority
+    // Name allocation order matters -- earlier claims receive the unsuffixed
+    // name when there are collisions. Weak-name claimants are intentionally
+    // deferred so emitted objects receive 1st chance at the shortest basenames:
     //   1. Ports (reserved by _initNamespace, claimed via signalName)
     //   2. Reserved submodule instances
-    //   3. Reserved internal signals
-    //   4. Non-reserved submodule instances
-    //   5. Non-reserved internal signals
+    //   3. Reserved internal signals with strong claims
+    //   4. Non-reserved submodule instances with strong claims
+    //   5. Non-reserved internal signals with strong claims
+    //   6. Weak submodule instances
+    //   7. Weak internal signals
     for (final input in inputs) {
       input.pickName();
     }
@@ -834,25 +965,73 @@ class SynthModuleDefinition {
 
     // Reserved internal signals next.
     final nonReservedSignals = <SynthLogic>[];
-    for (final signal in internalSignals) {
-      if (signal.isReserved) {
+    final weakSignals = <SynthLogic>[];
+    for (final signal in _signalsInModuleOrder(internalSignals)) {
+      if (_weakNameClaimSignals.contains(signal)) {
+        weakSignals.add(signal);
+      } else if (signal.isReserved) {
         signal.pickName();
       } else {
         nonReservedSignals.add(signal);
       }
     }
 
-    // Then non-reserved submodule instances.
+    // Then non-reserved submodule instances with strong name claims.
+    final weakSubmodules = <SynthSubModuleInstantiation>[];
     for (final submodule in subModuleInstantiations) {
-      if (!submodule.module.reserveName && submodule.needsInstantiation) {
+      if (submodule.module.reserveName) {
+        continue;
+      }
+      if (_weakNameClaimSubmodules.contains(submodule)) {
+        weakSubmodules.add(submodule);
+      } else if (submodule.needsInstantiation) {
         submodule.pickName(module);
       }
     }
 
-    // Then the rest of the internal signals.
-    for (final signal in nonReservedSignals) {
+    // Then the rest of the internal signals with strong name claims.
+    for (final signal in _signalsInModuleOrder(nonReservedSignals)) {
       signal.pickName();
     }
+
+    // Finally, weak claims reserve stable names after emitted objects have
+    // had first chance at the shortest basenames.
+    for (final submodule in weakSubmodules) {
+      submodule.pickName(module);
+    }
+    for (final signal in _signalsInModuleOrder(weakSignals)) {
+      signal.pickName();
+    }
+  }
+
+  List<SynthLogic> _signalsInModuleOrder(Iterable<SynthLogic> signals) {
+    final logicOrder = <Logic, int>{};
+    var nextOrder = 0;
+    for (final logic in module.signals) {
+      logicOrder[logic] = nextOrder++;
+    }
+
+    int orderOf(SynthLogic signal) {
+      var earliestOrder = nextOrder;
+      for (final logic in signal.logics) {
+        final order = logicOrder[logic];
+        if (order != null && order < earliestOrder) {
+          earliestOrder = order;
+        }
+      }
+      return earliestOrder;
+    }
+
+    final indexedSignals = signals.indexed.toList()
+      ..sort((a, b) {
+        final byModuleOrder = orderOf(a.$2).compareTo(orderOf(b.$2));
+        if (byModuleOrder != 0) {
+          return byModuleOrder;
+        }
+        return a.$1.compareTo(b.$1);
+      });
+
+    return indexedSignals.map((entry) => entry.$2).toList(growable: false);
   }
 
   /// Merges bit blasted array assignments into one single assignment when

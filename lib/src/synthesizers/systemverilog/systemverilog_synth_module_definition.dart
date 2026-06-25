@@ -18,8 +18,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
-    _replaceNetConnections();
-    _collapseChainableModules();
+    _buildNetConnectsForNaming(pickName: true);
+    _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
   }
 
@@ -30,16 +30,20 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// Creates a new [_NetConnect] module to synthesize assignment between two
   /// [LogicNet]s.
   SystemVerilogSynthSubModuleInstantiation _addNetConnect(
-      SynthLogic dst, SynthLogic src) {
+    SynthLogic dst,
+    SynthLogic src, {
+    bool pickName = false,
+  }) {
     // make an (unconnected) module representing the assignment
-    final netConnect =
-        _NetConnect(LogicNet(width: dst.width), LogicNet(width: src.width));
+    final netConnect = _NetConnect(
+      LogicNet(width: dst.width),
+      LogicNet(width: src.width),
+    );
 
     // instantiate the module within the definition
     final netConnectSynthSubModInst =
         (getSynthSubModuleInstantiation(netConnect)
             as SystemVerilogSynthSubModuleInstantiation)
-
           // map inouts to the appropriate `_SynthLogic`s
           ..setInOutMapping(_NetConnect.n0Name, dst)
           ..setInOutMapping(_NetConnect.n1Name, src);
@@ -47,19 +51,25 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // notify the `SynthBuilder` that it needs declaration
     supportingModules.add(netConnect);
 
+    if (pickName) {
+      netConnectSynthSubModInst.pickName(module);
+    }
+
     return netConnectSynthSubModInst;
   }
 
-  /// Replace all [assignments] between two [LogicNet]s with a [_NetConnect].
-  void _replaceNetConnections() {
+  /// Builds [_NetConnect] instances for [LogicNet] assignments.
+  void _buildNetConnectsForNaming({bool pickName = false}) {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {
       if (assignment.src.isNet && assignment.dst.isNet) {
-        assert(assignment is! PartialSynthAssignment,
-            'Net connections should not be partial assignments.');
+        assert(
+          assignment is! PartialSynthAssignment,
+          'Net connections should not be partial assignments.',
+        );
 
-        _addNetConnect(assignment.dst, assignment.src);
+        _addNetConnect(assignment.dst, assignment.src, pickName: pickName);
       } else {
         reducedAssignments.add(assignment);
       }
@@ -73,8 +83,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
-  /// Collapses chainable, inlineable modules.
-  void _collapseChainableModules() {
+  /// Collapses chainable, inlineable modules after naming.
+  void _collapseMarkedChainableModules() {
     // collapse multiple lines of in-line assignments into one where they are
     // unnamed one-liners
     //  for example, be capable of creating lines like:
@@ -82,95 +92,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     //      assign _d_and_e = d & e
     //      assign y = _d_and_e
 
-    // Also feed collapsed chained modules into other modules
-    // Need to consider order of operations in systemverilog or else add ()
-    // everywhere! (for now add the parentheses)
-
-    // Algorithm:
-    //  - find submodule instantiations that are inlineable
-    //  - filter to those who only output as input to one other module
-    //  - pass an override to the submodule instantiation that the corresponding
-    //    input should map to the output of another submodule instantiation
-    // do not collapse if signal feeds to multiple inputs of other modules
-
-    final inlineableSubmoduleInstantiations = module.subModules
-        .whereType<InlineSystemVerilog>()
-        .map((m) => getSynthSubModuleInstantiation(m)
-            as SystemVerilogSynthSubModuleInstantiation);
-
-    // number of times each signal name is used by any module
-    final signalUsage = <SynthLogic, int>{};
-
-    for (final subModuleInstantiation in subModuleInstantiations) {
-      for (final inSynthLogic in [
-        ...subModuleInstantiation.inputMapping.values,
-        ...subModuleInstantiation.inOutMapping.values
-      ]) {
-        if (inputs.contains(inSynthLogic) || inOuts.contains(inSynthLogic)) {
-          // dont worry about inputs to THIS module
-          continue;
-        }
-
-        subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
-
-        if (subModuleInstantiation.inlineResultLogic == inSynthLogic) {
-          // don't worry about the result signal
-          continue;
-        }
-
-        signalUsage.update(
-          inSynthLogic,
-          (value) => value + 1,
-          ifAbsent: () => 1,
-        );
-      }
-    }
-
-    final singleUseSignals = <SynthLogic>{};
-    signalUsage.forEach((signal, signalUsageCount) {
-      // don't collapse if:
-      //  - used more than once
-      //  - inline modules for preferred names
-      if (signalUsageCount == 1 && signal.mergeable) {
-        singleUseSignals.add(signal);
-      }
-    });
-
-    // partial assignments are a special case, count as a usage
-    for (final partialAssignment
-        in assignments.whereType<PartialSynthAssignment>()) {
-      singleUseSignals.remove(partialAssignment.src);
-    }
-
-    final singleUsageInlineableSubmoduleInstantiations =
-        inlineableSubmoduleInstantiations.where((subModuleInstantiation) {
-      // inlineable modules have only 1 result signal
-      final resultSynthLogic = subModuleInstantiation.inlineResultLogic!;
-
-      return singleUseSignals.contains(resultSynthLogic) &&
-
-          // don't inline modules if they were cleared from instantiation
-          subModuleInstantiation.needsInstantiation;
-    });
-
-    // remove any inlineability for those that want no expressions
-    for (final instantiation in subModuleInstantiations) {
-      final subModule = instantiation.module;
-      if (subModule is SystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
-            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
-      }
-      // ignore: deprecated_member_use_from_same_package
-      else if (subModule is CustomSystemVerilog) {
-        singleUseSignals.removeAll(subModule.expressionlessInputs.map((e) =>
-            instantiation.inputMapping[e] ?? instantiation.inOutMapping[e]));
-      }
-    }
-
     final synthLogicToInlineableSynthSubmoduleMap =
         <SynthLogic, SystemVerilogSynthSubModuleInstantiation>{};
-    for (final subModuleInstantiation
-        in singleUsageInlineableSubmoduleInstantiations) {
+    for (final subModuleInstantiation in chainableModulesToCollapse
+        .cast<SystemVerilogSynthSubModuleInstantiation>()) {
       (subModuleInstantiation.module as InlineSystemVerilog).resultSignalName;
 
       // inlineable modules have only 1 result signal
@@ -189,8 +114,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final subModuleInstantiation in subModuleInstantiations) {
       subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
 
-      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap =
-          synthLogicToInlineableSynthSubmoduleMap;
+      subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap = {
+        ...?subModuleInstantiation.synthLogicToInlineableSynthSubmoduleMap,
+        ...synthLogicToInlineableSynthSubmoduleMap,
+      };
     }
   }
 
@@ -199,11 +126,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
     for (final subModuleInstantiation in subModuleInstantiations.toList().where(
-        (e) =>
-            e.module is InlineSystemVerilog &&
-            e.needsInstantiation &&
-            e.outputMapping.isEmpty &&
-            e.inOutMapping.isNotEmpty)) {
+          (e) =>
+              e.module is InlineSystemVerilog &&
+              e.needsInstantiation &&
+              e.outputMapping.isEmpty &&
+              e.inOutMapping.isNotEmpty,
+        )) {
       // algorithm:
       // - mark module as not needing declaration
       // - add a net_connect
@@ -225,8 +153,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         parentSynthModuleDefinition: this,
       );
 
-      final netConnectSynthSubmod = _addNetConnect(subModResult, dummy)
-        ..synthLogicToInlineableSynthSubmoduleMap ??= {};
+      final netConnectSynthSubmod = _addNetConnect(
+        subModResult,
+        dummy,
+        pickName: true,
+      )..synthLogicToInlineableSynthSubmoduleMap ??= {};
 
       netConnectSynthSubmod.synthLogicToInlineableSynthSubmoduleMap![dummy] =
           subModuleInstantiation;
@@ -260,19 +191,21 @@ class _NetConnect extends Module with SystemVerilog {
   _NetConnect(LogicNet n0, LogicNet n1)
       : assert(n0.width == n1.width, 'Widths must be equal.'),
         width = n0.width,
-        super(
-          definitionName: _definitionName,
-          name: _definitionName,
-        ) {
+        super(definitionName: _definitionName, name: _definitionName) {
     n0 = addInOut(n0Name, n0, width: width);
     n1 = addInOut(n1Name, n1, width: width);
   }
 
   @override
   String instantiationVerilog(
-      String instanceType, String instanceName, Map<String, String> ports) {
-    assert(instanceType == _definitionName,
-        'Instance type selected should match the definition name.');
+    String instanceType,
+    String instanceName,
+    Map<String, String> ports,
+  ) {
+    assert(
+      instanceType == _definitionName,
+      'Instance type selected should match the definition name.',
+    );
     return '$instanceType'
         ' #(.WIDTH($width))'
         ' $instanceName'

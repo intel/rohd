@@ -44,10 +44,8 @@ class Namer {
 
   // ─── Construction ───────────────────────────────────────────────
 
-  Namer._({
-    required Uniquifier uniquifier,
-    required Set<Logic> portLogics,
-  })  : _uniquifier = uniquifier,
+  Namer._({required Uniquifier uniquifier, required Set<Logic> portLogics})
+      : _uniquifier = uniquifier,
         _portLogics = portLogics;
 
   /// Creates a [Namer] for the given [module]'s ports.
@@ -66,10 +64,7 @@ class Namer {
       uniquifier.getUniqueName(initialName: logic.name, reserved: true);
     }
 
-    return Namer._(
-      uniquifier: uniquifier,
-      portLogics: portLogics,
-    );
+    return Namer._(uniquifier: uniquifier, portLogics: portLogics);
   }
 
   // ─── Name availability / allocation ─────────────────────────────
@@ -210,15 +205,17 @@ class Namer {
     }
 
     if (preferredMergeable.isNotEmpty) {
-      final best = preferredMergeable
-              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
+      final best = preferredMergeable.firstWhereOrNull(
+            (e) => isAvailable(baseName(e)),
+          ) ??
           preferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }
 
     if (unpreferredMergeable.isNotEmpty) {
-      final best = unpreferredMergeable
-              .firstWhereOrNull((e) => isAvailable(baseName(e))) ??
+      final best = unpreferredMergeable.firstWhereOrNull(
+            (e) => isAvailable(baseName(e)),
+          ) ??
           unpreferredMergeable.first;
       return _nameAndCacheAll(best, candidates);
     }

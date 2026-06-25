@@ -64,6 +64,37 @@ class _FlopOuter extends Module {
   }
 }
 
+class _CollapsedInstanceCollidingNames extends Module {
+  late final Logic retainedDup;
+
+  _CollapsedInstanceCollidingNames(Logic a, Logic b)
+      : super(name: 'collapsedInstanceCollidingNames') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    final y = addOutput('y');
+    final z = addOutput('z');
+
+    final collapsedInstanceOut = And2Gate(a, b, name: 'dup').out;
+    retainedDup = Logic(name: 'dup');
+
+    retainedDup <= a | b;
+    y <= collapsedInstanceOut ^ retainedDup;
+    z <= retainedDup;
+  }
+}
+
+Future<String> _retainedDupNameAfter(
+  SynthModuleDefinition Function(_CollapsedInstanceCollidingNames)
+      createDefinition,
+) async {
+  final mod = _CollapsedInstanceCollidingNames(Logic(), Logic());
+  await mod.build();
+
+  createDefinition(mod);
+
+  return mod.namer.signalNameOfBest([mod.retainedDup]);
+}
+
 /// Builds [SynthModuleDefinition]s from both bases and collects a
 /// Logic→name mapping for all present SynthLogics.
 ///
@@ -304,6 +335,21 @@ void main() {
           reason: 'Repeated synthesis passes should reuse cached instance '
               'names instead of drifting numeric suffixes.',
         );
+      },
+    );
+
+    test(
+      'collapsed instance does not steal basename from retained signal',
+      () async {
+        final baseName = await _retainedDupNameAfter(SynthModuleDefinition.new);
+        await Simulator.reset();
+
+        final svName = await _retainedDupNameAfter(
+          SystemVerilogSynthModuleDefinition.new,
+        );
+
+        expect(svName, equals(baseName));
+        expect(baseName, equals('dup'));
       },
     );
   });
