@@ -300,11 +300,11 @@ class SynthModuleDefinition {
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : assert(
-          !(module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none),
-          'Do not build a definition for a module'
-          ' which generates no definition!',
-        ) {
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!') {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -944,10 +944,8 @@ class SynthModuleDefinition {
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
         submodule.pickName(module);
-        assert(
-          submodule.module.name == submodule.name,
-          'Expect reserved names to retain their name.',
-        );
+        assert(submodule.module.name == submodule.name,
+            'Expect reserved names to retain their name.');
       }
     }
 
