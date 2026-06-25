@@ -17,11 +17,14 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 
 /// A waveform dumper for simulations.
 ///
-/// Outputs to vcd format at [outputPath].  [module] must be built prior to
+/// Deprecated: use [WaveformService] instead.
+///
+/// Outputs to VCD format at [outputPath]. [module] must be built prior to
 /// attaching the [WaveDumper].
 ///
 /// The waves will only dump to the file periodically and then once the
 /// simulation has completed.
+@Deprecated('Use WaveformService instead')
 class WaveDumper {
   /// The [Module] being dumped.
   final Module module;
@@ -58,6 +61,8 @@ class WaveDumper {
 
   /// Attaches a [WaveDumper] to record all signal changes in a simulation of
   /// [module] in a VCD file at [outputPath].
+  /// @Deprecated: use [WaveformService] instead.
+  @Deprecated('Use WaveformService instead')
   WaveDumper(this.module, {this.outputPath = 'waves.vcd'})
       : _outputFile = File(outputPath)..createSync(recursive: true) {
     if (!module.hasBuilt) {

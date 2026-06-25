@@ -63,9 +63,9 @@ Future<void> main() async {
 
   await counter.build();
 
-  print(counter.generateSynth());
+  print(SvService(counter).synthOutput);
 
-  WaveDumper(counter,
+  WaveformService(counter,
       outputPath: 'doc/tutorials/chapter_8/counter_interface.vcd');
   Simulator.registerAction(25, () {
     intf.en.put(1);

@@ -461,7 +461,7 @@ void main() {
 
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
     expect(sv, contains('intermediate1'));
     expect(sv, contains('intermediate2'));
     expect(sv, contains('intermediate3'));
@@ -504,7 +504,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvService(mod).synthOutput;
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -515,7 +515,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvService(mod).synthOutput;
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -526,7 +526,7 @@ void main() {
 
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvService(mod).synthOutput;
       expect('  submod'.allMatches(sv).length, 2);
     });
   });
@@ -611,7 +611,7 @@ void main() {
           isNotNull);
     }
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     // test that " _b;" is not present (indication that a leftover internal
     // signal was there)
@@ -631,7 +631,7 @@ void main() {
       final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvService(mod).synthOutput;
       // print(sv);
       expect(sv, contains('wire [1:0][1:0][7:0] bd3'));
     });
@@ -677,7 +677,7 @@ void main() {
     );
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
     expect(sv, contains('assign c = _a_and_b;'));
     expect(sv, contains('assign d = _aIntermediate_or_bIntermediate;'));
 

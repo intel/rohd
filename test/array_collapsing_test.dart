@@ -97,7 +97,7 @@ void main() {
   test('simple 1d collapse', () async {
     final mod = SimpleLAPassthrough(LogicArray([4], 1));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     expect(sv, contains('assign laOut = laIn;'));
   });
@@ -105,7 +105,7 @@ void main() {
   test('array collapse for cross-module connection', () async {
     final mod = ArrayTopMod(Logic());
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     expect(sv, contains(RegExp(r'ArraySubModIn.*\.inp\(inp\)')));
     expect(sv, contains(RegExp(r'ArraySubModOut.*\.arrOut\(inp\)')));
@@ -116,7 +116,7 @@ void main() {
         LogicArray([3, 3], 1), LogicArray([3, 3], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
     expect(sv,
         contains('net_connect #(.WIDTH(9)) net_connect (intermediate, a);'));
     expect(sv,
@@ -134,7 +134,7 @@ void main() {
     final mod = ArrayWithShuffledAssignment(LogicArray([4], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).allContents;
     expect(sv, contains('assign b[0] = a[3];'));
     expect(sv, contains('assign b[3] = a[0];'));
 
@@ -151,7 +151,7 @@ void main() {
         LogicArray([3, 3], 1, numUnpackedDimensions: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
     expect(sv,
         contains('net_connect #(.WIDTH(9)) net_connect (intermediate, a);'));
     expect(sv,
@@ -168,7 +168,7 @@ void main() {
     final mod = ArrayModule(LogicArray([4, 4], 1));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvService(mod).synthOutput;
 
     expect(sv, contains('assign d = c[0];'));
     expect(sv, contains('assign b = a;'));

@@ -104,10 +104,7 @@ class Vector {
       final outputPort =
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
-      final expectedValue = LogicValue.of(
-        expected,
-        width: outputPort.width,
-      );
+      final expectedValue = LogicValue.of(expected, width: outputPort.width);
       final inputStimulus = inputValues.toString();
 
       if (outputPort is LogicArray) {
@@ -125,12 +122,8 @@ class Vector {
     }
     final checks = checksList.join('\n');
 
-    final tbVerilog = [
-      assignments,
-      '#$_offset',
-      checks,
-      '#${_period - _offset}',
-    ].join('\n');
+    final tbVerilog =
+        [assignments, '#$_offset', checks, '#${_period - _offset}'].join('\n');
     return tbVerilog;
   }
 }
@@ -202,12 +195,10 @@ abstract class SimCompare {
                 throw NonSupportedTypeException(value);
               }
             }
-          }).catchError(
-            test: (error) => error is Exception,
-            (Object err, StackTrace stackTrace) {
-              Simulator.throwException(err as Exception, stackTrace);
-            },
-          ));
+          }).catchError(test: (error) => error is Exception,
+              (Object err, StackTrace stackTrace) {
+            Simulator.throwException(err as Exception, stackTrace);
+          }));
         }
       });
       timestamp += Vector._period;
@@ -224,23 +215,20 @@ abstract class SimCompare {
     RegExp(r'sorry: constant selects in always_\* processes'
         ' are not currently supported'),
     RegExp('warning: always_comb process has no sensitivities'),
-    RegExp('finish called at'),
+    RegExp('finish called at')
   ];
 
   /// Executes [vectors] against the Icarus Verilog simulator and checks
   /// that it passes.
-  static void checkIverilogVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    bool dumpWaves = false,
-    List<String> iverilogExtraArgs = const [],
-    bool allowWarnings = false,
-    bool maskKnownWarnings = true,
-    bool enableChecking = true,
-    bool buildOnly = false,
-  }) {
+  static void checkIverilogVector(Module module, List<Vector> vectors,
+      {String? moduleName,
+      bool dontDeleteTmpFiles = false,
+      bool dumpWaves = false,
+      List<String> iverilogExtraArgs = const [],
+      bool allowWarnings = false,
+      bool maskKnownWarnings = true,
+      bool enableChecking = true,
+      bool buildOnly = false}) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
         dontDeleteTmpFiles: dontDeleteTmpFiles,
@@ -255,17 +243,14 @@ abstract class SimCompare {
   }
 
   /// Executes [vectors] against the Icarus Verilog simulator.
-  static bool iverilogVector(
-    Module module,
-    List<Vector> vectors, {
-    String? moduleName,
-    bool dontDeleteTmpFiles = false,
-    bool dumpWaves = false,
-    List<String> iverilogExtraArgs = const [],
-    bool allowWarnings = false,
-    bool maskKnownWarnings = true,
-    bool buildOnly = false,
-  }) {
+  static bool iverilogVector(Module module, List<Vector> vectors,
+      {String? moduleName,
+      bool dontDeleteTmpFiles = false,
+      bool dumpWaves = false,
+      List<String> iverilogExtraArgs = const [],
+      bool allowWarnings = false,
+      bool maskKnownWarnings = true,
+      bool buildOnly = false}) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
       return true;
@@ -307,7 +292,7 @@ abstract class SimCompare {
     final topModule = moduleName ?? module.definitionName;
     final allSignals = <String>{
       for (final v in vectors) ...v.inputValues.keys,
-      for (final v in vectors) ...v.expectedOutputValues.keys,
+      for (final v in vectors) ...v.expectedOutputValues.keys
     };
 
     late final tbWireUniquifier = Uniquifier();
@@ -335,7 +320,7 @@ abstract class SimCompare {
         final sigDecl = signalDeclaration(logicName,
             adjust: toTbWireName, signalTypeOverride: 'wire');
         return '$sigDecl; assign $wireName = $logicName;';
-      }),
+      })
     ].join('\n');
 
     final moduleConnections =
@@ -370,7 +355,7 @@ abstract class SimCompare {
       stimulus,
       r'$finish;', // so the test doesn't run forever if there's a clock gen
       'end',
-      'endmodule',
+      'endmodule'
     ].join('\n');
 
     Directory(dir).createSync(recursive: true);
@@ -397,11 +382,7 @@ abstract class SimCompare {
       }
 
       return output.toString().contains(RegExp(
-          [
-            'error',
-            'unable',
-            if (!allowWarnings) 'warning',
-          ].join('|'),
+          ['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
           caseSensitive: false));
     }
 
