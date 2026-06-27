@@ -19,6 +19,12 @@ import 'package:rohd/src/utilities/namer.dart';
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
 class _BusSubsetForStructSlice extends BusSubset {
+  /// The stable destination [Logic] this slice drives.
+  ///
+  /// Used as the [instanceNameKey] so that, although a fresh
+  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
+  /// canonical instance name is memoized against the persistent destination
+  /// signal and therefore does not drift run-to-run.
   final Logic _destination;
 
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
@@ -133,7 +139,15 @@ class SynthModuleDefinition {
   @internal
   bool logicHasPresentSynthLogic(Logic logic) {
     final synthLogic = logicToSynthMap[logic];
-    return synthLogic != null && !synthLogic.declarationCleared;
+    if (synthLogic == null) {
+      return false;
+    } else if (synthLogic.declarationCleared) {
+      return false;
+    } else if (synthLogic.isStructPortElement()) {
+      return true;
+    } else {
+      return true;
+    }
   }
 
   /// Either accesses a previously created [SynthLogic] corresponding to
@@ -303,11 +317,11 @@ class SynthModuleDefinition {
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : assert(
-          !(module is SystemVerilog &&
-              module.generatedDefinitionType == DefinitionGenerationType.none),
-          'Do not build a definition for a module'
-          ' which generates no definition!',
-        ) {
+            !(module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.none),
+            'Do not build a definition for a module'
+            ' which generates no definition!') {
     // start by traversing output signals
     final logicsToTraverse = TraverseableCollection<Logic>()
       ..addAll(module.outputs.values)
@@ -610,16 +624,17 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
-      final expressionlessInputs = subModule is SystemVerilog
-          ? subModule.expressionlessInputs
-          // ignore: deprecated_member_use_from_same_package
-          : subModule is CustomSystemVerilog
-              ? subModule.expressionlessInputs
-              : const <String>[];
-
-      if (expressionlessInputs.isNotEmpty) {
+      if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(
-          expressionlessInputs.map(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+        // ignore: deprecated_member_use_from_same_package
+      } else if (subModule is CustomSystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
             (e) =>
                 instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
           ),
@@ -947,17 +962,15 @@ class SynthModuleDefinition {
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
         submodule.pickName(module);
-        assert(
-          submodule.module.name == submodule.name,
-          'Expect reserved names to retain their name.',
-        );
+        assert(submodule.module.name == submodule.name,
+            'Expect reserved names to retain their name.');
       }
     }
 
     // Reserved internal signals next.
     final nonReservedSignals = <SynthLogic>[];
     final weakSignals = <SynthLogic>[];
-    for (final signal in _signalsInModuleOrder(internalSignals)) {
+    for (final signal in internalSignals) {
       if (_weakNameClaimSignals.contains(signal)) {
         weakSignals.add(signal);
       } else if (signal.isReserved) {
@@ -981,7 +994,7 @@ class SynthModuleDefinition {
     }
 
     // Then the rest of the internal signals with strong name claims.
-    for (final signal in _signalsInModuleOrder(nonReservedSignals)) {
+    for (final signal in nonReservedSignals) {
       signal.pickName();
     }
 
@@ -990,39 +1003,9 @@ class SynthModuleDefinition {
     for (final submodule in weakSubmodules) {
       submodule.pickName(module);
     }
-    for (final signal in _signalsInModuleOrder(weakSignals)) {
+    for (final signal in weakSignals) {
       signal.pickName();
     }
-  }
-
-  List<SynthLogic> _signalsInModuleOrder(Iterable<SynthLogic> signals) {
-    final logicOrder = <Logic, int>{};
-    var nextOrder = 0;
-    for (final logic in module.signals) {
-      logicOrder[logic] = nextOrder++;
-    }
-
-    int orderOf(SynthLogic signal) {
-      var earliestOrder = nextOrder;
-      for (final logic in signal.logics) {
-        final order = logicOrder[logic];
-        if (order != null && order < earliestOrder) {
-          earliestOrder = order;
-        }
-      }
-      return earliestOrder;
-    }
-
-    final indexedSignals = signals.indexed.toList()
-      ..sort((a, b) {
-        final byModuleOrder = orderOf(a.$2).compareTo(orderOf(b.$2));
-        if (byModuleOrder != 0) {
-          return byModuleOrder;
-        }
-        return a.$1.compareTo(b.$1);
-      });
-
-    return indexedSignals.map((entry) => entry.$2).toList(growable: false);
   }
 
   /// Merges bit blasted array assignments into one single assignment when
