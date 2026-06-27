@@ -352,5 +352,95 @@ void main() {
         expect(baseName, equals('dup'));
       },
     );
+
+    test(
+      'struct-slice submodule names are stable across repeated definitions',
+      () async {
+        // Regression test for _BusSubsetForStructSlice.instanceNameKey:
+        // Each SynthModuleDefinition pass creates fresh _BusSubsetForStructSlice
+        // instances for any submodule with a LogicStructure output port.
+        // Without the _destination override the namer cache misses on those
+        // fresh instances and allocates new suffixes every pass, so the same
+        // struct field would be named "struct_slice" on pass 1 and
+        // "struct_slice_0" on pass 2.
+        final mod = _StructSliceParentMod();
+        await mod.build();
+
+        final def1 = SynthModuleDefinition(mod);
+        final def2 = SynthModuleDefinition(mod);
+
+        // Only consider instantiations that are emitted (struct_slice and the
+        // child module itself both have needsInstantiation=true here).
+        final sliceNames1 = def1.subModuleInstantiations
+            .where((s) => s.needsInstantiation)
+            .map((s) => s.name)
+            .where((n) => n.startsWith('struct_slice'))
+            .toList()
+          ..sort();
+        final sliceNames2 = def2.subModuleInstantiations
+            .where((s) => s.needsInstantiation)
+            .map((s) => s.name)
+            .where((n) => n.startsWith('struct_slice'))
+            .toList()
+          ..sort();
+
+        expect(
+          sliceNames1,
+          isNotEmpty,
+          reason: 'Expected at least one struct_slice instance to be '
+              'created for the _TwoFieldStruct output port.',
+        );
+        expect(
+          sliceNames2,
+          sliceNames1,
+          reason: 'struct_slice instance names must not drift across repeated '
+              'synthesis passes — requires _BusSubsetForStructSlice to override '
+              'instanceNameKey with the stable destination Logic.',
+        );
+      },
+    );
   });
+}
+
+// ─── Fixtures ─────────────────────────────────────────────────────────────────
+
+class _TwoFieldStruct extends LogicStructure {
+  final Logic a;
+  final Logic b;
+
+  factory _TwoFieldStruct({String name = 'st'}) =>
+      _TwoFieldStruct._(Logic(name: 'a', width: 4), Logic(name: 'b', width: 4),
+          name: name);
+
+  _TwoFieldStruct._(this.a, this.b, {required super.name})
+      : super([a, b]);
+
+  @override
+  LogicStructure clone({String? name}) =>
+      _TwoFieldStruct(name: name ?? this.name);
+}
+
+/// A module with a [LogicStructure] output port.
+///
+/// When this module is instantiated inside a parent, synthesis of the parent
+/// calls [_subsetReceiveStructPort] for this module's struct output, creating
+/// one [_BusSubsetForStructSlice] per leaf element.
+class _StructOutputMod extends Module {
+  late final _TwoFieldStruct out;
+
+  _StructOutputMod() : super(name: '_StructOutputMod') {
+    out = addTypedOutput('out', _TwoFieldStruct.new)
+      ..a.gets(Const(0, width: 4))
+      ..b.gets(Const(0, width: 4));
+  }
+}
+
+/// Parent module whose synthesis pass creates [_BusSubsetForStructSlice]
+/// instances for [_StructOutputMod]'s struct output port.
+class _StructSliceParentMod extends Module {
+  _StructSliceParentMod() : super(name: '_StructSliceParentMod') {
+    final sub = _StructOutputMod();
+    // Consume one leaf so the parent has a meaningful output.
+    addOutput('flat', width: 4) <= sub.out.a;
+  }
 }
