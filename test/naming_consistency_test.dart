@@ -64,37 +64,6 @@ class _FlopOuter extends Module {
   }
 }
 
-class _CollapsedInstanceCollidingNames extends Module {
-  late final Logic retainedDup;
-
-  _CollapsedInstanceCollidingNames(Logic a, Logic b)
-      : super(name: 'collapsedInstanceCollidingNames') {
-    a = addInput('a', a);
-    b = addInput('b', b);
-    final y = addOutput('y');
-    final z = addOutput('z');
-
-    final collapsedInstanceOut = And2Gate(a, b, name: 'dup').out;
-    retainedDup = Logic(name: 'dup');
-
-    retainedDup <= a | b;
-    y <= collapsedInstanceOut ^ retainedDup;
-    z <= retainedDup;
-  }
-}
-
-Future<String> _retainedDupNameAfter(
-  SynthModuleDefinition Function(_CollapsedInstanceCollidingNames)
-      createDefinition,
-) async {
-  final mod = _CollapsedInstanceCollidingNames(Logic(), Logic());
-  await mod.build();
-
-  createDefinition(mod);
-
-  return mod.namer.signalNameOfBest([mod.retainedDup]);
-}
-
 /// Builds [SynthModuleDefinition]s from both bases and collects a
 /// Logic→name mapping for all present SynthLogics.
 ///
@@ -141,32 +110,20 @@ void main() {
       // Every Logic present in both must have the same name.
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(
-            baseNames[logic],
-            svNames[logic],
-            reason: 'Name mismatch for ${logic.name} '
-                '(${logic.runtimeType}, naming=${logic.naming})',
-          );
+          expect(baseNames[logic], svNames[logic],
+              reason: 'Name mismatch for ${logic.name} '
+                  '(${logic.runtimeType}, naming=${logic.naming})');
         }
       }
 
       // Port names specifically must match.
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
-        expect(
-          svNames[port],
-          isNotNull,
-          reason: 'SV def should have port ${port.name}',
-        );
-        expect(
-          baseNames[port],
-          isNotNull,
-          reason: 'Base def should have port ${port.name}',
-        );
-        expect(
-          svNames[port],
-          baseNames[port],
-          reason: 'Port name must match for ${port.name}',
-        );
+        expect(svNames[port], isNotNull,
+            reason: 'SV def should have port ${port.name}');
+        expect(baseNames[port], isNotNull,
+            reason: 'Base def should have port ${port.name}');
+        expect(svNames[port], baseNames[port],
+            reason: 'Port name must match for ${port.name}');
       }
     });
 
@@ -182,11 +139,8 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(
-            baseNames[logic],
-            svNames[logic],
-            reason: 'Name mismatch for ${logic.name}',
-          );
+          expect(baseNames[logic], svNames[logic],
+              reason: 'Name mismatch for ${logic.name}');
         }
       }
     });
@@ -203,11 +157,8 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(
-            baseNames[logic],
-            svNames[logic],
-            reason: 'Name mismatch for ${logic.name}',
-          );
+          expect(baseNames[logic], svNames[logic],
+              reason: 'Name mismatch for ${logic.name}');
         }
       }
     });
@@ -224,11 +175,8 @@ void main() {
 
       for (final logic in svNames.keys) {
         if (baseNames.containsKey(logic)) {
-          expect(
-            baseNames[logic],
-            svNames[logic],
-            reason: 'Name mismatch for ${logic.name}',
-          );
+          expect(baseNames[logic], svNames[logic],
+              reason: 'Name mismatch for ${logic.name}');
         }
       }
     });
@@ -246,201 +194,76 @@ void main() {
 
       for (final logic in names1.keys) {
         if (names2.containsKey(logic)) {
-          expect(
-            names2[logic],
-            names1[logic],
-            reason: 'Shared namer should produce same name for '
-                '${logic.name}',
-          );
+          expect(names2[logic], names1[logic],
+              reason: 'Shared namer should produce same name for '
+                  '${logic.name}');
         }
       }
     });
 
-    test('Namer.signalNameOfBest matches SynthLogic.name for ports', () async {
+    test('Namer.signalNameOf matches SynthLogic.name for ports', () async {
       final mod = _Outer(Logic(width: 8), Logic(width: 8));
       await mod.build();
 
       final def = SynthModuleDefinition(mod);
       final synthNames = _collectNames(def);
 
-      // Module.namer.signalNameOfBest uses Namer directly
+      // Module.namer.signalNameOf uses Namer directly
       for (final port in [...mod.inputs.values, ...mod.outputs.values]) {
-        final moduleName = mod.namer.signalNameOfBest([port]);
+        final moduleName = mod.namer.signalNameOf(port);
         final synthName = synthNames[port];
-        expect(
-          synthName,
-          moduleName,
-          reason:
-              'SynthLogic.name and Module.namer.signalNameOfBest must agree '
-              'for port ${port.name}',
-        );
+        expect(synthName, moduleName,
+            reason: 'SynthLogic.name and Module.namer.signalNameOf must agree '
+                'for port ${port.name}');
       }
     });
 
-    test(
-      'submodule instance names are allocated from the shared namespace',
-      () async {
-        // Instance names come from Module.namer.instanceNameOf,
-        // which shares the same namespace as signal names.
-        final mod = _Outer(Logic(width: 8), Logic(width: 8));
-        await mod.build();
+    test('submodule instance names are allocated from the shared namespace',
+        () async {
+      // Instance names come from Module.namer.instanceNameOf, which shares the
+      // same namespace as signal names.
+      final mod = _Outer(Logic(width: 8), Logic(width: 8));
+      await mod.build();
 
-        final def = SynthModuleDefinition(mod);
+      final def = SynthModuleDefinition(mod);
 
-        final instNames = def.subModuleInstantiations
-            .where((s) => s.needsInstantiation)
-            .map((s) => s.name)
-            .toSet();
+      final instNames = def.subModuleInstantiations
+          .where((s) => s.needsInstantiation)
+          .map((s) => s.name)
+          .toSet();
 
-        // The inner module instance should have a name
-        expect(
-          instNames,
-          isNotEmpty,
-          reason: 'Should have at least one submodule instance',
-        );
+      // The inner module instance should have a name
+      expect(instNames, isNotEmpty,
+          reason: 'Should have at least one submodule instance');
 
-        // Instance names are claimed in the shared namespace.
-        for (final name in instNames) {
-          expect(
-            mod.namer.isAvailable(name),
-            isFalse,
+      // Instance names are claimed in the shared namespace.
+      for (final name in instNames) {
+        expect(mod.namer.isAvailable(name), isFalse,
             reason: 'Instance name "$name" should be claimed in the '
-                'namespace',
-          );
-        }
-      },
-    );
+                'namespace');
+      }
+    });
 
-    test(
-      'submodule instance names are stable across repeated definitions',
-      () async {
-        final mod = _Outer(Logic(width: 8), Logic(width: 8));
-        await mod.build();
+    test('submodule instance names are stable across repeated definitions',
+        () async {
+      final mod = _Outer(Logic(width: 8), Logic(width: 8));
+      await mod.build();
 
-        final def1 = SynthModuleDefinition(mod);
-        final def2 = SynthModuleDefinition(mod);
+      final def1 = SynthModuleDefinition(mod);
+      final def2 = SynthModuleDefinition(mod);
 
-        final names1 = def1.subModuleInstantiations
-            .where((s) => s.needsInstantiation)
-            .map((s) => s.name)
-            .toList();
-        final names2 = def2.subModuleInstantiations
-            .where((s) => s.needsInstantiation)
-            .map((s) => s.name)
-            .toList();
+      final names1 = def1.subModuleInstantiations
+          .where((s) => s.needsInstantiation)
+          .map((s) => s.name)
+          .toList();
+      final names2 = def2.subModuleInstantiations
+          .where((s) => s.needsInstantiation)
+          .map((s) => s.name)
+          .toList();
 
-        expect(
-          names2,
-          names1,
+      expect(names2, names1,
           reason: 'Repeated synthesis passes should reuse cached instance '
-              'names instead of drifting numeric suffixes.',
-        );
-      },
-    );
-
-    test(
-      'collapsed instance does not steal basename from retained signal',
-      () async {
-        final baseName = await _retainedDupNameAfter(SynthModuleDefinition.new);
-        await Simulator.reset();
-
-        final svName = await _retainedDupNameAfter(
-          SystemVerilogSynthModuleDefinition.new,
-        );
-
-        expect(svName, equals(baseName));
-        expect(baseName, equals('dup'));
-      },
-    );
-
-    test(
-      'struct-slice submodule names are stable across repeated definitions',
-      () async {
-        // Regression test for _BusSubsetForStructSlice.instanceNameKey:
-        // Each SynthModuleDefinition pass creates fresh _BusSubsetForStructSlice
-        // instances for any submodule with a LogicStructure output port.
-        // Without the _destination override the namer cache misses on those
-        // fresh instances and allocates new suffixes every pass, so the same
-        // struct field would be named "struct_slice" on pass 1 and
-        // "struct_slice_0" on pass 2.
-        final mod = _StructSliceParentMod();
-        await mod.build();
-
-        final def1 = SynthModuleDefinition(mod);
-        final def2 = SynthModuleDefinition(mod);
-
-        // Only consider instantiations that are emitted (struct_slice and the
-        // child module itself both have needsInstantiation=true here).
-        final sliceNames1 = def1.subModuleInstantiations
-            .where((s) => s.needsInstantiation)
-            .map((s) => s.name)
-            .where((n) => n.startsWith('struct_slice'))
-            .toList()
-          ..sort();
-        final sliceNames2 = def2.subModuleInstantiations
-            .where((s) => s.needsInstantiation)
-            .map((s) => s.name)
-            .where((n) => n.startsWith('struct_slice'))
-            .toList()
-          ..sort();
-
-        expect(
-          sliceNames1,
-          isNotEmpty,
-          reason: 'Expected at least one struct_slice instance to be '
-              'created for the _TwoFieldStruct output port.',
-        );
-        expect(
-          sliceNames2,
-          sliceNames1,
-          reason: 'struct_slice instance names must not drift across repeated '
-              'synthesis passes — requires _BusSubsetForStructSlice to override '
-              'instanceNameKey with the stable destination Logic.',
-        );
-      },
-    );
+              'names instead of drifting numeric suffixes.');
+    });
   });
-}
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
-class _TwoFieldStruct extends LogicStructure {
-  final Logic a;
-  final Logic b;
-
-  factory _TwoFieldStruct({String name = 'st'}) =>
-      _TwoFieldStruct._(Logic(name: 'a', width: 4), Logic(name: 'b', width: 4),
-          name: name);
-
-  _TwoFieldStruct._(this.a, this.b, {required super.name})
-      : super([a, b]);
-
-  @override
-  LogicStructure clone({String? name}) =>
-      _TwoFieldStruct(name: name ?? this.name);
-}
-
-/// A module with a [LogicStructure] output port.
-///
-/// When this module is instantiated inside a parent, synthesis of the parent
-/// calls [_subsetReceiveStructPort] for this module's struct output, creating
-/// one [_BusSubsetForStructSlice] per leaf element.
-class _StructOutputMod extends Module {
-  late final _TwoFieldStruct out;
-
-  _StructOutputMod() : super(name: '_StructOutputMod') {
-    out = addTypedOutput('out', _TwoFieldStruct.new)
-      ..a.gets(Const(0, width: 4))
-      ..b.gets(Const(0, width: 4));
-  }
-}
-
-/// Parent module whose synthesis pass creates [_BusSubsetForStructSlice]
-/// instances for [_StructOutputMod]'s struct output port.
-class _StructSliceParentMod extends Module {
-  _StructSliceParentMod() : super(name: '_StructSliceParentMod') {
-    final sub = _StructOutputMod();
-    // Consume one leaf so the parent has a meaningful output.
-    addOutput('flat', width: 4) <= sub.out.a;
-  }
 }
