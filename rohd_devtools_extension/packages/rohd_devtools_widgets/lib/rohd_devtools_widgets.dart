@@ -21,3 +21,7 @@ export 'src/export_toast.dart';
 export 'src/save_png_stub.dart'
     if (dart.library.io) 'src/save_png_native.dart'
     if (dart.library.js_interop) 'src/save_png_web.dart';
+
+// Cross-probing
+export 'src/cross_probe_service.dart';
+export 'src/cross_probe_button.dart';
