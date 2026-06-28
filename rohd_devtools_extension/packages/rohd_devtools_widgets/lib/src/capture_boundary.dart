@@ -7,7 +7,7 @@
 // 2026 April
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'dart:math' as math;
+import 'dart:typed_data' show Uint8List;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -21,11 +21,24 @@ import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart' as export_png;
 /// [filePrefix] is used as the first part of the file name
 /// (e.g. `"schematic"` → `schematic_1713052800000.png`).
 ///
+/// When [saveFn] is provided it is used **instead** of the default platform
+/// save/download.  This allows callers (e.g. VS Code webview hosts) to route
+/// the PNG bytes through a native Save dialog.  [saveFn] receives the raw PNG
+/// bytes and a suggested file name, and should return the saved path (or null
+/// if no path feedback is available).
+///
+/// [pixelRatio] controls the output resolution multiplier.  Defaults to 2.0
+/// which works well in webview-constrained environments and keeps PNG sizes
+/// manageable for postMessage serialisation.  Callers that need print-quality
+/// output (e.g. schematic exports) should pass a higher value explicitly.
+///
 /// Returns `true` if the export succeeded.
 Future<bool> captureBoundaryToPng(
   BuildContext context, {
   required GlobalKey boundaryKey,
   String filePrefix = 'export',
+  double pixelRatio = 2.0,
+  Future<String?> Function(Uint8List pngBytes, String fileName)? saveFn,
 }) async {
   final boundary =
       boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -34,10 +47,6 @@ Future<bool> captureBoundaryToPng(
     return false;
   }
 
-  final pixelRatio = math.min(
-    3.0,
-    MediaQuery.of(context).devicePixelRatio,
-  );
   final image = await boundary.toImage(pixelRatio: pixelRatio);
   final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
   image.dispose();
@@ -51,7 +60,12 @@ Future<bool> captureBoundaryToPng(
   final fileName = '${filePrefix}_${DateTime.now().millisecondsSinceEpoch}.png';
 
   try {
-    final savedPath = await export_png.savePngBytes(pngBytes, fileName);
+    final String? savedPath;
+    if (saveFn != null) {
+      savedPath = await saveFn(pngBytes, fileName);
+    } else {
+      savedPath = await export_png.savePngBytes(pngBytes, fileName);
+    }
     final msg =
         savedPath != null ? 'Saved: $savedPath' : 'Downloaded $fileName';
     debugPrint('[ExportPng] $msg');
