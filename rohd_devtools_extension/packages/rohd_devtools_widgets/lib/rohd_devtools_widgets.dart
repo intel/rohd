@@ -30,6 +30,12 @@ export 'src/cross_probe_menu.dart';
 // Logic type utilities
 export 'src/logic_type_utils.dart';
 
+// Bit-field parsing, formatting, and dialog utilities
+export 'src/bit_field_utils.dart';
+
+// Shared "Expand Bits" / "Define Bit Fields" popup-menu helpers
+export 'src/bit_expansion_menu.dart';
+
 // ROHD extension client
 export 'src/rohd_extension_status.dart';
 export 'src/rohd_extension_client.dart';
