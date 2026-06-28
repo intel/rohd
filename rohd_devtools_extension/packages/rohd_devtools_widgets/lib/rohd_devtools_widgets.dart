@@ -27,6 +27,9 @@ export 'src/cross_probe_service.dart';
 export 'src/cross_probe_button.dart';
 export 'src/cross_probe_menu.dart';
 
+// Logic type utilities
+export 'src/logic_type_utils.dart';
+
 // ROHD extension client
 export 'src/rohd_extension_status.dart';
 export 'src/rohd_extension_client.dart';
