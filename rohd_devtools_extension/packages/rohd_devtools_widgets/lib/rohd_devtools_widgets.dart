@@ -25,6 +25,7 @@ export 'src/save_png_stub.dart'
 // Cross-probing
 export 'src/cross_probe_service.dart';
 export 'src/cross_probe_button.dart';
+export 'src/cross_probe_menu.dart';
 
 // ROHD extension client
 export 'src/rohd_extension_status.dart';
