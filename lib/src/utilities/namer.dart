@@ -31,6 +31,16 @@ class Namer {
   /// Port names are returned directly from [_portLogics] and never cached here.
   final Map<Logic, String> _signalNames = {};
 
+  /// Reverse map: final signal name -> the [Logic] the namer selected as the
+  /// *source* of that name (the `chosen` candidate in [signalNameOfBest]).
+  ///
+  /// This records a decision the namer already makes; it does not influence
+  /// naming.  It lets callers recover *which* merged [Logic] gave a net its
+  /// name, so source-trace / cross-probe data can be attributed to the
+  /// declared signal rather than to an arbitrary internal signal that merged
+  /// into the same net.
+  final Map<String, Logic> _nameSources = {};
+
   /// Cache of resolved instance names, keyed by [Module.instanceNameKey].
   ///
   /// Instance-name lookup claims names in [_uniquifier]. Without this cache,
@@ -131,6 +141,11 @@ class Namer {
   /// Equivalent to the internal [_signalNameOf] allocation but exposed for
   /// use in wave-dumping and tests.
   String signalNameOf(Logic logic) => _signalNameOf(logic);
+
+  /// Returns the [Logic] the namer chose as the source of signal [name], or
+  /// `null` if [name] has no single source [Logic] (e.g. a constant net) or
+  /// has not been named yet.
+  Logic? sourceLogicOf(String name) => _nameSources[name];
 
   /// The base name that would be used for [logic] before uniquification.
   static String baseName(Logic logic) =>
@@ -240,6 +255,7 @@ class Namer {
   /// same name for all other non-port [Logic]s in [all].
   String _nameAndCacheAll(Logic chosen, Iterable<Logic> all) {
     final name = _signalNameOf(chosen);
+    _nameSources[name] = chosen;
     for (final logic in all) {
       if (!identical(logic, chosen) && !_portLogics.contains(logic)) {
         _signalNames[logic] = name;
