@@ -14,22 +14,35 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// A version of [BusSubset] that can be used for slicing on [LogicStructure]
 /// ports.
 class _BusSubsetForStructSlice extends BusSubset {
+  /// The stable destination [Logic] this slice drives.
+  ///
+  /// Used as the [instanceNameKey] so that, although a fresh
+  /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
+  /// canonical instance name is memoized against the persistent destination
+  /// signal and therefore does not drift run-to-run.
+  final Logic _destination;
+
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
   _BusSubsetForStructSlice(
     super.bus,
     super.startIndex,
-    super.endIndex,
-  ) : super(name: 'struct_slice');
+    super.endIndex, {
+    required Logic destination,
+  })  : _destination = destination,
+        super(name: 'struct_slice');
 
   // we override this since it's added post-build
   @override
   bool get hasBuilt => true;
+
+  @override
+  Object get instanceNameKey => _destination;
 }
 
 /// Represents the definition of a module.
@@ -75,6 +88,17 @@ class SynthModuleDefinition {
   Iterable<SynthSubModuleInstantiation> get subModuleInstantiations =>
       moduleToSubModuleInstantiationMap.values;
 
+  /// Chainable inline modules that should claim names after emitted objects.
+  @protected
+  final Set<SynthSubModuleInstantiation> chainableModulesToCollapse = {};
+
+  // Weak-name marks do not remove objects from naming. They make likely
+  // collapsed objects claim names after unmarked objects, so in a collision
+  // the unmarked object keeps the basename and the marked object gets a suffix.
+  final Set<SynthSubModuleInstantiation> _weakNameClaimSubmodules = {};
+
+  final Set<SynthLogic> _weakNameClaimSignals = {};
+
   /// Indicates that [m] is a submodule used within this definition.
   ///
   /// This is only valid to call after all the submodules have been detected.
@@ -110,10 +134,6 @@ class SynthModuleDefinition {
   @override
   String toString() => "module name: '${module.name}'";
 
-  /// Used to uniquify any identifiers, including signal names
-  /// and module instances.
-  final Uniquifier _synthInstantiationNameUniquifier;
-
   /// Indicates whether [logic] has a corresponding present [SynthLogic] in
   /// this definition.
   @internal
@@ -132,9 +152,7 @@ class SynthModuleDefinition {
 
   /// Either accesses a previously created [SynthLogic] corresponding to
   /// [logic], or else creates a new one and adds it to the [logicToSynthMap].
-  SynthLogic? getSynthLogic(
-    Logic? logic,
-  ) {
+  SynthLogic? getSynthLogic(Logic? logic) {
     if (logic == null) {
       return null;
     } else if (!(logic.parentModule == module ||
@@ -244,8 +262,14 @@ class SynthModuleDefinition {
     for (final leafElement in port.leafElements) {
       final leafSynth = getSynthLogic(leafElement)!;
       internalSignals.add(leafSynth);
-      assignments.add(PartialSynthAssignment(leafSynth, portSynth,
-          dstUpperIndex: idx + leafElement.width - 1, dstLowerIndex: idx));
+      assignments.add(
+        PartialSynthAssignment(
+          leafSynth,
+          portSynth,
+          dstUpperIndex: idx + leafElement.width - 1,
+          dstLowerIndex: idx,
+        ),
+      );
       idx += leafElement.width;
     }
   }
@@ -266,9 +290,12 @@ class SynthModuleDefinition {
       // this is DISCONNECTED, just a module used for synthesizing
       final subsetMod = _BusSubsetForStructSlice(
         (port.isNet ? LogicNet.new : Logic.new)(
-            width: port.width, name: 'DUMMY'),
+          width: port.width,
+          name: 'DUMMY',
+        ),
         idx,
         idx + leafElement.width - 1,
+        destination: leafElement,
       );
 
       final ssmi = getSynthSubModuleInstantiation(subsetMod);
@@ -289,14 +316,7 @@ class SynthModuleDefinition {
 
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
-      : _synthInstantiationNameUniquifier = Uniquifier(
-          reservedNames: {
-            ...module.inputs.keys,
-            ...module.outputs.keys,
-            ...module.inOuts.keys,
-          },
-        ),
-        assert(
+      : assert(
             !(module is SystemVerilog &&
                 module.generatedDefinitionType ==
                     DefinitionGenerationType.none),
@@ -340,8 +360,9 @@ class SynthModuleDefinition {
     // find any named signals sitting around that don't do anything
     // this is not necessary for functionality, just nice naming inclusion
     logicsToTraverse.addAll(
-      module.internalSignals
-          .where((element) => element.naming != Naming.unnamed),
+      module.internalSignals.where(
+        (element) => element.naming != Naming.unnamed,
+      ),
     );
 
     // make sure floating modules are included
@@ -374,9 +395,10 @@ class SynthModuleDefinition {
       final receiver = logicsToTraverse[i];
 
       assert(
-          receiver.parentModule != null,
-          'Any signal traced by this should have been detected by build,'
-          ' but $receiver was not.');
+        receiver.parentModule != null,
+        'Any signal traced by this should have been detected by build,'
+        ' but $receiver was not.',
+      );
 
       if (receiver.parentModule != module &&
           !module.subModules.contains(receiver.parentModule)) {
@@ -399,10 +421,12 @@ class SynthModuleDefinition {
       if (receiver is LogicNet) {
         // only for the leaves, that's why only `LogicNet` and not array/struct
 
-        logicsToTraverse.addAll([
-          ...receiver.srcConnections,
-          ...receiver.dstConnections
-        ].where((element) => element.parentModule == module));
+        logicsToTraverse.addAll(
+          [
+            ...receiver.srcConnections,
+            ...receiver.dstConnections,
+          ].where((element) => element.parentModule == module),
+        );
 
         for (final srcConnection in receiver.srcConnections) {
           if (srcConnection.parentModule == module ||
@@ -410,10 +434,7 @@ class SynthModuleDefinition {
                   srcConnection.parentModule!.parent == module)) {
             final netSynthDriver = getSynthLogic(srcConnection)!;
 
-            assignments.add(SynthAssignment(
-              netSynthDriver,
-              synthReceiver,
-            ));
+            assignments.add(SynthAssignment(netSynthDriver, synthReceiver));
           }
         }
       }
@@ -442,10 +463,11 @@ class SynthModuleDefinition {
         inOuts.add(synthReceiver);
       } else {
         assert(
-            !inputs.contains(synthReceiver) &&
-                !outputs.contains(synthReceiver) &&
-                !inOuts.contains(synthReceiver),
-            'Internal signals should not be ports also.');
+          !inputs.contains(synthReceiver) &&
+              !outputs.contains(synthReceiver) &&
+              !inOuts.contains(synthReceiver),
+          'Internal signals should not be ports also.',
+        );
         internalSignals.add(synthReceiver);
       }
 
@@ -456,8 +478,9 @@ class SynthModuleDefinition {
 
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement()) {
-          getSynthSubModuleInstantiation(subModule)
-              .setInOutMapping(receiver.name, synthReceiver);
+          getSynthSubModuleInstantiation(
+            subModule,
+          ).setInOutMapping(receiver.name, synthReceiver);
         }
 
         logicsToTraverse.addAll(subModule.inOuts.values);
@@ -465,14 +488,16 @@ class SynthModuleDefinition {
 
       final receiverIsSubModuleOutput =
           receiver.isOutput && (receiver.parentModule?.parent == module);
+
       if (receiverIsSubModuleOutput) {
         final subModule = receiver.parentModule!;
 
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement()) {
-          getSynthSubModuleInstantiation(subModule)
-              .setOutputMapping(receiver.name, synthReceiver);
+          getSynthSubModuleInstantiation(
+            subModule,
+          ).setOutputMapping(receiver.name, synthReceiver);
         }
 
         logicsToTraverse
@@ -503,8 +528,9 @@ class SynthModuleDefinition {
         // array elements are not named ports, just contained in array
         if (synthReceiver is! SynthLogicArrayElement &&
             !synthReceiver.isStructPortElement()) {
-          getSynthSubModuleInstantiation(subModule)
-              .setInputMapping(receiver.name, synthReceiver);
+          getSynthSubModuleInstantiation(
+            subModule,
+          ).setInputMapping(receiver.name, synthReceiver);
         }
       }
     }
@@ -513,9 +539,213 @@ class SynthModuleDefinition {
     _collapseArrays();
     _collapseAssignments();
     _assignSubmodulePortMapping();
+
     _pruneUnused();
-    process();
+
+    // Naming has two base-owned phases: mark likely-collapsed objects as weak
+    // name claimants, then pick names. After that, synthesizers may
+    // process/collapse the marked objects.
+    _prepareForNaming();
     _pickNames();
+    process();
+  }
+
+  /// Performs base-owned preparation before names are picked.
+  ///
+  /// Synthesizers must not override this method.
+  void _prepareForNaming() {
+    _markPotentiallyCollapsedObjectsForNaming();
+  }
+
+  /// Marks objects likely to be collapsed by some synthesizers as weak name
+  /// claimants.
+  ///
+  /// Marked objects are still named. They just claim names after unmarked
+  /// objects, biasing collision resolution so unmarked objects keep basenames
+  /// and marked objects receive suffixes like `_1` or `_2`.
+  void _markPotentiallyCollapsedObjectsForNaming() {
+    chainableModulesToCollapse
+      ..clear()
+      ..addAll(_findChainableModulesToCollapse());
+    _weakNameClaimSubmodules.clear();
+    _weakNameClaimSignals.clear();
+
+    for (final subModuleInstantiation in chainableModulesToCollapse) {
+      _weakNameClaimSubmodules.add(subModuleInstantiation);
+      final resultLogic = _inlineResultLogic(subModuleInstantiation);
+      if (resultLogic != null) {
+        _weakNameClaimSignals.add(resultLogic);
+        if (resultLogic is SynthLogicArrayElement) {
+          _weakNameClaimSignals.add(resultLogic.parentArray.resolved);
+        }
+      }
+    }
+  }
+
+  /// Finds chainable, inlineable modules.
+  Iterable<SynthSubModuleInstantiation> _findChainableModulesToCollapse() {
+    final inlineableSubmoduleInstantiations = subModuleInstantiations.where(
+      (submoduleInstantiation) =>
+          submoduleInstantiation.module is InlineSystemVerilog,
+    );
+
+    final signalUsage = <SynthLogic, int>{};
+
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      for (final inSynthLogic in [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values,
+      ]) {
+        if (inputs.contains(inSynthLogic) || inOuts.contains(inSynthLogic)) {
+          continue;
+        }
+
+        if (_inlineResultLogic(subModuleInstantiation) == inSynthLogic) {
+          continue;
+        }
+
+        signalUsage.update(
+          inSynthLogic,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
+
+    // Arrays which are used as a whole (not just element-by-element) anywhere:
+    // as a port of this module, in a submodule port mapping, or in an
+    // assignment.  We must not inline away elements of such arrays, since the
+    // array declaration is still needed and elements could lose connections.
+    final aggregateUsedArrays = <SynthLogic>{};
+    void markIfAggregateArray(SynthLogic? synthLogic) {
+      if (synthLogic != null && synthLogic.isArray) {
+        aggregateUsedArrays.add(synthLogic.resolved);
+      }
+    }
+
+    [...inputs, ...outputs, ...inOuts].forEach(markIfAggregateArray);
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.outputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values,
+      ].forEach(markIfAggregateArray);
+    }
+    for (final assignment in assignments) {
+      markIfAggregateArray(assignment.src);
+      markIfAggregateArray(assignment.dst);
+    }
+
+    // Signals still referenced directly by an assignment must not be inlined
+    // away. This is especially important for array elements, whose assignments
+    // are not collapsed away like mergeable signals.
+    final assignmentReferencedSignals = <SynthLogic>{
+      for (final assignment in assignments) ...[
+        assignment.src,
+        assignment.dst,
+      ],
+    };
+
+    final inlineableResultLogics = <SynthLogic>{};
+    for (final subModuleInstantiation in inlineableSubmoduleInstantiations) {
+      final resultLogic = _inlineResultLogic(subModuleInstantiation);
+      if (resultLogic != null && subModuleInstantiation.needsInstantiation) {
+        inlineableResultLogics.add(resultLogic.resolved);
+      }
+    }
+
+    bool isInlineableArrayElementCandidate(SynthLogic signal) =>
+        signal is SynthLogicArrayElement &&
+        inlineableResultLogics.contains(signal.resolved) &&
+        signal.isClearable &&
+        !aggregateUsedArrays.contains(signal.parentArray.resolved) &&
+        !assignmentReferencedSignals.contains(signal.resolved);
+
+    final candidateElements = <SynthLogic>{};
+    signalUsage.forEach((signal, signalUsageCount) {
+      if (signalUsageCount == 1 && isInlineableArrayElementCandidate(signal)) {
+        candidateElements.add(signal.resolved);
+      }
+    });
+
+    // Only inline array elements when the whole parent array will be replaced.
+    // Partial inlining is unsafe: the array would remain declared and its
+    // remaining elements could change behavior (for example `x` vs `z` on
+    // undriven bits).
+    final approvedElements = <SynthLogic>{};
+    final candidatesByArray = <SynthLogic, Set<SynthLogic>>{};
+    for (final element in candidateElements) {
+      candidatesByArray
+          .putIfAbsent(
+            (element as SynthLogicArrayElement).parentArray.resolved,
+            () => {},
+          )
+          .add(element);
+    }
+    candidatesByArray.forEach((parentArray, arrayCandidates) {
+      final allElementSynthLogics = parentArray.logics
+          .whereType<LogicArray>()
+          .expand((logicArray) => logicArray.elements)
+          .map(getSynthLogic)
+          .nonNulls
+          .map((e) => e.resolved)
+          .toSet();
+      if (allElementSynthLogics.isNotEmpty &&
+          allElementSynthLogics.every(candidateElements.contains)) {
+        approvedElements.addAll(arrayCandidates);
+      }
+    });
+
+    final singleUseSignals = <SynthLogic>{};
+    signalUsage.forEach((signal, signalUsageCount) {
+      if (signalUsageCount == 1 &&
+          (signal.mergeable || approvedElements.contains(signal.resolved))) {
+        singleUseSignals.add(signal);
+      }
+    });
+
+    for (final partialAssignment
+        in assignments.whereType<PartialSynthAssignment>()) {
+      singleUseSignals.remove(partialAssignment.src);
+    }
+
+    for (final instantiation in subModuleInstantiations) {
+      final subModule = instantiation.module;
+      if (subModule is SystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+        // ignore: deprecated_member_use_from_same_package
+      } else if (subModule is CustomSystemVerilog) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+      }
+    }
+
+    return inlineableSubmoduleInstantiations.where((subModuleInstantiation) {
+      final resultSynthLogic = _inlineResultLogic(subModuleInstantiation);
+
+      return resultSynthLogic != null &&
+          singleUseSignals.contains(resultSynthLogic) &&
+          subModuleInstantiation.needsInstantiation;
+    });
+  }
+
+  SynthLogic? _inlineResultLogic(SynthSubModuleInstantiation instantiation) {
+    final subModule = instantiation.module;
+    if (subModule is! InlineSystemVerilog) {
+      return null;
+    }
+
+    return instantiation.outputMapping[subModule.resultSignalName] ??
+        instantiation.inOutMapping[subModule.resultSignalName];
   }
 
   /// Performs additional processing on the current definition to simplify,
@@ -576,8 +806,9 @@ class SynthModuleDefinition {
         final logics = internalSignal.logics;
 
         if (internalSignal.isArray) {
-          if (logics.any((logicArray) =>
-              logicArray.elements.any(logicHasPresentSynthLogic))) {
+          if (logics.any(
+            (logicArray) => logicArray.elements.any(logicHasPresentSynthLogic),
+          )) {
             // if it's an array, can only remove if all elements are removed
             reducedInternalSignals.add(internalSignal);
           } else {
@@ -589,26 +820,31 @@ class SynthModuleDefinition {
           continue;
         }
 
-        final isCustomSvModPort = logics.any((logic) =>
-            logic.isPort &&
-            isSubmoduleAndPresent(logic.parentModule) &&
-            ((logic.parentModule! is SystemVerilog &&
-                    !(logic.parentModule! as SystemVerilog)
-                        .acceptsEmptyPortConnections) ||
-                // ignore: deprecated_member_use_from_same_package
-                logic.parentModule! is CustomSystemVerilog));
+        final isCustomSvModPort = logics.any(
+          (logic) =>
+              logic.isPort &&
+              isSubmoduleAndPresent(logic.parentModule) &&
+              ((logic.parentModule! is SystemVerilog &&
+                      !(logic.parentModule! as SystemVerilog)
+                          .acceptsEmptyPortConnections) ||
+                  // ignore: deprecated_member_use_from_same_package
+                  logic.parentModule! is CustomSystemVerilog),
+        );
 
         if (!isCustomSvModPort) {
           if (internalSignal.isNet) {
             final anyInternalConnections = [
               ...internalSignal.srcConnections,
-              ...internalSignal.dstConnections
+              ...internalSignal.dstConnections,
             ]
-                .where((e) =>
-                    (e.parentModule == module ||
-                        ( // in case of sub-module output driving a net
-                            e.parentModule?.parent == module && e.isOutput)) &&
-                    logicHasPresentSynthLogic(e))
+                .where(
+                  (e) =>
+                      (e.parentModule == module ||
+                          ( // in case of sub-module output driving a net
+                              e.parentModule?.parent == module &&
+                                  e.isOutput)) &&
+                      logicHasPresentSynthLogic(e),
+                )
                 .isNotEmpty;
 
             if (anyInternalConnections) {
@@ -619,9 +855,11 @@ class SynthModuleDefinition {
             final connectedSubModules = logics
                 .map((e) => e.parentModule)
                 .nonNulls
-                .where((e) =>
-                    e != module &&
-                    getSynthSubModuleInstantiation(e).needsInstantiation)
+                .where(
+                  (e) =>
+                      e != module &&
+                      getSynthSubModuleInstantiation(e).needsInstantiation,
+                )
                 .toSet();
 
             if (connectedSubModules.length > 1) {
@@ -632,13 +870,15 @@ class SynthModuleDefinition {
             // If the signal appears in multiple inout port mappings on the
             // same (single) connected submodule, it's a loopback and needs
             // a wire declaration so both ports can reference it by name.
-            final hasInOutLoopback = connectedSubModules.any((m) =>
-                getSynthSubModuleInstantiation(m)
-                    .inOutMapping
-                    .values
-                    .where((v) => v == internalSignal)
-                    .length >
-                1);
+            final hasInOutLoopback = connectedSubModules.any(
+              (m) =>
+                  getSynthSubModuleInstantiation(m)
+                      .inOutMapping
+                      .values
+                      .where((v) => v == internalSignal)
+                      .length >
+                  1,
+            );
 
             if (hasInOutLoopback) {
               reducedInternalSignals.add(internalSignal);
@@ -696,39 +936,44 @@ class SynthModuleDefinition {
         continue;
       }
 
-      for (final subModuleInstantiation
-          in subModuleInstantiations.where((e) => e.needsInstantiation)) {
+      for (final subModuleInstantiation in subModuleInstantiations.where(
+        (e) => e.needsInstantiation,
+      )) {
         final subModule = subModuleInstantiation.module;
 
         if (subModule is SystemVerilog && subModule.isWiresOnly) {
           final inputs = {
             ...subModuleInstantiation.inputMapping,
-            ...subModuleInstantiation.inOutMapping
+            ...subModuleInstantiation.inOutMapping,
           };
           final outputs = {
             ...subModuleInstantiation.outputMapping,
-            ...subModuleInstantiation.inOutMapping
+            ...subModuleInstantiation.inOutMapping,
           };
 
           // if all the inputs or all the outputs are not used, we can remove
           // the module
 
-          final allOutputsUnused = outputs.values.every((output) =>
-              output.declarationCleared ||
-              (output.isClearable &&
-                  !output.isStructPortElement() &&
-                  !output.hasDstConnectionsPresent()));
+          final allOutputsUnused = outputs.values.every(
+            (output) =>
+                output.declarationCleared ||
+                (output.isClearable &&
+                    !output.isStructPortElement() &&
+                    !output.hasDstConnectionsPresent()),
+          );
           if (allOutputsUnused) {
             subModuleInstantiation.clearInstantiation();
             changed = true;
             continue;
           }
 
-          final allInputsUnused = inputs.values.every((input) =>
-              input.declarationCleared ||
-              (input.isClearable &&
-                  !input.isStructPortElement() &&
-                  !input.hasSrcConnectionsPresent()));
+          final allInputsUnused = inputs.values.every(
+            (input) =>
+                input.declarationCleared ||
+                (input.isClearable &&
+                    !input.isStructPortElement() &&
+                    !input.hasSrcConnectionsPresent()),
+          );
           if (allInputsUnused) {
             subModuleInstantiation.clearInstantiation();
             changed = true;
@@ -745,68 +990,108 @@ class SynthModuleDefinition {
     for (final submoduleInstantiation in subModuleInstantiations) {
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
-        submoduleInstantiation.setInputMapping(inputName, orig.resolved,
-            replace: true);
+        submoduleInstantiation.setInputMapping(
+          inputName,
+          orig.replacement ?? orig,
+          replace: true,
+        );
       }
 
       for (final outputName in submoduleInstantiation.module.outputs.keys) {
         final orig = submoduleInstantiation.outputMapping[outputName]!;
-        submoduleInstantiation.setOutputMapping(outputName, orig.resolved,
-            replace: true);
+        submoduleInstantiation.setOutputMapping(
+          outputName,
+          orig.replacement ?? orig,
+          replace: true,
+        );
       }
 
       for (final inOutName in submoduleInstantiation.module.inOuts.keys) {
         final orig = submoduleInstantiation.inOutMapping[inOutName]!;
-        submoduleInstantiation.setInOutMapping(inOutName, orig.resolved,
-            replace: true);
+        submoduleInstantiation.setInOutMapping(
+          inOutName,
+          orig.replacement ?? orig,
+          replace: true,
+        );
       }
     }
   }
 
   /// Picks names of signals and sub-modules.
+  ///
+  /// Signal names are selected through [Namer.signalNameOfBest] or kept as
+  /// literal constants. Submodule names are selected through
+  /// [Namer.instanceNameOf]. All non-constant names share a single namespace
+  /// managed by the module's [Namer].
   void _pickNames() {
     // first ports get priority
+    // Name allocation order matters -- earlier claims receive the unsuffixed
+    // name when there are collisions. Weak-name claimants are intentionally
+    // deferred so emitted objects receive 1st chance at the shortest basenames:
+    //   1. Ports (reserved by _initNamespace, claimed via signalName)
+    //   2. Reserved submodule instances
+    //   3. Reserved internal signals with strong claims
+    //   4. Non-reserved submodule instances with strong claims
+    //   5. Non-reserved internal signals with strong claims
+    //   6. Weak submodule instances
+    //   7. Weak internal signals
     for (final input in inputs) {
-      input.pickName(_synthInstantiationNameUniquifier);
+      input.pickName();
     }
     for (final output in outputs) {
-      output.pickName(_synthInstantiationNameUniquifier);
+      output.pickName();
     }
     for (final inOut in inOuts) {
-      inOut.pickName(_synthInstantiationNameUniquifier);
+      inOut.pickName();
     }
 
-    // pick names of *reserved* submodule instances
-    final nonReservedSubmodules = <SynthSubModuleInstantiation>[];
+    // Reserved submodule instances first (they assert their exact name).
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {
-        submodule.pickName(_synthInstantiationNameUniquifier);
+        submodule.pickName(module);
         assert(submodule.module.name == submodule.name,
             'Expect reserved names to retain their name.');
-      } else {
-        nonReservedSubmodules.add(submodule);
       }
     }
 
-    // then *reserved* internal signals get priority
+    // Reserved internal signals next.
     final nonReservedSignals = <SynthLogic>[];
+    final weakSignals = <SynthLogic>[];
     for (final signal in internalSignals) {
-      if (signal.isReserved) {
-        signal.pickName(_synthInstantiationNameUniquifier);
+      if (_weakNameClaimSignals.contains(signal)) {
+        weakSignals.add(signal);
+      } else if (signal.isReserved) {
+        signal.pickName();
       } else {
         nonReservedSignals.add(signal);
       }
     }
 
-    // then submodule instances
-    for (final submodule in nonReservedSubmodules
-        .where((element) => element.needsInstantiation)) {
-      submodule.pickName(_synthInstantiationNameUniquifier);
+    // Then non-reserved submodule instances with strong name claims.
+    final weakSubmodules = <SynthSubModuleInstantiation>[];
+    for (final submodule in subModuleInstantiations) {
+      if (submodule.module.reserveName) {
+        continue;
+      }
+      if (_weakNameClaimSubmodules.contains(submodule)) {
+        weakSubmodules.add(submodule);
+      } else if (submodule.needsInstantiation) {
+        submodule.pickName(module);
+      }
     }
 
-    // then the rest of the internal signals
+    // Then the rest of the internal signals with strong name claims.
     for (final signal in nonReservedSignals) {
-      signal.pickName(_synthInstantiationNameUniquifier);
+      signal.pickName();
+    }
+
+    // Finally, weak claims reserve stable names after emitted objects have
+    // had first chance at the shortest basenames.
+    for (final submodule in weakSubmodules) {
+      submodule.pickName(module);
+    }
+    for (final signal in weakSignals) {
+      signal.pickName();
     }
   }
 
@@ -849,9 +1134,10 @@ class SynthModuleDefinition {
       for (final MapEntry(key: (srcArray, dstArray), value: arrAssignments)
           in groupedAssignments.entries) {
         assert(
-            srcArray.logics.first.elements.length ==
-                dstArray.logics.first.elements.length,
-            'should be equal lengths of elements in both arrays by now');
+          srcArray.logics.first.elements.length ==
+              dstArray.logics.first.elements.length,
+          'should be equal lengths of elements in both arrays by now',
+        );
 
         // first requirement is that all elements have been assigned
         var shouldMerge =
@@ -906,8 +1192,10 @@ class SynthModuleDefinition {
         assignments.where((a) => !a.src.isConstant && !a.dst.isConstant),
         assignments.where((a) => a.src.isConstant || a.dst.isConstant),
       ])) {
-        assert(assignment is! PartialSynthAssignment,
-            'Partial assignments should have been removed before this.');
+        assert(
+          assignment is! PartialSynthAssignment,
+          'Partial assignments should have been removed before this.',
+        );
 
         final dst = assignment.dst;
         final src = assignment.src;
@@ -919,8 +1207,10 @@ class SynthModuleDefinition {
           continue;
         }
 
-        assert(dst != src,
-            'No circular assignment allowed between $dst and $src.');
+        assert(
+          dst != src,
+          'No circular assignment allowed between $dst and $src.',
+        );
 
         final mergeResults = SynthLogic.tryMerge(dst, src);
 
@@ -960,14 +1250,18 @@ class SynthModuleDefinition {
 
   /// Performs updates to this definition after merging away a signal as part of
   /// [_collapseAssignments].
-  void _applyAssignmentMergeUpdates(
-      {required SynthLogic mergedAway, required SynthLogic kept}) {
+  void _applyAssignmentMergeUpdates({
+    required SynthLogic mergedAway,
+    required SynthLogic kept,
+  }) {
     final foundInternal = internalSignals.remove(mergedAway);
 
     if (!foundInternal) {
       final foundKept = internalSignals.remove(kept);
-      assert(foundKept,
-          'One of the two should be internal since we cant merge ports.');
+      assert(
+        foundKept,
+        'One of the two should be internal since we cant merge ports.',
+      );
 
       if (inputs.contains(mergedAway)) {
         inputs
@@ -991,8 +1285,8 @@ class SynthModuleDefinition {
         // should all be the same synth, and arrays only merge with arrays
         final keptElement = getSynthLogic(keptElementLogic)!;
         final mergedAwayElement = getSynthLogic(
-            (mergedAway.logics.first as LogicArray)
-                .elements[keptElementIndex])!;
+          (mergedAway.logics.first as LogicArray).elements[keptElementIndex],
+        )!;
 
         if (keptElement == mergedAwayElement) {
           continue;
@@ -1001,7 +1295,9 @@ class SynthModuleDefinition {
         keptElement.adopt(mergedAwayElement, force: true);
 
         _applyAssignmentMergeUpdates(
-            mergedAway: mergedAwayElement, kept: keptElement);
+          mergedAway: mergedAwayElement,
+          kept: keptElement,
+        );
       }
     }
   }
