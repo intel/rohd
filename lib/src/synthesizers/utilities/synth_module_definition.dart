@@ -545,7 +545,7 @@ class SynthModuleDefinition {
     // Naming has two base-owned phases: mark likely-collapsed objects as weak
     // name claimants, then pick names. After that, synthesizers may
     // process/collapse the marked objects.
-    prepareForNaming();
+    _prepareForNaming();
     _pickNames();
     process();
   }
@@ -553,8 +553,7 @@ class SynthModuleDefinition {
   /// Performs base-owned preparation before names are picked.
   ///
   /// Synthesizers must not override this method.
-  @nonVirtual
-  void prepareForNaming() {
+  void _prepareForNaming() {
     _markPotentiallyCollapsedObjectsForNaming();
   }
 
