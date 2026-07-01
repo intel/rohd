@@ -1,3 +1,7 @@
+## Next release
+
+- Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions.
+
 ## 0.6.9
 
 - Fixed a bug where unnamed or mergeable inOut loop-back connections on a single module could be incorrectly omitted from the generated SystemVerilog (<https://github.com/intel/rohd/pull/655>).
