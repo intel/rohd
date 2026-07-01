@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synth_module_definition.dart
@@ -18,7 +18,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
-    _buildNetConnectsForNaming();
+    _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
   }
@@ -56,7 +56,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   }
 
   /// Builds [_NetConnect] instances for [LogicNet] assignments.
-  void _buildNetConnectsForNaming() {
+  void _replaceNetConnections() {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {

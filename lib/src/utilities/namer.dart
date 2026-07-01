@@ -140,6 +140,7 @@ class Namer {
   ///
   /// Equivalent to the internal [_signalNameOf] allocation but exposed for
   /// use in wave-dumping and tests.
+  @visibleForTesting
   String signalNameOf(Logic logic) => _signalNameOf(logic);
 
   /// Returns the [Logic] the namer chose as the source of signal [name], or
