@@ -82,7 +82,7 @@ void main() {
     test('constant value appears as literal in SV output', () async {
       final dut = _ConstantNamingModule();
       await dut.build();
-      final sv = SvService(dut).synthOutput;
+      final sv = dut.generateSynth();
 
       // The constant "1" should appear as a literal 1'h1 in the output,
       // not as a declared signal.
@@ -92,7 +92,7 @@ void main() {
     test('constNameDisallowed falls through to signal naming', () async {
       final dut = _ConstNameDisallowedModule();
       await dut.build();
-      final sv = SvService(dut).synthOutput;
+      final sv = dut.generateSynth();
 
       // The output assignment should NOT use the raw constant literal
       // as a wire name; a proper signal name should be used instead.
@@ -109,7 +109,7 @@ void main() {
         'in the shared namespace', () async {
       final dut = _InstanceSignalCollision();
       await dut.build();
-      final sv = SvService(dut).synthOutput;
+      final sv = dut.generateSynth();
 
       // With a single shared namespace, one of the two "inner" identifiers
       // must be suffixed to avoid collision.
@@ -159,7 +159,7 @@ void main() {
     test('duplicate instance names get uniquified', () async {
       final dut = _DuplicateInstances();
       await dut.build();
-      final sv = SvService(dut).synthOutput;
+      final sv = dut.generateSynth();
 
       // Two instances named 'blk' — one should be 'blk', the other 'blk_0'.
       expect(sv, contains('blk'));

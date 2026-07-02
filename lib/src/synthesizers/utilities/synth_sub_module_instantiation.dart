@@ -26,10 +26,9 @@ class SynthSubModuleInstantiation {
 
   /// Selects a name for this module instance. Must be called exactly once.
   ///
-  /// Names are allocated from [parentModule]'s [Namer]'s shared namespace
-  /// via [Namer.instanceNameOf], which memoizes by [Module.instanceNameKey] so
-  /// the same instance receives an identical canonical name across repeated
-  /// synthesis passes.
+  /// Names are allocated (and cached) via [Namer.instanceNameOf] so that
+  /// repeated synthesis passes over the same hierarchy always produce the
+  /// same instance name.
   void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 

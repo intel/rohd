@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synth_module_definition.dart
@@ -18,7 +18,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
-    _buildNetConnectsForNaming(pickName: true);
+    _replaceNetConnections();
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
   }
@@ -31,9 +31,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   /// [LogicNet]s.
   SystemVerilogSynthSubModuleInstantiation _addNetConnect(
     SynthLogic dst,
-    SynthLogic src, {
-    bool pickName = false,
-  }) {
+    SynthLogic src,
+  ) {
     // make an (unconnected) module representing the assignment
     final netConnect = _NetConnect(
       LogicNet(width: dst.width),
@@ -51,15 +50,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     // notify the `SynthBuilder` that it needs declaration
     supportingModules.add(netConnect);
 
-    if (pickName) {
-      netConnectSynthSubModInst.pickName(module);
-    }
+    netConnectSynthSubModInst.pickName(module);
 
     return netConnectSynthSubModInst;
   }
 
   /// Builds [_NetConnect] instances for [LogicNet] assignments.
-  void _buildNetConnectsForNaming({bool pickName = false}) {
+  void _replaceNetConnections() {
     final reducedAssignments = <SynthAssignment>[];
 
     for (final assignment in assignments) {
@@ -69,7 +66,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           'Net connections should not be partial assignments.',
         );
 
-        _addNetConnect(assignment.dst, assignment.src, pickName: pickName);
+        _addNetConnect(assignment.dst, assignment.src);
       } else {
         reducedAssignments.add(assignment);
       }
@@ -154,7 +151,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       final netConnectSynthSubmod = _addNetConnect(
         subModResult,
         dummy,
-        pickName: true,
       )..synthLogicToInlineableSynthSubmoduleMap ??= {};
 
       netConnectSynthSubmod.synthLogicToInlineableSynthSubmoduleMap![dummy] =
