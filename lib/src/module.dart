@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module.dart
@@ -13,7 +13,9 @@ import 'dart:collection';
 import 'package:meta/meta.dart';
 
 import 'package:rohd/rohd.dart';
+
 import 'package:rohd/src/collections/traverseable_collection.dart';
+
 import 'package:rohd/src/utilities/sanitizer.dart';
 import 'package:rohd/src/utilities/uniquifier.dart';
 
