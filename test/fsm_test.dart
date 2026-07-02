@@ -270,6 +270,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
 
       verifyMermaidStateDiagram(_simpleFSMPath);
     });
@@ -286,6 +287,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
 
       verifyMermaidStateDiagram(_simpleFSMPath);
     });
@@ -304,6 +306,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
 
       if (!kIsWeb) {
         const fsmPath = '$_tmpDir/default_next_state_fsm.md';
@@ -344,6 +347,7 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
 
       verifyMermaidStateDiagram(_trafficFSMPath);
     });

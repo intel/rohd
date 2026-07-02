@@ -289,6 +289,7 @@ void main() {
 
     // confirm build works
     SimCompare.checkIverilogVector(mod, []);
+    SimCompare.checkSystemCVector(mod, []);
   });
 
   test('array port and simple port with _num name conflict but pruned away',
@@ -305,6 +306,7 @@ void main() {
 
     // confirm build works
     SimCompare.checkIverilogVector(mod, []);
+    SimCompare.checkSystemCVector(mod, []);
   });
 
   test('badly named intermediate signal sanitization', () async {

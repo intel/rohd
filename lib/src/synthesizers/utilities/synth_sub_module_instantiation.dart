@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synth_sub_module_instantiation.dart
@@ -11,7 +11,7 @@ import 'dart:collection';
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 /// Represents an instantiation of a module within another module.
 class SynthSubModuleInstantiation {
@@ -25,14 +25,14 @@ class SynthSubModuleInstantiation {
   String get name => _name!;
 
   /// Selects a name for this module instance. Must be called exactly once.
-  void pickName(Uniquifier uniquifier) {
+  ///
+  /// Names are allocated (and cached) via [Namer.instanceNameOf] so that
+  /// repeated synthesis passes over the same hierarchy always produce the
+  /// same instance name.
+  void pickName(Module parentModule) {
     assert(_name == null, 'Should only pick a name once.');
 
-    _name = uniquifier.getUniqueName(
-      initialName: module.uniqueInstanceName,
-      reserved: module.reserveName,
-      nullStarter: 'm',
-    );
+    _name = parentModule.namer.instanceNameOf(module);
   }
 
   /// A mapping of input port name to [SynthLogic].

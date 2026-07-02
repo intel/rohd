@@ -490,6 +490,7 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
+        SimCompare.checkSystemCVector(mod, vectors);
       });
     });
 
@@ -780,6 +781,7 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
+    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test(
@@ -878,6 +880,7 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
+      SimCompare.checkSystemCVector(mod, vectors);
     }
 
     test('normal logic', () async {

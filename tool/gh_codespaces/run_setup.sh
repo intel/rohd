@@ -20,5 +20,11 @@ tool/gh_actions/install_dependencies.sh
 # Install Icarus Verilog.
 tool/gh_actions/install_iverilog.sh
 
+# Install Accellera SystemC.
+tool/gh_actions/install_systemc.sh
+
+# Pre-build SystemC precompiled header and Makefile.
+tool/gh_actions/setup_systemc_pch.sh
+
 # Install Node
 tool/gh_actions/install_node.sh
