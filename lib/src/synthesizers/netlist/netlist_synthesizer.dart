@@ -23,16 +23,15 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
     // netlist shows select gates for element extraction rather than
     // flat bit aliasing.
     module.inputs.values.whereType<LogicArray>().forEach(
-      _subsetReceiveArrayPort,
-    );
+          _subsetReceiveArrayPort,
+        );
 
     // Same for LogicArray outputs on submodules (received into this scope).
-    final subModuleOutputArrays =
-        module.subModules
-            .expand((sub) => sub.outputs.values)
-            .whereType<LogicArray>()
-            .toSet()
-          ..forEach(_subsetReceiveArrayPort);
+    final subModuleOutputArrays = module.subModules
+        .expand((sub) => sub.outputs.values)
+        .whereType<LogicArray>()
+        .toSet()
+      ..forEach(_subsetReceiveArrayPort);
 
     // Create explicit $concat cells for internal LogicArrays whose elements
     // are driven independently (e.g. by constants) and then consumed by
@@ -76,20 +75,17 @@ class _NetlistSynthModuleDefinition extends SynthModuleDefinition {
         portArraySynthLogics.add(sl.replacement ?? sl);
       }
     }
-    module.internalSignals
-        .whereType<LogicArray>()
-        .where((sig) {
-          if (excludedArrays.contains(sig)) {
-            return false;
-          }
-          final sl = logicToSynthMap[sig];
-          if (sl == null) {
-            return false;
-          }
-          final resolved = sl.replacement ?? sl;
-          return !portArraySynthLogics.contains(resolved);
-        })
-        .forEach(_concatAssembleArray);
+    module.internalSignals.whereType<LogicArray>().where((sig) {
+      if (excludedArrays.contains(sig)) {
+        return false;
+      }
+      final sl = logicToSynthMap[sig];
+      if (sl == null) {
+        return false;
+      }
+      final resolved = sl.replacement ?? sl;
+      return !portArraySynthLogics.contains(resolved);
+    }).forEach(_concatAssembleArray);
   }
 
   /// Creates explicit `$slice` cells for each element of a [LogicArray] port.
@@ -222,12 +218,10 @@ class NetlistSynthesizer extends Synthesizer {
     // -- Build SynthModuleDefinition ------------------------------------
     // This does all signal tracing, naming, constant handling,
     // assignment collapsing, and unused signal pruning.
-    final canBuildSynthDef =
-        !(module is SystemVerilog &&
-            module.generatedDefinitionType == DefinitionGenerationType.none);
-    final synthDef = canBuildSynthDef
-        ? _NetlistSynthModuleDefinition(module)
-        : null;
+    final canBuildSynthDef = !(module is SystemVerilog &&
+        module.generatedDefinitionType == DefinitionGenerationType.none);
+    final synthDef =
+        canBuildSynthDef ? _NetlistSynthModuleDefinition(module) : null;
 
     // -- Wire-ID allocation ---------------------------------------------
     // Start wire IDs at 2 to avoid collision with Yosys constant string
@@ -329,9 +323,8 @@ class NetlistSynthesizer extends Synthesizer {
         final sub = instance.module;
 
         final isLeaf = !generatesDefinition(sub);
-        final defaultCellType = isLeaf
-            ? sub.definitionName
-            : getInstanceTypeOfModule(sub);
+        final defaultCellType =
+            isLeaf ? sub.definitionName : getInstanceTypeOfModule(sub);
 
         // Build port directions and connections from instance mappings.
         final rawPortDirs = <String, String>{};
@@ -379,8 +372,7 @@ class NetlistSynthesizer extends Synthesizer {
           final portsToRemove = <String>[];
           for (final pe in cellConns.entries) {
             final portName = pe.key;
-            final synthLogic =
-                instance.inputMapping[portName] ??
+            final synthLogic = instance.inputMapping[portName] ??
                 instance.inOutMapping[portName];
             if (synthLogic != null &&
                 NetlistUtils.isConstantSynthLogic(synthLogic)) {
@@ -401,8 +393,7 @@ class NetlistSynthesizer extends Synthesizer {
         if (sub is Combinational || sub is Sequential) {
           final renames = <String, String>{};
           for (final portName in cellConns.keys.toList()) {
-            final sl =
-                instance.inputMapping[portName] ??
+            final sl = instance.inputMapping[portName] ??
                 instance.outputMapping[portName] ??
                 instance.inOutMapping[portName];
             if (sl == null) {
@@ -468,34 +459,28 @@ class NetlistSynthesizer extends Synthesizer {
     // The `parentLogic` and `fullParentIds` fields are used to group
     // entries from the same LogicStructure into a single multi-port
     // `$struct_unpack` cell.
-    final structFieldCells =
-        <
-          ({
-            List<int> parentIds,
-            List<int> elemIds,
-            int offset,
-            int width,
-            Logic elemLogic,
-            Logic parentLogic,
-            List<int> fullParentIds,
-          })
-        >[];
+    final structFieldCells = <({
+      List<int> parentIds,
+      List<int> elemIds,
+      int offset,
+      int width,
+      Logic elemLogic,
+      Logic parentLogic,
+      List<int> fullParentIds,
+    })>[];
 
     // Pending $struct_compose cells: for output struct ports, instead of
     // aliasing port bits to leaf bits (which causes "shorting"), we
     // collect composition operations and emit explicit cells later.
     // Each entry records: field (src) → port sub-range [lower:upper].
-    final structComposeCells =
-        <
-          ({
-            List<int> srcIds,
-            List<int> dstIds,
-            int dstLowerIndex,
-            int dstUpperIndex,
-            SynthLogic srcSynthLogic,
-            SynthLogic dstSynthLogic,
-          })
-        >[];
+    final structComposeCells = <({
+      List<int> srcIds,
+      List<int> dstIds,
+      int dstLowerIndex,
+      int dstUpperIndex,
+      SynthLogic srcSynthLogic,
+      SynthLogic dstSynthLogic,
+    })>[];
 
     // Track struct ports (both output ports of the current module AND
     // sub-module input struct ports) so Step 3 can skip $struct_field
@@ -510,9 +495,8 @@ class NetlistSynthesizer extends Synthesizer {
       )) {
         final srcIds = getIds(assignment.src);
         final dstIds = getIds(assignment.dst);
-        final len = srcIds.length < dstIds.length
-            ? srcIds.length
-            : dstIds.length;
+        final len =
+            srcIds.length < dstIds.length ? srcIds.length : dstIds.length;
         for (var i = 0; i < len; i++) {
           if (dstIds[i] != srcIds[i]) {
             idAlias[dstIds[i]] = srcIds[i];
@@ -556,8 +540,7 @@ class NetlistSynthesizer extends Synthesizer {
         // Detect: is pa.dst a sub-module input struct port?
         // (LogicStructure but not LogicArray, and not an output of the
         // current module.)
-        final isSubModuleInputStructPort =
-            !isCurrentModuleOutputPort &&
+        final isSubModuleInputStructPort = !isCurrentModuleOutputPort &&
             pa.dst.logics.any((l) => l is LogicStructure && l is! LogicArray);
 
         if (isCurrentModuleOutputPort || isSubModuleInputStructPort) {
@@ -696,11 +679,9 @@ class NetlistSynthesizer extends Synthesizer {
             final elemSL = synthDef.logicToSynthMap[element];
             if (elemSL != null) {
               final elemIds = getIds(elemSL);
-              for (
-                var i = 0;
-                i < elemIds.length && idx + i < parentIds.length;
-                i++
-              ) {
+              for (var i = 0;
+                  i < elemIds.length && idx + i < parentIds.length;
+                  i++) {
                 aliasChildToParent(elemIds[i], parentIds[idx + i]);
               }
             }
@@ -909,10 +890,8 @@ class NetlistSynthesizer extends Synthesizer {
     // This replaces the old per-field $struct_field cells.
     if (synthDef != null && structFieldCells.isNotEmpty) {
       // Group by parent Logic identity.
-      final groups =
-          <
-            Logic,
-            List<
+      final groups = <Logic,
+          List<
               ({
                 List<int> parentIds,
                 List<int> elemIds,
@@ -921,9 +900,7 @@ class NetlistSynthesizer extends Synthesizer {
                 Logic elemLogic,
                 Logic parentLogic,
                 List<int> fullParentIds,
-              })
-            >
-          >{};
+              })>>{};
       for (final sf in structFieldCells) {
         (groups[sf.parentLogic] ??= []).add(sf);
       }
@@ -968,16 +945,13 @@ class NetlistSynthesizer extends Synthesizer {
         // Same strategy as $struct_pack: walk the hierarchy collecting
         // (start, end, name, path, indexInParent) and look up the
         // narrowest non-unpreferred range for each field offset.
-        final suElementRanges =
-            <
-              ({
-                int start,
-                int end,
-                String name,
-                String path,
-                int indexInParent,
-              })
-            >[];
+        final suElementRanges = <({
+          int start,
+          int end,
+          String name,
+          String path,
+          int indexInParent,
+        })>[];
         if (parentLogic is LogicStructure) {
           void walkStruct(
             LogicStructure struct,
@@ -988,9 +962,8 @@ class NetlistSynthesizer extends Synthesizer {
             for (var idx = 0; idx < struct.elements.length; idx++) {
               final elem = struct.elements[idx];
               final elemEnd = offset + elem.width;
-              final elemPath = parentPath.isEmpty
-                  ? elem.name
-                  : '${parentPath}_${elem.name}';
+              final elemPath =
+                  parentPath.isEmpty ? elem.name : '${parentPath}_${elem.name}';
               suElementRanges.add((
                 start: offset,
                 end: elemEnd,
@@ -1009,12 +982,27 @@ class NetlistSynthesizer extends Synthesizer {
         }
 
         String suFieldNameFor(int fieldOffset, String fallbackName) {
-          ({int start, int end, String name, String path, int indexInParent})?
-          bestNamed;
-          ({int start, int end, String name, String path, int indexInParent})?
-          bestAny;
-          ({int start, int end, String name, String path, int indexInParent})?
-          narrowest;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? bestNamed;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? bestAny;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? narrowest;
 
           for (final r in suElementRanges) {
             if (fieldOffset >= r.start && fieldOffset < r.end) {
@@ -1112,10 +1100,8 @@ class NetlistSynthesizer extends Synthesizer {
     // This replaces the old per-field $struct_compose cells.
     if (structComposeCells.isNotEmpty) {
       // Group by destination SynthLogic identity.
-      final composeGroups =
-          <
-            SynthLogic,
-            List<
+      final composeGroups = <SynthLogic,
+          List<
               ({
                 List<int> srcIds,
                 List<int> dstIds,
@@ -1123,9 +1109,7 @@ class NetlistSynthesizer extends Synthesizer {
                 int dstUpperIndex,
                 SynthLogic srcSynthLogic,
                 SynthLogic dstSynthLogic,
-              })
-            >
-          >{};
+              })>>{};
       for (final sc in structComposeCells) {
         (composeGroups[sc.dstSynthLogic] ??= []).add(sc);
       }
@@ -1184,16 +1168,13 @@ class NetlistSynthesizer extends Synthesizer {
         // produce qualified names like "mmu_info_mmuSid".  When
         // leaf names are unpreferred, `parentElementIndex` provides
         // a fallback discriminator like "mmu_info_0".
-        final dstElementRanges =
-            <
-              ({
-                int start,
-                int end,
-                String name,
-                String path,
-                int indexInParent,
-              })
-            >[];
+        final dstElementRanges = <({
+          int start,
+          int end,
+          String name,
+          String path,
+          int indexInParent,
+        })>[];
         if (dstLogic is LogicStructure) {
           void walkStruct(
             LogicStructure struct,
@@ -1204,9 +1185,8 @@ class NetlistSynthesizer extends Synthesizer {
             for (var idx = 0; idx < struct.elements.length; idx++) {
               final elem = struct.elements[idx];
               final elemEnd = offset + elem.width;
-              final elemPath = parentPath.isEmpty
-                  ? elem.name
-                  : '${parentPath}_${elem.name}';
+              final elemPath =
+                  parentPath.isEmpty ? elem.name : '${parentPath}_${elem.name}';
               dstElementRanges.add((
                 start: offset,
                 end: elemEnd,
@@ -1237,12 +1217,27 @@ class NetlistSynthesizer extends Synthesizer {
         ///     (e.g. `mmu_info_0`, `mmu_info_1`).
         ///  4. Falls back to the resolved source SynthLogic name.
         String fieldNameFor(int dstLowerIndex, SynthLogic srcSynthLogic) {
-          ({int start, int end, String name, String path, int indexInParent})?
-          bestNamed;
-          ({int start, int end, String name, String path, int indexInParent})?
-          bestAny;
-          ({int start, int end, String name, String path, int indexInParent})?
-          narrowest;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? bestNamed;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? bestAny;
+          ({
+            int start,
+            int end,
+            String name,
+            String path,
+            int indexInParent
+          })? narrowest;
 
           for (final r in dstElementRanges) {
             if (dstLowerIndex >= r.start && dstLowerIndex < r.end) {
@@ -1493,11 +1488,10 @@ class NetlistSynthesizer extends Synthesizer {
     {
       var constIdx = 0;
       final emittedConstWires = <int>{};
-      for (final entry
-          in synthLogicIds.entries
-              .where((e) => e.key.isConstant)
-              .where((e) => !blockedConstSynthLogics.contains(e.key))
-              .where((e) => e.value.isNotEmpty)) {
+      for (final entry in synthLogicIds.entries
+          .where((e) => e.key.isConstant)
+          .where((e) => !blockedConstSynthLogics.contains(e.key))
+          .where((e) => e.value.isNotEmpty)) {
         final sl = entry.key;
         final constValue = NetlistUtils.constValueFromSynthLogic(sl);
         if (constValue == null) {
@@ -2090,7 +2084,7 @@ class NetlistSynthesizer extends Synthesizer {
 /// select gates rather than flat bit aliasing.
 class _BusSubsetForArraySlice extends BusSubset {
   _BusSubsetForArraySlice(super.bus, super.startIndex, super.endIndex)
-    : super(name: 'array_slice');
+      : super(name: 'array_slice');
 
   @override
   bool get hasBuilt => true;

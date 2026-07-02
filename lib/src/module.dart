@@ -115,11 +115,11 @@ abstract class Module {
   ///
   /// This does not contain any signals within [subModules].
   Iterable<Logic> get signals => UnmodifiableListView([
-    ..._inputs.values,
-    ..._outputs.values,
-    ..._inOuts.values,
-    ...internalSignals,
-  ]);
+        ..._inputs.values,
+        ..._outputs.values,
+        ..._inOuts.values,
+        ...internalSignals,
+      ]);
 
   /// Accesses the [Logic] associated with this [Module]s [input] port
   /// named [name].
@@ -267,12 +267,12 @@ abstract class Module {
     this.reserveName = false,
     String? definitionName,
     this.reserveDefinitionName = false,
-  }) : _uniqueInstanceName =
-           Naming.validatedName(name, reserveName: reserveName) ?? name,
-       _definitionName = Naming.validatedName(
-         definitionName,
-         reserveName: reserveDefinitionName,
-       );
+  })  : _uniqueInstanceName =
+            Naming.validatedName(name, reserveName: reserveName) ?? name,
+        _definitionName = Naming.validatedName(
+          definitionName,
+          reserveName: reserveDefinitionName,
+        );
 
   /// Returns an [Iterable] of [Module]s representing the hierarchical path to
   /// this [Module].
@@ -446,9 +446,8 @@ abstract class Module {
     }
 
     try {
-      final subModule = (signal.isInput || signal.isInOut)
-          ? signal.parentModule
-          : null;
+      final subModule =
+          (signal.isInput || signal.isInOut) ? signal.parentModule : null;
 
       final subModuleParent = subModule?.parent;
 
@@ -596,9 +595,8 @@ abstract class Module {
     }
 
     try {
-      final subModule = (signal.isOutput || signal.isInOut)
-          ? signal.parentModule
-          : null;
+      final subModule =
+          (signal.isOutput || signal.isInOut) ? signal.parentModule : null;
 
       final subModuleParent = subModule?.parent;
 
@@ -968,16 +966,15 @@ abstract class Module {
   }) {
     _checkForSafePortName(name);
 
-    final inArr =
-        LogicArray(
-            name: name,
-            dimensions,
-            elementWidth,
-            numUnpackedDimensions: numUnpackedDimensions,
-            naming: Naming.reserved,
-          )
-          ..gets(source)
-          ..setAllParentModule(this);
+    final inArr = LogicArray(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
+      ..gets(source)
+      ..setAllParentModule(this);
 
     _inputs[name] = inArr;
 
@@ -1146,16 +1143,15 @@ abstract class Module {
       }
     }
 
-    final inOutArr =
-        LogicArray.net(
-            name: name,
-            dimensions,
-            elementWidth,
-            numUnpackedDimensions: numUnpackedDimensions,
-            naming: Naming.reserved,
-          )
-          ..gets(source)
-          ..setAllParentModule(this);
+    final inOutArr = LogicArray.net(
+      name: name,
+      dimensions,
+      elementWidth,
+      numUnpackedDimensions: numUnpackedDimensions,
+      naming: Naming.reserved,
+    )
+      ..gets(source)
+      ..setAllParentModule(this);
 
     // there may be packed arrays created by the `gets` above, so this makes
     // sure we catch all of those.
@@ -1170,24 +1166,23 @@ abstract class Module {
 
   /// Connects the [source] to this [Module] using [Interface.connectIO] and
   /// returns a copy of the [source] that can be used within this module.
-  InterfaceType addInterfacePorts<
-    InterfaceType extends Interface<TagType>,
-    TagType extends Enum
-  >(
+  InterfaceType addInterfacePorts<InterfaceType extends Interface<TagType>,
+          TagType extends Enum>(
     InterfaceType source, {
     Iterable<TagType>? inputTags,
     Iterable<TagType>? outputTags,
     Iterable<TagType>? inOutTags,
     String Function(String original)? uniquify,
-  }) => (source.clone() as InterfaceType)
-    ..connectIO(
-      this,
-      source,
-      inputTags: inputTags,
-      outputTags: outputTags,
-      inOutTags: inOutTags,
-      uniquify: uniquify,
-    );
+  }) =>
+      (source.clone() as InterfaceType)
+        ..connectIO(
+          this,
+          source,
+          inputTags: inputTags,
+          outputTags: outputTags,
+          inOutTags: inOutTags,
+          uniquify: uniquify,
+        );
 
   /// Connects the [source] to this [Module] using [PairInterface.pairConnectIO]
   /// and returns a copy of the [source] that can be used within this module.
@@ -1201,11 +1196,11 @@ abstract class Module {
 
   @override
   String toString() => [
-    '"$name" ($definitionName)  : ',
-    if (_inputs.isNotEmpty) '${_inputs.keys}',
-    if (_outputs.isNotEmpty) '=> ${_outputs.keys}',
-    if (_inOuts.isNotEmpty) '; ${_inOuts.keys}',
-  ].join(' ');
+        '"$name" ($definitionName)  : ',
+        if (_inputs.isNotEmpty) '${_inputs.keys}',
+        if (_outputs.isNotEmpty) '=> ${_outputs.keys}',
+        if (_inOuts.isNotEmpty) '; ${_inOuts.keys}',
+      ].join(' ');
 
   /// Returns a pretty-print [String] of the heirarchy of all [Module]s within
   /// this [Module].
@@ -1233,8 +1228,7 @@ abstract class Module {
       throw ModuleNotBuiltException(this);
     }
 
-    final synthHeader =
-        '''
+    final synthHeader = '''
 /**
  * Generated by ROHD - www.github.com/intel/rohd
  * Generation time: ${Timestamper.stamp()}

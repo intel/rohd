@@ -96,12 +96,18 @@ void main() {
       final clk = SimpleClockGenerator(10).clk;
       final inputVal = Logic(name: 'inputVal', width: 8);
 
-      final fir = FirFilter(en, resetB, clk, inputVal, [
-        0,
-        0,
-        0,
-        1,
-      ], bitWidth: 8);
+      final fir = FirFilter(
+          en,
+          resetB,
+          clk,
+          inputVal,
+          [
+            0,
+            0,
+            0,
+            1,
+          ],
+          bitWidth: 8);
       await fir.build();
 
       final synth = SynthBuilder(fir, NetlistSynthesizer());

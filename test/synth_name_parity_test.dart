@@ -59,7 +59,7 @@ class _PartiallyInlineCollidingNames extends Module {
   late final Logic retainedDup;
 
   _PartiallyInlineCollidingNames(Logic a, Logic b)
-    : super(name: 'partiallyInlineCollidingNames') {
+      : super(name: 'partiallyInlineCollidingNames') {
     a = addInput('a', a);
     b = addInput('b', b);
     final y = addOutput('y');
@@ -79,7 +79,7 @@ class _CollapsedInstanceCollidingNames extends Module {
   late final Logic retainedDup;
 
   _CollapsedInstanceCollidingNames(Logic a, Logic b)
-    : super(name: 'collapsedInstanceCollidingNames') {
+      : super(name: 'collapsedInstanceCollidingNames') {
     a = addInput('a', a);
     b = addInput('b', b);
     final y = addOutput('y');

@@ -16,7 +16,7 @@ import 'package:test/test.dart';
 
 class PairStruct extends LogicStructure {
   PairStruct({Logic? a, Logic? b, super.name = 'pair'})
-    : super([a ?? Logic(name: 'a'), b ?? Logic(name: 'b')]);
+      : super([a ?? Logic(name: 'a'), b ?? Logic(name: 'b')]);
 
   @override
   PairStruct clone({String? name}) => PairStruct(name: name);

@@ -359,9 +359,8 @@ void main() {
       await mod.build();
 
       final synth = SynthBuilder(mod, NetlistSynthesizer());
-      final names = synth.synthesisResults
-          .map((r) => r.instanceTypeName)
-          .toSet();
+      final names =
+          synth.synthesisResults.map((r) => r.instanceTypeName).toSet();
       expect(names, contains(mod.definitionName));
       expect(synth.synthesisResults.length, greaterThan(1));
     });
@@ -392,7 +391,8 @@ void main() {
       );
       await mod.build();
 
-      final result = SynthBuilder(mod, NetlistSynthesizer()).synthesisResults
+      final result = SynthBuilder(mod, NetlistSynthesizer())
+          .synthesisResults
           .whereType<NetlistSynthesisResult>()
           .firstWhere((r) => r.module == mod);
 
@@ -408,7 +408,8 @@ void main() {
       final mod = _InverterModule(Logic(name: 'inp'));
       await mod.build();
 
-      final result = SynthBuilder(mod, NetlistSynthesizer()).synthesisResults
+      final result = SynthBuilder(mod, NetlistSynthesizer())
+          .synthesisResults
           .whereType<NetlistSynthesisResult>()
           .firstWhere((r) => r.module == mod);
       expect(result.netnames, isNotEmpty);
@@ -432,9 +433,8 @@ void main() {
       expect(modulesMap.length, greaterThan(1));
 
       // Top attribute
-      final topAttrs =
-          modulesMap[mod.definitionName]!['attributes']!
-              as Map<String, Object?>;
+      final topAttrs = modulesMap[mod.definitionName]!['attributes']!
+          as Map<String, Object?>;
       expect(topAttrs['top'], equals(1));
 
       // Every entry has the expected sections
@@ -527,9 +527,8 @@ void main() {
       final json = NetlistSynthesizer().synthesizeToJson(mod);
       final parsed = jsonDecode(json) as Map<String, dynamic>;
       final modules = parsed['modules'] as Map<String, dynamic>;
-      final channelDefs = modules.keys
-          .where((k) => k.contains('FilterChannel'))
-          .toList();
+      final channelDefs =
+          modules.keys.where((k) => k.contains('FilterChannel')).toList();
       // Two channels with different coefficients should produce
       // separate definitions (not fully deduplicated).
       expect(
@@ -573,8 +572,7 @@ void main() {
           expect(
             ['input', 'output', 'inout'],
             contains(dir),
-            reason:
-                '${result.instanceTypeName}.${port.key} '
+            reason: '${result.instanceTypeName}.${port.key} '
                 'has invalid direction',
           );
         }
@@ -685,7 +683,8 @@ void main() {
       expect(jsonBoth.length, lessThan(jsonCompactOnly.length));
     });
 
-    test('compressed FilterBank round-trips: range strings expand to '
+    test(
+        'compressed FilterBank round-trips: range strings expand to '
         'same bit IDs as uncompressed', () async {
       final mod = _buildFilterBank();
       await mod.build();
@@ -693,17 +692,15 @@ void main() {
       // Generate both compressed and uncompressed.
       final synthNormal = NetlistSynthesizer();
       final jsonNormal = synthNormal.synthesizeToJson(mod);
-      final normalModules =
-          (jsonDecode(jsonNormal) as Map<String, dynamic>)['modules']
-              as Map<String, dynamic>;
+      final normalModules = (jsonDecode(jsonNormal)
+          as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 
       final synthCompressed = NetlistSynthesizer(
         options: const NetlistOptions(compressBitRanges: true),
       );
       final jsonCompressed = synthCompressed.synthesizeToJson(mod);
-      final compressedModules =
-          (jsonDecode(jsonCompressed) as Map<String, dynamic>)['modules']
-              as Map<String, dynamic>;
+      final compressedModules = (jsonDecode(jsonCompressed)
+          as Map<String, dynamic>)['modules'] as Map<String, dynamic>;
 
       // Compressed should be smaller.
       expect(jsonCompressed.length, lessThan(jsonNormal.length));
@@ -716,12 +713,10 @@ void main() {
 
       // For each module, expand compressed port bits and compare to normal.
       for (final modName in normalModules.keys) {
-        final normalPorts =
-            (normalModules[modName] as Map<String, dynamic>)['ports']
-                as Map<String, dynamic>?;
-        final compPorts =
-            (compressedModules[modName] as Map<String, dynamic>)['ports']
-                as Map<String, dynamic>?;
+        final normalPorts = (normalModules[modName]
+            as Map<String, dynamic>)['ports'] as Map<String, dynamic>?;
+        final compPorts = (compressedModules[modName]
+            as Map<String, dynamic>)['ports'] as Map<String, dynamic>?;
         if (normalPorts == null || compPorts == null) {
           continue;
         }

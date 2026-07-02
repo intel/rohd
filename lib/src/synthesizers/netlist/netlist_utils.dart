@@ -55,14 +55,15 @@ class NetlistUtils {
     int width,
     List<Object> aBits,
     List<Object> yBits,
-  ) => <String, Object?>{
-    'hide_name': 0,
-    'type': r'$buf',
-    'parameters': <String, Object?>{'WIDTH': width},
-    'attributes': <String, Object?>{},
-    'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
-    'connections': <String, List<Object>>{'A': aBits, 'Y': yBits},
-  };
+  ) =>
+      <String, Object?>{
+        'hide_name': 0,
+        'type': r'$buf',
+        'parameters': <String, Object?>{'WIDTH': width},
+        'attributes': <String, Object?>{},
+        'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
+        'connections': <String, List<Object>>{'A': aBits, 'Y': yBits},
+      };
 
   /// Collapses bit-slice ports of a Combinational/Sequential cell into
   /// aggregate ports.
@@ -114,18 +115,14 @@ class NetlistUtils {
 
     // Group input ports by root signal, also tracking the BusSubset
     // instantiations that produced each port.
-    final inputGroups =
-        <
-          SynthLogic,
-          List<
+    final inputGroups = <SynthLogic,
+        List<
             (
               String portName,
               int startIdx,
               int width,
               SynthSubModuleInstantiation bsInst,
-            )
-          >
-        >{};
+            )>>{};
 
     for (final e in instance.inputMapping.entries) {
       final portName = e.key;
@@ -200,17 +197,14 @@ class NetlistUtils {
     //   (Swizzle port name, bit offset within the Swizzle output,
     //    port width, resolved Swizzle output SynthLogic,
     //    SynthSubModuleInstantiation).
-    final swizzleLookup =
-        <
-          SynthLogic,
-          (
-            String portName,
-            int offset,
-            int width,
-            SynthLogic,
-            SynthSubModuleInstantiation,
-          )
-        >{};
+    final swizzleLookup = <SynthLogic,
+        (
+      String portName,
+      int offset,
+      int width,
+      SynthLogic,
+      SynthSubModuleInstantiation,
+    )>{};
     for (final szInst in synthDef.subModuleInstantiations) {
       if (szInst.module is! Swizzle) {
         continue;
@@ -238,18 +232,14 @@ class NetlistUtils {
     }
 
     // Group output ports by Swizzle output signal.
-    final outputGroups =
-        <
-          SynthLogic,
-          List<
+    final outputGroups = <SynthLogic,
+        List<
             (
               String portName,
               int offset,
               int width,
               SynthSubModuleInstantiation szInst,
-            )
-          >
-        >{};
+            )>>{};
 
     for (final e in instance.outputMapping.entries) {
       final portName = e.key;

@@ -268,9 +268,8 @@ class LeafCellMapper {
         for (var i = 0; i < nonZeroKeys.length; i++) {
           final ik = nonZeroKeys[i];
           final w = ctx.width(ik);
-          final label = w == 1
-              ? '[$bitOffset]'
-              : '[${bitOffset + w - 1}:$bitOffset]';
+          final label =
+              w == 1 ? '[$bitOffset]' : '[${bitOffset + w - 1}:$bitOffset]';
           pd[label] = 'input';
           cn[label] = ctx.rawConns[ik] ?? [];
           params['IN${i}_WIDTH'] = w;
@@ -403,58 +402,55 @@ class LeafCellMapper {
       });
 
     // ── Type-map-based gates ───────────────────────────────────────────
-    final gateRegistrations =
-        <
-          (
-            Map<Type, String>,
-            LeafCellMapping? Function(LeafCellContext, String),
-          )
-        >[
-          (
-            const <Type, String>{
-              And2Gate: r'$and',
-              Or2Gate: r'$or',
-              Xor2Gate: r'$xor',
-            },
-            (ctx, type) =>
-                binaryABY(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
-          ),
-          (
-            const <Type, String>{
-              AndUnary: r'$reduce_and',
-              OrUnary: r'$reduce_or',
-              XorUnary: r'$reduce_xor',
-            },
-            unaryAY,
-          ),
-          (
-            const <Type, String>{
-              Multiply: r'$mul',
-              Subtract: r'$sub',
-              Equals: r'$eq',
-              NotEquals: r'$ne',
-              LessThan: r'$lt',
-              GreaterThan: r'$gt',
-              LessThanOrEqual: r'$le',
-              GreaterThanOrEqual: r'$ge',
-            },
-            (ctx, type) =>
-                binaryABY(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
-          ),
-          (
-            const <Type, String>{
-              LShift: r'$shl',
-              RShift: r'$shr',
-              ARShift: r'$shiftx',
-            },
-            (ctx, type) => binaryABY(
+    final gateRegistrations = <(
+      Map<Type, String>,
+      LeafCellMapping? Function(LeafCellContext, String),
+    )>[
+      (
+        const <Type, String>{
+          And2Gate: r'$and',
+          Or2Gate: r'$or',
+          Xor2Gate: r'$xor',
+        },
+        (ctx, type) =>
+            binaryABY(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
+      ),
+      (
+        const <Type, String>{
+          AndUnary: r'$reduce_and',
+          OrUnary: r'$reduce_or',
+          XorUnary: r'$reduce_xor',
+        },
+        unaryAY,
+      ),
+      (
+        const <Type, String>{
+          Multiply: r'$mul',
+          Subtract: r'$sub',
+          Equals: r'$eq',
+          NotEquals: r'$ne',
+          LessThan: r'$lt',
+          GreaterThan: r'$gt',
+          LessThanOrEqual: r'$le',
+          GreaterThanOrEqual: r'$ge',
+        },
+        (ctx, type) =>
+            binaryABY(ctx, type, inAPrefix: '_in0', inBPrefix: '_in1'),
+      ),
+      (
+        const <Type, String>{
+          LShift: r'$shl',
+          RShift: r'$shr',
+          ARShift: r'$shiftx',
+        },
+        (ctx, type) => binaryABY(
               ctx,
               type,
               inAPrefix: '_in',
               inBPrefix: '_shiftAmount',
             ),
-          ),
-        ];
+      ),
+    ];
     for (final (typeMap, handler) in gateRegistrations) {
       registerByTypeMap(typeMap, handler);
     }
