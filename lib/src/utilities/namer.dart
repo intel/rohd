@@ -126,6 +126,13 @@ class Namer {
     return name;
   }
 
+  /// Returns the synthesis-level signal name for [logic].
+  ///
+  /// Equivalent to the internal [_signalNameOf] allocation but exposed for
+  /// use in wave-dumping and tests.
+  @visibleForTesting
+  String signalNameOf(Logic logic) => _signalNameOf(logic);
+
   /// The base name that would be used for [logic] before uniquification.
   static String baseName(Logic logic) =>
       (logic.naming == Naming.reserved || logic.isArrayMember)
