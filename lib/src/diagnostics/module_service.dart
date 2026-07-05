@@ -9,6 +9,9 @@
 
 import 'package:rohd/rohd.dart';
 
+import 'package:rohd/src/diagnostics/output_file_writer.dart'
+    if (dart.library.io) 'package:rohd/src/diagnostics/output_file_writer_io.dart';
+
 /// The common contract implemented by every module-scoped service that
 /// registers with [ModuleServices].
 ///
@@ -49,6 +52,13 @@ abstract class OutputService implements ModuleService {
   /// Writes this service's output to [path], or to [outputPath] when [path] is
   /// omitted.
   void write([String? path]);
+
+  /// Writes [contents] to [path] on platforms that support file IO.
+  ///
+  /// Browser integrations can still construct services for in-memory output;
+  /// calling write APIs there throws [UnsupportedError].
+  void writeTextFile(String path, String contents) =>
+      writeOutputTextFile(path, contents);
 }
 
 /// An [OutputService] that generates source-code text, keyed per module
