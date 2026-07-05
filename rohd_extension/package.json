@@ -1,0 +1,102 @@
+{
+  "name": "rohd",
+  "displayName": "ROHD",
+  "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
+  "version": "0.3.0",
+  "publisher": "rohd",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intel/rohd"
+  },
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "keywords": [
+    "rohd",
+    "hardware",
+    "rtl",
+    "hdl",
+    "cross-probe"
+  ],
+  "categories": [
+    "Snippets",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:rohd.openSourceLocation",
+    "onCommand:rohd.openSourceLocations",
+    "onDebugResolve:dart",
+    "onDebug:dart",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "rohd.openSourceLocation",
+        "title": "ROHD: Go to Source Location"
+      },
+      {
+        "command": "rohd.openSourceLocations",
+        "title": "ROHD: Go to Source Locations (multi-frame)"
+      },
+      {
+        "command": "rohd.nextSourceLocation",
+        "title": "ROHD: Next Source Frame"
+      },
+      {
+        "command": "rohd.prevSourceLocation",
+        "title": "ROHD: Previous Source Frame"
+      },
+      {
+        "command": "rohd.connectDtd",
+        "title": "ROHD: Connect to Dart Tooling Daemon"
+      },
+      {
+        "command": "rohd.showForwardedUris",
+        "title": "ROHD: Show Forwarded DTD/VM URIs"
+      }
+    ],
+    "configuration": {
+      "title": "ROHD",
+      "properties": {
+        "rohd.enableCompletions": {
+          "type": "boolean",
+          "default": null,
+          "description": "Enable context-aware ROHD code completions (If, Case, Pipeline, Module, etc.). Set to true/false, or leave unset to be prompted on first activation."
+        },
+        "rohd.dtdUri": {
+          "type": "string",
+          "default": "",
+          "description": "WebSocket URI of the Dart Tooling Daemon (ws://...). Leave empty for auto-discovery."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "dart",
+        "path": "./snippets/rohd.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.5",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "eslint": "^8.41.0",
+    "typescript": "^5.9.3"
+  }
+}
