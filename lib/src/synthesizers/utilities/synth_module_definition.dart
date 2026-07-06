@@ -575,6 +575,9 @@ class SynthModuleDefinition {
       final resultLogic = _inlineResultLogic(subModuleInstantiation);
       if (resultLogic != null) {
         _weakNameClaimSignals.add(resultLogic);
+        if (resultLogic is SynthLogicArrayElement) {
+          _weakNameClaimSignals.add(resultLogic.parentArray.resolved);
+        }
       }
     }
   }
@@ -609,9 +612,94 @@ class SynthModuleDefinition {
       }
     }
 
+    // Arrays which are used as a whole (not just element-by-element) anywhere:
+    // as a port of this module, in a submodule port mapping, or in an
+    // assignment.  We must not inline away elements of such arrays, since the
+    // array declaration is still needed and elements could lose connections.
+    final aggregateUsedArrays = <SynthLogic>{};
+    void markIfAggregateArray(SynthLogic? synthLogic) {
+      if (synthLogic != null && synthLogic.isArray) {
+        aggregateUsedArrays.add(synthLogic.resolved);
+      }
+    }
+
+    [...inputs, ...outputs, ...inOuts].forEach(markIfAggregateArray);
+    for (final subModuleInstantiation in subModuleInstantiations) {
+      [
+        ...subModuleInstantiation.inputMapping.values,
+        ...subModuleInstantiation.outputMapping.values,
+        ...subModuleInstantiation.inOutMapping.values,
+      ].forEach(markIfAggregateArray);
+    }
+    for (final assignment in assignments) {
+      markIfAggregateArray(assignment.src);
+      markIfAggregateArray(assignment.dst);
+    }
+
+    // Signals still referenced directly by an assignment must not be inlined
+    // away. This is especially important for array elements, whose assignments
+    // are not collapsed away like mergeable signals.
+    final assignmentReferencedSignals = <SynthLogic>{
+      for (final assignment in assignments) ...[
+        assignment.src,
+        assignment.dst,
+      ],
+    };
+
+    final inlineableResultLogics = <SynthLogic>{};
+    for (final subModuleInstantiation in inlineableSubmoduleInstantiations) {
+      final resultLogic = _inlineResultLogic(subModuleInstantiation);
+      if (resultLogic != null && subModuleInstantiation.needsInstantiation) {
+        inlineableResultLogics.add(resultLogic.resolved);
+      }
+    }
+
+    bool isInlineableArrayElementCandidate(SynthLogic signal) =>
+        signal is SynthLogicArrayElement &&
+        inlineableResultLogics.contains(signal.resolved) &&
+        signal.isClearable &&
+        !aggregateUsedArrays.contains(signal.parentArray.resolved) &&
+        !assignmentReferencedSignals.contains(signal.resolved);
+
+    final candidateElements = <SynthLogic>{};
+    signalUsage.forEach((signal, signalUsageCount) {
+      if (signalUsageCount == 1 && isInlineableArrayElementCandidate(signal)) {
+        candidateElements.add(signal.resolved);
+      }
+    });
+
+    // Only inline array elements when the whole parent array will be replaced.
+    // Partial inlining is unsafe: the array would remain declared and its
+    // remaining elements could change behavior (for example `x` vs `z` on
+    // undriven bits).
+    final approvedElements = <SynthLogic>{};
+    final candidatesByArray = <SynthLogic, Set<SynthLogic>>{};
+    for (final element in candidateElements) {
+      candidatesByArray
+          .putIfAbsent(
+            (element as SynthLogicArrayElement).parentArray.resolved,
+            () => {},
+          )
+          .add(element);
+    }
+    candidatesByArray.forEach((parentArray, arrayCandidates) {
+      final allElementSynthLogics = parentArray.logics
+          .whereType<LogicArray>()
+          .expand((logicArray) => logicArray.elements)
+          .map(getSynthLogic)
+          .nonNulls
+          .map((e) => e.resolved)
+          .toSet();
+      if (allElementSynthLogics.isNotEmpty &&
+          allElementSynthLogics.every(candidateElements.contains)) {
+        approvedElements.addAll(arrayCandidates);
+      }
+    });
+
     final singleUseSignals = <SynthLogic>{};
     signalUsage.forEach((signal, signalUsageCount) {
-      if (signalUsageCount == 1 && signal.mergeable) {
+      if (signalUsageCount == 1 &&
+          (signal.mergeable || approvedElements.contains(signal.resolved))) {
         singleUseSignals.add(signal);
       }
     });
