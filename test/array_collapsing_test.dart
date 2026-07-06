@@ -285,6 +285,32 @@ class IndividualSignalsToArrayPort extends Module {
   }
 }
 
+/// Like [IndividualSignalsToArrayPort], but each array element is connected
+/// through a mergeable intermediate before aggregate connection inlining runs.
+class MergedSourcesToArrayPort extends Module {
+  Logic get y => output('y');
+  MergedSourcesToArrayPort(List<Logic> sigs, {int elementWidth = 1}) {
+    final n = sigs.length;
+    final ins = [
+      for (var i = 0; i < n; i++)
+        addInput('sig$i', sigs[i], width: elementWidth)
+    ];
+    final arr =
+        LogicArray([n], elementWidth, name: 'arr', naming: Naming.mergeable);
+    final child = ArrayPortInvChild(arr, n: n, elementWidth: elementWidth);
+    for (var i = 0; i < n; i++) {
+      final intermediate = Logic(
+        width: elementWidth,
+        name: 'intermediate$i',
+        naming: Naming.mergeable,
+      );
+      arr.elements[i] <= intermediate;
+      intermediate <= ins[i];
+    }
+    addOutput('y', width: n * elementWidth) <= child.y;
+  }
+}
+
 /// Child with a single inout net array port bidirectionally mirrored to `b`.
 class ArrayPortNetChild extends Module {
   ArrayPortNetChild(LogicArray a, LogicNet b, {int n = 4})
@@ -1195,6 +1221,34 @@ void main() {
         SimCompare.checkIverilogVector(mod, vectors);
       });
     }
+
+    test('merged element sources collapse to the real source', () async {
+      const n = 4;
+      final mod = MergedSourcesToArrayPort(List.generate(n, (_) => Logic()));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      print(sv);
+
+      expect(topBody, isNot(contains('intermediate')));
+      expect(topBody, isNot(contains('assign')));
+      expect(topBody, contains('.a(({'));
+      for (var i = 0; i < n; i++) {
+        expect(topBody, contains('sig$i'));
+      }
+
+      final vectors = [
+        for (final pattern in [0x0, 0xA, 0x5, 0xF])
+          Vector({
+            for (var i = 0; i < n; i++) 'sig$i': (pattern >> i) & 1
+          }, {
+            'y': LogicValue.ofInt(~pattern, n),
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
 
     final netConfigs = <({String name, int n, List<int>? perm})>[
       (name: '1d in order', n: 4, perm: null),
