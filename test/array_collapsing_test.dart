@@ -1229,8 +1229,6 @@ void main() {
       final sv = mod.generateSynth();
       final topBody = _topModuleBody(sv);
 
-      print(sv);
-
       expect(topBody, isNot(contains('intermediate')));
       expect(topBody, isNot(contains('assign')));
       expect(topBody, contains('.a(({'));
@@ -1771,6 +1769,8 @@ void main() {
 
       // not every element is a pass-through, so the subset array is preserved
       expect(topBody, contains('_subset'));
+      expect(topBody, contains('bus_subset[3]'));
+      expect(topBody, contains('net_connect'));
 
       final vectors = [
         for (final pattern in [0x0, 0x1, 0x2, 0x3])
