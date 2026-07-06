@@ -457,6 +457,29 @@ class WholeNetBusToPort extends Module {
   }
 }
 
+/// Reproduces the current naming-order issue where temporary [BusSubset]
+/// instances that will be collapsed still claim basenames before surviving
+/// signals can use them.
+class WholeNetBusCollapseNamingCollision extends Module {
+  WholeNetBusCollapseNamingCollision()
+      : super(name: 'whole_net_bus_collapse_naming_collision') {
+    final netPorts = [
+      for (var i = 0; i < 2; i++) addInOut('net$i', LogicNet()),
+    ];
+    final mirror = addInOut('mirror', LogicNet(width: 2), width: 2);
+    final bus = LogicNet(width: 2, name: 'bus');
+    for (var i = 0; i < 2; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+    WholeNetBusChild(bus, mirror, n: 2);
+
+    final sig = addInput('sig', Logic());
+    final busNamedSignal = Logic(name: 'bussubset');
+    busNamedSignal <= sig;
+    addOutput('busSubsetOut') <= busNamedSignal;
+  }
+}
+
 /// A child whose inout net *array* port `data` is bidirectionally mirrored to
 /// `mirror` (`mirror = data.elements.rswizzle()`).
 class ArrayNetBusChild extends Module {
@@ -1337,6 +1360,22 @@ void main() {
   });
 
   group('flat net bus collapsing', () {
+    test('cleared bus subsets do not claim better surviving basenames',
+        () async {
+      final mod = WholeNetBusCollapseNamingCollision();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('bussubset (')));
+      expect(topBody, contains('logic bussubset;'));
+      expect(topBody, isNot(contains('bussubset_')));
+      expect(topBody, contains('.data(({'));
+    },
+        skip: 'Known issue: BusSubset instances that are later cleared by '
+            'whole-net-bus collapse can still claim names before surviving '
+            'signals.');
+
     // Case A: a flat net bus tied bit-by-bit to individual nets and passed as a
     // whole to a child inout port collapses into a single inline concatenation
     // of those nets.
