@@ -1,7 +1,7 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// definition_name_test.dart
+// name_test.dart
 // Tests for definition names (including reserving them) of Modules.
 //
 // 2022 March 7
@@ -136,6 +136,9 @@ void main() {
         final nameTypes = [nameType1, nameType2];
 
         // skip ones that actually *should* cause a failure
+        //
+        // Note: SystemVerilog does not allow using the same identifier for a
+        // signal and an instance.
         final shouldConflict = [
           {
             NameType.internalModuleDefinition,
