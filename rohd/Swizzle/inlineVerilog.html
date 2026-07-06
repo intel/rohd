@@ -94,25 +94,25 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   &#47;&#47; Calculate all width descriptions upfront to determine alignment
   final validInputs =
       _swizzleInputs.reversed.where((e) =&gt; e.width &gt; 0).toList();
+  final operands = _collapseContiguousBitSelects(validInputs, inputs);
 
   &#47;&#47; If there&#39;s only one element, no need for width descriptions
-  if (validInputs.length == 1) {
-    final inName = inputs[validInputs.first.name]!;
-    return inName;
+  if (operands.length == 1) {
+    return operands.first.expression;
   }
 
   final widthDescriptions = &lt;({int upper, int? lower})&gt;[];
   var upperIndex = out.width - 1;
 
   &#47;&#47; First pass: calculate all width descriptions
-  for (final e in validInputs) {
-    if (e.width &gt; 1) {
-      final lowerIndex = upperIndex - e.width + 1;
+  for (final operand in operands) {
+    if (operand.width &gt; 1) {
+      final lowerIndex = upperIndex - operand.width + 1;
       widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
     } else {
       widthDescriptions.add((upper: upperIndex, lower: null));
     }
-    upperIndex -= e.width;
+    upperIndex -= operand.width;
   }
 
   &#47;&#47; Find maximum width for alignment
@@ -134,8 +134,7 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
   final inputLines = &lt;String&gt;[];
   var descIndex = 0;
 
-  for (final e in validInputs) {
-    final inName = inputs[e.name]!;
+  for (final operand in operands) {
     final desc = widthDescriptions[descIndex++];
 
     String alignedDesc;
@@ -150,10 +149,10 @@ String inlineVerilog(Map&lt;String, String&gt; inputs) {
       alignedDesc = desc.upper.toString().padLeft(totalWidth);
     }
 
-    upperIndex -= e.width;
+    upperIndex -= operand.width;
     final maybeComma =
         upperIndex &gt;= 0 ? &#39;,&#39; : &#39; &#39;; &#47;&#47; space at end for alignment
-    inputLines.add(&#39;$inName$maybeComma &#47;* $alignedDesc *&#47;&#39;);
+    inputLines.add(&#39;${operand.expression}$maybeComma &#47;* $alignedDesc *&#47;&#39;);
   }
 
   return &#39;&#39;&#39;
