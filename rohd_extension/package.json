@@ -2,7 +2,7 @@
   "name": "rohd",
   "displayName": "ROHD",
   "description": "ROHD extension for VS Code — snippets, cross-probe source navigation, and language support for the ROHD hardware design framework.",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "publisher": "rohd",
   "license": "BSD-3-Clause",
   "repository": {
@@ -64,8 +64,8 @@
       "properties": {
         "rohd.enableCompletions": {
           "type": "boolean",
-          "default": null,
-          "description": "Enable context-aware ROHD code completions (If, Case, Pipeline, Module, etc.). Set to true/false, or leave unset to be prompted on first activation."
+          "default": true,
+          "description": "Enable context-aware ROHD code completions (If, Case, Pipeline, Module, etc.). Set to false to disable them."
         },
         "rohd.dtdUri": {
           "type": "string",

@@ -15,7 +15,7 @@
 
 import * as vscode from 'vscode';
 
-const EXTENSION_VERSION = '0.2.0';
+const EXTENSION_VERSION = '0.1.0';
 
 let outputChannel: vscode.OutputChannel;
 

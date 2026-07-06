@@ -21,7 +21,7 @@ import * as conditionalCompletions from './conditional_completions';
 import * as flcService from './flc_service';
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('ROHD extension is now active (v0.3.0)');
+  console.log('ROHD extension is now active (v0.1.0)');
 
   // Initialise the FLC service with the extension path so it can locate
   // the compiled flc_lookup binary.
@@ -95,23 +95,7 @@ async function activateCompletionsIfEnabled(
   context: vscode.ExtensionContext,
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('rohd');
-  let enabled: boolean | undefined = config.get<boolean | null>('enableCompletions') ?? undefined;
-
-  if (enabled === undefined) {
-    // First time — ask the user.
-    const choice = await vscode.window.showInformationMessage(
-      'Enable ROHD context-aware code completions?',
-      'Yes', 'No',
-    );
-    if (choice === 'Yes') {
-      enabled = true;
-    } else if (choice === 'No') {
-      enabled = false;
-    } else {
-      return; // Dismissed — ask again next time.
-    }
-    await config.update('enableCompletions', enabled, vscode.ConfigurationTarget.Global);
-  }
+  const enabled = config.get<boolean>('enableCompletions', true);
 
   if (enabled && !completionsDisposable) {
     completionsDisposable = conditionalCompletions.activate(context);
