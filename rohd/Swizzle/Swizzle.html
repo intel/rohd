@@ -68,10 +68,10 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Swizzle(List&lt;Logic&gt; signals, {super.name = &#39;swizzle&#39;})
-    : _isNet = signals.any((e) =&gt; e.isNet) {
+    : isNet = signals.any((e) =&gt; e.isNet) {
   var outputWidth = 0;
 
-  final inputCreator = _isNet ? addInOut : addInput;
+  final inputCreator = isNet ? addInOut : addInput;
 
   var idx = 0;
   for (final signal in signals.reversed) {
@@ -83,7 +83,7 @@
     outputWidth += signal.width;
   }
 
-  if (_isNet) {
+  if (isNet) {
     out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
     final internalOut = addInOut(_out, out, width: outputWidth);
 
