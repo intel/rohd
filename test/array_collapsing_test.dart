@@ -65,6 +65,227 @@ class ArrayWithShuffledAssignment extends Module {
   }
 }
 
+/// Partially assigns three elements of an internal array from an input array.
+///
+/// When reversed is false, the assignments are contiguous and same-offset,
+/// so they can collapse into a range-to-range assignment.  When reversed is
+/// true, the assignments are intentionally not same-offset and must remain
+/// expanded.
+class PartialArrayRangeAssignment extends Module {
+  PartialArrayRangeAssignment({bool reversed = false})
+      : super(name: 'partial_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
+    final dst = LogicArray([6], 1, name: 'dst');
+
+    for (var dstIndex = 2; dstIndex <= 4; dstIndex++) {
+      final srcIndex = reversed ? 6 - dstIndex : dstIndex;
+      dst.elements[dstIndex] <= src.elements[srcIndex];
+    }
+
+    addOutput('y', width: 6) <= dst.elements.rswizzle();
+  }
+}
+
+/// Partially assigns a range through an intermediate array.  The two range
+/// assignments should compose so the intermediate array can be pruned.
+class ChainedPartialArrayRangeAssignment extends Module {
+  ChainedPartialArrayRangeAssignment({bool exposeIntermediate = false})
+      : super(name: 'chained_partial_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
+    final intermediate = LogicArray([6], 1, name: 'intermediate');
+    final dst = LogicArray([6], 1, name: 'dst');
+
+    for (var index = 2; index <= 4; index++) {
+      intermediate.elements[index] <= src.elements[index];
+      dst.elements[index] <= intermediate.elements[index];
+    }
+
+    addOutput('y', width: 6) <= dst.elements.rswizzle();
+    if (exposeIntermediate) {
+      addOutput('z', width: 6) <= intermediate.elements.rswizzle();
+    }
+  }
+}
+
+/// Partially assigns a range through two intermediate arrays.  The range
+/// composition pass should iterate until both intermediates are gone.
+class ThreeDeepChainedPartialArrayRangeAssignment extends Module {
+  ThreeDeepChainedPartialArrayRangeAssignment()
+      : super(name: 'three_deep_chained_partial_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
+    final intermediate0 = LogicArray([6], 1, name: 'intermediate0');
+    final intermediate1 = LogicArray([6], 1, name: 'intermediate1');
+    final dst = LogicArray([6], 1, name: 'dst');
+
+    for (var index = 2; index <= 4; index++) {
+      intermediate0.elements[index] <= src.elements[index];
+      intermediate1.elements[index] <= intermediate0.elements[index];
+      dst.elements[index] <= intermediate1.elements[index];
+    }
+
+    addOutput('y', width: 6) <= dst.elements.rswizzle();
+  }
+}
+
+/// Partially assigns an offset source range through an intermediate, then reads
+/// only a subrange of the intermediate.
+class ChainedSubrangeArrayRangeAssignment extends Module {
+  ChainedSubrangeArrayRangeAssignment()
+      : super(name: 'chained_subrange_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([8], 1), dimensions: [8]);
+    final intermediate = LogicArray([8], 1, name: 'intermediate');
+    final dst = LogicArray([8], 1, name: 'dst');
+
+    for (var index = 1; index <= 5; index++) {
+      intermediate.elements[index] <= src.elements[index + 2];
+    }
+    for (var index = 2; index <= 3; index++) {
+      dst.elements[index] <= intermediate.elements[index + 1];
+    }
+
+    addOutput('y', width: 8) <= dst.elements.rswizzle();
+  }
+}
+
+/// Partially assigns array elements from bits of a flat input bus.
+class PartialBusToArrayRangeAssignment extends Module {
+  PartialBusToArrayRangeAssignment({
+    bool reversed = false,
+    int numUnpackedDimensions = 0,
+  }) : super(name: 'partial_bus_to_array_range_assignment') {
+    final src = addInput('src', Logic(width: 8), width: 8);
+    final dst = LogicArray([8], 1,
+        name: 'dst', numUnpackedDimensions: numUnpackedDimensions);
+
+    for (var dstIndex = 2; dstIndex <= 5; dstIndex++) {
+      final srcIndex = reversed ? 7 - dstIndex : dstIndex;
+      dst.elements[dstIndex] <= src[srcIndex];
+    }
+
+    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+  }
+}
+
+/// Assigns a full array range into a flat bus through [Logic.assignSubset].
+class ArrayToBusAssignSubsetRangeAssignment extends Module {
+  ArrayToBusAssignSubsetRangeAssignment({bool partial = false})
+      : super(name: 'array_to_bus_assign_subset_range_assignment') {
+    final src = addInputArray('src', LogicArray([8], 1), dimensions: [8]);
+    final dst = Logic(width: 8, name: 'dst');
+
+    final start = partial ? 2 : 0;
+    final end = partial ? 5 : 7;
+    for (var index = start; index <= end; index++) {
+      dst.assignSubset([src.elements[index]], start: index);
+    }
+
+    addOutput('y', width: 8) <= dst;
+  }
+}
+
+/// Partially assigns a packed inner dimension of a two-dimensional array.
+class PartialInnerArrayRangeAssignment extends Module {
+  PartialInnerArrayRangeAssignment({int numUnpackedDimensions = 0})
+      : super(name: 'partial_inner_array_range_assignment') {
+    final src = addInputArray(
+      'src',
+      LogicArray([2, 4], 1, numUnpackedDimensions: numUnpackedDimensions),
+      dimensions: [2, 4],
+      numUnpackedDimensions: numUnpackedDimensions,
+    );
+    final dst = LogicArray([2, 4], 1,
+        name: 'dst', numUnpackedDimensions: numUnpackedDimensions);
+
+    final srcRow = src.elements[1] as LogicArray;
+    final dstRow = dst.elements[1] as LogicArray;
+    for (var index = 1; index <= 3; index++) {
+      dstRow.elements[index] <= srcRow.elements[index];
+    }
+
+    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+  }
+}
+
+/// Partially assigns an unpacked one-dimensional array, which must not be
+/// collapsed into a packed slice.
+class PartialUnpackedArrayRangeAssignment extends Module {
+  PartialUnpackedArrayRangeAssignment()
+      : super(name: 'partial_unpacked_array_range_assignment') {
+    final src = addInputArray(
+      'src',
+      LogicArray([6], 1, numUnpackedDimensions: 1),
+      dimensions: [6],
+      numUnpackedDimensions: 1,
+    );
+    final dst = LogicArray([6], 1, name: 'dst', numUnpackedDimensions: 1);
+
+    for (var index = 2; index <= 4; index++) {
+      dst.elements[index] <= src.elements[index];
+    }
+
+    addOutput('y', width: 6) <= dst.leafElements.rswizzle();
+  }
+}
+
+/// Partially assigns multi-bit array elements, which must not be collapsed by
+/// the one-bit range assignment optimization.
+class PartialWideArrayRangeAssignment extends Module {
+  PartialWideArrayRangeAssignment()
+      : super(name: 'partial_wide_array_range_assignment') {
+    final src = addInputArray(
+      'src',
+      LogicArray([4], 2),
+      dimensions: [4],
+      elementWidth: 2,
+    );
+    final dst = LogicArray([4], 2, name: 'dst');
+
+    for (var index = 1; index <= 2; index++) {
+      dst.elements[index] <= src.elements[index];
+    }
+
+    addOutput('y', width: 8) <= dst.leafElements.rswizzle();
+  }
+}
+
+/// Partially connects net array elements; range collapse must leave these for
+/// the net connection flow instead of emitting procedural assignments.
+class PartialNetArrayRangeAssignment extends Module {
+  PartialNetArrayRangeAssignment()
+      : super(name: 'partial_net_array_range_assignment') {
+    final src = addInOutArray(
+      'src',
+      LogicArray.net([6], 1),
+      dimensions: [6],
+    );
+    final mirror = addInOut('mirror', LogicNet(width: 6), width: 6);
+    final dst = LogicArray.net([6], 1, name: 'dst');
+
+    for (var index = 2; index <= 4; index++) {
+      dst.elements[index] <= src.elements[index];
+    }
+
+    mirror <= dst.leafElements.rswizzle();
+  }
+}
+
+/// Partially connects a flat net bus through bit selections; this is outside
+/// array range collapse and should stay in the net connection flow.
+class PartialLogicNetRangeAssignment extends Module {
+  PartialLogicNetRangeAssignment()
+      : super(name: 'partial_logic_net_range_assignment') {
+    final src = addInOut('src', LogicNet(width: 6), width: 6);
+    final mirror = addInOut('mirror', LogicNet(width: 6), width: 6);
+    final dst = LogicNet(width: 6, name: 'dst');
+
+    for (var index = 2; index <= 4; index++) {
+      dst.slice(index, index) <= src.slice(index, index);
+    }
+
+    mirror <= dst;
+  }
+}
+
 /// Inverts a bus of the given `width`.
 class InverterMod extends Module {
   Logic get o => output('o');
@@ -907,6 +1128,28 @@ String _topModuleBody(String sv) {
   return sv.substring(matches.last.start);
 }
 
+LogicValue _expectedPartialArrayRangeValue(int pattern,
+        {required bool reversed}) =>
+    _expectedSparseValue(6, pattern, (dstIndex) {
+      if (dstIndex < 2 || dstIndex > 4) {
+        return null;
+      }
+      return reversed ? 6 - dstIndex : dstIndex;
+    });
+
+LogicValue _expectedSparseValue(
+  int width,
+  int pattern,
+  int? Function(int dstIndex) srcIndexFor,
+) {
+  final bits = <String>[];
+  for (var dstIndex = width - 1; dstIndex >= 0; dstIndex--) {
+    final srcIndex = srcIndexFor(dstIndex);
+    bits.add(srcIndex == null ? 'z' : '${(pattern >> srcIndex) & 1}');
+  }
+  return LogicValue.ofString(bits.join());
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -943,6 +1186,410 @@ void main() {
     final vectors = [
       Vector({'a': 0}, {'b': 0}),
       Vector({'a': 123}, {'b': 123}),
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('partial array assignments collapse into range assignment', () async {
+    final mod = PartialArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[4:2] = src[4:2];'));
+    expect(topBody, isNot(contains('assign dst[2] = src[2];')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('chained partial array range assignments collapse through intermediate',
+      () async {
+    final mod = ChainedPartialArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[4:2] = src[4:2];'));
+    expect(topBody, isNot(contains('intermediate')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('chained range assignment composes contained subrange offsets',
+      () async {
+    final mod = ChainedSubrangeArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[3:2] = src[6:5];'));
+    expect(topBody, isNot(contains('intermediate')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 3 ? dstIndex + 3 : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('three-deep chained range assignments collapse iteratively', () async {
+    final mod = ThreeDeepChainedPartialArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[4:2] = src[4:2];'));
+    expect(topBody, isNot(contains('intermediate0')));
+    expect(topBody, isNot(contains('intermediate1')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('multi-use chained range intermediate stays expanded', () async {
+    final mod = ChainedPartialArrayRangeAssignment(exposeIntermediate: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
+    expect(topBody, contains('assign dst[4:2] = intermediate[4:2];'));
+    expect(topBody, contains('assign intermediate[4:2] = src[4:2];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+          'z': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('partial bus-to-array assignments collapse into range assignment',
+      () async {
+    final mod = PartialBusToArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[5:2] = src[5:2];'));
+    expect(topBody, isNot(contains('bussubset')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? dstIndex : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('full array-to-bus assignSubset has no subset intermediate', () async {
+    final mod = ArrayToBusAssignSubsetRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('_subset')));
+    expect(topBody, isNot(contains('assign dst[0]')));
+    expect(topBody, contains('assign dst = src[7:0];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({'src': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('partial array-to-bus assignSubset collapses into range assignment',
+      () async {
+    final mod = ArrayToBusAssignSubsetRangeAssignment(partial: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[5:2] = src[5:2];'));
+    expect(topBody, isNot(contains('_subset')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? dstIndex : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('reordered bus-to-array assignments stay expanded', () async {
+    final mod = PartialBusToArrayRangeAssignment(reversed: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[5:2] = src[5:2];')));
+    expect(topBody, contains('assign dst[2] = src[5];'));
+    expect(topBody, contains('assign dst[3] = src[4];'));
+    expect(topBody, contains('assign dst[4] = src[3];'));
+    expect(topBody, contains('assign dst[5] = src[2];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? 7 - dstIndex : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('bus-to-unpacked-array assignments stay expanded', () async {
+    final mod = PartialBusToArrayRangeAssignment(numUnpackedDimensions: 1);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[5:2] = src[5:2];')));
+    expect(topBody, contains('assign dst[2] = src[2];'));
+    expect(topBody, contains('assign dst[3] = src[3];'));
+    expect(topBody, contains('assign dst[4] = src[4];'));
+    expect(topBody, contains('assign dst[5] = src[5];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? dstIndex : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+  });
+
+  test('non-contiguous partial array assignments stay expanded', () async {
+    final mod = PartialArrayRangeAssignment(reversed: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2]')));
+    expect(topBody, contains('assign dst[2] = src[4];'));
+    expect(topBody, contains('assign dst[3] = src[3];'));
+    expect(topBody, contains('assign dst[4] = src[2];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: true),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('packed multidimensional partial assignments collapse inner range',
+      () async {
+    final mod = PartialInnerArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[1][3:1] = src[1][3:1];'));
+    expect(topBody, isNot(contains('assign dst[1][1] = src[1][1];')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(8, pattern, (dstIndex) {
+            final outerIndex = dstIndex ~/ 4;
+            final innerIndex = dstIndex % 4;
+            return outerIndex == 1 && innerIndex >= 1 ? dstIndex : null;
+          }),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('unpacked outer dimension still collapses inner packed range', () async {
+    final mod = PartialInnerArrayRangeAssignment(numUnpackedDimensions: 1);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[1][3:1] = src[1][3:1];'));
+    expect(topBody, isNot(contains(RegExp(r'assign dst\[[0-9]+:[0-9]+\]'))));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(8, pattern, (dstIndex) {
+            final outerIndex = dstIndex ~/ 4;
+            final innerIndex = dstIndex % 4;
+            return outerIndex == 1 && innerIndex >= 1 ? dstIndex : null;
+          }),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+  });
+
+  test('unpacked one-dimensional partial assignments stay expanded', () async {
+    final mod = PartialUnpackedArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
+    expect(topBody, contains('assign dst[2] = src[2];'));
+    expect(topBody, contains('assign dst[3] = src[3];'));
+    expect(topBody, contains('assign dst[4] = src[4];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+  });
+
+  test('wide element partial array assignments stay expanded', () async {
+    final mod = PartialWideArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[2:1] = src[2:1];')));
+    expect(topBody, contains('assign dst[1] = src[1];'));
+    expect(topBody, contains('assign dst[2] = src[2];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x5A, 0xA5, 0xFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedSparseValue(
+            8,
+            pattern,
+            (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? dstIndex : null,
+          ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('net array partial assignments stay in net connection flow', () async {
+    final mod = PartialNetArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
+    expect(topBody, contains('net_connect'));
+    expect(topBody, contains(RegExp(r'net_connect.*\(dst\[2\], src\[2\]\)')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'mirror': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('flat LogicNet partial assignments stay in net connection flow',
+      () async {
+    final mod = PartialLogicNetRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
+    expect(topBody, contains('net_connect'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'mirror': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

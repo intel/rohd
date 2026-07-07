@@ -20,7 +20,7 @@ import '../benchmark/ssa_driver_search_benchmark.dart';
 import '../benchmark/wave_dump_benchmark.dart';
 
 void main() {
-  group('benchmark', () {
+  group('benchmark', tags: 'benchmark', () {
     test('pipeline', () async {
       await PipelineBenchmark().measure();
     });
