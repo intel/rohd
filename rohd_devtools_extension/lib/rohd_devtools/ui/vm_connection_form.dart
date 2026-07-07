@@ -228,6 +228,13 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
   bool _discoveryCancelled = false;
   String? _discoveryError;
 
+  static const _uriTextStyle = TextStyle(
+    fontFamily: 'monospace',
+    letterSpacing: 0,
+  );
+
+  TextStyle? get _nativeUriTextStyle => kIsWeb ? null : _uriTextStyle;
+
   void _connect() {
     final raw = widget.vmServiceUriController.text;
     final cleaned = widget.cleanVmServiceUri(raw);
@@ -386,6 +393,7 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
               Expanded(
                 child: TextField(
                   controller: widget.dtdUriController,
+                  style: _nativeUriTextStyle,
                   keyboardType: TextInputType.url,
                   autocorrect: false,
                   enableSuggestions: false,
@@ -394,6 +402,7 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
                   decoration: InputDecoration(
                     labelText: 'DTD URI (auto-discover VMs)',
                     hintText: 'ws://127.0.0.1:xxxxx/xxxxx=',
+                    hintStyle: _nativeUriTextStyle,
                     border: const OutlineInputBorder(),
                     prefixIcon: platformIcon(
                       Icons.cloud,
@@ -573,6 +582,7 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
           // ── 3. VM Service URI field (manual / override) ──
           TextField(
             controller: widget.vmServiceUriController,
+            style: _nativeUriTextStyle,
             keyboardType: TextInputType.url,
             autocorrect: false,
             enableSuggestions: false,
@@ -581,6 +591,7 @@ class _VmConnectionFormState extends State<VmConnectionForm> {
             decoration: InputDecoration(
               labelText: 'VM Service URI',
               hintText: 'ws://127.0.0.1:8181/xxxx=/ws',
+              hintStyle: _nativeUriTextStyle,
               border: const OutlineInputBorder(),
               prefixIcon: platformIcon(
                 Icons.link,

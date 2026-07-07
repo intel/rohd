@@ -13,6 +13,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/cubit/snapshot_cubit.dart'
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/services/services.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/simulation_time_display.dart';
 
 /// Displays the signals for a selected module in a table.
 class SignalTable extends StatefulWidget {
@@ -28,8 +29,14 @@ class SignalTable extends StatefulWidget {
   /// Whether output signals should be shown.
   final bool outputSelectedVal;
 
+  /// Whether inout signals should be shown.
+  final bool inoutSelectedVal;
+
   /// Optional snapshot data to overlay signal values.
   final SnapshotLoaded? snapshot;
+
+  /// Display settings for simulation time values.
+  final SimulationTimeDisplay timeDisplay;
 
   /// Creates a signal table for the given module and filters.
   const SignalTable(
@@ -37,7 +44,9 @@ class SignalTable extends StatefulWidget {
       required this.searchTerm,
       required this.inputSelectedVal,
       required this.outputSelectedVal,
+      required this.inoutSelectedVal,
       this.snapshot,
+      this.timeDisplay = SimulationTimeDisplay.none,
       super.key});
 
   @override
@@ -53,7 +62,10 @@ class SignalTable extends StatefulWidget {
       ..add(StringProperty('searchTerm', searchTerm))
       ..add(FlagProperty('inputSelectedVal', value: inputSelectedVal))
       ..add(FlagProperty('outputSelectedVal', value: outputSelectedVal))
-      ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot));
+      ..add(FlagProperty('inoutSelectedVal', value: inoutSelectedVal))
+      ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot))
+      ..add(DiagnosticsProperty<SimulationTimeDisplay>(
+          'timeDisplay', timeDisplay));
   }
 }
 
@@ -62,9 +74,10 @@ class _SignalTableState extends State<SignalTable> {
 
   /// Builds the signal table and its rows.
   Widget build(BuildContext context) {
-    final snapshotTime = widget.snapshot?.timePs;
-    final valueHeader =
-        snapshotTime != null ? 'Value (@ ${snapshotTime}ps)' : 'Value';
+    final snapshotTime = widget.snapshot?.time;
+    final valueHeader = snapshotTime != null
+        ? 'Value (@ ${widget.timeDisplay.format(snapshotTime)})'
+        : 'Value';
     final tableHeaders = ['Name', 'Direction', valueHeader, 'Width'];
 
     return Table(
@@ -82,7 +95,8 @@ class _SignalTableState extends State<SignalTable> {
           ...generateSignalsRow(widget.selectedModule,
               searchTerm: widget.searchTerm,
               inputSelected: widget.inputSelectedVal,
-              outputSelected: widget.outputSelectedVal)
+              outputSelected: widget.outputSelectedVal,
+              inoutSelected: widget.inoutSelectedVal)
         ]);
   }
 
@@ -90,7 +104,8 @@ class _SignalTableState extends State<SignalTable> {
   List<TableRow> generateSignalsRow(TreeModel module,
       {required String? searchTerm,
       required bool inputSelected,
-      required bool outputSelected}) {
+      required bool outputSelected,
+      required bool inoutSelected}) {
     final rows = <TableRow>[];
 
     // Filter signals
@@ -100,6 +115,9 @@ class _SignalTableState extends State<SignalTable> {
     final outputSignals = outputSelected
         ? SignalService.filterSignals(module.outputs, searchTerm ?? '')
         : <SignalModel>[];
+    final inoutSignals = inoutSelected
+        ? SignalService.filterSignals(module.inouts, searchTerm ?? '')
+        : <SignalModel>[];
     // Add input from signal model list to row
     for (final signal in inputSignals) {
       rows.add(_generateSignalRow(signal));
@@ -107,6 +125,10 @@ class _SignalTableState extends State<SignalTable> {
 
     // Add output from signal model list to row
     for (final signal in outputSignals) {
+      rows.add(_generateSignalRow(signal));
+    }
+
+    for (final signal in inoutSignals) {
       rows.add(_generateSignalRow(signal));
     }
 

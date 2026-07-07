@@ -17,4 +17,5 @@ export 'schematic_icon.dart';
 export 'signal_details_card.dart';
 export 'signal_table.dart';
 export 'signal_table_text_field.dart';
+export 'simulation_time_display.dart';
 export 'vm_connection_form.dart';

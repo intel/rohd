@@ -41,8 +41,8 @@ class VmServiceSignalValueSource implements SignalValueSource {
       StreamController<SignalValueUpdateEvent>.broadcast();
 
   StreamSubscription<vm.Event>? _debugEventSubscription;
-  int _lastKnownTimePs = 0;
-  int _syntheticUpdateTimePs = 0;
+  int _lastKnownTime = 0;
+  int _syntheticUpdateTime = 0;
 
   /// Creates a VM-backed signal value source.
   VmServiceSignalValueSource({
@@ -108,8 +108,8 @@ class VmServiceSignalValueSource implements SignalValueSource {
   }
 
   @override
-  Future<SignalSnapshotData?> getSnapshot(int timePs) async {
-    final extensionSnapshot = await _readSnapshotFromExtension(timePs);
+  Future<SignalSnapshotData?> getSnapshot(int time) async {
+    final extensionSnapshot = await _readSnapshotFromExtension(time);
     if (extensionSnapshot != null) {
       return extensionSnapshot;
     }
@@ -117,7 +117,7 @@ class VmServiceSignalValueSource implements SignalValueSource {
     final snapshotExpressions = <String>[
       _moduleTreeHierarchyExpression,
       _moduleTreeSignalValuesExpression,
-      _waveformSnapshotExpression(timePs),
+      _waveformSnapshotExpression(time),
     ];
 
     for (final expression in snapshotExpressions) {
@@ -185,8 +185,8 @@ class VmServiceSignalValueSource implements SignalValueSource {
     await _updatesController.close();
   }
 
-  static String _waveformSnapshotExpression(int timePs) =>
-      'WaveformService.instance.getSnapshotCompactJSON($timePs)';
+  static String _waveformSnapshotExpression(int time) =>
+      'WaveformService.instance.getSnapshotCompactJSON($time)';
 
   static const _moduleTreeSignalValuesExpression =
       'ModuleTree.instance.signalValuesJSON';
@@ -204,10 +204,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
     return null;
   }
 
-  Future<SignalSnapshotData?> _readSnapshotFromExtension(int timePs) async {
+  Future<SignalSnapshotData?> _readSnapshotFromExtension(int time) async {
     final response = await _callExtension(
       _snapshotExtension,
-      args: {'time': timePs.toString()},
+      args: {'time': time.toString()},
     );
     if (response == null) {
       return null;
@@ -282,6 +282,12 @@ class VmServiceSignalValueSource implements SignalValueSource {
       modulePath: modulePath,
       signals: signals,
     );
+    _collectSignalGroup(
+      moduleJson['inouts'],
+      direction: 'Inout',
+      modulePath: modulePath,
+      signals: signals,
+    );
 
     final subModules = moduleJson['subModules'];
     if (subModules is! List) {
@@ -333,23 +339,23 @@ class VmServiceSignalValueSource implements SignalValueSource {
     return 1;
   }
 
-  void _rememberTime(int timePs) {
-    if (timePs <= 0) {
+  void _rememberTime(int time) {
+    if (time <= 0) {
       return;
     }
 
-    _lastKnownTimePs = timePs;
-    if (_syntheticUpdateTimePs < timePs) {
-      _syntheticUpdateTimePs = timePs;
+    _lastKnownTime = time;
+    if (_syntheticUpdateTime < time) {
+      _syntheticUpdateTime = time;
     }
   }
 
   int _nextUpdateTime() {
-    if (_lastKnownTimePs > _syntheticUpdateTimePs) {
-      _syntheticUpdateTimePs = _lastKnownTimePs;
+    if (_lastKnownTime > _syntheticUpdateTime) {
+      _syntheticUpdateTime = _lastKnownTime;
     }
 
-    return ++_syntheticUpdateTimePs;
+    return ++_syntheticUpdateTime;
   }
 
   void _handleDebugEvent(vm.Event event) {
@@ -367,10 +373,10 @@ class VmServiceSignalValueSource implements SignalValueSource {
       return;
     }
 
-    final timePs = _nextUpdateTime();
+    final time = _nextUpdateTime();
 
     _updatesController.add(
-      SignalValueUpdateEvent(upToTime: timePs, hasData: true, reason: reason),
+      SignalValueUpdateEvent(upToTime: time, hasData: true, reason: reason),
     );
   }
 }

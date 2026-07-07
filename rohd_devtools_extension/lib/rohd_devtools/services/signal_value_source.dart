@@ -12,7 +12,7 @@ typedef SignalSnapshotData = Map<String, Map<String, dynamic>>;
 
 /// Minimal update event used by the shared snapshot overlay flow.
 class SignalValueUpdateEvent {
-  /// Simulation time covered by the update, in picoseconds.
+  /// Simulation time covered by the update, in source-provided units.
   final int upToTime;
 
   /// Whether the update indicates value data is available.
@@ -37,6 +37,6 @@ abstract interface class SignalValueSource {
   /// Returns the current simulation time, if available.
   Future<int?> getCurrentTime();
 
-  /// Fetch a value snapshot at [timePs].
-  Future<SignalSnapshotData?> getSnapshot(int timePs);
+  /// Fetch a value snapshot at [time].
+  Future<SignalSnapshotData?> getSnapshot(int time);
 }

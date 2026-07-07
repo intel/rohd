@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_structure_page_test.dart
@@ -76,6 +76,7 @@ void main() {
           .thenAnswer((_) => Stream.value(RohdServiceLoaded(treeModel)));
       when(() => treeModel.inputs).thenReturn(signalModelList);
       when(() => treeModel.outputs).thenReturn(signalModelList);
+      when(() => treeModel.inouts).thenReturn(signalModelList);
       when(() => treeSearchTermCubit.stream)
           .thenAnswer((_) => Stream.value(null));
 

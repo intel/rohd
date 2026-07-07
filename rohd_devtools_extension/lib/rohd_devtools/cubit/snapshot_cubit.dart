@@ -84,28 +84,28 @@ class SnapshotInitial extends SnapshotState {
 /// A snapshot is currently being fetched.
 class SnapshotLoading extends SnapshotState {
   /// The time being queried.
-  final int timePs;
+  final int time;
 
   /// Creates a [SnapshotLoading].
-  const SnapshotLoading(this.timePs);
+  const SnapshotLoading(this.time);
 
   @override
-  List<Object?> get props => [timePs];
+  List<Object?> get props => [time];
 }
 
 /// A snapshot has been successfully fetched.
 class SnapshotLoaded extends SnapshotState {
-  /// The time at which the snapshot was taken (picoseconds).
-  final int timePs;
+  /// The time at which the snapshot was taken, in source-provided units.
+  final int time;
 
   /// Map of signal ID to [SignalSnapshot].
   final Map<String, SignalSnapshot> signals;
 
   /// Creates a [SnapshotLoaded].
-  const SnapshotLoaded({required this.timePs, required this.signals});
+  const SnapshotLoaded({required this.time, required this.signals});
 
   @override
-  List<Object?> get props => [timePs, signals];
+  List<Object?> get props => [time, signals];
 
   /// Look up a signal's snapshot value by signal ID.
   SignalSnapshot? getSignal(String signalId) => signals[signalId];
@@ -185,12 +185,12 @@ class SnapshotCubit extends Cubit<SnapshotState> {
     _liveUpdatesSub = null;
   }
 
-  /// Take a snapshot of all signal values at the given [timePs].
-  Future<void> takeSnapshot(SignalValueSource source, int timePs) async {
-    emit(SnapshotLoading(timePs));
+  /// Take a snapshot of all signal values at the given [time].
+  Future<void> takeSnapshot(SignalValueSource source, int time) async {
+    emit(SnapshotLoading(time));
 
     try {
-      final rawData = await source.getSnapshot(timePs);
+      final rawData = await source.getSnapshot(time);
 
       if (rawData == null) {
         emit(const SnapshotError('No snapshot data returned'));
@@ -211,7 +211,7 @@ class SnapshotCubit extends Cubit<SnapshotState> {
         );
       }
 
-      emit(SnapshotLoaded(timePs: timePs, signals: signals));
+      emit(SnapshotLoaded(time: time, signals: signals));
     } on Object catch (e) {
       debugPrint('[SnapshotCubit] Error taking snapshot: $e');
       emit(SnapshotError('Failed to take snapshot: $e'));

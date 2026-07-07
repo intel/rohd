@@ -30,6 +30,7 @@ class DevToolsHelpButton extends StatelessWidget {
   Widget build(BuildContext context) => MarkdownHelpButton(
         assetPath: 'assets/help/devtools_help.md',
         isDark: isDark,
+        labelIcon: kIsWeb ? const Icon(Icons.help_outline, size: 20) : null,
       );
 
   @override

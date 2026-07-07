@@ -8,6 +8,8 @@
 // 2026 May
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:rohd/rohd.dart';
+
 /// A node in the expanded type tree, used for structured display.
 class TypeFieldNode {
   /// Field name (e.g. "mantissa", "[0]").
@@ -37,8 +39,8 @@ class TypeFieldNode {
 
 /// Expand a `logic_type` metadata map into a tree of [TypeFieldNode]s.
 ///
-/// If [parentValue] is provided (as a binary string, MSB-first), sub-field
-/// values are extracted via bit-slicing.
+/// If [parentBinaryValue] is provided (as a binary string, MSB-first),
+/// sub-field values are extracted via bit-slicing.
 ///
 /// The `logic_type` format for structs:
 /// ```json
@@ -57,7 +59,9 @@ List<TypeFieldNode> expandLogicType(
   Map<String, dynamic>? logicType, {
   String? parentBinaryValue,
 }) {
-  if (logicType == null) return const [];
+  if (logicType == null) {
+    return const [];
+  }
 
   // Struct case
   final fields = logicType['fields'] as List<dynamic>?;
@@ -98,7 +102,9 @@ List<TypeFieldNode> _expandStructFields(
       if (bits != null && bits.isNotEmpty) {
         for (final b in bits) {
           final bInt = b as int;
-          if (bInt < minBit) minBit = bInt;
+          if (bInt < minBit) {
+            minBit = bInt;
+          }
         }
       }
     }
@@ -158,7 +164,9 @@ List<TypeFieldNode> _expandArrayElements(
   Map<String, dynamic>? elementType,
   String? parentBinaryValue,
 ) {
-  if (dims.isEmpty) return const [];
+  if (dims.isEmpty) {
+    return const [];
+  }
 
   final outerDim = dims.first;
   final nodes = <TypeFieldNode>[];
@@ -256,8 +264,18 @@ String _extractBitsFromBinary(String binaryValue, List<int> bitIndices) {
 ///
 /// [startBit] is the LSB index, [width] is the number of bits.
 String _extractContiguousBits(String binaryValue, int startBit, int width) {
+  if (width <= 0) {
+    return '';
+  }
+
   final totalWidth = binaryValue.length;
   final endBit = startBit + width; // exclusive
+  if (startBit >= 0 && endBit <= totalWidth) {
+    return LogicValue.ofString(binaryValue)
+        .slice(endBit - 1, startBit)
+        .toString(includeWidth: false);
+  }
+
   final result = StringBuffer();
 
   // Extract MSB-first.
@@ -276,40 +294,27 @@ String _extractContiguousBits(String binaryValue, int startBit, int width) {
 ///
 /// Returns null if the input can't be parsed.
 String? hexToBinary(String hexValue, int width) {
+  if (width <= 0) {
+    return '';
+  }
+
   var cleaned = hexValue.trim().toLowerCase();
   if (cleaned.startsWith('0x')) {
     cleaned = cleaned.substring(2);
   }
-  // Handle 'x' or 'z' values.
-  if (cleaned.contains('x') || cleaned.contains('z')) {
-    // Expand each hex digit to 4 binary digits, preserving x/z.
-    final buf = StringBuffer();
-    for (final ch in cleaned.split('')) {
-      if (ch == 'x') {
-        buf.write('xxxx');
-      } else if (ch == 'z') {
-        buf.write('zzzz');
-      } else {
-        final nibble = int.tryParse(ch, radix: 16);
-        if (nibble == null) return null;
-        buf.write(nibble.toRadixString(2).padLeft(4, '0'));
-      }
-    }
-    final full = buf.toString();
-    // Trim or pad to desired width.
-    if (full.length >= width) {
-      return full.substring(full.length - width);
-    }
-    return full.padLeft(width, '0');
+  if (cleaned.isEmpty) {
+    return null;
   }
 
-  final bigInt = BigInt.tryParse(cleaned, radix: 16);
-  if (bigInt == null) return null;
-  final binary = bigInt.toRadixString(2);
-  if (binary.length >= width) {
-    return binary.substring(binary.length - width);
+  final sourceWidth = cleaned.length * 4;
+  final parseWidth = sourceWidth > width ? sourceWidth : width;
+  try {
+    return LogicValue.ofRadixString("$parseWidth'h$cleaned")
+        .slice(width - 1, 0)
+        .toString(includeWidth: false);
+  } on Exception {
+    return null;
   }
-  return binary.padLeft(width, '0');
 }
 
 /// Format a binary field value for display.
@@ -317,13 +322,23 @@ String? hexToBinary(String hexValue, int width) {
 /// Short values (<=4 bits) show as binary. Longer values show as hex.
 /// Uses ROHD radixString style: width'hHEX.
 String formatFieldValue(String? binaryValue, int width) {
-  if (binaryValue == null || binaryValue.isEmpty) return '';
-  if (binaryValue.contains('x')) return "$width'hx";
-  if (binaryValue.contains('z')) return "$width'hz";
-  if (width <= 4) return "$width'b$binaryValue";
+  if (binaryValue == null || binaryValue.isEmpty) {
+    return '';
+  }
+  if (binaryValue.contains('x')) {
+    return "$width'hx";
+  }
+  if (binaryValue.contains('z')) {
+    return "$width'hz";
+  }
+  if (width <= 4) {
+    return "$width'b$binaryValue";
+  }
   // Convert to hex.
   final bigInt = BigInt.tryParse(binaryValue, radix: 2);
-  if (bigInt == null) return binaryValue;
+  if (bigInt == null) {
+    return binaryValue;
+  }
   final hexDigits = (width + 3) ~/ 4;
   final hex = bigInt.toRadixString(16).padLeft(hexDigits, '0');
   return "$width'h$hex";
@@ -338,19 +353,25 @@ String formatTypeTooltip(
   String? signalName,
   int maxDepth = 6,
 }) {
-  if (logicType == null) return '';
+  if (logicType == null) {
+    return '';
+  }
 
   final nodes = expandLogicType(
     logicType,
     parentBinaryValue: parentBinaryValue,
   );
-  if (nodes.isEmpty) return '';
+  if (nodes.isEmpty) {
+    return '';
+  }
 
   final buf = StringBuffer();
   final typeName = logicType['typeName'] as String?;
   if (signalName != null) {
     buf.write(signalName);
-    if (typeName != null) buf.write(' ($typeName)');
+    if (typeName != null) {
+      buf.write(' ($typeName)');
+    }
     buf.writeln();
   } else if (typeName != null) {
     buf.writeln(typeName);

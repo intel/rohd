@@ -11,17 +11,19 @@ class MyCounterInterface extends Interface<CounterDirection> {
 
   final int width;
   MyCounterInterface({this.width = 8}) {
-    setPorts([Port('en'), Port('reset')], [CounterDirection.inward]);
+    setPorts(
+        [Logic.port('en'), Logic.port('reset')], [CounterDirection.inward]);
 
     setPorts([
-      Port('val', width),
+      Logic.port('val', width),
     ], [
       CounterDirection.outward
     ]);
 
-    setPorts([Port('clk')], [CounterDirection.misc]);
+    setPorts([Logic.port('clk')], [CounterDirection.misc]);
   }
 
+  @override
   MyCounterInterface clone() => MyCounterInterface(width: width);
 }
 
@@ -36,10 +38,9 @@ class MyCounter extends Module {
   late final MyCounterInterface counterintf;
 
   MyCounter(MyCounterInterface intf) : super(name: 'counter') {
-    counterintf = MyCounterInterface(width: intf.width)
-      ..connectIO(this, intf,
-          inputTags: {CounterDirection.inward, CounterDirection.misc},
-          outputTags: {CounterDirection.outward});
+    counterintf = addInterfacePorts(counterintf,
+        inputTags: {CounterDirection.inward, CounterDirection.misc},
+        outputTags: {CounterDirection.outward});
 
     _buildLogic();
   }

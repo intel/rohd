@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_model.dart
@@ -20,6 +20,9 @@ class TreeModel {
   /// Output signals for the module.
   final List<SignalModel> outputs;
 
+  /// Inout signals for the module.
+  final List<SignalModel> inouts;
+
   /// Child submodules contained by this module.
   final List<TreeModel> subModules;
 
@@ -28,14 +31,17 @@ class TreeModel {
       {required this.name,
       required this.inputs,
       required this.outputs,
-      required this.subModules});
+      required this.subModules,
+      this.inouts = const []});
 
   /// Builds a tree model from a JSON map.
   factory TreeModel.fromJson(Map<String, dynamic> json) {
     final inputSignalsList = <SignalModel>[];
     final outputSignalsList = <SignalModel>[];
+    final inoutSignalsList = <SignalModel>[];
     final inputsJson = json['inputs'] as Map<String, dynamic>;
     final outputsJson = json['outputs'] as Map<String, dynamic>;
+    final inoutsJson = json['inouts'] as Map<String, dynamic>? ?? {};
 
     for (final inputSignal in inputsJson.entries) {
       final inputValue = inputSignal.value as Map<String, dynamic>;
@@ -60,10 +66,23 @@ class TreeModel {
       outputSignalsList.add(signal);
     }
 
+    for (final inoutSignal in inoutsJson.entries) {
+      final inoutValue = inoutSignal.value as Map<String, dynamic>;
+      final signal = SignalModel.fromMap({
+        'name': inoutSignal.key,
+        'direction': 'Inout',
+        'value': inoutValue['value'],
+        'width': inoutValue['width']
+      });
+
+      inoutSignalsList.add(signal);
+    }
+
     return TreeModel(
         name: json['name'] as String,
         inputs: inputSignalsList,
         outputs: outputSignalsList,
+        inouts: inoutSignalsList,
         subModules: (json['subModules'] as List)
             .map((subModule) =>
                 TreeModel.fromJson(subModule as Map<String, dynamic>))

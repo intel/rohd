@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // signal_details_card.dart
@@ -16,6 +16,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/models/tree_model.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/details_help_button.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
 import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table_text_field.dart';
+import 'package:rohd_devtools_extension/rohd_devtools/ui/simulation_time_display.dart';
 import 'package:rohd_devtools_widgets/rohd_devtools_widgets.dart';
 
 /// Shows the selected module's signal details and search controls.
@@ -26,8 +27,16 @@ class SignalDetailsCard extends StatefulWidget {
   /// Optional snapshot data to overlay signal values.
   final SnapshotLoaded? snapshot;
 
+  /// Display settings for simulation time values.
+  final SimulationTimeDisplay timeDisplay;
+
   /// Creates a signal details card for the selected module.
-  const SignalDetailsCard({super.key, this.module, this.snapshot});
+  const SignalDetailsCard({
+    super.key,
+    this.module,
+    this.snapshot,
+    this.timeDisplay = SimulationTimeDisplay.none,
+  });
 
   @override
 
@@ -39,7 +48,9 @@ class SignalDetailsCard extends StatefulWidget {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<TreeModel?>('module', module))
-      ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot));
+      ..add(DiagnosticsProperty<SnapshotLoaded?>('snapshot', snapshot))
+      ..add(DiagnosticsProperty<SimulationTimeDisplay>(
+          'timeDisplay', timeDisplay));
   }
 }
 
@@ -53,6 +64,9 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
 
   /// Whether output signals are shown.
   ValueNotifier<bool> outputSelected = ValueNotifier<bool>(true);
+
+  /// Whether inout signals are shown.
+  ValueNotifier<bool> inoutSelected = ValueNotifier<bool>(true);
 
   /// Notifies the widget tree to rebuild after filter changes.
   ValueNotifier<int> notifier = ValueNotifier<int>(0);
@@ -86,6 +100,15 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
                       onChanged: (value) {
                         setState(() {
                           outputSelected.value = value!;
+                        });
+                        toggleNotifier();
+                      }),
+                  CheckboxListTile(
+                      title: const Text('Inout'),
+                      value: inoutSelected.value,
+                      onChanged: (value) {
+                        setState(() {
+                          inoutSelected.value = value!;
                         });
                         toggleNotifier();
                       })
@@ -132,7 +155,9 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
                     searchTerm: searchTerm,
                     inputSelectedVal: inputSelected.value,
                     outputSelectedVal: outputSelected.value,
-                    snapshot: widget.snapshot))
+                    inoutSelectedVal: inoutSelected.value,
+                    snapshot: widget.snapshot,
+                    timeDisplay: widget.timeDisplay))
           ]))),
       Positioned(
           right: 8,
@@ -150,6 +175,7 @@ class SignalDetailsCardState extends State<SignalDetailsCard> {
       ..add(StringProperty('searchTerm', searchTerm))
       ..add(FlagProperty('inputSelected', value: inputSelected.value))
       ..add(FlagProperty('outputSelected', value: outputSelected.value))
+      ..add(FlagProperty('inoutSelected', value: inoutSelected.value))
       ..add(IntProperty('notifier', notifier.value));
   }
 }
