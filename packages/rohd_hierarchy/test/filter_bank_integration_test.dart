@@ -637,6 +637,15 @@ void main() {
       );
     });
 
+    test('inouts getter returns only inout ports', () {
+      final inouts = service.root.inouts;
+      expect(inouts, isNotEmpty, reason: 'inouts should include dataBus');
+      expect(inouts.map((s) => s.name), contains('dataBus'));
+      for (final s in inouts) {
+        expect(s.direction, 'inout');
+      }
+    });
+
     test('ports getter includes inout ports', () {
       final allPorts = service.root.ports;
       final inouts = allPorts.where((p) => p.direction == 'inout').toList();

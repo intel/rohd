@@ -90,29 +90,12 @@ class _SignalTableState extends State<SignalTable> {
   TableRow _generateSignalRow(SignalModel signal) {
     return TableRow(
       children: <Widget>[
+        SizedBox(height: 32, child: Center(child: Text(signal.name))),
+        SizedBox(height: 32, child: Center(child: Text(signal.direction))),
+        SizedBox(height: 32, child: Center(child: Text(signal.value))),
         SizedBox(
           height: 32,
-          child: Center(
-            child: Text(signal.name),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.direction),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.value),
-          ),
-        ),
-        SizedBox(
-          height: 32,
-          child: Center(
-            child: Text(signal.width.toString()),
-          ),
+          child: Center(child: Text(signal.width.toString())),
         ),
       ],
     );
@@ -124,10 +107,7 @@ class _SignalTableState extends State<SignalTable> {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
       ),
     );

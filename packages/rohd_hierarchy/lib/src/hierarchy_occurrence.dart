@@ -141,6 +141,10 @@ class HierarchyOccurrence {
   List<SignalOccurrence> get outputs =>
       signals.where((s) => s.direction == 'output').toList();
 
+  /// Returns only inout signals.
+  List<SignalOccurrence> get inouts =>
+      signals.where((s) => s.direction == 'inout').toList();
+
   /// Number of port signals in this occurrence.
   int get portCount => signals.where((s) => s.isPort).length;
 
