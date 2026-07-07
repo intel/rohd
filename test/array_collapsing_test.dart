@@ -189,6 +189,43 @@ class ArrayToBusAssignSubsetRangeAssignment extends Module {
   }
 }
 
+/// Assigns a flat bus range into another flat bus through a temporary slice.
+class BusSliceTemporaryToAssignSubsetRangeAssignment extends Module {
+  BusSliceTemporaryToAssignSubsetRangeAssignment()
+      : super(name: 'bus_slice_temporary_to_assign_subset_range_assignment') {
+    final src = addInput('src', Logic(width: 16), width: 16);
+    final dst = Logic(width: 8, name: 'dst');
+    final srcSlice =
+        Logic(width: 4, name: 'src_slice', naming: Naming.mergeable);
+
+    for (var index = 0; index < 4; index++) {
+      dst.assignSubset([src[index]], start: index);
+    }
+    srcSlice <= src.getRange(11, 15);
+    for (var index = 0; index < 4; index++) {
+      dst.assignSubset([srcSlice[index]], start: index + 4);
+    }
+
+    addOutput('y', width: 8) <= dst;
+  }
+}
+
+/// Uses a manually-created array with a subset-like name.
+class ManualSubsetNamedArrayRangeAssignment extends Module {
+  ManualSubsetNamedArrayRangeAssignment()
+      : super(name: 'manual_subset_named_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
+    final intermediate =
+        LogicArray([6], 1, name: 'manual_subset', naming: Naming.unnamed);
+
+    for (var index = 2; index <= 4; index++) {
+      intermediate.elements[index] <= src.elements[index];
+    }
+
+    addOutput('y', width: 6) <= intermediate.elements.rswizzle();
+  }
+}
+
 /// Partially assigns a packed inner dimension of a two-dimensional array.
 class PartialInnerArrayRangeAssignment extends Module {
   PartialInnerArrayRangeAssignment({int numUnpackedDimensions = 0})
@@ -1397,6 +1434,53 @@ void main() {
             pattern,
             (dstIndex) => dstIndex >= 2 && dstIndex <= 5 ? dstIndex : null,
           ),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('bus slice temporary feeding assignSubset collapses into ranges',
+      () async {
+    final mod = BusSliceTemporaryToAssignSubsetRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[3:0] = src[3:0];'));
+    expect(topBody, contains('assign dst[7:4] = src[14:11];'));
+    expect(topBody, isNot(contains('src_slice')));
+    expect(topBody, isNot(contains('_subset')));
+
+    final vectors = [
+      for (final pattern in [0x0000, 0x1234, 0x5AA5, 0xFFFF])
+        Vector({
+          'src': pattern
+        }, {
+          'y': ((pattern & 0xF) | (((pattern >> 11) & 0xF) << 4)),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('subset-like manual array name does not trigger generated subset fold',
+      () async {
+    final mod = ManualSubsetNamedArrayRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('manual_subset'));
+    expect(topBody, contains('assign manual_subset[4:2] = src[4:2];'));
+    expect(topBody, contains('assign y = manual_subset[5:0];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);

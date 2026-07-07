@@ -1310,6 +1310,8 @@ class SynthModuleDefinition {
       return;
     }
 
+    final generatedSubsetIntermediates = _generatedSubsetIntermediates();
+
     final swizzleInputSignals = {
       for (final instantiation in subModuleInstantiations)
         if (instantiation.module is Swizzle &&
@@ -1347,7 +1349,9 @@ class SynthModuleDefinition {
           src.range.width != 1 ||
           dst.width != 1 ||
           src.range.base == dst.base ||
-          (src.sourceSubmodule != null && src.range.lower != dst.lower) ||
+          (src.sourceSubmodule != null &&
+              src.range.lower != dst.lower &&
+              !generatedSubsetIntermediates.contains(dst.base)) ||
           (src.sourceSubmodule != null &&
               !_hasOnlySwizzleConsumers(
                 dst.base,
@@ -1371,6 +1375,24 @@ class SynthModuleDefinition {
       ));
     }
 
+    final fullyCoveredGeneratedSubsets = <SynthLogic>{};
+    final generatedSubsetBits = <SynthLogic, Set<int>>{};
+    for (final group in groupedCandidates.values) {
+      for (final candidate in group) {
+        if (generatedSubsetIntermediates.contains(candidate.dst.base)) {
+          generatedSubsetBits
+              .putIfAbsent(candidate.dst.base, () => {})
+              .add(candidate.dst.lower);
+        }
+      }
+    }
+    for (final entry in generatedSubsetBits.entries) {
+      if (entry.value.length == entry.key.width &&
+          Iterable<int>.generate(entry.key.width).every(entry.value.contains)) {
+        fullyCoveredGeneratedSubsets.add(entry.key);
+      }
+    }
+
     var changed = false;
     for (final group in groupedCandidates.values) {
       group.sort((a, b) => a.dst.lower.compareTo(b.dst.lower));
@@ -1382,13 +1404,23 @@ class SynthModuleDefinition {
         final continuesRun = current.dst.lower == previous.dst.lower + 1 &&
             current.src.lower == previous.src.lower + 1;
         if (!continuesRun) {
-          changed |=
-              _addSimpleRangeRun(reducedAssignments, group, start, index - 1);
+          changed |= _addSimpleRangeRun(
+              reducedAssignments,
+              group,
+              start,
+              index - 1,
+              generatedSubsetIntermediates,
+              fullyCoveredGeneratedSubsets);
           start = index;
         }
       }
       changed |= _addSimpleRangeRun(
-          reducedAssignments, group, start, group.length - 1);
+          reducedAssignments,
+          group,
+          start,
+          group.length - 1,
+          generatedSubsetIntermediates,
+          fullyCoveredGeneratedSubsets);
     }
 
     if (changed) {
@@ -1423,6 +1455,8 @@ class SynthModuleDefinition {
         group,
     int start,
     int end,
+    Set<SynthLogic> generatedSubsetIntermediates,
+    Set<SynthLogic> fullyCoveredGeneratedSubsets,
   ) {
     if (start == end) {
       reducedAssignments.add(group[start].assignment);
@@ -1431,6 +1465,13 @@ class SynthModuleDefinition {
 
     final first = group[start];
     final last = group[end];
+    if (generatedSubsetIntermediates.contains(first.dst.base) &&
+        !fullyCoveredGeneratedSubsets.contains(first.dst.base)) {
+      for (var index = start; index <= end; index++) {
+        reducedAssignments.add(group[index].assignment);
+      }
+      return false;
+    }
     reducedAssignments.add(
       RangeSynthAssignment(
         first.src.base,
@@ -1450,7 +1491,7 @@ class SynthModuleDefinition {
 
   Map<SynthLogic, ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>
       _busSubsetSourceRanges() {
-    final ranges = <SynthLogic,
+    final directRanges = <SynthLogic,
         ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>{};
     final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
     for (final assignment in assignments) {
@@ -1477,34 +1518,94 @@ class SynthModuleDefinition {
         continue;
       }
 
-      final originalBase = _singleFullWidthDriver(
-            original.resolved,
-            assignmentsByDestination,
-          ) ??
-          original.resolved;
-      if (!_canUsePackedRangeBase(originalBase)) {
-        continue;
-      }
-
-      ranges[subset.resolved] = (
+      directRanges[subset.resolved] = (
         range: _SynthRangeRef(
-          originalBase,
+          original.resolved,
           module.startIndex,
           module.endIndex,
         ),
         inst: instantiation,
       );
     }
+
+    final ranges = <SynthLogic,
+        ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>{};
+    for (final entry in directRanges.entries) {
+      final resolvedRange = _resolveFullWidthDrivenRange(
+        entry.value.range,
+        assignmentsByDestination,
+        directRanges,
+      );
+      if (!_canUsePackedRangeBase(resolvedRange.base)) {
+        continue;
+      }
+
+      ranges[entry.key] = (range: resolvedRange, inst: entry.value.inst);
+    }
     return ranges;
   }
 
-  SynthLogic? _singleFullWidthDriver(
+  _SynthRangeRef _resolveFullWidthDrivenRange(
+    _SynthRangeRef range,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+    Map<SynthLogic, ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>
+        directRanges, [
+    Set<SynthLogic> visiting = const {},
+  ]) {
+    if (visiting.contains(range.base)) {
+      return range;
+    }
+
+    final sourceRange = _singleFullWidthSourceRange(
+      range.base,
+      assignmentsByDestination,
+      directRanges,
+      {...visiting, range.base},
+    );
+    if (sourceRange == null) {
+      return range;
+    }
+
+    return _SynthRangeRef(
+      sourceRange.base,
+      sourceRange.lower + range.lower,
+      sourceRange.lower + range.upper,
+    );
+  }
+
+  _SynthRangeRef? _singleFullWidthSourceRange(
     SynthLogic signal,
     Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
-  ) =>
-      _singleFullWidthAssignment(signal, assignmentsByDestination)
-          ?.src
-          .resolved;
+    Map<SynthLogic, ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>
+        directRanges,
+    Set<SynthLogic> visiting,
+  ) {
+    final driver = _singleFullWidthAssignment(signal, assignmentsByDestination);
+    if (driver == null) {
+      return null;
+    }
+
+    if (driver is RangeSynthAssignment) {
+      return _SynthRangeRef(
+        driver.src.resolved,
+        driver.srcLowerIndex,
+        driver.srcUpperIndex,
+      );
+    }
+
+    final driverSrc = driver.src.resolved;
+    final directRange = directRanges[driverSrc];
+    if (directRange != null) {
+      return _resolveFullWidthDrivenRange(
+        directRange.range,
+        assignmentsByDestination,
+        directRanges,
+        visiting,
+      );
+    }
+
+    return _SynthRangeRef(driverSrc, 0, driverSrc.width - 1);
+  }
 
   SynthAssignment? _singleFullWidthAssignment(
     SynthLogic signal,
@@ -1516,6 +1617,15 @@ class SynthModuleDefinition {
     }
 
     final driver = drivers.single;
+    if (driver is RangeSynthAssignment) {
+      if (driver.dstLowerIndex != 0 ||
+          driver.dstUpperIndex != signal.width - 1 ||
+          driver.width != signal.width) {
+        return null;
+      }
+      return driver;
+    }
+
     if (driver is PartialSynthAssignment || driver.width != signal.width) {
       return null;
     }
@@ -1589,6 +1699,7 @@ class SynthModuleDefinition {
   /// Composes single-use chained range assignments through an internal
   /// intermediate.
   void _collapseChainedRangeAssignments() {
+    final generatedSubsetIntermediates = _generatedSubsetIntermediates();
     var changed = true;
 
     while (changed) {
@@ -1624,6 +1735,7 @@ class SynthModuleDefinition {
           producer: producer,
           consumer: consumer,
           intermediate: intermediate,
+          generatedSubsetIntermediates: generatedSubsetIntermediates,
         );
         if (replacement == null) {
           continue;
@@ -1651,6 +1763,7 @@ class SynthModuleDefinition {
     required PartialSynthAssignment producer,
     required SynthAssignment consumer,
     required SynthLogic intermediate,
+    required Set<SynthLogic> generatedSubsetIntermediates,
   }) {
     if (!_isRangeChainIntermediate(intermediate)) {
       return null;
@@ -1693,9 +1806,11 @@ class SynthModuleDefinition {
       final producerCoversWholeConsumer =
           producerDst.lower == consumerSrc.lower &&
               producerDst.upper == consumerSrc.upper;
-      if (!producerCoversWholeConsumer &&
-          !_isGeneratedSubsetIntermediate(intermediate)) {
-        return null;
+      if (!producerCoversWholeConsumer) {
+        if (!generatedSubsetIntermediates.contains(intermediate) ||
+            consumerDst.base is SynthLogicArrayElement) {
+          return null;
+        }
       }
 
       final dstLower =
@@ -1727,7 +1842,28 @@ class SynthModuleDefinition {
   /// Collapses a generated `assignSubset` array that is only consumed by a
   /// full packed swizzle into a range assignment to the swizzle output.
   void _collapseGeneratedSubsetSwizzleRangeAssignments() {
-    final swizzleSourceRanges = _inlinePackedSwizzleSourceRanges();
+    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsBySourceBase = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      assignmentsByDestination
+          .putIfAbsent(assignment.dst.resolved, () => [])
+          .add(assignment);
+      assignmentsBySourceBase
+          .putIfAbsent(_referenceBase(assignment.src), () => [])
+          .add(assignment);
+    }
+
+    final allSwizzleSourceRanges =
+        _fullPackedSwizzleSourceRanges(assignmentsByDestination);
+    final generatedSubsetIntermediates = _generatedSubsetIntermediatesFrom(
+      allSwizzleSourceRanges,
+      assignmentsBySourceBase,
+    );
+    final swizzleSourceRanges = {
+      for (final entry in allSwizzleSourceRanges.entries)
+        if (generatedSubsetIntermediates.contains(entry.value.range.base))
+          entry.key: entry.value,
+    };
     if (swizzleSourceRanges.isEmpty) {
       return;
     }
@@ -1749,28 +1885,36 @@ class SynthModuleDefinition {
       ));
     }
 
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsByBaseDestination = <SynthLogic, List<SynthAssignment>>{};
     final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
     for (final assignment in assignments) {
-      assignmentsByDestination
+      assignmentsByBaseDestination
           .putIfAbsent(_referenceBase(assignment.dst), () => [])
           .add(assignment);
       assignmentsBySource
           .putIfAbsent(_referenceBase(assignment.src), () => [])
           .add(assignment);
     }
+    final knownSourceRanges = {
+      for (final entry in _busSubsetSourceRanges().entries)
+        entry.key: entry.value.range,
+    };
 
     final replacements = <SynthAssignment, SynthAssignment>{};
     final consumedAssignments = <SynthAssignment>{};
-    for (final assignment in assignments.whereType<PartialSynthAssignment>()) {
-      final intermediate = assignment.dst.resolved;
-      final swizzles = swizzlesByBase[intermediate];
-      final swizzle = swizzles?.singleOrNull;
+    for (final entry in swizzlesByBase.entries) {
+      final intermediate = entry.key;
+      final swizzles = entry.value;
+      final swizzle = swizzles.singleOrNull;
       final sourceUsers = assignmentsBySource[intermediate] ?? const [];
-      if (swizzles == null ||
-          swizzles.length != 1 ||
+      final producers = assignmentsByBaseDestination[intermediate]
+          ?.whereType<PartialSynthAssignment>()
+          .toList();
+      if (swizzles.length != 1 ||
           swizzle == null ||
-          assignmentsByDestination[intermediate]?.length != 1 ||
+          producers == null ||
+          producers.isEmpty ||
+          producers.length != assignmentsByDestination[intermediate]?.length ||
           sourceUsers.any(
             (sourceUser) => !swizzle.inputAssignments.contains(sourceUser),
           )) {
@@ -1784,35 +1928,72 @@ class SynthModuleDefinition {
         continue;
       }
 
-      final producerSrc = _assignmentSourceRange(assignment);
-      final producerDst = _assignmentDestinationRange(assignment);
       final output = swizzle.output.resolved;
-      if (producerDst.base != intermediate ||
-          !swizzle.range.contains(producerDst) ||
-          producerSrc.base == output ||
-          producerSrc.base.isNet ||
-          output.isNet ||
-          producerSrc.base.isConstant ||
-          output.isConstant) {
+      if (output.isNet || output.isConstant) {
         continue;
       }
 
-      final dstLower = producerDst.lower - swizzle.range.lower;
-      final dstUpper = producerDst.upper - swizzle.range.lower;
-      if (producerSrc.width != dstUpper - dstLower + 1 ||
-          dstLower < 0 ||
-          dstUpper >= output.width) {
+      final producerReplacements = <SynthAssignment, SynthAssignment>{};
+      final seenDestinationBits = <int>{};
+      var canReplaceAll = true;
+      for (final producer in producers) {
+        final producerSrc = _resolveKnownRangeThroughFullWidthDrivers(
+          _assignmentSourceRange(producer),
+          assignmentsByDestination,
+          knownSourceRanges,
+        );
+        final producerDst = _assignmentDestinationRange(producer);
+        if (producerDst.base != intermediate ||
+            !swizzle.range.contains(producerDst) ||
+            producerSrc.base == output ||
+            producerSrc.base.isNet ||
+            producerSrc.base.isConstant) {
+          canReplaceAll = false;
+          break;
+        }
+        if (!producerSrc.base.hasSrcConnectionsPresent() &&
+            !producerSrc.base.isStructPortElement(module) &&
+            producerSrc.base.isClearable) {
+          canReplaceAll = false;
+          break;
+        }
+
+        final dstLower = producerDst.lower - swizzle.range.lower;
+        final dstUpper = producerDst.upper - swizzle.range.lower;
+        if (producerSrc.width != dstUpper - dstLower + 1 ||
+            dstLower < 0 ||
+            dstUpper >= output.width) {
+          canReplaceAll = false;
+          break;
+        }
+        for (var index = dstLower; index <= dstUpper; index++) {
+          if (!seenDestinationBits.add(index)) {
+            canReplaceAll = false;
+            break;
+          }
+        }
+        if (!canReplaceAll) {
+          break;
+        }
+
+        producerReplacements[producer] = RangeSynthAssignment(
+          producerSrc.base,
+          output,
+          srcUpperIndex: producerSrc.upper,
+          srcLowerIndex: producerSrc.lower,
+          dstUpperIndex: dstUpper,
+          dstLowerIndex: dstLower,
+        );
+      }
+      if (!canReplaceAll) {
+        continue;
+      }
+      if (seenDestinationBits.length != output.width &&
+          output.logics.any((logic) => logic.isArrayMember)) {
         continue;
       }
 
-      replacements[assignment] = RangeSynthAssignment(
-        producerSrc.base,
-        output,
-        srcUpperIndex: producerSrc.upper,
-        srcLowerIndex: producerSrc.lower,
-        dstUpperIndex: dstUpper,
-        dstLowerIndex: dstLower,
-      );
+      replacements.addAll(producerReplacements);
       consumedAssignments.addAll(swizzle.inputAssignments);
       intermediate.clearDeclaration();
       swizzle.inst.clearInstantiation();
@@ -1821,13 +2002,103 @@ class SynthModuleDefinition {
     if (replacements.isNotEmpty) {
       final updatedAssignments = [
         for (final assignment in assignments)
-          if (!consumedAssignments.contains(assignment))
-            replacements[assignment] ?? assignment,
+          if (replacements.containsKey(assignment))
+            replacements[assignment]!
+          else if (!consumedAssignments.contains(assignment))
+            assignment,
       ];
       assignments
         ..clear()
         ..addAll(updatedAssignments);
     }
+  }
+
+  _SynthRangeRef _resolveKnownRangeThroughFullWidthDrivers(
+    _SynthRangeRef range,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+    Map<SynthLogic, _SynthRangeRef> knownSourceRanges, [
+    Set<SynthLogic> visiting = const {},
+  ]) {
+    if (visiting.contains(range.base) || !range.base.isClearable) {
+      return range;
+    }
+
+    final driver = _singleFullWidthAssignment(
+      range.base,
+      assignmentsByDestination,
+    );
+    if (driver == null) {
+      return range;
+    }
+
+    final sourceRange = driver is RangeSynthAssignment
+        ? _SynthRangeRef(
+            driver.src.resolved,
+            driver.srcLowerIndex,
+            driver.srcUpperIndex,
+          )
+        : knownSourceRanges[driver.src.resolved] ??
+            _SynthRangeRef(driver.src.resolved, 0, driver.src.width - 1);
+
+    final resolvedSourceRange = _resolveKnownRangeThroughFullWidthDrivers(
+      sourceRange,
+      assignmentsByDestination,
+      knownSourceRanges,
+      {...visiting, range.base},
+    );
+    if (resolvedSourceRange.width != range.base.width) {
+      return range;
+    }
+
+    return _SynthRangeRef(
+      resolvedSourceRange.base,
+      resolvedSourceRange.lower + range.lower,
+      resolvedSourceRange.lower + range.upper,
+    );
+  }
+
+  Set<SynthLogic> _generatedSubsetIntermediates() {
+    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsBySourceBase = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      assignmentsByDestination
+          .putIfAbsent(assignment.dst.resolved, () => [])
+          .add(assignment);
+      assignmentsBySourceBase
+          .putIfAbsent(_referenceBase(assignment.src), () => [])
+          .add(assignment);
+    }
+
+    return _generatedSubsetIntermediatesFrom(
+      _fullPackedSwizzleSourceRanges(assignmentsByDestination),
+      assignmentsBySourceBase,
+    );
+  }
+
+  Set<SynthLogic> _generatedSubsetIntermediatesFrom(
+    Map<
+            SynthLogic,
+            ({
+              _SynthRangeRef range,
+              SynthSubModuleInstantiation inst,
+              List<SynthAssignment> inputAssignments,
+            })>
+        swizzleSourceRanges,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySourceBase,
+  ) {
+    final generatedSubsetIntermediates = <SynthLogic>{};
+    for (final entry in swizzleSourceRanges.entries) {
+      final intermediate = entry.value.range.base;
+      if (_isGeneratedSubsetIntermediateCandidate(intermediate) &&
+          _hasInternalFullWidthSwizzleConsumer(
+            entry.key,
+            assignmentsBySourceBase,
+          )) {
+        generatedSubsetIntermediates.add(intermediate);
+      }
+    }
+
+    return generatedSubsetIntermediates;
   }
 
   Map<
@@ -1836,14 +2107,9 @@ class SynthModuleDefinition {
         _SynthRangeRef range,
         SynthSubModuleInstantiation inst,
         List<SynthAssignment> inputAssignments,
-      })> _inlinePackedSwizzleSourceRanges() {
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-    }
-
+      })> _fullPackedSwizzleSourceRanges(
+    Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+  ) {
     final ranges = <SynthLogic,
         ({
       _SynthRangeRef range,
@@ -1908,9 +2174,7 @@ class SynthModuleDefinition {
         }
       }
 
-      if (!allInputsMatch ||
-          parentArray == null ||
-          !_isGeneratedSubsetIntermediate(parentArray)) {
+      if (!allInputsMatch || parentArray == null) {
         continue;
       }
 
@@ -1969,9 +2233,43 @@ class SynthModuleDefinition {
     return logic is! LogicArray || logic.numUnpackedDimensions == 0;
   }
 
-  bool _isGeneratedSubsetIntermediate(SynthLogic intermediate) =>
-      intermediate.logics.whereType<LogicArray>().any((logic) =>
-          logic.naming == Naming.unnamed && logic.name.endsWith('_subset'));
+  bool _isGeneratedSubsetIntermediateCandidate(SynthLogic intermediate) {
+    if (!internalSignals.contains(intermediate) ||
+        !intermediate.isClearable ||
+        intermediate.isPort(module) ||
+        intermediate.isStructPortElement(module) ||
+        !_canUsePackedRangeBase(intermediate)) {
+      return false;
+    }
+
+    final arrayLogic = intermediate.logics.singleOrNull;
+    return arrayLogic is LogicArray && arrayLogic.naming == Naming.unnamed;
+  }
+
+  bool _hasInternalFullWidthSwizzleConsumer(
+    SynthLogic swizzleOutput,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySourceBase,
+  ) {
+    final consumers = assignmentsBySourceBase[swizzleOutput] ?? const [];
+    return consumers.any((assignment) {
+      if (assignment is PartialSynthAssignment ||
+          assignment.width != swizzleOutput.width) {
+        return false;
+      }
+
+      final dst = assignment.dst.resolved;
+      if (!internalSignals.contains(dst) ||
+          dst.isNet ||
+          dst.isConstant ||
+          dst.isPort(module) ||
+          dst.isStructPortElement(module) ||
+          dst.width != swizzleOutput.width) {
+        return false;
+      }
+
+      return dst.logics.singleOrNull is! LogicArray;
+    });
+  }
 
   _SynthRangeRef _assignmentSourceRange(SynthAssignment assignment) {
     if (assignment is RangeSynthAssignment) {
