@@ -1529,8 +1529,14 @@ class SynthModuleDefinition {
   }
 
   bool _canPartiallyCollapseGeneratedSubsetSource(SynthLogic sourceBase) =>
+      _isLiveRangeSource(sourceBase);
+
+  bool _isLiveRangeSource(SynthLogic sourceBase) =>
       !sourceBase.isConstant &&
-      (!internalSignals.contains(sourceBase) || !sourceBase.isClearable);
+      (sourceBase.hasSrcConnectionsPresent() ||
+          sourceBase.isStructPortElement(module) ||
+          !internalSignals.contains(sourceBase) ||
+          !sourceBase.isClearable);
 
   /// Composes temporary bus slices through full-width assignments into wide
   /// array-element destinations.
@@ -2080,9 +2086,7 @@ class SynthModuleDefinition {
           canReplaceAll = false;
           break;
         }
-        if (!producerSrc.base.hasSrcConnectionsPresent() &&
-            !producerSrc.base.isStructPortElement(module) &&
-            producerSrc.base.isClearable) {
+        if (!_isLiveRangeSource(producerSrc.base)) {
           canReplaceAll = false;
           break;
         }
