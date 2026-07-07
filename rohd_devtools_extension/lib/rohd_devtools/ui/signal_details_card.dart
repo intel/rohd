@@ -16,10 +16,7 @@ import 'package:rohd_devtools_extension/rohd_devtools/ui/signal_table.dart';
 class SignalDetailsCard extends StatefulWidget {
   final TreeModel? module;
 
-  const SignalDetailsCard({
-    Key? key,
-    this.module,
-  }) : super(key: key);
+  const SignalDetailsCard({Key? key, this.module}) : super(key: key);
 
   @override
   SignalDetailsCardState createState() => SignalDetailsCardState();
