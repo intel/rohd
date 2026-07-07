@@ -89,10 +89,13 @@ class PartialArrayRangeAssignment extends Module {
 /// Partially assigns a range through an intermediate array.  The two range
 /// assignments should compose so the intermediate array can be pruned.
 class ChainedPartialArrayRangeAssignment extends Module {
-  ChainedPartialArrayRangeAssignment({bool exposeIntermediate = false})
-      : super(name: 'chained_partial_array_range_assignment') {
+  ChainedPartialArrayRangeAssignment({
+    bool exposeIntermediate = false,
+    Naming? intermediateNaming = Naming.mergeable,
+  }) : super(name: 'chained_partial_array_range_assignment') {
     final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
-    final intermediate = LogicArray([6], 1, name: 'intermediate');
+    final intermediate =
+        LogicArray([6], 1, name: 'intermediate', naming: intermediateNaming);
     final dst = LogicArray([6], 1, name: 'dst');
 
     for (var index = 2; index <= 4; index++) {
@@ -113,8 +116,10 @@ class ThreeDeepChainedPartialArrayRangeAssignment extends Module {
   ThreeDeepChainedPartialArrayRangeAssignment()
       : super(name: 'three_deep_chained_partial_array_range_assignment') {
     final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
-    final intermediate0 = LogicArray([6], 1, name: 'intermediate0');
-    final intermediate1 = LogicArray([6], 1, name: 'intermediate1');
+    final intermediate0 =
+        LogicArray([6], 1, name: 'intermediate0', naming: Naming.mergeable);
+    final intermediate1 =
+        LogicArray([6], 1, name: 'intermediate1', naming: Naming.mergeable);
     final dst = LogicArray([6], 1, name: 'dst');
 
     for (var index = 2; index <= 4; index++) {
@@ -133,7 +138,8 @@ class ChainedSubrangeArrayRangeAssignment extends Module {
   ChainedSubrangeArrayRangeAssignment()
       : super(name: 'chained_subrange_array_range_assignment') {
     final src = addInputArray('src', LogicArray([8], 1), dimensions: [8]);
-    final intermediate = LogicArray([8], 1, name: 'intermediate');
+    final intermediate =
+        LogicArray([8], 1, name: 'intermediate', naming: Naming.mergeable);
     final dst = LogicArray([8], 1, name: 'dst');
 
     for (var index = 1; index <= 5; index++) {
@@ -1299,6 +1305,28 @@ void main() {
         }, {
           'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
           'z': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('renameable chained range intermediate stays expanded', () async {
+    final mod = ChainedPartialArrayRangeAssignment(intermediateNaming: null);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, isNot(contains('assign dst[4:2] = src[4:2];')));
+    expect(topBody, contains('assign dst[4:2] = intermediate[4:2];'));
+    expect(topBody, contains('assign intermediate[4:2] = src[4:2];'));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);

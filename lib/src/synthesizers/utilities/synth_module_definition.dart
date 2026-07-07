@@ -1942,7 +1942,7 @@ class SynthModuleDefinition {
     if (!internalSignals.contains(intermediate) ||
         intermediate.isNet ||
         intermediate.isConstant ||
-        !intermediate.isClearableOrRenameable ||
+        !intermediate.isClearable ||
         intermediate.isPort(module) ||
         intermediate.isStructPortElement(module)) {
       return false;
