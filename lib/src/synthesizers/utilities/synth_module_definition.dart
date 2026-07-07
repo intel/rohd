@@ -562,6 +562,7 @@ class SynthModuleDefinition {
     // The order of these is important!
     _collapseArrays();
     _collapseSimpleRangeAssignments();
+    _collapseWideArrayElementRangeSources();
     _collapseChainedRangeAssignments();
     _collapseGeneratedSubsetSwizzleRangeAssignments();
     _collapseAssignments();
@@ -1327,9 +1328,13 @@ class SynthModuleDefinition {
           .add(assignment);
     }
     final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
     for (final assignment in assignments) {
       assignmentsByDestination
           .putIfAbsent(assignment.dst.resolved, () => [])
+          .add(assignment);
+      assignmentsBySource
+          .putIfAbsent(assignment.src.resolved, () => [])
           .add(assignment);
     }
     final knownSourceRanges = {
@@ -1526,6 +1531,92 @@ class SynthModuleDefinition {
   bool _canPartiallyCollapseGeneratedSubsetSource(SynthLogic sourceBase) =>
       !sourceBase.isConstant &&
       (!internalSignals.contains(sourceBase) || !sourceBase.isClearable);
+
+  /// Composes temporary bus slices through full-width assignments into wide
+  /// array-element destinations.
+  void _collapseWideArrayElementRangeSources() {
+    final busSubsetRanges = _busSubsetSourceRanges();
+    if (busSubsetRanges.isEmpty) {
+      return;
+    }
+
+    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      assignmentsByDestination
+          .putIfAbsent(assignment.dst.resolved, () => [])
+          .add(assignment);
+      assignmentsBySource
+          .putIfAbsent(assignment.src.resolved, () => [])
+          .add(assignment);
+    }
+    final knownSourceRanges = {
+      for (final entry in busSubsetRanges.entries) entry.key: entry.value.range,
+    };
+
+    var changed = false;
+    final updatedAssignments = <SynthAssignment>[];
+    for (final assignment in assignments) {
+      if (assignment is PartialSynthAssignment ||
+          assignment.dst.resolved is! SynthLogicArrayElement) {
+        updatedAssignments.add(assignment);
+        continue;
+      }
+
+      final busSubsetRange = busSubsetRanges[assignment.src.resolved];
+      if (busSubsetRange == null) {
+        updatedAssignments.add(assignment);
+        continue;
+      }
+      if (!internalSignals.contains(busSubsetRange.range.base) ||
+          !busSubsetRange.range.base.isClearable) {
+        updatedAssignments.add(assignment);
+        continue;
+      }
+
+      final dst = assignment.dst.resolved;
+      if (dst.width <= 1) {
+        updatedAssignments.add(assignment);
+        continue;
+      }
+
+      final src = _resolveKnownRangeThroughFullWidthDrivers(
+        busSubsetRange.range,
+        assignmentsByDestination,
+        knownSourceRanges,
+      );
+      if (src.base == dst ||
+          src.width != dst.width ||
+          !_canUsePackedRangeBase(src.base) ||
+          dst.isNet ||
+          dst.isConstant) {
+        updatedAssignments.add(assignment);
+        continue;
+      }
+
+      updatedAssignments.add(
+        RangeSynthAssignment(
+          src.base,
+          dst,
+          srcUpperIndex: src.upper,
+          srcLowerIndex: src.lower,
+          dstUpperIndex: dst.width - 1,
+          dstLowerIndex: 0,
+        ),
+      );
+      if (assignmentsBySource[assignment.src.resolved]?.length == 1) {
+        busSubsetRange.inst.clearInstantiation();
+        assignment.src.clearDeclaration();
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      assignments
+        ..clear()
+        ..addAll(updatedAssignments);
+    }
+  }
 
   Map<SynthLogic, ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>
       _busSubsetSourceRanges() {

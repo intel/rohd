@@ -218,6 +218,43 @@ class BusSliceTemporaryToAssignSubsetRangeAssignment extends Module {
   }
 }
 
+/// Assigns two sparse contiguous bus ranges into a flat bus through
+/// [Logic.assignSubset].
+class SparseBusRunsToAssignSubsetRangeAssignment extends Module {
+  SparseBusRunsToAssignSubsetRangeAssignment()
+      : super(name: 'sparse_bus_runs_to_assign_subset_range_assignment') {
+    final srcA = addInput('srcA', Logic(width: 32), width: 32);
+    final srcB = addInput('srcB', Logic(width: 16), width: 16);
+    final dst = Logic(width: 64, name: 'dst');
+
+    for (var index = 0; index < 12; index++) {
+      dst.assignSubset([srcA[index + 4]], start: index + 20);
+    }
+    for (var index = 0; index < 12; index++) {
+      dst.assignSubset([srcB[index]], start: index + 44);
+    }
+
+    addOutput('y', width: 64) <= dst;
+  }
+}
+
+/// Assigns a temporary flat bus slice into wide array elements.
+class WideTemporarySliceToArrayWords extends Module {
+  WideTemporarySliceToArrayWords()
+      : super(name: 'wide_temporary_slice_to_array_words') {
+    final src = addInput('src', Logic(width: 128), width: 128);
+    final srcSlice =
+        Logic(width: 64, name: 'src_slice', naming: Naming.mergeable);
+    final dst = addOutputArray('y', dimensions: [4], elementWidth: 16);
+
+    srcSlice <= src.getRange(32, 96);
+    dst.elements[1] <= srcSlice.getRange(16, 32);
+    dst.elements[0] <= srcSlice.getRange(0, 16);
+    dst.elements[2] <= srcSlice.getRange(32, 48);
+    dst.elements[3] <= srcSlice.getRange(48, 64);
+  }
+}
+
 /// Uses a manually-created array with a subset-like name.
 class ManualSubsetNamedArrayRangeAssignment extends Module {
   ManualSubsetNamedArrayRangeAssignment()
@@ -1496,6 +1533,68 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     });
   }
+
+  test('sparse bus runs feeding assignSubset collapse independently', () async {
+    final mod = SparseBusRunsToAssignSubsetRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[31:20] = srcA[15:4];'));
+    expect(topBody, contains('assign dst[55:44] = srcB[11:0];'));
+    expect(topBody, isNot(contains('_subset')));
+    expect(topBody, isNot(contains(RegExp(r'assign dst\[[0-9]+\]'))));
+
+    LogicValue expectedValue(int srcA, int srcB) => _expectedSparseValue(
+          64,
+          srcA,
+          (dstIndex) => dstIndex >= 20 && dstIndex <= 31 ? dstIndex - 16 : null,
+        ).withSet(
+          44,
+          LogicValue.ofInt(srcB & 0xfff, 12),
+        );
+
+    final vectors = [
+      for (final pattern in [0x00000000, 0x12345678, 0x89abcdef])
+        Vector({
+          'srcA': pattern,
+          'srcB': pattern >> 4,
+        }, {
+          'y': expectedValue(pattern, pattern >> 4),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('wide temporary bus slice feeding array words eliminates temporary',
+      () async {
+    final mod = WideTemporarySliceToArrayWords();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign y[0][15:0] = src[47:32];'));
+    expect(topBody, contains('assign y[1][15:0] = src[63:48];'));
+    expect(topBody, contains('assign y[2][15:0] = src[79:64];'));
+    expect(topBody, contains('assign y[3][15:0] = src[95:80];'));
+    expect(topBody, isNot(contains('src_slice')));
+
+    final vectors = [
+      for (final pattern in [
+        0,
+        0x123456789abc,
+        0xffffffffffff,
+      ])
+        Vector({
+          'src': pattern,
+        }, {
+          'y': LogicValue.ofInt((pattern >> 32) & ((1 << 64) - 1), 64),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
 
   test('subset-like manual array name does not trigger generated subset fold',
       () async {
