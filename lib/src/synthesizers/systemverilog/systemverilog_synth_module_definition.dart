@@ -260,6 +260,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
               connectingAssignments.length == 1 &&
               (elementUseCount[element] ?? 0) == 1) {
             final assignment = connectingAssignments.single;
+            if (assignment is PartialSynthAssignment) {
+              allElementsSingleSourced = false;
+              break;
+            }
             final source = assignment.src.resolved == element
                 ? assignment.dst.resolved
                 : assignment.src.resolved;

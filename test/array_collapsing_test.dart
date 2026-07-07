@@ -649,6 +649,34 @@ class MergedSourcesToArrayPort extends Module {
   }
 }
 
+/// Parent feeding ranged slices from one source bus into a single child array
+/// port through a mergeable intermediate array.
+class RangeSourcesToArrayPort extends Module {
+  Logic get y => output('y');
+  RangeSourcesToArrayPort() {
+    const n = 4;
+    const elementWidth = 16;
+    final src = addInput('src', Logic(width: n * elementWidth),
+        width: n * elementWidth);
+    final srcSlice = Logic(
+      width: n * elementWidth,
+      name: 'srcSlice',
+      naming: Naming.mergeable,
+    );
+    final arr =
+        LogicArray([n], elementWidth, name: 'arr', naming: Naming.mergeable);
+    final child = ArrayPortInvChild(arr, elementWidth: elementWidth);
+
+    srcSlice <= src;
+    for (var i = 0; i < n; i++) {
+      arr.elements[i] <=
+          srcSlice.getRange(i * elementWidth, (i + 1) * elementWidth);
+    }
+
+    addOutput('y', width: n * elementWidth) <= child.y;
+  }
+}
+
 /// Child with a single inout net array port bidirectionally mirrored to `b`.
 class ArrayPortNetChild extends Module {
   ArrayPortNetChild(LogicArray a, LogicNet b, {int n = 4})
@@ -2226,6 +2254,42 @@ void main() {
             for (var i = 0; i < n; i++) 'sig$i': (pattern >> i) & 1
           }, {
             'y': LogicValue.ofInt(~pattern, n),
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('ranged element sources are not collapsed into whole-source concat',
+        () async {
+      final mod = RangeSourcesToArrayPort();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains(RegExp(r'\.a\(\(\{\s*src,'))));
+      expect(
+        topBody,
+        contains(RegExp(
+            r'assign [A-Za-z_][A-Za-z0-9_$]*\[0\]\[15:0\] = src\[15:0\];')),
+      );
+      expect(
+        topBody,
+        contains(RegExp(
+            r'assign [A-Za-z_][A-Za-z0-9_$]*\[3\]\[15:0\] = src\[63:48\];')),
+      );
+
+      final patterns = [
+        LogicValue.filled(64, LogicValue.zero),
+        LogicValue.ofInt(0x123456789abc, 64),
+        LogicValue.filled(64, LogicValue.one),
+      ];
+      final vectors = [
+        for (final pattern in patterns)
+          Vector({
+            'src': pattern,
+          }, {
+            'y': ~pattern,
           })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
