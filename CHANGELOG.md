@@ -1,3 +1,8 @@
+## Next release
+
+- Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
+- Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
+
 ## 0.6.9
 
 - Fixed a bug where unnamed or mergeable inOut loop-back connections on a single module could be incorrectly omitted from the generated SystemVerilog (<https://github.com/intel/rohd/pull/655>).
