@@ -191,22 +191,30 @@ class ArrayToBusAssignSubsetRangeAssignment extends Module {
 
 /// Assigns a flat bus range into another flat bus through a temporary slice.
 class BusSliceTemporaryToAssignSubsetRangeAssignment extends Module {
-  BusSliceTemporaryToAssignSubsetRangeAssignment()
-      : super(name: 'bus_slice_temporary_to_assign_subset_range_assignment') {
+  BusSliceTemporaryToAssignSubsetRangeAssignment({
+    bool receiverIsOutput = false,
+    bool driveLowBits = true,
+  }) : super(name: 'bus_slice_temporary_to_assign_subset_range_assignment') {
     final src = addInput('src', Logic(width: 16), width: 16);
-    final dst = Logic(width: 8, name: 'dst');
+    final dst = receiverIsOutput
+        ? addOutput('y', width: 8)
+        : Logic(width: 8, name: 'dst');
     final srcSlice =
         Logic(width: 4, name: 'src_slice', naming: Naming.mergeable);
 
-    for (var index = 0; index < 4; index++) {
-      dst.assignSubset([src[index]], start: index);
+    if (driveLowBits) {
+      for (var index = 0; index < 4; index++) {
+        dst.assignSubset([src[index]], start: index);
+      }
     }
     srcSlice <= src.getRange(11, 15);
     for (var index = 0; index < 4; index++) {
       dst.assignSubset([srcSlice[index]], start: index + 4);
     }
 
-    addOutput('y', width: 8) <= dst;
+    if (!receiverIsOutput) {
+      addOutput('y', width: 8) <= dst;
+    }
   }
 }
 
@@ -1440,29 +1448,54 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
-  test('bus slice temporary feeding assignSubset collapses into ranges',
-      () async {
-    final mod = BusSliceTemporaryToAssignSubsetRangeAssignment();
-    await mod.build();
-    final sv = mod.generateSynth();
-    final topBody = _topModuleBody(sv);
+  for (final config in [
+    (receiverIsOutput: false, driveLowBits: true, dstName: 'dst'),
+    (receiverIsOutput: true, driveLowBits: true, dstName: 'y'),
+    (receiverIsOutput: false, driveLowBits: false, dstName: 'dst'),
+    (receiverIsOutput: true, driveLowBits: false, dstName: 'y'),
+  ]) {
+    test(
+        'bus slice temporary feeding assignSubset collapses into ranges '
+        '(receiver is ${config.receiverIsOutput ? 'output' : 'internal'}, '
+        '${config.driveLowBits ? 'full' : 'partial'} coverage)', () async {
+      final mod = BusSliceTemporaryToAssignSubsetRangeAssignment(
+        receiverIsOutput: config.receiverIsOutput,
+        driveLowBits: config.driveLowBits,
+      );
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
 
-    expect(topBody, contains('assign dst[3:0] = src[3:0];'));
-    expect(topBody, contains('assign dst[7:4] = src[14:11];'));
-    expect(topBody, isNot(contains('src_slice')));
-    expect(topBody, isNot(contains('_subset')));
+      if (config.driveLowBits) {
+        expect(topBody, contains('assign ${config.dstName}[3:0] = src[3:0];'));
+      } else {
+        expect(topBody, isNot(contains('assign ${config.dstName}[3:0] =')));
+      }
+      expect(topBody, contains('assign ${config.dstName}[7:4] = src[14:11];'));
+      expect(topBody, isNot(contains('src_slice')));
+      expect(topBody, isNot(contains('_subset')));
 
-    final vectors = [
-      for (final pattern in [0x0000, 0x1234, 0x5AA5, 0xFFFF])
-        Vector({
-          'src': pattern
-        }, {
-          'y': ((pattern & 0xF) | (((pattern >> 11) & 0xF) << 4)),
-        })
-    ];
-    await SimCompare.checkFunctionalVector(mod, vectors);
-    SimCompare.checkIverilogVector(mod, vectors);
-  });
+      final vectors = [
+        for (final pattern in [0x0000, 0x1234, 0x5AA5, 0xFFFF])
+          Vector({
+            'src': pattern
+          }, {
+            'y': config.driveLowBits
+                ? LogicValue.ofInt(
+                    (pattern & 0xF) | (((pattern >> 11) & 0xF) << 4),
+                    8,
+                  )
+                : _expectedSparseValue(
+                    8,
+                    pattern,
+                    (dstIndex) => dstIndex >= 4 ? dstIndex + 7 : null,
+                  ),
+          })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
 
   test('subset-like manual array name does not trigger generated subset fold',
       () async {
