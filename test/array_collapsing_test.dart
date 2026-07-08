@@ -1330,6 +1330,9 @@ LogicValue _expectedSparseValue(
   return LogicValue.ofString(bits.join());
 }
 
+LogicValue _expectedWideTemporarySlice(int pattern) =>
+    LogicValue.ofInt(pattern, 96).getRange(32, 96);
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -1767,7 +1770,7 @@ void main() {
         Vector({
           'src': pattern,
         }, {
-          'y': LogicValue.ofInt((pattern >> 32) & ((1 << 64) - 1), 64),
+          'y': _expectedWideTemporarySlice(pattern),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -1794,8 +1797,8 @@ void main() {
         Vector({
           'src': pattern,
         }, {
-          'y': LogicValue.ofInt((pattern >> 32) & ((1 << 64) - 1), 64),
-          'z': LogicValue.ofInt(~((pattern >> 32) & ((1 << 64) - 1)), 64),
+          'y': _expectedWideTemporarySlice(pattern),
+          'z': ~_expectedWideTemporarySlice(pattern),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
