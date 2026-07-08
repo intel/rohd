@@ -77,6 +77,35 @@ class _SynthRangeRef {
       base == other.base && other.lower >= lower && other.upper <= upper;
 }
 
+Iterable<({int start, int end})> _contiguousRuns<T>(
+  List<T> sortedItems,
+  bool Function(T previous, T current) continuesRun,
+) sync* {
+  if (sortedItems.isEmpty) {
+    return;
+  }
+
+  var start = 0;
+  for (var index = 1; index < sortedItems.length; index++) {
+    if (!continuesRun(sortedItems[index - 1], sortedItems[index])) {
+      yield (start: start, end: index - 1);
+      start = index;
+    }
+  }
+  yield (start: start, end: sortedItems.length - 1);
+}
+
+Map<K, List<SynthAssignment>> _assignmentsBy<K>(
+  Iterable<SynthAssignment> assignments,
+  K Function(SynthAssignment assignment) keyOf,
+) {
+  final assignmentsByKey = <K, List<SynthAssignment>>{};
+  for (final assignment in assignments) {
+    assignmentsByKey.putIfAbsent(keyOf(assignment), () => []).add(assignment);
+  }
+  return assignmentsByKey;
+}
+
 /// Represents the definition of a module.
 @internal
 class SynthModuleDefinition {
@@ -1265,18 +1294,14 @@ class SynthModuleDefinition {
     for (final group in assignmentsByOffset.values) {
       group.sort((a, b) => dstIndex(a).compareTo(dstIndex(b)));
 
-      var start = 0;
-      for (var index = 1; index < group.length; index++) {
-        final previous = group[index - 1];
-        final current = group[index];
-        final continuesRun = dstIndex(current) == dstIndex(previous) + 1 &&
-            srcIndex(current) == srcIndex(previous) + 1;
-        if (!continuesRun) {
-          addRun(group, start, index - 1);
-          start = index;
-        }
+      for (final run in _contiguousRuns(
+        group,
+        (previous, current) =>
+            dstIndex(current) == dstIndex(previous) + 1 &&
+            srcIndex(current) == srcIndex(previous) + 1,
+      )) {
+        addRun(group, run.start, run.end);
       }
-      addRun(group, start, group.length - 1);
     }
 
     collapsedAssignments.sort(
@@ -1329,22 +1354,12 @@ class SynthModuleDefinition {
             !(instantiation.module as Swizzle).isNet)
           ...instantiation.inputMapping.values.map((signal) => signal.resolved),
     };
-    final assignmentsBySourceBase = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsBySourceBase
-          .putIfAbsent(_referenceBase(assignment.src), () => [])
-          .add(assignment);
-    }
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-      assignmentsBySource
-          .putIfAbsent(assignment.src.resolved, () => [])
-          .add(assignment);
-    }
+    final assignmentsBySourceBase = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.src));
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
+    final assignmentsBySource =
+        _assignmentsBy(assignments, (assignment) => assignment.src.resolved);
     final knownSourceRanges = {
       for (final entry in busSubsetRanges.entries) entry.key: entry.value.range,
     };
@@ -1434,36 +1449,23 @@ class SynthModuleDefinition {
     for (final group in groupedCandidates.values) {
       group.sort((a, b) => a.dst.lower.compareTo(b.dst.lower));
 
-      var start = 0;
-      for (var index = 1; index < group.length; index++) {
-        final previous = group[index - 1];
-        final current = group[index];
-        final continuesRun = current.dst.lower == previous.dst.lower + 1 &&
-            current.src.lower == previous.src.lower + 1;
-        if (!continuesRun) {
-          changed |= _addSimpleRangeRun(
-            reducedAssignments,
-            group,
-            start,
-            index - 1,
-            assignmentsBySource,
-            generatedSubsetCandidates,
-            generatedSubsetIntermediates,
-            fullyCoveredGeneratedSubsets,
-          );
-          start = index;
-        }
-      }
-      changed |= _addSimpleRangeRun(
-        reducedAssignments,
+      for (final run in _contiguousRuns(
         group,
-        start,
-        group.length - 1,
-        assignmentsBySource,
-        generatedSubsetCandidates,
-        generatedSubsetIntermediates,
-        fullyCoveredGeneratedSubsets,
-      );
+        (previous, current) =>
+            current.dst.lower == previous.dst.lower + 1 &&
+            current.src.lower == previous.src.lower + 1,
+      )) {
+        changed |= _addSimpleRangeRun(
+          reducedAssignments,
+          group,
+          run.start,
+          run.end,
+          assignmentsBySource,
+          generatedSubsetCandidates,
+          generatedSubsetIntermediates,
+          fullyCoveredGeneratedSubsets,
+        );
+      }
     }
 
     if (changed) {
@@ -1610,16 +1612,10 @@ class SynthModuleDefinition {
       return;
     }
 
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-      assignmentsBySource
-          .putIfAbsent(assignment.src.resolved, () => [])
-          .add(assignment);
-    }
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
+    final assignmentsBySource =
+        _assignmentsBy(assignments, (assignment) => assignment.src.resolved);
     final knownSourceRanges = {
       for (final entry in busSubsetRanges.entries) entry.key: entry.value.range,
     };
@@ -1699,12 +1695,8 @@ class SynthModuleDefinition {
       _busSubsetSourceRanges() {
     final directRanges = <SynthLogic,
         ({_SynthRangeRef range, SynthSubModuleInstantiation inst})>{};
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-    }
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
 
     for (final instantiation in subModuleInstantiations) {
       final module = instantiation.module;
@@ -1912,16 +1904,10 @@ class SynthModuleDefinition {
     while (changed) {
       changed = false;
 
-      final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-      final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
-      for (final assignment in assignments) {
-        assignmentsByDestination
-            .putIfAbsent(_referenceBase(assignment.dst), () => [])
-            .add(assignment);
-        assignmentsBySource
-            .putIfAbsent(_referenceBase(assignment.src), () => [])
-            .add(assignment);
-      }
+      final assignmentsByDestination = _assignmentsBy(
+          assignments, (assignment) => _referenceBase(assignment.dst));
+      final assignmentsBySource = _assignmentsBy(
+          assignments, (assignment) => _referenceBase(assignment.src));
 
       for (final producer
           in assignments.whereType<PartialSynthAssignment>().toList()) {
@@ -2064,16 +2050,10 @@ class SynthModuleDefinition {
   /// Collapses a generated `assignSubset` array that is only consumed by a
   /// full packed swizzle into a range assignment to the swizzle output.
   void _collapseGeneratedSubsetSwizzleRangeAssignments() {
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    final assignmentsBySourceBase = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-      assignmentsBySourceBase
-          .putIfAbsent(_referenceBase(assignment.src), () => [])
-          .add(assignment);
-    }
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
+    final assignmentsBySourceBase = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.src));
 
     final allSwizzleSourceRanges =
         _fullPackedSwizzleSourceRanges(assignmentsByDestination);
@@ -2107,16 +2087,10 @@ class SynthModuleDefinition {
       ));
     }
 
-    final assignmentsByBaseDestination = <SynthLogic, List<SynthAssignment>>{};
-    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByBaseDestination
-          .putIfAbsent(_referenceBase(assignment.dst), () => [])
-          .add(assignment);
-      assignmentsBySource
-          .putIfAbsent(_referenceBase(assignment.src), () => [])
-          .add(assignment);
-    }
+    final assignmentsByBaseDestination = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.dst));
+    final assignmentsBySource = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.src));
     final knownSourceRanges = {
       for (final entry in _busSubsetSourceRanges().entries)
         entry.key: entry.value.range,
@@ -2293,16 +2267,10 @@ class SynthModuleDefinition {
 
   ({Set<SynthLogic> candidates, Set<SynthLogic> intermediates})
       _generatedSubsetIntermediateSets() {
-    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
-    final assignmentsBySourceBase = <SynthLogic, List<SynthAssignment>>{};
-    for (final assignment in assignments) {
-      assignmentsByDestination
-          .putIfAbsent(assignment.dst.resolved, () => [])
-          .add(assignment);
-      assignmentsBySourceBase
-          .putIfAbsent(_referenceBase(assignment.src), () => [])
-          .add(assignment);
-    }
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
+    final assignmentsBySourceBase = _assignmentsBy(
+        assignments, (assignment) => _referenceBase(assignment.src));
 
     final swizzleSourceRanges =
         _fullPackedSwizzleSourceRanges(assignmentsByDestination);
