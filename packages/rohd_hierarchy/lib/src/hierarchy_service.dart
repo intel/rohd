@@ -9,15 +9,13 @@
 
 import 'package:rohd_hierarchy/src/hierarchy_models.dart';
 
-/// Default path separator used when constructing paths from the tree.
-const String _hierarchySeparator = '/';
-
 /// A source-agnostic interface for navigating hardware hierarchy.
 ///
 /// All search and navigation is driven by walking the [HierarchyOccurrence]
 /// tree. Occurrences hold their [HierarchyOccurrence.name],
 /// [HierarchyOccurrence.children], and [HierarchyOccurrence.signals].  Full
-/// paths are constructed on the fly by joining names with [_hierarchySeparator]
+/// paths are constructed on the fly by joining names with
+/// [hierarchyPathSeparator]
 /// — no pre-baked path strings are needed for search.
 ///
 /// Key methods:
@@ -29,10 +27,6 @@ const String _hierarchySeparator = '/';
 abstract mixin class HierarchyService {
   /// The root occurrence for the hierarchy.
   HierarchyOccurrence get root;
-
-  /// Maximum number of results returned by search methods when no explicit
-  /// `limit` is provided.
-  static const int _defaultSearchLimit = 100;
 
   // ───────────── Address-based occurrence/signal lookup ────────────────
 
@@ -121,16 +115,19 @@ abstract mixin class HierarchyService {
       final sigIdx = indices.last;
       return (sigIdx >= 0 && sigIdx < walked.node.signals.length)
           ? [...walked.parts, walked.node.signals[sigIdx].name]
-              .join(_hierarchySeparator)
+              .join(hierarchyPathSeparator)
           : null;
     }
-    return walked.parts.join(_hierarchySeparator);
+    return walked.parts.join(hierarchyPathSeparator);
   }
 
-  /// Resolve a waveform-style ID (dot-separated, e.g. `"dut.adder.clk"`)
-  /// to a [OccurrenceAddress].
+  /// Resolve a signal identifier from a VCD or FST waveform file to an
+  /// [OccurrenceAddress].
   ///
-  /// Normalises `.` → `/` then delegates to [pathnameToAddress].
+  /// VCD/FST waveform readers often expose hierarchy names as dot-separated
+  /// strings such as `"dut.adder.clk"`. This delegates to
+  /// [pathnameToAddress], which accepts both dot-separated waveform IDs and
+  /// slash-separated hierarchy paths.
   OccurrenceAddress? waveformIdToAddress(String waveformId) =>
       pathnameToAddress(waveformId);
 
@@ -144,7 +141,7 @@ abstract mixin class HierarchyService {
   ///
   /// Returns up to [limit] results.
   List<String> searchSignalPaths(String query, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (query.trim().isEmpty) {
       return const [];
     }
@@ -182,9 +179,9 @@ abstract mixin class HierarchyService {
       return true;
     }
 
-    final normalizedQuery = searchTerm.replaceAll('.', '/');
+    final normalizedQuery = searchTerm.replaceAll('.', hierarchyPathSeparator);
     final queryParts = normalizedQuery
-        .split('/')
+        .split(hierarchyPathSeparator)
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
@@ -218,7 +215,7 @@ abstract mixin class HierarchyService {
   /// contains glob or regex metacharacters (`*`, `?`, `[`, `(`, `|`,
   /// `+`).  Otherwise uses [searchSignalPaths] for prefix-based matching.
   List<SignalSearchResult> searchSignals(String query, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (hasRegexChars(query)) {
       final pattern = (query.startsWith('**/') || query.startsWith('*/'))
           ? query
@@ -237,7 +234,7 @@ abstract mixin class HierarchyService {
   ///
   /// Returns up to [limit] results.
   List<String> searchOccurrencePaths(String query, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (query.trim().isEmpty) {
       return const [];
     }
@@ -253,7 +250,7 @@ abstract mixin class HierarchyService {
   /// Like [searchOccurrencePaths] but returns the [HierarchyOccurrence] objects
   /// themselves instead of path strings.
   List<HierarchyOccurrence> matchOccurrences(String query, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (query.trim().isEmpty) {
       return const [];
     }
@@ -270,9 +267,9 @@ abstract mixin class HierarchyService {
   /// filter on children at that level.  Returns up to [limit] full paths
   /// (with `/` appended for nodes that have children).
   List<String> autocompletePaths(String partialPath, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
-    final normalized = partialPath.replaceAll('.', _hierarchySeparator);
-    final endsWithSep = normalized.endsWith(_hierarchySeparator);
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
+    final normalized = partialPath.replaceAll('.', hierarchyPathSeparator);
+    final endsWithSep = normalized.endsWith(hierarchyPathSeparator);
     final parts = _splitPath(partialPath);
 
     // Navigate to the deepest complete segment.
@@ -310,15 +307,16 @@ abstract mixin class HierarchyService {
         current.name.startsWith(prefix)) {
       final rootPath = current.name;
       suggestions.add(current.children.isNotEmpty
-          ? '$rootPath$_hierarchySeparator'
+          ? '$rootPath$hierarchyPathSeparator'
           : rootPath);
     }
 
     for (final child in current.children) {
       if (prefix.isEmpty || child.name.startsWith(prefix)) {
-        final path = [...completedParts, child.name].join(_hierarchySeparator);
+        final pathParts = [...completedParts, child.name];
+        final path = pathParts.join(hierarchyPathSeparator);
         suggestions.add(
-            child.children.isNotEmpty ? '$path$_hierarchySeparator' : path);
+            child.children.isNotEmpty ? '$path$hierarchyPathSeparator' : path);
         if (suggestions.length >= effectiveLimit) {
           break;
         }
@@ -334,7 +332,7 @@ abstract mixin class HierarchyService {
   /// contains glob or regex metacharacters (`*`, `?`, `[`, `(`, `|`,
   /// `+`).  Otherwise uses [searchOccurrencePaths] for prefix-based matching.
   List<OccurrenceSearchResult> searchOccurrences(String query, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (hasRegexChars(query)) {
       final pattern = (query.startsWith('**/') || query.startsWith('*/'))
           ? query
@@ -373,7 +371,7 @@ abstract mixin class HierarchyService {
   /// 'Top/CPU/d[0-9]+'    — signals like d0, d1, d12 in Top/CPU
   /// ```
   List<String> searchSignalPathsRegex(String pattern, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (pattern.trim().isEmpty) {
       return const [];
     }
@@ -396,7 +394,7 @@ abstract mixin class HierarchyService {
   ///
   /// Returns up to [limit] full hierarchical occurrence paths.
   List<String> searchOccurrencePathsRegex(String pattern, {int? limit}) {
-    final effectiveLimit = limit ?? _defaultSearchLimit;
+    final effectiveLimit = limit ?? defaultHierarchySearchLimit;
     if (pattern.trim().isEmpty) {
       return const [];
     }
@@ -439,8 +437,8 @@ abstract mixin class HierarchyService {
 
   /// Split a query or path on `/` or `.` into non-empty segments.
   static List<String> _splitPath(String input) => input
-      .replaceAll('.', _hierarchySeparator)
-      .split(_hierarchySeparator)
+      .replaceAll('.', hierarchyPathSeparator)
+      .split(hierarchyPathSeparator)
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty)
       .toList();
@@ -450,8 +448,8 @@ abstract mixin class HierarchyService {
   /// Use this when the result is for display or building [SignalSearchResult]
   /// path parts — not for matching.
   static List<String> _splitPathPreserveCase(String input) => input
-      .replaceAll('.', _hierarchySeparator)
-      .split(_hierarchySeparator)
+      .replaceAll('.', hierarchyPathSeparator)
+      .split(hierarchyPathSeparator)
       .where((s) => s.isNotEmpty)
       .toList();
 
@@ -522,7 +520,7 @@ abstract mixin class HierarchyService {
         }
         if (signalQuery.isEmpty || signal.name.startsWith(signalQuery)) {
           final fullPath =
-              [...pathSoFar, signal.name].join(_hierarchySeparator);
+              [...pathSoFar, signal.name].join(hierarchyPathSeparator);
           results.add(fullPath);
         }
       }
@@ -569,7 +567,7 @@ abstract mixin class HierarchyService {
 
     // If all query parts are matched, this node is a result
     if (nextIdx >= queryParts.length) {
-      final fullPath = pathSoFar.join(_hierarchySeparator);
+      final fullPath = pathSoFar.join(hierarchyPathSeparator);
       results.add(fullPath);
       if (results.length >= limit) {
         return;
@@ -634,8 +632,11 @@ abstract mixin class HierarchyService {
   /// Unlike [_splitPath] (which also splits on `.`), regex patterns use only
   /// `/` as the hierarchy separator because `.` has meaning inside regular
   /// expressions (e.g. `.*`, `a.b`).
-  List<String> _splitRegexPattern(String input) =>
-      input.split('/').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  List<String> _splitRegexPattern(String input) => input
+      .split(hierarchyPathSeparator)
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
 
   /// Convert glob-style `*` and `?` wildcards to regex equivalents.
   ///
@@ -720,7 +721,9 @@ abstract mixin class HierarchyService {
             if (results.length >= limit) {
               return;
             }
-            results.add([...pathSoFar, signal.name].join(_hierarchySeparator));
+            final fullPath =
+                [...pathSoFar, signal.name].join(hierarchyPathSeparator);
+            results.add(fullPath);
           }
         } else {
           // sigIdx points to a non-** regex that should match signal names.
@@ -733,8 +736,8 @@ abstract mixin class HierarchyService {
                 return;
               }
               if (sigSeg.regex!.hasMatch(signal.name)) {
-                results
-                    .add([...pathSoFar, signal.name].join(_hierarchySeparator));
+                results.add(
+                    [...pathSoFar, signal.name].join(hierarchyPathSeparator));
               }
             }
           }
@@ -780,7 +783,7 @@ abstract mixin class HierarchyService {
 
       // All segments consumed (or only trailing **'s remain) → match.
       if (_allGlobStarAfter(segments, nextIdx)) {
-        results.add(pathSoFar.join(_hierarchySeparator));
+        results.add(pathSoFar.join(hierarchyPathSeparator));
         if (results.length >= limit) {
           return;
         }

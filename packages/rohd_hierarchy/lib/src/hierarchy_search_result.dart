@@ -9,6 +9,8 @@
 
 import 'package:meta/meta.dart';
 
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
+
 /// Base class for hierarchy search results.
 ///
 /// Holds the common fields shared by signal and occurrence search
@@ -36,7 +38,7 @@ abstract class HierarchySearchResult {
   ///
   /// For `Top/counter/clk` this returns `counter/clk`.
   /// For a single-segment path returns the original [id].
-  String get displayPath => displaySegments.join('/');
+  String get displayPath => displaySegments.join(hierarchyPathSeparator);
 
   /// Path segments with the top-level module name stripped.
   ///
@@ -46,7 +48,8 @@ abstract class HierarchySearchResult {
   /// Normalize a user query for hierarchy search.
   ///
   /// Converts common separators (`.`) to the canonical `/` separator.
-  static String normalizeQuery(String query) => query.replaceAll('.', '/');
+  static String normalizeQuery(String query) =>
+      query.replaceAll('.', hierarchyPathSeparator);
 
   @override
   bool operator ==(Object other) =>

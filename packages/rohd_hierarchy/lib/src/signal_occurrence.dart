@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
 import 'package:rohd_hierarchy/src/hierarchy_occurrence.dart';
 import 'package:rohd_hierarchy/src/occurrence_address.dart';
 
@@ -249,7 +250,7 @@ class SignalOccurrence {
   /// Joins the parent occurrence's path with this signal's [name] using
   /// [separator].  Falls back to just [name] if parent is not yet set
   /// (e.g. in test fixtures before `buildAddresses`).
-  String path({String separator = '/'}) {
+  String path({String separator = hierarchyPathSeparator}) {
     if (_parent == null) {
       return name;
     }

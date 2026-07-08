@@ -93,7 +93,7 @@ transport layer.
 - **`HierarchyQuery`** — Abstract base class for pluggable search
   strategies. The matching logic is decoupled from tree traversal.
 - **`PrefixQuery`** — Prefix-substring matching. Segments split on `/`
-  or `.` are matched case-insensitively via `startsWith` (signals) or
+  or `.` are matched case-sensitively via `startsWith` (signals) or
   `contains` (occurrences). Created via `HierarchyQuery.prefix()`.
 - **`RegexQuery`** — Regex/glob matching. Each segment is compiled as a
   regex. Supports `*` (any chars), `?` (one char), `**` (zero or more
@@ -165,8 +165,7 @@ final pathname = dict.addressToPathname(addr!);
 
 #### Prefix search (default)
 
-Segments are split on `/` or `.` and matched as case-insensitive
-substrings:
+Segments are split on `/` or `.` and matched as case-sensitive substrings:
 
 ```dart
 // Find all signals whose path contains 'cpu' then 'clk'

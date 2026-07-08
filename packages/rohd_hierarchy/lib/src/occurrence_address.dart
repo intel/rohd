@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
 import 'package:rohd_hierarchy/src/hierarchy_occurrence.dart';
 
 /// Efficient hierarchical address using indices instead of strings.
@@ -86,9 +87,10 @@ class OccurrenceAddress {
   /// Resolve a pathname string (e.g. `"Top/counter/clk"` or
   /// `"Top.counter.clk"`) to a [OccurrenceAddress] by walking [root].
   ///
-  /// Supports both `/` and `.` as separators.  If the first segment
-  /// matches [root]'s name, it is skipped — the root
-  /// occurrence is always at the empty address.
+  /// Supports both `/` hierarchy paths and dot-separated signal identifiers
+  /// commonly produced by VCD/FST waveform files. If the first segment matches
+  /// [root]'s name, it is skipped — the root occurrence is always at the empty
+  /// address.
   ///
   /// The last segment is first tried as a **signal** name within the
   /// current occurrence; if that fails it is tried as a **child**
@@ -110,8 +112,8 @@ class OccurrenceAddress {
   ) {
     final rootAddr = root.address ?? OccurrenceAddress.root;
     final parts = pathname
-        .replaceAll('.', '/')
-        .split('/')
+        .replaceAll('.', hierarchyPathSeparator)
+        .split(hierarchyPathSeparator)
         .where((s) => s.isNotEmpty)
         .toList();
 

@@ -7,6 +7,7 @@
 // 2026 May
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
 import 'package:rohd_hierarchy/src/hierarchy_query.dart';
 
 /// Regex/glob query: each segment is a compiled regex, with `**` support
@@ -15,7 +16,7 @@ import 'package:rohd_hierarchy/src/hierarchy_query.dart';
 /// ## Segment syntax
 ///
 /// The query string is split on `/` into segments.  Each segment is
-/// independently compiled as a case-insensitive [RegExp] anchored to the
+/// independently compiled as a case-sensitive [RegExp] anchored to the
 /// full occurrence or signal name (`^…$`).  This means:
 ///
 /// - **Plain names** match exactly: `Top/CPU/clk`.
@@ -76,7 +77,7 @@ class RegexQuery extends HierarchyQuery {
     super.target = SearchTarget.signals,
   }) : super(crossesBoundaries: false) {
     final parts = rawQuery
-        .split('/')
+        .split(hierarchyPathSeparator)
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();

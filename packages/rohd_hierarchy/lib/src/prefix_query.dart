@@ -7,6 +7,7 @@
 // 2026 May
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
 import 'package:rohd_hierarchy/src/hierarchy_query.dart';
 
 /// Prefix-substring query: segments are matched via `startsWith` (signals)
@@ -21,8 +22,8 @@ class PrefixQuery extends HierarchyQuery {
     super.target = SearchTarget.signals,
   }) : super(crossesBoundaries: false) {
     segments = rawQuery
-        .replaceAll('.', '/')
-        .split('/')
+        .replaceAll('.', hierarchyPathSeparator)
+        .split(hierarchyPathSeparator)
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();

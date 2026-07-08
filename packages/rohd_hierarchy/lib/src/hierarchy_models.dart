@@ -7,6 +7,7 @@
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+export 'hierarchy_constants.dart';
 export 'hierarchy_occurrence.dart';
 export 'hierarchy_search_result.dart';
 export 'occurrence_address.dart';

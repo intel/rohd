@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:meta/meta.dart';
+import 'package:rohd_hierarchy/src/hierarchy_constants.dart';
 import 'package:rohd_hierarchy/src/occurrence_address.dart';
 import 'package:rohd_hierarchy/src/signal_occurrence.dart';
 
@@ -66,7 +67,7 @@ class HierarchyOccurrence {
   ///
   /// Uses [separator] between path segments (default `/`).
   /// Returns just [name] for the root (no parent).
-  String path({String separator = '/'}) {
+  String path({String separator = hierarchyPathSeparator}) {
     if (_parent == null) {
       return name;
     }
