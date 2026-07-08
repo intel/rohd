@@ -64,6 +64,14 @@ class _SynthRangeRef {
       : assert(lower >= 0, 'Invalid lower index'),
         assert(upper >= lower, 'Invalid upper index');
 
+  /// Creates a range reference if the bounds are valid for [base].
+  static _SynthRangeRef? tryCreate(SynthLogic base, int lower, int upper) {
+    if (lower < 0 || upper < lower || upper >= base.width) {
+      return null;
+    }
+    return _SynthRangeRef(base, lower, upper);
+  }
+
   /// Whether [other] is fully contained in this range.
   bool contains(_SynthRangeRef other) =>
       base == other.base && other.lower >= lower && other.upper <= upper;
@@ -1438,6 +1446,7 @@ class SynthModuleDefinition {
             group,
             start,
             index - 1,
+            assignmentsBySource,
             generatedSubsetCandidates,
             generatedSubsetIntermediates,
             fullyCoveredGeneratedSubsets,
@@ -1450,6 +1459,7 @@ class SynthModuleDefinition {
         group,
         start,
         group.length - 1,
+        assignmentsBySource,
         generatedSubsetCandidates,
         generatedSubsetIntermediates,
         fullyCoveredGeneratedSubsets,
@@ -1488,6 +1498,7 @@ class SynthModuleDefinition {
         group,
     int start,
     int end,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySource,
     Set<SynthLogic> generatedSubsetCandidates,
     Set<SynthLogic> generatedSubsetIntermediates,
     Set<SynthLogic> fullyCoveredGeneratedSubsets,
@@ -1521,12 +1532,65 @@ class SynthModuleDefinition {
         dstLowerIndex: first.dst.lower,
       ),
     );
+    final replacedAssignments = {
+      for (var index = start; index <= end; index++) group[index].assignment,
+    };
     for (var index = start; index <= end; index++) {
-      group[index].sourceSubmodule?.clearInstantiation();
-      group[index].sourceSignal?.clearDeclaration();
+      final sourceSignal = group[index].sourceSignal?.resolved;
+      final sourceSubmodule = group[index].sourceSubmodule;
+      if (sourceSignal != null &&
+          sourceSubmodule != null &&
+          _canClearReplacedSourceSignal(
+            sourceSignal,
+            assignmentsBySource,
+            replacedAssignments,
+            allowedInstantiation: sourceSubmodule,
+          )) {
+        sourceSubmodule.clearInstantiation();
+        sourceSignal.clearDeclaration();
+      }
     }
     return true;
   }
+
+  bool _canClearReplacedSourceSignal(
+    SynthLogic sourceSignal,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySource,
+    Set<SynthAssignment> replacedAssignments, {
+    required SynthSubModuleInstantiation allowedInstantiation,
+  }) {
+    final assignmentUsers = assignmentsBySource[sourceSignal] ?? const [];
+    return assignmentUsers.every(replacedAssignments.contains) &&
+        !_hasSubmoduleSignalUse(
+          sourceSignal,
+          allowedInstantiation: allowedInstantiation,
+        );
+  }
+
+  bool _hasSubmoduleSignalUse(
+    SynthLogic signal, {
+    required SynthSubModuleInstantiation allowedInstantiation,
+  }) {
+    for (final instantiation in subModuleInstantiations) {
+      if (instantiation == allowedInstantiation) {
+        continue;
+      }
+
+      final mappedSignals = [
+        ...instantiation.inputMapping.values,
+        ...instantiation.outputMapping.values,
+        ...instantiation.inOutMapping.values,
+      ];
+      if (mappedSignals.any((mappedSignal) =>
+          _signalsShareReferenceBase(mappedSignal.resolved, signal.resolved))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _signalsShareReferenceBase(SynthLogic a, SynthLogic b) =>
+      a == b || _referenceBase(a) == b || _referenceBase(b) == a;
 
   bool _canPartiallyCollapseGeneratedSubsetSource(SynthLogic sourceBase) =>
       _isLiveRangeSource(sourceBase);
@@ -1581,7 +1645,7 @@ class SynthModuleDefinition {
       }
 
       final dst = assignment.dst.resolved;
-      if (dst.width <= 1) {
+      if (dst.width <= 1 || dst.logics.any((logic) => logic is LogicArray)) {
         updatedAssignments.add(assignment);
         continue;
       }
@@ -1594,6 +1658,8 @@ class SynthModuleDefinition {
       if (src.base == dst ||
           src.width != dst.width ||
           !_canUsePackedRangeBase(src.base) ||
+          !_isLiveRangeSource(src.base) ||
+          (internalSignals.contains(src.base) && src.base.isClearable) ||
           dst.isNet ||
           dst.isConstant) {
         updatedAssignments.add(assignment);
@@ -1610,7 +1676,12 @@ class SynthModuleDefinition {
           dstLowerIndex: 0,
         ),
       );
-      if (assignmentsBySource[assignment.src.resolved]?.length == 1) {
+      if (_canClearReplacedSourceSignal(
+        assignment.src.resolved,
+        assignmentsBySource,
+        {assignment},
+        allowedInstantiation: busSubsetRange.inst,
+      )) {
         busSubsetRange.inst.clearInstantiation();
         assignment.src.clearDeclaration();
       }
@@ -1701,11 +1772,12 @@ class SynthModuleDefinition {
       return range;
     }
 
-    return _SynthRangeRef(
-      sourceRange.base,
-      sourceRange.lower + range.lower,
-      sourceRange.lower + range.upper,
-    );
+    return _SynthRangeRef.tryCreate(
+          sourceRange.base,
+          sourceRange.lower + range.lower,
+          sourceRange.lower + range.upper,
+        ) ??
+        range;
   }
 
   _SynthRangeRef? _singleFullWidthSourceRange(
@@ -1931,8 +2003,15 @@ class SynthModuleDefinition {
           producerSrc.lower + (consumerSrc.lower - producerDst.lower);
       final sourceUpper =
           producerSrc.lower + (consumerSrc.upper - producerDst.lower);
-      replacementSrc =
-          _SynthRangeRef(producerSrc.base, sourceLower, sourceUpper);
+      final sourceRange = _SynthRangeRef.tryCreate(
+        producerSrc.base,
+        sourceLower,
+        sourceUpper,
+      );
+      if (sourceRange == null) {
+        return null;
+      }
+      replacementSrc = sourceRange;
       replacementDst = consumerDst;
     } else {
       if (!consumerSrc.contains(producerDst)) {
@@ -1952,8 +2031,16 @@ class SynthModuleDefinition {
           consumerDst.lower + (producerDst.lower - consumerSrc.lower);
       final dstUpper =
           consumerDst.lower + (producerDst.upper - consumerSrc.lower);
+      final destinationRange = _SynthRangeRef.tryCreate(
+        consumerDst.base,
+        dstLower,
+        dstUpper,
+      );
+      if (destinationRange == null) {
+        return null;
+      }
       replacementSrc = producerSrc;
-      replacementDst = _SynthRangeRef(consumerDst.base, dstLower, dstUpper);
+      replacementDst = destinationRange;
     }
 
     if (replacementSrc.width != replacementDst.width ||
@@ -2196,11 +2283,12 @@ class SynthModuleDefinition {
       return range;
     }
 
-    return _SynthRangeRef(
-      resolvedSourceRange.base,
-      resolvedSourceRange.lower + range.lower,
-      resolvedSourceRange.lower + range.upper,
-    );
+    return _SynthRangeRef.tryCreate(
+          resolvedSourceRange.base,
+          resolvedSourceRange.lower + range.lower,
+          resolvedSourceRange.lower + range.upper,
+        ) ??
+        range;
   }
 
   ({Set<SynthLogic> candidates, Set<SynthLogic> intermediates})

@@ -218,6 +218,27 @@ class BusSliceTemporaryToAssignSubsetRangeAssignment extends Module {
   }
 }
 
+/// Uses the same selected bus bits both for [Logic.assignSubset] and for other
+/// submodule inputs.  Range collapse must not delete the bit-select helpers
+/// needed by those other consumers.
+class BusSubsetBitsWithExtraConsumers extends Module {
+  BusSubsetBitsWithExtraConsumers()
+      : super(name: 'bus_subset_bits_with_extra_consumers') {
+    final src = addInput('src', Logic(width: 8), width: 8);
+    final dst = Logic(width: 4, name: 'dst');
+    final inverted = <Logic>[];
+
+    for (var index = 0; index < 4; index++) {
+      final selected = src[index + 2];
+      dst.assignSubset([selected], start: index);
+      inverted.add(InverterMod(selected).o);
+    }
+
+    addOutput('y', width: 4) <= dst;
+    addOutput('z', width: 4) <= inverted.rswizzle();
+  }
+}
+
 /// Assigns two sparse contiguous bus ranges into a flat bus through
 /// [Logic.assignSubset].
 class SparseBusRunsToAssignSubsetRangeAssignment extends Module {
@@ -269,18 +290,32 @@ class InternalBusRunsToAssignSubsetRangeAssignment extends Module {
 
 /// Assigns a temporary flat bus slice into wide array elements.
 class WideTemporarySliceToArrayWords extends Module {
-  WideTemporarySliceToArrayWords()
+  WideTemporarySliceToArrayWords({bool extraConsumers = false})
       : super(name: 'wide_temporary_slice_to_array_words') {
     final src = addInput('src', Logic(width: 128), width: 128);
     final srcSlice =
         Logic(width: 64, name: 'src_slice', naming: Naming.mergeable);
     final dst = addOutputArray('y', dimensions: [4], elementWidth: 16);
+    final inverted = <Logic>[];
 
     srcSlice <= src.getRange(32, 96);
-    dst.elements[1] <= srcSlice.getRange(16, 32);
-    dst.elements[0] <= srcSlice.getRange(0, 16);
-    dst.elements[2] <= srcSlice.getRange(32, 48);
-    dst.elements[3] <= srcSlice.getRange(48, 64);
+    final words = [
+      srcSlice.getRange(0, 16),
+      srcSlice.getRange(16, 32),
+      srcSlice.getRange(32, 48),
+      srcSlice.getRange(48, 64),
+    ];
+    dst.elements[1] <= words[1];
+    dst.elements[0] <= words[0];
+    dst.elements[2] <= words[2];
+    dst.elements[3] <= words[3];
+
+    if (extraConsumers) {
+      for (final word in words) {
+        inverted.add(InverterMod(word, width: 16).o);
+      }
+      addOutput('z', width: 64) <= inverted.rswizzle();
+    }
   }
 }
 
@@ -1591,6 +1626,28 @@ void main() {
     });
   }
 
+  test('bus subset helpers with extra consumers are preserved', () async {
+    final mod = BusSubsetBitsWithExtraConsumers();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[3:0] = src[5:2];'));
+    expect(topBody, contains(RegExp(r'\.i\([^)]*src')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x3C, 0xA5, 0xFF])
+        Vector({
+          'src': pattern,
+        }, {
+          'y': (pattern >> 2) & 0xF,
+          'z': (~((pattern >> 2) & 0xF)) & 0xF,
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
   test('sparse bus runs feeding assignSubset collapse independently', () async {
     final mod = SparseBusRunsToAssignSubsetRangeAssignment();
     await mod.build();
@@ -1711,6 +1768,34 @@ void main() {
           'src': pattern,
         }, {
           'y': LogicValue.ofInt((pattern >> 32) & ((1 << 64) - 1), 64),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('wide temporary slice helpers with extra consumers are preserved',
+      () async {
+    final mod = WideTemporarySliceToArrayWords(extraConsumers: true);
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign y[0][15:0] = src[47:32];'));
+    expect(topBody, contains('assign y[3][15:0] = src[95:80];'));
+    expect(topBody, contains(RegExp(r'\.i\([^)]*src_slice')));
+
+    final vectors = [
+      for (final pattern in [
+        0,
+        0x123456789abc,
+        0xffffffffffff,
+      ])
+        Vector({
+          'src': pattern,
+        }, {
+          'y': LogicValue.ofInt((pattern >> 32) & ((1 << 64) - 1), 64),
+          'z': LogicValue.ofInt(~((pattern >> 32) & ((1 << 64) - 1)), 64),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
