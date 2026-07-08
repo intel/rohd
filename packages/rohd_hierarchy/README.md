@@ -20,12 +20,16 @@ without re-transmitting structural context.
 A design dictionary captures the **hierarchy and connectivity** of a
 hardware design:
 
-- **Occurrences** — unfolded instances of module definitions in the
-  hierarchy tree. Each has a `name`, an optional `definition` (the
+- **Occurrences** — unfolded module instances in the hierarchy tree.
+  Each has a `name`, an optional `definition` (the
   module type), child occurrences, and signals.
 - **Signals** — named wires within an occurrence. Each has a `name`,
   `width`, optional `direction` (input/output/inout), and optional
   `value`.
+
+In the occurrence view of a design, every `Logic` wire and every module
+instance is unique. Both are occurrences: either signal/logic occurrences
+or module occurrences.
 
 The full "unfolded" view of a design is its **address space**: every
 occurrence and every signal reachable by walking the hierarchy tree.
@@ -59,7 +63,7 @@ transport layer.
 
 ### Data models
 
-- **`HierarchyOccurrence`** — An occurrence of a module definition in the
+- **`HierarchyOccurrence`** — An occurrence of a module instance in the
   unfolded hierarchy tree, with children, signals, name, an optional
   `definition` (module type), and a primitive flag. Call `buildAddresses()`
   to assign a canonical `OccurrenceAddress` to every occurrence and signal
