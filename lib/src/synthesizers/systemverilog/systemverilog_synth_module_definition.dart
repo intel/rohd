@@ -172,6 +172,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // sole appearance is its single connecting assignment; if it is read
       // anywhere else (e.g. by a reduction), the aggregate must stay intact.
       final elementAssignments = <SynthLogic, List<SynthAssignment>>{};
+      final assignmentsBySignal = _assignmentsBySignal();
       final elementUseCount = <SynthLogic, int>{};
       void noteElementUse(SynthLogic? synthLogic) {
         if (synthLogic is SynthLogicArrayElement) {
@@ -282,6 +283,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           final traced = _traceNetSubsetSource(
             element,
             netSubsets,
+            assignmentsBySignal,
             elementUseCount,
             elementAssignments,
             tracedSubsets,
@@ -414,6 +416,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       Map<SynthLogic, List<_NetSubsetView>> byOriginal,
       Map<SynthLogic, List<_NetSubsetView>> bySubset,
     }) netSubsets,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySignal,
     Map<SynthLogic, int> elementUseCount,
     Map<SynthLogic, List<SynthAssignment>> elementAssignments,
     Set<SystemVerilogSynthSubModuleInstantiation> tracedSubsets,
@@ -451,7 +454,16 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final siblingView = siblings.single;
     final sourceNet = siblingView.subset;
 
-    if (sourceNet == element) {
+    if (sourceNet == element ||
+        (!_isPort(sourceNet) &&
+            _hasSubmoduleUseOutsideThroughAssignment(
+              sourceNet,
+              {
+                elementView.inst,
+                siblingView.inst,
+              },
+              assignmentsBySignal,
+            ))) {
       return null;
     }
 
@@ -514,6 +526,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       changed = false;
 
       final netSubsets = _netSubsetLookups();
+      final assignmentsBySignal = _assignmentsBySignal();
 
       // Count whole uses of each candidate bus and remember the single
       // submodule port use we can inline into.  Uses as the [original] of a
@@ -612,7 +625,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
 
         // Every bit of the bus must be tiled exactly once by a single-bit
-        // [BusSubset] definer, covering [0, width).
+        // [BusSubset] definer covering [0, width).  A slice that also feeds
+        // real logic is a consumer too, so it cannot be removed here.
         final definers = netSubsets.byOriginal[bus]!;
         if (definers.any((v) => v.start != v.end)) {
           continue;
@@ -641,6 +655,16 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         if (!tiledExactly) {
           continue;
         }
+        final definerInstantiations = {for (final view in definers) view.inst};
+        if (definers.any((view) =>
+            !_isPort(view.subset) &&
+            _hasSubmoduleUseOutsideThroughAssignment(
+              view.subset,
+              definerInstantiations,
+              assignmentsBySignal,
+            ))) {
+          continue;
+        }
 
         // Build the per-bit source nets, LSB-first.
         final elementSources = <SynthLogic>[
@@ -666,6 +690,79 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
     }
   }
+
+  Map<SynthLogic, List<SynthAssignment>> _assignmentsBySignal() {
+    final assignmentsBySignal = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      for (final signal in [assignment.src.resolved, assignment.dst.resolved]) {
+        assignmentsBySignal.putIfAbsent(signal, () => []).add(assignment);
+      }
+    }
+    return assignmentsBySignal;
+  }
+
+  bool _isPort(SynthLogic signal) =>
+      signal.resolved.isPort(module) ||
+      signal.resolved.isStructPortElement(module);
+
+  bool _hasSubmoduleUseOutside(
+    SynthLogic signal,
+    Set<SystemVerilogSynthSubModuleInstantiation> ignoredInstantiations,
+  ) {
+    for (final instantiation in subModuleInstantiations) {
+      instantiation as SystemVerilogSynthSubModuleInstantiation;
+      if (ignoredInstantiations.contains(instantiation)) {
+        continue;
+      }
+      if (instantiation.module is BusSubset) {
+        continue;
+      }
+      final mappedSignals = [
+        ...instantiation.inputMapping.values,
+        ...instantiation.outputMapping.values,
+        ...instantiation.inOutMapping.values,
+      ];
+      if (mappedSignals.any(
+        (mappedSignal) => _signalsShareReferenceBase(
+          mappedSignal.resolved,
+          signal.resolved,
+        ),
+      )) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _hasSubmoduleUseOutsideThroughAssignment(
+    SynthLogic signal,
+    Set<SystemVerilogSynthSubModuleInstantiation> ignoredInstantiations,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsBySignal,
+  ) {
+    if (_hasSubmoduleUseOutside(signal, ignoredInstantiations)) {
+      return true;
+    }
+
+    for (final assignment
+        in assignmentsBySignal[signal.resolved] ?? const <SynthAssignment>[]) {
+      final other = assignment.src.resolved == signal.resolved
+          ? assignment.dst.resolved
+          : assignment.src.resolved;
+      if (!_isPort(other) &&
+          _hasSubmoduleUseOutside(other, ignoredInstantiations)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _signalsShareReferenceBase(SynthLogic a, SynthLogic b) =>
+      a == b || _referenceBase(a) == b || _referenceBase(b) == a;
+
+  SynthLogic _referenceBase(SynthLogic signal) =>
+      signal is SynthLogicArrayElement
+          ? signal.parentArray.resolved
+          : signal.resolved;
 
   /// Forwards the per-element sources of a pass-through [LogicArray] directly
   /// into the single inlineable submodule (e.g. a [Swizzle]) that consumes

@@ -884,6 +884,53 @@ class WholeNetBusToPort extends Module {
   }
 }
 
+/// Like [WholeNetBusToPort], but one bus slice also feeds an inline gate
+/// expression.  Collapsing the whole bus must not leave that expression reading
+/// an undriven subset helper.
+class WholeNetBusToPortWithInlineSubsetConsumer extends Module {
+  WholeNetBusToPortWithInlineSubsetConsumer(
+      List<LogicNet> nets, LogicNet mirror)
+      : super(name: 'whole_net_bus_to_port_with_inline_subset_consumer') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    final enable = addInput('enable', Logic());
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus');
+    for (var i = 0; i < n; i++) {
+      bus.slice(i, i) <= netPorts[i];
+    }
+
+    addOutput('z') <= enable & ~bus.slice(0, 0);
+    WholeNetBusChild(bus, mirror, n: n);
+  }
+}
+
+/// Reads every bit of a net bus through subset helpers, while the whole bus is
+/// also consumed by a child.  These read-only helpers must not be mistaken for
+/// bit definers and removed out from under the inline expression.
+class WholeNetBusToPortWithReadOnlyInlineSubsetConsumer extends Module {
+  WholeNetBusToPortWithReadOnlyInlineSubsetConsumer(LogicNet mirror,
+      {int n = 4})
+      : super(
+            name:
+                'whole_net_bus_to_port_with_read_only_inline_subset_consumer') {
+    final enable = addInput('enable', Logic());
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus');
+    final guarded = <Logic>[];
+
+    for (var i = 0; i < n; i++) {
+      final selected = bus.slice(i, i);
+      guarded.add(enable & ~selected);
+    }
+
+    addOutput('z', width: n) <= guarded.rswizzle();
+    WholeNetBusChild(bus, mirror, n: n);
+  }
+}
+
 /// Reproduces the current naming-order issue where temporary [BusSubset]
 /// instances that will be collapsed still claim basenames before surviving
 /// signals can use them.
@@ -936,6 +983,31 @@ class BitwiseNetBusToArrayPort extends Module {
     final bus = LogicNet(width: n, name: 'bus', naming: busNaming);
     for (var i = 0; i < n; i++) {
       bus.slice(i, i) <= netPorts[i];
+    }
+    ArrayNetBusChild(bus, mirror, n: n);
+  }
+}
+
+/// Like [BitwiseNetBusToArrayPort], but the same subset helper that ties one
+/// net into the bus also feeds an inline gate expression.
+class BitwiseNetBusToArrayPortWithInlineSubsetConsumer extends Module {
+  BitwiseNetBusToArrayPortWithInlineSubsetConsumer(
+      List<LogicNet> nets, LogicNet mirror)
+      : super(
+            name: 'bitwise_net_bus_to_array_port_with_inline_subset_consumer') {
+    final n = nets.length;
+    final netPorts = [
+      for (var i = 0; i < n; i++) addInOut('net$i', nets[i]),
+    ];
+    final enable = addInput('enable', Logic());
+    mirror = addInOut('mirror', mirror, width: n);
+    final bus = LogicNet(width: n, name: 'bus');
+    for (var i = 0; i < n; i++) {
+      final selected = bus.slice(i, i);
+      selected <= netPorts[i];
+      if (i == 0) {
+        addOutput('z') <= enable & ~selected;
+      }
     }
     ArrayNetBusChild(bus, mirror, n: n);
   }
@@ -2596,6 +2668,44 @@ void main() {
       });
     }
 
+    test('whole net bus collapse preserves inline subset consumers', () async {
+      const n = 4;
+      final mod = WholeNetBusToPortWithInlineSubsetConsumer(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains('.data'));
+      expect(topBody, contains('enable &'));
+
+      final vectors = [
+        for (final enable in [0, 1])
+          for (final pattern in [0x0, 0x5, 0xA, 0xF])
+            Vector({
+              'enable': enable,
+              for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1,
+            }, {
+              'mirror': pattern,
+              'z': enable == 0 ? 0 : (~pattern) & 1,
+            })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('whole net bus collapse ignores read-only subset consumers', () async {
+      const n = 4;
+      final mod =
+          WholeNetBusToPortWithReadOnlyInlineSubsetConsumer(LogicNet(width: n));
+      await mod.build();
+      final topBody = _topModuleBody(mod.generateSynth());
+
+      expect(topBody, contains('wire [3:0] bus'));
+      expect(topBody, contains(RegExp('net_connect.*_subset_0_0_bus')));
+      expect(topBody, contains('enable &'));
+    });
+
     test('reserved-named whole net bus is not collapsed', () async {
       const n = 8;
       final mod = WholeNetBusToPort(
@@ -2679,6 +2789,33 @@ void main() {
         SimCompare.checkIverilogVector(mod, vectors);
       });
     }
+
+    test('bitwise net bus collapse preserves inline subset consumers',
+        () async {
+      const n = 4;
+      final mod = BitwiseNetBusToArrayPortWithInlineSubsetConsumer(
+          List.generate(n, (_) => LogicNet()), LogicNet(width: n));
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains('.data'));
+      expect(topBody, contains('enable &'));
+
+      final vectors = [
+        for (final enable in [0, 1])
+          for (final pattern in [0x0, 0x5, 0xA, 0xF])
+            Vector({
+              'enable': enable,
+              for (var i = 0; i < n; i++) 'net$i': (pattern >> i) & 1,
+            }, {
+              'mirror': pattern,
+              'z': enable == 0 ? 0 : (~pattern) & 1,
+            })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
 
     test('reserved-named bitwise net bus into array port is not collapsed',
         () async {
