@@ -288,6 +288,27 @@ class InternalBusRunsToAssignSubsetRangeAssignment extends Module {
   }
 }
 
+/// Partially assigns a contiguous run from a temporary slice while also using
+/// one bit of that slice elsewhere.  The run should collapse, but the slice
+/// helper must remain live for the extra consumer.
+class PartialSliceWithExtraConsumer extends Module {
+  PartialSliceWithExtraConsumer()
+      : super(name: 'partial_slice_with_extra_consumer') {
+    final src = addInput('src', Logic(width: 16), width: 16);
+    final enable = addInput('enable', Logic());
+    final slice = Logic(width: 8, name: 'slice', naming: Naming.mergeable);
+    final dst = Logic(width: 12, name: 'dst');
+
+    slice <= src.getRange(4, 12);
+    for (var index = 2; index <= 5; index++) {
+      dst.assignSubset([slice[index]], start: index + 3);
+    }
+
+    addOutput('y', width: 12) <= dst;
+    addOutput('z') <= enable & ~slice[3];
+  }
+}
+
 /// Assigns a temporary flat bus slice into wide array elements.
 class WideTemporarySliceToArrayWords extends Module {
   WideTemporarySliceToArrayWords({bool extraConsumers = false})
@@ -1718,6 +1739,37 @@ void main() {
           'y': (pattern >> 2) & 0xF,
           'z': (~((pattern >> 2) & 0xF)) & 0xF,
         })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('partial slice helper with extra consumer is preserved', () async {
+    final mod = PartialSliceWithExtraConsumer();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('assign dst[8:5] = src[9:6];'));
+    expect(topBody, contains('assign slice = src[11:4];'));
+    expect(topBody, contains('slice[3]'));
+    expect(topBody, isNot(contains(RegExp(r'assign dst\[[0-9]+\]'))));
+
+    final vectors = [
+      for (final pattern in [0x0000, 0x0080, 0x03c0, 0xffff])
+        for (final enable in [0, 1])
+          Vector({
+            'src': pattern,
+            'enable': enable,
+          }, {
+            'y': _expectedSparseValue(
+              12,
+              pattern,
+              (dstIndex) =>
+                  dstIndex >= 5 && dstIndex <= 8 ? dstIndex + 1 : null,
+            ),
+            'z': enable == 1 ? (~((pattern >> 7) & 1)) & 1 : 0,
+          })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
