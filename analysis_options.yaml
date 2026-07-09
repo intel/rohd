@@ -8,6 +8,7 @@ analyzer:
     strict-raw-types: true
   exclude:
     - doc/tutorials/chapter_9/rohd_vf_example
+    - packages/rohd_hierarchy
     - rohd_devtools_extension
 
 # keep up to date, matching https://dart.dev/tools/linter-rules/all

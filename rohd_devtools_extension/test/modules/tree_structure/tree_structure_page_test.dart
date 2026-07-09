@@ -35,32 +35,38 @@ void main() {
         'with treeModel', (tester) async {
       final treeModel = MockTreeModel();
 
-      when(() => rohdServiceCubit.state)
-          .thenReturn(RohdServiceLoaded(treeModel));
-      when(() => rohdServiceCubit.stream)
-          .thenAnswer((_) => Stream.value(RohdServiceLoaded(treeModel)));
-      when(() => treeSearchTermCubit.state).thenReturn(null);
-      when(() => treeSearchTermCubit.stream)
-          .thenAnswer((_) => Stream.value(null));
+        when(
+          () => rohdServiceCubit.state,
+        ).thenReturn(RohdServiceLoaded(treeModel));
+        when(
+          () => rohdServiceCubit.stream,
+        ).thenAnswer((_) => Stream.value(RohdServiceLoaded(treeModel)));
+        when(() => treeSearchTermCubit.state).thenReturn(null);
+        when(
+          () => treeSearchTermCubit.stream,
+        ).thenAnswer((_) => Stream.value(null));
 
-      await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
-            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: TreeStructurePage(screenSize: const Size(2000, 1000)),
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
+              BlocProvider<TreeSearchTermCubit>.value(
+                value: treeSearchTermCubit,
+              ),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: TreeStructurePage(screenSize: const Size(2000, 1000)),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.byType(ModuleTreeCard), findsOneWidget);
-    });
+        expect(find.byType(ModuleTreeCard), findsOneWidget);
+      },
+    );
 
     testWidgets(
         'displays SignalDetailsCard when state is RohdServiceLoaded '
@@ -80,23 +86,26 @@ void main() {
       when(() => treeSearchTermCubit.stream)
           .thenAnswer((_) => Stream.value(null));
 
-      await tester.pumpWidget(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
-            BlocProvider<TreeSearchTermCubit>.value(value: treeSearchTermCubit),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: TreeStructurePage(screenSize: const Size(800, 600)),
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<RohdServiceCubit>.value(value: rohdServiceCubit),
+              BlocProvider<TreeSearchTermCubit>.value(
+                value: treeSearchTermCubit,
+              ),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: TreeStructurePage(screenSize: const Size(800, 600)),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.byType(SignalDetailsCard), findsOneWidget);
-    });
+        expect(find.byType(SignalDetailsCard), findsOneWidget);
+      },
+    );
   });
 }

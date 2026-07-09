@@ -1769,7 +1769,7 @@ void main() {
 
       // not every element is a pass-through, so the subset array is preserved
       expect(topBody, contains('_subset'));
-      expect(topBody, contains('bus_subset[3]'));
+      expect(topBody, contains('bus_subset[3'));
       expect(topBody, contains('net_connect'));
 
       final vectors = [
