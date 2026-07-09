@@ -13,7 +13,8 @@ import 'package:path/path.dart' as p;
 
 Future<void> main(List<String> args) async {
   final targetPath = args.isEmpty ? '../extension/devtools' : args.single;
-  final targetDir = Directory(p.normalize(p.absolute(targetPath)));
+  final resolvedTarget = await _resolveTarget(targetPath);
+  final targetDir = resolvedTarget.directory;
 
   if (!targetDir.existsSync()) {
     _fail('Expected target directory not found: ${targetDir.path}');
@@ -71,7 +72,91 @@ Future<void> main(List<String> args) async {
     );
   } finally {
     await projectRoot.delete(recursive: true);
+    await resolvedTarget.cleanupDir?.delete(recursive: true);
   }
+}
+
+Future<_ResolvedTarget> _resolveTarget(String target) async {
+  final githubTree = _githubTreeUrl.firstMatch(target);
+  if (githubTree != null) {
+    return _downloadGithubTree(githubTree);
+  }
+
+  final intelRohdTree = _intelRohdTreeUrl.firstMatch(target);
+  if (intelRohdTree != null) {
+    return _downloadGithubTree(intelRohdTree, isIntelRohdShorthand: true);
+  }
+
+  if (target.startsWith('http://') || target.startsWith('https://')) {
+    _fail(
+      'Unsupported URL. Expected a GitHub tree URL like '
+      'https://github.com/intel/rohd/tree/artifacts',
+    );
+  }
+
+  return _ResolvedTarget(
+    Directory(p.normalize(p.absolute(target))),
+  );
+}
+
+final _githubTreeUrl = RegExp(
+  r'^https://github\.com/([^/]+)/([^/]+)/tree/([^/]+)(?:/(.*))?$',
+);
+
+final _intelRohdTreeUrl = RegExp(
+  r'^https://github\.com/(rohd)/tree/([^/]+)(?:/(.*))?$',
+);
+
+Future<_ResolvedTarget> _downloadGithubTree(
+  RegExpMatch match, {
+  bool isIntelRohdShorthand = false,
+}) async {
+  final owner = isIntelRohdShorthand ? 'intel' : match.group(1)!;
+  final repo = isIntelRohdShorthand ? 'rohd' : match.group(2)!;
+  final branch = isIntelRohdShorthand ? match.group(2)! : match.group(3)!;
+  final treePath = isIntelRohdShorthand ? match.group(3) : match.group(4);
+  final tempDir = await Directory.systemTemp.createTemp(
+    'rohd_devtools_install_tree_',
+  );
+  final archivePath = p.join(tempDir.path, '$repo-$branch.zip');
+
+  await _runChecked(
+    'curl',
+    [
+      '-fsSL',
+      'https://github.com/$owner/$repo/archive/refs/heads/$branch.zip',
+      '-o',
+      archivePath,
+    ],
+  );
+  await _runChecked('unzip', ['-q', archivePath, '-d', tempDir.path]);
+
+  final extractedRoot = Directory(p.join(tempDir.path, '$repo-$branch'));
+  final resolvedPath = treePath == null || treePath.isEmpty
+      ? extractedRoot.path
+      : p.join(extractedRoot.path, treePath);
+
+  return _ResolvedTarget(
+    Directory(resolvedPath),
+    cleanupDir: tempDir,
+  );
+}
+
+Future<void> _runChecked(String executable, List<String> arguments) async {
+  final result = await Process.run(executable, arguments);
+  if (result.exitCode != 0) {
+    _fail(
+      'Failed to run `$executable ${arguments.join(' ')}`\n'
+      '${result.stderr}',
+    );
+  }
+}
+
+final class _ResolvedTarget {
+  final Directory directory;
+  final Directory? cleanupDir;
+
+  const _ResolvedTarget(this.directory, {this.cleanupDir});
 }
 
 Directory _installRootFor(Directory extensionDir) {
