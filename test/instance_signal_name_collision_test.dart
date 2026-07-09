@@ -63,8 +63,11 @@ void main() {
             orElse: () => null,
           );
       expect(sl, isNotNull, reason: 'Expected to find SynthLogic for "inner"');
-      expect(sl!.name, 'inner',
-          reason: 'Reserved signal "inner" must keep its exact name');
+      expect(
+        sl!.name,
+        'inner',
+        reason: 'Reserved signal "inner" must keep its exact name',
+      );
     });
 
     test(
@@ -73,15 +76,15 @@ void main() {
       final inst = def.subModuleInstantiations
           .where((s) => s.needsInstantiation)
           .cast<SynthSubModuleInstantiation?>()
-          .firstWhere(
-            (s) => s!.module.name == 'inner',
-            orElse: () => null,
-          );
+          .firstWhere((s) => s!.module.name == 'inner', orElse: () => null);
       expect(inst, isNotNull, reason: 'Expected submodule instance for inner');
       // The instance should be suffixed since the signal took "inner" first.
-      expect(inst!.name, isNot('inner'),
-          reason: 'Instance should be uniquified when signal already '
-              'claims "inner"');
+      expect(
+        inst!.name,
+        isNot('inner'),
+        reason: 'Instance should be uniquified when signal already '
+            'claims "inner"',
+      );
     });
   });
 }

@@ -1,0 +1,19 @@
+name: rohd_hierarchy
+description: "Generic hierarchy data models for hardware module navigation - HierarchyNode, Port, and HierarchyService."
+homepage: https://intel.github.io/rohd-website/
+repository: https://github.com/intel/rohd
+version: 0.1.0
+issue_tracker: https://github.com/intel/rohd/issues
+
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  collection: ^1.15.0
+  meta: ^1.9.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.17.3
