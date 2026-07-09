@@ -842,8 +842,9 @@ class SynthModuleDefinition {
       // - assignments that are removable:
       //   - the driver has no driver OR the receiver has no receivers
 
-      final rangeDrivenSubmoduleInputMappingSignals =
-          _rangeDrivenSubmoduleInputMappingSignals();
+      final assignmentConnectedSubmoduleMappingSignals =
+          _assignmentConnectedSubmoduleMappingSignals();
+      final sharedSubmoduleMappingSignals = _sharedSubmoduleMappingSignals();
 
       final reducedInternalSignals = <SynthLogic>[];
       for (final internalSignal in internalSignals) {
@@ -871,8 +872,9 @@ class SynthModuleDefinition {
           continue;
         }
 
-        if (rangeDrivenSubmoduleInputMappingSignals
-            .contains(internalSignal.resolved)) {
+        if (assignmentConnectedSubmoduleMappingSignals
+                .contains(internalSignal.resolved) ||
+            sharedSubmoduleMappingSignals.contains(internalSignal.resolved)) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
@@ -1095,8 +1097,8 @@ class SynthModuleDefinition {
   }
 
   /// Resolves a submodule input mapping through any replacement and, when the
-  /// mapped signal is fully driven by a packed scalar range assignment, through
-  /// that driver as well.
+  /// mapped signal is fully driven by a packed scalar assignment, through that
+  /// driver as well.
   SynthLogic _resolvedSubmoduleInputMapping(
     SynthLogic mappedSignal,
     Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
@@ -1137,43 +1139,117 @@ class SynthModuleDefinition {
     return sourceRange.base;
   }
 
-  /// Finds submodule input/inout mapping signals that are driven by scalar
-  /// range assignments and therefore must not be pruned before rendering.
-  Set<SynthLogic> _rangeDrivenSubmoduleInputMappingSignals() {
-    final submoduleInputMappingReferences = _submoduleInputMappingReferences();
-    final rangeDrivenSignals = <SynthLogic>{};
+  /// Finds submodule mapping signals that participate in scalar or packed range
+  /// assignments across a submodule boundary and therefore must not be pruned
+  /// before rendering.
+  Set<SynthLogic> _assignmentConnectedSubmoduleMappingSignals() {
+    final submoduleInputMappingReferences =
+        _submoduleMappingReferences(includeInputs: true, includeOutputs: false);
+    final submoduleOutputMappingReferences =
+        _submoduleMappingReferences(includeInputs: false, includeOutputs: true);
+    final assignmentConnectedSignals = <SynthLogic>{};
 
-    for (final assignment in assignments.whereType<RangeSynthAssignment>()) {
+    for (final assignment in assignments) {
       final sourceRange = _assignmentSourceRange(assignment);
-      if (sourceRange.base.isArray) {
-        continue;
-      }
-
       final destinationRange = _assignmentDestinationRange(assignment);
+
+      final sourceBase = sourceRange.base.resolved;
       final destinationBase = destinationRange.base.resolved;
-      if (submoduleInputMappingReferences.contains(destinationBase) ||
-          submoduleInputMappingReferences.contains(
-            _referenceBase(destinationBase),
-          )) {
-        rangeDrivenSignals.add(destinationBase);
+      final destinationReferenceBase = _referenceBase(destinationBase);
+      final sourceIsMappedOutput =
+          submoduleOutputMappingReferences.contains(sourceBase);
+
+      if (submoduleInputMappingReferences.contains(destinationBase) &&
+          sourceIsMappedOutput) {
+        assignmentConnectedSignals.add(destinationBase);
+      } else if (submoduleInputMappingReferences.contains(destinationBase) &&
+          !destinationReferenceBase.isArray &&
+          !sourceBase.isArray) {
+        assignmentConnectedSignals.add(destinationBase);
+      }
+      if (sourceIsMappedOutput) {
+        assignmentConnectedSignals.add(sourceBase);
       }
     }
 
-    return rangeDrivenSignals;
+    return assignmentConnectedSignals;
   }
 
-  /// Collects active submodule input/inout mapping signals plus their reference
-  /// bases, so array elements and aggregate mappings compare consistently.
-  Set<SynthLogic> _submoduleInputMappingReferences() {
+  /// Finds signals that are used by multiple active submodule port mappings.
+  /// After full assignment merging, these shared mapping signals may be the
+  /// only remaining evidence that a parent-level wire is still required.
+  Set<SynthLogic> _sharedSubmoduleMappingSignals() {
+    final inputMappingUseCounts = <SynthLogic, int>{};
+    final outputMappingUseCounts = <SynthLogic, int>{};
+    final inOutMappingUseCounts = <SynthLogic, int>{};
+
+    void addReferences(Map<SynthLogic, int> useCounts, SynthLogic signal) {
+      final resolved = signal.resolved;
+      for (final reference in {resolved, _referenceBase(resolved)}) {
+        useCounts.update(
+          reference,
+          (count) => count + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
+
+    for (final submoduleInstantiation in subModuleInstantiations) {
+      if (!submoduleInstantiation.needsInstantiation ||
+          submoduleInstantiation.module is InlineSystemVerilog) {
+        continue;
+      }
+
+      for (final signal in submoduleInstantiation.inputMapping.values) {
+        addReferences(inputMappingUseCounts, signal);
+      }
+      for (final signal in submoduleInstantiation.outputMapping.values) {
+        addReferences(outputMappingUseCounts, signal);
+      }
+      for (final signal in submoduleInstantiation.inOutMapping.values) {
+        addReferences(inOutMappingUseCounts, signal);
+      }
+    }
+
+    final mappingReferences = {
+      ...inputMappingUseCounts.keys,
+      ...outputMappingUseCounts.keys,
+      ...inOutMappingUseCounts.keys,
+    };
+
+    final sharedMappingSignals = <SynthLogic>{};
+    for (final reference in mappingReferences) {
+      final inputUses = inputMappingUseCounts[reference] ?? 0;
+      final outputUses = outputMappingUseCounts[reference] ?? 0;
+      final inOutUses = inOutMappingUseCounts[reference] ?? 0;
+
+      if ((inputUses > 0 && outputUses > 0) ||
+          (inOutUses > 0 && (inputUses > 0 || outputUses > 0)) ||
+          inOutUses > 1) {
+        sharedMappingSignals.add(reference);
+      }
+    }
+
+    return sharedMappingSignals;
+  }
+
+  /// Collects active submodule mapping signals plus their reference bases, so
+  /// array elements and aggregate mappings compare consistently.
+  Set<SynthLogic> _submoduleMappingReferences({
+    required bool includeInputs,
+    required bool includeOutputs,
+  }) {
     final mappedReferences = <SynthLogic>{};
 
     for (final submoduleInstantiation in subModuleInstantiations) {
-      if (!submoduleInstantiation.needsInstantiation) {
+      if (!submoduleInstantiation.needsInstantiation ||
+          submoduleInstantiation.module is InlineSystemVerilog) {
         continue;
       }
 
       final mappedSignals = [
-        ...submoduleInstantiation.inputMapping.values,
+        if (includeInputs) ...submoduleInstantiation.inputMapping.values,
+        if (includeOutputs) ...submoduleInstantiation.outputMapping.values,
         ...submoduleInstantiation.inOutMapping.values,
       ];
       for (final mappedSignal in mappedSignals) {

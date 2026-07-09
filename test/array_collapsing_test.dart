@@ -1391,6 +1391,193 @@ class LateSlicedSubsetInputTop extends Module {
   }
 }
 
+/// A child that forwards its input to an output for sibling connection tests.
+class SiblingSubsetProducer extends Module {
+  SiblingSubsetProducer({super.name = 'sibling_subset_producer'}) {
+    final seed = addInput('seed', Logic(width: 4), width: 4);
+    addOutput('result', width: 4) <= seed;
+  }
+}
+
+/// A child that observes a bit inside a late-driven input source.
+class SiblingSubsetConsumer extends Module {
+  SiblingSubsetConsumer({super.name = 'sibling_subset_consumer'}) {
+    addInput('data', Logic(width: 8), width: 8);
+    addOutput('observed') <= input('data')[2];
+  }
+}
+
+/// Width-matched sibling consumer for full-width subset mapping tests.
+class SiblingFullSubsetConsumer extends Module {
+  SiblingFullSubsetConsumer({super.name = 'sibling_full_subset_consumer'}) {
+    addInput('data', Logic(width: 4), width: 4);
+    addOutput('observed') <= input('data')[0];
+  }
+}
+
+/// Drives one sibling's input source from another sibling's output subset.
+class SiblingOutputToInputSubsetTop extends Module {
+  SiblingOutputToInputSubsetTop()
+      : super(name: 'sibling_output_to_input_subset_top') {
+    final source = addInput('source', Logic(width: 4), width: 4);
+    final producer = SiblingSubsetProducer();
+    producer.inputSource('seed') <= source;
+
+    final consumer = SiblingSubsetConsumer();
+    consumer.inputSource('data').assignSubset(
+          producer.output('result').elements,
+          start: 2,
+        );
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Drives one sibling's full input source from another sibling's full output.
+class SiblingFullOutputToInputSubsetTop extends Module {
+  SiblingFullOutputToInputSubsetTop()
+      : super(name: 'sibling_full_output_to_input_subset_top') {
+    final source = addInput('source', Logic(width: 4), width: 4);
+    final producer = SiblingSubsetProducer();
+    producer.inputSource('seed') <= source;
+
+    final consumer = SiblingFullSubsetConsumer();
+    consumer.inputSource('data').assignSubset(
+          producer.output('result').elements,
+        );
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Array-output sibling variant of [SiblingSubsetProducer].
+class SiblingArraySubsetProducer extends Module {
+  SiblingArraySubsetProducer({super.name = 'sibling_array_subset_producer'}) {
+    final seed = addInput('seed', Logic(width: 4), width: 4);
+    final result = addOutputArray('result', dimensions: [4]);
+
+    for (var index = 0; index < 4; index++) {
+      result.elements[index] <= seed[index];
+    }
+  }
+}
+
+/// Array-input sibling variant of [SiblingSubsetConsumer].
+class SiblingArraySubsetConsumer extends Module {
+  SiblingArraySubsetConsumer({super.name = 'sibling_array_subset_consumer'}) {
+    final data = addInputArray('data', LogicArray([8], 1), dimensions: [8]);
+    addOutput('observed') <= data.elements[2];
+  }
+}
+
+/// Drives one sibling's input array source from another sibling's output array.
+class SiblingArrayOutputToInputSubsetTop extends Module {
+  SiblingArrayOutputToInputSubsetTop()
+      : super(name: 'sibling_array_output_to_input_subset_top') {
+    final source = addInput('source', Logic(width: 4), width: 4);
+    final producer = SiblingArraySubsetProducer();
+    producer.inputSource('seed') <= source;
+
+    final consumer = SiblingArraySubsetConsumer();
+    (consumer.inputSource('data') as LogicArray).assignSubset(
+      (producer.output('result') as LogicArray).elements,
+      start: 2,
+    );
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Small structure used for sibling subset mapping regressions.
+class SiblingSubsetStruct extends LogicStructure {
+  final Logic low;
+  final Logic high;
+
+  factory SiblingSubsetStruct({String name = 'sibling_subset_struct'}) =>
+      SiblingSubsetStruct._(
+        Logic(name: 'low'),
+        Logic(name: 'high'),
+        name: name,
+      );
+
+  SiblingSubsetStruct._(this.low, this.high, {super.name}) : super([low, high]);
+
+  @override
+  SiblingSubsetStruct clone({String? name}) =>
+      SiblingSubsetStruct(name: name ?? this.name);
+}
+
+/// Structure-output sibling variant of [SiblingSubsetProducer].
+class SiblingStructSubsetProducer extends Module {
+  SiblingStructSubsetProducer({super.name = 'sibling_struct_subset_producer'}) {
+    final seed = addInput('seed', Logic(width: 2), width: 2);
+    final result = addTypedOutput('result', SiblingSubsetStruct.new);
+
+    result.low <= seed[0];
+    result.high <= seed[1];
+  }
+}
+
+/// Structure-input sibling variant of [SiblingSubsetConsumer].
+class SiblingStructSubsetConsumer extends Module {
+  SiblingStructSubsetConsumer({super.name = 'sibling_struct_subset_consumer'}) {
+    final data = addTypedInput('data', SiblingSubsetStruct());
+    addOutput('observed') <= data.high;
+  }
+}
+
+/// Drives one sibling's input structure source from another sibling's output
+/// structure.
+class SiblingStructOutputToInputSubsetTop extends Module {
+  SiblingStructOutputToInputSubsetTop()
+      : super(name: 'sibling_struct_output_to_input_subset_top') {
+    final source = addInput('source', Logic(width: 2), width: 2);
+    final producer = SiblingStructSubsetProducer();
+    producer.inputSource('seed') <= source;
+
+    final consumer = SiblingStructSubsetConsumer();
+    (consumer.inputSource('data') as SiblingSubsetStruct).assignSubset(
+      (producer.output('result') as SiblingSubsetStruct).elements,
+    );
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Inout sibling variant that exposes a net bus through a source mapping.
+class SiblingInOutSubsetProducer extends Module {
+  SiblingInOutSubsetProducer({super.name = 'sibling_inout_subset_producer'}) {
+    addInOut('link', LogicNet(width: 4), width: 4);
+  }
+}
+
+/// Inout sibling variant that observes a bit from an inout source mapping.
+class SiblingInOutSubsetConsumer extends Module {
+  SiblingInOutSubsetConsumer({super.name = 'sibling_inout_subset_consumer'}) {
+    final data = addInOut('data', LogicNet(width: 8), width: 8);
+    addOutput('observed') <= data.slice(2, 2);
+  }
+}
+
+/// Drives one sibling's inout source subset from another sibling's inout
+/// source.
+class SiblingInOutToInOutSubsetTop extends Module {
+  SiblingInOutToInOutSubsetTop()
+      : super(name: 'sibling_inout_to_inout_subset_top') {
+    final source = addInOut('source', LogicNet(width: 4), width: 4);
+    final producer = SiblingInOutSubsetProducer();
+    producer.inOutSource('link') <= source;
+
+    final consumer = SiblingInOutSubsetConsumer();
+    consumer.inOutSource('data').assignSubset([
+      for (var index = 0; index < 4; index++)
+        producer.inOutSource('link').slice(index, index),
+    ], start: 2);
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
 /// Non-net (regular [Logic]) driver-direction `assignSubset`: each external bit
 /// drives one bit of `sig` via `assignSubset`, and `sig` feeds a child input.
 /// The intermediate `*_subset` array must be forwarded straight into the child
@@ -3149,6 +3336,93 @@ void main() {
       final vectors = [
         for (final pattern in [0x0000, 0x0010, 0x00f0, 0xffff])
           Vector({'source': pattern}, {'y': (pattern >> 4) & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling output can drive subset of sibling input source', () async {
+      final mod = SiblingOutputToInputSubsetTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, isNot(contains('.result()')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0xf])
+          Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling full output can drive sibling full input source', () async {
+      final mod = SiblingFullOutputToInputSubsetTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, isNot(contains('.result()')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0xf])
+          Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling output array can drive subset of sibling input array source',
+        () async {
+      final mod = SiblingArrayOutputToInputSubsetTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, isNot(contains('.result()')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0xf])
+          Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling output structure can drive sibling input structure source',
+        () async {
+      final mod = SiblingStructOutputToInputSubsetTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, isNot(contains('.result()')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0x3])
+          Vector({'source': pattern}, {'y': (pattern >> 1) & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling inout can drive subset of sibling inout source', () async {
+      final mod = SiblingInOutToInOutSubsetTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, isNot(contains('.link()')));
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0xf])
+          Vector({'source': pattern}, {'y': pattern & 1})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
