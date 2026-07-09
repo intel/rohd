@@ -1578,6 +1578,97 @@ class SiblingInOutToInOutSubsetTop extends Module {
   }
 }
 
+/// Producer with scalar, array, structure, and inout ports for mixed boundary
+/// mapping regressions.
+class SiblingBoundaryProductProducer extends Module {
+  SiblingBoundaryProductProducer(
+      {super.name = 'sibling_boundary_product_producer'}) {
+    final seed = addInput('seed', Logic(width: 4), width: 4);
+    addOutput('wide', width: 4) <= seed;
+
+    final arr = addOutputArray('arr', dimensions: [4]);
+    for (var index = 0; index < 4; index++) {
+      arr.elements[index] <= seed[index];
+    }
+
+    final pair = addTypedOutput('pair', SiblingSubsetStruct.new);
+    pair.low <= seed[0];
+    pair.high <= seed[1];
+
+    addInOut('link', LogicNet(width: 4), width: 4);
+  }
+}
+
+/// Consumer with mixed port shapes that observes one bit from each mapping.
+class SiblingBoundaryProductConsumer extends Module {
+  SiblingBoundaryProductConsumer(
+      {super.name = 'sibling_boundary_product_consumer'}) {
+    addInput('wide_from_scalar', Logic(width: 10), width: 10);
+    final arrayFromScalar = addInputArray(
+      'array_from_scalar',
+      LogicArray([10], 1),
+      dimensions: [10],
+    );
+    final structFromArray = addTypedInput(
+      'struct_from_array',
+      SiblingSubsetStruct(),
+    );
+    addInput('wide_from_struct', Logic(width: 8), width: 8);
+    final netFromNet = addInOut('net_from_net', LogicNet(width: 10), width: 10);
+
+    addOutput('scalar_bit') <= input('wide_from_scalar')[5];
+    addOutput('array_bit') <= arrayFromScalar.elements[6];
+    addOutput('struct_bit') <= structFromArray.high;
+    addOutput('wide_struct_bit') <= input('wide_from_struct')[4];
+    addOutput('net_bit') <= netFromNet.slice(6, 6);
+  }
+}
+
+/// Mixed sibling boundary fixture that exercises several source/destination
+/// shape combinations in one pruning/collapse pass.
+class SiblingBoundaryProductTop extends Module {
+  SiblingBoundaryProductTop() : super(name: 'sibling_boundary_product_top') {
+    final source = addInput('source', Logic(width: 4), width: 4);
+    final netSource = addInOut('net_source', LogicNet(width: 4), width: 4);
+
+    final producer = SiblingBoundaryProductProducer();
+    producer.inputSource('seed') <= source;
+    producer.inOutSource('link') <= netSource;
+
+    final consumer = SiblingBoundaryProductConsumer();
+    consumer.inputSource('wide_from_scalar').assignSubset(
+          producer.output('wide').elements,
+          start: 4,
+        );
+    (consumer.inputSource('array_from_scalar') as LogicArray).assignSubset(
+      producer.output('wide').elements,
+      start: 4,
+    );
+    (consumer.inputSource('struct_from_array') as SiblingSubsetStruct)
+        .assignSubset(
+      (producer.output('arr') as LogicArray).elements.sublist(1, 3),
+    );
+    consumer.inputSource('wide_from_struct').assignSubset(
+          (producer.output('pair') as SiblingSubsetStruct).elements,
+          start: 3,
+        );
+    consumer.inOutSource('net_from_net').assignSubset([
+      for (var index = 0; index < 4; index++)
+        producer.inOutSource('link').slice(index, index),
+    ], start: 5);
+
+    for (final outputName in [
+      'scalar_bit',
+      'array_bit',
+      'struct_bit',
+      'wide_struct_bit',
+      'net_bit',
+    ]) {
+      addOutput(outputName) <= consumer.output(outputName);
+    }
+  }
+}
+
 /// Non-net (regular [Logic]) driver-direction `assignSubset`: each external bit
 /// drives one bit of `sig` via `assignSubset`, and `sig` feeds a child input.
 /// The intermediate `*_subset` array must be forwarded straight into the child
@@ -3423,6 +3514,44 @@ void main() {
       final vectors = [
         for (final pattern in [0x0, 0x1, 0x2, 0xf])
           Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling boundary kitchen sink keeps mixed source mappings', () async {
+      final mod = SiblingBoundaryProductTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      for (final portName in [
+        'wide',
+        'arr',
+        'pair',
+        'link',
+        'wide_from_scalar',
+        'array_from_scalar',
+        'struct_from_array',
+        'wide_from_struct',
+        'net_from_net',
+      ]) {
+        expect(topBody, isNot(contains('.$portName()')));
+      }
+
+      final vectors = [
+        for (final pattern in [0x0, 0x1, 0x2, 0x4, 0xf])
+          for (final netPattern in [0x0, 0x2, 0xf])
+            Vector({
+              'source': pattern,
+              'net_source': netPattern,
+            }, {
+              'scalar_bit': (pattern >> 1) & 1,
+              'array_bit': (pattern >> 2) & 1,
+              'struct_bit': (pattern >> 2) & 1,
+              'wide_struct_bit': (pattern >> 1) & 1,
+              'net_bit': (netPattern >> 1) & 1,
+            })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);

@@ -1512,9 +1512,20 @@ class SynthModuleDefinition {
         dstLogic.numUnpackedDimensions == 0;
   }
 
-  /// Collapses simple contiguous packed range assignments that are represented
-  /// as bit-by-bit assignments, such as non-net bus subsets feeding array
-  /// elements.
+  /// Width-oriented collapse of bit-blasted assignments into packed ranges.
+  ///
+  /// This pass looks for individual one-bit assignments that are really pieces
+  /// of the same packed connection. For example, a sequence like
+  /// `dst[1] <= src[13]`, `dst[2] <= src[14]`, ... can become one
+  /// `dst[4:1] <= src[16:13]` [RangeSynthAssignment]. Sources may be direct
+  /// array elements or temporary [BusSubset] outputs; temporary outputs are
+  /// traced back to the original packed base before grouping.
+  ///
+  /// Candidates are grouped by source base, destination base, and constant
+  /// index offset. A group is then split into contiguous runs, so the pass
+  /// grows assignments in width without composing through arbitrary depth.
+  /// Depth composition through intermediates is handled by
+  /// [_collapseChainedRangeAssignments].
   void _collapseSimpleRangeAssignments() {
     final busSubsetRanges = _busSubsetSourceRanges();
     if (busSubsetRanges.isEmpty) {
@@ -1571,6 +1582,10 @@ class SynthModuleDefinition {
               sourceSignal: src.sourceSignal,
             );
       final dst = _simpleAssignmentDestinationRange(assignment);
+      // A candidate is one bit of a future cross-object range assignment:
+      // `dstBase[dstBit] <= srcBase[srcBit]`. The bases must be different;
+      // this pass is packing plumbing between objects, not proving that an
+      // overlapping intra-object move like `a[4:1] <= a[16:13]` is safe.
       if (resolvedSrc == null ||
           dst == null ||
           resolvedSrc.range.width != 1 ||
@@ -1591,6 +1606,9 @@ class SynthModuleDefinition {
         continue;
       }
 
+      // Keep only assignments that share a stable bit offset. Each group can
+      // later become a packed range assignment such as
+      // `dstBase[4:1] <= srcBase[16:13]`.
       groupedCandidates.putIfAbsent((
         resolvedSrc.range.base,
         dst.base,
@@ -1604,6 +1622,11 @@ class SynthModuleDefinition {
       ));
     }
 
+    // Generated `assignSubset` arrays need full-coverage accounting. If only
+    // part of such an array is collapsed away, the remaining helper can change
+    // undriven/floating behavior. A fully covered helper can be replaced as a
+    // single range safely; partial helpers stay conservative unless they are
+    // known generated intermediates with live sources.
     final fullyCoveredGeneratedSubsets = <SynthLogic>{};
     final generatedSubsetBits = <SynthLogic, Set<int>>{};
     for (final group in groupedCandidates.values) {
@@ -1664,6 +1687,12 @@ class SynthModuleDefinition {
         );
   }
 
+  /// Adds one contiguous run from [_collapseSimpleRangeAssignments].
+  ///
+  /// Single-bit runs are left alone because there is no width to recover. Wider
+  /// runs become [RangeSynthAssignment]s. When the source bits came from a
+  /// temporary [BusSubset], the temporary module and signal are cleared only if
+  /// every remaining use is covered by the assignments being replaced.
   bool _addSimpleRangeRun(
     List<SynthAssignment> reducedAssignments,
     List<
@@ -2072,8 +2101,13 @@ class SynthModuleDefinition {
         logic.numUnpackedDimensions == 0;
   }
 
-  /// Composes single-use chained range assignments through an internal
-  /// intermediate.
+  /// Depth-oriented composition of range assignments through an intermediate.
+  ///
+  /// Unlike [_collapseSimpleRangeAssignments], this pass does not try to find
+  /// more adjacent bits. It looks for a single producer and a single consumer
+  /// around an internal helper and composes their ranges, for example
+  /// `mid[3:0] <= src[7:4]` plus `dst[1:0] <= mid[3:2]` becoming
+  /// `dst[1:0] <= src[7:6]`.
   void _collapseChainedRangeAssignments() {
     final generatedSubsetIntermediates = _generatedSubsetIntermediates();
     var changed = true;
@@ -2224,8 +2258,14 @@ class SynthModuleDefinition {
     );
   }
 
-  /// Collapses a generated `assignSubset` array that is only consumed by a
-  /// full packed swizzle into a range assignment to the swizzle output.
+  /// Collapses generated `assignSubset` helpers feeding packed swizzles.
+  ///
+  /// `Logic.assignSubset` builds a temporary array and then swizzles that array
+  /// back into a packed value. When every producer bit for that helper is
+  /// accounted for, the helper and swizzle can be replaced with direct packed
+  /// range assignments to the swizzle output. This is a specialized helper
+  /// pass: it requires full coverage so partially driven helpers keep their
+  /// original undriven/floating behavior.
   void _collapseGeneratedSubsetSwizzleRangeAssignments() {
     final assignmentsByDestination =
         _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
