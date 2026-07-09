@@ -31,9 +31,10 @@ void main() {
     });
 
     testWidgets(
-        'displays ModuleTreeCard when state is RohdServiceLoaded '
-        'with treeModel', (tester) async {
-      final treeModel = MockTreeModel();
+      'displays ModuleTreeCard when state is RohdServiceLoaded '
+      'with treeModel',
+      (tester) async {
+        final treeModel = MockTreeModel();
 
         when(
           () => rohdServiceCubit.state,
@@ -69,22 +70,23 @@ void main() {
     );
 
     testWidgets(
-        'displays SignalDetailsCard when state is RohdServiceLoaded '
-        'with selected module', (tester) async {
-      final treeModel = MockTreeModel();
-      final signalModelList = <SignalModel>[
-        MockSignalModel(),
-        MockSignalModel()
-      ];
-      when(() => rohdServiceCubit.state)
-          .thenReturn(RohdServiceLoaded(treeModel));
-      when(() => rohdServiceCubit.stream)
-          .thenAnswer((_) => Stream.value(RohdServiceLoaded(treeModel)));
-      when(() => treeModel.inputs).thenReturn(signalModelList);
-      when(() => treeModel.outputs).thenReturn(signalModelList);
-      when(() => treeModel.inouts).thenReturn(signalModelList);
-      when(() => treeSearchTermCubit.stream)
-          .thenAnswer((_) => Stream.value(null));
+      'displays SignalDetailsCard when state is RohdServiceLoaded '
+      'with selected module',
+      (tester) async {
+        final treeModel = MockTreeModel();
+        final signalModelList = <SignalModel>[
+          MockSignalModel(),
+          MockSignalModel()
+        ];
+        when(() => rohdServiceCubit.state)
+            .thenReturn(RohdServiceLoaded(treeModel));
+        when(() => rohdServiceCubit.stream)
+            .thenAnswer((_) => Stream.value(RohdServiceLoaded(treeModel)));
+        when(() => treeModel.inputs).thenReturn(signalModelList);
+        when(() => treeModel.outputs).thenReturn(signalModelList);
+        when(() => treeModel.inouts).thenReturn(signalModelList);
+        when(() => treeSearchTermCubit.stream)
+            .thenAnswer((_) => Stream.value(null));
 
         await tester.pumpWidget(
           MultiBlocProvider(
