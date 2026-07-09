@@ -25,6 +25,7 @@ class _BusSubsetForStructSlice extends BusSubset {
   /// [_BusSubsetForStructSlice] is created on every synthesis pass, its
   /// canonical instance name is memoized against the persistent destination
   /// signal and therefore does not drift run-to-run.
+  final Logic _destination;
 
   /// Creates a [BusSubset] for use in [SynthModuleDefinition]s during
   /// [LogicStructure] port slicing.
