@@ -842,6 +842,9 @@ class SynthModuleDefinition {
       // - assignments that are removable:
       //   - the driver has no driver OR the receiver has no receivers
 
+      final rangeDrivenSubmoduleInputMappingSignals =
+          _rangeDrivenSubmoduleInputMappingSignals();
+
       final reducedInternalSignals = <SynthLogic>[];
       for (final internalSignal in internalSignals) {
         // if it's cleared already, just skip it
@@ -864,6 +867,12 @@ class SynthModuleDefinition {
 
         if (internalSignal.isPort(module)) {
           // can't remove ports of this module
+          reducedInternalSignals.add(internalSignal);
+          continue;
+        }
+
+        if (rangeDrivenSubmoduleInputMappingSignals
+            .contains(internalSignal.resolved)) {
           reducedInternalSignals.add(internalSignal);
           continue;
         }
@@ -1052,12 +1061,15 @@ class SynthModuleDefinition {
   /// Updates all sub-module instantiations with information about which
   /// [SynthLogic] should be used for their ports.
   void _assignSubmodulePortMapping() {
+    final assignmentsByDestination =
+        _assignmentsBy(assignments, (assignment) => assignment.dst.resolved);
+
     for (final submoduleInstantiation in subModuleInstantiations) {
       for (final inputName in submoduleInstantiation.module.inputs.keys) {
         final orig = submoduleInstantiation.inputMapping[inputName]!;
         submoduleInstantiation.setInputMapping(
           inputName,
-          orig.replacement ?? orig,
+          _resolvedSubmoduleInputMapping(orig, assignmentsByDestination),
           replace: true,
         );
       }
@@ -1082,14 +1094,104 @@ class SynthModuleDefinition {
     }
   }
 
-  /// Picks names of signals and sub-modules.
-  ///
+  /// Resolves a submodule input mapping through any replacement and, when the
+  /// mapped signal is fully driven by a packed scalar range assignment, through
+  /// that driver as well.
+  SynthLogic _resolvedSubmoduleInputMapping(
+    SynthLogic mappedSignal,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+  ) {
+    final resolved = mappedSignal.replacement ?? mappedSignal;
+    return _fullWidthInputMappingSource(resolved, assignmentsByDestination) ??
+        resolved;
+  }
+
+  /// Returns the source of a single full-width scalar [RangeSynthAssignment]
+  /// into [mappedSignal], or `null` when the mapped signal must remain named.
+  SynthLogic? _fullWidthInputMappingSource(
+    SynthLogic mappedSignal,
+    Map<SynthLogic, List<SynthAssignment>> assignmentsByDestination,
+  ) {
+    final drivers = assignmentsByDestination[mappedSignal.resolved];
+    if (drivers == null || drivers.length != 1) {
+      return null;
+    }
+
+    final driver = drivers.single;
+    if (driver is! RangeSynthAssignment) {
+      return null;
+    }
+
+    final sourceRange = _assignmentSourceRange(driver);
+    final destinationRange = _assignmentDestinationRange(driver);
+    if (destinationRange.base != mappedSignal.resolved ||
+        destinationRange.lower != 0 ||
+        destinationRange.upper != mappedSignal.width - 1 ||
+        sourceRange.width != mappedSignal.width ||
+        sourceRange.lower != 0 ||
+        sourceRange.upper != sourceRange.base.width - 1 ||
+        sourceRange.base.isArray) {
+      return null;
+    }
+
+    return sourceRange.base;
+  }
+
+  /// Finds submodule input/inout mapping signals that are driven by scalar
+  /// range assignments and therefore must not be pruned before rendering.
+  Set<SynthLogic> _rangeDrivenSubmoduleInputMappingSignals() {
+    final submoduleInputMappingReferences = _submoduleInputMappingReferences();
+    final rangeDrivenSignals = <SynthLogic>{};
+
+    for (final assignment in assignments.whereType<RangeSynthAssignment>()) {
+      final sourceRange = _assignmentSourceRange(assignment);
+      if (sourceRange.base.isArray) {
+        continue;
+      }
+
+      final destinationRange = _assignmentDestinationRange(assignment);
+      final destinationBase = destinationRange.base.resolved;
+      if (submoduleInputMappingReferences.contains(destinationBase) ||
+          submoduleInputMappingReferences.contains(
+            _referenceBase(destinationBase),
+          )) {
+        rangeDrivenSignals.add(destinationBase);
+      }
+    }
+
+    return rangeDrivenSignals;
+  }
+
+  /// Collects active submodule input/inout mapping signals plus their reference
+  /// bases, so array elements and aggregate mappings compare consistently.
+  Set<SynthLogic> _submoduleInputMappingReferences() {
+    final mappedReferences = <SynthLogic>{};
+
+    for (final submoduleInstantiation in subModuleInstantiations) {
+      if (!submoduleInstantiation.needsInstantiation) {
+        continue;
+      }
+
+      final mappedSignals = [
+        ...submoduleInstantiation.inputMapping.values,
+        ...submoduleInstantiation.inOutMapping.values,
+      ];
+      for (final mappedSignal in mappedSignals) {
+        final resolved = mappedSignal.resolved;
+        mappedReferences
+          ..add(resolved)
+          ..add(_referenceBase(resolved));
+      }
+    }
+
+    return mappedReferences;
+  }
+
   /// Signal names are selected through [Namer.signalNameOfBest] or kept as
   /// literal constants. Submodule names are selected through
   /// [Namer.instanceNameOf]. All non-constant names share a single namespace
   /// managed by the module's [Namer].
   void _pickNames() {
-    // first ports get priority
     // Name allocation order matters -- earlier claims receive the unsuffixed
     // name when there are collisions. Weak-name claimants are intentionally
     // deferred so emitted objects receive 1st chance at the shortest basenames:
@@ -1109,7 +1211,6 @@ class SynthModuleDefinition {
     for (final inOut in inOuts) {
       inOut.pickName();
     }
-
     // Reserved submodule instances first (they assert their exact name).
     for (final submodule in subModuleInstantiations) {
       if (submodule.module.reserveName) {

@@ -1357,6 +1357,40 @@ class LogicInvChild extends Module {
   }
 }
 
+/// A child whose input source can be driven after construction.
+class LateSubsetInputChild extends Module {
+  LateSubsetInputChild({super.name = 'late_subset_input_child'}) {
+    addInput('data', Logic(width: 8), width: 8);
+    addOutput('out') <= input('data')[0];
+  }
+}
+
+/// Drives a child input source late using [Logic.assignSubset].
+class LateSubsetInputTop extends Module {
+  LateSubsetInputTop() : super(name: 'late_subset_input_top') {
+    final source = addInput('source', Logic(width: 8), width: 8);
+    final child = LateSubsetInputChild();
+
+    child.inputSource('data').assignSubset(source.elements);
+
+    addOutput('y') <= child.output('out');
+  }
+}
+
+/// Drives a child input source late from a slice of a wider source.
+class LateSlicedSubsetInputTop extends Module {
+  LateSlicedSubsetInputTop() : super(name: 'late_sliced_subset_input_top') {
+    final source = addInput('source', Logic(width: 16), width: 16);
+    final child = LateSubsetInputChild();
+
+    child.inputSource('data').assignSubset([
+      for (var index = 0; index < 8; index++) source[index + 4],
+    ]);
+
+    addOutput('y') <= child.output('out');
+  }
+}
+
 /// Non-net (regular [Logic]) driver-direction `assignSubset`: each external bit
 /// drives one bit of `sig` via `assignSubset`, and `sig` feeds a child input.
 /// The intermediate `*_subset` array must be forwarded straight into the child
@@ -3078,6 +3112,43 @@ void main() {
           }, {
             'y': (~pattern) & 0xF,
           })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assignSubset into late child input source maps instance input',
+        () async {
+      final mod = LateSubsetInputTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, contains('.data(source)'));
+
+      final vectors = [
+        for (final pattern in [0x00, 0x01, 0x02, 0xff])
+          Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('assignSubset slice into late child input source keeps mapping',
+        () async {
+      final mod = LateSlicedSubsetInputTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.data()')));
+      expect(topBody, contains('assign'));
+      expect(topBody, contains('source[11:4]'));
+
+      final vectors = [
+        for (final pattern in [0x0000, 0x0010, 0x00f0, 0xffff])
+          Vector({'source': pattern}, {'y': (pattern >> 4) & 1})
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
