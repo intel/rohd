@@ -94,6 +94,16 @@ nextVal &lt;= val.slice(5, 0); // = val.slice(-3, -8) &amp; output: 0b001110, wh
     return this;
   }
 
+  final constantFillValue = _constantFillValueOf(this);
+  if (constantFillValue != null) {
+    return Const(
+      LogicValue.filled(
+        (modifiedEndIndex - modifiedStartIndex).abs() + 1,
+        constantFillValue,
+      ),
+    );
+  }
+
   &#47;&#47; Create a new bus subset
   return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
 }</code></pre>
