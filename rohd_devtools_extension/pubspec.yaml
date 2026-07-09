@@ -21,8 +21,7 @@ dependencies:
   flutter_bloc: ^9.0.0
   flutter_simple_treeview: ^3.0.2
   logging: ^1.2.0
-  rohd:
-    path: ../../rohd
+  rohd: ^0.6.9
   rohd_devtools_widgets:
     path: packages/rohd_devtools_widgets
   vm_service: ^14.3.1
@@ -43,3 +42,6 @@ flutter:
     - assets/help/
     - assets/icons/
 
+dependency_overrides: 
+  rohd:
+    path: ../
