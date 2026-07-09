@@ -31,10 +31,13 @@ dependencies:
 dev_dependencies:
   bloc_lint: ^0.3.7
   build_runner: ^2.4.7
+  devtools_shared: ^13.0.1
+  extension_discovery: ^2.1.0
   flutter_lints: ^3.0.1
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.2
+  path: ^1.9.0
   
 flutter:
   uses-material-design: true
