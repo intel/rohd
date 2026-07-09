@@ -110,6 +110,24 @@ class ChainedPartialArrayRangeAssignment extends Module {
   }
 }
 
+/// Drives every leaf of a small multidimensional array from literal constants.
+/// Constant sources are not range bases, so range collapsing must not try to
+/// treat these as array-to-array range assignments.
+class ConstantLeafArrayAssignment extends Module {
+  ConstantLeafArrayAssignment({
+    List<int> values = const [0, 0, 0, 0],
+    super.name = 'constant_leaf_array_assignment',
+  }) {
+    final banana = LogicArray([2, 2], 1, name: 'banana');
+
+    for (var index = 0; index < banana.leafElements.length; index++) {
+      banana.leafElements[index] <= Const(values[index]);
+    }
+
+    addOutput('y', width: banana.width) <= banana.leafElements.rswizzle();
+  }
+}
+
 /// Partially assigns a range through two intermediate arrays.  The range
 /// composition pass should iterate until both intermediates are gone.
 class ThreeDeepChainedPartialArrayRangeAssignment extends Module {
@@ -2536,6 +2554,39 @@ void main() {
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
   });
+
+  for (final cfg in [
+    (name: 'all zero', values: [0, 0, 0, 0]),
+    (name: 'mixed', values: [0, 0, 1, 0]),
+  ]) {
+    test(
+        'constant leaf assignments into multidimensional array synthesize '
+        '(${cfg.name})', () async {
+      final mod = ConstantLeafArrayAssignment(
+        values: cfg.values,
+        name: 'constant_leaf_array_assignment_${cfg.name.replaceAll(' ', '_')}',
+      );
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      for (final row in [0, 1]) {
+        for (final column in [0, 1]) {
+          expect(topBody, contains('banana[$row][$column]'));
+        }
+      }
+      expect(topBody, contains("1'h0"));
+      if (cfg.values.contains(1)) {
+        expect(topBody, contains("1'h1"));
+      }
+
+      final vectors = [
+        Vector({}, {'y': LogicValue.ofString(cfg.values.reversed.join())})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
 
   group('array element inlining', () {
     /// Expected `~a` result for the [ArrayElementFanout] configurations, where
