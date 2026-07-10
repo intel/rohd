@@ -27,6 +27,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   void process() {
+    _inlinePackedRangesIntoSubmoduleInputs();
     _collapseAggregateConnections();
     _collapseWholeNetBuses();
     _forwardPassthroughElementsIntoInlineables();
@@ -34,6 +35,173 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     _collapseMarkedChainableModules();
     _replaceInOutConnectionInlineableModules();
   }
+
+  /// Inlines a fully covered packed bus into its sole submodule input.
+  ///
+  /// Each driver must cover the next contiguous destination range and supply
+  /// its entire source. Constant-backed intermediates are resolved to their
+  /// literal before the sources are joined into an inline concatenation.
+  ///
+  /// This remains SystemVerilog-specific because the replacement is an inline
+  /// [Swizzle] expression. Backend-neutral range discovery and composition are
+  /// handled by the base [SynthModuleDefinition] before [process] is called.
+  void _inlinePackedRangesIntoSubmoduleInputs() {
+    final inputUses = <SynthLogic,
+        List<
+            ({
+              SystemVerilogSynthSubModuleInstantiation instantiation,
+              String portName,
+            })>>{};
+    final allMappedSignals = <SynthLogic>{};
+    final outputOrInOutMappedSignals = <SynthLogic>{};
+    for (final instantiation in subModuleInstantiations) {
+      instantiation as SystemVerilogSynthSubModuleInstantiation;
+      for (final entry in instantiation.inputMapping.entries) {
+        if (instantiation.module is! InlineSystemVerilog) {
+          allMappedSignals.add(entry.value.resolved);
+        }
+        inputUses.putIfAbsent(entry.value.resolved, () => []).add((
+          instantiation: instantiation,
+          portName: entry.key,
+        ));
+      }
+      for (final signal in [
+        ...instantiation.outputMapping.values,
+        ...instantiation.inOutMapping.values,
+      ]) {
+        if (instantiation.module is! InlineSystemVerilog) {
+          allMappedSignals.add(signal.resolved);
+          outputOrInOutMappedSignals.add(signal.resolved);
+        }
+      }
+    }
+
+    final assignmentsByDestination = <SynthLogic, List<SynthAssignment>>{};
+    final assignmentsBySource = <SynthLogic, List<SynthAssignment>>{};
+    for (final assignment in assignments) {
+      assignmentsByDestination
+          .putIfAbsent(assignment.dst.resolved, () => [])
+          .add(assignment);
+      assignmentsBySource
+          .putIfAbsent(assignment.src.resolved, () => [])
+          .add(assignment);
+    }
+
+    final removedAssignments = <SynthAssignment>{};
+    final removedSignals = <SynthLogic>{};
+    for (final entry in inputUses.entries) {
+      final bus = entry.key;
+      final use = entry.value.singleOrNull;
+      if (use == null ||
+          bus.isArray ||
+          bus.isNet ||
+          bus.isConstant ||
+          bus.logics.any(
+            (logic) => logic is LogicStructure || logic.parentStructure != null,
+          ) ||
+          bus.isPort(module) ||
+          outputOrInOutMappedSignals.contains(bus) ||
+          !bus.isClearable ||
+          !internalSignals.contains(bus) ||
+          use.instantiation.module is InlineSystemVerilog ||
+          (use.instantiation.module is SystemVerilog &&
+              (use.instantiation.module as SystemVerilog)
+                  .expressionlessInputs
+                  .contains(use.portName))) {
+        continue;
+      }
+
+      final drivers = List<SynthAssignment>.of(
+        assignmentsByDestination[bus] ?? const [],
+      )..sort((a, b) =>
+          _packedDestinationLower(a).compareTo(_packedDestinationLower(b)));
+      if (drivers.isEmpty || (assignmentsBySource[bus]?.isNotEmpty ?? false)) {
+        continue;
+      }
+
+      var nextDestinationBit = 0;
+      var canInline = true;
+      final sources = <SynthLogic>[];
+      final constantDrivers = <SynthAssignment>{};
+      final constantIntermediates = <SynthLogic>{};
+      for (final driver in drivers) {
+        final lower = _packedDestinationLower(driver);
+        final upper = _packedDestinationUpper(driver);
+        if (driver is! PartialSynthAssignment ||
+            lower != nextDestinationBit ||
+            upper >= bus.width ||
+            (driver is RangeSynthAssignment &&
+                (driver.srcLowerIndex != 0 ||
+                    driver.srcUpperIndex != driver.src.width - 1))) {
+          canInline = false;
+          break;
+        }
+
+        var source = driver.src.resolved;
+        if (source.isArray || source.width != upper - lower + 1) {
+          canInline = false;
+          break;
+        }
+
+        final sourceDrivers =
+            assignmentsByDestination[source] ?? const <SynthAssignment>[];
+        final sourceConsumers =
+            assignmentsBySource[source] ?? const <SynthAssignment>[];
+        final removableConstantIntermediate = sourceDrivers.length == 1 &&
+            sourceConsumers.length == 1 &&
+            sourceConsumers.single == driver &&
+            sourceDrivers.single is! PartialSynthAssignment &&
+            sourceDrivers.single.src.resolved.isConstant &&
+            !source.hasPreservedName &&
+            !allMappedSignals.contains(source) &&
+            internalSignals.contains(source);
+        if (removableConstantIntermediate) {
+          constantDrivers.add(sourceDrivers.single);
+          constantIntermediates.add(source);
+          source = sourceDrivers.single.src.resolved;
+        }
+
+        sources.add(source);
+        nextDestinationBit = upper + 1;
+      }
+
+      if (!canInline || nextDestinationBit != bus.width) {
+        continue;
+      }
+
+      _addSwizzleConnect(bus, sources);
+      removedAssignments
+        ..addAll(drivers)
+        ..addAll(constantDrivers);
+      removedSignals
+        ..add(bus)
+        ..addAll(constantIntermediates);
+    }
+
+    if (removedAssignments.isNotEmpty) {
+      final retainedAssignments = [
+        for (final assignment in assignments)
+          if (!removedAssignments.contains(assignment)) assignment,
+      ];
+      assignments
+        ..clear()
+        ..addAll(retainedAssignments);
+      for (final signal in removedSignals) {
+        signal.clearDeclaration();
+        internalSignals.remove(signal);
+      }
+    }
+  }
+
+  /// Returns the lower destination bit selected by [assignment].
+  int _packedDestinationLower(SynthAssignment assignment) =>
+      assignment is PartialSynthAssignment ? assignment.dstLowerIndex : 0;
+
+  /// Returns the upper destination bit selected by [assignment].
+  int _packedDestinationUpper(SynthAssignment assignment) =>
+      assignment is PartialSynthAssignment
+          ? assignment.dstUpperIndex
+          : assignment.dst.width - 1;
 
   @override
   SynthSubModuleInstantiation createSubModuleInstantiation(Module m) =>
@@ -120,6 +288,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // sources that are tied through a pass-through net bus rather than via a
       // direct assignment (see [_traceNetSubsetSource]).
       final netSubsets = _netSubsetLookups();
+      final logicSubsets = _logicSubsetLookups();
 
       // Count how many times each array [SynthLogic] is used "as a whole",
       // along with where (a submodule port mapping is the only use we can
@@ -199,6 +368,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         }
       }
 
+      final removedAssignments = <SynthAssignment>{};
       for (final aggEntry in aggregatePortUse.entries) {
         final agg = aggEntry.key;
         final use = aggEntry.value;
@@ -238,6 +408,34 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
             .map(getSynthLogic)
             .map((e) => e?.resolved)
             .toList();
+
+        final aggregateLogic = agg.logics.singleOrNull;
+        final isPackedBitArray = aggregateLogic is LogicArray &&
+            aggregateLogic.dimensions.length == 1 &&
+            aggregateLogic.elementWidth == 1 &&
+            aggregateLogic.numUnpackedDimensions == 0;
+        final packedSubsetSource = isPackedBitArray
+            ? _packedLogicSubsetSource(
+                elementLogics,
+                logicSubsets,
+                expectedWidth: agg.width,
+              )
+            : null;
+        if (packedSubsetSource != null &&
+            use.instantiation.inputMapping.containsKey(use.portName)) {
+          use.instantiation.setInputMapping(
+            use.portName,
+            packedSubsetSource.source,
+            replace: true,
+          );
+          for (final subset in packedSubsetSource.subsets) {
+            subset.clearInstantiation();
+          }
+          agg.clearDeclaration();
+          internalSignals.remove(agg);
+          changed = true;
+          continue;
+        }
 
         final elementSources = <SynthLogic>[];
         var allElementsSingleSourced = true;
@@ -302,7 +500,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // A traced pass-through bus may only be dropped if it is fully consumed
         // by this collapse: every net [BusSubset] referencing it must have been
-        // traced, and it must be a clearable/renameable internal non-port.
+        // traced, and it must be a clearable internal non-port.
         if (!_tracedBusesFullyConsumed(
             tracedBuses, tracedSubsets, netSubsets)) {
           continue;
@@ -337,10 +535,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // Remove the now-inlined element assignments and clear the aggregate
         // declaration.
-        final elementSet = elementLogics.nonNulls.toSet();
-        assignments.removeWhere((assignment) =>
-            elementSet.contains(assignment.src.resolved) ||
-            elementSet.contains(assignment.dst.resolved));
+        for (final element in elementLogics.nonNulls) {
+          removedAssignments.addAll(
+            elementAssignments[element] ?? const <SynthAssignment>[],
+          );
+        }
         agg.clearDeclaration();
         internalSignals.remove(agg);
 
@@ -356,7 +555,72 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         changed = true;
       }
+      assignments.removeWhere(removedAssignments.contains);
     }
+  }
+
+  /// Indexes non-net [BusSubset] views by their resolved subset output.
+  Map<SynthLogic, List<_LogicSubsetView>> _logicSubsetLookups() {
+    final bySubset = <SynthLogic, List<_LogicSubsetView>>{};
+    for (final instantiation in subModuleInstantiations) {
+      instantiation as SystemVerilogSynthSubModuleInstantiation;
+      final subsetModule = instantiation.module;
+      if (subsetModule is! BusSubset || subsetModule.original.isNet) {
+        continue;
+      }
+      final original =
+          instantiation.inputMapping[subsetModule.original.name]?.resolved;
+      final subset =
+          instantiation.outputMapping[subsetModule.subset.name]?.resolved;
+      if (original == null || subset == null) {
+        continue;
+      }
+      final view = (
+        inst: instantiation,
+        original: original,
+        subset: subset,
+        start: subsetModule.startIndex,
+        end: subsetModule.endIndex,
+      );
+      bySubset.putIfAbsent(subset, () => []).add(view);
+    }
+    return bySubset;
+  }
+
+  /// Reconstructs one fully covered packed source from ordered element subset
+  /// mappings, returning the source and helper instantiations to clear.
+  ({
+    SynthLogic source,
+    Set<SystemVerilogSynthSubModuleInstantiation> subsets,
+  })? _packedLogicSubsetSource(
+    List<SynthLogic?> elements,
+    Map<SynthLogic, List<_LogicSubsetView>> subsetsByOutput, {
+    required int expectedWidth,
+  }) {
+    SynthLogic? source;
+    var nextBit = 0;
+    final subsets = <SystemVerilogSynthSubModuleInstantiation>{};
+    for (final element in elements) {
+      if (element == null) {
+        return null;
+      }
+      final view = subsetsByOutput[element]?.singleOrNull;
+      if (view == null ||
+          view.start != nextBit ||
+          view.end != nextBit + element.width - 1 ||
+          (source != null && source != view.original)) {
+        return null;
+      }
+      source ??= view.original;
+      subsets.add(view.inst);
+      nextBit += element.width;
+    }
+    if (source == null ||
+        source.width != expectedWidth ||
+        nextBit != expectedWidth) {
+      return null;
+    }
+    return (source: source, subsets: subsets);
   }
 
   /// Builds resolved lookups over every net [BusSubset] instantiation: a list
@@ -436,9 +700,9 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     final bit = elementView.start;
     final bus = elementView.original;
 
-    // The bus must be a clearable/renameable internal non-port pass-through.
+    // The bus must be a clearable internal non-port pass-through.
     if (bus.declarationCleared ||
-        !bus.isClearableOrRenameable ||
+        !bus.isClearable ||
         bus.isPort(module) ||
         !internalSignals.contains(bus)) {
       return null;
@@ -593,11 +857,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           continue;
         }
 
-        // The bus must be a clearable/renameable internal non-port net.
+        // The bus must be a clearable internal non-port net.
         if (bus.declarationCleared ||
             !bus.isNet ||
             bus.isArray ||
-            !bus.isClearableOrRenameable ||
+            !bus.isClearable ||
             bus.isPort(module) ||
             !internalSignals.contains(bus)) {
           continue;
@@ -759,10 +1023,12 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
   bool _signalsShareReferenceBase(SynthLogic a, SynthLogic b) =>
       a == b || _referenceBase(a) == b || _referenceBase(b) == a;
 
-  SynthLogic _referenceBase(SynthLogic signal) =>
-      signal is SynthLogicArrayElement
-          ? signal.parentArray.resolved
-          : signal.resolved;
+  /// Returns the packed object referenced by [signal] for usage comparisons.
+  SynthLogic _referenceBase(SynthLogic signal) => switch (signal) {
+        SynthLogicArrayElement() => signal.parentArray.resolved,
+        SynthLogicPackedBitReference() => signal.packedBase.resolved,
+        _ => signal.resolved,
+      };
 
   /// Forwards the per-element sources of a pass-through [LogicArray] directly
   /// into the single inlineable submodule (e.g. a [Swizzle]) that consumes
@@ -928,6 +1194,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       // would stay declared and its remaining (e.g. differently-driven or
       // undriven `x`/`z`) elements could change behavior.
       final droppedArrays = <SynthLogic>[];
+      final removedAssignments = <SynthAssignment>{};
       candidatesByArray.forEach((parentArray, arrayCandidates) {
         if (parentArray.declarationCleared ||
             !parentArray.isClearable ||
@@ -951,7 +1218,6 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // Rewire each element's consuming port straight to the element's
         // source, and remove the now-redundant element assignment.
-        final removedAssignments = <SynthAssignment>{};
         for (final element in arrayCandidates) {
           final read = inlineablePortReads[element]!.single;
           final assignment = elementAssignments[element]!.single;
@@ -971,11 +1237,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           (element as SynthLogicArrayElement).clearDeclaration();
         }
 
-        assignments.removeWhere(removedAssignments.contains);
         droppedArrays.add(parentArray);
         changed = true;
       });
 
+      assignments.removeWhere(removedAssignments.contains);
       _dropEmptiedArrays(droppedArrays);
     }
   }
@@ -1167,6 +1433,16 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 /// and `subset` signals and the (non-reversed) `[start, end]` inclusive bit
 /// range of the slice on the original bus.
 typedef _NetSubsetView = ({
+  SystemVerilogSynthSubModuleInstantiation inst,
+  SynthLogic original,
+  SynthLogic subset,
+  int start,
+  int end,
+});
+
+/// A resolved view of a non-net [BusSubset] used to reconstruct a packed bus
+/// from an array input's element mappings.
+typedef _LogicSubsetView = ({
   SystemVerilogSynthSubModuleInstantiation inst,
   SynthLogic original,
   SynthLogic subset,

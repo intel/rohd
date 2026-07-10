@@ -150,6 +150,36 @@ class ThreeDeepChainedPartialArrayRangeAssignment extends Module {
   }
 }
 
+/// Passes a partial packed-array range through many mergeable intermediates.
+class LongChainedPartialArrayRangeAssignment extends Module {
+  /// The number of intermediate range stages.
+  final int length;
+
+  LongChainedPartialArrayRangeAssignment({this.length = 256})
+      : super(name: 'long_chained_partial_array_range_assignment') {
+    final src = addInputArray('src', LogicArray([6], 1), dimensions: [6]);
+    var previous = src;
+    for (var stage = 0; stage < length; stage++) {
+      final intermediate = LogicArray(
+        [6],
+        1,
+        name: 'intermediate$stage',
+        naming: Naming.mergeable,
+      );
+      for (var index = 2; index <= 4; index++) {
+        intermediate.elements[index] <= previous.elements[index];
+      }
+      previous = intermediate;
+    }
+
+    final dst = LogicArray([6], 1, name: 'dst');
+    for (var index = 2; index <= 4; index++) {
+      dst.elements[index] <= previous.elements[index];
+    }
+    addOutput('y', width: 6) <= dst.elements.rswizzle();
+  }
+}
+
 /// Partially assigns an offset source range through an intermediate, then reads
 /// only a subrange of the intermediate.
 class ChainedSubrangeArrayRangeAssignment extends Module {
@@ -274,6 +304,239 @@ class SparseBusRunsToAssignSubsetRangeAssignment extends Module {
     }
 
     addOutput('y', width: 64) <= dst;
+  }
+}
+
+/// Builds a packed bus from a live lower range and a constant-backed upper
+/// range, then passes the whole bus to a child input.
+class TiedRangeToAssignSubsetRangeAssignment extends Module {
+  TiedRangeToAssignSubsetRangeAssignment({
+    Naming tieNaming = Naming.mergeable,
+    Naming busNaming = Naming.mergeable,
+  }) : super(name: 'tied_range_to_assign_subset_range_assignment') {
+    final source = addInput('source', Logic(width: 24), width: 24);
+    final tie = Logic(width: 8, name: 'tie', naming: tieNaming);
+    final bus = Logic(width: 32, name: 'bus', naming: busNaming);
+
+    tie <= Const(0, width: 8);
+    bus
+      ..assignSubset(source.elements)
+      ..assignSubset(tie.elements, start: 24);
+
+    final consumer = WholeBusChild(bus, n: 32);
+    addOutput('y', width: 32) <= consumer.output('mirror');
+  }
+}
+
+/// Produces the live range for [TiedSiblingRangeToAssignSubsetAssignment].
+class TiedRangeProducer extends Module {
+  TiedRangeProducer() : super(name: 'tied_range_producer') {
+    final seed = addInput('seed', Logic(width: 24), width: 24);
+    addOutput('result', width: 24) <= seed;
+  }
+}
+
+/// Builds a packed bus from a sibling output and a constant-backed upper
+/// range, then passes the whole bus to another sibling input.
+class TiedSiblingRangeToAssignSubsetAssignment extends Module {
+  TiedSiblingRangeToAssignSubsetAssignment()
+      : super(name: 'tied_sibling_range_to_assign_subset_assignment') {
+    final seed = addInput('seed', Logic(width: 24), width: 24);
+    final tie = Logic(
+      width: 8,
+      name: 'tie',
+      naming: Naming.mergeable,
+    );
+    final bus = Logic(
+      width: 32,
+      name: 'bus',
+      naming: Naming.mergeable,
+    );
+
+    final producer = TiedRangeProducer();
+    producer.inputSource('seed') <= seed;
+
+    tie <= Const(0, width: 8);
+    bus
+      ..assignSubset(producer.output('result').elements)
+      ..assignSubset(tie.elements, start: 24);
+
+    final consumer = WholeBusChild(bus, n: 32);
+    addOutput('y', width: 32) <= consumer.output('mirror');
+  }
+}
+
+/// Late-drives a child input source from a sibling output and a constant-backed
+/// upper range.
+class TiedSiblingRangeToLateInputSource extends Module {
+  TiedSiblingRangeToLateInputSource()
+      : super(name: 'tied_sibling_range_to_late_input_source') {
+    final seed = addInput('seed', Logic(width: 24), width: 24);
+    final tie = Const(0, width: 8).named(
+      'tie',
+      naming: Naming.mergeable,
+    );
+    final consumer = WholeBusChild(Logic(width: 32), n: 32);
+    final producer = TiedRangeProducer();
+
+    producer.inputSource('seed') <= seed;
+    consumer.inputSource('data')
+      ..assignSubset(producer.output('result').elements)
+      ..assignSubset(tie.elements, start: 24);
+
+    addOutput('y', width: 32) <= consumer.output('mirror');
+  }
+}
+
+/// Produces independently mapped scalar outputs for
+/// [ScalarSiblingOutputsWithNamedTieTop].
+class ScalarRangeProducer extends Module {
+  ScalarRangeProducer(this.liveWidth) : super(name: 'scalar_range_producer') {
+    final seed = addInput('seed', Logic(width: liveWidth), width: liveWidth);
+    for (var index = 0; index < liveWidth; index++) {
+      addOutput('bit$index') <= seed[index];
+    }
+  }
+
+  final int liveWidth;
+}
+
+/// Late-drives a child input from scalar sibling outputs followed by a named
+/// constant tie-off.
+class ScalarSiblingOutputsWithNamedTieTop extends Module {
+  ScalarSiblingOutputsWithNamedTieTop()
+      : super(name: 'scalar_sibling_outputs_with_named_tie_top') {
+    final seed = addInput('seed', Logic(width: liveWidth), width: liveWidth);
+    final tie = Const(0, width: tieWidth).named(
+      'tie',
+      naming: Naming.mergeable,
+    );
+    final consumer = WholeBusChild(Logic(width: busWidth), n: busWidth);
+    final producer = ScalarRangeProducer(liveWidth);
+
+    producer.inputSource('seed') <= seed;
+    for (var index = 0; index < liveWidth; index++) {
+      consumer.inputSource('data').assignSubset(
+        [producer.output('bit$index')],
+        start: index,
+      );
+    }
+    consumer.inputSource('data').assignSubset(tie.elements, start: liveWidth);
+
+    addOutput('y', width: busWidth) <= consumer.output('mirror');
+  }
+
+  static const busWidth = 8;
+  static const tieWidth = 3;
+  static const liveWidth = busWidth - tieWidth;
+}
+
+/// Builds a packed bus with a named constant range between live ranges and a
+/// scalar sibling output mapped to the top bit.
+class InteriorNamedTieWithMappedOutputTop extends Module {
+  InteriorNamedTieWithMappedOutputTop()
+      : super(name: 'interior_named_tie_with_mapped_output_top') {
+    final low = addInput('low', Logic(width: 4), width: 4);
+    final high = addInput('high', Logic(width: 8), width: 8);
+    final seed = addInput('seed', Logic());
+    final tie = Const(0, width: 3).named(
+      'tie',
+      naming: Naming.mergeable,
+    );
+    final bus = Logic(width: 16, name: 'bus');
+    final producer = SiblingBitProducer();
+
+    producer.inputSource('seed') <= seed;
+    final aliasedResult = producer.output('result')[0];
+    bus
+      ..assignSubset(low.elements)
+      ..assignSubset(tie.elements, start: 4)
+      ..assignSubset(high.elements, start: 7)
+      ..assignSubset([aliasedResult], start: 15);
+
+    final consumer = WholeBusChild(bus, n: 16);
+    final secondConsumer = WholeBusChild(bus, n: 16);
+    addOutput('y', width: 16) <= consumer.output('mirror');
+    addOutput('z', width: 16) <= secondConsumer.output('mirror');
+  }
+}
+
+/// Mixes repeated nonzero constant ranges with an interior sibling output.
+/// The child can be connected through an explicit bus or late-driven directly,
+/// and the sibling output can optionally have an additional consumer.
+class RepeatedConstantsAndSiblingOutputTop extends Module {
+  RepeatedConstantsAndSiblingOutputTop({
+    required bool lateInput,
+    required bool fanout,
+  }) : super(name: 'repeated_constants_and_sibling_output_top') {
+    final source = addInput('source', Logic(width: 2), width: 2);
+    final seed = addInput('seed', Logic());
+    final tie2 = Const(2, width: 2).named(
+      'tie2',
+      naming: Naming.mergeable,
+    );
+    final tie3 = Const(5, width: 3).named(
+      'tie3',
+      naming: Naming.mergeable,
+    );
+    final producer = SiblingBitProducer();
+    producer.inputSource('seed') <= seed;
+    final result = producer.output('result');
+
+    late final Logic target;
+    late final WholeBusChild consumer;
+    if (lateInput) {
+      consumer = WholeBusChild(Logic(width: 12), n: 12);
+      target = consumer.inputSource('data');
+    } else {
+      target = Logic(
+        width: 12,
+        name: 'bus',
+        naming: Naming.mergeable,
+      );
+      consumer = WholeBusChild(target, n: 12);
+    }
+
+    target
+      ..assignSubset(tie2.elements)
+      ..assignSubset(source.elements, start: 2)
+      ..assignSubset([result], start: 4)
+      ..assignSubset(tie3.elements, start: 5)
+      ..assignSubset(source.elements, start: 8)
+      ..assignSubset(tie2.elements, start: 10);
+
+    addOutput('y', width: 12) <= consumer.output('mirror');
+    if (fanout) {
+      addOutput('fanout') <= result;
+    }
+  }
+}
+
+/// Mixes unknown and floating constant ranges with live bits in one packed
+/// child input.
+class InvalidConstantsToAssignSubsetTop extends Module {
+  InvalidConstantsToAssignSubsetTop()
+      : super(name: 'invalid_constants_to_assign_subset_top') {
+    final source = addInput('source', Logic(width: 2), width: 2);
+    final unknown = Const(LogicValue.filled(2, LogicValue.x)).named(
+      'unknown',
+      naming: Naming.mergeable,
+    );
+    final floating = Const(LogicValue.filled(2, LogicValue.z)).named(
+      'floating',
+      naming: Naming.mergeable,
+    );
+    final bus = Logic(
+      width: 6,
+      name: 'bus',
+      naming: Naming.mergeable,
+    )
+      ..assignSubset(source.elements)
+      ..assignSubset(unknown.elements, start: 2)
+      ..assignSubset(floating.elements, start: 4);
+
+    final consumer = WholeBusChild(bus, n: 6);
+    addOutput('y', width: 6) <= consumer.output('mirror');
   }
 }
 
@@ -669,6 +932,29 @@ class ArrayPortInvChild extends Module {
       : super(name: 'arr_inv_child') {
     a = addInputArray('a', a, dimensions: [n], elementWidth: elementWidth);
     addOutput('y', width: n * elementWidth) <= ~a.elements.rswizzle();
+  }
+}
+
+/// Observes the only element of a packed array input.
+class SingleElementArrayConsumer extends Module {
+  SingleElementArrayConsumer() : super(name: 'single_element_array_consumer') {
+    final data = addInputArray(
+      'data',
+      LogicArray([1], 8),
+      dimensions: [1],
+      elementWidth: 8,
+    );
+    addOutput('observed', width: 8) <= data.elements.single;
+  }
+}
+
+/// Late-drives a one-element packed array child input with a flat constant.
+class ConstantToSingleElementArrayInputTop extends Module {
+  ConstantToSingleElementArrayInputTop({int value = 0})
+      : super(name: 'constant_to_single_element_array_input_top') {
+    final consumer = SingleElementArrayConsumer();
+    consumer.inputSource('data') <= Const(value, width: 8);
+    addOutput('y', width: 8) <= consumer.output('observed');
   }
 }
 
@@ -1267,9 +1553,14 @@ class CollapseConfig {
   bool get fullyCollapses =>
       collapsibleBus && !partial && !multiUse && !toArray;
 
-  /// The `*_subset` pass-through arrays should be forwarded away whenever the
-  /// whole connection can collapse (independent of bus naming).
-  bool get noSubset => !partial && !multiUse;
+  /// Whether generated `*_subset` pass-through arrays can be forwarded away.
+  ///
+  /// Driver-direction forwarding traces through and removes the intermediate
+  /// bus, so a preserved bus also preserves those subset arrays.
+  bool get noSubset =>
+      !partial &&
+      !multiUse &&
+      (mechanism != TieMechanism.subsetDriver || collapsibleBus);
 
   String get description => [
         if (isNet) 'net' else 'logic',
@@ -1465,6 +1756,199 @@ class SiblingFullOutputToInputSubsetTop extends Module {
         );
 
     addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Produces one bit used by [SiblingOutputWithRangeAssignmentsTop].
+class SiblingBitProducer extends Module {
+  SiblingBitProducer() : super(name: 'sibling_bit_producer') {
+    final seed = addInput('seed', Logic());
+    addOutput('result') <= seed;
+  }
+}
+
+/// Observes the upper bit of a whole input bus.
+class SiblingUpperBitConsumer extends Module {
+  SiblingUpperBitConsumer() : super(name: 'sibling_upper_bit_consumer') {
+    final data = addInput('data', Logic(width: 8), width: 8);
+    addOutput('observed') <= data[7];
+  }
+}
+
+/// Builds a bus from a contiguous input range and one sibling output, then
+/// passes the whole bus to another sibling input.
+class SiblingOutputWithRangeAssignmentsTop extends Module {
+  SiblingOutputWithRangeAssignmentsTop()
+      : super(name: 'sibling_output_with_range_assignments_top') {
+    final source = addInput('source', Logic(width: 7), width: 7);
+    final seed = addInput('seed', Logic());
+    final bus = Logic(width: 8, name: 'bus');
+
+    final producer = SiblingBitProducer();
+    producer.inputSource('seed') <= seed;
+
+    bus
+      ..assignSubset(source.elements)
+      ..assignSubset([producer.output('result')], start: 7);
+
+    final consumer = SiblingUpperBitConsumer();
+    consumer.inputSource('data') <= bus;
+
+    addOutput('y') <= consumer.output('observed');
+  }
+}
+
+/// Mirrors a whole input bus for mixed-source connection tests.
+class SiblingBusConsumer extends Module {
+  SiblingBusConsumer() : super(name: 'sibling_bus_consumer') {
+    final data = addInput('data', Logic(width: 8), width: 8);
+    addOutput('observed', width: 8) <= data;
+  }
+}
+
+/// Inserts one sibling output at [outputIndex], with input ranges on either
+/// side where space permits.
+class IndexedSiblingOutputWithRangeAssignmentsTop extends Module {
+  IndexedSiblingOutputWithRangeAssignmentsTop(this.outputIndex)
+      : assert(
+          outputIndex >= 0 && outputIndex < 8,
+          'Output index must fit within the eight-bit bus.',
+        ),
+        super(name: 'indexed_sibling_output_with_range_assignments_top') {
+    final source = addInput('source', Logic(width: 7), width: 7);
+    final seed = addInput('seed', Logic());
+    final bus = Logic(width: 8, name: 'bus');
+
+    final producer = SiblingBitProducer();
+    producer.inputSource('seed') <= seed;
+
+    if (outputIndex > 0) {
+      bus.assignSubset(source.elements.sublist(0, outputIndex));
+    }
+    bus.assignSubset([producer.output('result')], start: outputIndex);
+    if (outputIndex < 7) {
+      bus.assignSubset(
+        source.elements.sublist(outputIndex),
+        start: outputIndex + 1,
+      );
+    }
+
+    final consumer = SiblingBusConsumer();
+    consumer.inputSource('data') <= bus;
+    addOutput('y', width: 8) <= consumer.output('observed');
+  }
+
+  final int outputIndex;
+}
+
+/// Inserts two independent sibling outputs among packed input ranges.
+class MultipleSiblingOutputsWithRangeAssignmentsTop extends Module {
+  MultipleSiblingOutputsWithRangeAssignmentsTop()
+      : super(name: 'multiple_sibling_outputs_with_range_assignments_top') {
+    final sourceLow = addInput('sourceLow', Logic(width: 2), width: 2);
+    final sourceHigh = addInput('sourceHigh', Logic(width: 4), width: 4);
+    final seed0 = addInput('seed0', Logic());
+    final seed1 = addInput('seed1', Logic());
+    final bus = Logic(
+      width: 8,
+      name: 'bus',
+      naming: Naming.mergeable,
+    );
+
+    final producer0 = SiblingBitProducer();
+    final producer1 = SiblingBitProducer();
+    producer0.inputSource('seed') <= seed0;
+    producer1.inputSource('seed') <= seed1;
+
+    bus
+      ..assignSubset(sourceLow.elements)
+      ..assignSubset([producer0.output('result')], start: 2)
+      ..assignSubset(sourceHigh.elements, start: 3)
+      ..assignSubset([producer1.output('result')], start: 7);
+
+    final consumer = SiblingBusConsumer();
+    consumer.inputSource('data') <= bus;
+    addOutput('y', width: 8) <= consumer.output('observed');
+  }
+}
+
+/// Uses one sibling output both inside a packed bus and as a separate output.
+class FanoutSiblingOutputWithRangeAssignmentsTop extends Module {
+  FanoutSiblingOutputWithRangeAssignmentsTop()
+      : super(name: 'fanout_sibling_output_with_range_assignments_top') {
+    final source = addInput('source', Logic(width: 7), width: 7);
+    final seed = addInput('seed', Logic());
+    final bus = Logic(
+      width: 8,
+      name: 'bus',
+      naming: Naming.mergeable,
+    );
+
+    final producer = SiblingBitProducer();
+    producer.inputSource('seed') <= seed;
+    final result = producer.output('result');
+
+    bus
+      ..assignSubset(source.elements)
+      ..assignSubset([result], start: 7);
+
+    final consumer = SiblingBusConsumer();
+    consumer.inputSource('data') <= bus;
+    addOutput('y', width: 8) <= consumer.output('observed');
+    addOutput('fanout') <= result;
+  }
+}
+
+/// Inserts a four-bit sibling output between two packed input ranges.
+class WideSiblingOutputWithRangeAssignmentsTop extends Module {
+  WideSiblingOutputWithRangeAssignmentsTop()
+      : super(name: 'wide_sibling_output_with_range_assignments_top') {
+    final source = addInput('source', Logic(width: 4), width: 4);
+    final seed = addInput('seed', Logic(width: 4), width: 4);
+    final bus = Logic(width: 8, name: 'bus');
+
+    final producer = SiblingSubsetProducer();
+    producer.inputSource('seed') <= seed;
+
+    bus
+      ..assignSubset(source.elements.sublist(0, 2))
+      ..assignSubset(producer.output('result').elements, start: 2)
+      ..assignSubset(source.elements.sublist(2), start: 6);
+
+    final consumer = SiblingBusConsumer();
+    consumer.inputSource('data') <= bus;
+    addOutput('y', width: 8) <= consumer.output('observed');
+  }
+}
+
+/// Places a wide sibling output between repeated nonzero constant ranges and
+/// also exposes that output separately.
+class WideSiblingOutputWithConstantsAndFanoutTop extends Module {
+  WideSiblingOutputWithConstantsAndFanoutTop()
+      : super(name: 'wide_sibling_output_with_constants_and_fanout_top') {
+    final seed = addInput('seed', Logic(width: 4), width: 4);
+    final tie = Const(2, width: 2).named(
+      'tie',
+      naming: Naming.mergeable,
+    );
+    final bus = Logic(
+      width: 8,
+      name: 'bus',
+      naming: Naming.mergeable,
+    );
+    final producer = SiblingSubsetProducer();
+    producer.inputSource('seed') <= seed;
+    final result = producer.output('result');
+
+    bus
+      ..assignSubset(tie.elements)
+      ..assignSubset(result.elements, start: 2)
+      ..assignSubset(tie.elements, start: 6);
+
+    final consumer = SiblingBusConsumer();
+    consumer.inputSource('data') <= bus;
+    addOutput('y', width: 8) <= consumer.output('observed');
+    addOutput('fanout', width: 4) <= result;
   }
 }
 
@@ -1888,6 +2372,27 @@ void main() {
     SimCompare.checkIverilogVector(mod, vectors);
   });
 
+  test('long chained range assignments collapse without global rescans',
+      () async {
+    final mod = LongChainedPartialArrayRangeAssignment();
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+
+    expect(topBody, contains('assign dst[4:2] = src[4:2];'));
+    expect(topBody, isNot(contains('intermediate')));
+
+    final vectors = [
+      for (final pattern in [0x00, 0x15, 0x2A, 0x3F])
+        Vector({
+          'src': pattern
+        }, {
+          'y': _expectedPartialArrayRangeValue(pattern, reversed: false),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
   test('multi-use chained range intermediate stays expanded', () async {
     final mod = ChainedPartialArrayRangeAssignment(exposeIntermediate: true);
     await mod.build();
@@ -2132,6 +2637,234 @@ void main() {
           'srcB': pattern >> 4,
         }, {
           'y': expectedValue(pattern, pattern >> 4),
+        })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('constant-backed upper range remains tied off after collapse', () async {
+    final mod = TiedRangeToAssignSubsetRangeAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('.data(({'));
+    expect(topBody, contains("8'h0"));
+    expect(topBody, contains('source'));
+    expect(topBody, isNot(contains('logic [31:0] bus;')));
+    expect(topBody, isNot(contains('logic [7:0] tie;')));
+    expect(topBody, isNot(contains(RegExp(r'\bbus_subset\b'))));
+
+    final vectors = [
+      for (final pattern in [0x000000, 0x123456, 0xabcdef, 0xffffff])
+        Vector({'source': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  for (final tieNaming in [Naming.renameable, Naming.reserved]) {
+    test('${tieNaming.name} constant-backed range signal is preserved',
+        () async {
+      final mod = TiedRangeToAssignSubsetRangeAssignment(
+        tieNaming: tieNaming,
+      );
+      await mod.build();
+      final topBody = _topModuleBody(mod.generateSynth());
+
+      expect(topBody, contains('logic [7:0] tie;'));
+      expect(topBody, contains("assign tie = 8'h0;"));
+
+      final vectors = [
+        for (final pattern in [0x000000, 0x123456, 0xffffff])
+          Vector({'source': pattern}, {'y': pattern})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+  }
+
+  test('renameable packed range destination is preserved', () async {
+    final mod = TiedRangeToAssignSubsetRangeAssignment(
+      busNaming: Naming.renameable,
+    );
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+
+    expect(topBody, contains('logic [31:0] bus;'));
+    expect(topBody, contains('.data(bus)'));
+
+    final vectors = [
+      for (final pattern in [0x000000, 0x123456, 0xffffff])
+        Vector({'source': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('constant-backed range concatenates with sibling output', () async {
+    final mod = TiedSiblingRangeToAssignSubsetAssignment();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('.data(({'));
+    expect(topBody, contains("8'h0"));
+    expect(topBody, isNot(contains('.result()')));
+    expect(topBody, isNot(contains('logic [31:0] bus;')));
+    expect(topBody, isNot(contains('logic [7:0] tie;')));
+    expect(topBody, isNot(contains(RegExp(r'\bbus_subset\b'))));
+
+    final vectors = [
+      for (final pattern in [0x000000, 0x123456, 0xabcdef, 0xffffff])
+        Vector({'seed': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('constant-backed range concatenates into late child input', () async {
+    final mod = TiedSiblingRangeToLateInputSource();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('.data(({'));
+    expect(topBody, contains("8'h0"));
+    expect(topBody, isNot(contains('.result()')));
+    expect(topBody, isNot(contains('logic [7:0] tie;')));
+    expect(topBody, isNot(contains(RegExp(r'\bdata_subset\b'))));
+
+    final vectors = [
+      for (final pattern in [0x000000, 0x123456, 0xabcdef, 0xffffff])
+        Vector({'seed': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('named constant subsets survive scalar output collapse', () async {
+    final mod = ScalarSiblingOutputsWithNamedTieTop();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains('.data(({'));
+    expect(topBody, contains(RegExp(r"\d+'h0")));
+    expect(topBody, isNot(contains('.bit0()')));
+    expect(topBody, isNot(contains('.bit4()')));
+    expect(topBody, isNot(contains('logic [7:0] data;')));
+    expect(topBody, isNot(contains(RegExp(r'\bdata_subset\b'))));
+
+    const liveWidth = ScalarSiblingOutputsWithNamedTieTop.liveWidth;
+    final maxValue = (BigInt.one << liveWidth) - BigInt.one;
+    final vectors = [
+      for (final pattern in [
+        BigInt.zero,
+        BigInt.one,
+        BigInt.from(0x5a5a5a) & maxValue,
+        maxValue,
+      ])
+        Vector({'seed': pattern}, {'y': pattern})
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  test('interior named constant range survives mapped sibling output',
+      () async {
+    final mod = InteriorNamedTieWithMappedOutputTop();
+    await mod.build();
+    final sv = mod.generateSynth();
+    final topBody = _topModuleBody(sv);
+
+    expect(topBody, contains("assign bus[6:4] = 3'h0;"));
+    expect(topBody, contains('.result(bus[15])'));
+    expect(topBody, isNot(contains('logic [2:0] tie;')));
+    expect(topBody, isNot(contains(RegExp(r'\bbus_subset\b'))));
+
+    final vectors = [
+      for (final low in [0x0, 0x5, 0xf])
+        for (final high in [0x00, 0x5a, 0xff])
+          for (final seed in [0, 1])
+            Vector({
+              'low': low,
+              'high': high,
+              'seed': seed,
+            }, {
+              'y': low | (high << 7) | (seed << 15),
+              'z': low | (high << 7) | (seed << 15),
+            })
+    ];
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
+  for (final lateInput in [false, true]) {
+    for (final fanout in [false, true]) {
+      test(
+          'repeated constants survive ${lateInput ? 'late input' : 'bus'} '
+          'with sibling output${fanout ? ' fanout' : ''}', () async {
+        final mod = RepeatedConstantsAndSiblingOutputTop(
+          lateInput: lateInput,
+          fanout: fanout,
+        );
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        expect(topBody, contains('.data(({'));
+        expect(topBody, contains("2'h2"));
+        expect(topBody, contains("3'h5"));
+        expect(topBody, isNot(contains('.result()')));
+        expect(topBody, isNot(contains('logic [11:0] bus;')));
+        expect(topBody, isNot(contains('logic [1:0] tie2;')));
+        expect(topBody, isNot(contains('logic [2:0] tie3;')));
+        expect(topBody, isNot(contains('_subset')));
+
+        final vectors = [
+          for (final source in [0, 1, 2, 3])
+            for (final seed in [0, 1])
+              Vector({
+                'source': source,
+                'seed': seed,
+              }, {
+                'y': 2 |
+                    (source << 2) |
+                    (seed << 4) |
+                    (5 << 5) |
+                    (source << 8) |
+                    (2 << 10),
+                if (fanout) 'fanout': seed,
+              })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+  }
+
+  test('unknown and floating constant ranges preserve four-state values',
+      () async {
+    final mod = InvalidConstantsToAssignSubsetTop();
+    await mod.build();
+    final topBody = _topModuleBody(mod.generateSynth());
+
+    expect(topBody, contains("2'bxx"));
+    expect(topBody, isNot(contains("2'bzz")));
+    expect(topBody, contains('logic [5:0] data;'));
+    expect(topBody, contains('.data(data)'));
+    expect(topBody, isNot(contains('.data()')));
+
+    final vectors = [
+      for (final source in [0, 1, 2, 3])
+        Vector({
+          'source': source,
+        }, {
+          'y': LogicValue.ofString(
+            'zzxx${source.toRadixString(2).padLeft(2, '0')}',
+          ),
         })
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
@@ -2755,6 +3488,40 @@ void main() {
   });
 
   group('aggregate connection inlining', () {
+    test('constant stays connected to single-element packed array input',
+        () async {
+      final mod = ConstantToSingleElementArrayInputTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains(".data((8'h0))"));
+      expect(topBody, isNot(contains('logic [0:0][7:0] data;')));
+
+      final vectors = [
+        Vector({}, {'y': 0})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('nonzero constant stays connected to single-element packed array',
+        () async {
+      final mod = ConstantToSingleElementArrayInputTop(value: 0xa5);
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains(".data((8'ha5))"));
+      expect(topBody, isNot(contains('logic [0:0][7:0] data;')));
+
+      final vectors = [
+        Vector({}, {'y': 0xa5})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
     final logicConfigs =
         <({String name, int n, int elementWidth, List<int>? perm})>[
       (name: '1d in order', n: 4, elementWidth: 1, perm: null),
@@ -3055,7 +3822,7 @@ void main() {
     // whole to a child inout port collapses into a single inline concatenation
     // of those nets.
     for (final busNaming in [Naming.mergeable, Naming.renameable]) {
-      test('whole net bus to port collapses ($busNaming)', () async {
+      test('whole net bus to port respects naming ($busNaming)', () async {
         const n = 8;
         final mod = WholeNetBusToPort(
             List.generate(n, (_) => LogicNet()), LogicNet(width: n),
@@ -3064,11 +3831,17 @@ void main() {
         final sv = mod.generateSynth();
         final topBody = _topModuleBody(sv);
 
-        // the bus and its per-bit net_connects are gone, replaced by a single
-        // inline concatenation on the child port
-        expect(topBody, isNot(contains('net_connect')));
-        expect(topBody, isNot(contains('wire [7:0] bus')));
-        expect(topBody, contains('.data(({'));
+        if (busNaming == Naming.mergeable) {
+          // The bus and its per-bit net_connects are gone, replaced by a
+          // single inline concatenation on the child port.
+          expect(topBody, isNot(contains('net_connect')));
+          expect(topBody, isNot(contains('wire [7:0] bus')));
+          expect(topBody, contains('.data(({'));
+        } else {
+          expect(topBody, contains('net_connect'));
+          expect(topBody, contains('wire [7:0] bus'));
+          expect(topBody, contains('.data(bus)'));
+        }
 
         final vectors = [
           for (final pattern in [0x0, 0xA, 0x5, 0xFF, 0x3C])
@@ -3177,7 +3950,8 @@ void main() {
     // child inout *array* port traces through the pass-through bus and
     // collapses into a single inline concatenation of those nets.
     for (final busNaming in [Naming.mergeable, Naming.renameable]) {
-      test('bitwise net bus into array port collapses ($busNaming)', () async {
+      test('bitwise net bus into array port respects naming ($busNaming)',
+          () async {
         const n = 8;
         final mod = BitwiseNetBusToArrayPort(
             List.generate(n, (_) => LogicNet()), LogicNet(width: n),
@@ -3186,11 +3960,17 @@ void main() {
         final sv = mod.generateSynth();
         final topBody = _topModuleBody(sv);
 
-        // the bus and its net_connects are traced away and replaced by a
-        // single inline concatenation of those nets on the child array port
-        expect(topBody, isNot(contains('net_connect')));
-        expect(topBody, isNot(contains('wire [7:0] bus')));
-        expect(topBody, contains('.data(({'));
+        if (busNaming == Naming.mergeable) {
+          // The bus and its net_connects are traced away and replaced by a
+          // single inline concatenation of those nets on the child array port.
+          expect(topBody, isNot(contains('net_connect')));
+          expect(topBody, isNot(contains('wire [7:0] bus')));
+          expect(topBody, contains('.data(({'));
+        } else {
+          expect(topBody, contains('net_connect'));
+          expect(topBody, contains('wire [7:0] bus'));
+          expect(topBody, isNot(contains('.data(({')));
+        }
 
         final vectors = [
           for (final pattern in [0x0, 0xA, 0x5, 0xFF, 0x3C])
@@ -3512,6 +4292,168 @@ void main() {
       final vectors = [
         for (final pattern in [0x0, 0x1, 0x2, 0xf])
           Vector({'source': pattern}, {'y': pattern & 1})
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling output stays connected beside range assignments', () async {
+      final mod = SiblingOutputWithRangeAssignmentsTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, contains('.result(bus[7])'));
+      expect(topBody, contains('.data(bus)'));
+      expect(topBody, isNot(contains('_subset')));
+
+      final vectors = [
+        for (final pattern in [0x00, 0x01, 0x04, 0x7f])
+          for (final bit in [0, 1])
+            Vector({
+              'source': pattern,
+              'seed': bit,
+            }, {
+              'y': bit,
+            })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    for (final outputIndex in [0, 3]) {
+      test('sibling output at bit $outputIndex stays directly connected',
+          () async {
+        final mod = IndexedSiblingOutputWithRangeAssignmentsTop(outputIndex);
+        await mod.build();
+        final sv = mod.generateSynth();
+        final topBody = _topModuleBody(sv);
+
+        expect(topBody, contains('.result(bus[$outputIndex])'));
+        expect(topBody, contains('.data(bus)'));
+        expect(topBody, isNot(contains('_subset')));
+
+        final vectors = [
+          for (final pattern in [0x00, 0x01, 0x35, 0x7f])
+            for (final bit in [0, 1])
+              Vector({
+                'source': pattern,
+                'seed': bit,
+              }, {
+                'y': (pattern & ((1 << outputIndex) - 1)) |
+                    (bit << outputIndex) |
+                    ((pattern >> outputIndex) << (outputIndex + 1)),
+              })
+        ];
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+
+    test('multiple sibling outputs stay connected in packed concat', () async {
+      final mod = MultipleSiblingOutputsWithRangeAssignmentsTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.result()')));
+      expect(topBody, contains('.data(({'));
+      expect(topBody, isNot(contains('logic [7:0] bus;')));
+      expect(topBody, isNot(contains('_subset')));
+
+      final vectors = [
+        for (final pattern in [0x00, 0x01, 0x15, 0x3f])
+          for (final bit0 in [0, 1])
+            for (final bit1 in [0, 1])
+              Vector({
+                'sourceLow': pattern & 0x3,
+                'sourceHigh': pattern >> 2,
+                'seed0': bit0,
+                'seed1': bit1,
+              }, {
+                'y': (pattern & 0x3) |
+                    (bit0 << 2) |
+                    ((pattern >> 2) << 3) |
+                    (bit1 << 7),
+              })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('sibling output fanout stays connected after range collapse',
+        () async {
+      final mod = FanoutSiblingOutputWithRangeAssignmentsTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.result()')));
+      expect(topBody, contains('.data(({'));
+      expect(topBody, isNot(contains('logic [7:0] bus;')));
+      expect(topBody, isNot(contains('_subset')));
+
+      final vectors = [
+        for (final pattern in [0x00, 0x01, 0x35, 0x7f])
+          for (final bit in [0, 1])
+            Vector({
+              'source': pattern,
+              'seed': bit,
+            }, {
+              'y': pattern | (bit << 7),
+              'fanout': bit,
+            })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('wide sibling output stays connected after range collapse', () async {
+      final mod = WideSiblingOutputWithRangeAssignmentsTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.result()')));
+      expect(topBody, contains('.data(bus)'));
+      expect(topBody, contains('bus[5:2]'));
+      expect(topBody, isNot(contains(RegExp(r'\bbus_subset\b'))));
+
+      final vectors = [
+        for (final source in [0x0, 0x1, 0xa, 0xf])
+          for (final seed in [0x0, 0x3, 0xc, 0xf])
+            Vector({
+              'source': source,
+              'seed': seed,
+            }, {
+              'y': (source & 0x3) | (seed << 2) | ((source >> 2) << 6),
+            })
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      SimCompare.checkIverilogVector(mod, vectors);
+    });
+
+    test('wide sibling output keeps fanout between constant ranges', () async {
+      final mod = WideSiblingOutputWithConstantsAndFanoutTop();
+      await mod.build();
+      final sv = mod.generateSynth();
+      final topBody = _topModuleBody(sv);
+
+      expect(topBody, isNot(contains('.result()')));
+      expect(topBody, contains('.data(({'));
+      expect(RegExp("2'h2").allMatches(topBody), hasLength(greaterThan(1)));
+      expect(topBody, isNot(contains('logic [7:0] bus;')));
+      expect(topBody, isNot(contains('logic [1:0] tie;')));
+      expect(topBody, isNot(contains(RegExp(r'\bbus_subset\b'))));
+
+      final vectors = [
+        for (final seed in [0x0, 0x1, 0x5, 0xa, 0xf])
+          Vector({
+            'seed': seed,
+          }, {
+            'y': 2 | (seed << 2) | (2 << 6),
+            'fanout': seed,
+          })
       ];
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
