@@ -12,7 +12,7 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank_modules.dart';
+import 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart';
@@ -840,6 +840,44 @@ void main() {
         isTrue,
       );
       expect(expanded, initiallyExpanded);
+    });
+
+    test('filter bank can stop traversal at an opaque custom SV module',
+        () async {
+      final synthesizer = NetlistSynthesizer(
+        options: const NetlistOptions(leafModuleTypes: [FlipFlop, MacUnit]),
+      );
+      final json = jsonDecode(synthesizer.synthesizeToJson(
+        filterBank,
+      )) as Map<String, dynamic>;
+      final modules = _modules(json);
+
+      expect(
+        modules.keys.any((name) => name.contains('MacUnit')),
+        isFalse,
+        reason: 'MacUnit is treated like externally supplied/custom SV, so '
+            'the netlist should not emit a definition for it.',
+      );
+
+      final channelDefs = modules.entries.where(
+        (entry) => entry.key.contains('FilterChannel'),
+      );
+      expect(channelDefs, isNotEmpty);
+
+      final macCells = channelDefs.expand((entry) {
+        final def = entry.value as Map<String, dynamic>;
+        return _cells(def).values.where((cell) {
+          final cellMap = cell as Map<String, dynamic>;
+          return (cellMap['type'] as String).contains('MacUnit');
+        });
+      }).toList();
+
+      expect(
+        macCells,
+        isNotEmpty,
+        reason: 'FilterChannel should still instantiate the opaque MacUnit '
+            'cell; only hierarchy traversal stops at that boundary.',
+      );
     });
 
     test('DCE disabled still produces valid netlist', () async {

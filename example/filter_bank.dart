@@ -21,10 +21,10 @@ import 'dart:async';
 import 'package:rohd/rohd.dart';
 
 // Import module definitions.
-import 'package:rohd/src/examples/filter_bank_modules.dart';
+import 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
 
 // Re-export so downstream consumers (e.g. devtools loopback) can use.
-export 'package:rohd/src/examples/filter_bank_modules.dart';
+export 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
 
 // ──────────────────────────────────────────────────────────────────
 // Standalone simulation entry point

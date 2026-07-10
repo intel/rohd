@@ -215,6 +215,21 @@ class SynthLogic {
     return _name!;
   }
 
+  /// The chosen name of this, or `null` if a name has not been picked or this
+  /// has been replaced.
+  String? get nameOrNull {
+    if (_name == null || _replacement != null) {
+      return null;
+    }
+
+    assert(
+      isConstant || Sanitizer.isSanitary(_name!),
+      'Signal names should be sanitary, but found $_name.',
+    );
+
+    return _name;
+  }
+
   /// The name of this, if it has been picked.
   String? _name;
 

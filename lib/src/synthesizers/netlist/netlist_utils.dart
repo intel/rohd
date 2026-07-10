@@ -34,14 +34,7 @@ class NetlistUtils {
   /// Safely retrieve the name from a [SynthLogic], returning null if
   /// retrieval fails (e.g. name not yet picked, or the SynthLogic has
   /// been replaced).
-  static String? tryGetSynthLogicName(SynthLogic sl) {
-    try {
-      return sl.name;
-      // ignore: avoid_catches_without_on_clauses
-    } catch (_) {
-      return null;
-    }
-  }
+  static String? tryGetSynthLogicName(SynthLogic sl) => sl.nameOrNull;
 
   /// Create a `$buf` cell map.
   static Map<String, Object?> makeBufCell(
