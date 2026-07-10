@@ -28,6 +28,21 @@ void main() async {
 
 The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
 
+## Controlling port types
+
+Generated ports have explicit object and data types by default: inputs are `input wire logic`, outputs are `output var logic`, and inouts are `inout wire logic`. Use a `SystemVerilogSynthesizerConfiguration` to omit either category and rely on SystemVerilog's implicit types:
+
+```dart
+final generatedSv = myModule.generateSynth(
+  configuration: const SystemVerilogSynthesizerConfiguration(
+    portObjectType: SystemVerilogPortType.implicit,
+    portDataType: SystemVerilogPortType.implicit,
+  ),
+);
+```
+
+The same configuration can be passed directly to `SystemVerilogSynthesizer` when using `SynthBuilder`.
+
 ## Controlling naming
 
 ### Modules
