@@ -7,7 +7,10 @@
 // 2026 March 12
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
-import 'package:rohd/src/synthesizers/netlist/leaf_cell_mapper.dart';
+import 'package:meta/meta.dart';
+import 'package:rohd/rohd.dart' hide SynthModuleStopPolicy;
+import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_module_stop_policy.dart';
 
 /// The current format version for netlist JSON produced by ROHD.
 const String netlistFormatVersion = '0.0.5';
@@ -27,11 +30,10 @@ const String netlistFormatVersion = '0.0.5';
 ///   module definition on demand.  Results are cached; the first call
 ///   may trigger a lazy `SynthBuilder` run on the requested subtree.
 ///
-/// Both flows run the identical pipeline: `SynthBuilder` →
-/// `collectModuleEntries` → `applyPostProcessingPasses`.  Flow 1
-/// then strips cell connections from the cached data; Flow 2 returns
-/// it verbatim.  This guarantees cell keys and wire IDs are stable
-/// across both flows.
+/// Both flows retain complete per-module synthesis results. Flow 1 skips cell
+/// connection copying while collecting the emitted JSON projection. This keeps
+/// slim output lightweight while guaranteeing a later expanded request has the
+/// same cell keys, wire IDs, and connectivity as an initially expanded request.
 ///
 /// Bundles all parameters that control netlist generation into a single
 /// object, making it easier to pass through call chains and to store
@@ -45,10 +47,25 @@ const String netlistFormatVersion = '0.0.5';
 /// final synth = NetlistSynthesizer(options: options);
 /// ```
 class NetlistOptions {
-  /// The leaf-cell mapper used to convert ROHD leaf modules to Yosys
-  /// primitive cell types.  When `null`, [LeafCellMapper.defaultMapper]
-  /// is used.
-  final LeafCellMapper? leafCellMapper;
+  /// The policy used to decide which modules stop hierarchy traversal and are
+  /// emitted as cells in their parent instead of as separate module
+  /// definitions. When `null`, [SynthModuleStopPolicy.netlist] is used.
+  ///
+  /// When this is provided, it owns the complete stopping policy and
+  /// [leafModuleTypes] is ignored.
+  final SynthModuleStopPolicy? moduleStopPolicy;
+
+  /// Exact [Module.runtimeType]s that should stop netlist hierarchy traversal
+  /// and be emitted as cells in their parent. Defaults to [FlipFlop], which
+  /// contains internal sequential submodules but should be emitted as a `$dff`
+  /// netlist cell.
+  final List<Type> leafModuleTypes;
+
+  /// The netlist-internal mapper used to convert selected leaf modules to
+  /// Yosys primitive cell types. When `null`, each synthesizer creates its own
+  /// mapper containing the default handlers.
+  @internal
+  final NetlistCellMapper? netlistCellMapper;
 
   /// When `true`, a single unified pass finds connected components of
   /// all transparent cells (`$buf`, `$slice`, `$concat`,
@@ -63,12 +80,10 @@ class NetlistOptions {
   /// are entirely unconsumed.
   final bool enableDCE;
 
-  /// When `true`, the synthesizer produces "slim" output: the full
-  /// synthesis pipeline runs (including all post-processing passes),
-  /// but cell connection maps are stripped from the result.
-  /// Netnames and ports are still emitted with full wire-ID fidelity,
-  /// so a subsequent full-mode synthesis of the same module will
-  /// produce compatible wire IDs.
+  /// When `true`, the synthesizer produces "slim" output: cell connection maps
+  /// are not copied into the emitted JSON projection. Netnames and ports are
+  /// still emitted with full wire-ID fidelity, while per-module synthesis
+  /// results retain complete connectivity.
   final bool slimMode;
 
   /// When `true`, contiguous ascending runs of ≥3 integer bit IDs in
@@ -90,7 +105,9 @@ class NetlistOptions {
   /// All parameters have sensible defaults matching the current
   /// netlist synthesizer behaviour.
   const NetlistOptions({
-    this.leafCellMapper,
+    this.moduleStopPolicy,
+    this.leafModuleTypes = const [FlipFlop],
+    this.netlistCellMapper,
     this.collapseTransparentClusters = false,
     this.enableDCE = true,
     this.slimMode = false,

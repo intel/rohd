@@ -9,10 +9,12 @@
 
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A [SynthesisResult] that holds the netlist representation of a single
 /// module level: its ports, cells, and netnames.
+@internal
 class NetlistSynthesisResult extends SynthesisResult {
   /// The ports map: name → {direction, bits}.
   final Map<String, Map<String, Object?>> ports;

@@ -7,12 +7,14 @@
 // 2026 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
 /// Shared utility functions for netlist synthesis and post-processing passes.
 ///
 /// All methods are static — no instances are created.
+@internal
 class NetlistUtils {
   NetlistUtils._();
 
@@ -39,15 +41,6 @@ class NetlistUtils {
     } catch (_) {
       return null;
     }
-  }
-
-  /// Resolves [sl] to the end of its replacement chain.
-  static SynthLogic resolveReplacement(SynthLogic sl) {
-    var r = sl;
-    while (r.replacement != null) {
-      r = r.replacement!;
-    }
-    return r;
   }
 
   /// Create a `$buf` cell map.
@@ -107,8 +100,8 @@ class NetlistUtils {
         continue;
       }
 
-      final resolvedOutput = resolveReplacement(outputSL);
-      final resolvedInput = resolveReplacement(inputSL);
+      final resolvedOutput = outputSL.resolved;
+      final resolvedInput = inputSL.resolved;
 
       busSubsetLookup[resolvedOutput] = (bsMod, resolvedInput, bsInst);
     }
@@ -130,7 +123,7 @@ class NetlistUtils {
         continue; // already filtered
       }
 
-      final resolved = resolveReplacement(e.value);
+      final resolved = e.value.resolved;
       final info = busSubsetLookup[resolved];
       if (info != null) {
         final (bsMod, rootSL, bsInst) = info;
@@ -213,12 +206,12 @@ class NetlistUtils {
       if (outputSL == null) {
         continue;
       }
-      final resolvedOutput = resolveReplacement(outputSL);
+      final resolvedOutput = outputSL.resolved;
 
       // Swizzle inputs are in0, in1, ... with bit-0 first.
       var offset = 0;
       for (final inEntry in szInst.inputMapping.entries) {
-        final resolvedInput = resolveReplacement(inEntry.value);
+        final resolvedInput = inEntry.value.resolved;
         final w = resolvedInput.width;
         swizzleLookup[resolvedInput] = (
           inEntry.key,
@@ -247,7 +240,7 @@ class NetlistUtils {
         continue;
       }
 
-      final resolved = resolveReplacement(e.value);
+      final resolved = e.value.resolved;
       final info = swizzleLookup[resolved];
       if (info != null) {
         final (_, offset, width, swizzleOutputSL, szInst) = info;
@@ -277,7 +270,7 @@ class NetlistUtils {
         if (sl == null) {
           return false;
         }
-        final resolved = resolveReplacement(sl);
+        final resolved = sl.resolved;
         return resolved.isPort(parentModule);
       });
       if (hasModulePort) {
@@ -412,12 +405,11 @@ class NetlistUtils {
   }
 
   /// Check if a SynthLogic is a constant (following replacement chain).
-  static bool isConstantSynthLogic(SynthLogic sl) =>
-      resolveReplacement(sl).isConstant;
+  static bool isConstantSynthLogic(SynthLogic sl) => sl.resolved.isConstant;
 
   /// Extract the Const value from a constant SynthLogic.
   static Const? constValueFromSynthLogic(SynthLogic sl) {
-    final resolved = resolveReplacement(sl);
+    final resolved = sl.resolved;
     for (final logic in resolved.logics) {
       if (logic is Const) {
         return logic;

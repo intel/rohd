@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // netlist_synthesizer_test.dart
-// Comprehensive tests for the netlist synthesizer covering leaf cell
+// Comprehensive tests for the netlist synthesizer covering netlist cell
 // mapping, structural validation, options permutations, and real
 // example designs.
 //
@@ -92,6 +92,19 @@ class AddModule extends Module {
     a = addInput('a', a, width: width);
     b = addInput('b', b, width: width);
     addOutput('sum', width: width) <= a + b;
+  }
+}
+
+/// Wraps an [AddModule] so stop-policy tests can choose whether the child
+/// receives its own definition or is emitted as a netlist cell.
+class AddWrapperModule extends Module {
+  Logic get sum => output('sum');
+
+  AddWrapperModule({int width = 8}) : super(name: 'addwrapper') {
+    final a = addInput('a', Logic(width: width), width: width);
+    final b = addInput('b', Logic(width: width), width: width);
+    final child = AddModule(a, b, width: width);
+    addOutput('sum', width: width) <= child.sum;
   }
 }
 
@@ -431,7 +444,7 @@ void main() {
 
   // ── Group 1: Leaf cell mapper — individual gate mappings ───────────
 
-  group('leaf cell mapping', () {
+  group('netlist cell mapping', () {
     test(r'And2Gate maps to $and cell', () async {
       final json = await _synthToMap(AndModule(Logic(), Logic()));
       expect(_hasCellType(json, r'$and'), isTrue);
@@ -804,6 +817,31 @@ void main() {
       }
     });
 
+    test('slim then expanded matches initially expanded output', () async {
+      final module = _buildFilterBank();
+      await module.build();
+
+      final translator = NetlistSynthesizer(
+        options: const NetlistOptions(slimMode: true),
+      );
+      final slim = translator.synthesizeToJson(module);
+      final expanded = translator.synthesizeToJson(module, slimMode: false);
+      final initiallyExpanded = NetlistSynthesizer().synthesizeToJson(module);
+
+      final slimModules = _modules(
+        jsonDecode(slim) as Map<String, dynamic>,
+      );
+      expect(
+        slimModules.values
+            .expand((definition) => _cells(
+                  definition as Map<String, dynamic>,
+                ).values)
+            .every((cell) => !(cell as Map).containsKey('connections')),
+        isTrue,
+      );
+      expect(expanded, initiallyExpanded);
+    });
+
     test('DCE disabled still produces valid netlist', () async {
       final synth = SynthBuilder(
         filterBank,
@@ -1148,6 +1186,85 @@ void main() {
   // ── Group 7: Wire ID and structural invariants ─────────────────────
 
   group('wire ID and structural invariants', () {
+    test('default synthesizers do not share mutable leaf mappers', () {
+      final first = NetlistSynthesizer();
+      final second = NetlistSynthesizer();
+
+      expect(identical(first.netlistCellMapper, second.netlistCellMapper),
+          isFalse);
+    });
+
+    test('leaf module type option controls which modules stop traversal',
+        () async {
+      final module = AddWrapperModule();
+      await module.build();
+
+      final childDefinitionName = module.subModules.single.definitionName;
+      final synthesizer = NetlistSynthesizer(
+        options: const NetlistOptions(leafModuleTypes: [AddModule]),
+      );
+
+      final json = jsonDecode(synthesizer.synthesizeToJson(module))
+          as Map<String, dynamic>;
+      final modules = json['modules'] as Map<String, dynamic>;
+      final top = modules[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(top);
+
+      expect(modules, isNot(contains(childDefinitionName)));
+      expect(
+        cells.values,
+        contains(predicate<Map<String, dynamic>>(
+          (cell) => cell['type'] == childDefinitionName,
+        )),
+      );
+    });
+
+    test('repeated translation of the same module is identical', () async {
+      final module = LogicArrayExample(
+        LogicArray([4], 8, name: 'arrayA'),
+        Logic(name: 'id', width: 3),
+        Logic(name: 'selectIndexValue', width: 8),
+        Logic(name: 'selectFromValue', width: 8),
+      );
+      await module.build();
+
+      final synthesizer = NetlistSynthesizer();
+      final first = synthesizer.synthesizeToJson(module);
+      final second = synthesizer.synthesizeToJson(module);
+
+      expect(second, first);
+    });
+
+    test('reusing a synthesizer resets wire IDs for each module', () async {
+      final firstModule = AddModule(
+        Logic(name: 'firstA', width: 8),
+        Logic(name: 'firstB', width: 8),
+      );
+      final secondModule = AddModule(
+        Logic(name: 'secondA', width: 8),
+        Logic(name: 'secondB', width: 8),
+      );
+      await firstModule.build();
+      await secondModule.build();
+
+      final synthesizer = NetlistSynthesizer();
+
+      int firstWireId(Module module) {
+        final json = jsonDecode(synthesizer.synthesizeToJson(module))
+            as Map<String, dynamic>;
+        final definition =
+            _modules(json)[module.definitionName] as Map<String, dynamic>;
+        return _ports(definition)
+            .values
+            .expand((port) => (port as Map<String, dynamic>)['bits'] as List)
+            .whereType<int>()
+            .reduce((first, second) => first < second ? first : second);
+      }
+
+      expect(firstWireId(firstModule), 2);
+      expect(firstWireId(secondModule), 2);
+    });
+
     test('all wire IDs are >= 2 (0 and 1 reserved for constants)', () async {
       final json = await _synthToMap(
         AddModule(Logic(width: 8), Logic(width: 8)),

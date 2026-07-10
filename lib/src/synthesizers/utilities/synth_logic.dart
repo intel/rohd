@@ -34,6 +34,12 @@ class SynthLogic {
     _replacement = newReplacement;
   }
 
+  /// This [SynthLogic] resolved through any [replacement] that may have
+  /// occurred during merging, so that identity comparisons are consistent.
+  ///
+  /// Returns `this` if there is no [replacement].
+  SynthLogic get resolved => replacement ?? this;
+
   /// The parent [SynthModuleDefinition] that this [SynthLogic] belongs to.
   final SynthModuleDefinition parentSynthModuleDefinition;
 

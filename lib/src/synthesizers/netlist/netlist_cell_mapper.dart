@@ -1,28 +1,31 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// leaf_cell_mapper.dart
-// Maps ROHD leaf modules to Yosys-primitive cell representations.
+// netlist_cell_mapper.dart
+// Maps selected ROHD modules to Yosys-primitive cell representations.
 //
 // 2026 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
-/// The result of mapping a leaf ROHD module to a Yosys-style cell.
-typedef LeafCellMapping = ({
+/// The result of mapping a netlist cell module to a Yosys-style cell.
+@internal
+typedef NetlistCellMapping = ({
   String cellType,
   Map<String, String> portDirs,
   Map<String, List<Object>> connections,
   Map<String, Object?> parameters,
 });
 
-/// Context provided to each leaf-cell mapping handler.
+/// Context provided to each netlist-cell mapping handler.
 ///
 /// Contains the module instance plus the raw ROHD port directions and
 /// connections built by the synthesizer, so handlers can remap them to
 /// Yosys-primitive port names.
-class LeafCellContext {
+@internal
+class NetlistCellContext {
   /// The ROHD [Module] being mapped.
   final Module module;
 
@@ -32,8 +35,8 @@ class LeafCellContext {
   /// Raw ROHD connection map (`{'portName': [wireId, ...]}`).
   final Map<String, List<Object>> rawConns;
 
-  /// Creates a [LeafCellContext].
-  const LeafCellContext(this.module, this.rawPortDirs, this.rawConns);
+  /// Creates a [NetlistCellContext].
+  const NetlistCellContext(this.module, this.rawPortDirs, this.rawConns);
 
   // ── Shared helper methods ───────────────────────────────────────────
 
@@ -75,49 +78,48 @@ class LeafCellContext {
   }
 }
 
-/// Signature for a leaf-cell mapping handler.
+/// Signature for a netlist-cell mapping handler.
 ///
-/// Returns a [LeafCellMapping] if the handler recognises the module,
+/// Returns a [NetlistCellMapping] if the handler recognises the module,
 /// or `null` to let the next handler try.
-typedef LeafCellHandler = LeafCellMapping? Function(LeafCellContext ctx);
+@internal
+typedef NetlistCellHandler = NetlistCellMapping? Function(
+    NetlistCellContext ctx);
 
-/// Maps ROHD leaf [Module]s to Yosys-primitive cell representations.
+/// Maps modules already selected as netlist leaves to Yosys-primitive cell
+/// representations.
 ///
 /// Handlers are registered via [register] and tried in registration order.
-/// A singleton instance with all built-in ROHD types pre-registered is
-/// available via [LeafCellMapper.defaultMapper].
-///
-/// ```dart
-/// final mapper = LeafCellMapper.defaultMapper;
-/// final result = mapper.map(sub, rawPortDirs, rawConns);
-/// ```
-class LeafCellMapper {
+/// Hierarchy stopping is controlled separately by [SynthModuleStopPolicy].
+@internal
+class NetlistCellMapper {
   /// Ordered list of registered handlers.
-  final _handlers = <LeafCellHandler>[];
+  final _handlers = <NetlistCellHandler>[];
 
-  /// Creates an empty [LeafCellMapper] with no registered handlers.
-  LeafCellMapper();
+  /// Creates an empty [NetlistCellMapper] with no registered handlers.
+  NetlistCellMapper();
 
-  /// The default mapper with all built-in ROHD leaf types registered.
-  static final defaultMapper = LeafCellMapper._withDefaults();
+  /// Creates a mapper with all built-in ROHD netlist cell types registered.
+  factory NetlistCellMapper.withDefaults() =>
+      NetlistCellMapper().._registerDefaults();
 
   /// Register a mapping [handler].
   ///
   /// Handlers are tried in registration order; the first non-null result
   /// wins. Register more-specific handlers before less-specific ones.
-  void register(LeafCellHandler handler) {
+  void register(NetlistCellHandler handler) {
     _handlers.add(handler);
   }
 
   /// Try to map [module] to a Yosys-primitive cell.
   ///
   /// Returns `null` if no registered handler matches.
-  LeafCellMapping? map(
+  NetlistCellMapping? map(
     Module module,
     Map<String, String> rawPortDirs,
     Map<String, List<Object>> rawConns,
   ) {
-    final ctx = LeafCellContext(module, rawPortDirs, rawConns);
+    final ctx = NetlistCellContext(module, rawPortDirs, rawConns);
     for (final handler in _handlers) {
       final result = handler(ctx);
       if (result != null) {
@@ -132,7 +134,7 @@ class LeafCellMapper {
   // ══════════════════════════════════════════════════════════════════════
 
   /// Map a single-input, single-output gate (e.g. `$not`, `$reduce_and`).
-  static LeafCellMapping? unaryAY(LeafCellContext ctx, String cellType) {
+  static NetlistCellMapping? unaryAY(NetlistCellContext ctx, String cellType) {
     final inN = ctx.firstInput;
     final out = ctx.firstOutput;
     if (inN == null || out == null) {
@@ -151,8 +153,8 @@ class LeafCellMapper {
   }
 
   /// Map a two-input gate with ports A, B, Y (e.g. `$and`, `$eq`, `$shl`).
-  static LeafCellMapping? binaryABY(
-    LeafCellContext ctx,
+  static NetlistCellMapping? binaryABY(
+    NetlistCellContext ctx,
     String cellType, {
     required String inAPrefix,
     required String inBPrefix,
@@ -180,23 +182,20 @@ class LeafCellMapper {
   //  Built-in handler registration
   // ══════════════════════════════════════════════════════════════════════
 
-  /// Creates a [LeafCellMapper] with built-in handlers for common ROHD leaf
-  /// types.
-  factory LeafCellMapper._withDefaults() {
-    final m = LeafCellMapper();
-
+  void _registerDefaults() {
     // Helper to reduce boilerplate for type-map-based handlers.
     void registerByTypeMap(
       Map<Type, String> typeMap,
-      LeafCellMapping? Function(LeafCellContext ctx, String cellType) handler,
+      NetlistCellMapping? Function(NetlistCellContext ctx, String cellType)
+          handler,
     ) {
-      m.register((ctx) {
+      register((ctx) {
         final cellType = typeMap[ctx.module.runtimeType];
         return cellType == null ? null : handler(ctx, cellType);
       });
     }
 
-    m
+    this
       // ── BusSubset → $slice ────────────────────────────────────────────
       ..register((ctx) {
         if (ctx.module is! BusSubset) {
@@ -404,7 +403,7 @@ class LeafCellMapper {
     // ── Type-map-based gates ───────────────────────────────────────────
     final gateRegistrations = <(
       Map<Type, String>,
-      LeafCellMapping? Function(LeafCellContext, String),
+      NetlistCellMapping? Function(NetlistCellContext, String),
     )>[
       (
         const <Type, String>{
@@ -456,7 +455,7 @@ class LeafCellMapper {
     }
 
     // ── TriStateBuffer → $tribuf ──────────────────────────────────────
-    m.register((ctx) {
+    register((ctx) {
       if (ctx.module is! TriStateBuffer) {
         return null;
       }
@@ -472,7 +471,5 @@ class LeafCellMapper {
         parameters: <String, Object?>{'WIDTH': ctx.width(inName)},
       );
     });
-
-    return m;
   }
 }

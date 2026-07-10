@@ -7,3 +7,4 @@ export 'synth_file_contents.dart';
 export 'synthesis_result.dart';
 export 'synthesizer.dart';
 export 'systemverilog/systemverilog.dart';
+export 'utilities/synth_module_stop_policy.dart';

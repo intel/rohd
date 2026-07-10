@@ -584,6 +584,36 @@ void main() {
   // Bit-range compression & compact JSON
   // -----------------------------------------------------------------------
   group('Bit-range compression', () {
+    test('post-processing does not mutate synthesis results', () async {
+      final module = _AdderModule(
+        Logic(name: 'a', width: 8),
+        Logic(name: 'b', width: 8),
+      );
+      await module.build();
+
+      final synthesizer = NetlistSynthesizer(
+        options: const NetlistOptions(compressBitRanges: true),
+      );
+      final builder = SynthBuilder(module, synthesizer);
+      final result = builder.synthesisResults
+          .whereType<NetlistSynthesisResult>()
+          .firstWhere((result) => result.module == module);
+      final before = jsonEncode({
+        'ports': result.ports,
+        'cells': result.cells,
+        'netnames': result.netnames,
+      });
+
+      synthesizer.generateCombinedJson(builder, module);
+
+      final after = jsonEncode({
+        'ports': result.ports,
+        'cells': result.cells,
+        'netnames': result.netnames,
+      });
+      expect(after, before);
+    });
+
     test('compressBitRanges option produces range strings in JSON', () async {
       final a = Logic(name: 'a', width: 8);
       final mod = _AdderModule(a, Logic(name: 'b', width: 8));

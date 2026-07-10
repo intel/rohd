@@ -12,11 +12,13 @@
 // 2025 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// Post-processing optimization passes for netlist synthesis.
 ///
 /// All methods are static — no instances are created.
+@internal
 class NetlistPasses {
   NetlistPasses._();
 
@@ -25,24 +27,69 @@ class NetlistPasses {
   static Map<String, Map<String, Object?>> collectModuleEntries(
     Iterable<SynthesisResult> results, {
     Module? topModule,
+    bool includeCellConnections = true,
   }) {
     final allModules = <String, Map<String, Object?>>{};
     for (final result in results) {
       if (result is NetlistSynthesisResult) {
         final typeName = result.instanceTypeName;
-        final attrs = Map<String, Object?>.from(result.attributes);
+        final attrs = _copyObjectMap(result.attributes);
         if (topModule != null && result.module == topModule) {
           attrs['top'] = 1;
         }
         allModules[typeName] = {
           'attributes': attrs,
-          'ports': result.ports,
-          'cells': result.cells,
-          'netnames': result.netnames,
+          'ports': _copyNestedMaps(result.ports),
+          'cells': _copyCells(
+            result.cells,
+            includeConnections: includeCellConnections,
+          ),
+          'netnames': _copyObjectMap(result.netnames),
         };
       }
     }
     return allModules;
+  }
+
+  static Map<String, Map<String, Object?>> _copyCells(
+    Map<String, Map<String, Object?>> source, {
+    required bool includeConnections,
+  }) =>
+      {
+        for (final entry in source.entries)
+          entry.key: _copyObjectMap(
+            includeConnections
+                ? entry.value
+                : (Map<String, Object?>.of(entry.value)..remove('connections')),
+          ),
+      };
+
+  static Map<String, Map<String, Object?>> _copyNestedMaps(
+    Map<String, Map<String, Object?>> source,
+  ) =>
+      {
+        for (final entry in source.entries)
+          entry.key: _copyObjectMap(entry.value),
+      };
+
+  static Map<String, Object?> _copyObjectMap(Map<String, Object?> source) => {
+        for (final entry in source.entries)
+          entry.key: _copyJsonValue(entry.value),
+      };
+
+  static Object? _copyJsonValue(Object? value) {
+    if (value is Map) {
+      return <String, Object?>{
+        for (final entry in value.entries)
+          entry.key as String: _copyJsonValue(entry.value),
+      };
+    }
+    if (value is List) {
+      return <Object?>[
+        for (final element in value) _copyJsonValue(element),
+      ];
+    }
+    return value;
   }
 
   // ════════════════════════════════════════════════════════════════════
