@@ -75,11 +75,7 @@ class NetlistSynthesizer extends Synthesizer {
     SynthesisResult? Function(Module module)? lookupExistingResult,
     Map<Module, SynthesisResult>? existingResults,
   }) {
-    final isTop = module.parent == null;
     final attr = <String, Object?>{'src': 'generated'};
-    if (isTop) {
-      attr['top'] = 1;
-    }
 
     final translation = NetlistModuleTranslation(
       module,

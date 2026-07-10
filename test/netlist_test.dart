@@ -51,6 +51,18 @@ class _CompositeModule extends Module {
   }
 }
 
+/// A wrapper that lets tests synthesize a built submodule as the requested top.
+class _CompositeWrapperModule extends Module {
+  late final _CompositeModule child;
+
+  _CompositeWrapperModule(Logic a, Logic b) : super(name: 'composite_wrapper') {
+    a = addInput('a', a);
+    b = addInput('b', b);
+    child = _CompositeModule(a, b);
+    addOutput('out') <= child.out;
+  }
+}
+
 /// A simple adder module with a configurable width.
 class _AdderModule extends Module {
   Logic get sum => output('sum');
@@ -277,6 +289,31 @@ void main() {
         expect(attrs!['top'], equals(1));
       },
     );
+
+    test('requested submodule can be synthesized as top', () async {
+      final wrapper =
+          _CompositeWrapperModule(Logic(name: 'a'), Logic(name: 'b'));
+      await wrapper.build();
+
+      final submodule = wrapper.child;
+      final json = NetlistSynthesizer().synthesizeToJson(submodule);
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      final modules = decoded['modules'] as Map<String, dynamic>;
+
+      expect(modules, contains(submodule.definitionName));
+      expect(modules, isNot(contains(wrapper.definitionName)));
+
+      final topModules = modules.values.where((module) {
+        final attrs = (module as Map<String, dynamic>)['attributes']
+            as Map<String, dynamic>?;
+        return attrs?['top'] == 1;
+      });
+      expect(topModules, hasLength(1));
+
+      final attrs = (modules[submodule.definitionName]
+          as Map<String, dynamic>)['attributes'] as Map<String, dynamic>;
+      expect(attrs['top'], equals(1));
+    });
 
     test('port bit widths match module interface', () async {
       const width = 16;
