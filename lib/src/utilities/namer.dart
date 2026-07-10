@@ -24,8 +24,7 @@ import 'package:rohd/src/utilities/uniquifier.dart';
 /// are assigned lazily on the first [instanceNameOf] call.
 @internal
 class Namer {
-  // ─── Shared namespace ───────────────────────────────────────────
-
+  /// The [Uniquifier] that manages the shared namespace for this module.
   final Uniquifier _uniquifier;
 
   /// Cache of resolved names for internal (non-port) signals only.
@@ -70,6 +69,7 @@ class Namer {
   // ─── Name availability / allocation ─────────────────────────────
 
   /// Returns `true` if [name] has not yet been claimed in the namespace.
+  @visibleForTesting
   bool isAvailable(String name) => _uniquifier.isAvailable(name);
 
   // ─── Instance naming (Module → String) ──────────────────────────
@@ -125,6 +125,13 @@ class Namer {
     _signalNames[logic] = name;
     return name;
   }
+
+  /// Returns the synthesis-level signal name for [logic].
+  ///
+  /// Equivalent to the internal [_signalNameOf] allocation but exposed for
+  /// use in wave-dumping and tests.
+  @visibleForTesting
+  String signalNameOf(Logic logic) => _signalNameOf(logic);
 
   /// The base name that would be used for [logic] before uniquification.
   static String baseName(Logic logic) =>
