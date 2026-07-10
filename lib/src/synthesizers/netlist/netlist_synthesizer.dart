@@ -13,6 +13,8 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_module_translation.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';

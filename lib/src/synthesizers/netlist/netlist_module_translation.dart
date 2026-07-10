@@ -12,6 +12,7 @@ import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synth_module_definition.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';

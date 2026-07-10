@@ -14,6 +14,8 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 
 /// Post-processing optimization passes for netlist synthesis.
 ///
