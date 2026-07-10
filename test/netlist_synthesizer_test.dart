@@ -12,10 +12,10 @@
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank/filter_bank_modules.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart';
+import '../example/filter_bank/filter_bank_modules.dart';
 import '../example/fir_filter.dart';
 import '../example/logic_array.dart';
 import '../example/oven_fsm.dart';

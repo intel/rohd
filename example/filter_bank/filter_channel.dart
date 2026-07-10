@@ -9,9 +9,10 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank/coeff_bank.dart';
-import 'package:rohd/src/examples/filter_bank/filter_data_interface.dart';
-import 'package:rohd/src/examples/filter_bank/mac_unit.dart';
+
+import 'coeff_bank.dart';
+import 'filter_data_interface.dart';
+import 'mac_unit.dart';
 
 /// A single polyphase FIR filter channel with [numTaps] taps.
 ///

@@ -9,11 +9,12 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/examples/filter_bank/filter_channel.dart';
-import 'package:rohd/src/examples/filter_bank/filter_controller.dart';
-import 'package:rohd/src/examples/filter_bank/filter_data_interface.dart';
-import 'package:rohd/src/examples/filter_bank/filter_sample.dart';
-import 'package:rohd/src/examples/filter_bank/shared_data_bus.dart';
+
+import 'filter_channel.dart';
+import 'filter_controller.dart';
+import 'filter_data_interface.dart';
+import 'filter_sample.dart';
+import 'shared_data_bus.dart';
 
 /// A 2-channel polyphase FIR filter bank.
 ///
