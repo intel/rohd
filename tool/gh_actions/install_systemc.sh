@@ -18,6 +18,12 @@ set -euo pipefail
 SYSTEMC_VERSION="${SYSTEMC_VERSION:-3.0.2}"
 INSTALL_PREFIX="${SYSTEMC_INSTALL_PREFIX:-/opt/systemc}"
 
+if [ "$(id -u)" -eq 0 ]; then
+  SUDO=()
+else
+  SUDO=(sudo)
+fi
+
 # Skip if already installed (e.g. from cache)
 if [ -f "$INSTALL_PREFIX/lib/libsystemc.so" ]; then
   echo "SystemC already installed at $INSTALL_PREFIX — skipping build."
@@ -27,8 +33,8 @@ fi
 echo "Installing Accellera SystemC $SYSTEMC_VERSION to $INSTALL_PREFIX ..."
 
 # Install build dependencies
-apt-get update -qq
-apt-get install --yes --no-install-recommends cmake g++ make
+"${SUDO[@]}" apt-get update -qq
+"${SUDO[@]}" apt-get install --yes --no-install-recommends cmake g++ make
 
 # Download source
 TARBALL="systemc-$SYSTEMC_VERSION.tar.gz"
@@ -51,6 +57,6 @@ cmake .. \
   -DDISABLE_COPYRIGHT_MESSAGE=ON
 
 make -j"$(nproc)"
-make install
+"${SUDO[@]}" make install
 
 echo "SystemC $SYSTEMC_VERSION installed to $INSTALL_PREFIX"
