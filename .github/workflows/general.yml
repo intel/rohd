@@ -73,6 +73,9 @@ jobs:
       - name: Run SystemC tests
         run: dart test test/systemc_vector_test.dart
 
+      - name: Clean SystemC temporary files
+        run: tool/gh_actions/cleanup_systemc_tmp.sh
+
       - name: Check temporary test files
         run: tool/gh_actions/check_tmp_test.sh
       
@@ -83,6 +86,7 @@ jobs:
           runCmd: |
             tool/gh_actions/run_tests.sh
             dart test test/systemc_vector_test.dart
+            tool/gh_actions/cleanup_systemc_tmp.sh
             tool/gh_actions/check_tmp_test.sh
 
   deploy-documentation:
