@@ -173,6 +173,22 @@ void main() {
       SimCompare.checkSystemCVector(mod, vectors);
     });
 
+    test('independent inline gates share a method', () async {
+      final mod = GateModule(Logic(name: 'a'), Logic(name: 'b'));
+      await mod.build();
+
+      final systemc = mod.generateSystemC();
+      final assignMethods =
+          RegExp(r'SC_METHOD\(assign_\d+\);').allMatches(systemc).toList();
+
+      expect(assignMethods, hasLength(1));
+      expect(systemc, contains('sensitive << a;'));
+      expect(systemc, contains('sensitive << b;'));
+      expect(systemc, contains('a_and_b = a.read() & b.read();'));
+      expect(systemc, contains('a_or_b = a.read() | b.read();'));
+      expect(systemc, contains('not_a = !a.read();'));
+    });
+
     test('chained inline gates use minimal sensitivity lists', () async {
       final mod = ChainedGateModule(
         Logic(name: 'a'),

@@ -494,14 +494,13 @@ class SystemCSynthesisResult extends SynthesisResult {
       return null;
     }
 
-    final setupBuf = StringBuffer();
-    final bodyBuf = StringBuffer();
-    var methodIdx = 0;
+    final assignments = <_ScMethodAssignment>[];
 
     for (final ssmi in inlineGates) {
       final m = ssmi.module;
       final sensitivities = <String>{};
       final bodyLines = <String>[];
+      final destinations = <String>{};
 
       // Collect inputs — constants become literals, signals get .read()
       final inputExprs = <String, String>{};
@@ -520,6 +519,7 @@ class SystemCSynthesisResult extends SynthesisResult {
         }
         final expr = _gateExpression(m, inputExprs);
         final dst = _scName(resultSynthLogic.name);
+        destinations.add(dst);
         bodyLines.add('    $dst = $expr;');
       } else if (m is Add) {
         // Add has two outputs: sum and carry.
@@ -529,6 +529,7 @@ class SystemCSynthesisResult extends SynthesisResult {
         for (final entry in ssmi.outputMapping.entries) {
           final portName = entry.key;
           final dst = _scName(entry.value.name);
+          destinations.add(dst);
           if (portName == sumPortName) {
             bodyLines.add('    $dst = ${vals[0]} + ${vals[1]};');
           } else {
@@ -548,29 +549,19 @@ class SystemCSynthesisResult extends SynthesisResult {
         continue;
       }
 
-      final methodName = 'assign_$methodIdx';
-      methodIdx++;
-      setupBuf.writeln('    SC_METHOD($methodName);');
-      for (final sig in sensitivities) {
-        setupBuf.writeln('    sensitive << $sig;');
-      }
-
-      bodyBuf
-        ..writeln('  void $methodName() {')
-        ..writeln(bodyLines.join('\n'))
-        ..writeln('  }')
-        ..writeln();
+      assignments.add(_ScMethodAssignment(
+        bodyLines: bodyLines,
+        sensitivities: sensitivities,
+        destinations: destinations,
+      ));
       ssmi.clearInstantiation();
     }
 
-    if (bodyBuf.isEmpty) {
+    if (assignments.isEmpty) {
       return null;
     }
 
-    return _MethodResult(
-      setup: setupBuf.toString(),
-      body: bodyBuf.toString(),
-    );
+    return _emitGroupedAssignments('assign', assignments);
   }
 
   /// Maps an InlineSystemVerilog gate to a C++ expression.
@@ -1232,9 +1223,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       return null;
     }
 
-    final setupBuf = StringBuffer();
-    final bodyBuf = StringBuffer();
-    var methodIdx = 0;
+    final assignments = <_ScMethodAssignment>[];
 
     // Group partial assignments by destination for concatenated writes
     final partialsByDst = <String, List<PartialSynthAssignment>>{};
@@ -1249,18 +1238,13 @@ class SystemCSynthesisResult extends SynthesisResult {
         if (!assignment.src.isConstant) {
           sensitivities.add(_sensitivityName(assignment.src));
         }
-        final methodName = 'wire_assign_$methodIdx';
-        methodIdx++;
-        setupBuf.writeln('    SC_METHOD($methodName);');
-        for (final sig in sensitivities) {
-          setupBuf.writeln('    sensitive << $sig;');
-        }
-        bodyBuf
-          ..writeln('  void $methodName() {')
-          ..writeln('    ${_scName(assignment.dst.name)} = '
-              '${_synthLogicReadExpr(assignment.src)};')
-          ..writeln('  }')
-          ..writeln();
+        final bodyLine = '    ${_scName(assignment.dst.name)} = '
+            '${_synthLogicReadExpr(assignment.src)};';
+        assignments.add(_ScMethodAssignment(
+          bodyLines: [bodyLine],
+          sensitivities: sensitivities,
+          destinations: {_scName(assignment.dst.name)},
+        ));
       }
     }
 
@@ -1286,15 +1270,43 @@ class SystemCSynthesisResult extends SynthesisResult {
           parts.add('($utype($srcExpr) << ${p.dstLowerIndex})');
         }
       }
-      final methodName = 'wire_assign_$methodIdx';
-      methodIdx++;
+      assignments.add(_ScMethodAssignment(
+        bodyLines: ['    $dstName = ${parts.join(' | ')};'],
+        sensitivities: sensitivities,
+        destinations: {dstName},
+      ));
+    }
+
+    return _emitGroupedAssignments('wire_assign', assignments);
+  }
+
+  _MethodResult _emitGroupedAssignments(
+      String methodPrefix, List<_ScMethodAssignment> assignments) {
+    final groups = <_ScMethodAssignmentGroup>[];
+
+    for (final assignment in assignments) {
+      final group = groups.firstWhereOrNull((g) => g.canAdd(assignment));
+      if (group == null) {
+        groups.add(_ScMethodAssignmentGroup()..add(assignment));
+      } else {
+        group.add(assignment);
+      }
+    }
+
+    final setupBuf = StringBuffer();
+    final bodyBuf = StringBuffer();
+
+    for (var i = 0; i < groups.length; i++) {
+      final group = groups[i];
+      final methodName = '${methodPrefix}_$i';
       setupBuf.writeln('    SC_METHOD($methodName);');
-      for (final sig in sensitivities) {
+      for (final sig in group.sensitivities) {
         setupBuf.writeln('    sensitive << $sig;');
       }
+
       bodyBuf
         ..writeln('  void $methodName() {')
-        ..writeln('    $dstName = ${parts.join(' | ')};')
+        ..writeln(group.bodyLines.join('\n'))
         ..writeln('  }')
         ..writeln();
     }
@@ -1694,6 +1706,34 @@ class _MethodResult {
   final String setup;
   final String body;
   const _MethodResult({required this.setup, required this.body});
+}
+
+class _ScMethodAssignment {
+  final List<String> bodyLines;
+  final Set<String> sensitivities;
+  final Set<String> destinations;
+
+  const _ScMethodAssignment({
+    required this.bodyLines,
+    required this.sensitivities,
+    required this.destinations,
+  });
+}
+
+class _ScMethodAssignmentGroup {
+  final List<String> bodyLines = [];
+  final Set<String> sensitivities = {};
+  final Set<String> destinations = {};
+
+  bool canAdd(_ScMethodAssignment assignment) =>
+      !assignment.sensitivities.any(destinations.contains) &&
+      !assignment.destinations.any(sensitivities.contains);
+
+  void add(_ScMethodAssignment assignment) {
+    bodyLines.addAll(assignment.bodyLines);
+    sensitivities.addAll(assignment.sensitivities);
+    destinations.addAll(assignment.destinations);
+  }
 }
 
 /// Collects clocked process data for consolidation by (clock, reset) pair.
