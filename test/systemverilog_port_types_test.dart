@@ -8,6 +8,7 @@
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
 class _PortStructure extends LogicStructure {
@@ -31,7 +32,7 @@ class _PortStructure extends LogicStructure {
 }
 
 class _PortTypesModule extends Module {
-  _PortTypesModule() {
+  _PortTypesModule({bool includeUnpackedInOut = true}) {
     final scalarIn = addInput('scalarIn', Logic(width: 8), width: 8);
     addOutput('scalarOut', width: 8) <= scalarIn;
     addInOut('scalarInOut', LogicNet(width: 8), width: 8);
@@ -48,8 +49,10 @@ class _PortTypesModule extends Module {
         'unpackedArrayIn', LogicArray([2, 3], 4, numUnpackedDimensions: 1));
     addTypedOutput('unpackedArrayOut', unpackedArrayIn.clone) <=
         unpackedArrayIn;
-    addTypedInOut('unpackedArrayInOut',
-        LogicArray.net([2, 3], 4, numUnpackedDimensions: 1));
+    if (includeUnpackedInOut) {
+      addTypedInOut('unpackedArrayInOut',
+          LogicArray.net([2, 3], 4, numUnpackedDimensions: 1));
+    }
   }
 }
 
@@ -130,6 +133,15 @@ void main() {
           expect(sv, contains('$prefix $suffix'));
         }
       }
+
+      final iverilogModule = _PortTypesModule(includeUnpackedInOut: false);
+      await iverilogModule.build();
+      SimCompare.checkIverilogVector(
+        iverilogModule,
+        [],
+        buildOnly: true,
+        synthesizerConfiguration: testCase.configuration,
+      );
     });
   }
 }
