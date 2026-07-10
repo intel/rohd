@@ -422,6 +422,7 @@ abstract class SimCompare {
         }
       } on Exception catch (e) {
         print("Couldn't delete: $e");
+        return false;
       }
     }
     return true;
