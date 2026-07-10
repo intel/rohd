@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // tree_model.dart
@@ -9,51 +9,83 @@
 
 import 'package:rohd_devtools_extension/rohd_devtools/models/signal_model.dart';
 
+/// Hierarchical model of a ROHD module tree.
 class TreeModel {
+  /// Module name.
   final String name;
+
+  /// Input signals for the module.
   final List<SignalModel> inputs;
+
+  /// Output signals for the module.
   final List<SignalModel> outputs;
+
+  /// Inout signals for the module.
+  final List<SignalModel> inouts;
+
+  /// Child submodules contained by this module.
   final List<TreeModel> subModules;
 
-  TreeModel({
-    required this.name,
-    required this.inputs,
-    required this.outputs,
-    required this.subModules,
-  });
+  /// Creates a tree model for a module hierarchy node.
+  TreeModel(
+      {required this.name,
+      required this.inputs,
+      required this.outputs,
+      required this.subModules,
+      this.inouts = const []});
 
+  /// Builds a tree model from a JSON map.
   factory TreeModel.fromJson(Map<String, dynamic> json) {
-    List<SignalModel> inputSignalsList = [];
-    List<SignalModel> outputSignalsList = [];
+    final inputSignalsList = <SignalModel>[];
+    final outputSignalsList = <SignalModel>[];
+    final inoutSignalsList = <SignalModel>[];
+    final inputsJson = json['inputs'] as Map<String, dynamic>;
+    final outputsJson = json['outputs'] as Map<String, dynamic>;
+    final inoutsJson = json['inouts'] as Map<String, dynamic>? ?? {};
 
-    for (var inputSignal in json['inputs'].entries) {
-      SignalModel signal = SignalModel.fromMap({
+    for (final inputSignal in inputsJson.entries) {
+      final inputValue = inputSignal.value as Map<String, dynamic>;
+      final signal = SignalModel.fromMap({
         'name': inputSignal.key,
         'direction': 'Input',
-        'value': inputSignal.value['value'],
-        'width': inputSignal.value['width'],
+        'value': inputValue['value'],
+        'width': inputValue['width']
       });
       inputSignalsList.add(signal);
     }
 
-    for (var outputSignal in json['outputs'].entries) {
-      SignalModel signal = SignalModel.fromMap({
+    for (final outputSignal in outputsJson.entries) {
+      final outputValue = outputSignal.value as Map<String, dynamic>;
+      final signal = SignalModel.fromMap({
         'name': outputSignal.key,
-        'direction': 'Input',
-        'value': outputSignal.value['value'],
-        'width': outputSignal.value['width'],
+        'direction': 'Output',
+        'value': outputValue['value'],
+        'width': outputValue['width']
       });
 
       outputSignalsList.add(signal);
     }
 
+    for (final inoutSignal in inoutsJson.entries) {
+      final inoutValue = inoutSignal.value as Map<String, dynamic>;
+      final signal = SignalModel.fromMap({
+        'name': inoutSignal.key,
+        'direction': 'Inout',
+        'value': inoutValue['value'],
+        'width': inoutValue['width']
+      });
+
+      inoutSignalsList.add(signal);
+    }
+
     return TreeModel(
-      name: json['name'],
-      inputs: inputSignalsList,
-      outputs: outputSignalsList,
-      subModules: (json["subModules"] as List)
-          .map((subModule) => TreeModel.fromJson(subModule))
-          .toList(),
-    );
+        name: json['name'] as String,
+        inputs: inputSignalsList,
+        outputs: outputSignalsList,
+        inouts: inoutSignalsList,
+        subModules: (json['subModules'] as List)
+            .map((subModule) =>
+                TreeModel.fromJson(subModule as Map<String, dynamic>))
+            .toList());
   }
 }
