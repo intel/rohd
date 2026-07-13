@@ -887,8 +887,8 @@ void main() {
 
     expect(sv, contains('''
 module ModWithUselessWireMods (
-input logic [7:0] a,
-input logic [7:0] b
+input wire logic [7:0] a,
+input wire logic [7:0] b
 );
 
 endmodule : ModWithUselessWireMods'''));
