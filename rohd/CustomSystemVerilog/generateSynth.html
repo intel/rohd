@@ -55,7 +55,8 @@
     <section class="multi-line-signature">
       
 <span class="returntype"><a href="https://api.dart.dev/stable/3.12.2/dart-core/String-class.html">String</a></span>
-<span class="name ">generateSynth</span>(<wbr>)
+<span class="name ">generateSynth</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="generateSynth-param-configuration"><span class="type-annotation"><a href="../../rohd/SystemVerilogSynthesizerConfiguration-class.html">SystemVerilogSynthesizerConfiguration</a></span> <span class="parameter-name">configuration</span> = <span class="default-value">const SystemVerilogSynthesizerConfiguration()</span>, </span></li>
+</ol>})
 
       <div class="features"><span class="feature">inherited</span></div>
 
@@ -65,13 +66,17 @@
   <p>Returns a synthesized version of this <a href="../../rohd/Module-class.html">Module</a>.</p>
 <p>Currently returns one long file in SystemVerilog, but in the future
 may have other output formats, languages, files, etc.</p>
+<p>The <code>configuration</code> controls options specific to SystemVerilog output.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">String generateSynth() {
+  <pre class="language-dart"><code class="language-dart">String generateSynth({
+  SystemVerilogSynthesizerConfiguration configuration =
+      const SystemVerilogSynthesizerConfiguration(),
+}) {
   if (!_hasBuilt) {
     throw ModuleNotBuiltException(this);
   }
@@ -85,9 +90,10 @@ may have other output formats, languages, files, etc.</p>
 
 &#39;&#39;&#39;;
   return synthHeader +
-      SynthBuilder(this, SystemVerilogSynthesizer())
-          .getSynthFileContents()
-          .join(&#39;\n\n&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;\n\n&#39;);
+      SynthBuilder(
+        this,
+        SystemVerilogSynthesizer(configuration: configuration),
+      ).getSynthFileContents().join(&#39;\n\n&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;&#47;\n\n&#39;);
 }</code></pre>
 </section>
 

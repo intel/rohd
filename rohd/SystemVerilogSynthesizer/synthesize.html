@@ -90,7 +90,11 @@ SynthesisResult synthesize(
           module.generatedDefinitionType == DefinitionGenerationType.custom
       ? SystemVerilogCustomDefinitionSynthesisResult(
           module, getInstanceTypeOfModule)
-      : SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+      : SystemVerilogSynthesisResult(
+          module,
+          getInstanceTypeOfModule,
+          configuration: configuration,
+        );
 }</code></pre>
 </section>
 
