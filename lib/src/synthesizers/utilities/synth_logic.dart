@@ -207,6 +207,12 @@ class SynthLogic {
   /// True only if this represents a [LogicArray].
   final bool isArray;
 
+  /// An optional symbolic width expression for SV generation.
+  ///
+  /// When set, the generated SV will use this expression for the range
+  /// declaration (e.g., `[WIDTH-1:0]`) instead of concrete integer bounds.
+  final ParameterExpression? _widthExpression;
+
   /// The chosen name of this.
   ///
   /// Must call [pickName] before this is accessible.
@@ -255,6 +261,7 @@ class SynthLogic {
     Naming? namingOverride,
     bool constNameDisallowed = false,
   })  : isArray = initialLogic is LogicArray,
+        _widthExpression = initialLogic.widthExpression,
         _constNameDisallowed = constNameDisallowed {
     _addLogic(initialLogic, namingOverride: namingOverride);
   }
@@ -355,7 +362,14 @@ class SynthLogic {
       'logics contained: ${logics.map(Namer.baseName).toList()}';
 
   /// Provides a definition for a range in SV from a width.
-  static String _widthToRangeDef(int width, {bool forceRange = false}) {
+  ///
+  /// If [widthExpr] is provided, the expression is used instead of
+  /// concrete integer values (e.g., `[WIDTH-1:0]` instead of `[7:0]`).
+  static String _widthToRangeDef(int width,
+      {bool forceRange = false, ParameterExpression? widthExpr}) {
+    if (widthExpr != null) {
+      return '[${widthExpr.svExpression} - 1:0]';
+    }
     if (width > 1 || forceRange) {
       return '[${width - 1}:0]';
     } else {
@@ -379,9 +393,13 @@ class SynthLogic {
       final unpackedDimsBuf = StringBuffer();
 
       final dims = logicArr.dimensions;
+      final dimExprs = logicArr.dimensionExpressions;
       for (var i = 0; i < dims.length; i++) {
         final dim = dims[i];
-        final dimStr = _widthToRangeDef(dim, forceRange: true);
+        final dimExpr =
+            (dimExprs != null && i < dimExprs.length) ? dimExprs[i] : null;
+        final dimStr =
+            _widthToRangeDef(dim, forceRange: true, widthExpr: dimExpr);
         if (i < logicArr.numUnpackedDimensions) {
           unpackedDimsBuf.write(dimStr);
         } else {
@@ -389,12 +407,13 @@ class SynthLogic {
         }
       }
 
-      packedDimsBuf.write(_widthToRangeDef(logicArr.elementWidth));
+      packedDimsBuf.write(_widthToRangeDef(logicArr.elementWidth,
+          widthExpr: logicArr.elementWidthExpression));
 
       packedDims = packedDimsBuf.toString();
       unpackedDims = unpackedDimsBuf.toString();
     } else {
-      packedDims = _widthToRangeDef(logic.width);
+      packedDims = _widthToRangeDef(logic.width, widthExpr: _widthExpression);
       unpackedDims = '';
     }
 

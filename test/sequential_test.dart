@@ -52,7 +52,8 @@ class ShorthandSeqModule extends Module {
   final bool useArrays;
 
   @override
-  Logic addOutput(String name, {int width = 1}) {
+  Logic addOutput(String name,
+      {int width = 1, ParameterExpression? widthExpression}) {
     assert(width.isEven, 'if arrays, split width in 2');
     if (useArrays) {
       return super
