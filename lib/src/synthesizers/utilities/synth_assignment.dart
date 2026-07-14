@@ -74,3 +74,32 @@ class PartialSynthAssignment extends SynthAssignment {
   @override
   String toString() => '$dst[$dstUpperIndex:$dstLowerIndex] <= $src';
 }
+
+/// Represents an assignment from a partial source to a partial destination.
+class RangeSynthAssignment extends PartialSynthAssignment {
+  /// The upper index of the source.
+  int srcUpperIndex;
+
+  /// The lower index of the source.
+  int srcLowerIndex;
+
+  /// The width of the source and destination ranges.
+  @override
+  int get width => dstUpperIndex - dstLowerIndex + 1;
+
+  @override
+  bool _checkWidths() => width == srcUpperIndex - srcLowerIndex + 1;
+
+  /// Constructs a representation of a range-to-range assignment.
+  RangeSynthAssignment(super._src, super._dst,
+      {required this.srcUpperIndex,
+      required this.srcLowerIndex,
+      required super.dstUpperIndex,
+      required super.dstLowerIndex})
+      : assert(srcLowerIndex >= 0, 'Invalid source lower index'),
+        assert(srcUpperIndex < _src.width, 'Invalid source upper index');
+
+  @override
+  String toString() => '$dst[$dstUpperIndex:$dstLowerIndex] <= '
+      '$src[$srcUpperIndex:$srcLowerIndex]';
+}

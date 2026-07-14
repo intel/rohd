@@ -159,21 +159,37 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
+    String rangeString(int upperIndex, int lowerIndex) =>
+        upperIndex == lowerIndex
+            ? '[$upperIndex]'
+            : '[$upperIndex:$lowerIndex]';
+
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
           !(assignment.src.isNet && assignment.dst.isNet),
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      var sliceString = '';
-      if (assignment is PartialSynthAssignment && assignment.width > 1) {
-        sliceString = assignment.dstUpperIndex == assignment.dstLowerIndex
-            ? '[${assignment.dstUpperIndex}]'
-            : '[${assignment.dstUpperIndex}:${assignment.dstLowerIndex}]';
+      var dstSliceString = '';
+      var srcSliceString = '';
+      if (assignment is RangeSynthAssignment) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+        srcSliceString = rangeString(
+          assignment.srcUpperIndex,
+          assignment.srcLowerIndex,
+        );
+      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
       }
 
-      assignmentLines.add('assign ${assignment.dst.name}$sliceString'
-          ' = ${assignment.src.name};');
+      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
+          ' = ${assignment.src.name}$srcSliceString;');
     }
     return assignmentLines.join('\n');
   }
