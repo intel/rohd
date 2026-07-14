@@ -350,7 +350,7 @@ rohd_extension/
 ├── snippets/
 │   └── rohd.json         # ROHD Dart snippets
 └── resources/
-    └── icon.png          # Extension icon
+    └── rohd_icon.png     # Extension icon
 ```
 
 ## License

@@ -853,6 +853,13 @@ const moduleItems = buildItems(MODULE_SNIPPETS);
 const fileItems = buildItems(FILE_SNIPPETS);
 const testItems = buildItems(TEST_SNIPPETS);
 
+const COMPLETION_TRIGGER_CHARACTERS = Array.from(new Set([
+  ...ALWAYS_SNIPPETS,
+  ...MODULE_SNIPPETS,
+  ...FILE_SNIPPETS,
+  ...TEST_SNIPPETS,
+].flatMap(snippet => snippet.prefixes.map(prefix => prefix[0])))).concat('.');
+
 function buildPipelineTypedItems(
   range: vscode.Range,
   readyValid: boolean,
@@ -1075,8 +1082,6 @@ export function activate(_context: vscode.ExtensionContext): vscode.Disposable {
   return vscode.languages.registerCompletionItemProvider(
     { language: 'dart', scheme: 'file' },
     provider,
-    'I', 'i', 'E', 'e', 'C', 'c', 'S', 's',
-    'P', 'p', 'R', 'r', 'F', 'f', 'M', 'm', 'a', '.', 'b',
-    'd', 'e', 'g', 'i', 'l', 'n', 'o', 't', 'v', 'y',
+    ...COMPLETION_TRIGGER_CHARACTERS,
   );
 }
