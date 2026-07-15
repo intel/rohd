@@ -1138,7 +1138,6 @@ abstract class Module {
   /// For richer access to per-module file contents, named maps, and individual
   /// file writing, see [SvService] (and [SvService.synthOutput] for the
   /// equivalent one-shot string).
-  String generateSynth() {
   /// The [configuration] controls options specific to SystemVerilog output.
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
@@ -1148,7 +1147,8 @@ abstract class Module {
       throw ModuleNotBuiltException(this);
     }
 
-    return SvService(this, register: false).synthOutput;
+    return SvService(this, register: false, configuration: configuration)
+        .synthOutput;
   }
 }
 

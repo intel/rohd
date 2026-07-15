@@ -57,6 +57,9 @@ class SvService extends CodegenService {
   @override
   final bool multiFile;
 
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
   /// The underlying [SynthBuilder] that drove synthesis.
   late final SynthBuilder synthBuilder;
 
@@ -71,7 +74,10 @@ class SvService extends CodegenService {
   /// of per-module files when [multiFile] is `true`, otherwise the
   /// concatenated SV output (with header) to that single file.
   SvService(this.module,
-      {bool register = true, this.outputPath, this.multiFile = false}) {
+      {bool register = true,
+      this.outputPath,
+      this.multiFile = false,
+      this.configuration = const SystemVerilogSynthesizerConfiguration()}) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating SvService. '
@@ -79,7 +85,8 @@ class SvService extends CodegenService {
       );
     }
 
-    synthBuilder = SynthBuilder(module, SystemVerilogSynthesizer());
+    synthBuilder = SynthBuilder(
+        module, SystemVerilogSynthesizer(configuration: configuration));
     fileContents = synthBuilder.getSynthFileContents();
 
     if (outputPath != null) {
