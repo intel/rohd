@@ -41,6 +41,7 @@ class NetlistSynthesisResult extends SynthesisResult {
     this.attributes = const {},
   });
 
+  /// Builds the JSON representation for this single module entry.
   String _buildJson() {
     final moduleEntry = <String, Object?>{
       'attributes': attributes,
@@ -73,7 +74,7 @@ class NetlistSynthesisResult extends SynthesisResult {
     };
     final contents = const JsonEncoder.withIndent('  ').convert({
       'creator': 'NetlistSynthesizer (rohd)',
-      'version': netlistFormatVersion,
+      'version': NetlistSynthesizer.formatVersion,
       'modules': {typeName: moduleEntry},
     });
     return [

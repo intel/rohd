@@ -10,7 +10,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 
 /// A [Swizzle] used by synthesis backends to explicitly assemble a
 /// [LogicStructure] from its leaf elements.
@@ -19,13 +19,11 @@ class SynthStructureConcat extends Swizzle {
   final LogicStructure _destination;
 
   /// Creates a synthesis structure concatenation from [signals].
-  SynthStructureConcat(
-    super.signals, {
-    required LogicStructure destination,
-  })  : _destination = destination,
+  SynthStructureConcat(super.signals, {required LogicStructure destination})
+      : _destination = destination,
         super(
-          name: Namer.synthOperationInstanceName(
-            operationName: Namer.synthStructureConcatOperationName,
+          name: SynthOperationNamer.instanceName(
+            operationName: SynthOperationNamer.structureConcatOperationName,
             destination: destination,
           ),
         );
@@ -35,7 +33,7 @@ class SynthStructureConcat extends Swizzle {
 
   @override
   Object get instanceNameKey => (
-        operationName: Namer.synthStructureConcatOperationName,
+        operationName: SynthOperationNamer.structureConcatOperationName,
         destination: _destination,
       );
 }

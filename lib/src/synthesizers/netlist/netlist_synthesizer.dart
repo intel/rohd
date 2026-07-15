@@ -17,7 +17,6 @@ import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_synthesis_result.dart';
 import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
-import 'package:rohd/src/utilities/namer.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
 
 /// A simple [Synthesizer] that produces netlist-compatible JSON.
@@ -38,6 +37,9 @@ import 'package:rohd/src/utilities/sanitizer.dart';
 /// final json = synth.synthesizeToJson(topModule);
 /// ```
 class NetlistSynthesizer extends Synthesizer {
+  /// The current format version for netlist JSON produced by this synthesizer.
+  static const String formatVersion = '0.0.5';
+
   /// The configuration options controlling netlist synthesis.
   ///
   /// See [NetlistOptions] for documentation on individual fields.
@@ -267,8 +269,8 @@ class NetlistSynthesizer extends Synthesizer {
         idAlias[childId] = parentId;
       }
 
-      // Collect LogicArray ports that have explicit array slice or
-      // array concat submodules so we can skip aliasing them (the
+      // Collect LogicArray ports that have explicit array_slice or
+      // array_concat submodules so we can skip aliasing them (the
       // $slice/$concat cells provide the structural link).
       final arraysWithExplicitCells = <Logic>{};
       for (final inst in synthDef.subModuleInstantiations) {
@@ -424,7 +426,7 @@ class NetlistSynthesizer extends Synthesizer {
         ? bits
         : bits.map((b) => b is int ? resolveAlias(b) : b).toList();
 
-    // -- Break shared wire IDs for array slice cells -----------------------
+    // -- Break shared wire IDs for array slice/concat cells -----------------
     // (Populated inside the alias block below; declared here so netnames
     // can reference it later.)
     final arraySliceOldToNew = <int, int>{};
@@ -448,14 +450,16 @@ class NetlistSynthesizer extends Synthesizer {
       // trivial and it would be elided below.
       //
       // To preserve the structural decomposition in the schematic, we
-      // allocate fresh wire IDs for each array slice Y output, then
+      // allocate fresh wire IDs for each array_slice Y output, then
       // redirect all other cells that consume those IDs as inputs to
       // read from the fresh IDs instead.  The slice input A keeps the
       // original parent-array IDs, so the data flow becomes:
       //   parent (original IDs) → slice A → slice Y (fresh IDs) → consumer
 
       for (final cellEntry in cells.entries) {
-        if (!cellEntry.key.startsWith(Namer.synthArraySliceOperationName)) {
+        if (!cellEntry.key.startsWith(
+          SynthOperationNamer.arraySliceOperationName,
+        )) {
           continue;
         }
         final cell = cellEntry.value as Map<String, dynamic>;
@@ -483,7 +487,9 @@ class NetlistSynthesizer extends Synthesizer {
       // gets replaced with the corresponding fresh ID.
       if (arraySliceOldToNew.isNotEmpty) {
         for (final cellEntry in cells.entries) {
-          if (cellEntry.key.startsWith(Namer.synthArraySliceOperationName)) {
+          if (cellEntry.key.startsWith(
+            SynthOperationNamer.arraySliceOperationName,
+          )) {
             continue; // skip the slice cells themselves
           }
           final cell = cellEntry.value as Map<String, dynamic>;
@@ -504,37 +510,38 @@ class NetlistSynthesizer extends Synthesizer {
           }
         }
       }
-
-      // -- Elide trivial $slice cells ----------------------------------
-      // Also elide struct_slice cells ([SynthStructureSlice]
-      // instances from `_subsetReceiveStructPort`) because the new
-      // `$struct_unpack` cells emitted below supersede them with
-      // better-named field-level connections.
-      cells.removeWhere((cellKey, cell) {
-        if (cell['type'] != r'$slice') {
-          return false;
-        }
-        // Unconditionally remove struct_slice cells — they are
-        // duplicated by $struct_unpack cells which carry field names.
-        if (cellKey.startsWith(Namer.synthStructureSliceOperationName)) {
-          return true;
-        }
-        final params = cell['parameters'] as Map<String, Object?>?;
-        final offset = params?['OFFSET'];
-        if (offset is! int) {
-          return false;
-        }
-        final conns = cell['connections']! as Map<String, dynamic>;
-        final aBits = conns['A'] as List?;
-        final yBits = conns['Y'] as List?;
-        if (aBits == null || yBits == null) {
-          return false;
-        }
-        return yBits.indexed.every(
-          (e) => offset + e.$1 < aBits.length && e.$2 == aBits[offset + e.$1],
-        );
-      });
     }
+
+    // -- Elide trivial $slice cells ----------------------------------
+    // Also elide struct_slice cells ([SynthStructureSlice] instances from
+    // `_subsetReceiveStructPort`) because the new `$struct_unpack` cells
+    // emitted below supersede them with better-named field-level connections.
+    cells.removeWhere((cellKey, cell) {
+      if (cell['type'] != r'$slice') {
+        return false;
+      }
+      // Unconditionally remove struct_slice cells — they are duplicated by
+      // $struct_unpack cells which carry field names.
+      if (cellKey.startsWith(
+        SynthOperationNamer.structureSliceOperationName,
+      )) {
+        return true;
+      }
+      final params = cell['parameters'] as Map<String, Object?>?;
+      final offset = params?['OFFSET'];
+      if (offset is! int) {
+        return false;
+      }
+      final conns = cell['connections']! as Map<String, dynamic>;
+      final aBits = conns['A'] as List?;
+      final yBits = conns['Y'] as List?;
+      if (aBits == null || yBits == null) {
+        return false;
+      }
+      return yBits.indexed.every(
+        (e) => offset + e.$1 < aBits.length && e.$2 == aBits[offset + e.$1],
+      );
+    });
 
     // -- Emit $struct_unpack cells for LogicStructure elements ----------
     // Group per-field entries by their parent LogicStructure and emit a
@@ -708,11 +715,11 @@ class NetlistSynthesizer extends Synthesizer {
         final structLayout =
             dstLogic is LogicStructure ? SynthStructureLayout(dstLogic) : null;
         final cellName = dstLogic != null
-            ? Namer.synthOperationInstanceName(
-                operationName: Namer.synthStructureConcatOperationName,
+            ? SynthOperationNamer.instanceName(
+                operationName: SynthOperationNamer.structureConcatOperationName,
                 destination: dstLogic,
               )
-            : Namer.synthStructureConcatOperationName;
+            : SynthOperationNamer.structureConcatOperationName;
 
         // Build port_directions and connections.
         final portDirs = <String, String>{};
@@ -771,21 +778,30 @@ class NetlistSynthesizer extends Synthesizer {
         pruneFloating: options.enableDCE,
       );
 
-    // -- Break shared wire IDs for array concat cells --------------------
-    // After aliasing, the concat inputs share the same wire IDs as the
-    // concat Y output (because LogicArray elements share the parent's
-    // bit storage).  This makes the concat transparent -- constants
-    // appear to drive the parent array directly.
+    // -- Break shared wire IDs for array_concat cells --------------------
+    // After aliasing, concat Y can share wire IDs with the independently
+    // driven element inputs (because LogicArray elements share the parent's
+    // bit storage).  This makes concat Y a second driver of the element wires.
     //
-    // To fix: allocate fresh wire IDs for each concat input port,
-    // then redirect all other cells whose outputs used those old IDs
-    // to drive the fresh IDs instead.  The concat Y output keeps the
-    // original parent-array IDs, so the data flow becomes:
-    //   const → fresh_IDs → concat input → concat Y (= parent IDs)
+    // Allocate fresh IDs for concat Y and redirect downstream consumers to
+    // those fresh IDs. The concat inputs keep the original element IDs, so
+    // data flow is:
+    //   element drivers → concat input → concat Y (fresh IDs) → consumer
     final arrayConcatOldToNew = <int, int>{};
+    final arrayConcatOldOutputBits = <String, Set<int>>{};
+    final outputPortBitSets = [
+      for (final port in ports.values)
+        if ((port as Map<String, dynamic>)['direction'] == 'output')
+          (port['bits'] as List).whereType<int>().toSet(),
+    ];
 
     for (final cellEntry in cells.entries) {
-      if (!cellEntry.key.startsWith(Namer.synthArrayConcatOperationName)) {
+      if (!cellEntry.key.startsWith(
+        SynthOperationNamer.arrayConcatOperationName,
+      )) {
+        continue;
+      }
+      if (cellEntry.key.startsWith('array_concat_output_')) {
         continue;
       }
       final cell = cellEntry.value as Map<String, dynamic>;
@@ -793,40 +809,62 @@ class NetlistSynthesizer extends Synthesizer {
       final dirs = cell['port_directions'] as Map<String, dynamic>;
 
       for (final portEntry in conns.entries.toList()) {
-        if (dirs[portEntry.key] != 'input') {
+        if (dirs[portEntry.key] != 'output') {
           continue;
         }
         final oldBits = (portEntry.value as List).cast<Object>();
+        final oldBitSet = oldBits.whereType<int>().toSet();
+        if (outputPortBitSets.any(
+          (outputBits) =>
+              outputBits.length == oldBitSet.length &&
+              outputBits.containsAll(oldBitSet),
+        )) {
+          continue;
+        }
+        arrayConcatOldOutputBits[cellEntry.key] = oldBitSet;
         conns[portEntry.key] = [
           for (final b in oldBits)
             b is int
-                ? arrayConcatOldToNew.putIfAbsent(
-                    b,
-                    translation.allocateWireId,
-                  )
+                ? arrayConcatOldToNew.putIfAbsent(b, translation.allocateWireId)
                 : b,
         ];
       }
     }
 
-    // Redirect other cells: any output port bit that matches an old ID
-    // gets replaced with the corresponding fresh ID.
+    // Redirect downstream consumers: any input port or module output bit that
+    // matches an old concat Y ID gets replaced with the corresponding fresh ID.
     if (arrayConcatOldToNew.isNotEmpty) {
-      for (final cellEntry in cells.entries) {
-        if (cellEntry.key.startsWith(Namer.synthArrayConcatOperationName)) {
-          continue; // skip the concat cells themselves
+      for (final portEntry in ports.values) {
+        final port = portEntry as Map<String, dynamic>;
+        if (port['direction'] != 'output') {
+          continue;
         }
+        final bits = (port['bits'] as List).cast<Object>();
+        final newBits = [
+          for (final b in bits) b is int ? (arrayConcatOldToNew[b] ?? b) : b,
+        ];
+        if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
+          port['bits'] = newBits;
+        }
+      }
+
+      for (final cellEntry in cells.entries) {
         final cell = cellEntry.value as Map<String, dynamic>;
         final conns = cell['connections'] as Map<String, dynamic>;
         final dirs = cell['port_directions'] as Map<String, dynamic>;
+        final selfOldOutputBits =
+            arrayConcatOldOutputBits[cellEntry.key] ?? const <int>{};
 
         for (final portEntry in conns.entries.toList()) {
-          if (dirs[portEntry.key] != 'output') {
+          if (dirs[portEntry.key] != 'input') {
             continue;
           }
           final bits = (portEntry.value as List).cast<Object>();
           final newBits = [
-            for (final b in bits) b is int ? (arrayConcatOldToNew[b] ?? b) : b,
+            for (final b in bits)
+              b is int && !selfOldOutputBits.contains(b)
+                  ? (arrayConcatOldToNew[b] ?? b)
+                  : b,
           ];
           if (bits.indexed.any((e) => e.$2 != newBits[e.$1])) {
             conns[portEntry.key] = newBits;
@@ -852,12 +890,14 @@ class NetlistSynthesizer extends Synthesizer {
     final netnames = translation.netnames;
 
     // -- Structural validation -------------------------------------------
-    // Debug-mode checks to catch netlist bugs early.  These verify that
-    // every signal has a driver and every cell is connected.
-    assert(() {
-      NetlistValidation.validate(ports, cells, module.name);
-      return true;
-    }(), 'Netlist structural validation failed for ${module.name}');
+    // Always catch netlist shorts, even when assertions are disabled.
+    NetlistValidation.validate(
+      ports,
+      cells,
+      module.name,
+      netnames: netnames,
+      throwOnMultipleDrivers: true,
+    );
 
     return NetlistSynthesisResult(
       module,
@@ -877,7 +917,10 @@ class NetlistSynthesizer extends Synthesizer {
   /// Also used internally by [buildModulesMap] / [synthesizeToJson].
   void applyPostProcessingPasses(Map<String, Map<String, Object?>> modules) {
     if (options.collapseTransparentClusters) {
+      NetlistPasses.collapseConcatOfAdjacentSlices(modules);
+      NetlistPasses.removeTrivialConcatAliases(modules);
       NetlistPasses.applyTransparentClustering(modules);
+      NetlistPasses.removeUnconsumedTransparentCells(modules);
     }
   }
 
@@ -927,7 +970,7 @@ class NetlistSynthesizer extends Synthesizer {
 
     final combined = {
       'creator': 'NetlistSynthesizer (rohd)',
-      'version': netlistFormatVersion,
+      'version': formatVersion,
       'modules': modules,
     };
 
@@ -1029,11 +1072,7 @@ class NetlistSynthesizer extends Synthesizer {
   /// The [packageRoot] parameter is accepted for API compatibility with
   /// downstream trace-enabled branches. [slimMode] overrides the configured
   /// output mode for this call, allowing expansion after a slim request.
-  String synthesizeToJson(
-    Module top, {
-    String? packageRoot,
-    bool? slimMode,
-  }) {
+  String synthesizeToJson(Module top, {String? packageRoot, bool? slimMode}) {
     final sb = SynthBuilder(top, this);
     return generateCombinedJson(sb, top, slimMode: slimMode);
   }

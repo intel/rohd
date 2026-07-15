@@ -6,6 +6,7 @@ export 'synth_array_slice.dart';
 export 'synth_assignment.dart';
 export 'synth_logic.dart';
 export 'synth_module_definition.dart';
+export 'synth_operation_namer.dart';
 export 'synth_structure_concat.dart';
 export 'synth_structure_layout.dart';
 export 'synth_structure_slice.dart';

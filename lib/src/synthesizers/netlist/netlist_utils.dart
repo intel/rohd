@@ -16,6 +16,7 @@ import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 /// All methods are static — no instances are created.
 @internal
 class NetlistUtils {
+  /// Prevents construction of this static utility class.
   NetlistUtils._();
 
   /// Find the port name in [portMap] that corresponds to [sl].

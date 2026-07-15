@@ -4,11 +4,6 @@
 // netlist_passes.dart
 // Post-processing optimization passes for netlist synthesis.
 //
-// These passes operate on the modules map (definition name → module data)
-// produced by [NetlistSynthesizer.synthesize].  They simplify the netlist
-// by grouping struct conversions, collapsing redundant cells, and inserting
-// buffer cells for cleaner schematic rendering.
-//
 // 2025 February 11
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
@@ -22,6 +17,7 @@ import 'package:rohd/src/synthesizers/netlist/netlist_utils.dart';
 /// All methods are static — no instances are created.
 @internal
 class NetlistPasses {
+  /// Prevents construction of this static utility class.
   NetlistPasses._();
 
   /// Collects a combined modules map from [SynthesisResult]s suitable for
@@ -53,6 +49,7 @@ class NetlistPasses {
     return allModules;
   }
 
+  /// Deep-copies cell maps, optionally omitting connection payloads.
   static Map<String, Map<String, Object?>> _copyCells(
     Map<String, Map<String, Object?>> source, {
     required bool includeConnections,
@@ -66,6 +63,7 @@ class NetlistPasses {
           ),
       };
 
+  /// Deep-copies a map whose values are JSON-like object maps.
   static Map<String, Map<String, Object?>> _copyNestedMaps(
     Map<String, Map<String, Object?>> source,
   ) =>
@@ -74,11 +72,13 @@ class NetlistPasses {
           entry.key: _copyObjectMap(entry.value),
       };
 
+  /// Deep-copies a JSON-like object map.
   static Map<String, Object?> _copyObjectMap(Map<String, Object?> source) => {
         for (final entry in source.entries)
           entry.key: _copyJsonValue(entry.value),
       };
 
+  /// Deep-copies a JSON-like value while preserving scalar objects.
   static Object? _copyJsonValue(Object? value) {
     if (value is Map) {
       return <String, Object?>{
@@ -87,9 +87,7 @@ class NetlistPasses {
       };
     }
     if (value is List) {
-      return <Object?>[
-        for (final element in value) _copyJsonValue(element),
-      ];
+      return <Object?>[for (final element in value) _copyJsonValue(element)];
     }
     return value;
   }
@@ -233,6 +231,16 @@ class NetlistPasses {
       final cellsToAdd = <String, Map<String, Object?>>{};
 
       for (final comp in components) {
+        if (comp.any(
+          (cn) => const {
+            r'$concat',
+            r'$struct_pack',
+            r'$struct_unpack',
+          }.contains(cells[cn]!['type']),
+        )) {
+          continue;
+        }
+
         // Build output-bit → input-bit map for the whole cluster.
         final bitMap = <int, Object>{};
         for (final cn in comp) {
@@ -308,6 +316,379 @@ class NetlistPasses {
       cells.addAll(cellsToAdd);
     }
   }
+
+  /// Removes transparent helper cells whose outputs are not consumed by any
+  /// other cell or module output.
+  static void removeUnconsumedTransparentCells(
+    Map<String, Map<String, Object?>> allModules,
+  ) {
+    for (final moduleDef in allModules.values) {
+      final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
+      if (cells == null || cells.isEmpty) {
+        continue;
+      }
+
+      final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      var changed = true;
+      while (changed) {
+        changed = false;
+        final consumedBits = <int>{};
+
+        for (final cell in cells.values) {
+          final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
+          final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+          for (final entry in conns.entries) {
+            final direction = dirs[entry.key] as String?;
+            if (direction != 'input' && direction != 'inout') {
+              continue;
+            }
+            consumedBits.addAll((entry.value as List).whereType<int>());
+          }
+        }
+        for (final port in ports.values) {
+          final portMap = port as Map<String, dynamic>;
+          final direction = portMap['direction'] as String?;
+          if (direction != 'output' && direction != 'inout') {
+            continue;
+          }
+          consumedBits.addAll((portMap['bits'] as List).whereType<int>());
+        }
+
+        cells.removeWhere((_, cell) {
+          if (!_transparentTypes.contains(cell['type'] as String?)) {
+            return false;
+          }
+          final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
+          final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+          final outputBits = <int>{};
+          for (final entry in conns.entries) {
+            final direction = dirs[entry.key] as String?;
+            if (direction != 'output' && direction != 'inout') {
+              continue;
+            }
+            outputBits.addAll((entry.value as List).whereType<int>());
+          }
+          final remove =
+              outputBits.isNotEmpty && !outputBits.any(consumedBits.contains);
+          changed = changed || remove;
+          return remove;
+        });
+      }
+    }
+  }
+
+  /// Removes `$concat` cells that only rename an already-named bit vector.
+  ///
+  /// Explicit array concat cells are useful when they show a real regrouping,
+  /// but a concat whose flattened inputs exactly match an existing netname is
+  /// just an alias. Redirect its consumers to the named source bits and remove
+  /// the cell.
+  static void removeTrivialConcatAliases(
+    Map<String, Map<String, Object?>> allModules,
+  ) {
+    for (final moduleDef in allModules.values) {
+      final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
+      final netnames = moduleDef['netnames'] as Map<String, Object?>?;
+      if (cells == null || cells.isEmpty || netnames == null) {
+        continue;
+      }
+
+      final namedBitVectors = [
+        for (final rawNetname in netnames.values)
+          if (rawNetname is Map && rawNetname['bits'] is List)
+            (rawNetname['bits'] as List).cast<Object>(),
+      ];
+      if (namedBitVectors.isEmpty) {
+        continue;
+      }
+
+      var changed = true;
+      while (changed) {
+        changed = false;
+        final replacementByOutputBit = <int, Object>{};
+        final cellsToRemove = <String>{};
+
+        for (final entry in cells.entries) {
+          final cell = entry.value;
+          if (cell['type'] != r'$concat' ||
+              entry.key.startsWith('array_concat_output_')) {
+            continue;
+          }
+
+          final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
+          final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+          final outputBits = <Object>[];
+          final inputBits = <Object>[];
+
+          for (final portEntry in conns.entries) {
+            final bits = (portEntry.value as List).cast<Object>();
+            if ((dirs[portEntry.key] as String?) == 'output') {
+              outputBits.addAll(bits);
+            } else {
+              inputBits.addAll(bits);
+            }
+          }
+
+          if (outputBits.length != inputBits.length ||
+              !_matchesNamedVector(inputBits, namedBitVectors)) {
+            continue;
+          }
+
+          for (var index = 0; index < outputBits.length; index++) {
+            final outputBit = outputBits[index];
+            if (outputBit is int) {
+              replacementByOutputBit[outputBit] = inputBits[index];
+            }
+          }
+          cellsToRemove.add(entry.key);
+        }
+
+        if (replacementByOutputBit.isEmpty) {
+          continue;
+        }
+
+        void rewriteBits(List<Object> bits) {
+          for (var index = 0; index < bits.length; index++) {
+            final bit = bits[index];
+            if (bit is int && replacementByOutputBit.containsKey(bit)) {
+              bits[index] = replacementByOutputBit[bit]!;
+            }
+          }
+        }
+
+        final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+        for (final rawPort in ports.values) {
+          final port = rawPort as Map<String, dynamic>;
+          rewriteBits((port['bits'] as List).cast<Object>());
+        }
+
+        for (final entry in cells.entries) {
+          if (cellsToRemove.contains(entry.key)) {
+            continue;
+          }
+          final cell = entry.value;
+          final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+          for (final rawBits in conns.values) {
+            rewriteBits((rawBits as List).cast<Object>());
+          }
+        }
+
+        for (final rawNetname in netnames.values) {
+          if (rawNetname is Map && rawNetname['bits'] is List) {
+            rewriteBits((rawNetname['bits'] as List).cast<Object>());
+          }
+        }
+
+        cellsToRemove.forEach(cells.remove);
+        changed = true;
+      }
+    }
+  }
+
+  /// Replaces a `$concat` of adjacent `$slice` outputs from the same source
+  /// with one wider `$slice`.
+  static void collapseConcatOfAdjacentSlices(
+    Map<String, Map<String, Object?>> allModules,
+  ) {
+    for (final moduleDef in allModules.values) {
+      final cells = moduleDef['cells'] as Map<String, Map<String, Object?>>?;
+      if (cells == null || cells.isEmpty) {
+        continue;
+      }
+
+      final ports = moduleDef['ports'] as Map<String, dynamic>? ?? {};
+      final cellsToRemove = <String>{};
+
+      for (final concatEntry in cells.entries.toList()) {
+        final concat = concatEntry.value;
+        if (concat['type'] != r'$concat' ||
+            concatEntry.key.startsWith('array_concat_output_')) {
+          continue;
+        }
+
+        final concatDirs =
+            concat['port_directions'] as Map<String, dynamic>? ?? {};
+        final concatConns =
+            concat['connections'] as Map<String, dynamic>? ?? {};
+        final inputSliceRefs = <({String name, Map<String, Object?> cell})>[];
+        final outputBits = <Object>[];
+        var valid = true;
+
+        for (final portEntry in concatConns.entries) {
+          if ((concatDirs[portEntry.key] as String?) == 'output') {
+            outputBits.addAll((portEntry.value as List).cast<Object>());
+            continue;
+          }
+
+          final inputBits = (portEntry.value as List).cast<Object>();
+          final sliceEntry = _findSliceDrivingBits(cells, inputBits);
+          if (sliceEntry == null) {
+            valid = false;
+            break;
+          }
+          inputSliceRefs.add((name: sliceEntry.key, cell: sliceEntry.value));
+        }
+
+        if (!valid || inputSliceRefs.isEmpty || outputBits.isEmpty) {
+          continue;
+        }
+
+        final firstSlice = inputSliceRefs.first.cell;
+        final firstParams =
+            firstSlice['parameters'] as Map<String, dynamic>? ?? {};
+        final firstConnections =
+            firstSlice['connections'] as Map<String, dynamic>?;
+        final sourceRawBits = firstConnections?['A'] as List?;
+        if (sourceRawBits == null) {
+          continue;
+        }
+        final sourceBits = sourceRawBits.cast<Object>();
+        final startOffset = firstParams['OFFSET'] as int?;
+        final sourceWidth = firstParams['A_WIDTH'] as int?;
+        if (startOffset == null || sourceWidth == null) {
+          continue;
+        }
+
+        var expectedOffset = startOffset;
+        var combinedWidth = 0;
+        for (final sliceRef in inputSliceRefs) {
+          final slice = sliceRef.cell;
+          final params = slice['parameters'] as Map<String, dynamic>? ?? {};
+          final conns = slice['connections'] as Map<String, dynamic>? ?? {};
+          final sliceSourceBits = (conns['A'] as List).cast<Object>();
+          final offset = params['OFFSET'] as int?;
+          final width = params['Y_WIDTH'] as int?;
+
+          if (offset != expectedOffset ||
+              width == null ||
+              params['A_WIDTH'] != sourceWidth ||
+              !_sameBits(sliceSourceBits, sourceBits)) {
+            valid = false;
+            break;
+          }
+
+          expectedOffset += width;
+          combinedWidth += width;
+        }
+
+        if (!valid || combinedWidth != outputBits.length) {
+          continue;
+        }
+
+        cells[concatEntry.key] = {
+          'hide_name': concat['hide_name'] ?? 0,
+          'type': r'$slice',
+          'parameters': <String, Object?>{
+            'OFFSET': startOffset,
+            'A_WIDTH': sourceWidth,
+            'Y_WIDTH': combinedWidth,
+          },
+          'attributes': concat['attributes'] ?? <String, Object?>{},
+          'port_directions': <String, String>{'A': 'input', 'Y': 'output'},
+          'connections': <String, List<Object>>{
+            'A': sourceBits,
+            'Y': outputBits,
+          },
+        };
+
+        for (final sliceRef in inputSliceRefs) {
+          if (!_sliceOutputConsumedOutside(
+            sliceRef.name,
+            sliceRef.cell,
+            cells,
+            ports,
+          )) {
+            cellsToRemove.add(sliceRef.name);
+          }
+        }
+      }
+
+      cellsToRemove.forEach(cells.remove);
+    }
+  }
+
+  /// Finds a slice cell whose output bits exactly match [bits].
+  static MapEntry<String, Map<String, Object?>>? _findSliceDrivingBits(
+    Map<String, Map<String, Object?>> cells,
+    List<Object> bits,
+  ) {
+    for (final entry in cells.entries) {
+      final cell = entry.value;
+      if (cell['type'] != r'$slice') {
+        continue;
+      }
+      final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+      final yBits = (conns['Y'] as List?)?.cast<Object>();
+      if (yBits != null && _sameBits(yBits, bits)) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  /// Checks whether a slice output is still consumed outside that slice cell.
+  static bool _sliceOutputConsumedOutside(
+    String sliceName,
+    Map<String, Object?> slice,
+    Map<String, Map<String, Object?>> cells,
+    Map<String, dynamic> ports,
+  ) {
+    final sliceConns = slice['connections'] as Map<String, dynamic>? ?? {};
+    final outputBits =
+        ((sliceConns['Y'] as List?) ?? const []).whereType<int>();
+    final outputBitSet = outputBits.toSet();
+    if (outputBitSet.isEmpty) {
+      return false;
+    }
+
+    for (final rawPort in ports.values) {
+      final port = rawPort as Map<String, dynamic>;
+      final direction = port['direction'] as String?;
+      if (direction != 'output' && direction != 'inout') {
+        continue;
+      }
+      final bits = (port['bits'] as List).whereType<int>();
+      if (bits.any(outputBitSet.contains)) {
+        return true;
+      }
+    }
+
+    for (final entry in cells.entries) {
+      if (entry.key == sliceName) {
+        continue;
+      }
+      final cell = entry.value;
+      final dirs = cell['port_directions'] as Map<String, dynamic>? ?? {};
+      final conns = cell['connections'] as Map<String, dynamic>? ?? {};
+      for (final portEntry in conns.entries) {
+        final direction = dirs[portEntry.key] as String?;
+        if (direction != 'input' && direction != 'inout') {
+          continue;
+        }
+        final bits = (portEntry.value as List).whereType<int>();
+        if (bits.any(outputBitSet.contains)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Checks whether [bits] exactly matches any known named bit vector.
+  static bool _matchesNamedVector(
+    List<Object> bits,
+    List<List<Object>> namedBitVectors,
+  ) =>
+      namedBitVectors.any(
+        (namedBits) =>
+            namedBits.length == bits.length &&
+            namedBits.indexed.every((entry) => entry.$2 == bits[entry.$1]),
+      );
+
+  /// Checks whether two bit vectors have identical contents and order.
+  static bool _sameBits(List<Object> left, List<Object> right) =>
+      left.length == right.length &&
+      left.indexed.every((entry) => entry.$2 == right[entry.$1]);
 
   /// Populates [bitMap] with output-wire-bit → input-wire-bit entries
   /// for a single transparent cell.

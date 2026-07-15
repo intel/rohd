@@ -12,20 +12,17 @@ import 'package:rohd/rohd.dart' hide SynthModuleStopPolicy;
 import 'package:rohd/src/synthesizers/netlist/netlist_cell_mapper.dart';
 import 'package:rohd/src/synthesizers/utilities/synth_module_stop_policy.dart';
 
-/// The current format version for netlist JSON produced by ROHD.
-const String netlistFormatVersion = '0.0.5';
-
 /// Configuration options for netlist synthesis.
 ///
 /// The netlist synthesizer serves two main consumer flows, both configured
 /// through these options:
 ///
-/// **Flow 1 — Slim JSON** ([NetlistOptions.slimMode]):
+/// **Flow 1 — Slim JSON** (`NetlistService.slimJson`):
 ///   Batch synthesis of the entire design, producing a lightweight
 ///   representation with ports, signals, and cell stubs but **no cell
 ///   connections**.  Used for the initial DevTools hierarchy load.
 ///
-/// **Flow 2 — Full JSON, incremental** (`NetlistSynthesizer.synthesizeToJson`):
+/// **Flow 2 — Full JSON, incremental** (`NetlistService.moduleJson`):
 ///   Returns the complete netlist (with cell connections) for a single
 ///   module definition on demand.  Results are cached; the first call
 ///   may trigger a lazy `SynthBuilder` run on the requested subtree.

@@ -182,6 +182,7 @@ class NetlistCellMapper {
   //  Built-in handler registration
   // ══════════════════════════════════════════════════════════════════════
 
+  /// Registers the built-in ROHD-to-Yosys primitive cell mappings.
   void _registerDefaults() {
     // Helper to reduce boilerplate for type-map-based handlers.
     void registerByTypeMap(

@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // netlist_synthesizer_test.dart
-// Comprehensive tests for the netlist synthesizer covering netlist cell
-// mapping, structural validation, options permutations, and real
-// example designs.
+// Comprehensive tests for the netlist synthesizer.
 //
 // 2026 April 13
 // Author: Auto-generated
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_passes.dart';
+import 'package:rohd/src/synthesizers/netlist/netlist_validation.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 import 'package:test/test.dart';
 
 import '../example/example.dart';
@@ -180,6 +182,130 @@ class SwizzleModule extends Module {
     a = addInput('a', a, width: width);
     b = addInput('b', b, width: width);
     addOutput('y', width: width * 2) <= [a, b].swizzle();
+  }
+}
+
+/// Child with a LogicArray input, used to exercise array port netlisting.
+class ArrayInputChildModule extends Module {
+  LogicArray get values => input('values') as LogicArray;
+
+  Logic get packedOut => output('packedOut');
+
+  ArrayInputChildModule(LogicArray values) : super(name: 'arrayinputchild') {
+    values = addInputArray(
+      'values',
+      values,
+      dimensions: values.dimensions,
+      elementWidth: values.elementWidth,
+    );
+    addOutput('packedOut', width: values.width) <=
+        [for (final element in values.elements.reversed) element].swizzle();
+  }
+}
+
+/// Child with a LogicArray output, used to exercise regrouping array output
+/// elements into another child array input.
+class ArrayOutputChildModule extends Module {
+  LogicArray get values => output('values') as LogicArray;
+
+  ArrayOutputChildModule() : super(name: 'arrayoutputchild') {
+    addOutputArray('values', dimensions: [4], elementWidth: 8);
+  }
+}
+
+/// Parent whose internal LogicArray elements independently feed a child array
+/// input port.
+class InternalArrayToChildModule extends Module {
+  InternalArrayToChildModule() : super(name: 'internalarraytochild') {
+    final first = addInput('first', Logic(width: 8), width: 8);
+    final second = addInput('second', Logic(width: 8), width: 8);
+    final values = LogicArray([2], 8, name: 'values');
+
+    values.elements[0] <= first;
+    values.elements[1] <= second;
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Parent whose internal LogicArray groups elements from another child output
+/// array before feeding a child input port.
+class RegroupedArrayOutputToChildModule extends Module {
+  RegroupedArrayOutputToChildModule()
+      : super(name: 'regroupedarrayoutputtochild') {
+    final source = ArrayOutputChildModule();
+    final values = LogicArray([2], 8, name: 'values');
+
+    values.elements[0] <= source.values.elements[2];
+    values.elements[1] <= source.values.elements[3];
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Parent with nested internal LogicArrays, used to exercise concat-to-concat
+/// consumer rewrites after array concat outputs receive fresh wire IDs.
+class NestedInternalArrayToChildModule extends Module {
+  NestedInternalArrayToChildModule()
+      : super(name: 'nestedinternalarraytochild') {
+    final inputs = [
+      for (var index = 0; index < 4; index++)
+        addInput('in$index', Logic(width: 8), width: 8),
+    ];
+    final lower = LogicArray([2], 8, name: 'lower');
+    final upper = LogicArray([2], 8, name: 'upper');
+    final values = LogicArray([2], 16, name: 'values');
+
+    lower.elements[0] <= inputs[0];
+    lower.elements[1] <= inputs[1];
+    upper.elements[0] <= inputs[2];
+    upper.elements[1] <= inputs[3];
+    values.elements[0] <= lower;
+    values.elements[1] <= upper;
+    final child = ArrayInputChildModule(values);
+    addOutput('packedOut', width: values.width) <= child.packedOut;
+  }
+}
+
+/// Simple two-field structure used to demonstrate netlist struct unpack/pack
+/// cells.
+class NetlistPairStruct extends LogicStructure {
+  Logic get low => elements[0];
+
+  Logic get high => elements[1];
+
+  NetlistPairStruct({super.name = 'pair'})
+      : super([
+          Logic(name: 'low', width: 4),
+          Logic(name: 'high', width: 4),
+        ]);
+
+  @override
+  NetlistPairStruct clone({String? name}) => NetlistPairStruct(name: name);
+}
+
+/// Consumes fields of a typed structure input independently, requiring the
+/// netlist to unpack the aggregate port into named field connections.
+class StructInputConsumerModule extends Module {
+  StructInputConsumerModule(NetlistPairStruct pair)
+      : super(name: 'structinputconsumer') {
+    pair = addTypedInput('pair', pair);
+    addOutput('packedOut', width: pair.width) <=
+        [pair.high, pair.low].swizzle();
+  }
+}
+
+/// Drives fields of a typed structure output independently, requiring the
+/// netlist to pack the field wires back into the aggregate output port.
+class StructOutputProducerModule extends Module {
+  StructOutputProducerModule() : super(name: 'structoutputproducer') {
+    final low = addInput('low', Logic(width: 4), width: 4);
+    final high = addInput('high', Logic(width: 4), width: 4);
+    final pair = NetlistPairStruct(name: 'pairValue');
+
+    pair.low <= low;
+    pair.high <= high ^ Const(1, width: 4);
+    addTypedOutput('pair', pair.clone).gets(pair);
   }
 }
 
@@ -828,57 +954,56 @@ void main() {
       final expanded = translator.synthesizeToJson(module, slimMode: false);
       final initiallyExpanded = NetlistSynthesizer().synthesizeToJson(module);
 
-      final slimModules = _modules(
-        jsonDecode(slim) as Map<String, dynamic>,
-      );
+      final slimModules = _modules(jsonDecode(slim) as Map<String, dynamic>);
       expect(
         slimModules.values
-            .expand((definition) => _cells(
-                  definition as Map<String, dynamic>,
-                ).values)
+            .expand(
+              (definition) => _cells(definition as Map<String, dynamic>).values,
+            )
             .every((cell) => !(cell as Map).containsKey('connections')),
         isTrue,
       );
       expect(expanded, initiallyExpanded);
     });
 
-    test('filter bank can stop traversal at an opaque custom SV module',
-        () async {
-      final synthesizer = NetlistSynthesizer(
-        options: const NetlistOptions(leafModuleTypes: [FlipFlop, MacUnit]),
-      );
-      final json = jsonDecode(synthesizer.synthesizeToJson(
-        filterBank,
-      )) as Map<String, dynamic>;
-      final modules = _modules(json);
+    test(
+      'filter bank can stop traversal at an opaque custom SV module',
+      () async {
+        final synthesizer = NetlistSynthesizer(
+          options: const NetlistOptions(leafModuleTypes: [FlipFlop, MacUnit]),
+        );
+        final json = jsonDecode(synthesizer.synthesizeToJson(filterBank))
+            as Map<String, dynamic>;
+        final modules = _modules(json);
 
-      expect(
-        modules.keys.any((name) => name.contains('MacUnit')),
-        isFalse,
-        reason: 'MacUnit is treated like externally supplied/custom SV, so '
-            'the netlist should not emit a definition for it.',
-      );
+        expect(
+          modules.keys.any((name) => name.contains('MacUnit')),
+          isFalse,
+          reason: 'MacUnit is treated like externally supplied/custom SV, so '
+              'the netlist should not emit a definition for it.',
+        );
 
-      final channelDefs = modules.entries.where(
-        (entry) => entry.key.contains('FilterChannel'),
-      );
-      expect(channelDefs, isNotEmpty);
+        final channelDefs = modules.entries.where(
+          (entry) => entry.key.contains('FilterChannel'),
+        );
+        expect(channelDefs, isNotEmpty);
 
-      final macCells = channelDefs.expand((entry) {
-        final def = entry.value as Map<String, dynamic>;
-        return _cells(def).values.where((cell) {
-          final cellMap = cell as Map<String, dynamic>;
-          return (cellMap['type'] as String).contains('MacUnit');
-        });
-      }).toList();
+        final macCells = channelDefs.expand((entry) {
+          final def = entry.value as Map<String, dynamic>;
+          return _cells(def).values.where((cell) {
+            final cellMap = cell as Map<String, dynamic>;
+            return (cellMap['type'] as String).contains('MacUnit');
+          });
+        }).toList();
 
-      expect(
-        macCells,
-        isNotEmpty,
-        reason: 'FilterChannel should still instantiate the opaque MacUnit '
-            'cell; only hierarchy traversal stops at that boundary.',
-      );
-    });
+        expect(
+          macCells,
+          isNotEmpty,
+          reason: 'FilterChannel should still instantiate the opaque MacUnit '
+              'cell; only hierarchy traversal stops at that boundary.',
+        );
+      },
+    );
 
     test('DCE disabled still produces valid netlist', () async {
       final synth = SynthBuilder(
@@ -1221,41 +1346,47 @@ void main() {
     });
   });
 
-  // ── Group 7: Wire ID and structural invariants ─────────────────────
+  // ── Group 8: Wire ID and structural invariants ─────────────────────
 
   group('wire ID and structural invariants', () {
     test('default synthesizers do not share mutable leaf mappers', () {
       final first = NetlistSynthesizer();
       final second = NetlistSynthesizer();
 
-      expect(identical(first.netlistCellMapper, second.netlistCellMapper),
-          isFalse);
-    });
-
-    test('leaf module type option controls which modules stop traversal',
-        () async {
-      final module = AddWrapperModule();
-      await module.build();
-
-      final childDefinitionName = module.subModules.single.definitionName;
-      final synthesizer = NetlistSynthesizer(
-        options: const NetlistOptions(leafModuleTypes: [AddModule]),
-      );
-
-      final json = jsonDecode(synthesizer.synthesizeToJson(module))
-          as Map<String, dynamic>;
-      final modules = json['modules'] as Map<String, dynamic>;
-      final top = modules[module.definitionName] as Map<String, dynamic>;
-      final cells = _cells(top);
-
-      expect(modules, isNot(contains(childDefinitionName)));
       expect(
-        cells.values,
-        contains(predicate<Map<String, dynamic>>(
-          (cell) => cell['type'] == childDefinitionName,
-        )),
+        identical(first.netlistCellMapper, second.netlistCellMapper),
+        isFalse,
       );
     });
+
+    test(
+      'leaf module type option controls which modules stop traversal',
+      () async {
+        final module = AddWrapperModule();
+        await module.build();
+
+        final childDefinitionName = module.subModules.single.definitionName;
+        final synthesizer = NetlistSynthesizer(
+          options: const NetlistOptions(leafModuleTypes: [AddModule]),
+        );
+
+        final json = jsonDecode(synthesizer.synthesizeToJson(module))
+            as Map<String, dynamic>;
+        final modules = json['modules'] as Map<String, dynamic>;
+        final top = modules[module.definitionName] as Map<String, dynamic>;
+        final cells = _cells(top);
+
+        expect(modules, isNot(contains(childDefinitionName)));
+        expect(
+          cells.values,
+          contains(
+            predicate<Map<String, dynamic>>(
+              (cell) => cell['type'] == childDefinitionName,
+            ),
+          ),
+        );
+      },
+    );
 
     test('repeated translation of the same module is identical', () async {
       final module = LogicArrayExample(
@@ -1301,6 +1432,323 @@ void main() {
 
       expect(firstWireId(firstModule), 2);
       expect(firstWireId(secondModule), 2);
+    });
+
+    test('array concat outputs use fresh wire IDs', () async {
+      final warnings = <String>[];
+      final json = await runZoned(
+        () => _synthToMap(InternalArrayToChildModule()),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+      final moduleDef =
+          _modules(json)['InternalArrayToChildModule'] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final arrayConcats = cells.entries.where(
+        (entry) => entry.key.startsWith('array_concat'),
+      );
+
+      expect(
+        warnings.where((warning) => warning.contains('multiple drivers')),
+        isEmpty,
+      );
+      expect(arrayConcats, isNotEmpty);
+      for (final arrayConcat in arrayConcats) {
+        final connections = (arrayConcat.value
+            as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+        final inputBits = connections.entries
+            .where((entry) => entry.key != 'Y')
+            .expand((entry) => entry.value as List<dynamic>)
+            .toSet();
+        final outputBits =
+            (connections['Y'] as List<dynamic>).whereType<int>().toSet();
+
+        expect(inputBits.intersection(outputBits), isEmpty);
+      }
+    });
+
+    test('regrouped array output elements get explicit concat', () async {
+      final module = RegroupedArrayOutputToChildModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final arrayConcatEntries = cells.entries.where(
+        (entry) => entry.key.startsWith('array_concat'),
+      );
+
+      expect(arrayConcatEntries, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        arrayConcatEntries.any((entry) {
+          final connections = (entry.value
+              as Map<String, dynamic>)['connections'] as Map<String, dynamic>;
+          final outputBits = connections['Y'] as List<dynamic>?;
+          return outputBits?.length == 16;
+        }),
+        isTrue,
+      );
+    });
+
+    test('nested array concats feed downstream concat inputs', () async {
+      final json = await _synthToMap(NestedInternalArrayToChildModule());
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final concatEntries = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$concat';
+      }).toList();
+
+      final concatOutputBits = <int>{};
+      for (final entry in concatEntries) {
+        final cell = entry.value as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        concatOutputBits.addAll((connections['Y'] as List).whereType<int>());
+      }
+
+      final concatInputConsumers = <int>{};
+      for (final entry in concatEntries) {
+        final cell = entry.value as Map<String, dynamic>;
+        final connections = cell['connections'] as Map<String, dynamic>;
+        final directions = cell['port_directions'] as Map<String, dynamic>;
+        for (final portEntry in connections.entries) {
+          if (directions[portEntry.key] == 'input') {
+            concatInputConsumers.addAll(
+              (portEntry.value as List).whereType<int>(),
+            );
+          }
+        }
+      }
+
+      expect(concatOutputBits.intersection(concatInputConsumers), isNotEmpty);
+    });
+
+    test('struct input fields get explicit unpack cell', () async {
+      final module = StructInputConsumerModule(NetlistPairStruct());
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json)[module.definitionName] as Map<String, dynamic>;
+      final cells = _cells(moduleDef);
+      final structUnpacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return cell['type'] == r'$struct_unpack';
+      }).toList();
+
+      expect(structUnpacks, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        structUnpacks.any((entry) {
+          final cell = entry.value as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          return directions['A'] == 'input' &&
+              directions['low'] == 'output' &&
+              directions['high'] == 'output';
+        }),
+        isTrue,
+      );
+    });
+
+    test('struct output fields get explicit pack cell', () async {
+      final module = StructOutputProducerModule();
+      final json = await _synthToMap(module);
+      final moduleDef =
+          _modules(json).values.cast<Map<String, dynamic>>().reduce(
+                (left, right) =>
+                    _cells(left).length >= _cells(right).length ? left : right,
+              );
+      final cells = _cells(moduleDef);
+      final structPacks = cells.entries.where((entry) {
+        final cell = entry.value as Map<String, dynamic>;
+        return entry.key.startsWith(
+              SynthOperationNamer.structureConcatOperationName,
+            ) &&
+            cell['type'] == r'$struct_pack';
+      }).toList();
+
+      expect(structPacks, isNotEmpty, reason: cells.keys.join(', '));
+      expect(
+        structPacks.any((entry) {
+          final cell = entry.value as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          return directions['low'] == 'input' &&
+              directions['high'] == 'input' &&
+              directions['Y'] == 'output';
+        }),
+        isTrue,
+      );
+    });
+
+    test('struct aggregate netnames cannot span multiple drivers', () {
+      final ports = <String, Map<String, Object?>>{};
+      final cells = <String, Map<String, Object?>>{
+        'first_driver': {
+          'hide_name': 0,
+          'type': r'$buf',
+          'parameters': {'WIDTH': 8},
+          'attributes': <String, Object?>{},
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': List<Object>.generate(8, (index) => 100 + index),
+            'Y': List<Object>.generate(8, (index) => 200 + index),
+          },
+        },
+        'second_driver': {
+          'hide_name': 0,
+          'type': r'$buf',
+          'parameters': {'WIDTH': 8},
+          'attributes': <String, Object?>{},
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': List<Object>.generate(8, (index) => 300 + index),
+            'Y': List<Object>.generate(8, (index) => 400 + index),
+          },
+        },
+      };
+      final netnames = <String, Object?>{
+        'values': {
+          'bits': [
+            ...List<Object>.generate(8, (index) => 200 + index),
+            ...List<Object>.generate(8, (index) => 400 + index),
+          ],
+          'logic_type': {
+            'typeName': 'PairStructure',
+            'fields': [
+              {'name': 'first', 'width': 8},
+              {'name': 'second', 'width': 8},
+            ],
+          },
+        },
+      };
+
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'struct_module',
+          netnames: netnames,
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('optimized netlist removes concat aliases of named vectors', () async {
+      final json = await _synthToMap(
+        NestedInternalArrayToChildModule(),
+        options: const NetlistOptions(collapseTransparentClusters: true),
+      );
+
+      for (final moduleDef in _modules(
+        json,
+      ).values.cast<Map<String, dynamic>>()) {
+        final namedBitVectors = [
+          for (final netname
+              in (moduleDef['netnames'] as Map<String, dynamic>).values)
+            if (netname is Map && netname['bits'] is List)
+              (netname['bits'] as List).cast<Object>(),
+        ];
+
+        for (final entry in _cells(moduleDef).entries) {
+          final cell = entry.value as Map<String, dynamic>;
+          if (cell['type'] != r'$concat') {
+            continue;
+          }
+
+          final connections = cell['connections'] as Map<String, dynamic>;
+          final directions = cell['port_directions'] as Map<String, dynamic>;
+          final inputBits = <Object>[
+            for (final portEntry in connections.entries)
+              if (directions[portEntry.key] != 'output')
+                ...(portEntry.value as List).cast<Object>(),
+          ];
+
+          expect(
+            namedBitVectors.any(
+              (bits) =>
+                  bits.length == inputBits.length &&
+                  bits.indexed.every(
+                    (bitEntry) => bitEntry.$2 == inputBits[bitEntry.$1],
+                  ),
+            ),
+            isFalse,
+            reason: '${entry.key} aliases an already named vector',
+          );
+        }
+      }
+    });
+
+    test('concat of adjacent slices collapses to one slice', () {
+      final sourceBits = List<Object>.generate(32, (index) => 100 + index);
+      final modules = <String, Map<String, Object?>>{
+        'top': {
+          'attributes': <String, Object?>{},
+          'ports': <String, Map<String, Object?>>{},
+          'netnames': <String, Map<String, Object?>>{},
+          'cells': <String, Map<String, Object?>>{
+            'slice0': {
+              'hide_name': 0,
+              'type': r'$slice',
+              'parameters': {'OFFSET': 8, 'A_WIDTH': 32, 'Y_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': sourceBits,
+                'Y': [1, 2, 3, 4],
+              },
+            },
+            'slice1': {
+              'hide_name': 0,
+              'type': r'$slice',
+              'parameters': {'OFFSET': 12, 'A_WIDTH': 32, 'Y_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {'A': 'input', 'Y': 'output'},
+              'connections': {
+                'A': sourceBits,
+                'Y': [5, 6, 7, 8],
+              },
+            },
+            'concat': {
+              'hide_name': 0,
+              'type': r'$concat',
+              'parameters': {'IN0_WIDTH': 4, 'IN1_WIDTH': 4},
+              'attributes': <String, Object?>{},
+              'port_directions': {
+                '[3:0]': 'input',
+                '[7:4]': 'input',
+                'Y': 'output',
+              },
+              'connections': {
+                '[3:0]': [1, 2, 3, 4],
+                '[7:4]': [5, 6, 7, 8],
+                'Y': [9, 10, 11, 12, 13, 14, 15, 16],
+              },
+            },
+          },
+        },
+      };
+
+      NetlistPasses.collapseConcatOfAdjacentSlices(modules);
+
+      final topModule = modules['top']!;
+      final cells = topModule['cells']! as Map<String, Map<String, Object?>>;
+      final concat = cells['concat']!;
+      final concatConnections = concat['connections']! as Map<String, dynamic>;
+      expect(cells, isNot(contains('slice0')));
+      expect(cells, isNot(contains('slice1')));
+      expect(concat['type'], equals(r'$slice'));
+      expect(
+        concat['parameters'],
+        equals({'OFFSET': 8, 'A_WIDTH': 32, 'Y_WIDTH': 8}),
+      );
+      expect(concatConnections['A'], equals(sourceBits));
+      expect(concatConnections['Y'], equals([9, 10, 11, 12, 13, 14, 15, 16]));
     });
 
     test('all wire IDs are >= 2 (0 and 1 reserved for constants)', () async {
@@ -1440,6 +1888,49 @@ void main() {
         options: const NetlistOptions(collapseTransparentClusters: true),
       );
       expect(_modules(json), isNotEmpty);
+    });
+
+    test('validation warns on multiple drivers', () {
+      final warnings = <String>[];
+      final ports = {
+        'a': {
+          'direction': 'input',
+          'bits': [1],
+        },
+        'y': {
+          'direction': 'output',
+          'bits': [2],
+        },
+      };
+      final cells = {
+        'driver': {
+          'type': r'$buf',
+          'port_directions': {'A': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [1],
+            'Y': [1],
+          },
+        },
+      };
+
+      runZoned(
+        () => NetlistValidation.validate(ports, cells, 'ShortedModule'),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+
+      expect(warnings, contains(contains('wire bit 1 has multiple drivers')));
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'ShortedModule',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        throwsStateError,
+      );
     });
   });
 

@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // netlist_test.dart
-// Tests for the netlist synthesizer: JSON structure, SynthBuilder,
-// NetlistSynthesisResult, collectModuleEntries, NetlistOptions,
-// and example-based smoke tests.
+// Tests for the netlist synthesizer public surface.
 //
 // 2026 March 31
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -293,8 +291,10 @@ void main() {
     );
 
     test('requested submodule can be synthesized as top', () async {
-      final wrapper =
-          _CompositeWrapperModule(Logic(name: 'a'), Logic(name: 'b'));
+      final wrapper = _CompositeWrapperModule(
+        Logic(name: 'a'),
+        Logic(name: 'b'),
+      );
       await wrapper.build();
 
       final submodule = wrapper.child;

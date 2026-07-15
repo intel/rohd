@@ -10,7 +10,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/namer.dart';
+import 'package:rohd/src/synthesizers/utilities/synth_operation_namer.dart';
 
 /// A [BusSubset] used by synthesis backends to explicitly extract a
 /// [LogicStructure] leaf from its packed parent representation.
@@ -26,8 +26,8 @@ class SynthStructureSlice extends BusSubset {
     required Logic destination,
   })  : _destination = destination,
         super(
-          name: Namer.synthOperationInstanceName(
-            operationName: Namer.synthStructureSliceOperationName,
+          name: SynthOperationNamer.instanceName(
+            operationName: SynthOperationNamer.structureSliceOperationName,
             destination: destination,
           ),
         );
@@ -37,7 +37,7 @@ class SynthStructureSlice extends BusSubset {
 
   @override
   Object get instanceNameKey => (
-        operationName: Namer.synthStructureSliceOperationName,
+        operationName: SynthOperationNamer.structureSliceOperationName,
         destination: _destination,
       );
 }

@@ -1,6 +1,5 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
-
 //
 // netlist_synth_module_definition.dart
 // Synth module definition specialization for netlist synthesis.
@@ -81,6 +80,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     }).forEach(_concatAssembleArray);
   }
 
+  /// Adds slice cells that decompose a LogicArray port into element signals.
   void _subsetReceiveArrayPort(LogicArray port) {
     final portSynth = getSynthLogic(port)!;
 
@@ -105,6 +105,7 @@ class NetlistSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
+  /// Adds a concat cell that assembles independent LogicArray element signals.
   void _concatAssembleArray(LogicArray array) {
     final arraySynth = getSynthLogic(array)!;
     final dummyElements = [
