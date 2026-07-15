@@ -68,7 +68,8 @@ class Absolute extends Module {
 class ShiftTestModule extends Module {
   dynamic constant; // int or BigInt
 
-  ShiftTestModule(Logic a, Logic b, {this.constant = 3})
+  ShiftTestModule(Logic a, Logic b,
+      {this.constant = 3, bool useExplicitConstShiftModules = false})
       : super(name: 'shifttestmodule') {
     a = addInput('a', a, width: a.width);
     b = addInput('b', b, width: b.width);
@@ -84,9 +85,15 @@ class ShiftTestModule extends Module {
     aRshiftB <= a >>> b;
     aLshiftB <= a << b;
     aArshiftB <= a >> b;
-    aRshiftConst <= a >>> constant;
-    aLshiftConst <= a << constant;
-    aArshiftConst <= a >> constant;
+    if (useExplicitConstShiftModules) {
+      aRshiftConst <= RShift(a, constant).out;
+      aLshiftConst <= LShift(a, constant).out;
+      aArshiftConst <= ARShift(a, constant).out;
+    } else {
+      aRshiftConst <= a >>> constant;
+      aLshiftConst <= a << constant;
+      aArshiftConst <= a >> constant;
+    }
   }
 }
 
@@ -696,8 +703,12 @@ void main() {
       });
 
       test('shift by const zero', () async {
-        final gtm =
-            ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 0);
+        final gtm = ShiftTestModule(
+          Logic(width: 3),
+          Logic(width: 8),
+          constant: 0,
+          useExplicitConstShiftModules: true,
+        );
         await gtm.build();
         final sv = gtm.generateSynth();
 
