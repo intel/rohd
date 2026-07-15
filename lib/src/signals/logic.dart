@@ -567,6 +567,7 @@ class Logic {
     }
   }
 
+  /// Indicates whether [other] represents a known constant shift of zero.
   static bool _isZeroShiftAmount(dynamic other) {
     if (other is Const) {
       return other.value.isValid && other.value.isZero;

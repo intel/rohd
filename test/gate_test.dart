@@ -112,6 +112,20 @@ class IndexGateTestModule extends Module {
   }
 }
 
+/// A module with a signal driven by a [Const].
+class ConstAliasModule extends Module {
+  /// The constant source protected from mutation.
+  late final Const constant = Const(0);
+
+  /// A named signal driven by [constant].
+  late final Logic alias = constant.named('alias');
+
+  /// Creates a module whose output is driven by [alias].
+  ConstAliasModule() : super(name: 'constaliasmodule') {
+    addOutput('out') <= alias;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -353,12 +367,29 @@ void main() {
   });
 
   group('constant gate optimizations', () {
-    test('Const cannot be mutated', () {
-      final constant = Const(0);
+    test('Const cannot be mutated', () async {
+      final module = ConstAliasModule();
+      final constant = module.constant;
+      final alias = module.alias;
 
       expect(() => constant.put(1), throwsA(isA<UnassignableException>()));
       expect(() => constant.inject(1), throwsA(isA<UnassignableException>()));
+      expect(
+          () => alias.put(1),
+          throwsA(isA<UnassignableException>().having(
+              (exception) => exception.message,
+              'message',
+              allOf(
+                contains('"${alias.name}" cannot be updated'),
+                contains('is driven by immutable signal'),
+                contains('A `Const` value cannot be modified'),
+              ))));
+      expect(() => alias.inject(1), throwsA(isA<UnassignableException>()));
       expect(constant.value, LogicValue.zero);
+      expect(alias.value, LogicValue.zero);
+
+      await module.build();
+      expect(module.generateSynth(), contains("1'h0"));
     });
 
     test('bitwise NOT folds Const inputs', () {

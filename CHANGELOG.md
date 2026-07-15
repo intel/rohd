@@ -1,7 +1,7 @@
 ## Next release
 
 - Improved simulation performance and generated outputs by avoiding module creation for four-state-safe operations involving `Const`s, zero shifts, and muxes with constant controls (<https://github.com/intel/rohd/issues/429>).
-- Enforced that `Const` values cannot be changed through `put` or `inject` (<https://github.com/intel/rohd/issues/486>).
+- Enforced that `Const` values cannot be changed through `put` or `inject`, including through another `Logic` driven by a `Const` (<https://github.com/intel/rohd/issues/486>).
 - Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
 - Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
 - Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).

@@ -12,9 +12,13 @@ part of 'signals.dart';
 /// Represents a [Logic] that never changes value.
 ///
 /// Attempts to assign, [put], or [inject] a new value throw an
-/// [UnassignableException].
+/// [UnassignableException], including through another [Logic] driven by the
+/// [Const].
 class Const extends Logic {
-  static const _unassignableMessage = '`Const` signals are unassignable.';
+  /// The explanation included when an attempt is made to modify a [Const].
+  static const _unassignableMessage =
+      'A `Const` value cannot be modified, including through another `Logic` '
+      'driven by it.';
 
   /// Constructs a [Const] with the specified value.
   ///
@@ -30,7 +34,9 @@ class Const extends Logic {
           // we don't care about maintaining this node unless necessary
           naming: Naming.unnamed,
         ) {
-    _wire.put(val, fill: fill, signalName: name);
+    _wire
+      ..put(val, fill: fill, signalName: name)
+      ..makeImmutable(this, reason: _unassignableMessage);
 
     makeUnassignable(reason: _unassignableMessage);
   }
@@ -46,6 +52,7 @@ class Const extends Logic {
   void inject(dynamic val, {bool fill = false}) =>
       throw UnassignableException(this, reason: _unassignableMessage);
 
+  /// Verifies that [other] has the same width as this [Const].
   void _checkMatchingWidth(Logic other) {
     if (width != other.width) {
       throw PortWidthMismatchException.equalWidth(this, other);
