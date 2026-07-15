@@ -5,7 +5,7 @@
 // Waveform file format enumeration.
 //
 // 2026 January 03
-// Author: YDesmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// Supported waveform file formats.
 enum WaveFormat {

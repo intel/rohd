@@ -1,11 +1,11 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // data.dart
 // An entity that describes the data of a signal.
 //
 // 2024 January 29
-// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// A class that represents the data of a signal.
 ///

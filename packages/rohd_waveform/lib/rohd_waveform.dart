@@ -1,11 +1,11 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // rohd_waveform.dart
 // Waveform data models and APIs for wave viewers.
 //
 // 2024
-// Author: Yao Jing Quek <yao.jing.quek@intel.com>
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 /// Waveform data models and APIs for wave viewers.
 ///
