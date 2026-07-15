@@ -4,8 +4,8 @@
 // fst_writer.dart
 // Pure Dart implementation of FST (Fast Signal Trace) binary writer.
 //
-// Writes valid FST files compatible with GTKWave, Surfer, wellen reader.
-// Reference: fst-reader 0.14.2 (io.rs, types.rs) and fstapi.c from GTKWave.
+// Writes FST files compatible with GTKWave, Surfer, and wellen/fst-reader.
+// Implements the public FST binary format in pure Dart.
 //
 // 2026 February
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>

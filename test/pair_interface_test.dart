@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_test.dart
@@ -193,7 +193,7 @@ void main() {
 
     // Make sure the "modify" went through:
     final sv = mod.generateSynth();
-    expect(sv, contains('input logic simple_clk'));
+    expect(sv, contains('input wire logic simple_clk'));
   });
 
   group('drive and receive other', () {

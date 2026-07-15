@@ -15,4 +15,26 @@ void main() {
     final logic = Logic();
     expect(logic.packed, logic);
   });
+
+  test('getRange on filled constants returns a constant', () {
+    for (final fillValue in [
+      LogicValue.zero,
+      LogicValue.one,
+      LogicValue.x,
+      LogicValue.z,
+    ]) {
+      final range = Const(LogicValue.filled(8, fillValue)).getRange(2, 5);
+
+      expect(range, isA<Const>());
+      expect(range.value, LogicValue.filled(3, fillValue));
+      expect(range.parentModule, isNull);
+    }
+  });
+
+  test('getRange on mixed constants still uses BusSubset', () {
+    final range = Const(LogicValue.ofString('10101010')).getRange(2, 5);
+
+    expect(range, isNot(isA<Const>()));
+    expect(range.parentModule, isA<BusSubset>());
+  });
 }
