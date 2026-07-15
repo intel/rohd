@@ -836,9 +836,13 @@ class SynthModuleDefinition {
       activeIndices[candidate] = activePath.length;
       activePath.add(candidate);
 
-      for (final input in [
+      final resultSignalName =
+          (candidate.module as InlineSystemVerilog).resultSignalName;
+      for (final input in <SynthLogic>[
         ...candidate.inputMapping.values,
-        ...candidate.inOutMapping.values,
+        ...candidate.inOutMapping.entries
+            .where((entry) => entry.key != resultSignalName)
+            .map((entry) => entry.value),
       ]) {
         final dependency = candidateByResult[input.resolved];
         if (dependency == null) {
