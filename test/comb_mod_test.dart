@@ -58,29 +58,6 @@ class ReuseExampleSsa extends Module {
   }
 }
 
-class ReuseExampleSsaNoLoop extends Module {
-  /// Like [ReuseExampleSsa] but the shared [IncrModule] reads from the input
-  /// [a] rather than `intermediate`, avoiding the combo loop while still
-  /// exercising the SSA codegen (multiple `intermediate_N` versions).
-  ReuseExampleSsaNoLoop(Logic a) {
-    a = addInput('a', a, width: a.width);
-    final b = addOutput('b', width: a.width);
-
-    final intermediate = Logic(name: 'intermediate', width: a.width);
-
-    // Shared sub-module reads from `a` (no feedback loop)
-    final inc = IncrModule(a);
-
-    Combinational.ssa((s) => [
-          s(intermediate) < a,
-          s(intermediate) < inc.result,
-          s(intermediate) < inc.result,
-        ]);
-
-    b <= intermediate;
-  }
-}
-
 class DuplicateExample extends Module {
   DuplicateExample(Logic a) {
     a = addInput('a', a, width: a.width);
@@ -261,7 +238,6 @@ void main() {
         if (useSsa) {
           await SimCompare.checkFunctionalVector(dut, vectors);
           SimCompare.checkIverilogVector(dut, vectors);
-          SimCompare.checkSystemCVector(dut, vectors);
         } else {
           try {
             await SimCompare.checkFunctionalVector(dut, vectors);
@@ -305,27 +281,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors, buildOnly: true);
-    });
-
-    test('should resolve correctly with shared sub-module ssa (no loop)',
-        () async {
-      final mod = ReuseExampleSsaNoLoop(Logic(width: 8));
-      await mod.build();
-
-      // inc reads a (=3), result = a+1 = 4
-      // SSA: intermediate_0 = a(3), intermediate_1 = result(4),
-      //      intermediate = result(4)
-      // b = intermediate = 4
-      final vectors = [
-        Vector({'a': 3}, {'b': 4}),
-        Vector({'a': 0}, {'b': 1}),
-        Vector({'a': 254}, {'b': 255}),
-      ];
-
-      await SimCompare.checkFunctionalVector(mod, vectors);
-      SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 
@@ -353,7 +308,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 }

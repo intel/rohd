@@ -5,7 +5,7 @@ last_modified_at: 2023-11-13
 toc: true
 ---
 
-Hardware in ROHD is convertible to an output format via `Synthesizer`s. The most popular output format is SystemVerilog, with SystemC also available. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog or SystemC with structure, hierarchy, ports, and names maintained.
+Hardware in ROHD is convertible to an output format via `Synthesizer`s, the most popular of which is SystemVerilog. Hardware in ROHD can be converted to logically equivalent, human-readable SystemVerilog with structure, hierarchy, ports, and names maintained.
 
 The simplest way to generate SystemVerilog is with the helper method `generateSynth` in `Module`:
 
@@ -27,26 +27,6 @@ void main() async {
 ```
 
 The `generateSynth` function will return a `String` with the SystemVerilog `module` definitions for the top-level it is called on, as well as any sub-modules (recursively).  You can dump the entire contents to a file and use it anywhere you would any other SystemVerilog.
-
-## SystemC generation
-
-ROHD can also generate SystemC (C++ with the SystemC library) from the same hardware description. Use the `generateSystemC` helper method:
-
-```dart
-void main() async {
-    final myModule = MyModule();
-    await myModule.build();
-
-    final generatedSc = myModule.generateSystemC();
-
-    // write it to a file
-    File('myHardware.h').writeAsStringSync(generatedSc);
-}
-```
-
-The generated SystemC uses `SC_MODULE`, `SC_METHOD`, and `SC_CTHREAD` constructs. Combinational logic becomes `SC_METHOD` processes, sequential logic (flip-flops and `Sequential` blocks) sharing the same clock and reset are consolidated into a single `SC_CTHREAD`, and sub-modules are instantiated with port bindings. All signal types map to SystemC equivalents (`bool`, `sc_uint<N>`, `sc_biguint<N>`).
-
-For more control over SystemC generation, use `SynthBuilder` with `SystemCSynthesizer()` directly.
 
 ## Controlling naming
 

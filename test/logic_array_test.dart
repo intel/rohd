@@ -727,8 +727,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    // buildOnly: array element sub-module binding not yet supported
-    SimCompare.checkSystemCVector(mod, vectors, buildOnly: true);
   });
 
   group('logicarray passthrough', () {
@@ -762,7 +760,6 @@ void main() {
         SimCompare.checkIverilogVector(mod, vectors,
             buildOnly: noSvSim, dontDeleteTmpFiles: dontDeleteTmpFiles);
       }
-      SimCompare.checkSystemCVector(mod, vectors, buildOnly: noSvSim);
     }
 
     group('simple', () {
@@ -1111,7 +1108,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('assign subset of logic array without mentioning start', () async {
@@ -1165,7 +1161,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 

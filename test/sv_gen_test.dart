@@ -689,7 +689,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   group('tieoff ', () {
@@ -714,8 +713,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          // z-valued outputs are skipped in SystemC checks
-          SimCompare.checkSystemCVector(mod, vectors);
         });
 
         test('full port', () async {
@@ -737,7 +734,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          SimCompare.checkSystemCVector(mod, vectors);
         });
       });
     }
@@ -913,7 +909,6 @@ endmodule : ModWithUselessWireMods'''));
     ];
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   group('connected ports and pruning', () {

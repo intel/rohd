@@ -264,7 +264,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('simple pipeline with intermediate gets', () async {
@@ -281,7 +280,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('pipeline with pipelined sub-operation', () async {
@@ -299,7 +297,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('pipeline with abs reference', () async {
@@ -315,7 +312,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('getting out of range on pipeline is error', () {
@@ -358,7 +354,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('multiuse pipeline', () async {
@@ -374,7 +369,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('simple pipeline late add', () async {
@@ -395,7 +389,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('pipeline initialized via get', () async {
@@ -415,7 +408,6 @@ void main() {
       expect(pipem.b.value.isValid, isTrue);
 
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('pipeline initialized directly instead of via get', () async {
@@ -435,7 +427,6 @@ void main() {
       expect(pipem.b.value.isValid, isTrue);
 
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('rv pipeline simple', () async {
@@ -468,7 +459,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('rv pipeline simple async reset', () async {
@@ -482,7 +472,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('rv pipeline simple reset vals', () async {
@@ -515,7 +504,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('rv pipeline notready', () async {
@@ -570,7 +558,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
 
     test('rv pipeline multi', () async {
@@ -615,7 +602,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(pipem, vectors);
       SimCompare.checkIverilogVector(pipem, vectors);
-      SimCompare.checkSystemCVector(pipem, vectors);
     });
   });
 }

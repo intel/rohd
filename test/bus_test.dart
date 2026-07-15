@@ -238,7 +238,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   group('functional', () {
@@ -390,7 +389,6 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors);
       });
 
       test('Assignment of a const', () async {
@@ -402,7 +400,6 @@ void main() {
 
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
-        SimCompare.checkSystemCVector(mod, vectors);
 
         final sv = mod.generateSynth();
         expect(sv.contains("assign const_subset = 16'habcd;"), true);
@@ -453,7 +450,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
-      SimCompare.checkSystemCVector(gtm, vectors);
     });
 
     test('Bus shrink', () async {
@@ -639,7 +635,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
-      SimCompare.checkSystemCVector(gtm, vectors);
     });
 
     test('selectFrom and selectIndex', () async {

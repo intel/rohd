@@ -142,7 +142,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('should return exception when port name is not sanitary.', () async {

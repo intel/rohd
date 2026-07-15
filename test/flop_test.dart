@@ -53,7 +53,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bit with enable', () async {
@@ -75,7 +74,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus', () async {
@@ -90,7 +88,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus with enable', () async {
@@ -114,7 +111,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus reset, no reset value', () async {
@@ -128,7 +124,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus reset, const reset value', () async {
@@ -146,7 +141,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus reset, logic reset value', () async {
@@ -164,7 +158,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus no reset, const reset value', () async {
@@ -181,7 +174,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
 
     test('flop bus, enable, reset, const reset value', () async {
@@ -202,7 +194,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
   });
 }

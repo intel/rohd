@@ -54,9 +54,8 @@ abstract class OutputService implements ModuleService {
 /// An [OutputService] that generates source-code text, keyed per module
 /// definition.
 ///
-/// Shared by the language code-generation services (e.g. SystemVerilog and
-/// SystemC), which all produce a combined single-file [output] as well as
-/// per-definition contents.
+/// Shared by language code-generation services, which all produce a combined
+/// single-file [output] as well as per-definition contents.
 abstract class CodegenService extends OutputService {
   /// The combined single-file generated output (including any header).
   String get output;

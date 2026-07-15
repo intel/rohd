@@ -151,9 +151,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          // SystemC can't handle manually-driven clocks — buildOnly verifies
-          // the generated code compiles.
-          SimCompare.checkSystemCVector(mod, vectors, buildOnly: true);
         });
 
         test('simcompare with clk sync reset', () async {
@@ -175,7 +172,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          SimCompare.checkSystemCVector(mod, vectors);
         });
       });
     }
@@ -270,7 +266,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          SimCompare.checkSystemCVector(mod, vectors);
         });
       });
     }
@@ -323,7 +318,6 @@ void main() {
       ];
 
       SimCompare.checkIverilogVector(mod, vectorsSv);
-      SimCompare.checkSystemCVector(mod, vectorsSv);
     });
 
     test('inverted', () async {
@@ -345,7 +339,6 @@ void main() {
       ];
 
       SimCompare.checkIverilogVector(mod, vectorsSv);
-      SimCompare.checkSystemCVector(mod, vectorsSv);
     });
 
     test('trigger earlier inverted', () async {
@@ -369,7 +362,6 @@ void main() {
       ];
 
       SimCompare.checkIverilogVector(mod, vectorsSv);
-      SimCompare.checkSystemCVector(mod, vectorsSv);
     });
 
     test('trigger earlier normal', () async {
@@ -393,7 +385,6 @@ void main() {
       ];
 
       SimCompare.checkIverilogVector(mod, vectorsSv);
-      SimCompare.checkSystemCVector(mod, vectorsSv, buildOnly: true);
     });
   });
 
@@ -419,7 +410,6 @@ void main() {
 
           await SimCompare.checkFunctionalVector(mod, vectors);
           SimCompare.checkIverilogVector(mod, vectors);
-          SimCompare.checkSystemCVector(mod, vectors);
         });
       }
     });

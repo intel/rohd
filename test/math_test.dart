@@ -112,7 +112,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 
@@ -137,7 +136,6 @@ void main() {
       await gtm.build();
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
-      SimCompare.checkSystemCVector(gtm, vectors);
     }
 
     test('power', () async {

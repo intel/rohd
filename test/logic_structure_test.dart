@@ -256,7 +256,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('simple passthrough struct', () async {
@@ -272,7 +271,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
 
     test('fancy struct inverter', () async {
@@ -295,7 +293,6 @@ void main() {
 
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     });
   });
 

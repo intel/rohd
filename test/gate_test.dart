@@ -362,7 +362,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(gtm, vectors);
       SimCompare.checkIverilogVector(gtm, vectors);
-      SimCompare.checkSystemCVector(gtm, vectors);
     });
 
     test('unary and', () async {
@@ -471,7 +470,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('rshift logic', () async {
@@ -485,7 +483,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('arshift logic', () async {
@@ -501,7 +498,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('lshift int', () async {
@@ -513,7 +509,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('rshift int', () async {
@@ -525,7 +520,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('arshift int', () async {
@@ -537,7 +531,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('shift by const zero', () async {
@@ -559,7 +552,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('large logic shifted by small bus', () async {
@@ -581,7 +573,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('large logic shifted by large bus', () async {
@@ -603,7 +594,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('small logic shifted by large bus', () async {
@@ -625,7 +615,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('large logic shifted by huge value on large bus', () async {
@@ -647,7 +636,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('small logic shifted by huge value on large bus', () async {
@@ -669,7 +657,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
 
       test('very small logic shifted by huge value on large bus', () async {
@@ -691,7 +678,6 @@ void main() {
         ];
         await SimCompare.checkFunctionalVector(gtm, vectors);
         SimCompare.checkIverilogVector(gtm, vectors);
-        SimCompare.checkSystemCVector(gtm, vectors);
       });
     });
 

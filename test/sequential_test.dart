@@ -182,7 +182,6 @@ void main() {
     ];
     await SimCompare.checkFunctionalVector(dut, vectors);
     SimCompare.checkIverilogVector(dut, vectors);
-    SimCompare.checkSystemCVector(dut, vectors);
   });
 
   group('shorthand with sequential', () {
@@ -204,7 +203,6 @@ void main() {
 
       // await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
-      SimCompare.checkSystemCVector(mod, vectors);
     }
 
     test('normal logic', () async {
@@ -237,7 +235,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(dut, vectors);
     SimCompare.checkIverilogVector(dut, vectors);
-    SimCompare.checkSystemCVector(dut, vectors);
   });
 
   test('negedge triggered flop', () async {
@@ -255,7 +252,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('multiple triggers, both edges', () async {
@@ -273,7 +269,6 @@ void main() {
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);
-    SimCompare.checkSystemCVector(mod, vectors);
   });
 
   test('negedge trigger actually occurs on negedge', () async {

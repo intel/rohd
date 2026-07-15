@@ -126,7 +126,6 @@ void main() {
       ];
       await SimCompare.checkFunctionalVector(ftm, vectors);
       SimCompare.checkIverilogVector(ftm, vectors);
-      SimCompare.checkSystemCVector(ftm, vectors);
     });
   });
 }
