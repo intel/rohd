@@ -1,5 +1,8 @@
 ## Next release
 
+- Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
+- Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
+- Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).
 - Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
 - Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
 

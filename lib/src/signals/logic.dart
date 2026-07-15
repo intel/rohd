@@ -768,8 +768,29 @@ class Logic {
       return this;
     }
 
+    final constantFillValue = _constantFillValueOf(this);
+    if (constantFillValue != null) {
+      return Const(
+        LogicValue.filled(
+          (modifiedEndIndex - modifiedStartIndex).abs() + 1,
+          constantFillValue,
+        ),
+      );
+    }
+
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
+  }
+
+  static LogicValue? _constantFillValueOf(Logic logic) {
+    if (logic is! Const || logic.width == 0) {
+      return null;
+    }
+
+    final fillValue = logic.value[0];
+    return logic.value == LogicValue.filled(logic.width, fillValue)
+        ? fillValue
+        : null;
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
