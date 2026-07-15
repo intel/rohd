@@ -352,124 +352,134 @@ void main() {
     });
   });
 
-  group('Const input Gate test', () {
-    test('NotGate single bit Constant input', () async {
-      final normalLogic = Logic();
-      final const0 = Const(LogicValue.zero, width: 1);
-      final constX = Const(LogicValue.x, width: 1);
-      final const1 = Const(LogicValue.one, width: 1);
-      normalLogic.put(LogicValue.one);
+  group('constant gate optimizations', () {
+    test('Const cannot be mutated', () {
+      final constant = Const(0);
 
-      expect(~const0, isA<Const>());
-      expect((~const0).value, equals(LogicValue.one));
-
-      expect(~constX, isA<Const>());
-      expect((~constX).value, equals(LogicValue.x));
-
-      expect(~const1, isA<Const>());
-      expect((~const1).value, equals(LogicValue.zero));
-
-      expect(~normalLogic, isA<Logic>());
-      expect((~normalLogic).value, equals(LogicValue.zero));
+      expect(() => constant.put(1), throwsA(isA<UnassignableException>()));
+      expect(() => constant.inject(1), throwsA(isA<UnassignableException>()));
+      expect(constant.value, LogicValue.zero);
     });
 
-    test('NotGate Multi bit Constant input', () async {
-      final const1 = Const(bin('1111'), width: 4);
-      final const4 = Const(bin('0100'), width: 4);
+    test('bitwise NOT folds Const inputs', () {
+      final result = ~Const(LogicValue.ofString('01xz'));
 
-      expect(~const1, isA<Const>());
-      expect((~const1).value, equals(LogicValue.of(0, width: 4)));
+      expect(result, isA<Const>());
+      expect(result.value, LogicValue.ofString('10xx'));
 
-      expect(~const4, isA<Logic>());
-      expect((~const4).value, equals(LogicValue.of(11, width: 4)));
+      final normalResult = ~(Logic()..put(1));
+      expect(normalResult, isNot(isA<Const>()));
+      expect(normalResult.value, LogicValue.zero);
     });
 
-    test('And2Gate Single bit Constant input', () async {
-      final normalLogic = Logic();
-      final const0 = Const(LogicValue.zero);
-      final logicX = Logic();
-      final const1 = Const(LogicValue.one);
-      normalLogic.put(LogicValue.one);
-      logicX.put(LogicValue.x);
+    test('bitwise AND folds only four-state-safe cases', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('10z1'));
+      final zeros = Const(0, width: 4);
+      final ones = Const(0xf, width: 4);
 
-      expect(normalLogic & const0, isA<Const>());
-      expect((normalLogic & const0).value, equals(LogicValue.zero));
+      expect(signal & zeros, same(zeros));
+      expect(zeros & signal, same(zeros));
 
-      expect(logicX & const0, isA<Const>());
-      expect((logicX & const0).value, equals(LogicValue.zero));
+      final identityResult = signal & ones;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('10x1'));
 
-      expect(normalLogic & const1, isA<Logic>());
-      expect((normalLogic & const1).value, equals(normalLogic.value));
+      final folded = Const(LogicValue.ofString('11x1')) &
+          Const(LogicValue.ofString('1011'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('10x1'));
 
-      expect(normalLogic & logicX, isA<Logic>());
-      expect((normalLogic & logicX).value, equals(LogicValue.x));
-
-      expect(const0 & const1, isA<Const>());
-      expect((const0 & const1).value, equals(const0.value));
+      expect(() => Const(0, width: 2) & Logic(),
+          throwsA(isA<PortWidthMismatchException>()));
     });
 
-    test('And2Gate Multi bit Constant input', () async {
-      final const1 = Const(bin('1111'), width: 4);
-      final const4 = Const(bin('0100'), width: 4);
-      final logic0 = Logic(width: 4)..put(LogicValue.zero);
-      final logic1 = Logic(width: 4)..put(LogicValue.one);
-      final logicX = Logic(width: 4)..put(LogicValue.x);
+    test('bitwise OR folds only four-state-safe cases', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('01z0'));
+      final zeros = Const(0, width: 4);
+      final ones = Const(0xf, width: 4);
 
-      expect(const1 & const4, isA<Const>());
-      expect((const1 & const4).value, equals(LogicValue.of('0100', width: 4)));
+      expect(signal | ones, same(ones));
+      expect(ones | signal, same(ones));
 
-      expect(logic0 & const1, isA<Logic>());
-      expect((logic0 & const1).value, equals(LogicValue.of('0000', width: 4)));
+      final identityResult = signal | zeros;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('01x0'));
 
-      expect(logic1 & const1, isA<Logic>());
-      expect((logic1 & const1).value, equals(LogicValue.of('0001', width: 4)));
+      final folded = Const(LogicValue.ofString('10x0')) |
+          Const(LogicValue.ofString('0101'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('11x1'));
 
-      expect(logicX & const1, isA<Logic>());
-      expect((logicX & const1).value, equals(LogicValue.of('xxxx', width: 4)));
+      expect(() => Const(0, width: 2) | Logic(),
+          throwsA(isA<PortWidthMismatchException>()));
     });
 
-    test('OR2Gate Single bit Constant input', () async {
-      final normalLogic = Logic();
-      final const0 = Const(LogicValue.zero);
-      final logicX = Logic();
-      final const1 = Const(LogicValue.one);
-      normalLogic.put(LogicValue.one);
-      logicX.put(LogicValue.x);
+    test('bitwise XOR folds only when both inputs are Const', () {
+      final folded = Const(LogicValue.ofString('10x0')) ^
+          Const(LogicValue.ofString('0101'));
+      expect(folded, isA<Const>());
+      expect(folded.value, LogicValue.ofString('11x1'));
 
-      expect(normalLogic | const0, isA<Logic>());
-      expect((normalLogic | const0).value, equals(normalLogic.value));
-
-      expect(logicX | const0, isA<Logic>());
-      expect((logicX | const0).value, equals(logicX.value));
-
-      expect(normalLogic | const1, isA<Const>());
-      expect((normalLogic | const1).value, equals(LogicValue.one));
-
-      expect(normalLogic | logicX, isA<Logic>());
-      expect((normalLogic | logicX).value, equals(LogicValue.one));
-
-      expect(const0 | const1, isA<Const>());
-      expect((const0 | const1).value, equals(LogicValue.one));
+      final signal = Logic(width: 4)..put(LogicValue.ofString('01z0'));
+      final identityResult = Const(0, width: 4) ^ signal;
+      expect(identityResult, isNot(same(signal)));
+      expect(identityResult.value, LogicValue.ofString('01x0'));
     });
 
-    test('OR2Gate Multi bit Constant input', () async {
-      final const1 = Const(bin('1101'), width: 4);
-      final const4 = Const(bin('0100'), width: 4);
-      final logic0 = Logic(width: 4)..put(LogicValue.zero);
-      final logic1 = Logic(width: 4)..put(LogicValue.one);
-      final logicX = Logic(width: 4)..put(LogicValue.x);
+    test('reductions and comparisons fold Const inputs', () {
+      final value = Const(0xa, width: 4);
 
-      expect(const1 | const4, isA<Const>());
-      expect((const1 | const4).value, equals(LogicValue.of('1101', width: 4)));
+      expect(value.and(), isA<Const>());
+      expect(value.and().value, LogicValue.zero);
+      expect(value.or().value, LogicValue.one);
+      expect(value.xor().value, LogicValue.zero);
 
-      expect(logic0 | const1, isA<Logic>());
-      expect((logic0 | const1).value, equals(const1.value));
+      final equal = value.eq(Const(0xa, width: 4));
+      final notEqual = value.neq(0xb);
+      expect(equal, isA<Const>());
+      expect(equal.value, LogicValue.one);
+      expect(notEqual, isA<Const>());
+      expect(notEqual.value, LogicValue.one);
 
-      expect(logic1 | const1, isA<Logic>());
-      expect((logic1 | const1).value, equals(const1.value));
+      final unknown = Const(LogicValue.z).eq(Const(LogicValue.z));
+      expect(unknown, isA<Const>());
+      expect(unknown.value, LogicValue.x);
+    });
 
-      expect(logicX | const1, isA<Logic>());
-      expect((logicX | const1).value, equals(LogicValue.of('11x1', width: 4)));
+    test('shifts by constant zero return the original signal', () {
+      final signal = Logic(width: 4)..put(LogicValue.ofString('10z1'));
+
+      expect(signal << 0, same(signal));
+      expect(signal >> Const(0), same(signal));
+      expect(signal >>> BigInt.zero, same(signal));
+
+      final constant = Const(bin('1010'), width: 4);
+      expect(constant << 0, same(constant));
+
+      final left = constant << 1;
+      final right = constant >>> 1;
+      final arithmeticRight = constant >> 1;
+      expect(left, isA<Const>());
+      expect(left.value, LogicValue.ofString('0100'));
+      expect(right.value, LogicValue.ofString('0101'));
+      expect(arithmeticRight.value, LogicValue.ofString('1101'));
+    });
+
+    test('mux bypasses only valid constant controls', () {
+      final d0 = Logic(width: 4);
+      final d1 = Logic(width: 4);
+
+      expect(mux(Const(0), d1, d0), same(d0));
+      expect(mux(Const(1), d1, d0), same(d1));
+
+      final invalidResult = mux(Const(LogicValue.z), d1, d0);
+      expect(invalidResult, isNot(anyOf(same(d0), same(d1))));
+      expect(invalidResult.value, LogicValue.filled(4, LogicValue.x));
+
+      expect(() => mux(Const(0, width: 2), d1, d0),
+          throwsA(isA<PortWidthMismatchException>()));
+      expect(() => mux(Const(0), Logic(width: 2), d0),
+          throwsA(isA<PortWidthMismatchException>()));
     });
   });
 

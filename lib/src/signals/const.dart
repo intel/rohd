@@ -10,7 +10,12 @@
 part of 'signals.dart';
 
 /// Represents a [Logic] that never changes value.
+///
+/// Attempts to assign, [put], or [inject] a new value throw an
+/// [UnassignableException].
 class Const extends Logic {
+  static const _unassignableMessage = '`Const` signals are unassignable.';
+
   /// Constructs a [Const] with the specified value.
   ///
   /// [val] should be processable by [LogicValue.of].
@@ -27,9 +32,130 @@ class Const extends Logic {
         ) {
     _wire.put(val, fill: fill, signalName: name);
 
-    makeUnassignable(reason: '`Const` signals are unassignable.');
+    makeUnassignable(reason: _unassignableMessage);
   }
 
   @override
   Const clone({String? name}) => Const(value, width: width);
+
+  @override
+  void put(dynamic val, {bool fill = false}) =>
+      throw UnassignableException(this, reason: _unassignableMessage);
+
+  @override
+  void inject(dynamic val, {bool fill = false}) =>
+      throw UnassignableException(this, reason: _unassignableMessage);
+
+  void _checkMatchingWidth(Logic other) {
+    if (width != other.width) {
+      throw PortWidthMismatchException.equalWidth(this, other);
+    }
+  }
+
+  @override
+  Logic operator ~() => Const(~value);
+
+  @override
+  Logic operator &(Logic other) {
+    _checkMatchingWidth(other);
+
+    if (other is Const) {
+      return Const(value & other.value);
+    } else if (value.isValid && value.isZero) {
+      return this;
+    }
+
+    return And2Gate(this, other).out;
+  }
+
+  @override
+  Logic operator |(Logic other) {
+    _checkMatchingWidth(other);
+
+    if (other is Const) {
+      return Const(value | other.value);
+    } else if (value.isValid &&
+        value == LogicValue.filled(width, LogicValue.one)) {
+      return this;
+    }
+
+    return Or2Gate(this, other).out;
+  }
+
+  @override
+  Logic operator ^(Logic other) {
+    _checkMatchingWidth(other);
+
+    if (other is Const) {
+      return Const(value ^ other.value);
+    }
+
+    return Xor2Gate(this, other).out;
+  }
+
+  @override
+  Logic operator >>(dynamic other) {
+    if (Logic._isZeroShiftAmount(other)) {
+      return this;
+    } else if (other is Logic && other is! Const) {
+      return ARShift(this, other).out;
+    }
+
+    return Const(value >> (other is Const ? other.value : other));
+  }
+
+  @override
+  Logic operator <<(dynamic other) {
+    if (Logic._isZeroShiftAmount(other)) {
+      return this;
+    } else if (other is Logic && other is! Const) {
+      return LShift(this, other).out;
+    }
+
+    return Const(value << (other is Const ? other.value : other));
+  }
+
+  @override
+  Logic operator >>>(dynamic other) {
+    if (Logic._isZeroShiftAmount(other)) {
+      return this;
+    } else if (other is Logic && other is! Const) {
+      return RShift(this, other).out;
+    }
+
+    return Const(value >>> (other is Const ? other.value : other));
+  }
+
+  @override
+  Logic and() => Const(value.and());
+
+  @override
+  Logic or() => Const(value.or());
+
+  @override
+  Logic xor() => Const(value.xor());
+
+  @override
+  Logic eq(dynamic other) {
+    if (other is Logic) {
+      _checkMatchingWidth(other);
+      return other is Const
+          ? Const(value.eq(other.value))
+          : Equals(this, other).out;
+    }
+
+    return Const(value.eq(LogicValue.of(other, width: width)));
+  }
+
+  @override
+  Logic neq(dynamic other) {
+    if (other is Logic) {
+      _checkMatchingWidth(other);
+      return other is Const
+          ? Const(value.neq(other.value))
+          : NotEquals(this, other).out;
+    }
+
+    return Const(value.neq(LogicValue.of(other, width: width)));
+  }
 }

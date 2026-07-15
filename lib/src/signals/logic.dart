@@ -442,57 +442,23 @@ class Logic {
   void operator <=(Logic other) => gets(other);
 
   /// Logical bitwise NOT.
-  Logic operator ~() => this is Const ? Const(~value) : NotGate(this).out;
+  Logic operator ~() => NotGate(this).out;
 
   /// Logical bitwise AND.
   Logic operator &(Logic other) {
-    if (this is Const && other is Const) {
-      return Const((this as Const).value & other.value);
-    }
-    Const? constOperand;
-    Logic? otherOperand;
-
-    if (this is Const && value.isValid) {
-      constOperand = this as Const;
-    } else if (other is Const && other.value.isValid) {
-      constOperand = other;
-      otherOperand = this;
+    if (other is Const) {
+      return other & this;
     }
 
-    if (constOperand != null && otherOperand != null) {
-      if (constOperand.value == LogicValue.filled(width, LogicValue.zero)) {
-        return constOperand;
-      } else if (constOperand.value ==
-          LogicValue.filled(width, LogicValue.one)) {
-        return otherOperand;
-      }
-    }
     return And2Gate(this, other).out;
   }
 
   /// Logical bitwise OR.
   Logic operator |(Logic other) {
-    if (this is Const && other is Const) {
-      return Const((this as Const).value | other.value);
-    }
-    Const? constOperand;
-    Logic? otherOperand;
-
-    if (this is Const && value.isValid) {
-      constOperand = this as Const;
-    } else if (other is Const && other.value.isValid) {
-      constOperand = other;
-      otherOperand = this;
+    if (other is Const) {
+      return other | this;
     }
 
-    if (constOperand != null && otherOperand != null) {
-      if (constOperand.value == LogicValue.filled(width, LogicValue.one)) {
-        return constOperand;
-      } else if (constOperand.value ==
-          LogicValue.filled(width, LogicValue.zero)) {
-        return otherOperand;
-      }
-    }
     return Or2Gate(this, other).out;
   }
 
@@ -524,6 +490,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -544,6 +514,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator <<(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -564,6 +538,10 @@ class Logic {
   ///
   /// If [isNet] and [other] is constant, then the result will also be a net.
   Logic operator >>>(dynamic other) {
+    if (_isZeroShiftAmount(other)) {
+      return this;
+    }
+
     if (isNet) {
       // many SV simulators don't support shifting of nets, so default this
       final shamt = _constShiftAmount(other);
@@ -586,6 +564,16 @@ class Logic {
       return null;
     } else {
       return LogicValue.ofInferWidth(other).toInt();
+    }
+  }
+
+  static bool _isZeroShiftAmount(dynamic other) {
+    if (other is Const) {
+      return other.value.isValid && other.value.isZero;
+    } else if (other is Logic) {
+      return false;
+    } else {
+      return LogicValue.ofInferWidth(other).isZero;
     }
   }
 
