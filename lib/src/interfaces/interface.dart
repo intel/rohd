@@ -79,43 +79,81 @@ class Interface<TagType extends Enum> {
       {Iterable<TagType>? inputTags,
       Iterable<TagType>? outputTags,
       Iterable<TagType>? inOutTags,
-      String Function(String original)? uniquify}) {
+      String Function(String original)? uniquify,
+      String? groupName}) {
     uniquify ??= (original) => original;
+
+    // Derive the interface group name from the uniquify function.
+    // We probe with a sentinel to detect what the function adds.
+    // Supports prefix patterns (e.g. 'ace0_pcieRp_X') and suffix
+    // patterns (e.g. 'x_m', 'x_dti_a2f').
+    if (groupName == null) {
+      const sentinel = '\x00';
+      final probed = uniquify(sentinel);
+      if (probed.endsWith(sentinel)) {
+        // Prefix-based: uniquify('X') → 'prefix_X'
+        groupName = probed.substring(0, probed.length - 1);
+      } else if (probed.startsWith(sentinel)) {
+        // Suffix-based: uniquify('X') → 'X_suffix'
+        groupName = probed.substring(1);
+      }
+    }
+
+    // Helper to register the port group if we successfully extracted one.
+    void registerGroup(String portName) {
+      if (groupName != null && groupName.isNotEmpty) {
+        // Strip leading/trailing separators for a cleaner group name.
+        var trimmed = groupName;
+        if (trimmed.startsWith('_')) {
+          trimmed = trimmed.substring(1);
+        }
+        if (trimmed.endsWith('_')) {
+          trimmed = trimmed.substring(0, trimmed.length - 1);
+        }
+        if (trimmed.isNotEmpty) {
+          module.registerPortGroup(portName, trimmed);
+        }
+      }
+    }
 
     if (inputTags != null) {
       for (final port in getPorts(inputTags).values) {
+        final portName = uniquify(port.name);
         port <=
             (port is LogicArray
                 ? module.addInputArray(
-                    uniquify(port.name),
+                    portName,
                     srcInterface.port(port.name),
                     dimensions: port.dimensions,
                     elementWidth: port.elementWidth,
                     numUnpackedDimensions: port.numUnpackedDimensions,
                   )
                 : module.addInput(
-                    uniquify(port.name),
+                    portName,
                     srcInterface.port(port.name),
                     width: port.width,
                   ));
+        registerGroup(portName);
       }
     }
 
     if (outputTags != null) {
       for (final port in getPorts(outputTags).values) {
+        final portName = uniquify(port.name);
         final output = (port is LogicArray
             ? module.addOutputArray(
-                uniquify(port.name),
+                portName,
                 dimensions: port.dimensions,
                 elementWidth: port.elementWidth,
                 numUnpackedDimensions: port.numUnpackedDimensions,
               )
             : module.addOutput(
-                uniquify(port.name),
+                portName,
                 width: port.width,
               ));
         output <= port;
         srcInterface.port(port.name) <= output;
+        registerGroup(portName);
       }
     }
 
@@ -131,20 +169,22 @@ class Interface<TagType extends Enum> {
               port, 'LogicNet must be used for inOut ports.');
         }
 
+        final portName = uniquify(port.name);
         port <=
             (port is LogicArray
                 ? module.addInOutArray(
-                    uniquify(port.name),
+                    portName,
                     srcInterface.port(port.name),
                     dimensions: port.dimensions,
                     elementWidth: port.elementWidth,
                     numUnpackedDimensions: port.numUnpackedDimensions,
                   )
                 : module.addInOut(
-                    uniquify(port.name),
+                    portName,
                     srcInterface.port(port.name),
                     width: port.width,
                   ));
+        registerGroup(portName);
       }
     }
   }
