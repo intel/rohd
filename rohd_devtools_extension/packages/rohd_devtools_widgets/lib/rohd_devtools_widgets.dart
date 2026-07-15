@@ -30,6 +30,9 @@ export 'src/cross_probe_menu.dart';
 // Logic type utilities
 export 'src/logic_type_utils.dart';
 
+// Regular expression helpers
+export 'src/regex_utils.dart';
+
 // Bit-field parsing, formatting, and dialog utilities
 export 'src/bit_field_utils.dart';
 
