@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_value_test.dart
@@ -14,11 +14,16 @@ import 'package:rohd/src/exceptions/logic_value/invalid_random_logic_value_excep
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
-// All logicvalues to support trying all possiblities
-const allLv = [LogicValue.zero, LogicValue.one, LogicValue.x, LogicValue.z];
+// All logicvalues to support trying all possibilities
+const List<LogicValue> allLv = [
+  LogicValue.zero,
+  LogicValue.one,
+  LogicValue.x,
+  LogicValue.z
+];
 
 // shorten some names to make tests read better
-const lv = LogicValue.ofString;
+const LogicValue Function(String stringRepresentation) lv = LogicValue.ofString;
 LogicValue large(LogicValue lv) => LogicValue.filled(100, lv);
 
 int repeatedInt(int value, int width, int times) {
@@ -2057,6 +2062,7 @@ void main() {
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
       }
     });
+
     test('radixString roundTrip with leading zeros', () {
       final lv = LogicValue.ofBigInt(BigInt.from(737481838713847), 61);
       for (final i in [2, 4, 8, 10, 16]) {
@@ -2066,9 +2072,24 @@ void main() {
             equals(lv));
       }
     });
+
+    test('radixString roundTrip zero corner case', () {
+      final lv = LogicValue.ofBigInt(BigInt.from(0), 61);
+      for (final i in [2, 4, 8, 10, 16]) {
+        expect(
+            LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
+        expect(
+            LogicValue.ofRadixString(
+                lv.toRadixString(radix: i, leadingZeros: true)),
+            equals(lv));
+      }
+    });
+
     test('radixString binary expansion', () {
       final lv = LogicValue.ofRadixString("12'b10z111011z00");
       expect(lv.toRadixString(radix: 16), equals("12'h<10z1>d<1z00>"));
+      expect(lv.toRadixString(radix: 16, includeWidth: false),
+          equals('<10z1>d<1z00>'));
       for (final i in [2, 4, 8, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
@@ -2078,13 +2099,20 @@ void main() {
     test('radixString leading zero', () {
       final lv = LogicValue.ofRadixString("10'b00_0010_0111");
       expect(lv.toRadixString(), equals("10'b10_0111"));
+      expect(lv.toRadixString(sepChar: ''), equals("10'b100111"));
+      expect(
+          lv.toRadixString(includeWidth: false, sepChar: ''), equals('100111'));
       expect(lv.toRadixString(leadingZeros: true), equals("10'b00_0010_0111"));
       expect(lv.toRadixString(radix: 4), equals("10'q213"));
+      expect(lv.toRadixString(radix: 4, includeWidth: false), equals('213'));
       expect(lv.toRadixString(radix: 8), equals("10'o47"));
+      expect(lv.toRadixString(radix: 8, includeWidth: false), equals('47'));
       expect(lv.toRadixString(radix: 10), equals("10'd39"));
+      expect(lv.toRadixString(radix: 10, includeWidth: false), equals('39'));
       expect(
           lv.toRadixString(radix: 10, leadingZeros: true), equals("10'd0039"));
       expect(lv.toRadixString(radix: 16), equals("10'h27"));
+      expect(lv.toRadixString(radix: 16, includeWidth: false), equals('27'));
       expect(
           lv.toRadixString(radix: 16, leadingZeros: true), equals("10'h027"));
       for (final i in [2, 4, 8, 10, 16]) {
@@ -2104,22 +2132,44 @@ void main() {
       }
       try {
         lv.toRadixString(sepChar: 'q');
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConversionException>());
       }
       try {
         lv.toRadixString(radix: 14);
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConversionException>());
       }
     });
+
     test('radixString space separators', () {
       final lv = LogicValue.ofRadixString("10'b10 0010 0111", sepChar: ' ');
       expect(lv.toInt(), equals(551));
     });
+
+    test('radixString bad input', () {
+      try {
+        LogicValue.ofRadixString('something');
+        fail('Should throw a LogicValueConstructionException');
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConstructionException>());
+      }
+    });
+    test('radixString bad input with fake length', () {
+      try {
+        LogicValue.ofRadixString("10'bsomething");
+        fail('Should throw a LogicValueConstructionException');
+      } on Exception catch (e) {
+        expect(e, isA<LogicValueConstructionException>());
+      }
+    });
+
     test('radixString bad separator', () {
       try {
         LogicValue.ofRadixString("10'b10 0010_0111");
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2128,6 +2178,7 @@ void main() {
     test('radixString illegal separator', () {
       try {
         LogicValue.ofRadixString("10'b10q0010q0111", sepChar: 'q');
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
@@ -2135,12 +2186,16 @@ void main() {
 
     test('radixString bad length', () {
       try {
-        LogicValue.ofRadixString("10'b10_0010_0111_0000");
+        LogicValue.ofRadixString("10'b10_0010_0111_0001");
+        fail('Should throw a LogicValueConstructionException');
       } on Exception catch (e) {
         expect(e, isA<LogicValueConstructionException>());
       }
-      // Try the shortest possible input
-      LogicValue.ofRadixString("10'b");
+    });
+
+    test('radixString shortest possible length', () {
+      final lv = LogicValue.ofRadixString("10'b");
+      expect(lv, equals(LogicValue.ofInt(0, 10)));
     });
 
     test('radixString leading Z', () {
@@ -2154,6 +2209,7 @@ void main() {
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
       }
     });
+
     test('radixString decimal case', () {
       {
         final lv = LogicValue.ofRadixString("12'bzz_zzz1_1011");
@@ -2184,6 +2240,7 @@ void main() {
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
       }
     });
+
     test('radixString: slide set bits along entire word', () {
       final random = Random(5);
 

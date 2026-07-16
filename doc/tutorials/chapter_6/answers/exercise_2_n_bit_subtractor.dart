@@ -7,7 +7,6 @@ import '../../chapter_3/answers/helper.dart';
 import '../../chapter_5/answers/full_subtractor.dart';
 
 class FullSubtractorComb extends FullSubtractor {
-  @override
   FullSubtractorComb(super.a, super.b, super.borrowIn) {
     // Declare input and output
     final a = input('a');

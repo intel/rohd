@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_values.dart
@@ -218,7 +218,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
       if (val.width == 1 && (!val.isValid || fill)) {
         if (!val.isValid) {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
@@ -243,7 +242,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
 
       if (val.length == 1 && (val == 'x' || val == 'z' || fill)) {
         if (val == 'x' || val == 'z') {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
@@ -269,7 +267,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
       if (val.length == 1 &&
           (val.first == LogicValue.x || val.first == LogicValue.z || fill)) {
         if (!val.first.isValid) {
-          // ignore: parameter_assignments
           width ??= 1;
         }
         if (width == null) {
@@ -343,7 +340,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// the width of [other].
   LogicValue _concatenate(LogicValue other) {
     if (other.width == 0) {
-      // ignore: avoid_returning_this
       return this;
     } else if (width == 0) {
       return other;
@@ -611,12 +607,16 @@ abstract class LogicValue implements Comparable<LogicValue> {
   static String _reverse(String inString) =>
       String.fromCharCodes(inString.runes.toList().reversed);
 
-  /// Return the radix encoding of the current [LogicValue] as a sequence
-  /// of radix characters prefixed by the length and encoding format.
-  /// Output format is: `<len>'<format><encoded-value>`.
+  /// Return the radix encoding of the current [LogicValue] as a sequence of
+  /// radix characters. By default, the output is prefixed by the length and
+  /// encoding format: `<len>'<format><encoded-value>`.
   ///
-  /// [ofRadixString] can parse a [String] produced by [toRadixString] and
-  /// construct a [LogicValue].
+  /// If [includeWidth] is `false`, the length and encoding format are omitted.
+  /// The resulting string is not self-describing and cannot be parsed by
+  /// [ofRadixString] without restoring that information.
+  ///
+  /// [ofRadixString] can parse a decorated [String] produced by
+  /// [toRadixString] and construct a [LogicValue].
   ///
   /// Here is the number 1492 printed as a radix string:
   /// - Binary: `15'b101_1101_0100`
@@ -628,7 +628,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Separators are output according to [chunkSize] starting from the
   /// LSB(right), default is 4 characters.  The default separator is '_'.
   /// [sepChar] can be set to another character, but not in [radixStringChars],
-  /// otherwise it will throw an exception.
+  /// or to an empty string to disable separators. Otherwise, it will throw an
+  /// exception.
   ///  - [chunkSize] = default: `61'h2_9ebc_5f06_5bf7`
   ///  - [chunkSize] = 10: `61'h29e_bc5f065bf7`
   ///
@@ -654,8 +655,9 @@ abstract class LogicValue implements Comparable<LogicValue> {
       {int radix = 2,
       int chunkSize = 4,
       bool leadingZeros = false,
+      bool includeWidth = true,
       String sepChar = '_'}) {
-    if (radixStringChars.contains(sepChar)) {
+    if (sepChar.isNotEmpty && radixStringChars.contains(sepChar)) {
       throw LogicValueConversionException('separation character invalid');
     }
     final radixStr = switch (radix) {
@@ -729,10 +731,12 @@ abstract class LogicValue implements Comparable<LogicValue> {
             (match) => '${match.group(0)}$sepChar')
         .replaceAll('$sepChar<', '<'));
 
-    final fullString = spaceString[0] == sepChar
-        ? spaceString.substring(1, spaceString.length)
-        : spaceString;
-    return '$width$radixStr$fullString';
+    final fullString = (spaceString.isNotEmpty)
+        ? (spaceString[0] == sepChar)
+            ? spaceString.substring(1, spaceString.length)
+            : spaceString
+        : '0';
+    return '${includeWidth ? '$width$radixStr' : ''}$fullString';
   }
 
   /// Create a [LogicValue] from a length/radix-encoded string of the
@@ -755,7 +759,8 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// in chunks of 4 digits.
   ///
   /// If the format of then length/radix-encoded string is not completely parsed
-  /// an exception will be thrown.  This can be caused by illegal characters
+  /// a [LogicValueConstructionException] will be thrown.  This can be caused by
+  /// illegal characters
   /// in the string or too long of a value string.
   ///
   ///  Strings created by [toRadixString] are parsed by [ofRadixString].
@@ -909,12 +914,10 @@ abstract class LogicValue implements Comparable<LogicValue> {
           lastPos = pos;
         }
         return logicValList.rswizzle();
-      } else {
-        throw LogicValueConstructionException(
-            'Invalid LogicValue string $valueString');
       }
     }
-    return LogicValue.zero;
+    throw LogicValueConstructionException(
+        'Invalid LogicValue string $valueString');
   }
 
   /// Compares this to `other`.
@@ -1104,7 +1107,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   ///
   /// Throws an Exception if width is not 1.
   @Deprecated('Check `width` separately to see if single-bit.')
-  // ignore: avoid_returning_this
   LogicValue get bit {
     if (width != 1) {
       throw Exception('Width must be 1, but was $width.');
@@ -1523,7 +1525,6 @@ abstract class LogicValue implements Comparable<LogicValue> {
   /// Performs shift operations in the specified direction
   LogicValue _shift(dynamic shamt, _ShiftType direction) {
     if (width == 0) {
-      // ignore: avoid_returning_this
       return this;
     }
 

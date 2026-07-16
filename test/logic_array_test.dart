@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_array_test.dart
@@ -12,16 +12,18 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:rohd/src/utilities/web.dart';
 import 'package:test/test.dart';
 
 class SimpleLAPassthrough extends Module {
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
   SimpleLAPassthrough(
     LogicArray laIn, {
     List<int>? dimOverride,
     int? elemWidthOverride,
     int? numUnpackedOverride,
+    super.name = 'simple_la_passthrough',
   }) {
     laIn = addInputArray(
       'laIn',
@@ -44,7 +46,7 @@ class SimpleLAPassthrough extends Module {
 
 class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   RangeAndSliceArrModule(LogicArray laIn) {
     laIn = addInputArray(
@@ -83,7 +85,7 @@ class RangeAndSliceArrModule extends Module implements SimpleLAPassthrough {
 
 class WithSetArrayModule extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   WithSetArrayModule(LogicArray laIn) {
     laIn = addInputArray(
@@ -106,7 +108,7 @@ class WithSetArrayModule extends Module implements SimpleLAPassthrough {
 
 class WithSetArrayOffsetModule extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   WithSetArrayOffsetModule(LogicArray laIn) {
     laIn = addInputArray(
@@ -161,11 +163,18 @@ class LAPassthroughIntf extends Interface<LADir> {
           elementWidth: other.elementWidth,
           numUnpackedDimensions: other.numUnpackedDimensions,
         );
+
+  @override
+  LAPassthroughIntf clone() => LAPassthroughIntf(
+        dimensions: dimensions,
+        elementWidth: elementWidth,
+        numUnpackedDimensions: numUnpackedDimensions,
+      );
 }
 
 class LAPassthroughWithIntf extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
   LAPassthroughWithIntf(
     LAPassthroughIntf intf,
   ) {
@@ -179,7 +188,7 @@ class LAPassthroughWithIntf extends Module implements SimpleLAPassthrough {
 
 class SimpleLAPassthroughLogic extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
   SimpleLAPassthroughLogic(
     Logic laIn, {
     required List<int> dimensions,
@@ -206,7 +215,7 @@ class SimpleLAPassthroughLogic extends Module implements SimpleLAPassthrough {
 
 class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   PackAndUnpackPassthrough(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
@@ -229,7 +238,7 @@ class PackAndUnpackPassthrough extends Module implements SimpleLAPassthrough {
 class PackAndUnpackWithArraysPassthrough extends Module
     implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   PackAndUnpackWithArraysPassthrough(LogicArray laIn,
       {int intermediateUnpacked = 0}) {
@@ -260,7 +269,7 @@ class PackAndUnpackWithArraysPassthrough extends Module
 
 class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   RearrangeArraysPassthrough(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
@@ -285,7 +294,7 @@ class RearrangeArraysPassthrough extends Module implements SimpleLAPassthrough {
 
 class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   ArrayNameConflicts(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
@@ -322,7 +331,7 @@ class ArrayNameConflicts extends Module implements SimpleLAPassthrough {
 
 class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   SimpleArraysAndHierarchy(LogicArray laIn) {
     laIn = addInputArray('laIn', laIn,
@@ -342,7 +351,7 @@ class SimpleArraysAndHierarchy extends Module implements SimpleLAPassthrough {
 
 class FancyArraysAndHierarchy extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
 
   FancyArraysAndHierarchy(LogicArray laIn, {int intermediateUnpacked = 0}) {
     laIn = addInputArray('laIn', laIn,
@@ -402,7 +411,7 @@ class ConstantAssignmentArrayModule extends Module {
 
 class CondAssignArray extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
   CondAssignArray(
     LogicArray laIn, {
     List<int>? dimOverride,
@@ -430,7 +439,7 @@ class CondAssignArray extends Module implements SimpleLAPassthrough {
 
 class CondCompArray extends Module implements SimpleLAPassthrough {
   @override
-  Logic get laOut => output('laOut');
+  LogicArray get laOut => output('laOut') as LogicArray;
   CondCompArray(
     LogicArray laIn, {
     List<int>? dimOverride,
@@ -496,6 +505,64 @@ class AssignSubsetModule extends Module {
     } on SignalWidthMismatchException {
       error <= Const(1);
     }
+  }
+}
+
+class ParentModuleWithPackingArrayOutput extends Module {
+  ParentModuleWithPackingArrayOutput(
+    Logic x,
+  ) {
+    x = addInput('x', x);
+    ChildModuleWithPackingArrayOutput(x).myOut.packed.xor() ^ x;
+  }
+}
+
+class ChildModuleWithPackingArrayOutput extends Module {
+  late final LogicArray myOut =
+      addOutputArray('myOut', dimensions: [2, 2], elementWidth: 4);
+  ChildModuleWithPackingArrayOutput(Logic x) {
+    x = addInput('x', x);
+    x ^ myOut.packed.xor();
+  }
+}
+
+class PartialArrayAssignTop extends Module {
+  PartialArrayAssignTop(LogicArray inpArr) {
+    inpArr = addInputArray('inpArr', inpArr,
+        dimensions: inpArr.dimensions, elementWidth: inpArr.elementWidth);
+
+    final p1 = SimpleLAPassthrough(inpArr, name: 'passthrough1');
+
+    final innerArr = LogicArray(
+      [2, ...inpArr.dimensions],
+      inpArr.elementWidth,
+      // note: important that this does not have a name!
+    );
+
+    // note: important that this output port is present!
+    addOutputArray('p1out',
+            dimensions: p1.laOut.dimensions,
+            elementWidth: p1.laOut.elementWidth)
+        .gets(p1.laOut);
+
+    final partialListener = SimpleLAPassthrough(
+        p1.laOut.elements[0] as LogicArray,
+        name: 'partialListener');
+
+    addOutputArray('partialOut',
+            dimensions: partialListener.laOut.dimensions,
+            elementWidth: partialListener.laOut.elementWidth)
+        .gets(partialListener.laOut);
+
+    innerArr.elements[0] <= p1.laOut;
+    innerArr.elements[1] <= Const(3, width: inpArr.width);
+
+    final p2 = SimpleLAPassthrough(innerArr, name: 'passthrough2');
+
+    addOutputArray('outArr',
+            dimensions: p2.laOut.dimensions,
+            elementWidth: p2.laOut.elementWidth)
+        .gets(p2.laOut);
   }
 }
 
@@ -643,6 +710,25 @@ void main() {
     });
   });
 
+  test('array output driving partial and subset of other array between modules',
+      () async {
+    final mod = PartialArrayAssignTop(LogicArray([3, 2], 2));
+    await mod.build();
+
+    final vectors = [
+      Vector({
+        'inpArr': '110011000011'
+      }, {
+        'outArr': '000000000011110011000011',
+        'p1out': '110011000011',
+        'partialOut': '0011',
+      }),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
+  });
+
   group('logicarray passthrough', () {
     Future<void> testArrayPassthrough(SimpleLAPassthrough mod,
         {bool checkNoSwizzle = true,
@@ -761,8 +847,8 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.generateSynth();
-        expect(sv, contains('input logic [2:0][1:0][2:0][7:0] laIn'));
-        expect(sv, contains('output logic [2:0][1:0][2:0][7:0] laOut'));
+        expect(sv, contains('input wire logic [2:0][1:0][2:0][7:0] laIn'));
+        expect(sv, contains('output var logic [2:0][1:0][2:0][7:0] laOut'));
       });
 
       test('3 dimensions with interface and unpacked', () async {
@@ -776,8 +862,8 @@ void main() {
 
         // ensure ports with interface are still an array
         final sv = mod.generateSynth();
-        expect(sv, contains('input logic [1:0][2:0][7:0] laIn [2:0]'));
-        expect(sv, contains('output logic [1:0][2:0][7:0] laOut [2:0]'));
+        expect(sv, contains('input wire logic [1:0][2:0][7:0] laIn [2:0]'));
+        expect(sv, contains('output var logic [1:0][2:0][7:0] laOut [2:0]'));
       });
     });
 
@@ -895,9 +981,8 @@ void main() {
       test('3d', () async {
         final mod = SimpleArraysAndHierarchy(LogicArray([2], 8));
         await testArrayPassthrough(mod);
-
-        expect(mod.generateSynth(),
-            contains('SimpleLAPassthrough  unnamed_module'));
+        final sv = mod.generateSynth();
+        expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough'));
       });
 
       test('3d unpacked', () async {
@@ -916,9 +1001,10 @@ void main() {
         final mod = FancyArraysAndHierarchy(LogicArray([4, 3, 2], 8));
         await testArrayPassthrough(mod, checkNoSwizzle: false);
 
+        final sv = mod.generateSynth();
+
         // make sure the 4th one is there (since we expect 4)
-        expect(mod.generateSynth(),
-            contains('SimpleLAPassthrough  unnamed_module_2'));
+        expect(sv, contains('SimpleLAPassthrough  simple_la_passthrough_2'));
       });
 
       test('3d unpacked', () async {
@@ -957,7 +1043,7 @@ void main() {
       final mod = WithSetArrayOffsetModule(LogicArray([2, 2], 8));
       await testArrayPassthrough(mod, checkNoSwizzle: false);
 
-      final sv = mod.generateSynth();
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
       // make sure we're reassigning both times it overlaps!
       expect(
@@ -1076,6 +1162,13 @@ void main() {
       await SimCompare.checkFunctionalVector(mod, vectors);
       SimCompare.checkIverilogVector(mod, vectors);
     });
+  });
+
+  test('packed array output inside and outside of module', () async {
+    final mod = ParentModuleWithPackingArrayOutput(Logic());
+
+    // just building will detect if there was a bad reuse of packed
+    await mod.build();
   });
 
   group('array clone', () {

@@ -44,6 +44,10 @@ class _MCUInterface extends Interface<_MCUInterfaceTag> {
   Logic get outputData => port('outputData');
 
   final int? memorySizeOverride;
+
+  @override
+  _MCUInterface clone() =>
+      _MCUInterface(memorySizeOverride: memorySizeOverride);
 }
 
 class _MemoryControllerUnit extends Module {

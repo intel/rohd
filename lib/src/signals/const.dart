@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // const.dart
@@ -9,8 +9,51 @@
 
 part of 'signals.dart';
 
+/// Returns [preferredRadix] if it is supported for generated literals.
+///
+/// Throws a [LogicValueConversionException] for unsupported radices.
+int? _validatePreferredRadix(int? preferredRadix) {
+  if (preferredRadix != null &&
+      !const {2, 8, 10, 16}.contains(preferredRadix)) {
+    throw LogicValueConversionException(
+        'Unsupported preferred radix: $preferredRadix');
+  }
+
+  return preferredRadix;
+}
+
+/// Creates an identifier-friendly name for a constant [value].
+///
+/// Fully known values use [preferredRadix], or decimal if none is
+/// preferred. Values containing `x` or `z` use binary so no state is lost.
+String _constName(LogicValue value, int? preferredRadix) {
+  final radix = value.isValid ? preferredRadix ?? 10 : 2;
+  final digits = value.toRadixString(
+    radix: radix,
+    includeWidth: false,
+    sepChar: '',
+  );
+  final prefix = switch (radix) {
+    2 => '0b',
+    8 => '0o',
+    10 => '',
+    16 => '0x',
+    _ => throw StateError('Unexpected radix: $radix'),
+  };
+
+  return 'const_$prefix$digits';
+}
+
 /// Represents a [Logic] that never changes value.
 class Const extends Logic {
+  /// The preferred radix for displaying this constant in generated outputs.
+  ///
+  /// Supported radices are binary (2), octal (8), decimal (10), and
+  /// hexadecimal (16). If omitted, generated outputs select a radix
+  /// automatically. A generator may fall back to another radix when the
+  /// preferred radix cannot represent this constant's value.
+  final int? preferredRadix;
+
   /// Constructs a [Const] with the specified value.
   ///
   /// [val] should be processable by [LogicValue.of].
@@ -18,15 +61,39 @@ class Const extends Logic {
   /// If a [width] is provided, the [Const] will be that width.  If not, and
   /// [val] is a [LogicValue], the [Const] will be the width of [val].
   /// Otherwise, the [Const] will be 1 bit wide.
-  Const(dynamic val, {int? width, bool fill = false})
+  ///
+  /// [preferredRadix] controls how the constant is displayed in generated
+  /// outputs and its normalized name. Supported values are 2, 8, 10, and 16.
+  /// If omitted, generated outputs select a radix automatically and the name
+  /// uses decimal. Values containing `x` or `z` may fall back to binary.
+  Const(
+    dynamic val, {
+    int? width,
+    bool fill = false,
+    int? preferredRadix,
+  }) : this._(
+          LogicValue.of(
+            val,
+            width: width ?? (val is LogicValue ? val.width : 1),
+            fill: fill,
+          ),
+          preferredRadix: _validatePreferredRadix(preferredRadix),
+        );
+
+  /// Constructs a [Const] from an already normalized [value].
+  Const._(LogicValue value, {required this.preferredRadix})
       : super(
-          name: 'const_$val',
-          width: width ?? (val is LogicValue ? val.width : 1),
+          name: _constName(value, preferredRadix),
+          width: value.width,
           // we don't care about maintaining this node unless necessary
           naming: Naming.unnamed,
         ) {
-    _wire.put(val, fill: fill, signalName: name);
+    _wire.put(value, signalName: name);
 
     makeUnassignable(reason: '`Const` signals are unassignable.');
   }
+
+  @override
+  Const clone({String? name}) =>
+      Const(value, width: width, preferredRadix: preferredRadix);
 }

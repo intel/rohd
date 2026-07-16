@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional_assign.dart
@@ -46,7 +46,7 @@ class ConditionalAssign extends Conditional {
   late final List<Conditional> conditionals = const [];
 
   /// A cached copy of the result of [receiverOutput] to save on lookups.
-  late final _receiverOutput = receiverOutput(receiver);
+  late final Logic _receiverOutput = receiverOutput(receiver);
 
   @override
   void execute(Set<Logic>? drivenSignals,
@@ -56,12 +56,17 @@ class ConditionalAssign extends Conditional {
     }
 
     final currentValue = driverValue(driver);
-    if (!currentValue.isValid) {
-      // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
-      // It's too pessimistic to convert the whole bus to X.
-      _receiverOutput.put(currentValue & currentValue);
-    } else {
-      _receiverOutput.put(currentValue);
+
+    try {
+      if (!currentValue.isValid) {
+        // Use bitwise & to turn Z's into X's, but keep valid signals as-is.
+        // It's too pessimistic to convert the whole bus to X.
+        _receiverOutput.put(currentValue & currentValue);
+      } else {
+        _receiverOutput.put(currentValue);
+      }
+    } on WriteAfterReadException catch (e) {
+      throw e.cloneWithAddedPath('  at $this  [$hierarchyString]');
     }
 
     if (drivenSignals != null &&

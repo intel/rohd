@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pipeline.dart
@@ -329,7 +329,7 @@ class Pipeline {
 
 /// A pipeline that implements Ready/Valid protocol at each stage.
 class ReadyValidPipeline extends Pipeline {
-  /// Indicates that valid contents are ready to be recieved
+  /// Indicates that valid contents are ready to be received
   /// at the output of the pipeline.
   late final Logic validPipeOut;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus.dart
@@ -7,6 +7,9 @@
 // 2021 August 2
 // Author: Max Korbel <max.korbel@intel.com>
 
+import 'dart:math' show max;
+
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 
 /// A [Module] which gives access to a subset range of signals of the input.
@@ -23,9 +26,12 @@ class BusSubset extends Module with InlineSystemVerilog {
   late final String _subsetName;
 
   /// The input to get a subset of.
-  late final Logic _original;
+  ///
+  /// This is the [input] or [inOut] of this module, and thus should not be
+  /// directly connected to outside of this module.
+  late final Logic original;
 
-  /// The output, a subset of [_original].
+  /// The output, a subset of [original].
   late final Logic subset;
 
   /// Start index of the subset.
@@ -36,6 +42,10 @@ class BusSubset extends Module with InlineSystemVerilog {
 
   /// Indicates whether this operates bidirectionally on nets.
   final bool _isNet;
+
+  @internal
+  @override
+  bool get isWiresOnly => true;
 
   @override
   String get resultSignalName => _subsetName;
@@ -72,27 +82,28 @@ class BusSubset extends Module with InlineSystemVerilog {
     final newWidth = (endIndex - startIndex).abs() + 1;
 
     if (_isNet) {
-      _original = addInOut(_originalName, bus, width: bus.width);
-      subset = LogicNet(width: newWidth);
+      original = addInOut(_originalName, bus, width: bus.width);
+      subset =
+          LogicNet(width: newWidth, name: _subsetName, naming: Naming.unnamed);
       final internalSubset = addInOut(_subsetName, subset, width: newWidth);
 
       if (startIndex > endIndex) {
         // reverse case
         for (var i = 0; i < newWidth; i++) {
           internalSubset.quietlyMergeSubsetTo(
-            _original[startIndex - i] as LogicNet,
+            original[startIndex - i] as LogicNet,
             start: endIndex + i,
           );
         }
       } else {
         // normal case
-        (_original as LogicNet).quietlyMergeSubsetTo(
+        (original as LogicNet).quietlyMergeSubsetTo(
           internalSubset,
           start: startIndex,
         );
       }
     } else {
-      _original = addInput(_originalName, bus, width: bus.width);
+      original = addInput(_originalName, bus, width: bus.width);
       subset = addOutput(_subsetName, width: newWidth);
 
       // so that people can't do a slice assign, not (yet?) implemented
@@ -107,22 +118,22 @@ class BusSubset extends Module with InlineSystemVerilog {
   /// Performs setup steps for custom functional behavior.
   void _setup() {
     _execute(); // for initial values
-    _original.glitch.listen((args) {
+    original.glitch.listen((args) {
       _execute();
     });
   }
 
   /// Executes the functional behavior of this gate.
   void _execute() {
-    if (_original.width == 1) {
-      subset.put(_original.value);
+    if (original.width == 1) {
+      subset.put(original.value);
       return;
     }
 
     if (endIndex < startIndex) {
-      subset.put(_original.value.getRange(endIndex, startIndex + 1).reversed);
+      subset.put(original.value.getRange(endIndex, startIndex + 1).reversed);
     } else {
-      subset.put(_original.value.getRange(startIndex, endIndex + 1));
+      subset.put(original.value.getRange(startIndex, endIndex + 1));
     }
   }
 
@@ -140,7 +151,7 @@ class BusSubset extends Module with InlineSystemVerilog {
         'Inputs to bus swizzle cannot contain any expressions.');
 
     // When, input width is 1, ignore startIndex and endIndex
-    if (_original.width == 1) {
+    if (original.width == 1) {
       return a;
     }
 
@@ -172,20 +183,31 @@ class BusSubset extends Module with InlineSystemVerilog {
 class Swizzle extends Module with InlineSystemVerilog {
   final String _out = Naming.unpreferredName('swizzled');
 
+  /// A regular expression that will have matches if an expression is a single
+  /// bit select of a signal or packed array element.
+  static final RegExp _singleBitSelectRegex =
+      RegExp(r'^\(?([A-Za-z_][A-Za-z0-9_$]*(?:\[\d+\])*)\[(\d+)\]\)?$');
+
   /// The output port containing concatenated signals.
   late final Logic out;
 
   final List<Logic> _swizzleInputs = [];
 
-  /// Whether this [Swizzle] is for [LogicNet]s.
-  final bool _isNet;
+  /// Whether this [Swizzle] concatenates [LogicNet]s (so its output is a net
+  /// that can be driven bidirectionally).
+  @internal
+  final bool isNet;
+
+  @internal
+  @override
+  bool get isWiresOnly => true;
 
   /// Constructs a [Module] which concatenates [signals] into one large [out].
   Swizzle(List<Logic> signals, {super.name = 'swizzle'})
-      : _isNet = signals.any((e) => e.isNet) {
+      : isNet = signals.any((e) => e.isNet) {
     var outputWidth = 0;
 
-    final inputCreator = _isNet ? addInOut : addInput;
+    final inputCreator = isNet ? addInOut : addInput;
 
     var idx = 0;
     for (final signal in signals.reversed) {
@@ -197,7 +219,7 @@ class Swizzle extends Module with InlineSystemVerilog {
       outputWidth += signal.width;
     }
 
-    if (_isNet) {
+    if (isNet) {
       out = LogicNet(name: _out, width: outputWidth, naming: Naming.unnamed);
       final internalOut = addInOut(_out, out, width: outputWidth);
 
@@ -237,14 +259,170 @@ class Swizzle extends Module with InlineSystemVerilog {
   String inlineVerilog(Map<String, String> inputs) {
     assert(
         inputs.length == _swizzleInputs.length ||
-            (inputs.length == _swizzleInputs.length + 1 && _isNet),
+            (inputs.length == _swizzleInputs.length + 1 && isNet),
         'This swizzle has ${_swizzleInputs.length} inputs,'
         ' but saw $inputs with ${inputs.length} values.');
 
-    final inputStr = _swizzleInputs.reversed
-        .where((e) => e.width > 0)
-        .map((e) => inputs[e.name])
-        .join(',');
-    return '{$inputStr}';
+    // Calculate all width descriptions upfront to determine alignment
+    final validInputs =
+        _swizzleInputs.reversed.where((e) => e.width > 0).toList();
+    final operands = _collapseContiguousBitSelects(validInputs, inputs);
+
+    // If there's only one element, no need for width descriptions
+    if (operands.length == 1) {
+      return operands.first.expression;
+    }
+
+    final widthDescriptions = <({int upper, int? lower})>[];
+    var upperIndex = out.width - 1;
+
+    // First pass: calculate all width descriptions
+    for (final operand in operands) {
+      if (operand.width > 1) {
+        final lowerIndex = upperIndex - operand.width + 1;
+        widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
+      } else {
+        widthDescriptions.add((upper: upperIndex, lower: null));
+      }
+      upperIndex -= operand.width;
+    }
+
+    // Find maximum width for alignment
+    final maxUpperWidth = widthDescriptions.isEmpty
+        ? 0
+        : widthDescriptions
+            .map((desc) => desc.upper.toString().length)
+            .reduce(max);
+    final maxLowerWidth =
+        widthDescriptions.where((desc) => desc.lower != null).isEmpty
+            ? 0
+            : widthDescriptions
+                .where((desc) => desc.lower != null)
+                .map((desc) => desc.lower!.toString().length)
+                .reduce(max);
+
+    // Second pass: generate aligned output
+    upperIndex = out.width - 1;
+    final inputLines = <String>[];
+    var descIndex = 0;
+
+    for (final operand in operands) {
+      final desc = widthDescriptions[descIndex++];
+
+      String alignedDesc;
+      if (desc.lower != null) {
+        final paddedUpper = desc.upper.toString().padLeft(maxUpperWidth);
+        final paddedLower = desc.lower!.toString().padLeft(maxLowerWidth);
+        alignedDesc = '$paddedUpper:$paddedLower';
+      } else {
+        // For single bits, right-align to the total width (upper:lower format)
+        final totalWidth =
+            maxUpperWidth + (maxLowerWidth > 0 ? 1 + maxLowerWidth : 0);
+        alignedDesc = desc.upper.toString().padLeft(totalWidth);
+      }
+
+      upperIndex -= operand.width;
+      final maybeComma =
+          upperIndex >= 0 ? ',' : ' '; // space at end for alignment
+      inputLines.add('${operand.expression}$maybeComma /* $alignedDesc */');
+    }
+
+    return '''
+{
+${inputLines.join('\n')}
+}''';
+  }
+
+  /// Rewrites runs of adjacent descending single-bit selects from the same
+  /// packed signal into wider SystemVerilog slices.
+  ///
+  /// For example, `a[7], a[6], a[5]` becomes `a[7:5]`, and
+  /// `a[0][1], a[0][0]` becomes `a[0][1:0]`. Ascending runs are intentionally
+  /// left expanded because SystemVerilog slices cannot reverse bit order with
+  /// `lower:upper` syntax.
+  List<({String expression, int width})> _collapseContiguousBitSelects(
+    List<Logic> validInputs,
+    Map<String, String> inputs,
+  ) {
+    final operands = <({String expression, int width})>[];
+
+    var index = 0;
+    while (index < validInputs.length) {
+      final input = validInputs[index];
+      final expression = inputs[input.name]!;
+      final selectedBit = _singleBitSelect(input, expression);
+      if (selectedBit == null) {
+        operands.add((expression: expression, width: input.width));
+        index++;
+        continue;
+      }
+
+      var lowerIndex = selectedBit.index;
+      var endIndex = index + 1;
+      while (endIndex < validInputs.length) {
+        final nextInput = validInputs[endIndex];
+        final nextExpression = inputs[nextInput.name]!;
+        final nextSelectedBit = _singleBitSelect(nextInput, nextExpression);
+        if (nextSelectedBit == null ||
+            nextSelectedBit.source != selectedBit.source ||
+            nextSelectedBit.index != lowerIndex - 1) {
+          break;
+        }
+
+        lowerIndex = nextSelectedBit.index;
+        endIndex++;
+      }
+
+      if (endIndex == index + 1) {
+        operands.add((expression: expression, width: input.width));
+      } else {
+        operands.add((
+          expression: '${selectedBit.source}[${selectedBit.index}:$lowerIndex]',
+          width: endIndex - index,
+        ));
+      }
+      index = endIndex;
+    }
+
+    return operands;
+  }
+
+  /// Parses [expression] as a single-bit select of a packed signal when it is
+  /// safe to participate in slice collapsing.
+  ///
+  /// Returns `null` for multi-bit inputs, non-select expressions, or selects
+  /// sourced from unpacked arrays.
+  ({String source, int index})? _singleBitSelect(
+    Logic input,
+    String expression,
+  ) {
+    if (input.width != 1 || _hasUnpackedArraySource(input.srcConnection)) {
+      return null;
+    }
+
+    final match = _singleBitSelectRegex.firstMatch(expression);
+    if (match == null) {
+      return null;
+    }
+
+    return (source: match.group(1)!, index: int.parse(match.group(2)!));
+  }
+
+  /// Walks up [logic]'s containing structures to detect unpacked arrays.
+  ///
+  /// SystemVerilog packed slices are not interchangeable with unpacked array
+  /// indexing, so any unpacked array source disables bit-select collapsing.
+  bool _hasUnpackedArraySource(Logic? logic) {
+    var current = logic;
+    while (current?.parentStructure != null) {
+      final parentStructure = current!.parentStructure!;
+      if (parentStructure is LogicArray &&
+          parentStructure.numUnpackedDimensions > 0) {
+        return true;
+      }
+      current = parentStructure;
+    }
+
+    return false;
   }
 }

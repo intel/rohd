@@ -1,0 +1,268 @@
+// Copyright (C) 2021-2026 Intel Corporation
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// systemverilog_synthesis_result.dart
+// Definition for SystemVerilogCustomDefinitionSynthesisResult
+//
+// 2025 June
+// Author: Max Korbel <max.korbel@intel.com>
+
+import 'package:collection/collection.dart';
+import 'package:rohd/rohd.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_module_definition.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synth_sub_module_instantiation.dart';
+import 'package:rohd/src/synthesizers/utilities/utilities.dart';
+
+/// Extra utilities on [SynthLogic] to help with SystemVerilog synthesis.
+extension on SynthLogic {
+  /// Gets the SystemVerilog type for this signal.
+  String definitionType() => isNet ? 'wire' : 'logic';
+}
+
+/// A [SynthesisResult] representing a [Module] that provides a custom
+/// SystemVerilog definition.
+class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
+  /// Creates a new [SystemVerilogCustomDefinitionSynthesisResult] for the given
+  /// [module].
+  SystemVerilogCustomDefinitionSynthesisResult(
+      super.module, super.getInstanceTypeOfModule)
+      : assert(
+            module is SystemVerilog &&
+                module.generatedDefinitionType ==
+                    DefinitionGenerationType.custom,
+            'This should only be used for custom system verilog definitions.');
+
+  @override
+  int get matchHashCode =>
+      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!.hashCode;
+
+  @override
+  bool matchesImplementation(SynthesisResult other) =>
+      other is SystemVerilogCustomDefinitionSynthesisResult &&
+      (module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')! ==
+          (other.module as SystemVerilog).definitionVerilog('*PLACEHOLDER*')!;
+
+  @override
+  String toFileContents() => (module as SystemVerilog)
+      .definitionVerilog(getInstanceTypeOfModule(module))!;
+
+  @override
+  List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
+        SynthFileContents(
+            name: instanceTypeName,
+            contents: (module as SystemVerilog)
+                .definitionVerilog(getInstanceTypeOfModule(module))!)
+      ]);
+}
+
+/// A [SynthesisResult] representing a conversion of a [Module] to
+/// SystemVerilog.
+class SystemVerilogSynthesisResult extends SynthesisResult {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
+  /// A cached copy of the generated ports.
+  late final String _portsString;
+
+  /// A cached copy of the generated contents of the module.
+  late final String _moduleContentsString;
+
+  /// A cached copy of the generated parameters.
+  late final String? _parameterString;
+
+  /// The main [SynthModuleDefinition] for this.
+  final SynthModuleDefinition _synthModuleDefinition;
+
+  @override
+  List<Module> get supportingModules =>
+      _synthModuleDefinition.supportingModules;
+
+  /// Creates a new [SystemVerilogSynthesisResult] for the given [module].
+  SystemVerilogSynthesisResult(
+    super.module,
+    super.getInstanceTypeOfModule, {
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+    _portsString = _verilogPorts();
+    _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
+    _parameterString = _verilogParameters(module);
+  }
+
+  @override
+  bool matchesImplementation(SynthesisResult other) =>
+      other is SystemVerilogSynthesisResult &&
+      other._portsString == _portsString &&
+      other._parameterString == _parameterString &&
+      other._moduleContentsString == _moduleContentsString;
+
+  @override
+  int get matchHashCode =>
+      _portsString.hashCode ^
+      _moduleContentsString.hashCode ^
+      _parameterString.hashCode;
+
+  @override
+  String toFileContents() => _toVerilog();
+
+  @override
+  List<SynthFileContents> toSynthFileContents() => List.unmodifiable([
+        SynthFileContents(
+          name: instanceTypeName,
+          description: 'SystemVerilog module definition for $instanceTypeName',
+          contents: _toVerilog(),
+        )
+      ]);
+
+  /// Representation of all input port declarations in generated SV.
+  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
+        assert(module.tryInput(sig.name) != null,
+            'Named input ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('input', 'wire', sig);
+      });
+
+  /// Representation of all output port declarations in generated SV.
+  Iterable<String> _verilogOutputs() =>
+      _synthModuleDefinition.outputs.map((sig) {
+        assert(module.tryOutput(sig.name) != null,
+            'Named output ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('output', 'var', sig);
+      });
+
+  /// Representation of all inout port declarations in generated SV.
+  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
+        assert(module.tryInOut(sig.name) != null,
+            'Named inOut ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('inout', 'wire', sig);
+      });
+
+  /// Representation of a port declaration in generated SV.
+  String _verilogPort(String direction, String objectType, SynthLogic sig) => [
+        direction,
+        if (configuration.portObjectType == SystemVerilogPortType.explicit)
+          objectType,
+        if (configuration.portDataType == SystemVerilogPortType.explicit)
+          'logic',
+        sig.definitionName(),
+      ].join(' ');
+
+  /// Representation of all internal net declarations in generated SV.
+  String _verilogInternalSignals() {
+    final declarations = <String>[];
+    for (final sig in _synthModuleDefinition.internalSignals
+        .where((e) => e.needsDeclaration)
+        .sorted((a, b) => a.name.compareTo(b.name))) {
+      declarations.add('${sig.definitionType()} ${sig.definitionName()};');
+    }
+    return declarations.join('\n');
+  }
+
+  /// Representation of all assignments in generated SV.
+  String _verilogAssignments() {
+    final assignmentLines = <String>[];
+    String rangeString(int upperIndex, int lowerIndex) =>
+        upperIndex == lowerIndex
+            ? '[$upperIndex]'
+            : '[$upperIndex:$lowerIndex]';
+
+    for (final assignment in _synthModuleDefinition.assignments) {
+      assert(
+          !(assignment.src.isNet && assignment.dst.isNet),
+          'Net connections should have been implemented as'
+          ' bidirectional net connections.');
+
+      var dstSliceString = '';
+      var srcSliceString = '';
+      if (assignment is RangeSynthAssignment) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+        srcSliceString = rangeString(
+          assignment.srcUpperIndex,
+          assignment.srcLowerIndex,
+        );
+      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+      }
+
+      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
+          ' = ${assignment.src.name}$srcSliceString;');
+    }
+    return assignmentLines.join('\n');
+  }
+
+  /// Representation of all sub-module instantiations in generated SV.
+  String _verilogSubModuleInstantiations(
+      String Function(Module module) getInstanceTypeOfModule) {
+    final subModuleLines = <String>[];
+    for (final subModuleInstantiation
+        in _synthModuleDefinition.subModuleInstantiations) {
+      final instanceType =
+          getInstanceTypeOfModule(subModuleInstantiation.module);
+
+      subModuleInstantiation as SystemVerilogSynthSubModuleInstantiation;
+
+      final instantiationVerilog =
+          subModuleInstantiation.instantiationVerilog(instanceType);
+      if (instantiationVerilog != null) {
+        subModuleLines.add(instantiationVerilog);
+      }
+    }
+    return subModuleLines.join('\n');
+  }
+
+  /// The contents of this module converted to SystemVerilog without module
+  /// declaration, ports, etc.
+  String _verilogModuleContents(
+          String Function(Module module) getInstanceTypeOfModule) =>
+      [
+        _verilogInternalSignals(),
+        _verilogAssignments(), // order matters!
+        _verilogSubModuleInstantiations(getInstanceTypeOfModule),
+      ].where((element) => element.isNotEmpty).join('\n');
+
+  /// The representation of all port declarations.
+  String _verilogPorts() => [
+        ..._verilogInputs(),
+        ..._verilogOutputs(),
+        ..._verilogInOuts(),
+      ].join(',\n');
+
+  String? _verilogParameters(Module module) {
+    if (module is SystemVerilog) {
+      final defParams = module.definitionParameters;
+      if (defParams == null || defParams.isEmpty) {
+        return null;
+      }
+
+      return [
+        '#(',
+        defParams
+            .map((p) => 'parameter ${p.type} ${p.name} = ${p.defaultValue}')
+            .join(',\n'),
+        ')',
+      ].join('\n');
+    }
+
+    return null;
+  }
+
+  /// The full SV representation of this module.
+  String _toVerilog() {
+    final verilogModuleName = getInstanceTypeOfModule(module);
+    return [
+      [
+        'module $verilogModuleName',
+        _parameterString,
+        '(',
+      ].nonNulls.join(' '),
+      _portsString,
+      ');',
+      _moduleContentsString,
+      'endmodule : $verilogModuleName'
+    ].join('\n');
+  }
+}

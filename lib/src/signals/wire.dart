@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // wire.dart
@@ -230,7 +230,7 @@ class _Wire {
   /// The type of [val] and usage of [fill] should be supported by
   /// [LogicValue.of].
   ///
-  /// This function is used for propogating glitches through connected signals.
+  /// This function is used for propagating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   void put(dynamic val, {required String signalName, bool fill = false}) {
     var newValue = LogicValue.of(val, fill: fill, width: width);

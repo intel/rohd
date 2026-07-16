@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // c_logic_gate_part_1.dart
@@ -6,8 +6,6 @@
 //
 // 2023 February 20
 // Author: Yao Jing Quek <yao.jing.quek@intel.com>
-
-// ignore_for_file: avoid_print, unused_local_variable
 
 import 'package:rohd/rohd.dart';
 import 'helper.dart';

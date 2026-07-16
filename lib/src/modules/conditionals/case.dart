@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // case.dart
@@ -158,7 +158,7 @@ class Case extends Conditional {
     }
 
     if (!expression.value.isValid) {
-      // if expression has X or Z, then propogate X's!
+      // if expression has X or Z, then propagate X's!
       driveX(drivenSignals);
       return;
     }
@@ -363,6 +363,16 @@ ${subPadding}end
     }
 
     return newMappings;
+  }
+
+  @override
+  String toString() {
+    final buffer = StringBuffer()..writeln('$caseType($expression, ');
+    for (final item in items) {
+      buffer.writeln('  $item');
+    }
+    buffer.writeln(')');
+    return buffer.toString();
   }
 }
 

@@ -8,6 +8,21 @@
     },
     {
       "pattern":"^https://stackoverflow.com"
+    },
+    {
+      "pattern":"^https://github.com"
+    },
+    {
+      "pattern":"^https://pymtl3.readthedocs.io/en/latest/$"
+    },
+    {
+      "pattern":"^https://docs.cocotb.org/en/stable/$"
+    },
+    {
+      "pattern":"^https://www.nandland.com"
+    },
+    {
+      "pattern":"^https://.*\\.fandom\\.com"
     }
   ]
 }

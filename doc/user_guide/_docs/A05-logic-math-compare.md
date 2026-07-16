@@ -2,7 +2,7 @@
 title: "Simple logical, mathematical, and comparison operations"
 permalink: /docs/logic-math-compare/
 excerpt: "Simple logical, mathematical, and comparison operations"
-last_modified_at: 2022-12-06
+last_modified_at: 2025-7-24
 toc: true
 ---
 
@@ -26,9 +26,9 @@ a_eq_b    <=  a.eq(b)  // equality              NOTE: == is for Object equality 
 a_neq_b   <=  a.neq(b) // inequality            NOTE: != is for Object inequality of Logic's
 a_lt_b    <=  a.lt(b)  // less than             NOTE: <  is for conditional assignment
 a_lte_b   <=  a.lte(b) // less than or equal    NOTE: <= is for assignment
-a_gt_b    <=  (a > b)  // greater than          NOTE: careful with order of operations, > needs parentheses in this case
-                       // Note: a_gt_b <= a.gt(b) is also supported for greater than.
-a_gte_b   <=  (a >= b) // greater than or equal NOTE: careful with order of operations, >= needs parentheses in this case
-                       // Note: a_gte_b <= a.gte(b) is also supported for greater than or equal.
+a_gt_b    <=  a.gt(b)  // greater than
+a_gt_b    <=  (a > b)  // greater than          (alt) NOTE: careful with order of operations, > needs parentheses in this case
+a_gte_b   <=  a.gte(b) // greater than or equal
+a_gte_b   <=  (a >= b) // greater than or equal (alt) NOTE: careful with order of operations, >= needs parentheses in this case
 answer    <=  mux(selectA, a, b) // answer = selectA ? a : b
 ```

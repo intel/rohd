@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_bus_test.dart
@@ -9,6 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class SubsetMod extends Module {
@@ -254,7 +255,7 @@ void main() {
     final mod = NicePortPassingTop(LogicNet(width: 8), LogicNet(width: 8));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
     expect(sv.contains('net_connect'), isFalse);
     expect(sv,
@@ -517,6 +518,7 @@ void main() {
       await mod.build();
 
       final sv = mod.generateSynth();
+
       expect(
           sv,
           contains('net_connect (reversed, '
@@ -587,7 +589,8 @@ void main() {
 
               await mod.build();
 
-              final sv = mod.generateSynth();
+              final sv = SvCleaner.removeSwizzleAnnotationComments(
+                  mod.generateSynth());
               if (netTypeName == LogicNet) {
                 expect(
                     sv,
@@ -598,7 +601,7 @@ void main() {
                     sv,
                     contains('net_connect_0'
                         ' (_original__swizzled, '
-                        '({bus[1][1],bus[1][0],bus[0][3],bus[0][2]}));'));
+                        '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
               final vectors = [
@@ -616,7 +619,8 @@ void main() {
 
               await mod.build();
 
-              final sv = mod.generateSynth();
+              final sv = SvCleaner.removeSwizzleAnnotationComments(
+                  mod.generateSynth());
               if (netTypeName == LogicNet) {
                 expect(
                     sv,
@@ -627,7 +631,7 @@ void main() {
                     sv,
                     contains('net_connect_0'
                         ' (_original__swizzled, '
-                        '({bus[1][1],bus[1][0],bus[0][3],bus[0][2]}));'));
+                        '({bus[1][1:0],bus[0][3:2]}));'));
               }
 
               final vectors = [
@@ -746,7 +750,8 @@ void main() {
 
             await mod.build();
 
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
           });
@@ -759,7 +764,8 @@ void main() {
 
             await mod.build();
 
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(
                 sv,
@@ -775,13 +781,14 @@ void main() {
 
             await mod.build();
 
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(
                 sv,
                 contains('assign _swizzled = '
                     '{({({in0[1][1],in0[1][0]}),({in0[0][1],in0[0][0]})}),'
-                    '({in1[3],in1[2],in1[1],in1[0]})};'));
+                    '(in1[3:0])};'));
           });
 
           test('net array 2', () async {
@@ -792,12 +799,13 @@ void main() {
 
             await mod.build();
 
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(
                 sv,
                 contains('net_connect (swizzled,'
-                    ' ({({in0[3],in0[2],in0[1],in0[0]}),in1[0]}));'));
+                    ' ({(in0[3:0]),in1[0]}));'));
           });
 
           test('net array 3', () async {
@@ -809,14 +817,15 @@ void main() {
 
             await mod.build();
 
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(
                 sv,
                 contains('net_connect (swizzled, '
                     '({({({in0[1][1],in0[1][0]}),'
                     '({in0[0][1],in0[0][0]})}),'
-                    '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
+                    '(in1[3:0]),in2[0]}));'));
           });
 
           test('net and non-net', () async {
@@ -826,7 +835,8 @@ void main() {
             ]);
 
             await mod.build();
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(sv, contains('assign _in1 = in0;'));
             expect(
@@ -842,7 +852,8 @@ void main() {
             ]);
 
             await mod.build();
-            final sv = mod.generateSynth();
+            final sv =
+                SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
             expect(
                 sv,
@@ -920,7 +931,7 @@ void main() {
                             'net_connect #(.WIDTH(16)) net_connect (swizzled, '
                             '({({({in0[1][1],in0[1][0]}),'
                             '({in0[0][1],in0[0][0]})}),'
-                            '({in1[3],in1[2],in1[1],in1[0]}),in2[0]}));'));
+                            '(in1[3:0]),in2[0]}));'));
                   }
                 }
 
@@ -930,7 +941,8 @@ void main() {
 
                     await mod.build();
 
-                    final sv = mod.generateSynth();
+                    final sv = SvCleaner.removeSwizzleAnnotationComments(
+                        mod.generateSynth());
                     checkSV(sv);
 
                     final vectors = [
@@ -949,7 +961,8 @@ void main() {
 
                     await mod.build();
 
-                    final sv = mod.generateSynth();
+                    final sv = SvCleaner.removeSwizzleAnnotationComments(
+                        mod.generateSynth());
                     checkSV(sv);
 
                     final vectors = [
@@ -1191,7 +1204,8 @@ void main() {
         final mod = ReplicateMod(LogicNet(width: 4), 2);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         expect(
             sv,
@@ -1211,7 +1225,8 @@ void main() {
         final mod = ReplicateMod(LogicNet(width: 4), 2);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         expect(
             sv,

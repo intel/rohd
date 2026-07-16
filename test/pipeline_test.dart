@@ -65,7 +65,7 @@ class SimplePipelineModuleLateAdd extends Module {
 }
 
 class PipelineModuleWithPipelinedSub extends Module {
-  final _clk = SimpleClockGenerator(10).clk;
+  final Logic _clk = SimpleClockGenerator(10).clk;
 
   PipelineModuleWithPipelinedSub(Logic a) {
     a = addInput('a', a, width: a.width);
@@ -94,7 +94,7 @@ class PipelineModuleWithPipelinedSub extends Module {
 }
 
 class PipelineModuleWithAbsRef extends Module {
-  final _clk = SimpleClockGenerator(10).clk;
+  final Logic _clk = SimpleClockGenerator(10).clk;
 
   PipelineModuleWithAbsRef(Logic a) {
     a = addInput('a', a, width: a.width);

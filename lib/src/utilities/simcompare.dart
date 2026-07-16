@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // simcompare.dart
@@ -71,7 +71,8 @@ class Vector {
 
     return 'if($sigName !== $expectedValStr) '
         '\$error(\$sformatf("Expected $sigName=$expectedHexStr,'
-        ' but found $sigName=0x%x with inputs $inputValues", $sigName));';
+        ' but found $sigName=0x%x (0b%b) with inputs $inputValues",'
+        ' $sigName, $sigName));';
   }
 
   /// Converts this vector into a SystemVerilog check.
@@ -160,7 +161,7 @@ abstract class SimCompare {
     }
 
     for (final vector in vectors) {
-      Simulator.registerAction(timestamp, () {
+      Simulator.registerAction(timestamp, () async {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
           (module.tryInput(signalName) ?? getIoInputDriver(signalName))
@@ -168,7 +169,7 @@ abstract class SimCompare {
         }
 
         if (enableChecking) {
-          Simulator.postTick.first.then((value) {
+          unawaited(Simulator.postTick.first.then((value) {
             for (final signalName in vector.expectedOutputValues.keys) {
               final value = vector.expectedOutputValues[signalName];
               final o =
@@ -203,11 +204,10 @@ abstract class SimCompare {
             }
           }).catchError(
             test: (error) => error is Exception,
-            // ignore: avoid_types_on_closure_parameters
             (Object err, StackTrace stackTrace) {
               Simulator.throwException(err as Exception, stackTrace);
             },
-          );
+          ));
         }
       });
       timestamp += Vector._period;
@@ -224,6 +224,7 @@ abstract class SimCompare {
     RegExp(r'sorry: constant selects in always_\* processes'
         ' are not currently supported'),
     RegExp('warning: always_comb process has no sensitivities'),
+    RegExp('finish called at'),
   ];
 
   /// Executes [vectors] against the Icarus Verilog simulator and checks
@@ -239,6 +240,8 @@ abstract class SimCompare {
     bool maskKnownWarnings = true,
     bool enableChecking = true,
     bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
   }) {
     final result = iverilogVector(module, vectors,
         moduleName: moduleName,
@@ -247,7 +250,8 @@ abstract class SimCompare {
         iverilogExtraArgs: iverilogExtraArgs,
         allowWarnings: allowWarnings,
         maskKnownWarnings: maskKnownWarnings,
-        buildOnly: buildOnly);
+        buildOnly: buildOnly,
+        synthesizerConfiguration: synthesizerConfiguration);
     if (enableChecking) {
       expect(result, true);
     }
@@ -264,6 +268,8 @@ abstract class SimCompare {
     bool allowWarnings = false,
     bool maskKnownWarnings = true,
     bool buildOnly = false,
+    SystemVerilogSynthesizerConfiguration synthesizerConfiguration =
+        const SystemVerilogSynthesizerConfiguration(),
   }) {
     if (kIsWeb) {
       // if running in web mode, then we can't run icarus verilog
@@ -281,7 +287,6 @@ abstract class SimCompare {
               : 'logic');
 
       if (adjust != null) {
-        // ignore: parameter_assignments
         signalName = adjust(signalName);
       }
 
@@ -290,7 +295,7 @@ abstract class SimCompare {
             signal.dimensions.getRange(0, signal.numUnpackedDimensions);
         final packedDims = signal.dimensions
             .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
-        // ignore: parameter_assignments, prefer_interpolation_to_compose_strings
+        // ignore: prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
             // ignore: prefer_interpolation_to_compose_strings
@@ -342,7 +347,9 @@ abstract class SimCompare {
         allSignals.map((e) => '.$e(${logicToWireMapping[e] ?? e})').join(', ');
     final moduleInstance = '$topModule dut($moduleConnections);';
     final stimulus = vectors.map((e) => e.toTbVerilog(module)).join('\n');
-    final generatedVerilog = module.generateSynth();
+    final generatedVerilog = module.generateSynth(
+      configuration: synthesizerConfiguration,
+    );
 
     // so that when they run in parallel, they dont step on each other
     final uniqueId =

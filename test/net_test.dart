@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_test.dart
@@ -123,6 +123,9 @@ class NetIntf extends Interface<NetTag> {
     setPorts([LogicNet.port('ana', 8)], {NetTag.na});
     setPorts([LogicNet.port('anb', 8)], {NetTag.nb});
   }
+
+  @override
+  NetIntf clone() => NetIntf();
 }
 
 class NetISubMod extends Module {
@@ -149,7 +152,6 @@ class NetITopMod extends Module {
     final net = LogicNet(width: 8, name: 'myNet');
     final norm = LogicNet(width: 8, name: 'myNorm');
 
-    // ignore: parameter_assignments
     intf = NetIntf()..connectIO(this, intf, outputTags: NetTag.values);
 
     NetISubMod(norm, net, intf, NetTag.na);
@@ -176,6 +178,9 @@ class NetArrayIntf extends Interface<NetArrayTag> {
       NetArrayTag.d3
     });
   }
+
+  @override
+  NetArrayIntf clone() => NetArrayIntf();
 }
 
 class NetArraySubMod extends Module {
@@ -233,11 +238,15 @@ class NetArrayTopMod extends Module {
 }
 
 class NetfulLogicStructure extends LogicStructure {
-  NetfulLogicStructure()
+  NetfulLogicStructure({super.name})
       : super([
           LogicNet(name: 'structnet', width: 4),
           Logic(name: 'structlogic', width: 4)
         ]);
+
+  @override
+  NetfulLogicStructure clone({String? name}) =>
+      NetfulLogicStructure(name: name);
 }
 
 class NetsStructsArraysDriving extends Module {

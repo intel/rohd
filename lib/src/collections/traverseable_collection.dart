@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // traverseable_collection.dart
@@ -19,7 +19,7 @@ import 'dart:collection';
 ///
 /// In situations where it is necessary to iterate through and frequently access
 /// elements by index, but also check whether a certain element is contained
-/// wihin it, and there are many elements, this implementation is substantially
+/// within it, and there are many elements, this implementation is substantially
 /// faster than using either a [Set] or a [List].
 class TraverseableCollection<T> with IterableMixin<T> {
   /// The underlying [Set] that stores the data.

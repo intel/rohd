@@ -36,7 +36,6 @@ void recursiveFullAdder(Logic a, Logic b, Logic carry, List<Logic> sum, int i) {
   } else {
     // Recursive Case
     final res = fullAdder(a[i], b[i], carry);
-    // ignore: parameter_assignments
     recursiveFullAdder(a, b, res.cOut, sum, i + 1);
     sum.add(res.sum);
   }

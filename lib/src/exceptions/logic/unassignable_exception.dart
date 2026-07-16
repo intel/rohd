@@ -1,8 +1,8 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // unassignable_exception.dart
-// An exception that thrown when a signal failes to `put`.
+// An exception that thrown when a signal fails to `put`.
 //
 // 2024 October 24
 // Author: Max Korbel <max.korbel@intel.com>
