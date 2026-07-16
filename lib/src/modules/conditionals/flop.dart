@@ -1,10 +1,10 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // flop.dart
 // Definition for flip flops.
 //
-// 2024 December
+// 2026 July
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'package:rohd/rohd.dart';
@@ -87,11 +87,6 @@ class FlipFlop extends Module with SystemVerilog {
   ///
   /// Only initialized if a constant value is provided.
   late LogicValue _resetValueConst;
-
-  /// Returns the constant reset value if one was provided, or null if the
-  /// reset value is a port or no reset exists.
-  LogicValue? get constantResetValue =>
-      _reset != null && _resetValuePort == null ? _resetValueConst : null;
 
   /// Indicates whether provided `reset` signals should be treated as an async
   /// reset. If no `reset` is provided, this will have no effect.

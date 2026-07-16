@@ -46,12 +46,8 @@ class Vector {
   /// Computes a SystemVerilog code string that checks in a SystemVerilog
   /// simulation whether a signal [sigName] has the [expected] value given
   /// the [inputValues].
-  static String _errorCheckString(
-    String sigName,
-    dynamic expected,
-    LogicValue expectedVal,
-    String inputValues,
-  ) {
+  static String _errorCheckString(String sigName, dynamic expected,
+      LogicValue expectedVal, String inputValues) {
     if (expected is! int &&
         expected is! LogicValue &&
         expected is! BigInt &&
@@ -61,9 +57,8 @@ class Vector {
 
     String expectedHexStr;
     if (expected is int) {
-      expectedHexStr = BigInt.from(
-        expected,
-      ).toUnsigned(expectedVal.width).toRadixString(16);
+      expectedHexStr =
+          BigInt.from(expected).toUnsigned(expectedVal.width).toRadixString(16);
       expectedHexStr = '0x$expectedHexStr';
     } else if (expected is BigInt) {
       expectedHexStr = expected.toUnsigned(expectedVal.width).toRadixString(16);
@@ -88,10 +83,8 @@ class Vector {
       if (signal is LogicArray) {
         final arrAssigns = StringBuffer();
         var index = 0;
-        final fullVal = LogicValue.of(
-          inputValues[signalName],
-          width: signal.width,
-        );
+        final fullVal =
+            LogicValue.of(inputValues[signalName], width: signal.width);
         for (final leaf in signal.leafElements) {
           final subVal = fullVal.getRange(index, index + leaf.width);
           arrAssigns.writeln('${leaf.structureName} = $subVal;');
@@ -113,7 +106,10 @@ class Vector {
       final outputPort =
           module.tryInOut(outputName) ?? module.output(outputName);
       final expected = expectedOutput.value;
-      final expectedValue = LogicValue.of(expected, width: outputPort.width);
+      final expectedValue = LogicValue.of(
+        expected,
+        width: outputPort.width,
+      );
       final inputStimulus = inputValues.toString();
 
       if (outputPort is LogicArray) {
@@ -122,18 +118,13 @@ class Vector {
           final subVal = expectedValue.getRange(index, index + leaf.width);
           checksList.add(
             _errorCheckString(
-              leaf.structureName,
-              subVal,
-              subVal,
-              inputStimulus,
-            ),
+                leaf.structureName, subVal, subVal, inputStimulus),
           );
           index += leaf.width;
         }
       } else {
-        checksList.add(
-          _errorCheckString(outputName, expected, expectedValue, inputStimulus),
-        );
+        checksList.add(_errorCheckString(
+            outputName, expected, expectedValue, inputStimulus));
       }
     }
     final checks = checksList.join('\n');
@@ -156,11 +147,8 @@ abstract class SimCompare {
   ///
   /// If [enableChecking] is set to false, then it will drive the simulation
   /// but not check that the outputs match.
-  static Future<void> checkFunctionalVector(
-    Module module,
-    List<Vector> vectors, {
-    bool enableChecking = true,
-  }) async {
+  static Future<void> checkFunctionalVector(Module module, List<Vector> vectors,
+      {bool enableChecking = true}) async {
     var timestamp = 1;
 
     final ioInputDrivers = <String, Logic>{};
@@ -180,9 +168,8 @@ abstract class SimCompare {
       Simulator.registerAction(timestamp, () async {
         for (final signalName in vector.inputValues.keys) {
           final value = vector.inputValues[signalName];
-          (module.tryInput(signalName) ?? getIoInputDriver(signalName)).put(
-            value,
-          );
+          (module.tryInput(signalName) ?? getIoInputDriver(signalName))
+              .put(value);
         }
 
         if (enableChecking) {
@@ -198,18 +185,13 @@ abstract class SimCompare {
                     ' expected $o to be $value, but it was ${o.value}.';
                 if (value is int) {
                   expect(o.value.isValid, isTrue, reason: errorReason);
-                  expect(
-                    o.value.toBigInt(),
-                    equals(BigInt.from(value).toUnsigned(o.width)),
-                    reason: errorReason,
-                  );
+                  expect(o.value.toBigInt(),
+                      equals(BigInt.from(value).toUnsigned(o.width)),
+                      reason: errorReason);
                 } else if (value is BigInt) {
                   expect(o.value.isValid, isTrue, reason: errorReason);
-                  expect(
-                    o.value.toBigInt(),
-                    equals(value),
-                    reason: errorReason,
-                  );
+                  expect(o.value.toBigInt(), equals(value),
+                      reason: errorReason);
                 } else if (value is LogicValue) {
                   if (o.width > 1 &&
                       (value == LogicValue.x || value == LogicValue.z)) {
@@ -220,21 +202,18 @@ abstract class SimCompare {
                     expect(o.value, equals(value), reason: errorReason);
                   }
                 } else if (value is String) {
-                  expect(
-                    o.value,
-                    LogicValue.of(value, width: o.width),
-                    reason: errorReason,
-                  );
+                  expect(o.value, LogicValue.of(value, width: o.width),
+                      reason: errorReason);
                 } else {
                   throw NonSupportedTypeException(value);
                 }
               }
-            }).catchError(test: (error) => error is Exception, (
-              Object err,
-              StackTrace stackTrace,
-            ) {
-              Simulator.throwException(err as Exception, stackTrace);
-            }),
+            }).catchError(
+              test: (error) => error is Exception,
+              (Object err, StackTrace stackTrace) {
+                Simulator.throwException(err as Exception, stackTrace);
+              },
+            ),
           );
         }
       });
@@ -251,10 +230,8 @@ abstract class SimCompare {
   /// A collection of warnings that are fine to ignore usually.
   static final List<RegExp> _knownWarnings = [
     RegExp('sorry: Case unique/unique0 qualities are ignored.'),
-    RegExp(
-      r'sorry: constant selects in always_\* processes'
-      ' are not currently supported',
-    ),
+    RegExp(r'sorry: constant selects in always_\* processes'
+        ' are not currently supported'),
     RegExp('warning: always_comb process has no sensitivities'),
     RegExp('finish called at'),
   ];
@@ -308,11 +285,9 @@ abstract class SimCompare {
       return true;
     }
 
-    String signalDeclaration(
-      String signalName, {
-      String Function(String original)? adjust,
-      String? signalTypeOverride,
-    }) {
+    String signalDeclaration(String signalName,
+        {String Function(String original)? adjust,
+        String? signalTypeOverride}) {
       final signal = module.signals.firstWhere((e) => e.name == signalName);
 
       final signalType = signalTypeOverride ??
@@ -325,14 +300,10 @@ abstract class SimCompare {
       }
 
       if (signal is LogicArray) {
-        final unpackedDims = signal.dimensions.getRange(
-          0,
-          signal.numUnpackedDimensions,
-        );
-        final packedDims = signal.dimensions.getRange(
-          signal.numUnpackedDimensions,
-          signal.dimensions.length,
-        );
+        final unpackedDims =
+            signal.dimensions.getRange(0, signal.numUnpackedDimensions);
+        final packedDims = signal.dimensions
+            .getRange(signal.numUnpackedDimensions, signal.dimensions.length);
         // ignore: prefer_interpolation_to_compose_strings
         return signalType +
             ' ' +
@@ -356,36 +327,27 @@ abstract class SimCompare {
     late final tbWireUniquifier = Uniquifier();
     late final alreadyMappedLogicToWires = <String, String>{};
     String toTbWireName(String name) => alreadyMappedLogicToWires.putIfAbsent(
-          name,
-          () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'),
-        );
+        name, () => tbWireUniquifier.getUniqueName(initialName: 'wire__$name'));
 
-    final logicToWireMapping = Map.fromEntries(
-      vectors
-          .map((v) => v.inputValues.keys)
-          .flattened
-          .where((name) => module.tryInOut(name) != null)
-          .map((name) => MapEntry(name, toTbWireName(name))),
-    );
+    final logicToWireMapping = Map.fromEntries(vectors
+        .map((v) => v.inputValues.keys)
+        .flattened
+        .where((name) => module.tryInOut(name) != null)
+        .map((name) => MapEntry(name, toTbWireName(name))));
 
     final localDeclarations = [
       ...allSignals.map((e) {
-        final sigDecl = signalDeclaration(
-          e,
-          signalTypeOverride:
-              logicToWireMapping.containsKey(e) ? 'logic' : null,
-        );
+        final sigDecl = signalDeclaration(e,
+            signalTypeOverride:
+                logicToWireMapping.containsKey(e) ? 'logic' : null);
         return '$sigDecl;';
       }),
       ...logicToWireMapping.entries.map((e) {
         final logicName = e.key;
         final wireName = e.value;
 
-        final sigDecl = signalDeclaration(
-          logicName,
-          adjust: toTbWireName,
-          signalTypeOverride: 'wire',
-        );
+        final sigDecl = signalDeclaration(logicName,
+            adjust: toTbWireName, signalTypeOverride: 'wire');
         return '$sigDecl; assign $wireName = $logicName;';
       }),
     ].join('\n');
@@ -429,13 +391,8 @@ abstract class SimCompare {
 
     Directory(dir).createSync(recursive: true);
     File(tmpTestFile).writeAsStringSync(testbench);
-    final compileResult = Process.runSync('iverilog', [
-      '-g2012',
-      '-o',
-      tmpOutput,
-      ...iverilogExtraArgs,
-      tmpTestFile,
-    ]);
+    final compileResult = Process.runSync('iverilog',
+        ['-g2012', '-o', tmpOutput, ...iverilogExtraArgs, tmpTestFile]);
     bool printIfContentsAndCheckError(dynamic output) {
       final maskedOutput = output
           .toString()
@@ -456,10 +413,8 @@ abstract class SimCompare {
       }
 
       return output.toString().contains(
-            RegExp(
-              ['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
-              caseSensitive: false,
-            ),
+            RegExp(['error', 'unable', if (!allowWarnings) 'warning'].join('|'),
+                caseSensitive: false),
           );
     }
 

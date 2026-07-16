@@ -41,10 +41,7 @@ class ModuleServices {
   /// DevTools evaluates this via `EvalOnDartLibrary` to display the module
   /// hierarchy.  Richer design views (e.g. a slim netlist) are composed by the
   /// DevTools client from the relevant registered service.
-  String get hierarchyJSON {
-    ModuleTree.rootModuleInstance = rootModule;
-    return ModuleTree.instance.hierarchyJSON;
-  }
+  String get hierarchyJSON => ModuleTree.instance.hierarchyJSON;
 
   // ─── Type-keyed service registry ──────────────────────────────
 

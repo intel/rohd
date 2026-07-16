@@ -225,7 +225,7 @@ Future<void> main({bool noPrint = false}) async {
 
   // Attach a waveform dumper so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'oven.vcd');
+    WaveformService(oven, outputPath: 'oven.vcd');
   }
 
   // Kick off the simulation.

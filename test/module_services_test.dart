@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_services_test.dart
-// Unit tests for ModuleServices, the service base types, and SvService.
+// Unit tests for ModuleServices, the service base types, and
+// SystemVerilogService.
 //
-// 2026 April 25
-// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
+// 2026 April 25 Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 @TestOn('vm')
 library;
@@ -83,46 +83,46 @@ void main() {
     });
   });
 
-  group('SvService', () {
+  group('SystemVerilogService', () {
     test('registers with ModuleServices and sets current', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
-      expect(ModuleServices.instance.lookup<SvService>(), same(sv));
-      expect(SvService.current, same(sv));
+      final sv = SystemVerilogService(mod);
+      expect(ModuleServices.instance.lookup<SystemVerilogService>(), same(sv));
+      expect(SystemVerilogService.current, same(sv));
     });
 
-    test('is a CodegenService', () async {
+    test('is a CodeGenService', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      expect(SvService(mod), isA<CodegenService>());
+      expect(SystemVerilogService(mod), isA<CodeGenService>());
     });
 
     test('allContents is non-empty', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.allContents, isNotEmpty);
     });
 
     test('output equals synthOutput', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.output, equals(sv.synthOutput));
     });
 
     test('contentsByName has entries', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.contentsByName, isNotEmpty);
     });
 
     test('contentsByDefinitionName has entries', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.contentsByDefinitionName, isNotEmpty);
       expect(sv.contentsByDefinitionName.containsKey('SimpleModule'), isTrue);
     });
@@ -130,7 +130,7 @@ void main() {
     test('moduleOutput returns the definition contents', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.moduleOutput('SimpleModule'), isNotNull);
       expect(sv.moduleOutput('DoesNotExist'), isNull);
     });
@@ -138,14 +138,14 @@ void main() {
     test('toJson lists generated modules', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       expect(sv.toJson()['modules'], isList);
     });
 
     test('writeFiles creates SV files', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod);
+      final sv = SystemVerilogService(mod);
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         sv.writeFiles(dir.path);
@@ -160,7 +160,7 @@ void main() {
     test('write() emits a single file', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SvService(mod, register: false);
+      final sv = SystemVerilogService(mod, register: false);
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         final path = '${dir.path}/out.sv';
@@ -177,7 +177,8 @@ void main() {
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         // Construction with outputPath writes immediately.
-        SvService(mod, register: false, outputPath: dir.path, multiFile: true);
+        SystemVerilogService(mod,
+            register: false, outputPath: dir.path, multiFile: true);
         final files = dir.listSync().whereType<File>().toList();
         expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
       } finally {
@@ -189,13 +190,13 @@ void main() {
       final mod = SimpleModule(Logic());
       await mod.build();
       ModuleServices.instance.reset();
-      SvService(mod, register: false);
-      expect(ModuleServices.instance.lookup<SvService>(), isNull);
+      SystemVerilogService(mod, register: false);
+      expect(ModuleServices.instance.lookup<SystemVerilogService>(), isNull);
     });
 
     test('throws if module not built', () {
       final mod = SimpleModule(Logic());
-      expect(() => SvService(mod), throwsException);
+      expect(() => SystemVerilogService(mod), throwsException);
     });
   });
 }

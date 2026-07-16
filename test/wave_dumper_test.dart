@@ -7,6 +7,8 @@
 // 2021 November 4
 // Author: Max Korbel <max.korbel@intel.com>
 
+// ignore_for_file: deprecated_member_use_from_same_package
+
 @TestOn('vm')
 library;
 

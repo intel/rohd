@@ -1,25 +1,21 @@
 #!/bin/bash
 
-# Copyright (C) 2022-2024 Intel Corporation
+# Copyright (C) 2022-2026 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # check_tmp_test.sh
 # GitHub Actions step: Check temporary test files.
 #
-# 2022 October 12
+# 2026 July
 # Author: Chykon
 
 set -euo pipefail
 
 declare -r folder_name='tmp_test'
 
-# The "tmp_test" folder after performing the tests should be empty,
-# except for the precompiled-header cache (pch/) which is intentionally
-# persistent and pre-built by CI before the test run.
+# The "tmp_test" folder after performing the tests should be empty.
 if [ -d "${folder_name}" ]; then
-  output=$(find ${folder_name} -not -path "${folder_name}/pch" \
-                               -not -path "${folder_name}/pch/*" \
-           | wc --lines | tee)
+  output=$(find ${folder_name} | wc --lines | tee)
   if [ "${output}" -eq 1 ]; then
     echo "Success: directory \"${folder_name}\" is empty!"
   else

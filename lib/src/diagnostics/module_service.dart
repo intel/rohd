@@ -56,7 +56,7 @@ abstract class OutputService implements ModuleService {
 ///
 /// Shared by language code-generation services, which all produce a combined
 /// single-file [output] as well as per-definition contents.
-abstract class CodegenService extends OutputService {
+abstract class CodeGenService extends OutputService {
   /// The combined single-file generated output (including any header).
   String get output;
 

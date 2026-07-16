@@ -1,7 +1,7 @@
 // Copyright (C) 2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// sv_service.dart
+// system_verilog_service.dart
 // Service wrapper for SystemVerilog synthesis.
 //
 // 2026 April 25
@@ -24,7 +24,7 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// ```dart
 /// final dut = MyModule(...);
 /// await dut.build();
-/// final sv = SvService(dut);
+/// final sv = SystemVerilogService(dut);
 ///
 /// // Write individual .sv files:
 /// sv.writeFiles('build/');
@@ -32,15 +32,15 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// // Or get the concatenated output (like generateSynth):
 /// print(sv.allContents);
 /// ```
-class SvService extends CodegenService {
+class SystemVerilogService extends CodeGenService {
   /// The separator inserted between module definitions in the
   /// concatenated single-file output from [allContents].
   ///
   /// Matches the format historically produced by `Module.generateSynth()`.
   static const moduleSeparator = '\n\n////////////////////\n\n';
 
-  /// The most recently registered [SvService], or `null`.
-  static SvService? current;
+  /// The most recently registered [SystemVerilogService], or `null`.
+  static SystemVerilogService? current;
 
   /// The top-level [Module] being synthesized.
   @override
@@ -66,21 +66,21 @@ class SvService extends CodegenService {
   /// The generated file contents (one per unique module definition).
   late final List<SynthFileContents> fileContents;
 
-  /// Creates an [SvService] for [module].
+  /// Creates a [SystemVerilogService] for [module].
   ///
   /// [module] must already be built.
   ///
   /// If [outputPath] is provided, output is written immediately: a directory
   /// of per-module files when [multiFile] is `true`, otherwise the
   /// concatenated SV output (with header) to that single file.
-  SvService(this.module,
+  SystemVerilogService(this.module,
       {bool register = true,
       this.outputPath,
       this.multiFile = false,
       this.configuration = const SystemVerilogSynthesizerConfiguration()}) {
     if (!module.hasBuilt) {
       throw Exception(
-        'Module must be built before creating SvService. '
+        'Module must be built before creating SystemVerilogService. '
         'Call build() first.',
       );
     }
@@ -95,7 +95,7 @@ class SvService extends CodegenService {
 
     if (register) {
       current = this;
-      ModuleServices.instance.register<SvService>(this);
+      ModuleServices.instance.register<SystemVerilogService>(this);
     }
   }
 

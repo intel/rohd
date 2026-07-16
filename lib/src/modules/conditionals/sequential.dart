@@ -4,7 +4,7 @@
 // sequential.dart
 // Definition for sequential blocks.
 //
-// 2024 December
+// 2026 July
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
@@ -134,14 +134,6 @@ class _SequentialTriggerRaceTracker {
 class Sequential extends Always {
   /// The input edge triggers used in this block.
   final List<_SequentialTrigger> _triggers = [];
-
-  /// Returns the edge polarity for each trigger input port.
-  ///
-  /// Each entry pairs the trigger input port name with whether the trigger
-  /// fires on a positive edge (`true`) or negative edge (`false`).
-  List<({String portName, bool isPosedge})> get triggerEdges => _triggers
-      .map((t) => (portName: t.signal.name, isPosedge: t.isPosedge))
-      .toList();
 
   /// When `false`, an [SignalRedrivenException] will be thrown during
   /// simulation if the same signal is driven multiple times within this
