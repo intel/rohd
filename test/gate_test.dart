@@ -474,14 +474,34 @@ void main() {
 
       final equal = value.eq(Const(0xa, width: 4));
       final notEqual = value.neq(0xb);
+      final notEqualConst = value.neq(Const(0xb, width: 4));
       expect(equal, isA<Const>());
       expect(equal.value, LogicValue.one);
       expect(notEqual, isA<Const>());
       expect(notEqual.value, LogicValue.one);
+      expect(notEqualConst, isA<Const>());
+      expect(notEqualConst.value, LogicValue.one);
 
       final unknown = Const(LogicValue.z).eq(Const(LogicValue.z));
       expect(unknown, isA<Const>());
       expect(unknown.value, LogicValue.x);
+    });
+
+    test('comparisons with mutable Logic retain comparison modules', () {
+      final value = Const(0xa, width: 4);
+      final mutable = Logic(width: 4)..put(0xa);
+
+      final equal = value.eq(mutable);
+      final notEqual = value.neq(mutable);
+
+      expect(equal.parentModule, isA<Equals>());
+      expect(notEqual.parentModule, isA<NotEquals>());
+      expect(equal.value, LogicValue.one);
+      expect(notEqual.value, LogicValue.zero);
+
+      mutable.put(0xb);
+      expect(equal.value, LogicValue.zero);
+      expect(notEqual.value, LogicValue.one);
     });
 
     test('shifts by constant zero return the original signal', () {
@@ -493,6 +513,8 @@ void main() {
 
       final constant = Const(bin('1010'), width: 4);
       expect(constant << 0, same(constant));
+      expect(constant >> BigInt.zero, same(constant));
+      expect(constant >>> Const(0), same(constant));
 
       final left = constant << 1;
       final right = constant >>> 1;
@@ -501,6 +523,27 @@ void main() {
       expect(left.value, LogicValue.ofString('0100'));
       expect(right.value, LogicValue.ofString('0101'));
       expect(arithmeticRight.value, LogicValue.ofString('1101'));
+    });
+
+    test('Const shifts by mutable Logic retain shift modules', () {
+      final constant = Const(bin('1010'), width: 4);
+      final amount = Logic(width: 2)..put(1);
+
+      final left = constant << amount;
+      final right = constant >>> amount;
+      final arithmeticRight = constant >> amount;
+
+      expect(left.parentModule, isA<LShift>());
+      expect(right.parentModule, isA<RShift>());
+      expect(arithmeticRight.parentModule, isA<ARShift>());
+      expect(left.value, LogicValue.ofString('0100'));
+      expect(right.value, LogicValue.ofString('0101'));
+      expect(arithmeticRight.value, LogicValue.ofString('1101'));
+
+      amount.put(2);
+      expect(left.value, LogicValue.ofString('1000'));
+      expect(right.value, LogicValue.ofString('0010'));
+      expect(arithmeticRight.value, LogicValue.ofString('1110'));
     });
 
     test('mux bypasses only valid constant controls', () {
