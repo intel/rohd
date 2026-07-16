@@ -86,7 +86,7 @@
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
         <dt id="Const.new" class="callable">
-          <span class="name"><a href="../rohd/Const/Const.html">Const</a></span><span class="signature">(<span class="parameter" id="param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span></span>})</span>
+          <span class="name"><a href="../rohd/Const/Const.html">Const</a></span><span class="signature">(<span class="parameter" id="param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span><span class="parameter" id="param-preferredRadix"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">preferredRadix</span></span>})</span>
         </dt>
         <dd>
           Constructs a <a href="../rohd/Const-class.html">Const</a> with the specified value.
@@ -95,7 +95,7 @@
   </section>
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="instance-properties">
     <h2>Properties</h2>
     <dl class="properties">
@@ -387,6 +387,18 @@ a part of.  Otherwise, <code>null</code>.
 per <a href="../rohd/Simulator-class.html">Simulator</a> tick, iff the value of the <a href="../rohd/Logic-class.html">Logic</a> has changed
 from <code>0</code> to <code>1</code>.
   <div class="features"><span class="feature">no setter</span><span class="feature">inherited</span></div>
+
+</dd>
+
+        <dt id="preferredRadix" class="property">
+  <span class="name"><a href="../rohd/Const/preferredRadix.html">preferredRadix</a></span>
+  <span class="signature">&#8594; <a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span>
+  
+
+</dt>
+<dd>
+  The preferred radix for displaying this constant in generated outputs.
+  <div class="features"><span class="feature">final</span></div>
 
 </dd>
 

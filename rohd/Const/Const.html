@@ -57,6 +57,7 @@
       <span class="name ">Const</span>(<wbr><ol class="parameter-list"> <li><span class="parameter" id="param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span></li>
 <li><span class="parameter" id="param-width"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">width</span>, </span></li>
 <li><span class="parameter" id="param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="param-preferredRadix"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/int-class.html">int</a>?</span> <span class="parameter-name">preferredRadix</span>, </span></li>
 </ol>})
     </section>
     
@@ -66,23 +67,29 @@
 <p>If a <code>width</code> is provided, the <a href="../../rohd/Const-class.html">Const</a> will be that width.  If not, and
 <code>val</code> is a <a href="../../rohd/LogicValue-class.html">LogicValue</a>, the <a href="../../rohd/Const-class.html">Const</a> will be the width of <code>val</code>.
 Otherwise, the <a href="../../rohd/Const-class.html">Const</a> will be 1 bit wide.</p>
+<p><code>preferredRadix</code> controls how the constant is displayed in generated
+outputs and its normalized name. Supported values are 2, 8, 10, and 16.
+If omitted, generated outputs select a radix automatically and the name
+uses decimal. Values containing <code>x</code> or <code>z</code> may fall back to binary.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Const(dynamic val, {int? width, bool fill = false})
-    : super(
-        name: &#39;const_$val&#39;,
-        width: width ?? (val is LogicValue ? val.width : 1),
-        &#47;&#47; we don&#39;t care about maintaining this node unless necessary
-        naming: Naming.unnamed,
-      ) {
-  _wire.put(val, fill: fill, signalName: name);
-
-  makeUnassignable(reason: &#39;`Const` signals are unassignable.&#39;);
-}</code></pre>
+  <pre class="language-dart"><code class="language-dart">Const(
+  dynamic val, {
+  int? width,
+  bool fill = false,
+  int? preferredRadix,
+}) : this._(
+        LogicValue.of(
+          val,
+          width: width ?? (val is LogicValue ? val.width : 1),
+          fill: fill,
+        ),
+        preferredRadix: _validatePreferredRadix(preferredRadix),
+      );</code></pre>
 </section>
 
 
