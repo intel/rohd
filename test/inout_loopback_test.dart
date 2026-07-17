@@ -237,7 +237,7 @@ void main() {
       );
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // The outer module should NOT contain an internal net_connect
       // for the loopback — the submodule ports should just be wired to the
@@ -268,7 +268,7 @@ void main() {
       final mod = SimpleOuterLoopback(LogicNet(width: 8));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       final outerModuleSv = _extractModuleSv(sv, 'simpleOuter');
       expect(outerModuleSv, isNot(contains('net_connect')),
@@ -284,7 +284,7 @@ void main() {
       final mod = LoopbackPairTop(Logic());
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Check for net_connect in the top module
       final topModuleSv = _extractModuleSv(sv, 'LoopbackPairTop');
@@ -309,7 +309,7 @@ void main() {
       );
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // The inner module SHOULD have a net_connect (connecting ioA <= ioB).
       final innerModuleSv = _extractModuleSv(sv, 'innerConnected');
@@ -347,7 +347,7 @@ void main() {
       final mod = OuterClkLoopback(Logic());
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // The outer module should NOT have a net_connect — the loopback net
       // is only used as port connections in the inner instantiation.

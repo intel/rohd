@@ -49,7 +49,7 @@ void main() async {
   final mod = FullAdder(a: a, b: b, carryIn: cIn);
   await mod.build();
 
-  print(mod.generateSynth());
+  print(SystemVerilogService(mod, register: false).synthOutput);
 
   test('should return true if result sum similar to truth table.', () async {
     for (var i = 0; i <= 1; i++) {

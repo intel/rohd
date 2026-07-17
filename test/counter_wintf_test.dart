@@ -145,7 +145,7 @@ void main() {
   test('interface ports dont get doubled up', () async {
     final mod = Counter(CounterInterface(8));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     expect(!sv.contains('en_0'), true);
   });

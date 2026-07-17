@@ -175,7 +175,7 @@ void main() {
     final mod = StructModuleWithInstrumentation(Const(0, width: 2));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     expect(sv.contains('swizzle'), isFalse,
         reason: 'Should not pack from instrumentation!');

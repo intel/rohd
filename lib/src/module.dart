@@ -1139,6 +1139,8 @@ abstract class Module {
   /// file writing, see [SystemVerilogService] (and
   /// [SystemVerilogService.synthOutput] for the equivalent one-shot string).
   /// The [configuration] controls options specific to SystemVerilog output.
+  @Deprecated('Use SystemVerilogService(this, register: false,'
+      ' configuration: ...).synthOutput instead.')
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),

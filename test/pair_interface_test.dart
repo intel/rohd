@@ -192,7 +192,7 @@ void main() {
     await mod.build();
 
     // Make sure the "modify" went through:
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
     expect(sv, contains('input wire logic simple_clk'));
   });
 

@@ -228,7 +228,7 @@ void main() {
     final mod = SingleBitBusSubsetMod(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
     expect(sv, contains('assign result = oneBit'));
 
     final vectors = [
@@ -401,7 +401,7 @@ void main() {
         await SimCompare.checkFunctionalVector(mod, vectors);
         SimCompare.checkIverilogVector(mod, vectors);
 
-        final sv = mod.generateSynth();
+        final sv = SystemVerilogService(mod, register: false).synthOutput;
         expect(sv.contains("assign const_subset = 16'habcd;"), true);
       });
     });

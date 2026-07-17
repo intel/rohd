@@ -31,7 +31,7 @@ void main() {
   test('instantiate', () async {
     final mod = TopModule(Logic(width: 2));
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     // make sure we instantiate the external module properly
     expect(

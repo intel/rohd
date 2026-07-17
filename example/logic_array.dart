@@ -58,7 +58,8 @@ Future<void> main({bool noPrint = false}) async {
   // Build the module
   await logicArrayExample.build();
 
-  final systemVerilogCode = logicArrayExample.generateSynth();
+  final systemVerilogCode =
+      SystemVerilogService(logicArrayExample, register: false).synthOutput;
   if (!noPrint) {
     print(systemVerilogCode);
   }

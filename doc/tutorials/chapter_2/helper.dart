@@ -13,7 +13,8 @@ import 'package:rohd/rohd.dart';
 
 Future<void> displaySystemVerilog(Module mod) async {
   await mod.build();
-  print('\nYour System Verilog Equivalent Code: \n ${mod.generateSynth()}');
+  print('\nYour System Verilog Equivalent Code: \n '
+      '${SystemVerilogService(mod, register: false).synthOutput}');
 }
 
 class LogicInitialization extends Module {

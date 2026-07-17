@@ -57,7 +57,7 @@ void main() {
   test('collapse pretty', () async {
     final mod = CollapseTestModule(Logic(), Logic());
     await mod.build();
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     // make sure e=a&b&c is in there, to prove there was some inlining
     expect(sv, contains(RegExp('e.*=.*a.*&.*b.*&.*c')));

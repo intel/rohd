@@ -49,7 +49,7 @@ Future<void> main(List<String> args) async {
   final toyCap = ToyCapsuleFSM(clk, reset, dispenseBtn, coin);
   await toyCap.build();
 
-  print(toyCap.generateSynth());
+  print(SystemVerilogService(toyCap, register: false).synthOutput);
 
   toyCap.toyCapsuleStateMachine.generateDiagram();
 

@@ -46,7 +46,7 @@ void main() async {
     final mod = SimpleModule(Logic(), Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     expect(sv, contains(version));
   });

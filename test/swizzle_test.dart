@@ -188,7 +188,7 @@ void main() {
       final mod = SwizzleVariety(Logic(width: 8));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
       expect(sv, contains('/*'));
       expect(sv, contains('*/'));
 
@@ -211,7 +211,7 @@ void main() {
       final mod = SingleElementSwizzle(Logic(width: 8));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Single element should not have braces or bit range annotations
       // Look for bit range annotations specifically (/* number */)
@@ -236,7 +236,7 @@ void main() {
       final mod = AllSingleBitSwizzle();
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Should have bit range annotations for single bits
       expect(sv, contains('/*'));
@@ -267,7 +267,7 @@ void main() {
       final mod = NestedSwizzle(Logic(width: 4), Logic(width: 3));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Should contain annotations for both inner and outer swizzles
       expect(sv, contains('/*'));
@@ -287,7 +287,7 @@ void main() {
       final mod = InlinedSwizzle(Logic(width: 4), Logic(width: 4));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Should have annotations even when swizzle is part of larger expression
       expect(sv, contains('/*'));
@@ -307,7 +307,7 @@ void main() {
       final mod = VariedWidthSwizzle();
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SystemVerilogService(mod, register: false).synthOutput;
 
       // Should have aligned bit range annotations
       expect(sv, contains('/*'));
@@ -345,7 +345,7 @@ void main() {
       // Create a module with indices requiring different digit widths
       final largeModule = LargeWidthSwizzle();
       await largeModule.build();
-      final sv = largeModule.generateSynth();
+      final sv = SystemVerilogService(largeModule, register: false).synthOutput;
 
       // Should have properly aligned annotations despite different digit counts
       expect(sv, contains('/*'));
@@ -389,7 +389,8 @@ void main() {
       final mod = SwizzleAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, contains('assign out = {a[7:5],a[2:0]};'));
       expect(sv, isNot(contains('a[7],a[6]')));
@@ -412,7 +413,8 @@ void main() {
       final mod = SwizzleAllAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, contains('assign out = a[7:5];'));
       expect(sv, isNot(contains('assign out = {a[7:5]};')));
@@ -430,7 +432,8 @@ void main() {
       final mod = SwizzleAscendingBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, isNot(contains('a[2:0]')));
       expect(sv, contains('a[0]'));
@@ -457,7 +460,8 @@ void main() {
       final mod = SwizzleNestedAdjacentBitSlices();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, contains('assign out = {(a[7:5]),a[4:3]};'));
       expect(sv, isNot(contains('a[7:3]')));
@@ -475,7 +479,8 @@ void main() {
       final mod = SwizzleAdjacentRanges();
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, contains('assign out = {(a[5:2]),(a[1:0])};'));
       expect(sv, isNot(contains('a[5:0]')));
@@ -494,7 +499,8 @@ void main() {
       final mod = SwizzlePackedArrayElementBits(LogicArray([2, 2], 1));
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, contains('assign out = {arr[1][1:0],arr[0][1:0]};'));
       expect(sv, isNot(contains('arr[1][1],arr[1][0]')));
@@ -514,7 +520,8 @@ void main() {
       );
       await mod.build();
 
-      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+      final sv = SvCleaner.removeSwizzleAnnotationComments(
+          SystemVerilogService(mod, register: false).synthOutput);
 
       expect(sv, isNot(contains('arr[3:0]')));
       expect(sv, contains('arr[3]'));
@@ -528,7 +535,7 @@ void main() {
     final mod = SwizzleVariety(Logic(width: 8));
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
 
     expect(sv, contains('''
 assign b = {

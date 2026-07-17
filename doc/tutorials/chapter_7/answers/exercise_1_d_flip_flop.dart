@@ -44,7 +44,7 @@ Future<void> main() async {
     final dff = DFlipFlop(data, reset, clk);
     await dff.build();
 
-    print(dff.generateSynth());
+    print(SystemVerilogService(dff, register: false).synthOutput);
 
     data.inject(1);
     reset.inject(1);
