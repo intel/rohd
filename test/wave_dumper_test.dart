@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // wave_dumper_test.dart
-// Tests for the WaveDumper
+// Tests for WaveformService VCD output
 //
 // 2021 November 4
 // Author: Max Korbel <max.korbel@intel.com>
@@ -40,11 +40,11 @@ const tempDumpDir = 'tmp_test';
 /// Gets the path of the VCD file based on a name.
 String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
-/// Attaches a [WaveDumper] to [module] to VCD with [name].
+/// Attaches a [WaveformService] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = temporaryDumpPath(name);
-  WaveDumper(module, outputPath: tmpDumpFile);
+  WaveformService(module, outputPath: tmpDumpFile);
 }
 
 /// Deletes the temporary VCD file associated with [name].
@@ -58,7 +58,7 @@ void main() {
     await Simulator.reset();
   });
 
-  test('attach dumper after put', () async {
+  test('attach service after put', () async {
     final a = Logic(name: 'a');
     final mod = SimpleModule(a);
     await mod.build();
@@ -86,7 +86,7 @@ void main() {
     deleteTemporaryDump(dumpName);
   });
 
-  test('attach dumper before put', () async {
+  test('attach service before put', () async {
     final a = Logic(name: 'a');
     final mod = SimpleModule(a);
     await mod.build();
@@ -241,11 +241,14 @@ void main() {
 
     const dir1Path = '$tempDumpDir/dir1';
 
-    final waveDumper = WaveDumper(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+    final waveformService =
+        WaveformService(mod, outputPath: '$dir1Path/dir2/waves.vcd');
 
-    expect(File(waveDumper.outputPath).existsSync(), equals(true));
+    expect(File(waveformService.outputPath).existsSync(), equals(true));
 
-    if (File(waveDumper.outputPath).existsSync()) {
+    await Simulator.run();
+
+    if (File(waveformService.outputPath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
   });
@@ -263,7 +266,7 @@ void main() {
     Simulator.registerAction(13, () => reset.put(1));
     reset.put(0);
 
-    // add wave dumper *after* the put to reset
+    // add waveform service *after* the put to reset
     createTemporaryDump(mod, dumpName);
 
     // check functional matches

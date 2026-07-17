@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // fst_writer_test.dart
-// Tests for FST writer and WaveDumper FST format support.
+// Tests for FST writer and WaveformService FST format support.
 //
 // 2026 February
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -41,11 +41,15 @@ const _tempDumpDir = 'tmp_test';
 /// Gets the path of the FST file based on a name.
 String _temporaryFstPath(String name) => '$_tempDumpDir/temp_dump_$name.fst';
 
-/// Attaches a [WaveDumper] to [module] with FST format.
+/// Attaches a [WaveformService] to [module] with FST format.
 void _createFstDump(Module module, String name) {
   Directory(_tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = _temporaryFstPath(name);
-  WaveDumper(module, outputPath: tmpDumpFile, format: WaveFormat.fst);
+  WaveformService(
+    module,
+    outputPath: tmpDumpFile,
+    format: WaveOutputFormat.fst,
+  );
 }
 
 /// Deletes the temporary FST file associated with [name].
@@ -209,7 +213,7 @@ void main() {
     });
   });
 
-  group('WaveDumper FST format', () {
+  group('WaveformService FST format', () {
     test('basic 1-bit signal FST dump', () async {
       final a = Logic(name: 'a');
       final mod = _SimpleModule(a);
@@ -279,7 +283,11 @@ void main() {
       const dir1Path = '$_tempDumpDir/fst_dir1';
       const fstPath = '$dir1Path/dir2/waves.fst';
 
-      WaveDumper(mod, outputPath: fstPath, format: WaveFormat.fst);
+      WaveformService(
+        mod,
+        outputPath: fstPath,
+        format: WaveOutputFormat.fst,
+      );
 
       a.put(0);
       Simulator.setMaxSimTime(10);
@@ -347,7 +355,7 @@ void main() {
 
       const vcdPath = '$_tempDumpDir/temp_dump_vcdCompare.vcd';
       Directory(_tempDumpDir).createSync(recursive: true);
-      WaveDumper(mod2, outputPath: vcdPath);
+      WaveformService(mod2, outputPath: vcdPath);
 
       a2.put(0);
       Simulator.setMaxSimTime(50);

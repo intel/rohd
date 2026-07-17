@@ -190,9 +190,9 @@ Future<void> main({bool noPrint = false}) async {
   // Let's start off with asserting reset to Oven.
   reset.inject(1);
 
-  // Attach a waveform dumper so we can see what happens.
+  // Attach a waveform service so we can see what happens.
   if (!noPrint) {
-    WaveDumper(oven, outputPath: 'doc/tutorials/chapter_8/oven.vcd');
+    WaveformService(oven, outputPath: 'doc/tutorials/chapter_8/oven.vcd');
   }
 
   if (!noPrint) {

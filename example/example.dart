@@ -68,9 +68,9 @@ Future<void> main({bool noPrint = false}) async {
 
   // Now let's try simulating!
 
-  // Attach a waveform dumper so we can see what happens.
+  // Attach a waveform service so we can see what happens.
   if (!noPrint) {
-    WaveDumper(counter);
+    WaveformService(counter);
   }
 
   // Let's also print a message every time the value on the counter changes,

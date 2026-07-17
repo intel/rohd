@@ -55,7 +55,7 @@ Future<void> main(List<String> args) async {
 
   reset.inject(1);
 
-  WaveDumper(toyCap, outputPath: 'toyCapsuleFSM.vcd');
+  WaveformService(toyCap, outputPath: 'toyCapsuleFSM.vcd');
 
   Simulator.setMaxSimTime(100);
   Simulator.registerAction(25, () {
