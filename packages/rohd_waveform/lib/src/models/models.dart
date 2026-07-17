@@ -1,5 +1,11 @@
 // Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
+//
+// models.dart
+// Barrel file for waveform-specific model exports.
+//
+// 2026 July 15
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 // Note: For hierarchy types (HierarchyOccurrence, SignalOccurrence, Port),
 // import 'package:rohd_hierarchy/rohd_hierarchy.dart' directly.

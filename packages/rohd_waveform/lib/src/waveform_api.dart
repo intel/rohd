@@ -1,15 +1,14 @@
 // Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// rohd_waveform.dart
-// An abstract class that defines the API for module structure.
+// waveform_api.dart
+// An abstract class that defines the API for waveform data retrieval.
 //
 // 2024 January 29
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_waveform/rohd_waveform.dart';
 
-/// An abstract class that defines the API for module structure.
 /// An abstract class that defines the API for waveform data retrieval.
 ///
 /// Module structure (hierarchy, signals) is provided separately through

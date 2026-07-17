@@ -29,72 +29,34 @@ enum WaveFormat {
   ghw,
 
   /// Unknown or unsupported format.
-  unknown;
+  unknown(extension: '');
+
+  const WaveFormat({String? extension}) : _extension = extension;
+
+  final String? _extension;
 
   /// Returns the file extension for this format.
-  String get extension {
-    switch (this) {
-      case WaveFormat.vcd:
-        return '.vcd';
-      case WaveFormat.fst:
-        return '.fst';
-      case WaveFormat.ghw:
-        return '.ghw';
-      case WaveFormat.unknown:
-        return '';
-    }
-  }
+  String get extension => _extension ?? '.$name';
 
   /// Parses a format from a file path or extension.
   static WaveFormat fromPath(String path) {
     final lower = path.toLowerCase();
-    if (lower.endsWith('.vcd')) {
-      return WaveFormat.vcd;
-    }
-    if (lower.endsWith('.fst')) {
-      return WaveFormat.fst;
-    }
-    if (lower.endsWith('.ghw')) {
-      return WaveFormat.ghw;
+    for (final format in values) {
+      if (format.extension.isNotEmpty && lower.endsWith(format.extension)) {
+        return format;
+      }
     }
     return WaveFormat.unknown;
   }
 
   /// Parses a format from a string name.
   static WaveFormat fromString(String name) {
-    switch (name.toLowerCase()) {
-      case 'vcd':
-        return WaveFormat.vcd;
-      case 'fst':
-        return WaveFormat.fst;
-      case 'ghw':
-        return WaveFormat.ghw;
-      default:
-        return WaveFormat.unknown;
+    final lower = name.toLowerCase();
+    for (final format in values) {
+      if (format.name == lower) {
+        return format;
+      }
     }
-  }
-
-  /// Whether this format supports writing.
-  bool get supportsWriting {
-    switch (this) {
-      case WaveFormat.vcd:
-      case WaveFormat.fst:
-        return true;
-      case WaveFormat.ghw:
-      case WaveFormat.unknown:
-        return false;
-    }
-  }
-
-  /// Whether this format supports reading.
-  bool get supportsReading {
-    switch (this) {
-      case WaveFormat.vcd:
-      case WaveFormat.fst:
-      case WaveFormat.ghw:
-        return true;
-      case WaveFormat.unknown:
-        return false;
-    }
+    return WaveFormat.unknown;
   }
 }

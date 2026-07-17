@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "rohd",
+      "path": "."
+    },
+    {
+      "name": "rohd_hierarchy",
+      "path": "packages/rohd_hierarchy"
+    },
+    {
+      "name": "rohd_waveform",
+      "path": "packages/rohd_waveform"
+    },
+    {
+      "name": "rohd_devtools_extension",
+      "path": "rohd_devtools_extension"
+    },
+    {
+      "name": "rohd_devtools_widgets",
+      "path": "rohd_devtools_extension/packages/rohd_devtools_widgets"
+    }
+  ],
+  "settings": {
+    "dart.projectSearchDepth": 8
+  }
+}

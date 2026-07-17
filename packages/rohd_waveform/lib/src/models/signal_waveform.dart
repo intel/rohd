@@ -7,6 +7,7 @@
 // 2026 January
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:collection/collection.dart';
 import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 
 import 'package:rohd_waveform/src/models/data.dart';
@@ -54,7 +55,11 @@ class SignalWaveform {
 
   /// Whether this waveform was computed/synthesized (e.g. gate evaluation)
   /// rather than directly fetched from the VM service.
-  bool isComputed;
+  bool _isComputed;
+
+  /// Whether this waveform was computed/synthesized (e.g. gate evaluation)
+  /// rather than directly fetched from the VM service.
+  bool get isComputed => _isComputed;
 
   /// Override width for computed sub-field waveforms whose signal metadata
   /// is not available via the hierarchy lookup.
@@ -67,10 +72,11 @@ class SignalWaveform {
   SignalWaveform({
     required this.signalId,
     List<Data>? data,
-    this.isComputed = false,
+    bool isComputed = false,
     this.overrideWidth,
     this.overrideName,
-  }) : data = data ?? [];
+  })  : _isComputed = isComputed,
+        data = data ?? [];
 
   /// Creates an empty SignalWaveform for a signal.
   factory SignalWaveform.empty(String signalId) =>
@@ -178,7 +184,7 @@ class SignalWaveform {
   }) {
     appendData(waveformData.data, sortByTime: sortByTime);
     if (waveformData.isComputed) {
-      isComputed = true;
+      _isComputed = true;
     }
   }
 
@@ -186,6 +192,11 @@ class SignalWaveform {
   void clearData() {
     data.clear();
   }
+
+  int _lowerBoundIndexForTime(int time) => data.lowerBound(
+        Data(time: time, value: ''),
+        (a, b) => a.time.compareTo(b.time),
+      );
 
   /// Gets the value at a specific time using binary search.
   ///
@@ -196,25 +207,8 @@ class SignalWaveform {
       return '';
     }
 
-    var low = 0;
-    var high = data.length - 1;
-    var res = -1;
-
-    while (low <= high) {
-      final mid = (low + high) >> 1;
-      if (data[mid].time <= time) {
-        res = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-
-    if (res != -1) {
-      return data[res].value;
-    } else {
-      return data.first.value;
-    }
+    final idx = _lowerBoundIndexForTime(time + 1) - 1;
+    return data[idx < 0 ? 0 : idx].value;
   }
 
   /// Finds the index of the data point at or after the given time.
@@ -225,23 +219,8 @@ class SignalWaveform {
       return -1;
     }
 
-    var low = 0;
-    var high = data.length - 1;
-    var resultIndex = -1;
-
-    while (low <= high) {
-      final mid = low + (high - low) ~/ 2;
-      final midData = data[mid];
-
-      if (midData.time >= time) {
-        resultIndex = mid;
-        high = mid - 1;
-      } else {
-        low = mid + 1;
-      }
-    }
-
-    return resultIndex;
+    final idx = _lowerBoundIndexForTime(time);
+    return idx == data.length ? -1 : idx;
   }
 
   /// Finds the index of the data point at or before the given time.
@@ -252,23 +231,8 @@ class SignalWaveform {
       return -1;
     }
 
-    var low = 0;
-    var high = data.length - 1;
-    var resultIndex = -1;
-
-    while (low <= high) {
-      final mid = low + (high - low) ~/ 2;
-      final midData = data[mid];
-
-      if (midData.time <= time) {
-        resultIndex = mid;
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-
-    return resultIndex;
+    final idx = _lowerBoundIndexForTime(time + 1) - 1;
+    return idx < 0 ? -1 : idx;
   }
 
   /// Gets the next data point index from the current time.

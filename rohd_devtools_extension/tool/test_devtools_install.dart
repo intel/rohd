@@ -5,7 +5,6 @@
 // Smoke-test that Flutter DevTools can discover the installed ROHD DevTools
 // extension from a package root or extension/devtools install directory.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:devtools_shared/devtools_extensions_io.dart';
@@ -35,13 +34,14 @@ Future<void> main(List<String> args) async {
     );
 
     final extensionAssetsPath = p.join(extensionDir.path, 'build');
-    final rohdExtensions = manager.devtoolsExtensions.where((extension) {
-      return extension.name == 'rohd' &&
-          p.equals(
-            extension.extensionAssetsPath,
-            extensionAssetsPath,
-          );
-    }).toList();
+    final rohdExtensions = manager.devtoolsExtensions
+        .where((extension) =>
+            extension.name == 'rohd' &&
+            p.equals(
+              extension.extensionAssetsPath,
+              extensionAssetsPath,
+            ))
+        .toList();
 
     if (rohdExtensions.length != 1) {
       _fail(
@@ -181,23 +181,6 @@ Directory _installRootFor(Directory extensionDir) {
 Future<Directory> _writeProjectRootPointingTo(Directory packageRoot) async {
   final projectRoot = await Directory.systemTemp.createTemp(
     'rohd_devtools_extension_discovery_',
-  );
-  final dartToolDir = Directory(p.join(projectRoot.path, '.dart_tool'));
-  dartToolDir.createSync(recursive: true);
-  final packageConfigFile =
-      File(p.join(dartToolDir.path, 'package_config.json'));
-  packageConfigFile.writeAsStringSync(
-    jsonEncode({
-      'configVersion': 2,
-      'packages': [
-        {
-          'name': 'rohd',
-          'rootUri': packageRoot.uri.toString(),
-          'packageUri': 'lib/',
-          'languageVersion': '3.6',
-        }
-      ],
-    }),
   );
   return projectRoot;
 }

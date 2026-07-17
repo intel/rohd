@@ -4,7 +4,8 @@
 // module_structure_test.dart
 // Unit tests for the ModuleStructure model (empty / no-signal cases).
 //
-// 2026
+// 2026 July 15
+// Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_waveform/rohd_waveform.dart';
 import 'package:test/test.dart';

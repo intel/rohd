@@ -100,7 +100,7 @@ class _TabButton extends StatelessWidget {
     properties
       ..add(StringProperty('label', label))
       ..add(DiagnosticsProperty<Widget>('icon', icon))
-      ..add(FlagProperty('isSelected', value: isSelected))
+      ..add(DiagnosticsProperty<bool>('isSelected', isSelected))
       ..add(
           ObjectFlagProperty<VoidCallback>('onTap', onTap, ifNull: 'disabled'));
   }
