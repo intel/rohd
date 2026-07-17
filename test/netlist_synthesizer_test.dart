@@ -1932,6 +1932,46 @@ void main() {
         throwsStateError,
       );
     });
+
+    test('validation allows cells to drive inout ports', () {
+      final warnings = <String>[];
+      final ports = {
+        'bus': {
+          'direction': 'inout',
+          'bits': [1],
+        },
+      };
+      final cells = {
+        'driver': {
+          'type': r'$tribuf',
+          'port_directions': {'A': 'input', 'EN': 'input', 'Y': 'output'},
+          'connections': {
+            'A': [2],
+            'EN': [3],
+            'Y': [1],
+          },
+        },
+      };
+
+      runZoned(
+        () => NetlistValidation.validate(ports, cells, 'InOutModule'),
+        zoneSpecification: ZoneSpecification(
+          print: (_, __, ___, line) => warnings.add(line),
+        ),
+      );
+
+      expect(warnings, isEmpty);
+      expect(
+        () => NetlistValidation.validate(
+          ports,
+          cells,
+          'InOutModule',
+          throwOnMultipleDrivers: true,
+          printWarnings: false,
+        ),
+        returnsNormally,
+      );
+    });
   });
 
   // ── Group 11: Named constant signals ─────────────────────────────

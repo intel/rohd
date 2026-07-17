@@ -168,7 +168,7 @@ class NetlistValidation {
 
     for (final entry in ports.entries) {
       final direction = entry.value['direction'] as String?;
-      if (direction != 'input' && direction != 'inout') {
+      if (direction != 'input') {
         continue;
       }
       for (final bit in (entry.value['bits'] as List?) ?? const []) {
