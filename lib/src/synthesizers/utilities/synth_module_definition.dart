@@ -16,6 +16,12 @@ import 'package:rohd/src/collections/traverseable_collection.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 import 'package:rohd/src/utilities/namer.dart';
 
+/// Adapts structure slicing to the shared synthesis operation.
+class _BusSubsetForStructSlice extends SynthStructureSlice {
+  _BusSubsetForStructSlice(super.bus, super.startIndex, super.endIndex,
+      {required super.destination});
+}
+
 /// Represents the definition of a module.
 @internal
 class SynthModuleDefinition {
@@ -259,7 +265,7 @@ class SynthModuleDefinition {
       internalSignals.add(leafSynth);
 
       // this is DISCONNECTED, just a module used for synthesizing
-      final subsetMod = SynthStructureSlice(
+      final subsetMod = _BusSubsetForStructSlice(
         (port.isNet ? LogicNet.new : Logic.new)(
           width: port.width,
           name: 'DUMMY',
@@ -611,7 +617,10 @@ class SynthModuleDefinition {
     // away. This is especially important for array elements, whose assignments
     // are not collapsed away like mergeable signals.
     final assignmentReferencedSignals = <SynthLogic>{
-      for (final assignment in assignments) ...[assignment.src, assignment.dst],
+      for (final assignment in assignments) ...[
+        assignment.src,
+        assignment.dst,
+      ],
     };
 
     final inlineableResultLogics = <SynthLogic>{};

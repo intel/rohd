@@ -15,17 +15,12 @@ import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_resu
 ///
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
-  /// The hierarchy stopping policy used by this synthesizer.
-  final SynthModuleStopPolicy moduleStopPolicy;
-
-  /// Creates a [SystemVerilogSynthesizer].
-  SystemVerilogSynthesizer({SynthModuleStopPolicy? moduleStopPolicy})
-      : moduleStopPolicy =
-            moduleStopPolicy ?? SynthModuleStopPolicy.systemVerilog();
-
   @override
   bool generatesDefinition(Module module) =>
-      moduleStopPolicy.generatesDefinition(module);
+      // ignore: deprecated_member_use_from_same_package
+      !((module is CustomSystemVerilog) ||
+          (module is SystemVerilog &&
+              module.generatedDefinitionType == DefinitionGenerationType.none));
 
   /// Creates a line of SystemVerilog that instantiates [module].
   ///
