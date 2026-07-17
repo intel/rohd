@@ -45,6 +45,8 @@ enum PairRole {
 /// complex situations.
 class PairInterface extends Interface<PairDirection> {
   /// A function that can be used to modify all port names in a certain way.
+  @Deprecated(
+      'Use `uniquify` when connecting or adding sub interfaces instead.')
   String Function(String original)? modify;
 
   /// Constructs an instance of a [PairInterface] with the specified ports.
@@ -56,6 +58,8 @@ class PairInterface extends Interface<PairDirection> {
     List<Logic>? portsFromProvider,
     List<Logic>? sharedInputPorts,
     List<Logic>? commonInOutPorts,
+    @Deprecated(
+        'Use `uniquify` when connecting or adding sub interfaces instead.')
     this.modify,
   }) {
     if (portsFromConsumer != null) {
@@ -98,6 +102,7 @@ class PairInterface extends Interface<PairDirection> {
 
   /// Creates a new instance of a [PairInterface] with the same ports and other
   /// characteristics.
+  @Deprecated('Use `clone()` on an instance instead')
   PairInterface.clone(PairInterface otherInterface)
       : this(
           portsFromConsumer:
@@ -161,6 +166,7 @@ class PairInterface extends Interface<PairDirection> {
       Iterable<PairDirection>? inOutTags,
       String Function(String original)? uniquify}) {
     final nonNullUniquify = uniquify ?? (original) => original;
+    // ignore: deprecated_member_use_from_same_package
     final nonNullModify = modify ?? (original) => original;
     String newUniquify(String original) =>
         nonNullUniquify(nonNullModify(original));
@@ -182,6 +188,12 @@ class PairInterface extends Interface<PairDirection> {
       for (final subInterfaceEntry in _subInterfaces.entries) {
         final subInterface = subInterfaceEntry.value.interface;
         final subInterfaceName = subInterfaceEntry.key;
+
+        final nonNullSubIntfUniquify =
+            subInterfaceEntry.value.uniquify ?? (original) => original;
+
+        String newSubIntfUniquify(String original) =>
+            nonNullUniquify(nonNullSubIntfUniquify(nonNullModify(original)));
 
         if (!srcInterface._subInterfaces.containsKey(subInterfaceName)) {
           throw InterfaceTypeException(
@@ -228,7 +240,7 @@ class PairInterface extends Interface<PairDirection> {
           inputTags: subIntfInputTags,
           outputTags: subIntfOutputTags,
           inOutTags: subIntfInOutTags,
-          uniquify: newUniquify,
+          uniquify: newSubIntfUniquify,
         );
       }
     }
@@ -248,11 +260,15 @@ class PairInterface extends Interface<PairDirection> {
   /// opposite way as it usually is with respect to the [PairRole] specified.
   ///
   /// Sub-interfaces are connected via [connectIO] based on the [name].
+  ///
+  /// The [uniquify] function can be used to rename ports as they are created on
+  /// [Module] boundaries during [connectIO].
   @protected
   PairInterfaceType addSubInterface<PairInterfaceType extends PairInterface>(
     String name,
     PairInterfaceType subInterface, {
     bool reverse = false,
+    String Function(String original)? uniquify,
   }) {
     if (_subInterfaces.containsKey(name)) {
       throw InterfaceNameException(
@@ -265,9 +281,140 @@ class PairInterface extends Interface<PairDirection> {
       throw InterfaceNameException(name, 'Sub-interface name is not sanitary.');
     }
 
-    _subInterfaces[name] = _SubPairInterface(subInterface, reverse: reverse);
+    _subInterfaces[name] = _SubPairInterface(
+      subInterface,
+      reverse: reverse,
+      uniquify: uniquify,
+    );
     return subInterface;
   }
+
+  /// Makes `this` drive interface signals tagged with [tags] on [other].
+  ///
+  /// In addition to the base [Interface.driveOther] functionality, this also
+  /// handles driving signals on all [subInterfaces] hierarchically when [other]
+  /// is a [PairInterface], considering `reverse`.
+  @override
+  void driveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    super.driveOther(other, tags);
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+        } else {
+          subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+        }
+      });
+    }
+  }
+
+  /// Makes `this` signals tagged with [tags] be driven by [other].
+  ///
+  /// In addition to the base [Interface.receiveOther] functionality, this also
+  /// handles receiving signals from all [subInterfaces] hierarchically when
+  /// [other] is a [PairInterface], considering `reverse`.
+  @override
+  void receiveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    super.receiveOther(other, tags);
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          subInterface.driveOther(other.subInterfaces[subIntfName]!, tags);
+        } else {
+          subInterface.receiveOther(other.subInterfaces[subIntfName]!, tags);
+        }
+      });
+    }
+  }
+
+  /// Makes `this` conditionally drive interface signals tagged with [tags] on
+  /// [other].
+  ///
+  /// In addition to the base [Interface.conditionalDriveOther] functionality,
+  /// this also handles conditional driving of signals on all [subInterfaces]
+  /// hierarchically when [other] is a [PairInterface]. Returns a
+  /// [ConditionalGroup] that combines all conditionals from the main interface
+  /// and sub-interfaces, considering `reverse`.
+  @override
+  Conditional conditionalDriveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    final conditionals = <Conditional>[
+      super.conditionalDriveOther(other, tags)
+    ];
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          conditionals.add(subInterface.conditionalReceiveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        } else {
+          conditionals.add(subInterface.conditionalDriveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        }
+      });
+    }
+
+    return ConditionalGroup(conditionals);
+  }
+
+  /// Makes `this` signals tagged with [tags] be driven conditionally by
+  /// [other].
+  ///
+  /// In addition to the base [Interface.conditionalReceiveOther] functionality,
+  /// this also handles conditional receiving of signals from all
+  /// [subInterfaces] hierarchically when [other] is a [PairInterface]. Returns
+  /// a [ConditionalGroup] that combines all conditionals from the main
+  /// interface and sub-interfaces, considering `reverse`.
+  @override
+  Conditional conditionalReceiveOther(
+      Interface<PairDirection> other, Iterable<PairDirection> tags) {
+    final conditionals = <Conditional>[
+      super.conditionalReceiveOther(other, tags)
+    ];
+
+    if (other is PairInterface) {
+      subInterfaces.forEach((subIntfName, subInterface) {
+        if (!other.subInterfaces.containsKey(subIntfName)) {
+          throw InterfaceTypeException(
+              other, 'missing a sub-interface named $subIntfName');
+        }
+
+        if (_subInterfaces[subIntfName]!.reverse) {
+          conditionals.add(subInterface.conditionalDriveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        } else {
+          conditionals.add(subInterface.conditionalReceiveOther(
+              other.subInterfaces[subIntfName]!, tags));
+        }
+      });
+    }
+
+    return ConditionalGroup(conditionals);
+  }
+
+  @override
+  @mustBeOverridden
+  // ignore: deprecated_member_use_from_same_package
+  PairInterface clone() => PairInterface.clone(this);
 }
 
 /// An internal tracking object for sub-interfaces and characteristics useful
@@ -279,6 +426,9 @@ class _SubPairInterface<PairInterfaceType extends PairInterface> {
   /// Whether or not this interface should be connected in a reverse way.
   final bool reverse;
 
+  /// A function to uniquify/rename ports on a per-subInterface basis.
+  final String Function(String original)? uniquify;
+
   /// Constructs a new sub-interface tracking object with characteristics.
-  _SubPairInterface(this.interface, {required this.reverse});
+  _SubPairInterface(this.interface, {required this.reverse, this.uniquify});
 }

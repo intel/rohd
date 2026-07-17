@@ -38,7 +38,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+
+      - name: Setup Pana source analysis
+        run: tool/gh_actions/install_pana.sh
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -48,6 +51,9 @@ jobs:
 
       - name: Analyze project source
         run: tool/gh_actions/analyze_source.sh
+
+      - name: Run Pana on project source
+        run: tool/gh_actions/pana_source.sh
 
       - name: Check project documentation
         run: tool/gh_actions/generate_documentation.sh
@@ -81,8 +87,6 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          sdk: 3.6.2 # downgrade pending https://github.com/dart-lang/dartdoc/issues/3996
 
       - name: Install project dependencies
         run: tool/gh_actions/install_dependencies.sh
@@ -113,5 +117,8 @@ jobs:
         run: tool/gh_actions/devtool/run_devtool_test.sh
 
       - name: Build Static Web
-        run: tool/gh_actions/devtool/build_web.sh
+        run: tool/gh_actions/devtool/install_devtools.sh
+
+      - name: Test DevTools Installation
+        run: tool/gh_actions/devtool/test_devtools_install.sh extension/devtools
 

@@ -43,7 +43,7 @@ Read more about Chisel here: <https://www.chisel-lang.org/>
 There have been a number of attempts to create a HDL on top of Python, but it appears the MyHDL is one of the most mature options.  MyHDL has many similar goals to ROHD, but chose to develop in Python instead of Dart.  MyHDL can also convert to SystemVerilog.
 
 - MyHDL uses "generators" and decorators to help model concurrent behavior of hardware, which is arguably less user-friendly and intuitive than async/await and event based simulation in ROHD.
-- While Python is a great programming langauge for the right purposes, some language features of Dart make it better for representing hardware.  Above is already mentioned Dart's isolates and async/await, which don't exist in the same way in Python.  Dart is statically typed with null safety while Python is dynamically typed, which can make static analysis (including intellisense, type safety, etc.) more challenging in Python.  Python can also be challenging to scale to large programs without careful architecting.
+- While Python is a great programming language for the right purposes, some language features of Dart make it better for representing hardware.  Above is already mentioned Dart's isolates and async/await, which don't exist in the same way in Python.  Dart is statically typed with null safety while Python is dynamically typed, which can make static analysis (including intellisense, type safety, etc.) more challenging in Python.  Python can also be challenging to scale to large programs without careful architecting.
 - Python is inherently slower to execute than Dart.
 - MyHDL has support for cosimulation via VPI calls to SystemVerilog simulators.
 

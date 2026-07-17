@@ -9,6 +9,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class ModuleWithMaybePorts extends Module {
@@ -108,8 +109,12 @@ class SubModWithArray extends Module {
 }
 
 class SimpleLogicStructure extends LogicStructure {
-  SimpleLogicStructure([Logic? a, Logic? b])
-      : super([a ?? Logic(), b ?? Logic()], name: 'simple_logic_structure');
+  SimpleLogicStructure(
+      {Logic? a, Logic? b, super.name = 'simple_logic_structure'})
+      : super([a ?? Logic(), b ?? Logic()]);
+
+  @override
+  SimpleLogicStructure clone({String? name}) => SimpleLogicStructure();
 }
 
 class StructWithOutputAsElementMod extends Module {
@@ -121,8 +126,8 @@ class StructWithOutputAsElementMod extends Module {
     b = addInput('b', b);
 
     final s = SimpleLogicStructure(
-      mux(a, Const(0), Const(1)),
-      Const(1),
+      a: mux(a, Const(0), Const(1)),
+      b: Const(1),
     );
 
     final o_ = addOutput('o', width: s.width);
@@ -154,8 +159,8 @@ class StructWithInputAsElementMod extends Module {
     b = addInput('b', b);
 
     final s = SimpleLogicStructure(
-      a,
-      Const(1),
+      a: a,
+      b: Const(1),
     );
 
     final o_ = addOutput('o', width: s.width);
@@ -188,8 +193,8 @@ class StructWithInoutAsElementMod extends Module {
     b = addInOut('b', b);
 
     final s = SimpleLogicStructure(
-      a,
-      LogicNet(name: 'floaty_mc_float_face'), // floating net
+      a: a,
+      b: LogicNet(name: 'floaty_mc_float_face'), // floating net
     );
 
     addInOut('o', o, width: s.width) <= s;
@@ -298,7 +303,8 @@ void main() {
             disconnectOutputs: disconnectOutputs);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -314,7 +320,8 @@ void main() {
             disconnectOutputs: disconnectOutputs);
         await mod.build();
 
-        final sv = mod.generateSynth();
+        final sv =
+            SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -329,9 +336,12 @@ void main() {
           TopStructInoutWrap(LogicNet(), LogicNet(), LogicNet(width: 2));
       await mod.build();
 
-      final sv = mod.generateSynth();
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
 
-      expect(sv, contains('net_connect (o, ({floaty_mc_float_face,a}));'));
+      expect(
+          sv,
+          contains('net_connect (o, '
+              '({simple_logic_structure_floaty_mc_float_face,a}));'));
     });
   });
 
@@ -378,5 +388,16 @@ void main() {
                 multiLine: true)));
       }
     });
+  });
+
+  test('hierarchicalName', () async {
+    final topInput = Logic();
+    final top = FlexibleModule(name: 'top')..addInput('a', topInput);
+    final mid = FlexibleModule(name: 'mid')..addInput('a', top.input('a'));
+    final sub = FlexibleModule(name: 'sub')..addInput('a', mid.input('a'));
+
+    await top.build();
+
+    expect(sub.hierarchicalName, 'top.mid.sub');
   });
 }

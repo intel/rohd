@@ -35,7 +35,7 @@ Transitions between states would be triggered by events such as button presses o
 
 ## ROHD FSM
 
-In ROHD, there are abstraction level of writting FSM. Yes, you can definitely wrote the code using Sequential and Combinational like previous chapter. But, today we want to see how we can leverage the abstraction layer provided in ROHD to quickly create the Oven FSM above.
+In ROHD, there are abstraction level of writing FSM. Yes, you can definitely write the code using Sequential and Combinational like previous chapter. But, today we want to see how we can leverage the abstraction layer provided in ROHD to quickly create the Oven FSM above.
 
 First, we want to import the ROHD package and also `counter` module. We can use the counter interface we created last session.
 
@@ -64,7 +64,7 @@ class OvenModule extends Module {
 
 In ROHD, we can use `FiniteStateMachine` API library. The `FiniteStateMachine` constructs a simple FSM, using the `clk` and `reset` signals. Also accepts the `reset` state to transition to `resetState` along with the List of _states of the FSM. Later, we will also need to create a List of `state` and send to the `FiniteStateMachine`.
 
-Let start by intitialize a variable called `_oven` that is `FiniteStateMachine` with `StateIdentifier` as  `OvenState`.
+Let's start by initializing a variable called `_oven` that is a `FiniteStateMachine` with `StateIdentifier` as  `OvenState`.
 
 Besides, we can use a simple hashmap to map over the button and LED value to integer.
 
@@ -124,7 +124,7 @@ class OvenModule extends Module {
 
 Let start creating the FSM `State`. FSM `State` represent a state named `identifier` with a definition of `events` and `actions` associated with that state.
 
-- `identifier`: Identifer or name of the state.
+- `identifier`: Identifier or name of the state.
 - `events`: A map of the possible conditions that might be true and the next state that the FSM needs to transition to in each of those cases.
 - `actions`: Actions to perform while the FSM is in this state.
 

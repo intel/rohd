@@ -196,7 +196,11 @@ class LogicArray extends LogicStructure {
   /// [elementWidth], [numUnpackedDimensions], and [isNet] as `this`.
   ///
   /// If no new [name] is specified, then it will also have the same name.
+  ///
+  /// It is expected that any implementation will override this in a way that
+  /// returns the same type as itself.
   @override
+  @mustBeOverridden
   LogicArray clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone] with the provided [name] and optionally [naming], then

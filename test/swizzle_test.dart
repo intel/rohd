@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // swizzle_test.dart
@@ -9,6 +9,7 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
+import 'package:rohd/src/utilities/sv_cleaner.dart';
 import 'package:test/test.dart';
 
 class SwizzlyModule extends Module {
@@ -28,9 +29,523 @@ class SwizzlyEmpty extends Module {
   }
 }
 
+class SwizzleVariety extends Module {
+  SwizzleVariety(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final swz = [
+      Const(0),
+      a,
+      Logic(name: 'x', width: 4),
+      LogicArray(name: 'y', [3], 2),
+      Const(3, width: 5),
+      LogicStructure([a, Const(2, width: 3)], name: 'z'),
+    ].swizzle();
+    final b = addOutput('b', width: swz.width);
+    b <= swz;
+  }
+}
+
+class SingleElementSwizzle extends Module {
+  SingleElementSwizzle(Logic a) {
+    a = addInput('a', a, width: a.width);
+    final b = addOutput('b', width: a.width);
+    // Force creation of Swizzle module with single element
+    b <= Swizzle([a]).out;
+  }
+}
+
+class AllSingleBitSwizzle extends Module {
+  AllSingleBitSwizzle() {
+    final bits = List.generate(5, (i) => addInput('bit$i', Logic()));
+    final b = addOutput('b', width: bits.length);
+    b <= bits.swizzle();
+  }
+}
+
+class NestedSwizzle extends Module {
+  NestedSwizzle(Logic a, Logic b) {
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    final inner = [a, b].swizzle();
+    final outer = [Const(1), inner, Const(0, width: 2)].swizzle();
+    final out = addOutput('out', width: outer.width);
+    out <= outer;
+  }
+}
+
+class InlinedSwizzle extends Module {
+  InlinedSwizzle(Logic a, Logic b) {
+    a = addInput('a', a, width: a.width);
+    b = addInput('b', b, width: b.width);
+    final swz = [a, b].swizzle();
+    final out = addOutput('out', width: swz.width);
+    // Inline swizzle in an expression
+    out <= swz & Const(bin('11111111'), width: swz.width);
+  }
+}
+
+class VariedWidthSwizzle extends Module {
+  VariedWidthSwizzle() {
+    final a = addInput('a', Logic());
+    final b = addInput('b', Logic(width: 12), width: 12);
+    final c = addInput('c', Logic(width: 3), width: 3);
+    final d = addInput('d', Logic(width: 100), width: 100);
+    final e = addInput('e', Logic(width: 7), width: 7);
+    final signals = [a, b, c, d, e];
+    final out = addOutput('out',
+        width: signals.map((s) => s.width).reduce((a, b) => a + b));
+    out <= signals.swizzle();
+  }
+}
+
+class LargeWidthSwizzle extends Module {
+  LargeWidthSwizzle() {
+    final smallSig =
+        addInput('smallSig', Logic(width: 5), width: 5); // indices 0-4
+    final mediumSig =
+        addInput('mediumSig', Logic(width: 50), width: 50); // indices 5-54
+    final largeSig =
+        addInput('largeSig', Logic(width: 500), width: 500); // indices 55-554
+    final signals = [smallSig, mediumSig, largeSig];
+
+    final totalWidth = signals.map((s) => s.width).reduce((a, b) => a + b);
+    final out = addOutput('out', width: totalWidth);
+    out <= signals.swizzle();
+  }
+}
+
+class SwizzleAdjacentBitSlices extends Module {
+  SwizzleAdjacentBitSlices() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    addOutput('out', width: 6) <=
+        [a[7], a[6], a[5], a[2], a[1], a[0]].swizzle();
+  }
+}
+
+class SwizzleAllAdjacentBitSlices extends Module {
+  SwizzleAllAdjacentBitSlices() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    addOutput('out', width: 3) <= [a[7], a[6], a[5]].swizzle();
+  }
+}
+
+class SwizzleAscendingBitSlices extends Module {
+  SwizzleAscendingBitSlices() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    addOutput('out', width: 3) <= [a[0], a[1], a[2]].swizzle();
+  }
+}
+
+class SwizzleNestedAdjacentBitSlices extends Module {
+  SwizzleNestedAdjacentBitSlices() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    final inner = Swizzle([a[7], a[6], a[5]]).out;
+    addOutput('out', width: 5) <= [inner, a[4], a[3]].swizzle();
+  }
+}
+
+class SwizzleAdjacentRanges extends Module {
+  SwizzleAdjacentRanges() {
+    final a = addInput('a', Logic(width: 8), width: 8);
+    addOutput('out', width: 6) <= [a.slice(5, 2), a.slice(1, 0)].swizzle();
+  }
+}
+
+class SwizzlePackedArrayElementBits extends Module {
+  SwizzlePackedArrayElementBits(LogicArray arr) {
+    final inArr = addInputArray('arr', arr, dimensions: [2, 2]);
+    final upper = inArr.elements[1] as LogicArray;
+    final lower = inArr.elements[0] as LogicArray;
+    addOutput('out', width: 4) <=
+        [
+          upper.elements[1],
+          upper.elements[0],
+          lower.elements[1],
+          lower.elements[0],
+        ].swizzle();
+  }
+}
+
+class SwizzleUnpackedArrayElements extends Module {
+  SwizzleUnpackedArrayElements(LogicArray arr) {
+    final inArr = addInputArray(
+      'arr',
+      arr,
+      dimensions: [4],
+      numUnpackedDimensions: 1,
+    );
+    addOutput('out', width: 4) <= inArr.elements.reversed.toList().swizzle();
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  group('Bit Range Annotations', () {
+    test('variety of element widths with aligned bit ranges', () async {
+      final mod = SwizzleVariety(Logic(width: 8));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // Check that bit ranges are present and properly formatted
+      final lines =
+          sv.split('\n').where((line) => line.contains('/*')).toList();
+      expect(lines.length, greaterThan(3)); // Multiple annotated lines
+
+      // Verify simulation works with generated SV
+      final vectors = [
+        Vector({'a': 0x55}, {}),
+        Vector({'a': 0xAA}, {}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('single element swizzle has no bit range annotations', () async {
+      final mod = SingleElementSwizzle(Logic(width: 8));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Single element should not have braces or bit range annotations
+      // Look for bit range annotations specifically (/* number */)
+      final hasRangeAnnotations =
+          RegExp(r'/\*\s*\d+(?::\d+)?\s*\*/').hasMatch(sv);
+      expect(hasRangeAnnotations, equals(false));
+      expect(sv, isNot(contains('{'))); // No concatenation braces
+
+      expect(sv, contains('assign b = a;'));
+
+      // Verify functionality
+      final vectors = [
+        Vector({'a': 0x42}, {'b': 0x42}),
+        Vector({'a': 0xFF}, {'b': 0xFF}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('all single-bit elements with aligned annotations', () async {
+      final mod = AllSingleBitSwizzle();
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Should have bit range annotations for single bits
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // All should be single bit indices (no colons)
+      final annotationLines =
+          sv.split('\n').where((line) => line.contains('/*')).toList();
+      for (final line in annotationLines) {
+        expect(line, isNot(contains(':')));
+      }
+
+      expect(sv, contains('bit1, /* 3 */'));
+
+      // Verify functionality
+      final vectors = [
+        Vector({'bit0': 1, 'bit1': 0, 'bit2': 1, 'bit3': 0, 'bit4': 1},
+            {'b': bin('10101')}),
+        Vector({'bit0': 0, 'bit1': 1, 'bit2': 1, 'bit3': 1, 'bit4': 0},
+            {'b': bin('01110')}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('nested swizzles with proper annotations', () async {
+      final mod = NestedSwizzle(Logic(width: 4), Logic(width: 3));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Should contain annotations for both inner and outer swizzles
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // Verify functionality
+      final vectors = [
+        Vector({'a': 0xA, 'b': 0x5}, {}),
+        Vector({'a': 0x3, 'b': 0x7}, {}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('swizzle inlined in expressions maintains annotations', () async {
+      final mod = InlinedSwizzle(Logic(width: 4), Logic(width: 4));
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Should have annotations even when swizzle is part of larger expression
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // Verify functionality
+      final vectors = [
+        Vector({'a': 0xF, 'b': 0x0}, {'out': 0xF0}),
+        Vector({'a': 0x3, 'b': 0xC}, {'out': 0x3C}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('varied width elements have properly aligned annotations', () async {
+      final mod = VariedWidthSwizzle();
+      await mod.build();
+
+      final sv = mod.generateSynth();
+
+      // Should have aligned bit range annotations
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // Get all annotation lines and check alignment
+      final annotationLines = sv
+          .split('\n')
+          .where((line) => line.contains('/*') && line.contains('*/'))
+          .toList();
+
+      expect(annotationLines.length, greaterThan(3));
+
+      // Check that multi-bit ranges use colon notation
+      final multibitLines =
+          annotationLines.where((line) => line.contains(':')).toList();
+      expect(multibitLines.length, greaterThan(0));
+
+      // Check that single-bit ranges don't use colon
+      final singlebitLines = annotationLines
+          .where((line) => line.contains('/*') && !line.contains(':'))
+          .toList();
+      expect(singlebitLines.length, greaterThan(0));
+
+      // Verify functionality with a simple test
+      final vectors = [
+        Vector({'a': 1, 'b': 0x123, 'c': 0x5, 'd': 0x42, 'e': 0x7F}, {}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('alignment with different digit widths', () async {
+      // Create a module with indices requiring different digit widths
+      final largeModule = LargeWidthSwizzle();
+      await largeModule.build();
+      final sv = largeModule.generateSynth();
+
+      // Should have properly aligned annotations despite different digit counts
+      expect(sv, contains('/*'));
+      expect(sv, contains('*/'));
+
+      // Get annotation lines and verify they contain proper ranges
+      final annotationLines = sv
+          .split('\n')
+          .where((line) => line.contains('/*') && line.contains('*/'))
+          .toList();
+
+      // Should have 3 annotation lines (one per signal)
+      expect(annotationLines.length, equals(3));
+
+      // Verify 3-digit indices are present for the large signal
+      expect(sv, contains('554'));
+      expect(sv, contains('550'));
+
+      // Verify functionality
+      final vectors = [
+        Vector({
+          'smallSig': 0x1F,
+          'mediumSig': BigInt.from(0x123456789ABC),
+          'largeSig': 0x42
+        }, {
+          'out': [
+            LogicValue.ofBigInt(BigInt.from(0x1F), 5), // smallSig
+            LogicValue.ofBigInt(BigInt.from(0x123456789ABC), 50), // mediumSig
+            LogicValue.ofBigInt(BigInt.from(0x42), 500) // largeSig
+          ].swizzle()
+        }),
+      ];
+      await SimCompare.checkFunctionalVector(largeModule, vectors);
+      final simResult = SimCompare.iverilogVector(largeModule, vectors);
+      expect(simResult, equals(true));
+    });
+  });
+
+  group('SystemVerilog slice collapsing', () {
+    test('collapses descending contiguous bit selects', () async {
+      final mod = SwizzleAdjacentBitSlices();
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, contains('assign out = {a[7:5],a[2:0]};'));
+      expect(sv, isNot(contains('a[7],a[6]')));
+
+      final vectors = [
+        for (final value in [0x00, 0xe5, 0x3c, 0xff])
+          Vector({
+            'a': value
+          }, {
+            'out': (((value >> 5) & 0x7) << 3) | (value & 0x7),
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('omits braces when the whole swizzle collapses to one slice',
+        () async {
+      final mod = SwizzleAllAdjacentBitSlices();
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, contains('assign out = a[7:5];'));
+      expect(sv, isNot(contains('assign out = {a[7:5]};')));
+
+      final vectors = [
+        for (final value in [0x00, 0xe0, 0xa0, 0xff])
+          Vector({'a': value}, {'out': (value >> 5) & 0x7}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('does not collapse ascending bit selects', () async {
+      final mod = SwizzleAscendingBitSlices();
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, isNot(contains('a[2:0]')));
+      expect(sv, contains('a[0]'));
+      expect(sv, contains('a[1]'));
+      expect(sv, contains('a[2]'));
+
+      final vectors = [
+        for (final value in [0x00, 0x05, 0x06, 0xff])
+          Vector({
+            'a': value
+          }, {
+            'out': ((value & 0x1) << 2) |
+                (((value >> 1) & 0x1) << 1) |
+                ((value >> 2) & 0x1),
+          }),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('collapses nested swizzle internals but not across the nested range',
+        () async {
+      final mod = SwizzleNestedAdjacentBitSlices();
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, contains('assign out = {(a[7:5]),a[4:3]};'));
+      expect(sv, isNot(contains('a[7:3]')));
+
+      final vectors = [
+        for (final value in [0x00, 0xf8, 0xa8, 0xff])
+          Vector({'a': value}, {'out': (value >> 3) & 0x1f}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('does not re-collapse adjacent range operands', () async {
+      final mod = SwizzleAdjacentRanges();
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, contains('assign out = {(a[5:2]),(a[1:0])};'));
+      expect(sv, isNot(contains('a[5:0]')));
+
+      final vectors = [
+        for (final value in [0x00, 0x15, 0x2a, 0xff])
+          Vector({'a': value}, {'out': value & 0x3f}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('collapses packed array element bit selects within each element',
+        () async {
+      final mod = SwizzlePackedArrayElementBits(LogicArray([2, 2], 1));
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, contains('assign out = {arr[1][1:0],arr[0][1:0]};'));
+      expect(sv, isNot(contains('arr[1][1],arr[1][0]')));
+
+      final vectors = [
+        for (final value in [0x0, 0x5, 0xa, 0xf])
+          Vector({'arr': value}, {'out': value}),
+      ];
+      await SimCompare.checkFunctionalVector(mod, vectors);
+      final simResult = SimCompare.iverilogVector(mod, vectors);
+      expect(simResult, equals(true));
+    });
+
+    test('does not collapse unpacked array element selects', () async {
+      final mod = SwizzleUnpackedArrayElements(
+        LogicArray([4], 1, numUnpackedDimensions: 1),
+      );
+      await mod.build();
+
+      final sv = SvCleaner.removeSwizzleAnnotationComments(mod.generateSynth());
+
+      expect(sv, isNot(contains('arr[3:0]')));
+      expect(sv, contains('arr[3]'));
+      expect(sv, contains('arr[2]'));
+      expect(sv, contains('arr[1]'));
+      expect(sv, contains('arr[0]'));
+    });
+  });
+
+  test('annotated elements of swizzle in generated sv', () async {
+    final mod = SwizzleVariety(Logic(width: 8));
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('''
+assign b = {
+1'h0, /*    34 */
+a, /* 33:26 */
+x, /* 25:22 */
+({
+y[2], /* 5:4 */
+y[1], /* 3:2 */
+y[0]  /* 1:0 */
+}), /* 21:16 */
+5'h3, /* 15:11 */
+({
+3'h2, /* 10:8 */
+a  /*  7:0 */
+})  /* 10: 0 */
+};  // swizzle'''));
   });
 
   group('LogicValue', () {

@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
-import 'package:rohd/src/utilities/uniquifier.dart';
+import 'package:rohd/src/utilities/namer.dart';
 
 @immutable
 class SynthEnumDefinition<T extends Enum> {
@@ -10,17 +10,31 @@ class SynthEnumDefinition<T extends Enum> {
   final String definitionName;
   final Map<T, String> enumToNameMapping;
 
-  SynthEnumDefinition(this.characteristicEnum, Uniquifier identifierUniquifier)
-      //TODO: sanitization!
-      : definitionName = identifierUniquifier.getUniqueName(
-            initialName: characteristicEnum.definitionName,
-            reserved: characteristicEnum.reserveDefinitionName),
+  factory SynthEnumDefinition(
+    LogicEnum<T> characteristicEnum,
+    Namer namer,
+  ) {
+    final definitionKey = SynthEnumDefinitionKey(characteristicEnum);
+    return SynthEnumDefinition._(characteristicEnum, namer, definitionKey);
+  }
+
+  SynthEnumDefinition._(
+    this.characteristicEnum,
+    Namer namer,
+    SynthEnumDefinitionKey definitionKey,
+  )   : definitionName = namer.identifierNameOf(
+          definitionKey,
+          initialName: characteristicEnum.definitionName,
+          reserved: characteristicEnum.reserveDefinitionName,
+        ),
         enumToNameMapping = Map.unmodifiable(characteristicEnum.mapping.map(
-          (key, value) => MapEntry(
-            key,
-            identifierUniquifier.getUniqueName(
-                initialName: key.name,
-                reserved: characteristicEnum.reserveDefinitionName),
+          (enumValue, value) => MapEntry(
+            enumValue,
+            namer.identifierNameOf(
+              (definitionKey, enumValue),
+              initialName: enumValue.name,
+              reserved: characteristicEnum.reserveDefinitionName,
+            ),
           ),
         ));
 }

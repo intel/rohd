@@ -2,7 +2,7 @@
 title: "Assignment"
 permalink: /docs/assignment/
 excerpt: "Assignment"
-last_modified_at: 2024-08-02
+last_modified_at: 2025-7-24
 toc: true
 ---
 
@@ -13,6 +13,9 @@ var a = Logic(), b = Logic();
 
 // assign `a` to always have the same value as `b`
 a <= b;
+
+// or, equivalently, you can use the `gets` function, which may be more convenient in some situations
+a.gets(b);
 ```
 
 It is also possible to do a partial assignment to a signal using `assignSubset`.

@@ -22,4 +22,8 @@ class SsaLogic extends Logic {
   /// Constructs a new SSA node referring to a signal in a specific context.
   SsaLogic(this.ref, this.context)
       : super(width: ref.width, name: ref.name, naming: Naming.mergeable);
+
+  @override
+  SsaLogic clone({String? name}) =>
+      throw UnimplementedError('Should not clone an SsaLogic');
 }

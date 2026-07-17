@@ -17,8 +17,17 @@ class LogicStructure implements Logic {
   late final List<Logic> elements = UnmodifiableListView(_elements);
   final List<Logic> _elements = [];
 
-  /// Packs all [elements] into one flattened bus.
-  late final Logic packed = elements
+  /// Packs all [elements] into one flattened [Logic] bus.
+  @override
+  // If this is an output port, we have to regenerate each time to avoid
+  // illegal reuse inside and outside the module. This is unique for outputs.
+  Logic get packed => isOutput ? _genPacked() : _packed;
+
+  /// A cached version of [packed] scenarios when it is legal.
+  late final Logic _packed = _genPacked();
+
+  /// Generates the packed version of this [LogicStructure].
+  Logic _genPacked() => elements
       .map((e) {
         if (e is LogicStructure) {
           return e.packed;
@@ -27,7 +36,8 @@ class LogicStructure implements Logic {
         }
       })
       .toList(growable: false)
-      .rswizzle();
+      .rswizzle()
+      .named(name, naming: Naming.mergeable);
 
   @override
   final String name;
@@ -61,7 +71,11 @@ class LogicStructure implements Logic {
 
   /// Creates a new [LogicStructure] with the same structure as `this` and
   /// [clone]d [elements], optionally with the provided [name].
+  ///
+  /// It is expected that any implementation will override this in a way that
+  /// returns the same type as itself.
   @override
+  @mustBeOverridden
   LogicStructure clone({String? name}) => _clone(name: name);
 
   /// Makes a [clone], optionally with the specified [name], then assigns it to
@@ -268,7 +282,7 @@ class LogicStructure implements Logic {
   @override
   Module? _parentModule;
 
-  @protected
+  @internal
   @override
   set parentModule(Module? newParentModule) {
     assert(_parentModule == null || _parentModule == newParentModule,
@@ -282,8 +296,11 @@ class LogicStructure implements Logic {
   ///
   /// This should *only* be called by [Module.build].  It is used to optimize
   /// search.
-  @protected
+  @internal
   void setAllParentModule(Module? newParentModule) {
+    assert(_parentModule == null || _parentModule == newParentModule,
+        'Should only set parent module once.');
+
     parentModule = newParentModule;
     for (final element in elements) {
       if (element is LogicStructure) {
@@ -466,7 +483,7 @@ class LogicStructure implements Logic {
 
   /// An internal version of [packed] for instrumentation operations on this
   /// [LogicStructure].
-  late final _internalPacked = _generateInternalPacked();
+  late final Logic _internalPacked = _generateInternalPacked();
 
   /// Generates and subscribes to be stored lazily into [_internalPacked].
   Logic _generateInternalPacked() {
@@ -614,7 +631,14 @@ class LogicStructure implements Logic {
       packed.selectFrom(busList, defaultValue: defaultValue);
 
   @override
-  bool get isNet => false;
+  bool get isNet => _isNet;
+  late final bool _isNet = elements.every((e) => e.isNet);
+
+  /// Indicates whether this structure or any of its elements [isNet].
+  bool get hasNets => _hasNets;
+  late final bool _hasNets =
+      elements.any((e) => e.isNet || (e is LogicStructure && e.hasNets)) ||
+          isNet;
 
   @override
   Iterable<Logic> get srcConnections => {
@@ -635,7 +659,9 @@ class LogicStructure implements Logic {
       throw UnsupportedError('Delegated to elements');
 
   @override
-  // ignore: unused_element
   set _unassignableReason(String? _) =>
       throw UnsupportedError('Delegated to elements');
+
+  @override
+  String toString() => 'LogicStructure(${super.toString()}): $name';
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus_test.dart
@@ -211,9 +211,33 @@ class ConstBusModule extends Module {
   }
 }
 
+class SingleBitBusSubsetMod extends Module {
+  SingleBitBusSubsetMod(Logic oneBit) {
+    oneBit = addInput('oneBit', oneBit);
+
+    addOutput('result') <= BusSubset(oneBit, 0, 0).subset;
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('single-bit bus subset', () async {
+    final mod = SingleBitBusSubsetMod(Logic());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+    expect(sv, contains('assign result = oneBit'));
+
+    final vectors = [
+      Vector({'oneBit': 0}, {'result': 0}),
+      Vector({'oneBit': 1}, {'result': 1}),
+    ];
+
+    await SimCompare.checkFunctionalVector(mod, vectors);
+    SimCompare.checkIverilogVector(mod, vectors);
   });
 
   group('functional', () {

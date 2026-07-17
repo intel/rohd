@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 Intel Corporation
+// Copyright (C) 2022-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic_name_test.dart
@@ -10,6 +10,7 @@
 import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/sanitizer.dart';
+import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 import 'logic_structure_test.dart' as logic_structure_test;
 
@@ -17,12 +18,17 @@ class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct() => MyStruct._(
+  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
         Logic(name: 'ready'),
         Logic(name: 'valid'),
+        name: name,
       );
 
-  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+  MyStruct._(this.ready, this.valid, {required String name})
+      : super([ready, valid], name: name);
+
+  @override
+  MyStruct clone({String? name}) => MyStruct(name: name ?? this.name);
 }
 
 class LogicTestModule extends Module {
@@ -88,6 +94,19 @@ class BusSubsetNaming extends Module {
   }
 }
 
+class BadlyNamedIntermediateSignalModule extends Module {
+  BadlyNamedIntermediateSignalModule(Logic a) {
+    a = addInput('a', a);
+
+    final intermediate = Logic(name: '*wow&^(*&^)');
+
+    intermediate <= ~a;
+
+    addOutput('b') <= ~intermediate;
+    addOutput('c') <= intermediate;
+  }
+}
+
 class DrivenOutputModule extends Module {
   Logic get x => output('x');
   DrivenOutputModule(Logic? toDrive) {
@@ -102,6 +121,8 @@ class DrivenOutputModule extends Module {
 
 class ModWithNameCollisionArrayPorts extends Module {
   Logic get o => output('o');
+  Logic get portB1 => output('portB_1');
+  Logic get portB => output('portB');
   ModWithNameCollisionArrayPorts(LogicArray portA, Logic portA2)
       : super(name: 'submod') {
     portA2 = addInput('portA_2', portA2);
@@ -114,9 +135,46 @@ class ModWithNameCollisionArrayPorts extends Module {
 }
 
 class NameCollisionArrayTop extends Module {
-  NameCollisionArrayTop() {
-    addOutput('o') <=
-        ModWithNameCollisionArrayPorts(LogicArray([3, 1], 1), Logic()).o;
+  NameCollisionArrayTop({Naming? portANaming}) {
+    final portA = LogicArray([3, 1], 1, naming: portANaming);
+    final portA2 = Logic();
+    final mod = ModWithNameCollisionArrayPorts(portA, portA2);
+    addOutput('o') <= mod.o;
+
+    // put some logic to prevent them from just being removed...
+    portA.xor();
+    portA2.xor();
+    mod.portB1.xor();
+    mod.portB.xor();
+  }
+}
+
+class VariousNamingStruct extends LogicStructure {
+  VariousNamingStruct({super.name = 'various_naming_struct'})
+      : super([
+          Logic(name: 'renameable', naming: Naming.renameable),
+          Logic(name: 'reserved_$name', naming: Naming.reserved),
+          Logic(name: 'mergeable', naming: Naming.mergeable),
+          Logic(name: 'unnamed', naming: Naming.unnamed),
+          MyStruct(name: 'my_sub_struct'),
+        ]);
+
+  @override
+  VariousNamingStruct clone({String? name}) => VariousNamingStruct(name: name);
+}
+
+class StructElementNamingModule extends Module {
+  StructElementNamingModule(VariousNamingStruct inp) {
+    inp = addTypedInput('inp', inp);
+    final outp = addTypedOutput('outp', inp.clone);
+
+    final intermediate = inp.clone(name: 'intermediate');
+
+    for (var i = 0; i < inp.elements.length; i++) {
+      intermediate.elements[i] <= ~inp.elements[i] ^ outp.elements[i];
+    }
+
+    outp <= inp;
   }
 }
 
@@ -216,14 +274,79 @@ void main() {
   });
 
   test('array port and simple port with _num name conflict', () async {
-    final mod = NameCollisionArrayTop();
+    final mod = NameCollisionArrayTop(
+      // mark as renameable so that it doesnt get pruned away (no name needed)
+      portANaming: Naming.renameable,
+    );
     await mod.build();
     final sv = mod.generateSynth();
+
     expect(
         sv,
         contains('submod(.portA_2(portA_2),.portA(portA),'
             '.o(o),'
             '.portB_1(portB_1),.portB(portB))'));
+
+    // confirm build works
+    SimCompare.checkIverilogVector(mod, []);
+  });
+
+  test('array port and simple port with _num name conflict but pruned away',
+      () async {
+    final mod = NameCollisionArrayTop();
+    await mod.build();
+    final sv = mod.generateSynth();
+
+    expect(
+        sv,
+        contains('submod(.portA_2(portA_2),.portA(),'
+            '.o(o),'
+            '.portB_1(portB_1),.portB(portB))'));
+
+    // confirm build works
+    SimCompare.checkIverilogVector(mod, []);
+  });
+
+  test('badly named intermediate signal sanitization', () async {
+    final dut = BadlyNamedIntermediateSignalModule(Logic());
+
+    await dut.build();
+
+    final sv = dut.generateSynth();
+
+    expect(sv, contains('_wow_______'));
+  });
+
+  test('struct elements contain their parent names', () async {
+    final mod = StructElementNamingModule(VariousNamingStruct());
+    await mod.build();
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('assign outp[0] = outp_renameable;'));
+    expect(sv, contains('assign outp[1] = reserved_outp;'));
+    expect(sv, contains('assign outp[2] = outp_mergeable;'));
+    expect(sv, contains('assign outp[4] = outp_my_sub_struct_ready;'));
+    expect(sv, contains('assign outp[5] = outp_my_sub_struct_valid;'));
+    expect(sv, contains('assign inp_renameable = inp[0];'));
+    expect(sv, contains('assign reserved_inp = inp[1];'));
+    expect(sv, contains('assign outp_mergeable = inp[2];'));
+    expect(sv, contains('assign inp_my_sub_struct_ready = inp[4];'));
+    expect(sv, contains('assign inp_my_sub_struct_valid = inp[5];'));
+    expect(
+        sv,
+        contains('assign intermediate_renameable ='
+            ' (~inp_renameable) ^ outp_renameable;'));
+    expect(
+        sv,
+        contains('assign reserved_intermediate ='
+            ' (~reserved_inp) ^ reserved_outp;'));
+    expect(
+        sv,
+        contains('assign intermediate_mergeable ='
+            ' (~outp_mergeable) ^ outp_mergeable;'));
+    expect(sv, contains('intermediate_my_sub_struct_ready'));
+    expect(sv, contains('intermediate_my_sub_struct_valid'));
   });
 
   group('clone', () {

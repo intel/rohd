@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_hier_test.dart
@@ -16,7 +16,7 @@ class SubInterface extends PairInterface {
   Logic get io => port('io');
   LogicArray get ioArr => port('io_arr') as LogicArray;
 
-  SubInterface({super.modify})
+  SubInterface()
       : super(
           portsFromConsumer: [Logic.port('rsp')],
           portsFromProvider: [LogicArray.port('req')],
@@ -26,7 +26,8 @@ class SubInterface extends PairInterface {
           ],
         );
 
-  SubInterface.clone(SubInterface super.otherInterface) : super.clone();
+  @override
+  SubInterface clone() => SubInterface();
 }
 
 class TopLevelInterface extends PairInterface {
@@ -42,22 +43,21 @@ class TopLevelInterface extends PairInterface {
         ) {
     for (var i = 0; i < numSubInterfaces; i++) {
       subIntfs.add(addSubInterface(
-          'sub$i',
-          SubInterface(
-            modify: (original) => '${original}_$i',
-          )));
+        'sub$i',
+        SubInterface(),
+        uniquify: (original) => '${original}_$i',
+      ));
     }
   }
 
-  TopLevelInterface.clone(TopLevelInterface otherInterface)
-      : this(otherInterface.numSubInterfaces);
+  @override
+  TopLevelInterface clone() => TopLevelInterface(numSubInterfaces);
 }
 
 class HierProducer extends Module {
   late final TopLevelInterface _intf;
   HierProducer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.provider);
 
     _intf.subIntfs[0].req <= FlipFlop(_intf.clk, _intf.subIntfs[0].rsp).q;
   }
@@ -66,8 +66,7 @@ class HierProducer extends Module {
 class HierConsumer extends Module {
   late final TopLevelInterface _intf;
   HierConsumer(TopLevelInterface intf) {
-    _intf = TopLevelInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.consumer);
+    _intf = intf.clone()..pairConnectIO(this, intf, PairRole.consumer);
 
     _intf.subIntfs[1].rsp <= FlipFlop(_intf.clk, _intf.subIntfs[1].req).q;
   }
@@ -96,7 +95,7 @@ void main() {
 
     expect(sv, contains('HierConsumer  unnamed_module'));
     expect(sv, contains('HierProducer  unnamed_module'));
-    expect(sv, contains('inout wire io_0'));
-    expect(sv, contains('inout wire [2:0] io_arr_0'));
+    expect(sv, contains('inout wire logic io_0'));
+    expect(sv, contains('inout wire logic [2:0] io_arr_0'));
   });
 }

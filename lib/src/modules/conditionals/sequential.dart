@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // sequential.dart
@@ -107,7 +107,7 @@ class _SequentialTriggerRaceTracker {
     _preNonTriggerClearAction = action;
   }
 
-  /// Whether a post-tick has been registered alreayd for this timestep.
+  /// Whether a post-tick has been registered already for this timestep.
   bool _registeredPostTick = false;
 
   /// Registers a post-tick event to clear the flags.
@@ -327,7 +327,6 @@ class Sequential extends Always {
                 },
               ).catchError(
                 test: (error) => error is Exception,
-                // ignore: avoid_types_on_closure_parameters
                 (Object err, StackTrace stackTrace) {
                   Simulator.throwException(err as Exception, stackTrace);
                 },
@@ -355,11 +354,9 @@ class Sequential extends Always {
             _execute();
             _pendingExecute = false;
           }).catchError(test: (error) => error is Exception,
-              // ignore: avoid_types_on_closure_parameters
               (Object err, StackTrace stackTrace) {
             Simulator.throwException(err as Exception, stackTrace);
           }).catchError(test: (error) => error is StateError,
-              // ignore: avoid_types_on_closure_parameters
               (Object err, StackTrace stackTrace) {
             // This could be a result of the `Simulator` being reset, causing
             // the stream to `close` before `first` occurs.

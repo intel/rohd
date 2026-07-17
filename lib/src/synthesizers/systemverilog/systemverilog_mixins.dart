@@ -56,6 +56,14 @@ mixin SystemVerilog on Module {
   /// will be fed into these.
   final List<String> expressionlessInputs = const [];
 
+  /// Indicates whether this module accepts empty port connections when being
+  /// instantiated in SystemVerilog.
+  ///
+  /// This may be safely set to `true` in cases where the instantiation verilog
+  /// can accept port connections like `.port_name()` where no signal is
+  /// connected to that port.
+  bool get acceptsEmptyPortConnections => false;
+
   /// A custom SystemVerilog definition to be produced for this [Module].
   ///
   /// If an empty string is returned (the default behavior), then no definition
@@ -91,6 +99,11 @@ mixin SystemVerilog on Module {
       return DefinitionGenerationType.none;
     }
   }
+
+  /// Indicates that this module is only wires, no logic inside, which can be
+  /// leveraged for pruning.
+  @internal
+  bool get isWiresOnly => false;
 }
 
 /// A type of generation for generated outputs.
@@ -139,6 +152,9 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   }
 
   @override
+  bool get acceptsEmptyPortConnections => false;
+
+  @override
   String instantiationVerilog(
     String instanceType,
     String instanceName,
@@ -167,6 +183,10 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
 
   @override
   List<SystemVerilogParameterDefinition>? get definitionParameters => null;
+
+  @internal
+  @override
+  bool get isWiresOnly => false;
 }
 
 /// Allows a [Module] to define a custom implementation of SystemVerilog to be

@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // async_reset_test.dart
@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 
 class NonIdenticalTriggerSeq extends Module {
   /// If [triggerAfterSampledUpdate] is `true`, then the trigger for the
-  /// sequential block happens *afer* the signal being sampled updates.  If
+  /// sequential block happens *after* the signal being sampled updates.  If
   /// [triggerAfterSampledUpdate] is `false`, then the trigger for the
   /// sequential block happens *before* the signal being sampled updates.
   NonIdenticalTriggerSeq(

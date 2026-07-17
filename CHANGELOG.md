@@ -1,3 +1,64 @@
+## Next release
+
+- Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
+- Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
+- Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).
+- Improved generated SystemVerilog for swizzles to compact adjacent bit selections into legal slice expressions (<https://github.com/intel/rohd/pull/674>).
+- Improved generated SystemVerilog to collapse a variety of intermediate `LogicArray`s and net buses (e.g. from bit-blasting, aggregate connections, `assignSubset`) into inline concatenations on their consuming connections, eliminating unnecessary intermediate declarations, `assign`s, and `net_connect`s when it is safe to do so (<https://github.com/intel/rohd/pull/663>).
+
+## 0.6.9
+
+- Fixed a bug where unnamed or mergeable inOut loop-back connections on a single module could be incorrectly omitted from the generated SystemVerilog (<https://github.com/intel/rohd/pull/655>).
+- Improved generated SystemVerilog to avoid duplicate constant declarations and preserve more naming context for `LogicStructure` elements (<https://github.com/intel/rohd/pull/650>).
+
+## 0.6.8
+
+- Fixed a bug where constant assignments or tie-offs could be lost in certain rare scenarios in generated outputs (<https://github.com/intel/rohd/pull/643>).
+- Fixed a bug where an unnamed connection between an output and inOut could be incorrectly pruned during SystemVerilog generation, causing confusing error messages (<https://github.com/intel/rohd/pull/644>).
+- Fixed typos in various documentation, comments, tutorials, etc. (<https://github.com/intel/rohd/pull/642>).
+
+## 0.6.7
+
+- Significantly improved and simplified generated outputs (including SystemVerilog) by reducing unnecessary signal slicing and swizzling operations and leaving unconnected ports on module instantiations empty (<https://github.com/intel/rohd/pull/638>).
+- Enhanced generated SystemVerilog to include annotated bit ranges in comments for swizzles, improving readability and debugability (<https://github.com/intel/rohd/pull/627>).
+- Fixed a bug where, in some rare scenarios, partial array assignments could cause missing assignments in generated outputs (<https://github.com/intel/rohd/pull/637>).
+- Fixed a bug where non-port `LogicStructure`s that contain elements which are ports could cause incorrect name selection in generated outputs (<https://github.com/intel/rohd/pull/630>).
+- Fixed a bug where `packed` on output port `LogicStructure`s being accessed both inside and outside of its parent module could cause build trace failures (<https://github.com/intel/rohd/pull/631>).
+- Fixed a bug where one-bit `LogicStructure` ports could generate illegal SystemVerilog with slicing (<https://github.com/intel/rohd/pull/629>).
+- Fixed a bug where `LogicValue.ofRadixString` could return incorrect values for invalid inputs instead of throwing an exception (<https://github.com/intel/rohd/issues/616>).
+- Fixed behavior of `PairInterface`s so that `driveOther`, `receiveOther`, etc. properly apply recursively to sub-interfaces as well (<https://github.com/intel/rohd/pull/628>).  Note that any code that relied on or expected this missing capability may need to be updated.
+- Deprecated `PairInterface.modify` in favor of using `uniquify` on `PairInterface.addSubInterface` (<https://github.com/intel/rohd/pull/620>).
+- Optimized simulation performance for some designs that have many glitchy `Conditional`s (<https://github.com/intel/rohd/pull/623>).
+- Fixed an error message for SSA checks to be more helpful when illegal signal reuse occurs (<https://github.com/intel/rohd/pull/625>).
+- Improved SSA error messages and debugability with additional hierarchy context (<https://github.com/intel/rohd/pull/635>).
+- Added the `hierarchicalName` API to `Module` to make it easier to get the full hierarchical name of a module instance (<https://github.com/intel/rohd/pull/635>).
+- Improved error messages for `WriteAfterReadException`s to include a trace of conditional assignments involved in the execution (<https://github.com/intel/rohd/pull/624>).
+
+## 0.6.6
+
+- Added `clone`ing for `Interface`s and `Logic`s and APIs that leverage the new capabilities (<https://github.com/intel/rohd/pull/614>).
+  - Added a new expectation for `Interface`s and `Logic`s (and derivative classes) to implement a `clone` function, to enable better APIs and reuse in various scenarios.
+  - Deprecated `PairInterface.clone` constructor in favor of new `clone` method on `PairInterface` instances.
+  - Added new `addTyped*` functions on `Module` which will create a `clone` of original source for ports.  This also supports `LogicStructure`s as ports.
+  - Added new `addInterfacePorts` and `addPairInterfacePorts` functions on `Module` which wrap `connectIO` and `pairConnectIO`, respectively, to make adding interfaces on `Module`s easier and more consistent with creation of other ports.
+- Updated naming of generated SystemVerilog signals (without `reserved` names) that were part of `LogicStructure`s to include the name of the parent structure as a prefix.
+- Added `packed` to base `Logic`, which just returns itself, so that it can safely be called on any `Logic` without first checking the type.
+- Fixed a bug related to module selection in the ROHD DevTools Extension (<https://github.com/intel/rohd/pull/612>).
+
+## 0.6.5
+
+- Fixed a bug where zero-value `LogicValue`s could result in `toRadixString()` returning output an empty `String` instead of "0" (<https://github.com/intel/rohd/pull/606>).
+
+## 0.6.4
+
+- Added `setupActions` to `FiniteStateMachine` so that "common" or "default" actions can be grouped in one place instead of repeated in each `State` (<https://github.com/intel/rohd/pull/593>).
+- Fixed a bug where `LogicStructure.previousValue` would actually return the *current* `value` instead of the previous one (<https://github.com/intel/rohd/pull/565>).
+- Fixed a bug in `Pipeline` where cross-stage references could be incorrectly resolved (<https://github.com/intel/rohd/pull/588>).
+- Added `SynthBuilder.multi` to generate outputs (e.g. SystemVerilog) for multiple top-level modules simultaneously, with shared uniquification across them. Deprecated `getFileContents` in favor of `getSynthFileContents` which provides `SynthFileContents` objects with more context than just the `String` contents.  Also, improved modularity and organization of the "synth" infrastructure to make extension to additional generated outputs easier (<https://github.com/intel/rohd/pull/598>).
+- Fixed a bug where simulation memory usage could grow unboundedly when `Combinational`s are used (<https://github.com/intel/rohd/pull/602>).
+- Enhanced `LogicValue.toRadixString` with more options to make usage easier and more flexible (<https://github.com/intel/rohd/pull/583>).
+- Deprecated `Port` in favor of `Logic.port`, making the APIs more consistent (<https://github.com/intel/rohd/pull/575>).
+
 ## 0.6.3
 
 - Fixed a bug where `withSet` on `LogicStructure`s could sometimes attempt to access the wrong range, causing unexpected exceptions (<https://github.com/intel/rohd/pull/561>).

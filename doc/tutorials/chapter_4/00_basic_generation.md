@@ -9,7 +9,7 @@
 
 In this chapter:
 
-- You learn how to create an n-bit adder by utilizing dart function and class. You will start by writting unit test and slowly implement the function of the n-bit adder.
+- You learn how to create an n-bit adder by utilizing dart function and class. You will start by writing unit test and slowly implement the function of the n-bit adder.
 
 ## What is n-bit adder?
 

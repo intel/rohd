@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synthesizer.dart
@@ -15,7 +15,13 @@ import 'package:rohd/src/synthesizers/systemverilog/systemverilog_synthesis_resu
 ///
 /// Attempts to maintain signal naming and structure as much as possible.
 class SystemVerilogSynthesizer extends Synthesizer {
-  //TODO: add configuration for whether to emit enums or not
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
+  /// Creates a SystemVerilog synthesizer with the specified [configuration].
+  SystemVerilogSynthesizer({
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  });
 
   @override
   bool generatesDefinition(Module module) =>
@@ -149,6 +155,10 @@ class SystemVerilogSynthesizer extends Synthesizer {
             module.generatedDefinitionType == DefinitionGenerationType.custom
         ? SystemVerilogCustomDefinitionSynthesisResult(
             module, getInstanceTypeOfModule)
-        : SystemVerilogSynthesisResult(module, getInstanceTypeOfModule);
+        : SystemVerilogSynthesisResult(
+            module,
+            getInstanceTypeOfModule,
+            configuration: configuration,
+          );
   }
 }

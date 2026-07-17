@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_test.dart
@@ -27,17 +27,56 @@ class SimpleInterface extends PairInterface {
             LogicNet.port('io'),
             LogicArray.netPort('io_arr', [3])
           ],
+
+          // keep this around to test deprecated functionality
+          // ignore: deprecated_member_use_from_same_package
           modify: (original) => 'simple_$original',
         );
 
-  SimpleInterface.clone(SimpleInterface super.otherInterface) : super.clone();
+  @override
+  SimpleInterface clone() => SimpleInterface();
+}
+
+class SubInterface extends PairInterface {
+  Logic get subReq => port('sub_req');
+  Logic get subRsp => port('sub_rsp');
+
+  SubInterface()
+      : super(
+          portsFromConsumer: [Logic.port('sub_rsp', 8)],
+          portsFromProvider: [Logic.port('sub_req', 8)],
+        );
+
+  @override
+  SubInterface clone() => SubInterface();
+}
+
+class HierarchicalInterface extends PairInterface {
+  Logic get mainReq => port('main_req');
+  Logic get mainRsp => port('main_rsp');
+  SubInterface get sub1 => subInterfaces['sub1']! as SubInterface;
+  SubInterface get sub2 => subInterfaces['sub2']! as SubInterface;
+
+  HierarchicalInterface({bool excludeSubInterfaces = false})
+      : super(
+          portsFromProvider: [Logic.port('main_req', 8)],
+          portsFromConsumer: [Logic.port('main_rsp', 8)],
+        ) {
+    if (!excludeSubInterfaces) {
+      addSubInterface('sub1', SubInterface(), uniquify: (orig) => 'sub1_$orig');
+      addSubInterface('sub2', SubInterface(),
+          uniquify: (orig) => 'sub2_$orig', reverse: true);
+    }
+  }
+
+  @override
+  HierarchicalInterface clone() => HierarchicalInterface();
 }
 
 class SimpleProvider extends Module {
   late final SimpleInterface _intf;
   SimpleProvider(SimpleInterface intf) {
-    _intf = SimpleInterface.clone(intf)
-      ..pairConnectIO(this, intf, PairRole.provider);
+    _intf = addPairInterfacePorts(intf, PairRole.provider);
 
     SimpleSubProvider(_intf);
   }
@@ -45,13 +84,13 @@ class SimpleProvider extends Module {
 
 class SimpleSubProvider extends Module {
   SimpleSubProvider(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.provider);
+    addPairInterfacePorts(intf, PairRole.provider);
   }
 }
 
 class SimpleConsumer extends Module {
   SimpleConsumer(SimpleInterface intf) {
-    SimpleInterface.clone(intf).pairConnectIO(this, intf, PairRole.consumer);
+    addPairInterfacePorts(intf, PairRole.consumer);
   }
 }
 
@@ -67,23 +106,37 @@ class SimpleTop extends Module {
 
 class PassthroughPairIntfModule extends Module {
   PassthroughPairIntfModule(SimpleInterface intf1, SimpleInterface intf2,
-      {required bool useConditional}) {
-    intf1 = SimpleInterface.clone(intf1)
-      ..pairConnectIO(
-        this,
-        intf1,
-        PairRole.consumer,
-        uniquify: (original) => '${original}_1',
-      );
-    intf2 = SimpleInterface.clone(intf2)
-      ..connectIO(
-        this,
-        intf2,
-        inputTags: {PairDirection.fromConsumer},
-        outputTags: {PairDirection.fromProvider},
-        inOutTags: {PairDirection.commonInOuts},
-        uniquify: (original) => '${original}_2',
-      );
+      {required bool useConditional, required bool useConnectApi}) {
+    intf1 = useConnectApi
+        ? addPairInterfacePorts(
+            intf1,
+            PairRole.consumer,
+            uniquify: (original) => '${original}_1',
+          )
+        : (intf1.clone()
+          ..pairConnectIO(
+            this,
+            intf1,
+            PairRole.consumer,
+            uniquify: (original) => '${original}_1',
+          ));
+    intf2 = useConnectApi
+        ? addInterfacePorts(
+            intf2,
+            inputTags: {PairDirection.fromConsumer},
+            outputTags: {PairDirection.fromProvider},
+            inOutTags: {PairDirection.commonInOuts},
+            uniquify: (original) => '${original}_2',
+          )
+        : (intf2.clone()
+          ..connectIO(
+            this,
+            intf2,
+            inputTags: {PairDirection.fromConsumer},
+            outputTags: {PairDirection.fromProvider},
+            inOutTags: {PairDirection.commonInOuts},
+            uniquify: (original) => '${original}_2',
+          ));
 
     if (useConditional) {
       Combinational([
@@ -101,6 +154,34 @@ class PassthroughPairIntfModule extends Module {
   }
 }
 
+class SubInterfaceTestModule extends Module {
+  SubInterfaceTestModule(
+      HierarchicalInterface intf1, HierarchicalInterface intf2,
+      {required bool useConditional}) {
+    intf1 = addPairInterfacePorts(
+      intf1,
+      PairRole.consumer,
+      uniquify: (original) => 'intf1_$original',
+    );
+    intf2 = addPairInterfacePorts(
+      intf2,
+      PairRole.provider,
+      uniquify: (original) => 'intf2_$original',
+    );
+
+    if (useConditional) {
+      Combinational([
+        intf1.conditionalDriveOther(intf2, {PairDirection.fromProvider}),
+        intf1.conditionalReceiveOther(intf2, {PairDirection.fromConsumer}),
+      ]);
+    } else {
+      intf1
+        ..driveOther(intf2, {PairDirection.fromProvider})
+        ..receiveOther(intf2, {PairDirection.fromConsumer});
+    }
+  }
+}
+
 void main() {
   tearDown(() async {
     await Simulator.reset();
@@ -112,15 +193,17 @@ void main() {
 
     // Make sure the "modify" went through:
     final sv = mod.generateSynth();
-    expect(sv, contains('input logic simple_clk'));
+    expect(sv, contains('input wire logic simple_clk'));
   });
 
   group('drive and receive other', () {
-    Future<void> testDriveAndReceive({required bool useConditional}) async {
+    Future<void> testDriveAndReceive(
+        {required bool useConditional, required bool useConnectApi}) async {
       final mod = PassthroughPairIntfModule(
         SimpleInterface(),
         SimpleInterface(),
         useConditional: useConditional,
+        useConnectApi: useConnectApi,
       );
       await mod.build();
 
@@ -155,12 +238,75 @@ void main() {
       SimCompare.checkIverilogVector(mod, vectors);
     }
 
-    test('with assign', () async {
-      await testDriveAndReceive(useConditional: false);
-    });
+    for (final useConditional in [false, true]) {
+      for (final useConnectApi in [false, true]) {
+        test(
+            'with useConnectApi: $useConnectApi, '
+            'with useConditional: $useConditional', () async {
+          await testDriveAndReceive(
+            useConditional: useConditional,
+            useConnectApi: useConnectApi,
+          );
+        });
+      }
+    }
+  });
 
-    test('with conditional assign', () async {
-      await testDriveAndReceive(useConditional: true);
-    });
+  group('sub-interface drive and receive other', () {
+    for (final useConditional in [false, true]) {
+      test('with useConditional: $useConditional', () async {
+        final mod = SubInterfaceTestModule(
+          HierarchicalInterface(),
+          HierarchicalInterface(),
+          useConditional: useConditional,
+        );
+        await mod.build();
+
+        final vectors = [
+          Vector({
+            'intf1_main_req': 0x01,
+            'intf2_main_rsp': 0x12,
+            'intf1_sub1_sub_req': 0x23,
+            'intf2_sub1_sub_rsp': 0x34,
+            'intf1_sub2_sub_rsp': 0x45,
+            'intf2_sub2_sub_req': 0x56
+          }, {
+            'intf2_main_req': 0x01,
+            'intf1_main_rsp': 0x12,
+            'intf2_sub1_sub_req': 0x23,
+            'intf1_sub1_sub_rsp': 0x34,
+            'intf2_sub2_sub_rsp': 0x45,
+            'intf1_sub2_sub_req': 0x56
+          }),
+        ];
+
+        await SimCompare.checkFunctionalVector(mod, vectors);
+        SimCompare.checkIverilogVector(mod, vectors);
+      });
+    }
+  });
+
+  test('hierarchical interface creation and access', () {
+    final intf = HierarchicalInterface();
+
+    // Test that sub-interfaces were created properly
+    expect(intf.subInterfaces.containsKey('sub1'), isTrue);
+    expect(intf.subInterfaces.containsKey('sub2'), isTrue);
+    expect(intf.subInterfaces.length, equals(2));
+
+    // Test access to sub-interface ports
+    expect(intf.sub1.subReq.width, equals(8));
+    expect(intf.sub1.subRsp.width, equals(8));
+    expect(intf.sub2.subReq.width, equals(8));
+    expect(intf.sub2.subRsp.width, equals(8));
+  });
+
+  test('sub-interface missing error handling', () {
+    expect(
+      () => HierarchicalInterface().driveOther(
+          HierarchicalInterface(excludeSubInterfaces: true),
+          {PairDirection.fromProvider}),
+      throwsA(isA<InterfaceTypeException>()),
+    );
   });
 }

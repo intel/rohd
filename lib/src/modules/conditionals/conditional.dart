@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2025 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // conditional.dart
@@ -9,6 +9,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
+import 'package:rohd/src/modules/conditionals/always.dart';
 import 'package:rohd/src/modules/conditionals/ssa.dart';
 
 /// Represents an some logical assignments or actions that will only happen
@@ -28,20 +29,67 @@ abstract class Conditional {
   /// This is used for things like [Sequential]'s pre-tick values.
   Map<Logic, LogicValue> _driverValueOverrideMap = {};
 
+  /// The [Conditional] that contains this [Conditional], if there is one.
+  ///
+  /// This is only initialized after it's been included inside an [Always].
+  late final Conditional? _parentConditional;
+
+  /// The [Always] parent of this [Conditional], if there is one.
+  ///
+  /// This is only initialized after it's been included inside an [Always].
+  late final Always _parentAlways;
+
+  /// A string representing the hierarchical path to this [Conditional],
+  /// including the module path to the [_parentAlways] and the names of
+  /// [Conditional]s within that [Always] down to `this` one.
+  ///
+  /// If this [Conditional] is not yet registered within an [Always], or if the
+  /// [_parentAlways] has not yet been built, this will only include the runtime
+  /// type of this [Conditional].
+  @protected
+  @internal
+  String get hierarchyString => [
+        if (_isRegistered && _parentAlways.hasBuilt)
+          _parentConditional?.hierarchyString ?? _parentAlways.hierarchicalName,
+        runtimeType
+      ].join('.');
+
+  /// Indicates whether [updateRegistration] has been called on this
+  /// [Conditional] already.
+  bool _isRegistered = false;
+
+  /// Updates registration information for the [Conditional], passed down from
+  /// the parent [Always] or [Conditional].
+  ///
   /// Updates the values of [_assignedReceiverToOutputMap] and
   /// [_assignedDriverToInputMap] and passes them down to all sub-[Conditional]s
   /// as well.
   @internal
-  void updateAssignmentMaps(
-    Map<Logic, Logic> assignedReceiverToOutputMap,
-    Map<Logic, Logic> assignedDriverToInputMap,
-  ) {
+  void updateRegistration({
+    required Map<Logic, Logic> assignedReceiverToOutputMap,
+    required Map<Logic, Logic> assignedDriverToInputMap,
+    required Conditional? parentConditional,
+    required Always parentAlways,
+  }) {
+    if (_isRegistered) {
+      throw InvalidConditionalException('Conditional $this is already included'
+          ' as part of another block: $hierarchyString');
+    }
+
     _assignedReceiverToOutputMap = assignedReceiverToOutputMap;
     _assignedDriverToInputMap = assignedDriverToInputMap;
+    _parentConditional = parentConditional;
+    _parentAlways = parentAlways;
     for (final conditional in conditionals) {
-      conditional.updateAssignmentMaps(
-          assignedReceiverToOutputMap, assignedDriverToInputMap);
+      conditional.updateRegistration(
+        assignedReceiverToOutputMap: assignedReceiverToOutputMap,
+        assignedDriverToInputMap: assignedDriverToInputMap,
+        parentConditional: this,
+        parentAlways: parentAlways,
+      );
     }
+
+    _isRegistered = true;
   }
 
   /// Updates the value of [_driverValueOverrideMap] and passes it down to all
@@ -177,6 +225,12 @@ abstract class Conditional {
         continue;
       }
 
+      // if at this point there's still a srcConnection, then something is wrong
+      // and someone probably reused a signal when they shouldn't have
+      if (ssaDriver.srcConnection != null) {
+        throw MappedSignalAlreadyAssignedException(ssaDriver.ref.name);
+      }
+
       ssaDriver <= mappings[ssaDriver.ref]!;
     }
   }
@@ -202,16 +256,23 @@ abstract class Conditional {
   Map<Logic, Logic> processSsa(Map<Logic, Logic> currentMappings,
       {required int context});
 
+  /// A cached list of [receiverOutput]s for all [receivers] that can be
+  /// iterated across quickly.
+  late final List<Logic> _receiverOutputs =
+      receivers.map(receiverOutput).toList(growable: false);
+
   /// Drives X to all receivers.
   @protected
   void driveX(Set<Logic>? drivenSignals) {
-    for (final receiver in receivers) {
-      receiverOutput(receiver).put(LogicValue.x);
-      if (drivenSignals != null &&
-          (!drivenSignals.contains(receiver) || receiver.value.isValid)) {
-        drivenSignals.add(receiver);
+    try {
+      for (final receiverOutput in _receiverOutputs) {
+        receiverOutput.put(LogicValue.x);
       }
+    } on WriteAfterReadException catch (e) {
+      throw e.cloneWithAddedPath('  at (driving X) $this  [$hierarchyString]');
     }
+
+    drivenSignals?.addAll(receivers);
   }
 }
 

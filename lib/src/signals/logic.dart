@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // logic.dart
@@ -192,7 +192,7 @@ class Logic {
   ///
   /// This should *only* be called by [Module.build].  It is used to
   /// optimize search.
-  @protected
+  @internal
   set parentModule(Module? newParentModule) {
     assert(_parentModule == null || _parentModule == newParentModule,
         'Should only set parent module once.');
@@ -268,9 +268,13 @@ class Logic {
 
   /// Makes a copy of `this`, optionally with the specified [name], but the same
   /// [width].
+  ///
+  /// It is expected that any implementation will override this in a way that
+  /// returns the same type as itself.
+  @mustBeOverridden
   Logic clone({String? name}) => _clone(name: name);
 
-  /// Makes a [clone] with the provided [name] and optionally [naming], then
+  /// Makes a new [Logic] with the provided [name] and optionally [naming], then
   /// assigns it to be driven by `this`.
   ///
   /// This is a useful utility for naming the result of some hardware
@@ -357,7 +361,7 @@ class Logic {
   ///
   /// The type of [val] should be an `int`, [BigInt], `bool`, or [LogicValue].
   ///
-  /// This function is used for propogating glitches through connected signals.
+  /// This function is used for propagating glitches through connected signals.
   /// Use this function for custom definitions of [Module] behavior.
   ///
   /// If [fill] is set, all bits of the signal gets set to [val], similar
@@ -373,7 +377,6 @@ class Logic {
     // If we are connecting a `LogicStructure` to this simple `Logic`,
     // then pack it first.
     if (other is LogicStructure) {
-      // ignore: parameter_assignments
       other = other.packed;
     }
 
@@ -731,6 +734,12 @@ class Logic {
   late final List<Logic> elements = UnmodifiableListView(
       List.generate(width, (index) => this[index], growable: false));
 
+  /// Returns a simple flattened [Logic].
+  ///
+  /// For a basic [Logic], this just returns itself.
+  // ignore: avoid_returning_this
+  Logic get packed => this;
+
   /// Accesses a subset of this signal from [startIndex] to [endIndex],
   /// both inclusive.
   ///
@@ -757,12 +766,32 @@ class Logic {
     final modifiedEndIndex = IndexUtilities.wrapIndex(endIndex, width);
 
     if (modifiedStartIndex == 0 && modifiedEndIndex == width - 1) {
-      // ignore: avoid_returning_this
       return this;
+    }
+
+    final constantFillValue = _constantFillValueOf(this);
+    if (constantFillValue != null) {
+      return Const(
+        LogicValue.filled(
+          (modifiedEndIndex - modifiedStartIndex).abs() + 1,
+          constantFillValue,
+        ),
+      );
     }
 
     // Create a new bus subset
     return BusSubset(this, modifiedStartIndex, modifiedEndIndex).subset;
+  }
+
+  static LogicValue? _constantFillValueOf(Logic logic) {
+    if (logic is! Const || logic.width == 0) {
+      return null;
+    }
+
+    final fillValue = logic.value[0];
+    return logic.value == LogicValue.filled(logic.width, fillValue)
+        ? fillValue
+        : null;
   }
 
   /// Returns a version of this [Logic] with the bit order reversed.
@@ -857,7 +886,6 @@ class Logic {
         this,
       ].swizzle();
     } else if (newWidth == width) {
-      // ignore: avoid_returning_this
       return this;
     }
 

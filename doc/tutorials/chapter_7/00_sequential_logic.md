@@ -281,7 +281,7 @@ expect(
 
 Well, that its for unit test in Sequential Logic. After you finish the `Simulation`, you can use `Simulator.endSimulation()` to end the Simulator and await for `Simulator.simulationEnded`.
 
-There is another method of writting unit test using which is using `Simulator.registerAction()`. But we will dive into that in the next chapter.
+There is another method of writing unit test using which is using `Simulator.registerAction()`. But we will dive into that in the next chapter.
 
 You can find the executable version of code at [shift_register.dart](shift_register.dart).
 

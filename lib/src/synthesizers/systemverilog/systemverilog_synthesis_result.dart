@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synthesis_result.dart
@@ -74,6 +74,9 @@ class SystemVerilogCustomDefinitionSynthesisResult extends SynthesisResult {
 /// A [SynthesisResult] representing a conversion of a [Module] to
 /// SystemVerilog.
 class SystemVerilogSynthesisResult extends SynthesisResult {
+  /// Configuration controlling generated SystemVerilog.
+  final SystemVerilogSynthesizerConfiguration configuration;
+
   /// A cached copy of the generated ports.
   late final String _portsString;
 
@@ -91,8 +94,11 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       _synthModuleDefinition.supportingModules;
 
   /// Creates a new [SystemVerilogSynthesisResult] for the given [module].
-  SystemVerilogSynthesisResult(super.module, super.getInstanceTypeOfModule)
-      : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
+  SystemVerilogSynthesisResult(
+    super.module,
+    super.getInstanceTypeOfModule, {
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  }) : _synthModuleDefinition = SystemVerilogSynthModuleDefinition(module) {
     _portsString = _verilogPorts();
     _moduleContentsString = _verilogModuleContents(getInstanceTypeOfModule);
     _parameterString = _verilogParameters(module);
@@ -124,37 +130,44 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       ]);
 
   /// Representation of all input port declarations in generated SV.
-  List<String> _verilogInputs() {
-    final declarations = _synthModuleDefinition.inputs
-        .map((sig) => 'input ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogInputs() => _synthModuleDefinition.inputs.map((sig) {
+        assert(module.tryInput(sig.name) != null,
+            'Named input ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('input', 'wire', sig);
+      });
 
   /// Representation of all output port declarations in generated SV.
-  List<String> _verilogOutputs() {
-    final declarations = _synthModuleDefinition.outputs
-        .map((sig) => 'output ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogOutputs() =>
+      _synthModuleDefinition.outputs.map((sig) {
+        assert(module.tryOutput(sig.name) != null,
+            'Named output ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('output', 'var', sig);
+      });
 
   /// Representation of all inout port declarations in generated SV.
-  List<String> _verilogInOuts() {
-    final declarations = _synthModuleDefinition.inOuts
-        .map((sig) => 'inout ${sig.definitionType()} ${sig.definitionName()}')
-        .toList(growable: false);
-    return declarations;
-  }
+  Iterable<String> _verilogInOuts() => _synthModuleDefinition.inOuts.map((sig) {
+        assert(module.tryInOut(sig.name) != null,
+            'Named inOut ${sig.name} not found in module ${module.name}.');
+        return _verilogPort('inout', 'wire', sig);
+      });
+
+  /// Representation of a port declaration in generated SV.
+  String _verilogPort(String direction, String objectType, SynthLogic sig) => [
+        direction,
+        if (configuration.portObjectType == SystemVerilogPortType.explicit)
+          objectType,
+        if (configuration.portDataType == SystemVerilogPortType.explicit)
+          'logic',
+        sig.definitionName(),
+      ].join(' ');
 
   /// Representation of all internal net declarations in generated SV.
   String _verilogInternalSignals() {
     final declarations = <String>[];
     for (final sig in _synthModuleDefinition.internalSignals
+        .where((e) => e.needsDeclaration)
         .sorted((a, b) => a.name.compareTo(b.name))) {
-      if (sig.needsDeclaration) {
-        declarations.add('${sig.definitionType()} ${sig.definitionName()};');
-      }
+      declarations.add('${sig.definitionType()} ${sig.definitionName()};');
     }
     return declarations.join('\n');
   }
@@ -162,15 +175,37 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
   /// Representation of all assignments in generated SV.
   String _verilogAssignments() {
     final assignmentLines = <String>[];
+    String rangeString(int upperIndex, int lowerIndex) =>
+        upperIndex == lowerIndex
+            ? '[$upperIndex]'
+            : '[$upperIndex:$lowerIndex]';
+
     for (final assignment in _synthModuleDefinition.assignments) {
       assert(
           !(assignment.src.isNet && assignment.dst.isNet),
           'Net connections should have been implemented as'
           ' bidirectional net connections.');
 
-      // TODO: if we have an enum assigned to a constant, then use enum!
-      assignmentLines
-          .add('assign ${assignment.dst.name} = ${assignment.src.name};');
+      var dstSliceString = '';
+      var srcSliceString = '';
+      if (assignment is RangeSynthAssignment) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+        srcSliceString = rangeString(
+          assignment.srcUpperIndex,
+          assignment.srcLowerIndex,
+        );
+      } else if (assignment is PartialSynthAssignment && assignment.width > 1) {
+        dstSliceString = rangeString(
+          assignment.dstUpperIndex,
+          assignment.dstLowerIndex,
+        );
+      }
+
+      assignmentLines.add('assign ${assignment.dst.name}$dstSliceString'
+          ' = ${assignment.src.name}$srcSliceString;');
     }
     return assignmentLines.join('\n');
   }
@@ -180,7 +215,7 @@ class SystemVerilogSynthesisResult extends SynthesisResult {
       String Function(Module module) getInstanceTypeOfModule) {
     final subModuleLines = <String>[];
     for (final subModuleInstantiation
-        in _synthModuleDefinition.moduleToSubModuleInstantiationMap.values) {
+        in _synthModuleDefinition.subModuleInstantiations) {
       final instanceType =
           getInstanceTypeOfModule(subModuleInstantiation.module);
 

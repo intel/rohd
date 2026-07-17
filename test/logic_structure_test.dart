@@ -13,19 +13,40 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+/// This is the struct used in the logic structures documentation.
+class ReadyValidStruct extends LogicStructure {
+  final Logic ready;
+  final Logic valid;
+
+  factory ReadyValidStruct({String name = 'readyValid'}) => ReadyValidStruct._(
+        Logic(name: 'ready'),
+        Logic(name: 'valid'),
+        name: name,
+      );
+
+  ReadyValidStruct._(this.ready, this.valid, {required String name})
+      : super([ready, valid], name: name);
+
+  @override
+  ReadyValidStruct clone({String? name}) =>
+      ReadyValidStruct(name: name ?? this.name);
+}
+
 class MyStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory MyStruct() => MyStruct._(
+  factory MyStruct({String name = 'myStruct'}) => MyStruct._(
         Logic(name: 'ready'),
         Logic(name: 'valid'),
+        name: name,
       );
 
-  MyStruct._(this.ready, this.valid) : super([ready, valid], name: 'myStruct');
+  MyStruct._(this.ready, this.valid, {required super.name})
+      : super([ready, valid]);
 
   @override
-  LogicStructure clone({String? name}) => MyStruct();
+  MyStruct clone({String? name}) => MyStruct(name: name ?? this.name);
 }
 
 class MyFancyStruct extends LogicStructure {
@@ -33,14 +54,21 @@ class MyFancyStruct extends LogicStructure {
   final Logic bus;
   final LogicStructure subStruct;
 
-  factory MyFancyStruct({int busWidth = 12}) => MyFancyStruct._(
+  factory MyFancyStruct({int busWidth = 12, String name = 'myFancyStruct'}) =>
+      MyFancyStruct._(
         LogicArray([3, 3], 8, name: 'arr'),
         Logic(name: 'bus', width: busWidth),
         MyStruct(),
+        name: name,
       );
 
-  MyFancyStruct._(this.arr, this.bus, this.subStruct)
-      : super([arr, bus, subStruct], name: 'myFancyStruct');
+  MyFancyStruct._(this.arr, this.bus, this.subStruct,
+      {super.name = 'myFancyStruct'})
+      : super([arr, bus, subStruct]);
+
+  @override
+  MyFancyStruct clone({String? name}) =>
+      MyFancyStruct(busWidth: bus.width, name: name ?? this.name);
 }
 
 class StructPortModule extends Module {
@@ -109,6 +137,11 @@ class StructModuleWithInstrumentation extends Module {
 void main() {
   tearDown(() async {
     await Simulator.reset();
+  });
+
+  test('example ready valid struct', () {
+    expect(
+        ReadyValidStruct(name: 'hello').clone(name: 'goodbye').name, 'goodbye');
   });
 
   test('late previousValue', () async {

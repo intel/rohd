@@ -1,7 +1,7 @@
 ---
 title: "Logic Structures"
 permalink: /docs/logic-structures/
-last_modified_at: 2022-6-5
+last_modified_at: 2025-7-23
 toc: true
 ---
 
@@ -11,7 +11,9 @@ A [`LogicStructure`](https://intel.github.io/rohd/rohd/LogicStructure-class.html
 
 **`LogicStructure`s can be used anywhere a `Logic` can be**. This means you can assign one structure to another structure, or inter-assign between normal signals and structures.  As long as the overall width matches, the assignment will work. The order of assignment of bits is based on the order of the `elements` in the structure.
 
-**Elements within a `LogicStructure` can be individually assigned.** This is a notable difference from individual bits of a plain `Logic` where you'd have to use something like `withSet` to effectively modify bits within a signal.
+**Elements within a `LogicStructure` can be individually assigned.** This is a notable difference from individual bits of a plain `Logic` where you'd have to use something like `withSet` or `assignSubset` to effectively modify bits within a signal.
+
+Ports with matching types to the original `LogicStructure` can be created using `addTypedInput`, `addTypedOutput`, and `addTypedInOut`.  Note that these functions rely on a proper implementation of the `clone` function.
 
 `LogicArray`s are a type of `LogicStructure` and thus inherit these behavioral traits.
 
@@ -48,16 +50,18 @@ class ReadyValidStruct extends LogicStructure {
   final Logic ready;
   final Logic valid;
 
-  factory ReadyValidStruct() => MyStruct._(
+  factory ReadyValidStruct({String name = 'readyValid'}) => ReadyValidStruct._(
         Logic(name: 'ready'),
         Logic(name: 'valid'),
+        name: name,
       );
 
-  ReadyValidStruct._(this.ready, this.valid)
-      : super([ready, valid], name: 'readyValid');
+  ReadyValidStruct._(this.ready, this.valid, {required String name})
+      : super([ready, valid], name: name);
 
   @override
-  LogicStructure clone({String? name}) => ReadyValidStruct();
+  ReadyValidStruct clone({String? name}) =>
+      ReadyValidStruct(name: name ?? this.name);
 }
 ```
 

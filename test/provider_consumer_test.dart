@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // provider_consumer_test.dart
@@ -11,52 +11,75 @@ import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/simcompare.dart';
 import 'package:test/test.dart';
 
+/// Creates a uniquification which adds a [prefix].
+String Function(String) withPrefix(String prefix) =>
+    (original) => '${prefix}_$original';
+
+/// Creates a uniquification which adds a [suffix].
+String Function(String) withSuffix(String suffix) =>
+    (original) => '${original}_$suffix';
+
 class DataInterface extends PairInterface {
   Logic get data => port('data');
   Logic get valid => port('valid');
   Logic get ready => port('ready');
 
-  DataInterface({String? prefix})
+  DataInterface()
       : super(
             portsFromProvider: [Logic.port('data', 32), Logic.port('valid')],
-            portsFromConsumer: [Logic.port('ready')],
-            modify: (original) => [
-                  if (prefix != null) prefix,
-                  original,
-                ].join('_'));
+            portsFromConsumer: [Logic.port('ready')]);
+  @override
+  DataInterface clone() => DataInterface();
 }
 
 class RequestInterface extends PairInterface {
   final List<DataInterface> writeDatas = [];
-  final String name;
   final int numWd;
-  RequestInterface({this.numWd = 2, this.name = 'req'})
-      : super(modify: (original) => '${original}_$name') {
+  RequestInterface({this.numWd = 2}) {
     for (var wd = 0; wd < numWd; wd++) {
-      writeDatas.add(
-          addSubInterface('write_data$wd', DataInterface(prefix: 'wd$wd')));
+      writeDatas.add(addSubInterface(
+        'write_data$wd',
+        DataInterface(),
+        uniquify: withPrefix('wd$wd'),
+      ));
     }
   }
 
-  RequestInterface.clone(RequestInterface other)
-      : this(numWd: other.numWd, name: other.name);
+  @override
+  RequestInterface clone() => RequestInterface(numWd: numWd);
 }
 
 class ResponseInterface extends PairInterface {
   late final DataInterface readData;
-  ResponseInterface() : super(modify: (original) => '${original}_rsp') {
-    readData = addSubInterface('read_data', DataInterface(prefix: 'rd'),
-        reverse: true);
+  ResponseInterface() : super() {
+    readData = addSubInterface(
+      'read_data',
+      DataInterface(),
+      reverse: true,
+      uniquify: withPrefix('rd'),
+    );
   }
+  @override
+  ResponseInterface clone() => ResponseInterface();
 }
 
 class PCInterface extends PairInterface {
   late final RequestInterface req;
   late final ResponseInterface rsp;
   PCInterface() {
-    req = addSubInterface('req', RequestInterface());
-    rsp = addSubInterface('rsp', ResponseInterface());
+    req = addSubInterface(
+      'req',
+      RequestInterface(),
+      uniquify: withSuffix('req'),
+    );
+    rsp = addSubInterface(
+      'rsp',
+      ResponseInterface(),
+      uniquify: withSuffix('rsp'),
+    );
   }
+  @override
+  PCInterface clone() => PCInterface();
 }
 
 class Provider extends Module {
@@ -64,10 +87,20 @@ class Provider extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
-      ..pairConnectIO(this, reqIntf, PairRole.provider);
-    rspIntf = ResponseInterface()
-      ..pairConnectIO(this, rspIntf, PairRole.provider);
+    reqIntf = reqIntf.clone()
+      ..pairConnectIO(
+        this,
+        reqIntf,
+        PairRole.provider,
+        uniquify: withSuffix('req'),
+      );
+    rspIntf = rspIntf.clone()
+      ..pairConnectIO(
+        this,
+        rspIntf,
+        PairRole.provider,
+        uniquify: withSuffix('rsp'),
+      );
 
     reqIntf.writeDatas[0].valid <= Const(1);
     reqIntf.writeDatas[1].valid <= Const(1);
@@ -84,10 +117,20 @@ class Consumer extends Module {
       ResponseInterface rspIntf) {
     clk = addInput('clk', clk);
     reset = addInput('reset', reset);
-    reqIntf = RequestInterface.clone(reqIntf)
-      ..pairConnectIO(this, reqIntf, PairRole.consumer);
-    rspIntf = ResponseInterface()
-      ..pairConnectIO(this, rspIntf, PairRole.consumer);
+    reqIntf = reqIntf.clone()
+      ..pairConnectIO(
+        this,
+        reqIntf,
+        PairRole.consumer,
+        uniquify: withSuffix('req'),
+      );
+    rspIntf = rspIntf.clone()
+      ..pairConnectIO(
+        this,
+        rspIntf,
+        PairRole.consumer,
+        uniquify: withSuffix('rsp'),
+      );
 
     rspIntf.readData.valid <= Const(1);
 
@@ -132,6 +175,40 @@ void main() {
       Vector({}, {'rsp_data': 6}),
       Vector({}, {'rsp_data': 9}),
     ];
+
+    final sv = mod.generateSynth();
+
+    expect(sv, contains('''
+module Provider (
+input wire logic clk,
+input wire logic reset,
+input wire logic wd0_ready_req,
+input wire logic wd1_ready_req,
+input wire logic [31:0] rd_data_rsp,
+input wire logic rd_valid_rsp,
+output var logic [31:0] wd0_data_req,
+output var logic wd0_valid_req,
+output var logic [31:0] wd1_data_req,
+output var logic wd1_valid_req,
+output var logic rd_ready_rsp
+);
+'''));
+
+    expect(sv, contains('''
+module Consumer (
+input wire logic clk,
+input wire logic reset,
+input wire logic [31:0] wd0_data_req,
+input wire logic wd0_valid_req,
+input wire logic [31:0] wd1_data_req,
+input wire logic wd1_valid_req,
+input wire logic rd_ready_rsp,
+output var logic wd0_ready_req,
+output var logic wd1_ready_req,
+output var logic [31:0] rd_data_rsp,
+output var logic rd_valid_rsp
+);
+'''));
 
     await SimCompare.checkFunctionalVector(mod, vectors);
     SimCompare.checkIverilogVector(mod, vectors);

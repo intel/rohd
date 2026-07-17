@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // Copyright (C) 2024 Adam Rose
 // SPDX-License-Identifier: BSD-3-Clause
 //
@@ -28,7 +28,7 @@ void main() {
     expect(actionTaken, equals(true));
   });
 
-  test('simulator supports cancelation of previously scheduled actions',
+  test('simulator supports cancellation of previously scheduled actions',
       () async {
     var actionCount = 0;
 
@@ -281,8 +281,7 @@ void main() {
 
   group('Rohme compatibility tests', () {
     test('simulator supports delta cycles', () async {
-      // ignore: omit_local_variable_types
-      final List<String> testLog = [];
+      final testLog = <String>[];
 
       void deltaFunc(int t, int i) {
         testLog.add('wake up $i');
@@ -294,13 +293,7 @@ void main() {
 
       await Simulator.run();
 
-      // ignore: omit_local_variable_types
-      final List<String> expectedLog = [
-        'wake up 0',
-        'wake up 1',
-        'delta 0',
-        'delta 1'
-      ];
+      final expectedLog = ['wake up 0', 'wake up 1', 'delta 0', 'delta 1'];
       expect(testLog, expectedLog);
     });
 
@@ -317,8 +310,7 @@ void main() {
     });
 
     test('deltas occur after end of delta', () async {
-      // ignore: omit_local_variable_types
-      final List<String> testLog = [];
+      final testLog = <String>[];
 
       void deltaFunc(int t, int i) {
         testLog.add('first delta $i');
@@ -335,8 +327,7 @@ void main() {
 
       await Simulator.run();
 
-      // ignore: omit_local_variable_types
-      final List<String> expectedLog = [
+      final expectedLog = [
         'first delta 0',
         'first delta 1',
         'end delta 0',

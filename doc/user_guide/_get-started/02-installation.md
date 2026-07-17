@@ -2,7 +2,7 @@
 title: "Setup & Install"
 permalink: /get-started/setup/
 excerpt: "Instructions for installing the theme for new and existing Jekyll based sites."
-last_modified_at: 2023-01-03
+last_modified_at: 2026-01-09
 toc: true
 ---
 
@@ -30,7 +30,7 @@ Be sure to note the minimum Dart version required for ROHD specified in pubspec.
 
 ## Package Managers for Hardware
 
-In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrainted subsets of versions of all your *direct* dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an `import` statment.  Compare that to SystemVerilog IP integration!
+In the Dart ecosystem, you can use a package manager to define all package dependencies.  A package manager allows you to define constrained subsets of versions of all your *direct* dependencies, and then the tool will solve for a coherent set of all (direct and indirect) dependencies required to build your project.  There's no need to manually figure out tool versions, build flags and options, environment setup, etc. because it is all guaranteed to work.  Integration of other packages (whether a tool or a hardware IP) become as simple as an `import` statement.  Compare that to SystemVerilog IP integration!
 
 Read more about package managers here: <https://en.wikipedia.org/wiki/Package_manager>
 
