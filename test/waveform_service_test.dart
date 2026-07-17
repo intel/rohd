@@ -42,12 +42,17 @@ void main() {
     final mod = _SimpleWaveModule(a);
     await mod.build();
 
-    WaveformService(mod);
+    Directory(_tempDumpDir).createSync(recursive: true);
+    final dumpPath = _temporaryVcdPath('serviceRegistration');
+
+    WaveformService(mod, outputPath: dumpPath);
 
     final service = ModuleServices.instance.lookup<WaveformService>();
     expect(service, isNotNull);
     final waveformJson = jsonEncode(service!.toJson());
     expect(waveformJson, contains('"format":"vcd"'));
+
+    File(dumpPath).deleteSync();
   });
 
   test('captures waveform to VCD output path', () async {
