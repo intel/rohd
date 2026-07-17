@@ -1,5 +1,6 @@
 ## Next release
 
+- Added per-`Const` preferred radix control for generated literals, normalized `Const` names to reflect their displayed radix, and enhanced `LogicValue.toRadixString` to omit its width and radix decorator or digit separators (<https://github.com/intel/rohd/issues/601>).
 - Improved generated SystemVerilog to collapse contiguous partial array and range assignments into packed slice assignments when safe (<https://github.com/intel/rohd/pull/676>).
 - Added configurable explicit or implicit object and data types for generated SystemVerilog ports, defaulting to `input wire logic`, `output var logic`, and `inout wire logic` (<https://github.com/intel/rohd/pull/678>).
 - Improved `Logic.getRange` and `slice` on filled `Const`s to return direct constants instead of constructing `BusSubset` modules (<https://github.com/intel/rohd/pull/677>).

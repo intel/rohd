@@ -2088,6 +2088,8 @@ void main() {
     test('radixString binary expansion', () {
       final lv = LogicValue.ofRadixString("12'b10z111011z00");
       expect(lv.toRadixString(radix: 16), equals("12'h<10z1>d<1z00>"));
+      expect(lv.toRadixString(radix: 16, includeWidth: false),
+          equals('<10z1>d<1z00>'));
       for (final i in [2, 4, 8, 16]) {
         expect(
             LogicValue.ofRadixString(lv.toRadixString(radix: i)), equals(lv));
@@ -2097,13 +2099,20 @@ void main() {
     test('radixString leading zero', () {
       final lv = LogicValue.ofRadixString("10'b00_0010_0111");
       expect(lv.toRadixString(), equals("10'b10_0111"));
+      expect(lv.toRadixString(sepChar: ''), equals("10'b100111"));
+      expect(
+          lv.toRadixString(includeWidth: false, sepChar: ''), equals('100111'));
       expect(lv.toRadixString(leadingZeros: true), equals("10'b00_0010_0111"));
       expect(lv.toRadixString(radix: 4), equals("10'q213"));
+      expect(lv.toRadixString(radix: 4, includeWidth: false), equals('213'));
       expect(lv.toRadixString(radix: 8), equals("10'o47"));
+      expect(lv.toRadixString(radix: 8, includeWidth: false), equals('47'));
       expect(lv.toRadixString(radix: 10), equals("10'd39"));
+      expect(lv.toRadixString(radix: 10, includeWidth: false), equals('39'));
       expect(
           lv.toRadixString(radix: 10, leadingZeros: true), equals("10'd0039"));
       expect(lv.toRadixString(radix: 16), equals("10'h27"));
+      expect(lv.toRadixString(radix: 16, includeWidth: false), equals('27'));
       expect(
           lv.toRadixString(radix: 16, leadingZeros: true), equals("10'h027"));
       for (final i in [2, 4, 8, 10, 16]) {
