@@ -2,7 +2,7 @@
 title: "Overview"
 permalink: /get-started/overview/
 excerpt: "Overview of ROHD framework."
-last_modified_at: 2024-01-04
+last_modified_at: 2026-07-16
 toc: true
 ---
 
@@ -66,33 +66,42 @@ For more information on Dart and tutorials, see <https://dart.dev/> and <https:/
 
 ## Trusting ROHD
 
-A common initial concern when adopting ROHD is the matter of trust.  How can one trust that there is equivalence between what was developed and simulated in ROHD and what gets generated in the output SystemVerilog?
+A reasonable concern when adopting any hardware generator is whether the model that was developed and simulated matches the generated RTL. ROHD addresses that concern by keeping generation inspectable, testing the same behavior through independent simulation paths, and making the complete implementation available for review.
 
-### Unoptimized, simple, one-to-one mapping
+### Inspectable, structural generation
 
-ROHD generates outputs one-to-one with the objects constructed in the original Dart.  There is no magic compiler under the hood that's transforming or optimizing your design.  A module instantiated in a ROHD model will directly map to a piece of equivalent generated SystemVerilog.  This is key to generating logically equivalent, structurally similar outputs with instance and signal names and hierarchy maintained.  This means there are two somewhat independent pieces of ROHD generation:
+ROHD is an RTL construction framework, not an HLS compiler that infers a microarchitecture from an algorithm. Modules, signals, assignments, and conditional or sequential logic in a ROHD model are translated into recognizable SystemVerilog structures. Module hierarchy and user-provided names are preserved where the generated structure permits it.
 
-1. How to generate an output based on an instance in the ROHD model.
-2. How to compose and connect instances together in the generated output.
+Generation is not a literal one-object-to-one-declaration mapping. ROHD performs mechanical simplifications such as collapsing intermediate connections and pruning unused objects. These transformations reduce unnecessary generated code without choosing an architecture on the designer's behalf. The result is intended to remain human-readable and structurally close enough to the model that a reviewer can trace signals and module boundaries through the generated RTL.
 
-These two steps are a thin layer between the original design intent and the generated output.  More complex abstractions are created by composing together lower-level building blocks.  One can always trace exactly how an output was created.
+Generated SystemVerilog is also an ordinary artifact: it can be inspected, diffed, linted, simulated, synthesized, or checked with formal tools before it is accepted into a downstream flow.
 
-### Extensive unit testing across simulators
+### Safer SystemVerilog by construction
 
-Generation and composition are extensively tested in the ROHD test suite. Every feature, argument, and composition mechanism is unit-tested before it can be merged in.  Most of these tests are written using test vectors which are then run on both the ROHD simulator and in a SystemVerilog simulator on the generated outputs, ensuring identical behavior between the two simulators.
+ROHD does not expose arbitrary SystemVerilog syntax for synthesizable hardware construction. Its APIs describe hardware intent, and the generator selects the appropriate SystemVerilog construct. This makes entire classes of legal-looking but incorrect RTL difficult or impossible to express.
 
-Generally speaking, the ROHD simulations are *stricter* and *more predictable* than SystemVerilog simulators can be. For example, in SystemVerilog, transitions between invalid signal states (`x` and `z`) can trigger as edges in sequential logic, whereas in ROHD they cannot, and in fact would propagate an `x` instead.  In SystemVerilog, if you violate a `unique` on a `case`, you get a *warning printed in the logs*, whereas in ROHD you get an `x` out of that block.
+For example, a conditional assignment is written the same way inside ROHD `Combinational` and `Sequential` blocks. The generator emits blocking assignments (`=`) in the corresponding `always_comb` block and non-blocking assignments (`<=`) in the corresponding `always_ff` block. A developer cannot accidentally select the wrong assignment semantics because that choice is not exposed by the ROHD API.
 
-ROHD is also both more flexible in design intent and more restrictive in SystemVerilog generation.  It is easy in SystemVerilog to describe non-synthesizable logic, but ROHD makes it very difficult to generate SystemVerilog which would imply an ambiguous design.  ROHD also helps ensure lint-clean SystemVerilog generation, even if that means it would become more verbose. Since ROHD does not generate everything that SystemVerilog *could* do, it means the surface area to test is dramatically reduced for equivalence of simulator behavior.
+ROHD also checks widths and block configurations and detects problematic patterns such as combinational write-after-read that could produce simulation and synthesis mismatches. These restrictions do not guarantee that every constructible design is correct, but they substantially reduce the SystemVerilog surface area where subtle mistakes can hide.
 
-### Trusting EDA tools in general
+Producing lint-clean SystemVerilog is also an explicit design goal. ROHD prefers explicit, sometimes more verbose output when it avoids common lint or portability issues, sanitizes and uniquifies generated names, manages widths, and removes unnecessary intermediate signals and assignments. The cross-simulator test infrastructure treats unexpected Icarus Verilog warnings as failures by default, and targeted tests protect against known lint-sensitive generation patterns. No generator can guarantee zero diagnostics under every vendor and ruleset, but ROHD actively designs and tests its output to minimize them.
 
-How does anyone trust any EDA tool in general?  Usually a combination of
+### The same tests through independent simulators
 
-- testing methodologies to ensure the tool works (and doesn't break with new versions),
-- a history of real-world usage, and
-- sanity checking the results.
+The ROHD test suite repeatedly checks the boundary between the in-memory model and generated SystemVerilog. Its [`SimCompare`](https://github.com/intel/rohd/blob/main/lib/src/utilities/simcompare.dart) utility applies test vectors to the built-in ROHD simulator, converts those vectors into a SystemVerilog testbench, and runs the generated design with Icarus Verilog. The [tests](https://github.com/intel/rohd/tree/main/test) use this pattern across arithmetic, conditional and sequential logic, arrays, interfaces, nets, naming, and module composition.
 
-Bugs are still found regularly in "industry-standard" EDA tools, including between simulators and synthesis tools from the same developer and in formal analysis tools. Even if you run formal tools (equivalence, verification, etc.) on a design, those tools themselves were not formally proven. There's a lot of human-written software between the source code you wrote and the design you tape out. It's not a bad thing to do some sanity checking on critical designs for *any* EDA tool (e.g. reviewing outputs manually, paranoia checks, running other tools to compare results, formal analysis, etc.).
+The [continuous integration workflow](https://github.com/intel/rohd/blob/main/.github/workflows/general.yml) installs Icarus Verilog and runs the project tests for every pull request and every push to the main branch. A change to simulation or generation therefore has to satisfy both execution paths before it can be merged.
 
-ROHD's thin generation layer, real-world usage, and open-source, well-tested implementation should inspire a good amount of confidence. In the end, it's up to you, the user, to decide how much you trust the tools you're using and what additional steps are worth taking to mitigate risk.
+### Deliberately conservative simulation semantics
+
+ROHD supports four-state values (`0`, `1`, `x`, and `z`), but it does not attempt to reproduce every permissive or tool-specific corner of SystemVerilog simulation. Ambiguous behavior is generally rejected or propagated as unknown instead of being accepted silently. For example, transitions involving `x` or `z` are not treated as valid clock edges, and conditional logic propagates unknown values when selecting a deterministic branch would hide ambiguity.
+
+This conservative behavior helps expose questionable assumptions earlier. It also means that designs which intentionally depend on simulator-specific `x` or `z` behavior deserve explicit comparison in the downstream SystemVerilog simulator.
+
+### Trusting ROHD like any other EDA tool
+
+Trust in an EDA tool is not all-or-nothing. Engineers decide how much confidence to place in simulators, synthesizers, linters, and formal tools based on their testing, track record, transparency, and the consequences of a failure. Familiarity and vendor reputation can make established SystemVerilog tools feel unquestionably reliable, but those tools also contain bugs, can disagree with one another, and are part of the same chain of human-written software.
+
+ROHD belongs in that same evaluation. Its structural output, independent simulation paths, automated regression testing, open-source implementation, and use in real silicon are evidence that can inform a team's confidence. They are not a claim that ROHD is infallible or more trustworthy than every alternative, just as the history of an established EDA tool is not proof that it is infallible.
+
+The appropriate level of additional checking depends on the project and the cost of being wrong, not simply on whether the tool is ROHD or a familiar SystemVerilog tool. A team may rely on normal regression testing for one design and add independent simulation, output review, or formal analysis for another. That proportional judgment is a normal part of using any EDA tool.
