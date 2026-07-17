@@ -78,7 +78,7 @@ void main() {
     final mod = CombinationalLoopCollapseModule(Logic());
     await mod.build();
 
-    final sv = mod.generateSynth();
+    final sv = SystemVerilogService(mod, register: false).synthOutput;
     expect(sv, contains(' | a'));
     expect(sv, contains(' == a'));
   });
