@@ -8,6 +8,7 @@
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
 import 'package:rohd_waveform/rohd_waveform.dart';
+import 'package:rohd_hierarchy/rohd_hierarchy.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
   tearDown(SignalWaveform.clearSignalLookup);
 
   group('SignalWaveform metadata fallbacks (no lookup)', () {
-    test('name/width fall back to overrides then signalId', () {
+    test('name and width fall back to signalId metadata', () {
       final wf = SignalWaveform(signalId: 'clk');
       expect(wf.signal, isNull);
       expect(wf.name, 'clk');
@@ -24,14 +25,36 @@ void main() {
       expect(wf.hierarchyPath, 'clk');
       expect(wf.id, 'clk');
       expect(wf.isPort, isFalse);
+      expect(wf.isSubField, isFalse);
+    });
 
-      final overridden = SignalWaveform(
-        signalId: 'sig0',
-        overrideName: 'bus',
-        overrideWidth: 8,
+    test('derives bit-slice name and width from signalId', () {
+      final waveform = SignalWaveform(signalId: 'top/value#b[15:8]');
+
+      expect(waveform.isSubField, isTrue);
+      expect(waveform.name, 'value[15:8]');
+      expect(waveform.width, 8);
+    });
+
+    test('derives structural field metadata from its parent signal', () {
+      final parent = SignalOccurrence(
+        name: 'value',
+        width: 16,
+        logicType: {
+          'fields': [
+            {
+              'name': 'exponent',
+              'width': 5,
+              'bits': [8, 9, 10, 11, 12]
+            },
+          ],
+        },
       );
-      expect(overridden.name, 'bus');
-      expect(overridden.width, 8);
+      SignalWaveform.signalLookup = (id) => id == 'top/value' ? parent : null;
+      final waveform = SignalWaveform(signalId: 'top/value#exponent');
+
+      expect(waveform.name, 'value_exponent');
+      expect(waveform.width, 5);
     });
 
     test('empty and length reflect data', () {
@@ -115,13 +138,9 @@ void main() {
       final original = SignalWaveform(
         signalId: 's',
         data: [Data(time: 0, value: '0')],
-        overrideName: 'n',
-        overrideWidth: 4,
       );
       final copy = SignalWaveform.copyFrom(original);
       expect(copy.signalId, 's');
-      expect(copy.overrideName, 'n');
-      expect(copy.overrideWidth, 4);
 
       copy.appendData([Data(time: 5, value: '1')]);
       expect(original.length, 1, reason: 'copy must not mutate the original');

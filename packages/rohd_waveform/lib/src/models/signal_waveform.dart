@@ -61,20 +61,11 @@ class SignalWaveform {
   /// rather than directly fetched from the VM service.
   bool get isComputed => _isComputed;
 
-  /// Override width for computed sub-field waveforms whose signal metadata
-  /// is not available via the hierarchy lookup.
-  int? overrideWidth;
-
-  /// Override display name for computed sub-field waveforms.
-  String? overrideName;
-
   /// Creates a new SignalWaveform.
   SignalWaveform({
     required this.signalId,
     List<Data>? data,
     bool isComputed = false,
-    this.overrideWidth,
-    this.overrideName,
   })  : _isComputed = isComputed,
         data = data ?? [];
 
@@ -100,8 +91,6 @@ class SignalWaveform {
         signalId: other.signalId,
         data: List.from(other.data),
         isComputed: other.isComputed,
-        overrideWidth: other.overrideWidth,
-        overrideName: other.overrideName,
       );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -115,20 +104,21 @@ class SignalWaveform {
   /// Alias for signalId for convenience.
   String get id => signalId;
 
+  /// Whether this waveform represents a computed sub-field of another signal.
+  bool get isSubField => signalId.contains('#');
+
   /// The canonical hierarchical path for waveform lookup. Delegates to
   /// [SignalOccurrence.path] when available, falls back to [signalId].
   String get hierarchyPath => signal?.path() ?? signalId;
 
-  /// The signal name (from metadata). Returns overrideName or signalId if
-  /// lookup fails.
-  String get name => signal?.name ?? overrideName ?? signalId;
+  /// The signal name from metadata or reproducible sub-field metadata.
+  String get name => signal?.name ?? _derivedSubFieldName ?? signalId;
 
   /// The signal type for VCD rendering. Always 'wire' in post-synthesis.
   String get type => 'wire';
 
-  /// The signal width in bits (from metadata). Returns overrideWidth or 1 if
-  /// lookup fails.
-  int get width => signal?.width ?? overrideWidth ?? 1;
+  /// The signal width in bits from metadata or reproducible sub-field data.
+  int get width => signal?.width ?? _derivedSubFieldWidth ?? 1;
 
   /// The signal direction (from metadata). Returns null for internal signals.
   String? get direction => signal?.direction;
@@ -138,6 +128,94 @@ class SignalWaveform {
 
   /// Whether this signal is a port (has direction).
   bool get isPort => signal?.isPort ?? false;
+
+  String? get _parentSignalId {
+    final separatorIndex = signalId.indexOf('#');
+    if (separatorIndex < 0) {
+      return null;
+    }
+    return signalId.substring(0, separatorIndex);
+  }
+
+  String? get _subFieldLabel {
+    final separatorIndex = signalId.indexOf('#');
+    if (separatorIndex < 0 || separatorIndex == signalId.length - 1) {
+      return null;
+    }
+    return signalId.substring(separatorIndex + 1);
+  }
+
+  ({int high, int low})? get _bitSlice {
+    final label = _subFieldLabel;
+    if (label == null) {
+      return null;
+    }
+    final match = RegExp(r'^b\[(\d+)(?::(\d+))?\]$').firstMatch(label);
+    if (match == null) {
+      return null;
+    }
+    final high = int.parse(match.group(1)!);
+    return (high: high, low: int.parse(match.group(2) ?? '$high'));
+  }
+
+  String? get _derivedSubFieldName {
+    final parentId = _parentSignalId;
+    final label = _subFieldLabel;
+    if (parentId == null || label == null) {
+      return null;
+    }
+
+    final parentName = signalLookup?.call(parentId)?.name ??
+        parentId.substring(parentId.lastIndexOf('/') + 1);
+    final bitSlice = _bitSlice;
+    if (bitSlice != null) {
+      final range = bitSlice.high == bitSlice.low
+          ? '${bitSlice.high}'
+          : '${bitSlice.high}:${bitSlice.low}';
+      return '$parentName[$range]';
+    }
+
+    if (label.startsWith('[')) {
+      return '$parentName${label.replaceAll('.', '')}';
+    }
+    return '${parentName}_${label.replaceAll('.', '_')}';
+  }
+
+  int? get _derivedSubFieldWidth {
+    final bitSlice = _bitSlice;
+    if (bitSlice != null) {
+      return (bitSlice.high - bitSlice.low).abs() + 1;
+    }
+
+    final parentId = _parentSignalId;
+    final label = _subFieldLabel;
+    final logicType =
+        parentId == null ? null : signalLookup?.call(parentId)?.logicType;
+    if (label == null || logicType == null) {
+      return null;
+    }
+
+    Map<String, Object?>? currentType = Map<String, Object?>.from(logicType);
+    for (final segment in label.split('.')) {
+      if (currentType == null) {
+        return null;
+      }
+      final descriptors = SignalOccurrence.subFieldDescriptorsForType(
+        currentType,
+        '',
+      );
+      final descriptor = descriptors.where((d) => d.fieldLabel == segment);
+      if (descriptor.isEmpty) {
+        return null;
+      }
+      final match = descriptor.first;
+      if (segment == label.split('.').last) {
+        return match.width;
+      }
+      currentType = match.subLogicType;
+    }
+    return null;
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Waveform data properties

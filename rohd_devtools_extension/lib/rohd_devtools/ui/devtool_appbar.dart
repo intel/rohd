@@ -78,8 +78,6 @@ class DevtoolAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<bool>('hasColorEmoji', hasColorEmoji),
-    );
+    properties.add(DiagnosticsProperty<bool>('hasColorEmoji', hasColorEmoji));
   }
 }

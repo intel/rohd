@@ -37,10 +37,7 @@ Future<void> main(List<String> args) async {
     final rohdExtensions = manager.devtoolsExtensions
         .where((extension) =>
             extension.name == 'rohd' &&
-            p.equals(
-              extension.extensionAssetsPath,
-              extensionAssetsPath,
-            ))
+            p.equals(extension.extensionAssetsPath, extensionAssetsPath))
         .toList();
 
     if (rohdExtensions.length != 1) {
