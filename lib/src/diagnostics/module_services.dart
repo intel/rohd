@@ -31,10 +31,17 @@ class ModuleServices {
 
   // ─── Hierarchy (auto-registered by Module.build) ──────────────
 
+  Module? _rootModule;
+
   /// The most recently built top-level [Module].
   ///
   /// Set automatically at the end of [Module.build].
-  Module? rootModule;
+  Module? get rootModule => _rootModule;
+
+  set rootModule(Module? value) {
+    _rootModule = value;
+    ModuleTree.rootModuleInstance = value;
+  }
 
   /// Returns the module hierarchy as a JSON string.
   ///
