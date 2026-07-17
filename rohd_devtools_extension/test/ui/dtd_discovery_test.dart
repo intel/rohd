@@ -7,6 +7,9 @@
 // 2026 July
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+@TestOn('vm')
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
