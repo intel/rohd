@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // gate_test.dart
@@ -537,7 +537,7 @@ void main() {
         final gtm =
             ShiftTestModule(Logic(width: 3), Logic(width: 8), constant: 0);
         await gtm.build();
-        final sv = SystemVerilogService(gtm, register: false).synthOutput;
+        final sv = SystemVerilogService(gtm).output;
 
         expect(sv, isNot(contains("0'h0")));
 

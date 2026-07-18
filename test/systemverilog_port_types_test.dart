@@ -104,9 +104,10 @@ void main() {
       final module = _PortTypesModule();
       await module.build();
 
-      final sv = SystemVerilogService(module,
-              register: false, configuration: testCase.configuration)
-          .synthOutput;
+      final sv = SystemVerilogService(
+        module,
+        configuration: testCase.configuration,
+      ).output;
 
       final declarations = {
         testCase.inputPrefix: [

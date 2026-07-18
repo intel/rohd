@@ -140,8 +140,7 @@ void main() {
       final module = _ConstRadixModule();
       await module.build();
 
-      final systemVerilog =
-          SystemVerilogService(module, register: false).synthOutput;
+      final systemVerilog = SystemVerilogService(module).output;
 
       expect(systemVerilog, contains("assign autoHex = 8'h2a;"));
       expect(systemVerilog, contains("assign binaryValue = 8'b101010;"));
@@ -155,8 +154,7 @@ void main() {
       final module = _ExpressionlessRadixTop();
       await module.build();
 
-      final systemVerilog =
-          SystemVerilogService(module, register: false).synthOutput;
+      final systemVerilog = SystemVerilogService(module).output;
 
       expect(systemVerilog, contains("assign in = 8'd42;"));
       expect(systemVerilog, contains('.in(in)'));

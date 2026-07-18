@@ -1,4 +1,4 @@
-// Copyright (C) 2023 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_merging_test.dart
@@ -91,7 +91,7 @@ void main() async {
       () async {
     final dut = TrunkWithLeaves(Logic(), Logic());
     await dut.build();
-    final sv = SystemVerilogService(dut, register: false).synthOutput;
+    final sv = SystemVerilogService(dut).output;
 
     expect('module ComplicatedLeaf'.allMatches(sv).length, 1);
   });
@@ -99,7 +99,7 @@ void main() async {
   test('different reserved definition name modules stay separate', () async {
     final dut = ParentOfDifferentModuleDefNames(Logic());
     await dut.build();
-    final sv = SystemVerilogService(dut, register: false).synthOutput;
+    final sv = SystemVerilogService(dut).output;
 
     expect(sv, contains('module def1'));
     expect(sv, contains('module def2'));

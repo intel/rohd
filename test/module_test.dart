@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // module_test.dart
@@ -304,7 +304,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod, register: false).synthOutput);
+            SystemVerilogService(mod).output);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,(a ? 1'h0 : 1'h1)}"));
@@ -321,7 +321,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod, register: false).synthOutput);
+            SystemVerilogService(mod).output);
 
         if (!disconnectOutputs) {
           expect(sv, contains("assign o = {1'h1,a}"));
@@ -337,7 +337,7 @@ void main() {
       await mod.build();
 
       final sv = SvCleaner.removeSwizzleAnnotationComments(
-          SystemVerilogService(mod, register: false).synthOutput);
+          SystemVerilogService(mod).output);
 
       expect(
           sv,
@@ -353,7 +353,7 @@ void main() {
     expect(
         mod.internalSignals.firstWhereOrNull((e) => e.name == 't0'), isNotNull);
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('assign a_concat[0] = t0;'));
   });
 
@@ -364,7 +364,7 @@ void main() {
     expect(mod.internalSignals.firstWhereOrNull((e) => e.name == 'unconnected'),
         isNotNull);
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('assign a_arr[1] = unconnected;'));
   });
 

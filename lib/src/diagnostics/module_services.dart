@@ -8,6 +8,7 @@
 // 2026 April 25
 // Author: Desmond Kirkpatrick <desmond.a.kirkpatrick@intel.com>
 
+import 'package:meta/meta.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/diagnostics/inspector_service.dart';
 
@@ -38,9 +39,13 @@ class ModuleServices {
   /// Set automatically at the end of [Module.build].
   Module? get rootModule => _rootModule;
 
-  set rootModule(Module? value) {
-    _rootModule = value;
-    ModuleTree.rootModuleInstance = value;
+  /// Registers the most recently built top-level [Module].
+  ///
+  /// Intended for internal use by [Module.build] and test reset paths.
+  @internal
+  void registerRootModule(Module? module) {
+    _rootModule = module;
+    ModuleTree.rootModuleInstance = module;
   }
 
   /// Returns the module hierarchy as a JSON string.
@@ -71,7 +76,7 @@ class ModuleServices {
 
   /// Resets all services.  Intended for test teardown.
   void reset() {
-    rootModule = null;
+    registerRootModule(null);
     _services.clear();
   }
 }

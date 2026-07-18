@@ -51,21 +51,11 @@ abstract class OutputService implements ModuleService {
   void write([String? path]);
 }
 
-/// An [OutputService] that generates source-code text, keyed per module
-/// definition.
+/// An [OutputService] that generates source-code text.
 ///
 /// Shared by language code-generation services, which all produce a combined
-/// single-file [output] as well as per-definition contents.
+/// single-file [output].
 abstract class CodeGenService extends OutputService {
   /// The combined single-file generated output (including any header).
   String get output;
-
-  /// The generated output keyed by module definition name
-  /// ([Module.definitionName]).
-  Map<String, String> get contentsByDefinitionName;
-
-  /// The generated output for a single module [definitionName], or `null` when
-  /// that definition was not generated.
-  String? moduleOutput(String definitionName) =>
-      contentsByDefinitionName[definitionName];
 }

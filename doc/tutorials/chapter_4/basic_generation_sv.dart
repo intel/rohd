@@ -78,7 +78,7 @@ void main() async {
 
   await nbitAdder.build();
 
-  print(SystemVerilogService(nbitAdder, register: false).synthOutput);
+  print(SystemVerilogService(nbitAdder).output);
 
   test('should return 10 when both inputs are 5.', () async {
     a.put(5);

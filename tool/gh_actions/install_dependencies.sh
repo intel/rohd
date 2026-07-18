@@ -6,7 +6,7 @@
 # install_dependencies.sh
 # GitHub Actions step: Install project dependencies.
 #
-# 2026 July
+# 2022 October 7
 # Author: Chykon
 
 set -euo pipefail

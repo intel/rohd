@@ -6,7 +6,7 @@
 # check_tmp_test.sh
 # GitHub Actions step: Check temporary test files.
 #
-# 2026 July
+# 2022 October 12
 # Author: Chykon
 
 set -euo pipefail

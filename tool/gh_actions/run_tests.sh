@@ -6,7 +6,7 @@
 # run_tests.sh
 # GitHub Actions step: Run project tests.
 #
-# 2026 July
+# 2022 October 10
 # Author: Chykon
 
 set -euo pipefail
@@ -18,7 +18,7 @@ dart test
 for pkg in packages/*/; do
   if [ -d "${pkg}test" ]; then
     echo "Running tests in ${pkg}..."
-    (cd "$pkg" && dart pub get && dart test)
+    (cd "$pkg" && dart test)
   fi
 done
 

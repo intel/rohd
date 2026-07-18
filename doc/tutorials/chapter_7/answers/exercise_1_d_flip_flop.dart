@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // exercise_1_d_flip_flop.dart
@@ -44,7 +44,7 @@ Future<void> main() async {
     final dff = DFlipFlop(data, reset, clk);
     await dff.build();
 
-    print(SystemVerilogService(dff, register: false).synthOutput);
+    print(SystemVerilogService(dff).output);
 
     data.inject(1);
     reset.inject(1);

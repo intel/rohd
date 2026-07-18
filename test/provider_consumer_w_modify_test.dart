@@ -146,7 +146,7 @@ void main() {
       Vector({}, {'rsp_data': 9}),
     ];
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('''
 module Provider (

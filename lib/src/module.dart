@@ -4,7 +4,7 @@
 // module.dart
 // Definition for abstract module class.
 //
-// 2026 July
+// 2021 May 7
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';
@@ -338,7 +338,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
-    ModuleServices.instance.rootModule = this;
+    ModuleServices.instance.registerRootModule(this);
   }
 
   /// Confirms that the post-[build] hierarchy is valid.
@@ -1137,10 +1137,10 @@ abstract class Module {
   ///
   /// For richer access to per-module file contents, named maps, and individual
   /// file writing, see [SystemVerilogService] (and
-  /// [SystemVerilogService.synthOutput] for the equivalent one-shot string).
+  /// [SystemVerilogService.output] for the equivalent one-shot string).
   /// The [configuration] controls options specific to SystemVerilog output.
-  @Deprecated('Use SystemVerilogService(this, register: false,'
-      ' configuration: ...).synthOutput instead.')
+  @Deprecated('Use SystemVerilogService(this,'
+      ' configuration: ...).output instead.')
   String generateSynth({
     SystemVerilogSynthesizerConfiguration configuration =
         const SystemVerilogSynthesizerConfiguration(),
@@ -1149,9 +1149,10 @@ abstract class Module {
       throw ModuleNotBuiltException(this);
     }
 
-    return SystemVerilogService(this,
-            register: false, configuration: configuration)
-        .synthOutput;
+    return SystemVerilogService(
+      this,
+      configuration: configuration,
+    ).output;
   }
 }
 

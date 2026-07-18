@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // net_test.dart
@@ -461,7 +461,7 @@ void main() {
 
     await mod.build();
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('intermediate1'));
     expect(sv, contains('intermediate2'));
     expect(sv, contains('intermediate3'));
@@ -504,7 +504,7 @@ void main() {
 
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -515,7 +515,7 @@ void main() {
 
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
       expect('SubModInoutOnly  submod'.allMatches(sv).length, 1);
     });
 
@@ -526,7 +526,7 @@ void main() {
 
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
       expect('  submod'.allMatches(sv).length, 2);
     });
   });
@@ -611,7 +611,7 @@ void main() {
           isNotNull);
     }
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     // test that " _b;" is not present (indication that a leftover internal
     // signal was there)
@@ -631,7 +631,7 @@ void main() {
       final mod = NetArrayTopMod(Logic(width: 8), NetArrayIntf());
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
       // print(sv);
       expect(sv, contains('wire [1:0][1:0][7:0] bd3'));
     });
@@ -677,7 +677,7 @@ void main() {
     );
     await mod.build();
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
     expect(sv, contains('assign c = _a_and_b;'));
     expect(sv, contains('assign d = _aIntermediate_or_bIntermediate;'));
 

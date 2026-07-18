@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // fsm_test.dart
@@ -183,7 +183,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains("b = 1'h0;"));
   });
@@ -192,7 +192,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('priority case'));
   });
@@ -201,7 +201,7 @@ void main() {
     final mod = TestModule(Logic(), Logic(), Logic());
     await mod.build();
 
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     expect(sv, contains('MyStates_state1 : begin'));
   });

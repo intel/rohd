@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 Intel Corporation
+// Copyright (C) 2022-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // external_test.dart
@@ -31,7 +31,7 @@ void main() {
   test('instantiate', () async {
     final mod = TopModule(Logic(width: 2));
     await mod.build();
-    final sv = SystemVerilogService(mod, register: false).synthOutput;
+    final sv = SystemVerilogService(mod).output;
 
     // make sure we instantiate the external module properly
     expect(

@@ -256,7 +256,7 @@ void main() {
     await mod.build();
 
     final sv = SvCleaner.removeSwizzleAnnotationComments(
-        SystemVerilogService(mod, register: false).synthOutput);
+        SystemVerilogService(mod).output);
 
     expect(sv.contains('net_connect'), isFalse);
     expect(sv,
@@ -315,7 +315,7 @@ void main() {
       final dut = DoubleNetPassthrough(LogicNet(width: 8), LogicNet(width: 8));
       await dut.build();
 
-      final sv = SystemVerilogService(dut, register: false).synthOutput;
+      final sv = SystemVerilogService(dut).output;
 
       expect(
           sv,
@@ -456,7 +456,7 @@ void main() {
 
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
       expect(
           sv,
           contains(
@@ -518,7 +518,7 @@ void main() {
 
       await mod.build();
 
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
 
       expect(
           sv,
@@ -591,7 +591,7 @@ void main() {
               await mod.build();
 
               final sv = SvCleaner.removeSwizzleAnnotationComments(
-                  SystemVerilogService(mod, register: false).synthOutput);
+                  SystemVerilogService(mod).output);
               if (netTypeName == LogicNet) {
                 expect(
                     sv,
@@ -621,7 +621,7 @@ void main() {
               await mod.build();
 
               final sv = SvCleaner.removeSwizzleAnnotationComments(
-                  SystemVerilogService(mod, register: false).synthOutput);
+                  SystemVerilogService(mod).output);
               if (netTypeName == LogicNet) {
                 expect(
                     sv,
@@ -752,7 +752,7 @@ void main() {
             await mod.build();
 
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(sv, contains('net_connect (swizzled, ({in0[0],in1[0]}));'));
           });
@@ -766,7 +766,7 @@ void main() {
             await mod.build();
 
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(
                 sv,
@@ -783,7 +783,7 @@ void main() {
             await mod.build();
 
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(
                 sv,
@@ -801,7 +801,7 @@ void main() {
             await mod.build();
 
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(
                 sv,
@@ -819,7 +819,7 @@ void main() {
             await mod.build();
 
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(
                 sv,
@@ -837,7 +837,7 @@ void main() {
 
             await mod.build();
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(sv, contains('assign _in1 = in0;'));
             expect(
@@ -854,7 +854,7 @@ void main() {
 
             await mod.build();
             final sv = SvCleaner.removeSwizzleAnnotationComments(
-                SystemVerilogService(mod, register: false).synthOutput);
+                SystemVerilogService(mod).output);
 
             expect(
                 sv,
@@ -943,7 +943,7 @@ void main() {
                     await mod.build();
 
                     final sv = SvCleaner.removeSwizzleAnnotationComments(
-                        SystemVerilogService(mod, register: false).synthOutput);
+                        SystemVerilogService(mod).output);
                     checkSV(sv);
 
                     final vectors = [
@@ -963,7 +963,7 @@ void main() {
                     await mod.build();
 
                     final sv = SvCleaner.removeSwizzleAnnotationComments(
-                        SystemVerilogService(mod, register: false).synthOutput);
+                        SystemVerilogService(mod).output);
                     checkSV(sv);
 
                     final vectors = [
@@ -1206,7 +1206,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod, register: false).synthOutput);
+            SystemVerilogService(mod).output);
 
         expect(
             sv,
@@ -1227,7 +1227,7 @@ void main() {
         await mod.build();
 
         final sv = SvCleaner.removeSwizzleAnnotationComments(
-            SystemVerilogService(mod, register: false).synthOutput);
+            SystemVerilogService(mod).output);
 
         expect(
             sv,

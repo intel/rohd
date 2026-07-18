@@ -36,7 +36,7 @@ Future<void> main() async {
   final mod = NBitFullSubtractor(a, b);
   await mod.build();
 
-  print(SystemVerilogService(mod, register: false).synthOutput);
+  print(SystemVerilogService(mod).output);
 
   test('should return 1 when a is 8 and b is 7.', () {
     a.put(8);

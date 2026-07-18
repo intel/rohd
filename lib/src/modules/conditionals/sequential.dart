@@ -4,7 +4,7 @@
 // sequential.dart
 // Definition for sequential blocks.
 //
-// 2026 July
+// 2024 December
 // Author: Max Korbel <max.korbel@intel.com>
 
 import 'dart:async';

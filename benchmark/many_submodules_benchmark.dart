@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // many_submodules_benchmark.dart
@@ -33,7 +33,7 @@ class ManySubmodulesBenchmark extends AsyncBenchmarkBase {
   Future<void> run() async {
     final dut = ManySubmodulesModule(Logic(), numSubModules: 10000);
     await dut.build();
-    SystemVerilogService(dut, register: false).synthOutput;
+    SystemVerilogService(dut).output;
   }
 }
 

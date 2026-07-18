@@ -33,7 +33,7 @@ void main() async {
   await fSub.build();
 
   // ignore: avoid_print
-  print(SystemVerilogService(fSub, register: false).synthOutput);
+  print(SystemVerilogService(fSub).output);
 
   test('should return 0 when a and b equal 1', () async {
     a.put(1);

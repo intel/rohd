@@ -84,14 +84,6 @@ void main() {
   });
 
   group('SystemVerilogService', () {
-    test('registers with ModuleServices and sets current', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      final sv = SystemVerilogService(mod);
-      expect(ModuleServices.instance.lookup<SystemVerilogService>(), same(sv));
-      expect(SystemVerilogService.current, same(sv));
-    });
-
     test('is a CodeGenService', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
@@ -105,34 +97,21 @@ void main() {
       expect(sv.allContents, isNotEmpty);
     });
 
-    test('output equals synthOutput', () async {
+    test('output is non-empty', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
       final sv = SystemVerilogService(mod);
-      expect(sv.output, equals(sv.synthOutput));
+      expect(sv.output, isNotEmpty);
     });
 
-    test('contentsByName has entries', () async {
+    test('instanceTypeOutput returns the instance type contents', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
       final sv = SystemVerilogService(mod);
-      expect(sv.contentsByName, isNotEmpty);
-    });
 
-    test('contentsByDefinitionName has entries', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      final sv = SystemVerilogService(mod);
-      expect(sv.contentsByDefinitionName, isNotEmpty);
-      expect(sv.contentsByDefinitionName.containsKey('SimpleModule'), isTrue);
-    });
-
-    test('moduleOutput returns the definition contents', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      final sv = SystemVerilogService(mod);
-      expect(sv.moduleOutput('SimpleModule'), isNotNull);
-      expect(sv.moduleOutput('DoesNotExist'), isNull);
+      final contents = sv.fileContents.single;
+      expect(sv.instanceTypeOutput(contents.name), equals(contents.contents));
+      expect(sv.instanceTypeOutput('DoesNotExist'), isNull);
     });
 
     test('toJson lists generated modules', () async {
@@ -160,12 +139,12 @@ void main() {
     test('write() emits a single file', () async {
       final mod = SimpleModule(Logic());
       await mod.build();
-      final sv = SystemVerilogService(mod, register: false);
+      final sv = SystemVerilogService(mod);
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         final path = '${dir.path}/out.sv';
         sv.write(path);
-        expect(File(path).readAsStringSync(), equals(sv.synthOutput));
+        expect(File(path).readAsStringSync(), equals(sv.output));
       } finally {
         dir.deleteSync(recursive: true);
       }
@@ -177,21 +156,12 @@ void main() {
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         // Construction with outputPath writes immediately.
-        SystemVerilogService(mod,
-            register: false, outputPath: dir.path, multiFile: true);
+        SystemVerilogService(mod, outputPath: dir.path, multiFile: true);
         final files = dir.listSync().whereType<File>().toList();
         expect(files.any((f) => f.path.endsWith('.sv')), isTrue);
       } finally {
         dir.deleteSync(recursive: true);
       }
-    });
-
-    test('register false does not register', () async {
-      final mod = SimpleModule(Logic());
-      await mod.build();
-      ModuleServices.instance.reset();
-      SystemVerilogService(mod, register: false);
-      expect(ModuleServices.instance.lookup<SystemVerilogService>(), isNull);
     });
 
     test('throws if module not built', () {

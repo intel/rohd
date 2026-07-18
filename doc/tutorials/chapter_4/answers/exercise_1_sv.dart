@@ -10,7 +10,7 @@ void main() async {
   final mod = NBitAdder(a, b);
   await mod.build();
 
-  print(SystemVerilogService(mod, register: false).synthOutput);
+  print(SystemVerilogService(mod).output);
 
   test('should return 255 when both inputs are added', () {
     a.put(127);

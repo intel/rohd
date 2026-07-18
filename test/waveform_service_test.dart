@@ -1,13 +1,11 @@
-// Copyright (C) 2021-2024 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
-// wave_dumper_test.dart
-// Tests for the WaveDumper
+// waveform_service_test.dart
+// Tests for the WaveformService
 //
 // 2021 November 4
 // Author: Max Korbel <max.korbel@intel.com>
-
-// ignore_for_file: deprecated_member_use_from_same_package
 
 @TestOn('vm')
 library;
@@ -42,10 +40,19 @@ const tempDumpDir = 'tmp_test';
 /// Gets the path of the VCD file based on a name.
 String temporaryDumpPath(String name) => '$tempDumpDir/temp_dump_$name.vcd';
 
-/// Attaches a [WaveDumper] to [module] to VCD with [name].
+/// Attaches a [WaveformService] to [module] to VCD with [name].
 void createTemporaryDump(Module module, String name) {
   Directory(tempDumpDir).createSync(recursive: true);
   final tmpDumpFile = temporaryDumpPath(name);
+  WaveformService(module, outputPath: tmpDumpFile);
+}
+
+// ignore: deprecated_member_use_from_same_package
+/// Attaches the deprecated [WaveDumper] to [module] to VCD with [name].
+void createTemporaryWaveDumperDump(Module module, String name) {
+  Directory(tempDumpDir).createSync(recursive: true);
+  final tmpDumpFile = temporaryDumpPath(name);
+  // ignore: deprecated_member_use_from_same_package
   WaveDumper(module, outputPath: tmpDumpFile);
 }
 
@@ -69,6 +76,34 @@ void main() {
 
     a.put(1);
     createTemporaryDump(mod, dumpName);
+
+    Simulator.registerAction(10, () => a.put(0));
+    await Simulator.run();
+
+    final vcdContents = File(temporaryDumpPath(dumpName)).readAsStringSync();
+
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 0, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 5, LogicValue.ofString('1')),
+        equals(true));
+    expect(
+        VcdParser.confirmValue(vcdContents, 'a', 10, LogicValue.ofString('0')),
+        equals(true));
+
+    deleteTemporaryDump(dumpName);
+  });
+
+  test('attach deprecated wave dumper after put', () async {
+    final a = Logic(name: 'a');
+    final mod = SimpleModule(a);
+    await mod.build();
+
+    const dumpName = 'deprecatedDumpAfterPut';
+
+    a.put(1);
+    createTemporaryWaveDumperDump(mod, dumpName);
 
     Simulator.registerAction(10, () => a.put(0));
     await Simulator.run();
@@ -243,11 +278,12 @@ void main() {
 
     const dir1Path = '$tempDumpDir/dir1';
 
-    final waveDumper = WaveDumper(mod, outputPath: '$dir1Path/dir2/waves.vcd');
+    final waveformService =
+        WaveformService(mod, outputPath: '$dir1Path/dir2/waves.vcd');
 
-    expect(File(waveDumper.outputPath).existsSync(), equals(true));
+    expect(File(waveformService.outputPath).existsSync(), equals(true));
 
-    if (File(waveDumper.outputPath).existsSync()) {
+    if (File(waveformService.outputPath).existsSync()) {
       File(dir1Path).deleteSync(recursive: true);
     }
   });
@@ -265,7 +301,7 @@ void main() {
     Simulator.registerAction(13, () => reset.put(1));
     reset.put(0);
 
-    // add wave dumper *after* the put to reset
+    // add waveform service *after* the put to reset
     createTemporaryDump(mod, dumpName);
 
     // check functional matches

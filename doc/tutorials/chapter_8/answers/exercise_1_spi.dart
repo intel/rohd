@@ -139,7 +139,7 @@ void main() async {
 
   await tb.build();
 
-  print(SystemVerilogService(tb, register: false).synthOutput);
+  print(SystemVerilogService(tb).output);
 
   testInterface.cs.inject(0);
   testInterface.sdi.inject(0);

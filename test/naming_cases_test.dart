@@ -554,7 +554,7 @@ void main() {
     // ── Golden SV snapshot ──────────────────────────────────────
 
     test('golden SV output snapshot', () {
-      final sv = SystemVerilogService(mod, register: false).synthOutput;
+      final sv = SystemVerilogService(mod).output;
 
       // Port declarations.
       expect(sv, contains('input wire logic [7:0] inp'));

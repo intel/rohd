@@ -9,7 +9,6 @@
 
 import 'dart:io';
 
-import 'package:collection/collection.dart';
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/utilities/config.dart';
 import 'package:rohd/src/utilities/timestamper.dart';
@@ -30,7 +29,7 @@ import 'package:rohd/src/utilities/timestamper.dart';
 /// sv.writeFiles('build/');
 ///
 /// // Or get the concatenated output (like generateSynth):
-/// print(sv.allContents);
+/// print(sv.output);
 /// ```
 class SystemVerilogService extends CodeGenService {
   /// The separator inserted between module definitions in the
@@ -38,9 +37,6 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// Matches the format historically produced by `Module.generateSynth()`.
   static const moduleSeparator = '\n\n////////////////////\n\n';
-
-  /// The most recently registered [SystemVerilogService], or `null`.
-  static SystemVerilogService? current;
 
   /// The top-level [Module] being synthesized.
   @override
@@ -73,11 +69,12 @@ class SystemVerilogService extends CodeGenService {
   /// If [outputPath] is provided, output is written immediately: a directory
   /// of per-module files when [multiFile] is `true`, otherwise the
   /// concatenated SV output (with header) to that single file.
-  SystemVerilogService(this.module,
-      {bool register = true,
-      this.outputPath,
-      this.multiFile = false,
-      this.configuration = const SystemVerilogSynthesizerConfiguration()}) {
+  SystemVerilogService(
+    this.module, {
+    this.outputPath,
+    this.multiFile = false,
+    this.configuration = const SystemVerilogSynthesizerConfiguration(),
+  }) {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating SystemVerilogService. '
@@ -92,11 +89,6 @@ class SystemVerilogService extends CodeGenService {
     if (outputPath != null) {
       write();
     }
-
-    if (register) {
-      current = this;
-      ModuleServices.instance.register<SystemVerilogService>(this);
-    }
   }
 
   /// All [SynthesisResult]s produced by synthesis.
@@ -106,7 +98,7 @@ class SystemVerilogService extends CodeGenService {
   /// string, without the generation header.
   ///
   /// For the full output with header (matching `Module.generateSynth()`),
-  /// use [synthOutput].
+  /// use [output].
   String get allContents =>
       fileContents.map((fc) => fc.contents).join(moduleSeparator);
 
@@ -125,39 +117,32 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// Computed once and cached so the timestamped header is stable for the
   /// lifetime of this service.
-  late final String synthOutput = synthHeader + allContents;
-
-  /// The combined single-file generated output (alias for [synthOutput]).
   @override
-  String get output => synthOutput;
+  late final String output = synthHeader + allContents;
 
-  /// Returns a map from module definition name to its SV file contents.
+  /// Returns SV output for a generated module [instanceTypeName], or `null`
+  /// when that instance type was not generated.
+  ///
+  /// The instance type name is [SynthesisResult.instanceTypeName], the
+  /// uniquified definition name used in the generated SV.
+  String? instanceTypeOutput(String instanceTypeName) {
+    for (final fc in fileContents) {
+      if (fc.name == instanceTypeName) {
+        return fc.contents;
+      }
+    }
+    return null;
+  }
+
+  /// Returns a map from generated module instance type name to its SV contents.
   ///
   /// Keys are [SynthesisResult.instanceTypeName] (the uniquified definition
   /// name used in the generated SV).
+  @Deprecated('Use instanceTypeOutput(instanceTypeName) for lookup or '
+      'fileContents for iteration instead.')
   Map<String, String> get contentsByName => {
         for (final fc in fileContents) fc.name: fc.contents,
       };
-
-  /// Returns a map from module definition name
-  /// ([Module.definitionName]) to its SV file contents.
-  ///
-  /// This uses the original definition name (not uniquified), matching
-  /// the keys used by FLC trace data.
-  @override
-  Map<String, String> get contentsByDefinitionName {
-    final result = <String, String>{};
-    for (final sr in synthesisResults) {
-      final defName = sr.module.definitionName;
-      final instanceName = sr.instanceTypeName;
-      // Find the file content matching this instance type name.
-      final fc = fileContents.firstWhereOrNull((f) => f.name == instanceName);
-      if (fc != null) {
-        result[defName] = fc.contents;
-      }
-    }
-    return result;
-  }
 
   /// Writes each module's SV to a separate file in [directory].
   ///
@@ -173,7 +158,7 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// When [multiFile] is `true`, writes one `.sv` file per module definition
   /// into the target directory (see [writeFiles]); otherwise writes the
-  /// concatenated [synthOutput] to the target file.
+  /// concatenated [output] to the target file.
   @override
   void write([String? path]) {
     final target = path ?? outputPath;
@@ -187,7 +172,7 @@ class SystemVerilogService extends CodeGenService {
     } else {
       File(target)
         ..parent.createSync(recursive: true)
-        ..writeAsStringSync(synthOutput);
+        ..writeAsStringSync(output);
     }
   }
 

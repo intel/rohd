@@ -77,5 +77,5 @@ void main() async {
   final mod = FullAdderModule(a, b, cIn, faOps);
   await mod.build();
 
-  print(SystemVerilogService(mod, register: false).synthOutput);
+  print(SystemVerilogService(mod).output);
 }
