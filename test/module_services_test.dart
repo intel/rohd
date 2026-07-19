@@ -183,8 +183,8 @@ void main() {
       final dir = Directory.systemTemp.createTempSync('sv_test_');
       try {
         final singlePath = '${dir.path}/single.sv';
-        final singleFile = SystemVerilogService(mod, includeHeader: false);
-        singleFile.write(singlePath);
+        final singleFile = SystemVerilogService(mod, includeHeader: false)
+          ..write(singlePath);
         expect(
           File(singlePath).readAsStringSync(),
           equals(singleFile.allContents),
@@ -194,8 +194,7 @@ void main() {
           mod,
           multiFile: true,
           includeHeader: true,
-        );
-        multiFile.writeFiles(dir.path);
+        )..writeFiles(dir.path);
         final output =
             File('${dir.path}/${multiFile.fileContents.single.name}.sv')
                 .readAsStringSync();
