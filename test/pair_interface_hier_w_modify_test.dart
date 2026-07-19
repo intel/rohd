@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Intel Corporation
+// Copyright (C) 2023-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // pair_interface_hier_w_modify_test.dart
@@ -97,7 +97,7 @@ void main() {
 
     expect(sv, contains('HierConsumer  unnamed_module'));
     expect(sv, contains('HierProducer  unnamed_module'));
-    expect(sv, contains('inout wire io_0'));
-    expect(sv, contains('inout wire [2:0] io_arr_0'));
+    expect(sv, contains('inout wire logic io_0'));
+    expect(sv, contains('inout wire logic [2:0] io_arr_0'));
   });
 }

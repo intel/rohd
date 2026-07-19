@@ -48,6 +48,21 @@ The generated SystemC uses `SC_MODULE`, `SC_METHOD`, and `SC_CTHREAD` constructs
 
 For more control over SystemC generation, use `SynthBuilder` with `SystemCSynthesizer()` directly.
 
+## Controlling port types
+
+Generated ports have explicit object and data types by default: inputs are `input wire logic`, outputs are `output var logic`, and inouts are `inout wire logic`. Use a `SystemVerilogSynthesizerConfiguration` to omit either category and rely on SystemVerilog's implicit types:
+
+```dart
+final generatedSv = myModule.generateSynth(
+  configuration: const SystemVerilogSynthesizerConfiguration(
+    portObjectType: SystemVerilogPortType.implicit,
+    portDataType: SystemVerilogPortType.implicit,
+  ),
+);
+```
+
+The same configuration can be passed directly to `SystemVerilogSynthesizer` when using `SynthBuilder`.
+
 ## Controlling naming
 
 ### Modules

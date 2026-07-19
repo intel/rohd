@@ -1138,7 +1138,12 @@ abstract class Module {
   ///
   /// Currently returns one long file in SystemVerilog, but in the future
   /// may have other output formats, languages, files, etc.
-  String generateSynth() {
+  ///
+  /// The [configuration] controls options specific to SystemVerilog output.
+  String generateSynth({
+    SystemVerilogSynthesizerConfiguration configuration =
+        const SystemVerilogSynthesizerConfiguration(),
+  }) {
     if (!_hasBuilt) {
       throw ModuleNotBuiltException(this);
     }
@@ -1152,9 +1157,10 @@ abstract class Module {
 
 ''';
     return synthHeader +
-        SynthBuilder(this, SystemVerilogSynthesizer())
-            .getSynthFileContents()
-            .join('\n\n////////////////////\n\n');
+        SynthBuilder(
+          this,
+          SystemVerilogSynthesizer(configuration: configuration),
+        ).getSynthFileContents().join('\n\n////////////////////\n\n');
   }
 
   /// Returns a synthesized SystemC version of this [Module].

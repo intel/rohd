@@ -45,6 +45,6 @@ flutter:
     - assets/help/
     - assets/icons/
 
-dependency_overrides: 
+dependency_overrides:
   rohd:
     path: ../
