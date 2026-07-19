@@ -164,6 +164,47 @@ void main() {
       }
     });
 
+    test('defaults headers by output layout', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+
+      final singleFile = SystemVerilogService(mod);
+      final multiFile = SystemVerilogService(mod, multiFile: true);
+
+      expect(singleFile.includeHeader, isTrue);
+      expect(singleFile.output, startsWith(singleFile.header));
+      expect(multiFile.includeHeader, isFalse);
+      expect(multiFile.header, isEmpty);
+    });
+
+    test('writes headers in either output layout when requested', () async {
+      final mod = SimpleModule(Logic());
+      await mod.build();
+      final dir = Directory.systemTemp.createTempSync('sv_test_');
+      try {
+        final singlePath = '${dir.path}/single.sv';
+        final singleFile = SystemVerilogService(mod, includeHeader: false);
+        singleFile.write(singlePath);
+        expect(
+          File(singlePath).readAsStringSync(),
+          equals(singleFile.allContents),
+        );
+
+        final multiFile = SystemVerilogService(
+          mod,
+          multiFile: true,
+          includeHeader: true,
+        );
+        multiFile.writeFiles(dir.path);
+        final output =
+            File('${dir.path}/${multiFile.fileContents.single.name}.sv')
+                .readAsStringSync();
+        expect(output, startsWith(multiFile.header));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
     test('throws if module not built', () {
       final mod = SimpleModule(Logic());
       expect(() => SystemVerilogService(mod), throwsException);

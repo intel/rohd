@@ -53,6 +53,13 @@ class SystemVerilogService extends CodeGenService {
   @override
   final bool multiFile;
 
+  /// Whether generated SV files include the ROHD generation header.
+  ///
+  /// Defaults to `true` for single-file output and `false` for multi-file
+  /// output, preserving the historical layout. Set explicitly to select any
+  /// combination of header and file layout.
+  final bool includeHeader;
+
   /// Configuration controlling generated SystemVerilog.
   final SystemVerilogSynthesizerConfiguration configuration;
 
@@ -68,13 +75,15 @@ class SystemVerilogService extends CodeGenService {
   ///
   /// If [outputPath] is provided, output is written immediately: a directory
   /// of per-module files when [multiFile] is `true`, otherwise the
-  /// concatenated SV output (with header) to that single file.
+  /// concatenated SV output to that single file. [includeHeader] defaults to
+  /// `!multiFile` to preserve the historical layout.
   SystemVerilogService(
     this.module, {
     this.outputPath,
     this.multiFile = false,
+    bool? includeHeader,
     this.configuration = const SystemVerilogSynthesizerConfiguration(),
-  }) {
+  }) : includeHeader = includeHeader ?? !multiFile {
     if (!module.hasBuilt) {
       throw Exception(
         'Module must be built before creating SystemVerilogService. '
@@ -112,13 +121,18 @@ class SystemVerilogService extends CodeGenService {
 
 ''';
 
+  /// The generation header included in each emitted SV file, when enabled.
+  ///
+  /// Cached so output and emitted files always use the same timestamp.
+  late final String header = includeHeader ? synthHeader : '';
+
   /// Returns the full single-file SystemVerilog output with header,
   /// identical to `Module.generateSynth()`.
   ///
   /// Computed once and cached so the timestamped header is stable for the
   /// lifetime of this service.
   @override
-  late final String output = synthHeader + allContents;
+  late final String output = header + allContents;
 
   /// Returns SV output for a generated module [instanceTypeName], or `null`
   /// when that instance type was not generated.
@@ -150,7 +164,7 @@ class SystemVerilogService extends CodeGenService {
   void writeFiles(String directory) {
     final dir = Directory(directory)..createSync(recursive: true);
     for (final fc in fileContents) {
-      File('${dir.path}/${fc.name}.sv').writeAsStringSync(fc.contents);
+      File('${dir.path}/${fc.name}.sv').writeAsStringSync(header + fc.contents);
     }
   }
 
