@@ -32,20 +32,17 @@ class ModuleServices {
 
   // ─── Hierarchy (auto-registered by Module.build) ──────────────
 
-  Module? _rootModule;
-
   /// The most recently built top-level [Module].
   ///
   /// Set automatically at the end of [Module.build].
-  Module? get rootModule => _rootModule;
+  Module? get rootModule => ModuleTree.instance.rootModule;
 
-  /// Registers the most recently built top-level [Module].
+  /// Sets the most recently built top-level [Module].
   ///
   /// Intended for internal use by [Module.build] and test reset paths.
   @internal
-  void registerRootModule(Module? module) {
-    _rootModule = module;
-    ModuleTree.rootModuleInstance = module;
+  set rootModule(Module? module) {
+    ModuleTree.instance.rootModule = module;
   }
 
   /// Returns the module hierarchy as a JSON string.
@@ -76,7 +73,7 @@ class ModuleServices {
 
   /// Resets all services.  Intended for test teardown.
   void reset() {
-    registerRootModule(null);
+    rootModule = null;
     _services.clear();
   }
 }

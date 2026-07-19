@@ -338,7 +338,7 @@ abstract class Module {
 
     _hasBuilt = true;
 
-    ModuleServices.instance.registerRootModule(this);
+    ModuleServices.instance.rootModule = this;
   }
 
   /// Confirms that the post-[build] hierarchy is valid.
