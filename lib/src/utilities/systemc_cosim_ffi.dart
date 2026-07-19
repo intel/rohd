@@ -629,26 +629,45 @@ class SystemCFfiCosim {
   // C++ Code Generation
   // ══════════════════════════════════════════════════════════════════════
 
+  static void _writeCode(StringBuffer sb, String code, {String prefix = ''}) {
+    final lines = code.substring(1).split('\n');
+    final nonEmptyLines = lines.where((line) => line.trim().isNotEmpty);
+    final indent = nonEmptyLines.isEmpty
+        ? 0
+        : nonEmptyLines
+            .map((line) => line.length - line.trimLeft().length)
+            .reduce((current, next) => current < next ? current : next);
+
+    sb.write(lines
+        .map((line) =>
+            line.length < indent ? '' : '$prefix${line.substring(indent)}')
+        .join('\n'));
+  }
+
   /// Generates the C++ wrapper with extern "C" API around the ROHD-generated
   /// SystemC module code.
   String _generateWrapper(String generatedSystemC, String topModule) {
-    final sb = StringBuffer()
-      ..writeln('// Auto-generated SystemC FFI Cosim Wrapper')
-      ..writeln('// Module: $topModule')
-      ..writeln()
-      ..writeln('#include <systemc.h>')
-      ..writeln('#include <cstring>')
-      ..writeln('#include <string>')
-      ..writeln('#include <iostream>')
-      ..writeln('using namespace std;')
-      ..writeln()
-      ..writeln('// ═══ ROHD-Generated SystemC Module(s) ═══')
-      ..writeln()
-      ..writeln(generatedSystemC)
-      ..writeln()
-      ..writeln('// ═══ FFI Cosim Context ═══')
-      ..writeln()
-      ..writeln('struct CosimContext {');
+    final sb = StringBuffer();
+
+    _writeCode(sb, '''
+  // Auto-generated SystemC FFI Cosim Wrapper
+  // Module: $topModule
+
+  #include <systemc.h>
+  #include <cstring>
+  #include <string>
+  #include <iostream>
+  using namespace std;
+
+  // ═══ ROHD-Generated SystemC Module(s) ═══
+
+  ''');
+    sb.writeln(generatedSystemC);
+    _writeCode(sb, '''
+  // ═══ FFI Cosim Context ═══
+
+  struct CosimContext {
+  ''');
 
     // All input signal declarations (including clocks as sc_signal<bool>)
     for (final entry in _inputWidths.entries) {
@@ -661,44 +680,42 @@ class SystemCFfiCosim {
       sb.writeln('    sc_signal<$type> ${entry.key};');
     }
 
-    sb
-      ..writeln('    $topModule* dut;')
-      ..writeln('};')
-      ..writeln()
-      ..writeln('extern "C" {')
-      ..writeln()
-      ..writeln('// Required by SystemC linker — we never call it directly')
-      ..writeln('int sc_main(int, char*[]) { return 0; }')
-      ..writeln()
-      ..writeln('// Track whether the kernel has been initialized')
-      ..writeln('static CosimContext* _active_ctx = nullptr;')
-      ..writeln()
-      // ──── sc_cosim_create ────
-      ..writeln('void* sc_cosim_create(const char* name) {')
-      ..writeln('    // If a context already exists (same process, new test),')
-      ..writeln('    // just return the existing one after resetting signals.')
-      ..writeln('    if (_active_ctx != nullptr) {')
-      ..writeln('        // Reset all input signals to 0');
+    _writeCode(sb, '''
+      $topModule* dut;
+  };
+
+  extern "C" {
+
+  // Required by SystemC linker — we never call it directly
+  int sc_main(int, char*[]) { return 0; }
+
+  // Track whether the kernel has been initialized
+  static CosimContext* _active_ctx = nullptr;
+
+  void* sc_cosim_create(const char* name) {
+    // If a context already exists (same process, new test),
+    // just return the existing one after resetting signals.
+    if (_active_ctx != nullptr) {
+      // Reset all input signals to 0
+  ''');
 
     for (final entry in _inputWidths.entries) {
       final type = SystemCSynthesisResult.systemCType(entry.value);
       sb.writeln('        _active_ctx->${entry.key}.write($type(0));');
     }
 
-    sb
-      ..writeln('        return static_cast<void*>(_active_ctx);')
-      ..writeln('    }')
-      ..writeln()
-      ..writeln('    // Guard: cannot create sc_signal after kernel starts')
-      ..writeln('    if (sc_get_status() != SC_ELABORATION'
-          ' && sc_get_status() != SC_BEFORE_END_OF_ELABORATION) {')
-      ..writeln('        return nullptr;  // E113 prevention')
-      ..writeln('    }')
-      ..writeln()
-      ..writeln('    auto* ctx = new CosimContext();')
+    _writeCode(sb, '''
+          return static_cast<void*>(_active_ctx);
+    }
 
-      // Instantiate DUT
-      ..writeln('    ctx->dut = new $topModule("dut");');
+    // Guard: cannot create sc_signal after kernel starts
+    if (sc_get_status() != SC_ELABORATION && sc_get_status() != SC_BEFORE_END_OF_ELABORATION) {
+      return nullptr;  // E113 prevention
+    }
+
+    auto* ctx = new CosimContext();
+    ctx->dut = new $topModule("dut");
+  ''');
 
     // Bind all inputs (including clocks — driven via sc_signal<bool>)
     for (final name in _inputWidths.keys) {
@@ -709,87 +726,80 @@ class SystemCFfiCosim {
       sb.writeln('    ctx->dut->$name(ctx->$name);');
     }
 
-    sb
-      ..writeln()
-      ..writeln('    // Store context — do NOT call sc_start here.')
-      ..writeln('    // Deferring sc_start to the first advance allows')
-      ..writeln('    // multiple module types to be elaborated before')
-      ..writeln('    // the kernel starts (avoids E113).')
-      ..writeln('    _active_ctx = ctx;')
-      ..writeln('    return static_cast<void*>(ctx);')
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_set_input ────
-      ..writeln('void sc_cosim_set_input(void* handle, const char* name,'
-          ' uint64_t value) {')
-      ..writeln('    auto* ctx = static_cast<CosimContext*>(handle);');
+    _writeCode(sb, '''
+    // Store context — do NOT call sc_start here.
+    // Deferring sc_start to the first advance allows
+    // multiple module types to be elaborated before
+    // the kernel starts (avoids E113).
+    _active_ctx = ctx;
+    return static_cast<void*>(ctx);
+  }
+
+  void sc_cosim_set_input(void* handle, const char* name, uint64_t value) {
+    auto* ctx = static_cast<CosimContext*>(handle);
+  ''');
 
     _generateInputDispatch(sb, narrow: true);
 
-    sb
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_set_input_wide ────
-      ..writeln('void sc_cosim_set_input_wide(void* handle, const char* name,'
-          ' const char* hex_value) {')
-      ..writeln('    auto* ctx = static_cast<CosimContext*>(handle);');
+    _writeCode(sb, '''
+  }
+
+  void sc_cosim_set_input_wide(void* handle, const char* name, const char* hex_value) {
+    auto* ctx = static_cast<CosimContext*>(handle);
+  ''');
 
     _generateInputDispatch(sb, narrow: false);
 
-    sb
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_get_output ────
-      ..writeln(
-          'uint64_t sc_cosim_get_output(void* handle, const char* name) {')
-      ..writeln('    auto* ctx = static_cast<CosimContext*>(handle);');
+    _writeCode(sb, '''
+  }
+
+  uint64_t sc_cosim_get_output(void* handle, const char* name) {
+    auto* ctx = static_cast<CosimContext*>(handle);
+  ''');
 
     _generateOutputDispatch(sb, narrow: true);
 
-    sb
-      ..writeln('    return 0;')
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_get_output_wide ────
-      ..writeln('const char* sc_cosim_get_output_wide(void* handle,'
-          ' const char* name) {')
-      ..writeln('    auto* ctx = static_cast<CosimContext*>(handle);')
-      ..writeln('    static char _buf[512];');
+    _writeCode(sb, '''
+      return 0;
+  }
+
+  const char* sc_cosim_get_output_wide(void* handle, const char* name) {
+    auto* ctx = static_cast<CosimContext*>(handle);
+    static char _buf[512];
+  ''');
 
     _generateOutputDispatch(sb, narrow: false);
 
-    sb
-      ..writeln("    _buf[0] = '0'; _buf[1] = 0;")
-      ..writeln('    return _buf;')
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_advance ────
-      ..writeln('void sc_cosim_advance(void* handle, uint64_t time_ps) {')
-      ..writeln('    // End elaboration on first advance (allows multiple')
-      ..writeln('    // module types to be instantiated before starting).')
-      ..writeln('    if (sc_get_status() == SC_ELABORATION) {')
-      ..writeln('        sc_start(SC_ZERO_TIME);')
-      ..writeln('    }')
-      ..writeln('    if (time_ps == 0) {')
-      ..writeln('        // Zero-time advance: process delta cycles only.')
-      ..writeln('        // Use SC_ZERO_TIME explicitly (some implementations')
-      ..writeln('        // treat sc_time(0,SC_PS) differently).')
-      ..writeln('        sc_start(SC_ZERO_TIME);')
-      ..writeln('    } else {')
-      ..writeln(
-          '        sc_start(sc_time(static_cast<double>(time_ps), SC_PS));')
-      ..writeln('    }')
-      ..writeln('}')
-      ..writeln()
-      // ──── sc_cosim_destroy ────
-      ..writeln('void sc_cosim_destroy(void* handle) {')
-      ..writeln('    // Do NOT delete or sc_stop — the SystemC kernel is a')
-      ..writeln('    // process-wide singleton. The context is reused if')
-      ..writeln('    // sc_cosim_create is called again (same module).')
-      ..writeln('    // This avoids E113 "insert primitive channel failed".')
-      ..writeln('}')
-      ..writeln()
-      ..writeln('} // extern "C"');
+    _writeCode(sb, '''
+      _buf[0] = '0'; _buf[1] = 0;
+    return _buf;
+  }
+
+  void sc_cosim_advance(void* handle, uint64_t time_ps) {
+    // End elaboration on first advance (allows multiple
+    // module types to be instantiated before starting).
+    if (sc_get_status() == SC_ELABORATION) {
+      sc_start(SC_ZERO_TIME);
+    }
+    if (time_ps == 0) {
+      // Zero-time advance: process delta cycles only.
+      // Use SC_ZERO_TIME explicitly (some implementations
+      // treat sc_time(0,SC_PS) differently).
+      sc_start(SC_ZERO_TIME);
+    } else {
+      sc_start(sc_time(static_cast<double>(time_ps), SC_PS));
+    }
+  }
+
+  void sc_cosim_destroy(void* handle) {
+    // Do NOT delete or sc_stop — the SystemC kernel is a
+    // process-wide singleton. The context is reused if
+    // sc_cosim_create is called again (same module).
+    // This avoids E113 "insert primitive channel failed".
+  }
+
+  } // extern "C"
+  ''');
 
     return sb.toString();
   }
@@ -816,9 +826,13 @@ class SystemCFfiCosim {
         final type = SystemCSynthesisResult.systemCType(width);
         sb.writeln('        ctx->$name.write(static_cast<$type>(value));');
       } else {
-        sb
-          ..writeln('        sc_biguint<$width> v(hex_value);')
-          ..writeln('        ctx->$name.write(v);');
+        _writeCode(
+            sb,
+            '''
+          sc_biguint<$width> v(hex_value);
+          ctx->$name.write(v);
+        ''',
+            prefix: '        ');
       }
     }
     if (!first) {
@@ -847,12 +861,16 @@ class SystemCFfiCosim {
       if (narrow) {
         sb.writeln('        return static_cast<uint64_t>(ctx->$name.read());');
       } else {
-        sb
-          ..writeln('        sc_biguint<$width> v = ctx->$name.read();')
-          ..writeln('        string s = v.to_string(SC_HEX_US);')
-          ..writeln('        strncpy(_buf, s.c_str(), sizeof(_buf)-1);')
-          ..writeln('        _buf[sizeof(_buf)-1] = 0;')
-          ..writeln('        return _buf;');
+        _writeCode(
+            sb,
+            '''
+          sc_biguint<$width> v = ctx->$name.read();
+          string s = v.to_string(SC_HEX_US);
+          strncpy(_buf, s.c_str(), sizeof(_buf)-1);
+          _buf[sizeof(_buf)-1] = 0;
+          return _buf;
+        ''',
+            prefix: '        ');
       }
     }
     if (!first) {

@@ -211,6 +211,10 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// SystemC output port type for a given width.
   static String systemCOutType(int width) => 'sc_out<${systemCType(width)}>';
 
+  /// SystemC inout port type for a given width.
+  static String systemCInOutType(int width) =>
+      'sc_inout<${systemCType(width)}>';
+
   /// SystemC signal type for a given width.
   static String systemCSignalType(int width) =>
       'sc_signal<${systemCType(width)}>';
@@ -233,6 +237,10 @@ class SystemCSynthesisResult extends SynthesisResult {
     for (final sig in _synthModuleDefinition.outputs) {
       final n = _scName(sig.name);
       lines.add('  ${systemCOutType(sig.width)} $n{"$n"};');
+    }
+    for (final sig in _synthModuleDefinition.inOuts) {
+      final n = _scName(sig.name);
+      lines.add('  ${systemCInOutType(sig.width)} $n{"$n"};');
     }
     return lines.join('\n');
   }
@@ -502,9 +510,15 @@ class SystemCSynthesisResult extends SynthesisResult {
       final bodyLines = <String>[];
       final destinations = <String>{};
 
-      // Collect inputs — constants become literals, signals get .read()
+      // Collect inputs — constants become literals, signals get .read().
+      // Inline modules connected to LogicNets can have source ports mapped as
+      // inouts, so include non-result inout mappings as inputs.
       final inputExprs = <String, String>{};
-      for (final entry in ssmi.inputMapping.entries) {
+      final inputMappings = {...ssmi.inputMapping, ...ssmi.inOutMapping};
+      if (m is InlineSystemVerilog) {
+        inputMappings.remove(m.resultSignalName);
+      }
+      for (final entry in inputMappings.entries) {
         final sl = entry.value;
         if (!sl.isConstant) {
           sensitivities.add(_sensitivityName(sl));

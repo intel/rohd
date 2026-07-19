@@ -636,6 +636,10 @@ abstract class SimCompare {
     for (final output in module.outputs.entries) {
       outputPorts[output.key] = output.value.width;
     }
+    final inOutPorts = <String, int>{};
+    for (final inOut in module.inOuts.entries) {
+      inOutPorts[inOut.key] = inOut.value.width;
+    }
 
     // Generate stdin-driven testbench
     final tb = StringBuffer()
@@ -674,6 +678,13 @@ abstract class SimCompare {
           ' ${entry.key};');
     }
 
+    // Signals for all inout ports
+    for (final entry in inOutPorts.entries) {
+      tb.writeln(
+          '    sc_signal<${SystemCSynthesisResult.systemCType(entry.value)}>'
+          ' ${entry.key};');
+    }
+
     tb
       ..writeln()
       // DUT instantiation and port binding
@@ -687,6 +698,9 @@ abstract class SimCompare {
       }
     }
     for (final name in outputPorts.keys) {
+      tb.writeln('    dut.$name($name);');
+    }
+    for (final name in inOutPorts.keys) {
       tb.writeln('    dut.$name($name);');
     }
 
@@ -720,6 +734,21 @@ abstract class SimCompare {
           ..writeln('          $name.write(_v); }');
       }
     }
+    for (final entry in inOutPorts.entries) {
+      final name = entry.key;
+      final w = entry.value;
+      tb.writeln('        { int _drive; cin >> _drive;');
+      if (w > 64) {
+        tb
+          ..writeln('          if (_drive) { string _h; cin >> _h;')
+          ..writeln('            sc_biguint<$w> _v(_h.c_str());')
+          ..writeln('            $name.write(_v); } }');
+      } else {
+        tb
+          ..writeln('          if (_drive) { uint64_t _v; cin >> _v;')
+          ..writeln('            $name.write(_v); } }');
+      }
+    }
 
     // Advance to check point
     tb
@@ -734,9 +763,10 @@ abstract class SimCompare {
       ..writeln('            string _tb_pn;')
       ..writeln('            cin >> _tb_pn;');
 
-    // Generate if-else chain for each output port
+    // Generate if-else chain for each output and inout port
     var first = true;
-    for (final entry in outputPorts.entries) {
+    final checkablePorts = {...outputPorts, ...inOutPorts};
+    for (final entry in checkablePorts.entries) {
       final name = entry.key;
       final w = entry.value;
       final ifKey = first ? 'if' : '} else if';
@@ -759,7 +789,7 @@ abstract class SimCompare {
         ..writeln('                    _tb_errors++;')
         ..writeln('                }');
     }
-    if (outputPorts.isNotEmpty) {
+    if (checkablePorts.isNotEmpty) {
       tb
         ..writeln('            } else {')
         ..writeln('                string _d; cin >> _d; // skip unknown')
@@ -823,7 +853,8 @@ abstract class SimCompare {
         scLib: resolvedLib,
         clockSignals: clockSignals,
         inputPorts: inputPorts,
-        outputPorts: outputPorts);
+        outputPorts: outputPorts,
+        inOutPorts: inOutPorts);
     _compilationCache[cacheKey] = exe;
     return exe;
   }
@@ -871,6 +902,22 @@ abstract class SimCompare {
       for (final name in drivableInputs) {
         sb.write('${lastValues[name]} ');
       }
+      for (final name in exe.inOutPorts.keys) {
+        final value = vector.inputValues[name];
+        if (value != null) {
+          final w = exe.inOutPorts[name]!;
+          final formattedValue = w > 64
+              ? _systemcHexValue(value, w)
+              : '${_systemcIntValue(value, w)}';
+          lastValues[name] = formattedValue;
+        }
+        final lastValue = lastValues[name];
+        if (lastValue == null) {
+          sb.write('0 ');
+        } else {
+          sb.write('1 $lastValue ');
+        }
+      }
       sb.writeln();
 
       // Write expected outputs: count then name/value pairs
@@ -878,18 +925,15 @@ abstract class SimCompare {
       final checks = <String, String>{};
       for (final entry in vector.expectedOutputValues.entries) {
         final name = entry.key;
-        final w = exe.outputPorts[name]!;
+        final checkablePorts = {...exe.outputPorts, ...exe.inOutPorts};
+        final w = checkablePorts[name]!;
         final expectedLV = LogicValue.of(entry.value, width: w);
         if (expectedLV.toString().contains('x') ||
             expectedLV.toString().contains('z')) {
           continue;
         }
         if (w > 64) {
-          var hex = expectedLV.toBigInt().toUnsigned(w).toRadixString(16);
-          if (hex.length.isOdd) {
-            hex = '0$hex';
-          }
-          checks[name] = '0x$hex';
+          checks[name] = _systemcHexValue(entry.value, w);
         } else {
           checks[name] = '${_systemcIntValue(entry.value, w)}';
         }
@@ -962,6 +1006,16 @@ abstract class SimCompare {
       return lv.toBigInt().toUnsigned(width).toInt();
     }
     return 0;
+  }
+
+  /// Converts a value to a hex string for stdin.
+  static String _systemcHexValue(dynamic value, int width) {
+    final lv = LogicValue.of(value, width: width);
+    var hex = lv.toBigInt().toUnsigned(width).toRadixString(16);
+    if (hex.length.isOdd) {
+      hex = '0$hex';
+    }
+    return '0x$hex';
   }
 
   /// Executes [vectors] against a SystemC simulator compiled with g++ and
@@ -1151,13 +1205,17 @@ class SystemCExecutable {
   /// Output port names and widths.
   final Map<String, int> outputPorts;
 
+  /// Inout port names and widths.
+  final Map<String, int> inOutPorts;
+
   SystemCExecutable._(
       {required this.binaryPath,
       required this.cppFile,
       required this.scLib,
       required this.clockSignals,
       required this.inputPorts,
-      required this.outputPorts});
+      required this.outputPorts,
+      required this.inOutPorts});
 
   /// Deletes the compiled binary and source.
   void cleanup() {
