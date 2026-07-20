@@ -1,9 +1,12 @@
-// Copyright (C) 2021-2023 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 
+export 'src/diagnostics/diagnostics.dart';
 export 'src/exceptions/exceptions.dart';
 export 'src/external.dart';
 export 'src/finite_state_machine.dart';
+export 'src/fst/fst_types.dart';
+export 'src/fst/fst_writer.dart';
 export 'src/interfaces/interfaces.dart';
 export 'src/module.dart';
 export 'src/modules/modules.dart';

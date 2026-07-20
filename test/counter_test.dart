@@ -48,7 +48,7 @@ void main() {
       final reset = Logic();
       final counter = Counter(Logic(), reset);
       await counter.build();
-      // WaveDumper(counter);
+      // WaveformService(counter);
 
       unawaited(reset.nextPosedge
           .then((value) => expect(counter.val.value.toInt(), equals(0))));

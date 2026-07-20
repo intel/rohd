@@ -41,7 +41,7 @@ void main(List<String> args) async {
 
     Simulator.registerAction(10, () => reset.put(0));
 
-    WaveDumper(pipe, outputPath: 'answer_1.vcd');
+    WaveformService(pipe, outputPath: 'answer_1.vcd');
 
     Simulator.registerAction(50, () async {
       // stage 4 / result: 30 + (30 * 3) = 120
