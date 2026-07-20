@@ -73,6 +73,10 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Logic operator &lt;&lt;(dynamic other) {
+  if (_isZeroShiftAmount(other)) {
+    return this;
+  }
+
   if (isNet) {
     &#47;&#47; many SV simulators don&#39;t support shifting of nets, so default this
     final shamt = _constShiftAmount(other);

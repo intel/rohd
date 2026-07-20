@@ -69,13 +69,27 @@
 <p>This is equivalent to something like:</p>
 <pre class="language-SystemVerilog"><code class="language-SystemVerilog">control ? d1 : d0
 </code></pre>
+<p>If <code>control</code> is a valid <a href="../rohd/Const-class.html">Const</a>, returns the selected input directly.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Logic mux(Logic control, Logic d1, Logic d0) =&gt; Mux(control, d1, d0).out;</code></pre>
+  <pre class="language-dart"><code class="language-dart">Logic mux(Logic control, Logic d1, Logic d0) {
+  if (control.width != 1) {
+    throw PortWidthMismatchException(control, 1);
+  }
+  if (d0.width != d1.width) {
+    throw PortWidthMismatchException.equalWidth(d0, d1);
+  }
+
+  if (control is Const &amp;&amp; control.value.isValid) {
+    return control.value == LogicValue.one ? d1 : d0;
+  }
+
+  return Mux(control, d1, d0).out;
+}</code></pre>
 </section>
 
 

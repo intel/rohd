@@ -55,6 +55,9 @@
     
 <section class="desc markdown">
   <p>Represents a <a href="../rohd/Logic-class.html">Logic</a> that never changes value.</p>
+<p>Attempts to assign, <a href="../rohd/Const/put.html">put</a>, or <a href="../rohd/Const/inject.html">inject</a> a new value throw an
+<a href="../rohd/UnassignableException-class.html">UnassignableException</a>, including through another <a href="../rohd/Logic-class.html">Logic</a> driven by the
+<a href="../rohd/Const-class.html">Const</a>.</p>
 </section>
 
 
@@ -548,16 +551,16 @@ number is a two's complement.
 
 </dd>
 
-        <dt id="and" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/and.html">and</a></span><span class="signature">(<wbr>)
+        <dt id="and" class="callable">
+  <span class="name"><a href="../rohd/Const/and.html">and</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Unary AND.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -616,16 +619,16 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dd>
 
-        <dt id="eq" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/eq.html">eq</a></span><span class="signature">(<wbr><span class="parameter" id="eq-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+        <dt id="eq" class="callable">
+  <span class="name"><a href="../rohd/Const/eq.html">eq</a></span><span class="signature">(<wbr><span class="parameter" id="eq-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical equality.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -708,16 +711,16 @@ the corresponding index, plus <code>start</code>, of this signal.
 
 </dd>
 
-        <dt id="inject" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="inject-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span></span>})
+        <dt id="inject" class="callable">
+  <span class="name"><a href="../rohd/Const/inject.html">inject</a></span><span class="signature">(<wbr><span class="parameter" id="inject-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="inject-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Injects a value onto this signal in the current <a href="../rohd/Simulator-class.html">Simulator</a> tick.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -815,16 +818,16 @@ assigns it to be driven by <code>this</code>.
 
 </dd>
 
-        <dt id="neq" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/neq.html">neq</a></span><span class="signature">(<wbr><span class="parameter" id="neq-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+        <dt id="neq" class="callable">
+  <span class="name"><a href="../rohd/Const/neq.html">neq</a></span><span class="signature">(<wbr><span class="parameter" id="neq-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical inequality.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -841,16 +844,16 @@ assigns it to be driven by <code>this</code>.
 
 </dd>
 
-        <dt id="or" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/or.html">or</a></span><span class="signature">(<wbr>)
+        <dt id="or" class="callable">
+  <span class="name"><a href="../rohd/Const/or.html">or</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Unary OR.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -867,17 +870,17 @@ assigns it to be driven by <code>this</code>.
 
 </dd>
 
-        <dt id="put" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="put-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span></span>})
+        <dt id="put" class="callable">
+  <span class="name"><a href="../rohd/Const/put.html">put</a></span><span class="signature">(<wbr><span class="parameter" id="put-param-val"><span class="type-annotation">dynamic</span> <span class="parameter-name">val</span>, {</span><span class="parameter" id="put-param-fill"><span class="type-annotation"><a href="https://api.dart.dev/stable/3.12.2/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">fill</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; void</span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Puts a value <code>val</code> onto this signal, which may or may not be picked up
 for <a href="../rohd/Logic/changed.html">changed</a> in this <a href="../rohd/Simulator-class.html">Simulator</a> tick.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -967,16 +970,16 @@ of their original value.
 
 </dd>
 
-        <dt id="xor" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/xor.html">xor</a></span><span class="signature">(<wbr>)
+        <dt id="xor" class="callable">
+  <span class="name"><a href="../rohd/Const/xor.html">xor</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Unary XOR.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -998,7 +1001,7 @@ as the most significant bits.
   </section>
     
   <section
-      class="summary offset-anchor inherited"
+      class="summary offset-anchor"
       id="operators">
     <h2>Operators</h2>
     <dl class="callables">
@@ -1015,16 +1018,16 @@ as the most significant bits.
 
 </dd>
 
-        <dt id="operator &amp;" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_bitwise_and.html">operator &</a></span><span class="signature">(<wbr><span class="parameter" id="&-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
+        <dt id="operator &amp;" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_bitwise_and.html">operator &</a></span><span class="signature">(<wbr><span class="parameter" id="&-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical bitwise AND.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -1093,16 +1096,16 @@ as the most significant bits.
 
 </dd>
 
-        <dt id="operator &lt;&lt;" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_shift_left.html">operator <<</a></span><span class="signature">(<wbr><span class="parameter" id="<<-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+        <dt id="operator &lt;&lt;" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_shift_left.html">operator <<</a></span><span class="signature">(<wbr><span class="parameter" id="<<-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical left-shift.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -1158,29 +1161,29 @@ as the most significant bits.
 
 </dd>
 
-        <dt id="operator &gt;&gt;" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_shift_right.html">operator >></a></span><span class="signature">(<wbr><span class="parameter" id=">>-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+        <dt id="operator &gt;&gt;" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_shift_right.html">operator >></a></span><span class="signature">(<wbr><span class="parameter" id=">>-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Arithmetic right-shift.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
-        <dt id="operator &gt;&gt;&gt;" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_triple_shift.html">operator >>></a></span><span class="signature">(<wbr><span class="parameter" id=">>>-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
+        <dt id="operator &gt;&gt;&gt;" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_triple_shift.html">operator >>></a></span><span class="signature">(<wbr><span class="parameter" id=">>>-param-other"><span class="type-annotation">dynamic</span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical right-shift.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
@@ -1197,42 +1200,42 @@ as the most significant bits.
 
 </dd>
 
-        <dt id="operator ^" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_bitwise_exclusive_or.html">operator ^</a></span><span class="signature">(<wbr><span class="parameter" id="^-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
+        <dt id="operator ^" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_bitwise_exclusive_or.html">operator ^</a></span><span class="signature">(<wbr><span class="parameter" id="^-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical bitwise XOR.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
-        <dt id="operator |" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_bitwise_or.html">operator |</a></span><span class="signature">(<wbr><span class="parameter" id="|-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
+        <dt id="operator |" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_bitwise_or.html">operator |</a></span><span class="signature">(<wbr><span class="parameter" id="|-param-other"><span class="type-annotation"><a href="../rohd/Logic-class.html">Logic</a></span> <span class="parameter-name">other</span></span>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical bitwise OR.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
-        <dt id="operator ~" class="callable inherited">
-  <span class="name"><a href="../rohd/Logic/operator_bitwise_negate.html">operator ~</a></span><span class="signature">(<wbr>)
+        <dt id="operator ~" class="callable">
+  <span class="name"><a href="../rohd/Const/operator_bitwise_negate.html">operator ~</a></span><span class="signature">(<wbr>)
     <span class="returntype parameter">&#8594; <a href="../rohd/Logic-class.html">Logic</a></span>
   </span>
   
 
 </dt>
-<dd class="inherited">
+<dd>
   Logical bitwise NOT.
-  <div class="features"><span class="feature">inherited</span></div>
+  <div class="features"><span class="feature">override</span></div>
 
 </dd>
 
