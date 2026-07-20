@@ -39,8 +39,14 @@ typedef _AdvanceDart = void Function(Pointer<Void>, int);
 // SystemCFfiCosim — Real-time FFI co-simulation with SystemC
 // ============================================================================
 
-/// A co-simulation wrapper that compiles an ROHD module's SystemC output to a
-/// shared library and drives it in lock-step with the ROHD [Simulator].
+/// A live peek/poke-style co-simulation wrapper that compiles an ROHD module's
+/// SystemC output to a shared library and drives it in lock-step with the ROHD
+/// [Simulator].
+///
+/// This is intended for tests that interact with signals procedurally through
+/// `inject`, `put`, `await clk.nextPosedge`, and `expect`. Batch [Vector]
+/// replay uses the native SystemC vector-testbench executable from
+/// [SimCompare.checkSystemCVector] instead of FFI.
 ///
 /// ## How it works
 ///

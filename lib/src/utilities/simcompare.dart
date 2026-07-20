@@ -197,13 +197,14 @@ abstract class SimCompare {
   static void cleanupSystemCCache({bool keepPch = true}) =>
       _SystemCSimCompare.cleanupSystemCCache(keepPch: keepPch);
 
-  /// Compiles a SystemC module into a reusable stdin-driven executable.
+  /// Compiles a SystemC module into a reusable stdin-driven vector-testbench
+  /// executable.
   ///
-  /// Returns a [SystemCExecutable] that can be used to run multiple vector
-  /// sets without recompilation. Use in `setUpAll` for test groups.
+  /// Returns a [SystemCVectorExecutable] that can be used to run multiple
+  /// vector sets without recompilation. Use in `setUpAll` for test groups.
   /// Results are cached — calling this with the same module definition
   /// returns the previously compiled binary.
-  static SystemCExecutable? buildSystemCExecutable(
+  static SystemCVectorExecutable? buildSystemCVectorExecutable(
     Module module, {
     String? moduleName,
     String? clockName,
@@ -211,7 +212,7 @@ abstract class SimCompare {
     String? systemcHome,
     String? systemcLib,
   }) =>
-      _SystemCSimCompare.buildSystemCExecutable(
+      _SystemCSimCompare.buildSystemCVectorExecutable(
         module,
         moduleName: moduleName,
         clockName: clockName,
@@ -220,16 +221,36 @@ abstract class SimCompare {
         systemcLib: systemcLib,
       );
 
-  /// Runs [vectors] against a pre-compiled [SystemCExecutable].
+  /// Legacy name for [buildSystemCVectorExecutable].
+  @Deprecated('Use buildSystemCVectorExecutable instead.')
+  static SystemCVectorExecutable? buildSystemCExecutable(
+    Module module, {
+    String? moduleName,
+    String? clockName,
+    String? resetName,
+    String? systemcHome,
+    String? systemcLib,
+  }) =>
+      buildSystemCVectorExecutable(
+        module,
+        moduleName: moduleName,
+        clockName: clockName,
+        resetName: resetName,
+        systemcHome: systemcHome,
+        systemcLib: systemcLib,
+      );
+
+  /// Runs [vectors] against a pre-compiled [SystemCVectorExecutable].
   ///
   /// Returns `true` if all vectors pass.
-  static bool runSystemCVectors(SystemCExecutable exe, List<Vector> vectors) =>
+  static bool runSystemCVectors(
+          SystemCVectorExecutable exe, List<Vector> vectors) =>
       _SystemCSimCompare.runSystemCVectors(exe, vectors);
 
   /// Convenience: runs [vectors] against a pre-compiled executable and
   /// asserts the result.
   static void checkSystemCVectors(
-          SystemCExecutable exe, List<Vector> vectors) =>
+          SystemCVectorExecutable exe, List<Vector> vectors) =>
       _SystemCSimCompare.checkSystemCVectors(exe, vectors);
 
   /// Executes [vectors] against a SystemC simulator compiled with g++ and

@@ -379,12 +379,12 @@ void main() {
   });
 
   group('simcompare', () {
-    SystemCExecutable? busSystemCExe;
+    SystemCVectorExecutable? busSystemCExe;
 
     setUpAll(() async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      busSystemCExe = SimCompare.buildSystemCExecutable(gtm);
+      busSystemCExe = SimCompare.buildSystemCVectorExecutable(gtm);
     });
 
     tearDownAll(SimCompare.cleanupSystemCCache);

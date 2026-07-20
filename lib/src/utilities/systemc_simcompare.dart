@@ -16,8 +16,9 @@ class _SystemCSimCompare {
   static const _systemCDefaultHome = '/opt/systemc/include';
   static const _systemCDefaultLib = '/opt/systemc/lib';
 
-  /// Cache of compiled SystemC executables keyed by generated code hash.
-  static final _compilationCache = <int, SystemCExecutable>{};
+  /// Cache of compiled SystemC vector-testbench executables keyed by generated
+  /// code hash.
+  static final _compilationCache = <int, SystemCVectorExecutable>{};
 
   /// Prefix for SystemC artifacts owned by this test process.
   static final String tempPrefix =
@@ -145,13 +146,14 @@ class _SystemCSimCompare {
     } on Exception catch (_) {}
   }
 
-  /// Compiles a SystemC module into a reusable stdin-driven executable.
+  /// Compiles a SystemC module into a reusable stdin-driven vector-testbench
+  /// executable.
   ///
-  /// Returns a [SystemCExecutable] that can be used to run multiple vector
-  /// sets without recompilation. Use in `setUpAll` for test groups.
+  /// Returns a [SystemCVectorExecutable] that can be used to run multiple
+  /// vector sets without recompilation. Use in `setUpAll` for test groups.
   /// Results are cached — calling this with the same module definition
   /// returns the previously compiled binary.
-  static SystemCExecutable? buildSystemCExecutable(
+  static SystemCVectorExecutable? buildSystemCVectorExecutable(
     Module module, {
     String? moduleName,
     String? clockName,
@@ -439,7 +441,7 @@ int sc_main(int argc, char* argv[]) {
       return null;
     }
 
-    final exe = SystemCExecutable._(
+    final exe = SystemCVectorExecutable._(
       binaryPath: tmpOutput,
       cppFile: tmpCppFile,
       scLib: resolvedLib,
@@ -452,10 +454,11 @@ int sc_main(int argc, char* argv[]) {
     return exe;
   }
 
-  /// Runs [vectors] against a pre-compiled [SystemCExecutable].
+  /// Runs [vectors] against a pre-compiled [SystemCVectorExecutable].
   ///
   /// Returns `true` if all vectors pass.
-  static bool runSystemCVectors(SystemCExecutable exe, List<Vector> vectors) {
+  static bool runSystemCVectors(
+      SystemCVectorExecutable exe, List<Vector> vectors) {
     if (!File(exe.binaryPath).existsSync()) {
       print('SystemC binary not found: ${exe.binaryPath}');
       return false;
@@ -574,7 +577,8 @@ int sc_main(int argc, char* argv[]) {
 
   /// Convenience: runs [vectors] against a pre-compiled executable and
   /// asserts the result.
-  static void checkSystemCVectors(SystemCExecutable exe, List<Vector> vectors) {
+  static void checkSystemCVectors(
+      SystemCVectorExecutable exe, List<Vector> vectors) {
     expect(runSystemCVectors(exe, vectors), true);
   }
 
@@ -630,7 +634,7 @@ int sc_main(int argc, char* argv[]) {
       module.generateSystemC();
       return;
     }
-    final exe = buildSystemCExecutable(
+    final exe = buildSystemCVectorExecutable(
       module,
       moduleName: moduleName,
       clockName: clockName,
@@ -667,7 +671,7 @@ int sc_main(int argc, char* argv[]) {
     if (kIsWeb) {
       return true;
     }
-    final exe = buildSystemCExecutable(
+    final exe = buildSystemCVectorExecutable(
       module,
       moduleName: moduleName,
       clockName: clockName,
@@ -774,8 +778,9 @@ int sc_main(int argc, char* argv[]) {
   }
 }
 
-/// Holds the compiled state of a SystemC executable for reuse across tests.
-class SystemCExecutable {
+/// Holds the compiled state of a native SystemC vector-testbench executable for
+/// reuse across tests.
+class SystemCVectorExecutable {
   /// Path to the compiled binary.
   final String binaryPath;
 
@@ -797,7 +802,7 @@ class SystemCExecutable {
   /// Inout port names and widths.
   final Map<String, int> inOutPorts;
 
-  SystemCExecutable._({
+  SystemCVectorExecutable._({
     required this.binaryPath,
     required this.cppFile,
     required this.scLib,
@@ -830,3 +835,7 @@ class SystemCExecutable {
     } on Exception catch (_) {}
   }
 }
+
+/// Legacy name for [SystemCVectorExecutable].
+@Deprecated('Use SystemCVectorExecutable instead.')
+typedef SystemCExecutable = SystemCVectorExecutable;
