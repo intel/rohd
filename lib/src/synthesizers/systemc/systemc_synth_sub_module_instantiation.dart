@@ -40,11 +40,11 @@ class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
 
   /// Provides the inline SystemC expression for this module.
   ///
-  /// Should only be called if [module] is [InlineSystemVerilog].
+  /// Should only be called if [module] is [InlineLeaf].
   String inlineSystemC() {
     final portNameToValueMapping = modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
-        ..remove((module as InlineSystemVerilog).resultSignalName),
+        ..remove((module as InlineLeaf).resultSignalName),
       synthLogicToInlineableSynthSubmoduleMap,
       (submodule) => submodule.inlineSystemC(),
     );
@@ -59,7 +59,7 @@ class SystemCSynthSubModuleInstantiation extends SynthSubModuleInstantiation {
   String _inlineSystemCExpression(Map<String, String> inputs) {
     final m = module;
 
-    if (m is InlineSystemVerilog) {
+    if (m is InlineLeaf) {
       return leafEmitter.expressionFor(m, inputs);
     }
 

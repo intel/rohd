@@ -15,21 +15,9 @@ class InlineLeafEmitter {
   const InlineLeafEmitter();
 
   /// Emits a backend-specific expression for [module] given [inputs].
-  String expressionFor(InlineSystemVerilog module, Map<String, String> inputs) {
+  String expressionFor(InlineLeaf module, Map<String, String> inputs) {
     throw UnimplementedError(
       'InlineLeafEmitter.expressionFor must be implemented by subclasses.',
     );
   }
-}
-
-/// Minimal passthrough implementation for backends without dedicated leaf
-/// rendering logic.
-class PassthroughInlineLeafEmitter implements InlineLeafEmitter {
-  /// Creates a passthrough inline leaf emitter.
-  const PassthroughInlineLeafEmitter();
-
-  @override
-  String expressionFor(
-          InlineSystemVerilog module, Map<String, String> inputs) =>
-      module.inlineVerilog(inputs);
 }

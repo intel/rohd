@@ -10,7 +10,7 @@
 import 'package:rohd/rohd.dart';
 
 /// Representative inline leaf modules for focused contract tests.
-List<InlineSystemVerilog> representativeInlineLeafModules() => [
+List<InlineLeaf> representativeInlineLeafModules() => [
       NotGate(Logic(name: 'n', width: 3)),
       And2Gate(Logic(name: 'a', width: 4), Logic(name: 'b', width: 4)),
       LShift(Logic(name: 'lhs', width: 9), Logic(name: 'sh', width: 4)),
@@ -30,7 +30,7 @@ List<InlineSystemVerilog> representativeInlineLeafModules() => [
     ];
 
 /// All known built-in inline leaf modules expected to have inference coverage.
-List<InlineSystemVerilog> allKnownInlineLeafModules() => [
+List<InlineLeaf> allKnownInlineLeafModules() => [
       NotGate(Logic(name: 'n', width: 3)),
       And2Gate(Logic(name: 'a', width: 4), Logic(name: 'b', width: 4)),
       Or2Gate(Logic(name: 'a', width: 4), Logic(name: 'b', width: 4)),

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_mixins.dart
@@ -161,7 +161,7 @@ enum DefinitionGenerationType {
 ///
 /// The inline SystemVerilog will get parentheses wrapped around it and then
 /// dropped into other code in the same way a variable name is.
-mixin InlineSystemVerilog on Module implements SystemVerilog {
+mixin InlineSystemVerilog on Module implements SystemVerilog, InlineLeaf {
   @override
   BackendArtifact? artifactFor(BackendArtifactContext context) =>
       _systemVerilogArtifactFor(this, context);
@@ -184,6 +184,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   ///
   /// By default, this assumes one [output] port. This should be overridden in
   /// classes which have an [inOut] port as the in-lined symbol.
+  @override
   String get resultSignalName {
     if (outputs.keys.length != 1) {
       throw Exception('Inline verilog expected to have exactly one output,'
@@ -213,6 +214,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   }
 
   @override
+  @override
   @protected
   final List<String> expressionlessInputs = const [];
 
@@ -227,6 +229,7 @@ mixin InlineSystemVerilog on Module implements SystemVerilog {
   List<SystemVerilogParameterDefinition>? get definitionParameters => null;
 
   @internal
+  @override
   @override
   bool get isWiresOnly => false;
 }

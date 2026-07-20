@@ -15,7 +15,7 @@ import 'package:rohd/src/synthesizers/utilities/leaf_cell_spec.dart';
 /// This bridges current type-based inline modules into backend-neutral leaf
 /// metadata without requiring those modules to implement [LeafCellProvider]
 /// immediately.
-LeafCellSpec? leafCellSpecForInlineModule(InlineSystemVerilog module) {
+LeafCellSpec? leafCellSpecForInlineModule(InlineLeaf module) {
   if (module is LeafCellProvider) {
     return (module as LeafCellProvider).leafCellSpec;
   }
@@ -162,12 +162,19 @@ LeafCellSpec? leafCellSpecForInlineModule(InlineSystemVerilog module) {
   }
 
   if (module is Swizzle) {
+    final inputPorts = {
+      ...module.inputs,
+      ...module.inOuts,
+    }..remove(module.resultSignalName);
     return LeafCellSpec(
       operation: LeafOperationKind.swizzle,
       metadata: {
-        'inputCount': module.inputs.length,
-        'inputWidths':
-            module.inputs.values.map((input) => input.width).toList(),
+        'inputCount': inputPorts.length,
+        'inputWidths': inputPorts.values.map((input) => input.width).toList(),
+        'inputIsArrayMember':
+            inputPorts.values.map((input) => input.isArrayMember).toList(),
+        'inputHasUnpackedArraySource':
+            inputPorts.values.map(_hasUnpackedArraySource).toList(),
       },
     );
   }
@@ -185,4 +192,18 @@ LeafCellSpec? leafCellSpecForInlineModule(InlineSystemVerilog module) {
   }
 
   return null;
+}
+
+bool _hasUnpackedArraySource(Logic input) {
+  var current = input.srcConnection;
+  while (current?.parentStructure != null) {
+    final parentStructure = current!.parentStructure!;
+    if (parentStructure is LogicArray &&
+        parentStructure.numUnpackedDimensions > 0) {
+      return true;
+    }
+    current = parentStructure;
+  }
+
+  return false;
 }

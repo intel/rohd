@@ -407,7 +407,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// definition and should be inlined (like Add).
   static bool _isInlinableSystemVerilogGate(Module m) =>
       m is SystemVerilog &&
-      m is! InlineSystemVerilog &&
+      m is! InlineLeaf &&
       m is! Always &&
       m is! FlipFlop &&
       m.generatedDefinitionType == DefinitionGenerationType.none;
@@ -503,8 +503,7 @@ class SystemCSynthesisResult extends SynthesisResult {
     final inlineGates = _synthModuleDefinition.subModuleInstantiations
         .where((s) =>
             s.needsInstantiation &&
-            (s.module is InlineSystemVerilog ||
-                _isInlinableSystemVerilogGate(s.module)))
+            (s.module is InlineLeaf || _isInlinableSystemVerilogGate(s.module)))
         .cast<SystemCSynthSubModuleInstantiation>()
         .toList();
 
@@ -525,7 +524,7 @@ class SystemCSynthesisResult extends SynthesisResult {
       // inouts, so include non-result inout mappings as inputs.
       final inputExprs = <String, String>{};
       final inputMappings = {...ssmi.inputMapping, ...ssmi.inOutMapping};
-      if (m is InlineSystemVerilog) {
+      if (m is InlineLeaf) {
         inputMappings.remove(m.resultSignalName);
       }
       for (final entry in inputMappings.entries) {
@@ -536,9 +535,9 @@ class SystemCSynthesisResult extends SynthesisResult {
         inputExprs[entry.key] = _synthLogicReadExpr(sl);
       }
 
-      if (m is InlineSystemVerilog) {
+      if (m is InlineLeaf) {
         final resultSynthLogic = ssmi.inlineResultLogic;
-        if (resultSynthLogic == null) {
+        if (resultSynthLogic == null || !resultSynthLogic.hasName) {
           continue;
         }
         final expr = _gateExpression(m, inputExprs);
@@ -592,7 +591,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   ///
   /// Handles all gate types that have SV-specific syntax which needs
   /// translation to valid SystemC/C++.
-  String _gateExpression(InlineSystemVerilog m, Map<String, String> inputs) =>
+  String _gateExpression(InlineLeaf m, Map<String, String> inputs) =>
       _leafEmitter.expressionFor(m, inputs);
 
   // ────────────────────────────────────────────────────────────────────
@@ -963,7 +962,7 @@ class SystemCSynthesisResult extends SynthesisResult {
   /// instantiation) — i.e. it is an inline gate, Always, FlipFlop, or clock.
   static bool _isHandledInline(SystemCSynthSubModuleInstantiation ssmi) =>
       !ssmi.needsInstantiation ||
-      ssmi.module is InlineSystemVerilog ||
+      ssmi.module is InlineLeaf ||
       ssmi.module is Always ||
       ssmi.module is FlipFlop ||
       ssmi.module is SimpleClockGenerator ||

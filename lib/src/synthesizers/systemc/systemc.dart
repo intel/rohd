@@ -20,7 +20,8 @@ class SystemCSynthesizer extends Synthesizer {
   @override
   bool generatesDefinition(Module module) =>
       // ignore: deprecated_member_use_from_same_package
-      !((module is CustomSystemVerilog) ||
+      !((module is InlineLeaf) ||
+          (module is CustomSystemVerilog) ||
           (module is SystemVerilog &&
               module.generatedDefinitionType == DefinitionGenerationType.none));
 

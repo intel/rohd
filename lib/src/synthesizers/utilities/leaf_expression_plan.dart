@@ -39,12 +39,12 @@ class LeafExpressionPlan {
 
   /// Builds a plan for [module] and [inputs].
   factory LeafExpressionPlan.fromInlineModule(
-    InlineSystemVerilog module,
+    InlineLeaf module,
     Map<String, String> inputs,
   ) {
     final spec = leafCellSpecForInlineModule(module);
     return LeafExpressionPlan(
-      sourceModule: module,
+      sourceModule: module as Module,
       operation: spec?.operation,
       metadata: spec?.metadata ?? const {},
       inputValues: inputs.values.toList(),
@@ -57,11 +57,4 @@ class LeafExpressionPlan {
     final value = metadata[key];
     return value is T ? value : null;
   }
-
-  /// Invokes the legacy SystemVerilog inline hook for this source module.
-  ///
-  /// This exists only for the staged SystemVerilog migration. Other backends
-  /// must emit [operation] or use an explicit backend extension.
-  String legacySystemVerilogExpression() =>
-      (sourceModule as InlineSystemVerilog).inlineVerilog(inputsByPort);
 }

@@ -10,13 +10,93 @@
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/utilities/utilities.dart';
 
-/// Emits planned inline SystemVerilog expressions for semantic leaf gates.
+/// Emits inline SystemVerilog expressions for semantic leaf gates.
 class SystemVerilogLeafEmitter implements InlineLeafEmitter {
+  static final RegExp _singleBitSelectRegex =
+      RegExp(r'^\(?([A-Za-z_][A-Za-z0-9_$]*(?:\[\d+\])*)\[(\d+)\]\)?$');
+  static final RegExp _sliceSelectRegex =
+      RegExp(r'^\(?([A-Za-z_][A-Za-z0-9_$]*)\[(\d+):(\d+)\]\)?$');
+
   /// Creates a leaf emitter.
   const SystemVerilogLeafEmitter();
 
+  static ({String? target, int? index}) _singleBitSelect(String expression) {
+    final match = _singleBitSelectRegex.firstMatch(expression.trim());
+    if (match == null) {
+      return (target: null, index: null);
+    }
+
+    return (target: match.group(1), index: int.parse(match.group(2)!));
+  }
+
+  static String _bitSelect(String expression, int index) {
+    final match = _sliceSelectRegex.firstMatch(expression.trim());
+    if (match == null) {
+      return '$expression[$index]';
+    }
+
+    final target = match.group(1)!;
+    final upper = int.parse(match.group(2)!);
+    final lower = int.parse(match.group(3)!);
+    final selectedIndex = upper >= lower ? lower + index : lower - index;
+    return '$target[$selectedIndex]';
+  }
+
+  static List<({String expression, int width})> _collapseBitSelects(
+    List<({bool canCollapse, String expression, int width})> operands,
+  ) {
+    final collapsed = <({String expression, int width})>[];
+
+    var index = 0;
+    while (index < operands.length) {
+      final first = operands[index];
+      final firstSelect = first.width == 1 && first.canCollapse
+          ? _singleBitSelect(first.expression)
+          : (target: null, index: null);
+
+      if (firstSelect.target == null || firstSelect.index == null) {
+        collapsed.add((expression: first.expression, width: first.width));
+        index++;
+        continue;
+      }
+
+      var lastIndex = index;
+      var expectedBit = firstSelect.index! - 1;
+      while (lastIndex + 1 < operands.length) {
+        final next = operands[lastIndex + 1];
+        final nextSelect = next.width == 1 && next.canCollapse
+            ? _singleBitSelect(next.expression)
+            : (target: null, index: null);
+        if (nextSelect.target != firstSelect.target ||
+            nextSelect.index != expectedBit) {
+          break;
+        }
+        lastIndex++;
+        expectedBit--;
+      }
+
+      if (lastIndex == index) {
+        collapsed.add((
+          expression: '${firstSelect.target}[${firstSelect.index}]',
+          width: 1,
+        ));
+      } else {
+        final lowerSelect = _singleBitSelect(operands[lastIndex].expression);
+        collapsed.add((
+          expression:
+              '${firstSelect.target}[${firstSelect.index}:${lowerSelect.index}]',
+          width: lastIndex - index + 1,
+        ));
+      }
+
+      index = lastIndex + 1;
+    }
+
+    return collapsed;
+  }
+
   @override
-  String expressionFor(InlineSystemVerilog module, Map<String, String> inputs) {
+  String expressionFor(InlineLeaf module, Map<String, String> inputs) {
     final plan = LeafExpressionPlan.fromInlineModule(module, inputs);
 
     final op = plan.operation;
@@ -44,11 +124,14 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
       LeafOperationKind.greaterThanOrEqual: '>=',
       LeafOperationKind.shiftLeft: '<<',
       LeafOperationKind.shiftRight: '>>',
-      LeafOperationKind.arithmeticShiftRight: '>>>',
     };
     final binaryOp = binaryOps[op];
     if (binaryOp != null && vals.length >= 2) {
       return '${vals[0]} $binaryOp ${vals[1]}';
+    }
+
+    if (op == LeafOperationKind.arithmeticShiftRight && vals.length >= 2) {
+      return '{\$signed(${vals[0]}) >>> ${vals[1]}}';
     }
 
     if (op == LeafOperationKind.andUnary && vals.length == 1) {
@@ -77,7 +160,10 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
       final startIndex = plan.meta<int>('startIndex');
       final endIndex = plan.meta<int>('endIndex');
       if (startIndex == null || endIndex == null) {
-        return plan.legacySystemVerilogExpression();
+        throw SynthException(
+          'SystemVerilog bus subset leaf requires startIndex and endIndex '
+          'metadata.',
+        );
       }
 
       final a = vals[0];
@@ -87,7 +173,7 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
       if (startIndex > endIndex) {
         final swizzleContents = List.generate(
           startIndex - endIndex + 1,
-          (i) => '$a[${endIndex + i}]',
+          (i) => _bitSelect(a, endIndex + i),
         ).join(',');
         return '{$swizzleContents}';
       }
@@ -116,33 +202,62 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
     if (op == LeafOperationKind.swizzle && vals.isNotEmpty) {
       final inputWidths = plan.meta<List<int>>('inputWidths');
       final inputCount = plan.meta<int>('inputCount');
+      final inputIsArrayMember =
+          plan.meta<List<bool>>('inputIsArrayMember') ?? const <bool>[];
+      final inputHasUnpackedArraySource =
+          plan.meta<List<bool>>('inputHasUnpackedArraySource') ??
+              const <bool>[];
       if (inputWidths == null || inputCount == null) {
-        return plan.legacySystemVerilogExpression();
+        throw SynthException(
+          'SystemVerilog swizzle leaf requires inputWidths and inputCount '
+          'metadata.',
+        );
       }
 
       if (vals.length != inputCount && vals.length != inputCount + 1) {
-        return plan.legacySystemVerilogExpression();
+        throw SynthException(
+          'SystemVerilog swizzle leaf expected $inputCount inputs, but saw '
+          '${vals.length}.',
+        );
       }
 
-      final filtered = <({String expression, int width})>[];
-      for (var i = 0; i < inputWidths.length && i < vals.length; i++) {
+      final filtered = <({bool canCollapse, String expression, int width})>[];
+      final inputExpressions = vals.take(inputCount).toList();
+      for (var i = inputWidths.length - 1; i >= 0; i--) {
+        if (i >= inputExpressions.length) {
+          continue;
+        }
         final width = inputWidths[i];
         if (width > 0) {
-          filtered.add((expression: vals[i], width: width));
+          final isArrayMember =
+              i < inputIsArrayMember.length && inputIsArrayMember[i];
+          final hasUnpackedArraySource =
+              i < inputHasUnpackedArraySource.length &&
+                  inputHasUnpackedArraySource[i];
+          filtered.add((
+            canCollapse: !isArrayMember && !hasUnpackedArraySource,
+            expression: inputExpressions[i],
+            width: width,
+          ));
         }
       }
 
       if (filtered.isEmpty) {
-        return plan.legacySystemVerilogExpression();
-      }
-      if (filtered.length == 1) {
-        return filtered.single.expression;
+        throw SynthException(
+          'SystemVerilog swizzle leaf requires at least one non-zero-width '
+          'input.',
+        );
       }
 
-      final outWidth = filtered.fold<int>(0, (sum, entry) => sum + entry.width);
+      final operands = _collapseBitSelects(filtered);
+      if (operands.length == 1) {
+        return operands.single.expression;
+      }
+
+      final outWidth = operands.fold<int>(0, (sum, entry) => sum + entry.width);
       final widthDescriptions = <({int upper, int? lower})>[];
       var upperIndex = outWidth - 1;
-      for (final entry in filtered) {
+      for (final entry in operands) {
         if (entry.width > 1) {
           final lowerIndex = upperIndex - entry.width + 1;
           widthDescriptions.add((upper: upperIndex, lower: lowerIndex));
@@ -169,8 +284,8 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
 
       final inputLines = <String>[];
       var lineUpper = outWidth - 1;
-      for (var i = 0; i < filtered.length; i++) {
-        final entry = filtered[i];
+      for (var i = 0; i < operands.length; i++) {
+        final entry = operands[i];
         final desc = widthDescriptions[i];
 
         final alignedDesc = desc.lower != null
@@ -188,7 +303,10 @@ class SystemVerilogLeafEmitter implements InlineLeafEmitter {
       return '{\n${inputLines.join('\n')}\n}';
     }
 
-    // Fallback keeps behavior stable while migration is incremental.
-    return plan.legacySystemVerilogExpression();
+    throw SynthException(
+      'SystemVerilog cannot emit semantic leaf operation for '
+      '${module.runtimeType}. Provide LeafCellProvider metadata or a '
+      'backend-specific leaf emitter extension.',
+    );
   }
 }

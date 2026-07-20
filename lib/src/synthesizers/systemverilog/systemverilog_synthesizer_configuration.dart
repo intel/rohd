@@ -24,17 +24,9 @@ class SystemVerilogSynthesizerConfiguration {
   /// Whether port data types, such as `logic`, are explicit.
   final SystemVerilogPortType portDataType;
 
-  /// Whether inline leaf expressions are rendered via the leaf-expression
-  /// planner path.
-  ///
-  /// This is an opt-in migration flag for the metadata-driven inline
-  /// rendering path. The default keeps existing inline rendering behavior.
-  final bool useLeafExpressionPlanForInlineRendering;
-
   /// Creates a new configuration for SystemVerilog synthesis.
   const SystemVerilogSynthesizerConfiguration({
     this.portObjectType = SystemVerilogPortType.explicit,
     this.portDataType = SystemVerilogPortType.explicit,
-    this.useLeafExpressionPlanForInlineRendering = false,
   });
 }

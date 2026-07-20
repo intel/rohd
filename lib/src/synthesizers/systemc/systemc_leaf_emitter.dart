@@ -22,7 +22,7 @@ class SystemCLeafEmitter implements InlineLeafEmitter {
   ///
   /// [inputs] maps module input port names to SystemC read expressions.
   @override
-  String expressionFor(InlineSystemVerilog m, Map<String, String> inputs) {
+  String expressionFor(InlineLeaf m, Map<String, String> inputs) {
     final plan = LeafExpressionPlan.fromInlineModule(m, inputs);
     final op = plan.operation;
 

@@ -87,6 +87,14 @@ void main() {
         swizzleSpec.metadata['inputWidths'],
         swizzle.inputs.values.map((input) => input.width).toList(),
       );
+      expect(
+        swizzleSpec.metadata['inputIsArrayMember'],
+        swizzle.inputs.values.map((input) => input.isArrayMember).toList(),
+      );
+      expect(
+        swizzleSpec.metadata['inputHasUnpackedArraySource'],
+        [false, false, false],
+      );
     });
 
     test('inference contract matrix across representative leaf operations', () {
@@ -97,7 +105,7 @@ void main() {
       ]);
 
       final scenarios = <({
-        InlineSystemVerilog module,
+        InlineLeaf module,
         LeafOperationKind operation,
         Map<String, Object?> metadata,
       })>[
@@ -170,6 +178,10 @@ void main() {
             'inputCount': 3,
             'inputWidths':
                 swizzle.inputs.values.map((input) => input.width).toList(),
+            'inputIsArrayMember': swizzle.inputs.values
+                .map((input) => input.isArrayMember)
+                .toList(),
+            'inputHasUnpackedArraySource': [false, false, false],
           },
         ),
       ];

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_synth_sub_module_instantiation.dart
@@ -17,15 +17,9 @@ class SystemVerilogSynthSubModuleInstantiation
     extends SynthSubModuleInstantiation {
   static const _leafEmitter = SystemVerilogLeafEmitter();
 
-  /// Whether inline expressions should be rendered using [LeafExpressionPlan].
-  final bool useLeafExpressionPlanForInlineRendering;
-
   /// Creates a new [SystemVerilogSynthSubModuleInstantiation] for the given
   /// [module].
-  SystemVerilogSynthSubModuleInstantiation(
-    super.module, {
-    this.useLeafExpressionPlanForInlineRendering = false,
-  });
+  SystemVerilogSynthSubModuleInstantiation(super.module);
 
   /// Mapping from [SynthLogic]s which are outputs of inlineable SV to those
   /// inlineable modules.
@@ -34,11 +28,11 @@ class SystemVerilogSynthSubModuleInstantiation
 
   /// Provides the inline SV representation for this module.
   ///
-  /// Should only be called if [module] is [InlineSystemVerilog].
+  /// Should only be called if [module] is [InlineLeaf].
   String inlineVerilog() {
     final portNameToValueMapping = modulePortsMapWithInline(
       {...inputMapping, ...inOutMapping}
-        ..remove((module as InlineSystemVerilog).resultSignalName),
+        ..remove((module as InlineLeaf).resultSignalName),
       synthLogicToInlineableSynthSubmoduleMap,
       (submodule) => submodule.inlineVerilog(),
     );
@@ -50,12 +44,10 @@ class SystemVerilogSynthSubModuleInstantiation
         'Inline modules should not ever receive empty port values,'
         ' only module instantiations can get something like `.port_name()`.');
 
-    final inlineSvRepresentation = useLeafExpressionPlanForInlineRendering
-        ? _leafEmitter.expressionFor(
-            module as InlineSystemVerilog,
-            portNameToValueMapping,
-          )
-        : (module as InlineSystemVerilog).inlineVerilog(portNameToValueMapping);
+    final inlineSvRepresentation = _leafEmitter.expressionFor(
+      module as InlineLeaf,
+      portNameToValueMapping,
+    );
 
     return '($inlineSvRepresentation)';
   }
@@ -65,15 +57,23 @@ class SystemVerilogSynthSubModuleInstantiation
     if (!needsInstantiation) {
       return null;
     }
+    final ports = modulePortsMapWithInline({
+      ...inputMapping,
+      ...outputMapping,
+      ...inOutMapping,
+    }, synthLogicToInlineableSynthSubmoduleMap,
+        (submodule) => submodule.inlineVerilog());
+
+    if (module is InlineLeaf) {
+      final resultName = (module as InlineLeaf).resultSignalName;
+      if ((ports[resultName] ?? '').isEmpty) {
+        return null;
+      }
+    }
     return SystemVerilogSynthesizer.instantiationVerilogFor(
         module: module,
         instanceType: instanceType,
         instanceName: name,
-        ports: modulePortsMapWithInline({
-          ...inputMapping,
-          ...outputMapping,
-          ...inOutMapping,
-        }, synthLogicToInlineableSynthSubmoduleMap,
-            (submodule) => submodule.inlineVerilog()));
+        ports: ports);
   }
 }

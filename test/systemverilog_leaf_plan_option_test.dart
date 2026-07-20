@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // systemverilog_leaf_plan_option_test.dart
-// Tests for opt-in SystemVerilog leaf expression plan rendering.
+// Tests for SystemVerilog leaf expression plan rendering configuration.
 //
 // 2026 July
 // Author: Desmond A. Kirkpatrick <desmond.a.kirkpatrick@intel.com>
@@ -174,7 +174,7 @@ class _InlineMixedOptionGateModule extends Module {
 }
 
 void main() {
-  test('leaf-expression-plan inline rendering is opt-in', () async {
+  test('leaf-expression-plan inline rendering is the default', () async {
     final mod = _InlineOpsModule(
       Logic(name: 'a', width: 4),
       Logic(name: 'b', width: 4),
@@ -183,11 +183,7 @@ void main() {
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('assign y_and = a & b;'));
     expect(baseline, contains('assign y_not = ~a;'));
@@ -198,17 +194,13 @@ void main() {
     expect(planned, contains('assign y_mux = control ? a : b;'));
   });
 
-  test('opt-in path preserves inline output for range/replication/swizzle',
+  test('planned path preserves inline output for range/replication/swizzle',
       () async {
     final mod = _InlineRangeReplicationModule(Logic(name: 'a', width: 8));
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(
       baseline,
@@ -241,7 +233,7 @@ void main() {
     );
   });
 
-  test('opt-in path preserves inline output for power/index', () async {
+  test('planned path preserves inline output for power/index', () async {
     final mod = _InlinePowerIndexModule(
       Logic(name: 'a', width: 4),
       Logic(name: 'b', width: 4),
@@ -250,11 +242,7 @@ void main() {
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains(RegExp(r'assign y_pow = \{a \*\* b\};')));
     expect(baseline, contains(RegExp(r'assign y_idx = a\[idx\];')));
@@ -267,7 +255,7 @@ void main() {
     );
   });
 
-  test('opt-in path preserves inline output for single-bit edge cases',
+  test('planned path preserves inline output for single-bit edge cases',
       () async {
     final mod = _InlineSingleBitEdgesModule(
       Logic(name: 'a', width: 4),
@@ -277,11 +265,7 @@ void main() {
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('assign y_subset_single = a[2];'));
     expect(baseline, contains('assign y_idx_single = scalar;'));
@@ -294,16 +278,12 @@ void main() {
     );
   });
 
-  test('opt-in path preserves swizzle output with zero-width input', () async {
+  test('planned path preserves swizzle output with zero-width input', () async {
     final mod = _InlineSwizzleZeroWidthModule(Logic(name: 'a', width: 4));
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('assign y_swizzle_zero = a;'));
     expect(planned, contains('assign y_swizzle_zero = a;'));
@@ -313,18 +293,14 @@ void main() {
     );
   });
 
-  test('opt-in path preserves swizzle contiguous-select collapsing', () async {
+  test('planned path preserves swizzle contiguous-select collapsing', () async {
     final mod = _InlineSwizzleCollapsedSelectsModule(
       Logic(name: 'a', width: 8),
     );
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('assign y_swizzle_collapse = a[7:5];'));
     expect(planned, contains('assign y_swizzle_collapse = a[7:5];'));
@@ -334,18 +310,14 @@ void main() {
     );
   });
 
-  test('opt-in path preserves swizzle partial contiguous-collapse', () async {
+  test('planned path preserves swizzle partial contiguous-collapse', () async {
     final mod = _InlineSwizzlePartialCollapseModule(
       Logic(name: 'a', width: 8),
     );
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('a[7:6]'));
     expect(baseline, contains('a[4]'));
@@ -357,7 +329,7 @@ void main() {
     );
   });
 
-  test('opt-in path preserves non-collapsible ascending swizzle order',
+  test('planned path preserves non-collapsible ascending swizzle order',
       () async {
     final mod = _InlineSwizzleAscendingSelectsModule(
       Logic(name: 'a', width: 8),
@@ -365,11 +337,7 @@ void main() {
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('a[5]'));
     expect(baseline, contains('a[6]'));
@@ -386,7 +354,7 @@ void main() {
     );
   });
 
-  test('opt-in path preserves per-source swizzle collapsing', () async {
+  test('planned path preserves per-source swizzle collapsing', () async {
     final mod = _InlineSwizzleMultiSourceCollapseModule(
       Logic(name: 'a', width: 8),
       Logic(name: 'b', width: 8),
@@ -394,11 +362,7 @@ void main() {
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('a[7:6]'));
     expect(baseline, contains('b[3:2]'));
@@ -410,18 +374,14 @@ void main() {
     );
   });
 
-  test('opt-in path preserves unpacked-array swizzle non-collapse', () async {
+  test('planned path preserves unpacked-array swizzle non-collapse', () async {
     final mod = _InlineSwizzleUnpackedArrayElementsModule(
       LogicArray([4], 1, numUnpackedDimensions: 1),
     );
     await mod.build();
 
     final baseline = mod.generateSynth();
-    final planned = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final planned = mod.generateSynth();
 
     expect(baseline, contains('arr[3]'));
     expect(baseline, contains('arr[2]'));
@@ -440,7 +400,7 @@ void main() {
     );
   });
 
-  test('opt-in path preserves swizzle parity matrix', () async {
+  test('planned path preserves swizzle parity matrix', () async {
     final scenarios = <({
       String name,
       Module Function() build,
@@ -503,11 +463,7 @@ void main() {
       await mod.build();
 
       final baseline = mod.generateSynth();
-      final planned = mod.generateSynth(
-        configuration: const SystemVerilogSynthesizerConfiguration(
-          useLeafExpressionPlanForInlineRendering: true,
-        ),
-      );
+      final planned = mod.generateSynth();
 
       for (final expected in scenario.contains) {
         expect(
@@ -545,8 +501,7 @@ void main() {
     }
   });
 
-  test('default option matches explicit false and opt-in parity on mixed ops',
-      () async {
+  test('semantic leaf emission handles mixed ops', () async {
     final mod = _InlineMixedOptionGateModule(
       Logic(name: 'a', width: 8),
       Logic(name: 'b', width: 8),
@@ -555,30 +510,11 @@ void main() {
     );
     await mod.build();
 
-    final defaultSynth = mod.generateSynth();
-    final explicitFalseConfiguration = SystemVerilogSynthesizerConfiguration(
-      useLeafExpressionPlanForInlineRendering: [false].single,
-    );
-    final explicitFalse =
-        mod.generateSynth(configuration: explicitFalseConfiguration);
-    final optIn = mod.generateSynth(
-      configuration: const SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: true,
-      ),
-    );
+    final synth = mod.generateSynth();
 
-    expect(
-      normalizeSynthHeader(defaultSynth),
-      equals(normalizeSynthHeader(explicitFalse)),
-    );
-    expect(
-      normalizeSynthHeader(optIn),
-      equals(normalizeSynthHeader(defaultSynth)),
-    );
-
-    expect(defaultSynth, contains('assign y_and = a & b;'));
-    expect(defaultSynth, contains('assign y_mux = control ? a : b;'));
-    expect(defaultSynth, contains('assign y_pow = {a ** b};'));
-    expect(defaultSynth, contains('assign y_idx = a[idx];'));
+    expect(synth, contains('assign y_and = a & b;'));
+    expect(synth, contains('assign y_mux = control ? a : b;'));
+    expect(synth, contains('assign y_pow = {a ** b};'));
+    expect(synth, contains('assign y_idx = a[idx];'));
   });
 }

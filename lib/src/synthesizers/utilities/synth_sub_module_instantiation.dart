@@ -114,11 +114,11 @@ class SynthSubModuleInstantiation {
   bool get needsInstantiation => _needsInstantiation;
   bool _needsInstantiation = true;
 
-  /// If [module] is [InlineSystemVerilog], this is the [SynthLogic] mapped
-  /// from its [InlineSystemVerilog.resultSignalName].
+  /// If [module] is [InlineLeaf], this is the [SynthLogic] mapped from its
+  /// [InlineLeaf.resultSignalName].
   SynthLogic? get inlineResultLogic {
     final m = module;
-    if (m is! InlineSystemVerilog) {
+    if (m is! InlineLeaf) {
       return null;
     }
     return outputMapping[m.resultSignalName] ??

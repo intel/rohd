@@ -9,10 +9,9 @@
 
 import 'package:rohd/rohd.dart';
 import 'package:rohd/src/synthesizers/systemc/systemc_leaf_emitter.dart';
+import 'package:rohd/src/synthesizers/systemverilog/systemverilog_leaf_emitter.dart';
 import 'package:rohd/src/synthesizers/utilities/leaf_cell_spec.dart';
 import 'package:test/test.dart';
-
-import 'synth_test_helpers.dart';
 
 class _BackendConformanceModule extends Module {
   _BackendConformanceModule(Logic a, Logic b, Logic sel, Logic idx) {
@@ -41,8 +40,8 @@ class _InlineUnknownNand extends Module with InlineSystemVerilog {
     b = addInput('b', b, width: b.width);
     out = addOutput('out', width: a.width);
 
-    // Functional behavior is arbitrary for this test; synthesis path uses
-    // inlineVerilog when this module is inlined.
+    // Functional behavior is arbitrary for this test; semantic leaf emission
+    // rejects this module because it has no backend-neutral metadata.
     out <= a & b;
   }
 
@@ -182,11 +181,7 @@ void main() {
       );
       await mod.build();
 
-      final planned = mod.generateSynth(
-        configuration: const SystemVerilogSynthesizerConfiguration(
-          useLeafExpressionPlanForInlineRendering: true,
-        ),
-      );
+      final planned = mod.generateSynth();
 
       expect(planned, contains('assign y_and = a & b;'));
       expect(planned, contains('assign y_mux = sel ? a : b;'));
@@ -194,18 +189,29 @@ void main() {
       expect(planned, contains('assign y_idx = a[idx];'));
     });
 
-    test('SystemC rejects unknown SystemVerilog-only inline module', () async {
-      final emitter = SystemCLeafEmitter(
+    test('backends reject unknown SystemVerilog-only inline module', () async {
+      final systemCEmitter = SystemCLeafEmitter(
         typeForWidth: (width) =>
             width <= 64 ? 'sc_uint<$width>' : 'sc_biguint<$width>',
       );
+      const systemVerilogEmitter = SystemVerilogLeafEmitter();
 
       final unknown = _InlineUnknownNand(
         Logic(name: 'a', width: 4),
         Logic(name: 'b', width: 4),
       );
       expect(
-        () => emitter.expressionFor(unknown, {'a': 'a_expr', 'b': 'b_expr'}),
+        () => systemCEmitter.expressionFor(
+          unknown,
+          {'a': 'a_expr', 'b': 'b_expr'},
+        ),
+        throwsA(isA<SynthException>()),
+      );
+      expect(
+        () => systemVerilogEmitter.expressionFor(
+          unknown,
+          {'a': 'a_expr', 'b': 'b_expr'},
+        ),
         throwsA(isA<SynthException>()),
       );
 
@@ -215,22 +221,13 @@ void main() {
       );
       await mod.build();
 
-      final baseline = mod.generateSynth();
-      final planned = mod.generateSynth(
-        configuration: const SystemVerilogSynthesizerConfiguration(
-          useLeafExpressionPlanForInlineRendering: true,
-        ),
-      );
-
-      expect(baseline, contains('~(a & b)'));
-      expect(planned, contains('~(a & b)'));
       expect(
-        normalizeSynthHeader(planned),
-        equals(normalizeSynthHeader(baseline)),
+        mod.generateSynth,
+        throwsA(isA<SynthException>()),
       );
     });
 
-    test('unknown inline module is invariant across planner option states',
+    test('unknown inline module is rejected by SystemVerilog synthesis',
         () async {
       final mod = _BackendFallbackModule(
         Logic(name: 'a', width: 4),
@@ -238,31 +235,10 @@ void main() {
       );
       await mod.build();
 
-      final defaultSynth = mod.generateSynth();
-      final explicitFalseConfig = SystemVerilogSynthesizerConfiguration(
-        useLeafExpressionPlanForInlineRendering: [false].single,
-      );
-      final explicitFalse = mod.generateSynth(
-        configuration: explicitFalseConfig,
-      );
-      final optIn = mod.generateSynth(
-        configuration: const SystemVerilogSynthesizerConfiguration(
-          useLeafExpressionPlanForInlineRendering: true,
-        ),
-      );
-
       expect(
-        normalizeSynthHeader(defaultSynth),
-        equals(normalizeSynthHeader(explicitFalse)),
+        mod.generateSynth,
+        throwsA(isA<SynthException>()),
       );
-      expect(
-        normalizeSynthHeader(optIn),
-        equals(normalizeSynthHeader(defaultSynth)),
-      );
-
-      expect(defaultSynth, contains('~(a & b)'));
-      expect(explicitFalse, contains('~(a & b)'));
-      expect(optIn, contains('~(a & b)'));
     });
 
     test('SystemC rejects unknown inline module matrix', () {
@@ -272,7 +248,7 @@ void main() {
       );
 
       final scenarios = <({
-        InlineSystemVerilog module,
+        InlineLeaf module,
         Map<String, String> inputs,
       })>[
         (

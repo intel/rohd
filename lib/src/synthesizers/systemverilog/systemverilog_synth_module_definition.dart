@@ -63,7 +63,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     for (final instantiation in subModuleInstantiations) {
       instantiation as SystemVerilogSynthSubModuleInstantiation;
       for (final entry in instantiation.inputMapping.entries) {
-        if (instantiation.module is! InlineSystemVerilog) {
+        if (instantiation.module is! InlineLeaf) {
           allMappedSignals.add(entry.value.resolved);
         }
         inputUses.putIfAbsent(entry.value.resolved, () => []).add((
@@ -75,7 +75,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
         ...instantiation.outputMapping.values,
         ...instantiation.inOutMapping.values,
       ]) {
-        if (instantiation.module is! InlineSystemVerilog) {
+        if (instantiation.module is! InlineLeaf) {
           allMappedSignals.add(signal.resolved);
           outputOrInOutMappedSignals.add(signal.resolved);
         }
@@ -109,7 +109,11 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
           outputOrInOutMappedSignals.contains(bus) ||
           !bus.isClearable ||
           !internalSignals.contains(bus) ||
-          use.instantiation.module is InlineSystemVerilog ||
+          use.instantiation.module is InlineLeaf ||
+          (use.instantiation.module is InlineLeaf &&
+              (use.instantiation.module as InlineLeaf)
+                  .expressionlessInputs
+                  .contains(use.portName)) ||
           (use.instantiation.module is SystemVerilog &&
               (use.instantiation.module as SystemVerilog)
                   .expressionlessInputs
@@ -211,11 +215,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
   @override
   SynthSubModuleInstantiation createSubModuleInstantiation(Module m) =>
-      SystemVerilogSynthSubModuleInstantiation(
-        m,
-        useLeafExpressionPlanForInlineRendering:
-            configuration.useLeafExpressionPlanForInlineRendering,
-      );
+      SystemVerilogSynthSubModuleInstantiation(m);
 
   /// Creates a new [_NetConnect] module to synthesize assignment between two
   /// [LogicNet]s.
@@ -404,6 +404,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // The consuming port must accept expressions.
         final consumer = use.instantiation.module;
+        if (consumer is InlineLeaf &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
         if (consumer is SystemVerilog &&
             consumer.expressionlessInputs.contains(use.portName)) {
           continue;
@@ -884,6 +888,10 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
         // The consuming port must accept expressions.
         final consumer = use.instantiation.module;
+        if (consumer is InlineLeaf &&
+            consumer.expressionlessInputs.contains(use.portName)) {
+          continue;
+        }
         if (consumer is SystemVerilog &&
             consumer.expressionlessInputs.contains(use.portName)) {
           continue;
@@ -1116,7 +1124,7 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
       }
 
       for (final inst in activeInstantiations) {
-        final isInlineable = inst.module is InlineSystemVerilog;
+        final isInlineable = inst.module is InlineLeaf;
         final resultLogic =
             isInlineable ? inst.inlineResultLogic?.resolved : null;
 
@@ -1396,13 +1404,13 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
     }
   }
 
-  /// Finds all [InlineSystemVerilog] modules where all ports are [LogicNet]s
+  /// Finds all [InlineLeaf] modules where all ports are [LogicNet]s
   /// and which have not had their declarations cleared and replaces them with a
   /// [_NetConnect] assignment instead of a normal assignment.
   void _replaceInOutConnectionInlineableModules() {
     for (final subModuleInstantiation in subModuleInstantiations.toList().where(
           (e) =>
-              e.module is InlineSystemVerilog &&
+              e.module is InlineLeaf &&
               e.needsInstantiation &&
               e.outputMapping.isEmpty &&
               e.inOutMapping.isNotEmpty,
@@ -1416,8 +1424,8 @@ class SystemVerilogSynthModuleDefinition extends SynthModuleDefinition {
 
       subModuleInstantiation.clearInstantiation();
 
-      final resultName = (subModuleInstantiation.module as InlineSystemVerilog)
-          .resultSignalName;
+      final resultName =
+          (subModuleInstantiation.module as InlineLeaf).resultSignalName;
 
       final subModResult = subModuleInstantiation.inOutMapping[resultName]!;
 

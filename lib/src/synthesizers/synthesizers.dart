@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // synthesizers.dart
@@ -14,3 +14,4 @@ export 'synthesizer.dart';
 export 'systemc/systemc.dart';
 export 'systemverilog/systemverilog.dart';
 export 'utilities/backend_artifact.dart';
+export 'utilities/inline_leaf.dart';

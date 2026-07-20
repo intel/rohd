@@ -43,7 +43,7 @@ void main() {
 
     test('planner contract matrix across representative leaf operations', () {
       Map<String, String> orderedInputs(
-        InlineSystemVerilog module,
+        InlineLeaf module,
         List<String> values,
       ) {
         final keys = module.inputs.keys.toList();
@@ -69,7 +69,7 @@ void main() {
       ]);
 
       final scenarios = <({
-        InlineSystemVerilog module,
+        InlineLeaf module,
         LeafOperationKind op,
         List<String> inputs,
         Map<String, Object?> metadata,
@@ -116,6 +116,8 @@ void main() {
           metadata: {
             'inputCount': 3,
             'inputWidths': [3, 1, 2],
+            'inputIsArrayMember': [false, false, false],
+            'inputHasUnpackedArraySource': [false, false, false],
           },
         ),
       ];
@@ -137,7 +139,7 @@ void main() {
     });
 
     test('plan mirrors inferred leaf spec across module matrix', () {
-      Map<String, String> taggedInputs(InlineSystemVerilog module) {
+      Map<String, String> taggedInputs(InlineLeaf module) {
         final mapping = <String, String>{};
         for (final port in module.inputs.keys) {
           mapping[port] = '${port}_expr';

@@ -1,4 +1,4 @@
-// Copyright (C) 2021-2025 Intel Corporation
+// Copyright (C) 2021-2026 Intel Corporation
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // bus_test.dart
@@ -379,12 +379,12 @@ void main() {
   });
 
   group('simcompare', () {
-    SystemCExecutable? busSystemCExe;
+    SystemCVectorExecutable? busSystemCExe;
 
     setUpAll(() async {
       final gtm = BusTestModule(Logic(width: 8), Logic(width: 8));
       await gtm.build();
-      busSystemCExe = SimCompare.buildSystemCExecutable(gtm);
+      busSystemCExe = SimCompare.buildSystemCVectorExecutable(gtm);
     });
 
     tearDownAll(SimCompare.cleanupSystemCCache);

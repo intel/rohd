@@ -270,6 +270,10 @@ class SynthModuleDefinition {
                 (logic.parentModule is SystemVerilog &&
                     (logic.parentModule! as SystemVerilog)
                         .expressionlessInputs
+                        .contains(logic.name)) ||
+                (logic.parentModule is InlineLeaf &&
+                    (logic.parentModule! as InlineLeaf)
+                        .expressionlessInputs
                         .contains(logic.name)));
 
         final Naming? namingOverride;
@@ -390,9 +394,10 @@ class SynthModuleDefinition {
   /// Creates a new definition representation for this [module].
   SynthModuleDefinition(this.module)
       : assert(
-            !(module is SystemVerilog &&
-                module.generatedDefinitionType ==
-                    DefinitionGenerationType.none),
+            module is! InlineLeaf &&
+                !(module is SystemVerilog &&
+                    module.generatedDefinitionType ==
+                        DefinitionGenerationType.none),
             'Do not build a definition for a module'
             ' which generates no definition!') {
     // start by traversing output signals
@@ -666,8 +671,7 @@ class SynthModuleDefinition {
   /// Finds chainable, inlineable modules.
   Iterable<SynthSubModuleInstantiation> _findChainableModulesToCollapse() {
     final inlineableSubmoduleInstantiations = subModuleInstantiations.where(
-      (submoduleInstantiation) =>
-          submoduleInstantiation.module is InlineSystemVerilog,
+      (submoduleInstantiation) => submoduleInstantiation.module is InlineLeaf,
     );
 
     final signalUsage = <SynthLogic, int>{};
@@ -792,7 +796,14 @@ class SynthModuleDefinition {
 
     for (final instantiation in subModuleInstantiations) {
       final subModule = instantiation.module;
-      if (subModule is SystemVerilog) {
+      if (subModule is InlineLeaf) {
+        singleUseSignals.removeAll(
+          subModule.expressionlessInputs.map(
+            (e) =>
+                instantiation.inputMapping[e] ?? instantiation.inOutMapping[e],
+          ),
+        );
+      } else if (subModule is SystemVerilog) {
         singleUseSignals.removeAll(
           subModule.expressionlessInputs.map(
             (e) =>
@@ -821,7 +832,7 @@ class SynthModuleDefinition {
 
   SynthLogic? _inlineResultLogic(SynthSubModuleInstantiation instantiation) {
     final subModule = instantiation.module;
-    if (subModule is! InlineSystemVerilog) {
+    if (subModule is! InlineLeaf) {
       return null;
     }
 
@@ -1250,7 +1261,7 @@ class SynthModuleDefinition {
 
     for (final submoduleInstantiation in subModuleInstantiations) {
       if (!submoduleInstantiation.needsInstantiation ||
-          submoduleInstantiation.module is InlineSystemVerilog) {
+          submoduleInstantiation.module is InlineLeaf) {
         continue;
       }
 
@@ -1297,7 +1308,7 @@ class SynthModuleDefinition {
 
     for (final submoduleInstantiation in subModuleInstantiations) {
       if (!submoduleInstantiation.needsInstantiation ||
-          submoduleInstantiation.module is InlineSystemVerilog) {
+          submoduleInstantiation.module is InlineLeaf) {
         continue;
       }
 
@@ -2728,7 +2739,7 @@ class SynthModuleDefinition {
             })>>{};
     for (final instantiation in subModuleInstantiations) {
       if (!instantiation.needsInstantiation ||
-          instantiation.module is InlineSystemVerilog) {
+          instantiation.module is InlineLeaf) {
         continue;
       }
       for (final entry in instantiation.outputMapping.entries) {
