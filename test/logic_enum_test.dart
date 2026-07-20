@@ -322,6 +322,45 @@ class EnumHierarchyModule extends Module {
   }
 }
 
+class TypedEnumPortsModule extends Module {
+  late final LogicEnum<TestEnum> stateIn;
+  late final LogicEnum<TestEnum> stateOut;
+
+  TypedEnumPortsModule(LogicEnum<TestEnum> source)
+      : super(name: 'typedEnumPorts') {
+    stateIn = addTypedInput('stateIn', source);
+    stateOut = addTypedOutput('stateOut', stateIn.clone)..gets(stateIn);
+  }
+}
+
+class TypedEnumHierarchyModule extends Module {
+  late final TypedEnumPortsModule child;
+
+  TypedEnumHierarchyModule(Logic source) {
+    source = addInput('source', source, width: 2);
+    final narrow = LogicEnum<TestEnum>.withMapping(
+      {
+        TestEnum.a: 0,
+        TestEnum.c: 2,
+      },
+      width: 2,
+      name: 'narrow',
+      naming: Naming.reserved,
+      definitionName: 'TypedChildNarrowEnum',
+    )..gets(source);
+    child = TypedEnumPortsModule(narrow);
+    final broad = LogicEnum(
+      TestEnum.values,
+      width: 2,
+      name: 'broad',
+      naming: Naming.reserved,
+      definitionName: 'ParentTypedBroadEnum',
+    )..gets(child.stateOut);
+
+    addOutput('result', width: broad.width) <= broad;
+  }
+}
+
 class EnumIfElseModule extends Module {
   EnumIfElseModule(Logic source, Logic select) {
     source = addInput('source', source, width: 2);
@@ -1019,6 +1058,68 @@ void main() {
       final sv = module.generateSynth();
       expect(sv, contains('ChildNarrowEnum'));
       expect(sv, contains('ParentBroadEnum'));
+    });
+
+    test('typed enum input and output preserve type in both modes', () async {
+      final source = LogicEnum<TestEnum>.withMapping(
+        {
+          TestEnum.a: 0,
+          TestEnum.c: 2,
+        },
+        width: 2,
+        definitionName: 'TypedPortEnum',
+      );
+      final module = TypedEnumPortsModule(source);
+
+      expect(module.stateIn, isA<LogicEnum<TestEnum>>());
+      expect(module.stateOut, isA<LogicEnum<TestEnum>>());
+      expect(module.stateIn.mapping, source.mapping);
+      expect(module.stateOut.mapping, source.mapping);
+
+      final vectors = [
+        Vector({'stateIn': 0}, {'stateOut': 0}),
+        Vector({'stateIn': 2}, {'stateOut': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('input wire logic [1:0] stateIn'));
+      expect(sv, contains('output var logic [1:0] stateOut'));
+      expect(sv, contains('} TypedPortEnum;'));
+    });
+
+    test('typed enum ports preserve widening across hierarchy in both modes',
+        () async {
+      final module = TypedEnumHierarchyModule(Logic(width: 2));
+      final vectors = [
+        Vector({'source': 0}, {'result': 0}),
+        Vector({'source': 2}, {'result': 2}),
+      ];
+      await checkEnumModeParity(module, vectors);
+
+      expect(module.child.stateIn.mapping.keys, [TestEnum.a, TestEnum.c]);
+      expect(module.child.stateOut.mapping, module.child.stateIn.mapping);
+
+      final sv = module.generateSynth();
+      expect(sv, contains('TypedChildNarrowEnum'));
+      expect(sv, contains('ParentTypedBroadEnum'));
+      expect(sv, contains("ParentTypedBroadEnum'("));
+    });
+
+    test('typed enum inOut requires a net-backed enum type', () {
+      final module = EmptyModule();
+      final logicEnum = LogicEnum(TestEnum.values);
+
+      expect(
+        () => module.addTypedInOut('state', logicEnum),
+        throwsA(
+          isA<PortTypeException>().having(
+            (error) => error.message,
+            'message',
+            contains('must be nets'),
+          ),
+        ),
+      );
     });
 
     test('if-else mixes widened enum and enum constant in both modes',
